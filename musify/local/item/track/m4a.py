@@ -1,3 +1,7 @@
+from collections.abc import Iterable, Collection
+from typing import Literal
+
+import mutagen.id3
 import mutagen.mp4
 from PIL import Image
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, field_validator
@@ -13,6 +17,13 @@ from musify.model.properties.order import Position
 
 
 class M4A(LocalTrack[mutagen.mp4.MP4]):
+    format: Literal["m4a"] = Field(
+        description="The format (or file type) of the file.",
+        validation_alias=AliasChoices("ext", "extension"),
+        default=None,
+        exclude=True,
+    )
+
     name: str | None = Field(
         description="A title of this track.",
         default=None,
@@ -62,12 +73,12 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         validation_alias="©day"
     )
-    comments: list[str] | None = Field(
+    comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
-        default=None,
+        default_factory=list,
         validation_alias="©cmt"
     )
-    images: list[InstanceOf[Image.Image] | ImageLink] | None = Field(
+    images: dict[str, InstanceOf[Image.Image] | ImageLink] | None = Field(
         description="Images associated with this track.",
         default=None,
         validation_alias="covr"
@@ -80,7 +91,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     # noinspection PyNestedDecorators
     @field_validator("key", mode="before")
     @classmethod
-    def _from_free_form_field[T](cls, value: T) -> T | str:
+    def _deserialize_free_form_field[T](cls, value: T) -> T | str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_sequence(value)
@@ -92,7 +103,15 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     # noinspection PyNestedDecorators
     @field_validator("genres", mode="before")
     @classmethod
-    def _from_free_form_fields[T](cls, value: T) -> T | str:
+    def _deserialize_free_form_fields[T](cls, value: T) -> T | str:
         if not isinstance(value, tuple | list):
             return value
-        return [cls._from_free_form_field(v) for v in value]
+        return [cls._deserialize_free_form_field(v) for v in value]
+
+    # noinspection PyNestedDecorators
+    @field_validator("images", mode="before")
+    @classmethod
+    def _extract_first_image_from_sequence[T](cls, value: T | Iterable[T]) -> T:
+        # AFAIK, MP4 only supports a single image per track
+        # just extract the first one so downstream validators can handle it
+        return cls._extract_first_value_from_sequence(value)

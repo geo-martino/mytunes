@@ -20,57 +20,45 @@ class _IsFile(_AttributeModel):
         description="The format (or file type) of the file.",
         validation_alias=AliasChoices("ext", "extension"),
         default=None,
+        exclude=True,
     )
 
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @staticmethod
-    def _determine_format_from_path[T](value: T) -> T | dict[str, Any]:
+    def _extract_format_from_path[T](value: T) -> T | dict[str, Any]:
         if not isinstance(value, dict) or "format" in value or (path := value.get("path")) is None:
             return value
         return value | {"format": PurePath(str(path)).suffix.lstrip(".")}
 
-    @computed_field(
-        description="The name of the parent folder of the file."
-    )
     @property
     def folder(self) -> str:
+        """The name of the parent folder of the file."""
         return self.path.parent.name
 
-    @computed_field(
-        description="The filename without extension."
-    )
     @property
     def filename(self) -> str:
+        """The filename without extension."""
         return self.path.stem
 
-    @computed_field(
-        description="The file extension in lowercase."
-    )
     @property
     def ext(self) -> str:
         """The file extension in lowercase."""
         return self.path.suffix.lower()
 
-    @computed_field(
-        description="The size of the file in bytes."
-    )
     @property
     def size(self) -> PositiveInt | None:
+        """The size of the file in bytes."""
         return self.path.stat().st_size if self.path.is_file() else None
 
-    @computed_field(
-        description="The date that the file was created."
-    )
     @property
     def created_at(self) -> datetime | None:
+        """The date that the file was created."""
         return datetime.fromtimestamp(self.path.stat().st_ctime) if self.path.is_file() else None
 
-    @computed_field(
-        description="The date that the file was last modified."
-    )
     @property
     def modified_at(self) -> datetime | None:
+        """The date that the file was last modified."""
         return datetime.fromtimestamp(self.path.stat().st_mtime) if self.path.is_file() else None
 
     @classmethod
@@ -197,7 +185,7 @@ class PathStemMapper(PathMapper):
     # noinspection PyNestedDecorators
     @field_validator("available_paths", mode="before", check_fields=True)
     @staticmethod
-    def _map_available_paths_iter(value: Iterable[str | PurePath]) -> dict[str, str]:
+    def _map_available_paths_from_iterable(value: Iterable[str | PurePath]) -> dict[str, str]:
         if isinstance(value, str | PurePath):
             value = [value]
         elif not isinstance(value, Iterable):
@@ -208,7 +196,7 @@ class PathStemMapper(PathMapper):
     # noinspection PyNestedDecorators
     @field_validator("stem_map", mode="before", check_fields=True)
     @staticmethod
-    def _map_stem_map_iter(
+    def _map_stem_map_from_iterable(
             value: Iterable[tuple[str | PurePath, str | PurePath]] | Mapping[str | PurePath, str | PurePath]
     ) -> dict[str, str]:
         if isinstance(value, Mapping):

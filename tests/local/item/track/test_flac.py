@@ -2,6 +2,7 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
+from typing import get_args
 
 import mutagen.flac
 import pytest
@@ -10,21 +11,28 @@ from faker import Faker
 
 from musify.local.item.track.flac import FLAC
 from musify.model import MusifyModel
+from musify.model.properties.image import get_picture_name_from_id3_value, PICTURE_TYPES
 from musify.model.properties.uri import URI
 from tests.model.testers import UniqueKeyTester
+from tests.utils import assert_validator_skips
 
 
 class TestFLAC(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
-        return FLAC(name=faker.sentence(), uri=uri, path=faker.file_path())
+    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
+        extension = choice(get_args(FLAC.model_fields["format"].annotation))
+        path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
+        return FLAC(name=faker.sentence(), uri=uri, path=path)
 
     @pytest.fixture
     def pictures(self, images: list[bytes]) -> list[mutagen.flac.Picture]:
         pictures = []
+        types = set(PICTURE_TYPES.values())
+
         for img in images:
             picture = mutagen.flac.Picture()
             picture.data = img
+            picture.type = types.pop()
             pictures.append(picture)
 
         return pictures
@@ -41,16 +49,16 @@ class TestFLAC(UniqueKeyTester):
         return file
 
     # noinspection PyCallingNonCallable
-    def test_from_mutagen(self, file: mutagen.flac.FLAC, faker: Faker):
+    def test_extract_tags_from_mutagen(self, file: mutagen.flac.FLAC, faker: Faker):
         tags = faker.pydict()
         file.tags = tags
         assert file.filename
         assert file.pictures
 
-        assert FLAC._from_mutagen(tags) is tags
-        assert FLAC._from_mutagen(file.filename) is file.filename
+        assert FLAC._extract_tags_from_mutagen(tags) is tags
+        assert FLAC._extract_tags_from_mutagen(file.filename) is file.filename
 
-        result = FLAC._from_mutagen(file)
+        result = FLAC._extract_tags_from_mutagen(file)
         assert result == tags | dict(images=file.pictures, path=file.filename)
 
     # noinspection PyCallingNonCallable
@@ -74,12 +82,20 @@ class TestFLAC(UniqueKeyTester):
         assert sum(key.startswith("disc") for key in result) == 1
         assert result["discnumber"] == (2, 5)
 
-    def test_extract_images(self, images: list[bytes], pictures: list[mutagen.flac.Picture]):
-        pictures = [choice([pic, pic.data]) for pic in pictures]
-        assert FLAC._extract_images(pictures[0]) == [images[0]]
-        assert FLAC._extract_images(pictures) == images
+    def test_deserialize_from_pictures(self, pictures: list[mutagen.flac.Picture]):
+        expected = {pic.type: pic.data for pic in pictures}
+        assert FLAC._deserialize_from_pictures(pictures[0]) == {pictures[0].type: pictures[0].data}
+        assert FLAC._deserialize_from_pictures(pictures) == expected
 
-    def test_from_tags(self, images: list[bytes], pictures: list[mutagen.flac.Picture], faker: Faker):
+    def test_deserialize_from_pictures_skips(self, pictures: list[mutagen.flac.Picture], faker: Faker):
+        assert_validator_skips(FLAC._deserialize_from_pictures, None)
+        assert_validator_skips(FLAC._deserialize_from_pictures, faker.pyint())
+        assert_validator_skips(FLAC._deserialize_from_pictures, faker.pytuple())
+        assert_validator_skips(FLAC._deserialize_from_pictures, faker.pylist())
+        assert_validator_skips(FLAC._deserialize_from_pictures, faker.pydict())
+        assert_validator_skips(FLAC._deserialize_from_pictures, [pic.data for pic in pictures])
+
+    def test_from_tags(self, model: FLAC, images: list[bytes], pictures: list[mutagen.flac.Picture], faker: Faker):
         sep = choice(FLAC._tag_sep)
         tags = {
             "title": ["Sleepwalk My Life Away"],
@@ -98,7 +114,7 @@ class TestFLAC(UniqueKeyTester):
             "images": pictures,
         }
 
-        model = FLAC(**tags, path=faker.file_path())
+        model = FLAC(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
@@ -111,4 +127,9 @@ class TestFLAC(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-        assert model.images == list(map(Image.open, map(BytesIO, images)))
+
+        expected_images = {
+            get_picture_name_from_id3_value(pic.type): Image.open(BytesIO(img))
+            for pic, img in zip(pictures, images)
+        }
+        assert model.images == expected_images

@@ -18,10 +18,10 @@ from musify.model.properties.uri import HasURI
 from musify.model.sequence import MusifyMutableSequence, MusifySequence
 
 
-class Track[RT: Artist, AT: Album, GT: Genre](
-    HasArtists[RT], HasAlbum[AT], HasGenres[GT], HasName, HasURI, HasLength, HasRating, HasReleaseDate, HasImages
+class TrackTagsMixin[RT: Artist, AT: Album, GT: Genre](
+    HasArtists[RT], HasAlbum[AT], HasGenres[GT], HasName, HasRating, HasReleaseDate, HasImages
 ):
-    """Represents a track resource and its properties."""
+    """A mixin class to add common track tags which can be composed and written as metadata in a track file."""
     type: ClassVar[str] = "track"
 
     name: StrippedString = Field(
@@ -44,9 +44,9 @@ class Track[RT: Artist, AT: Album, GT: Genre](
         description="The key of this track.",
         default=None,
     )
-    comments: list[str] | None = Field(
+    comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
-        default=None,
+        default_factory=list,
     )
 
     @model_validator(mode="after")
@@ -91,6 +91,11 @@ class Track[RT: Artist, AT: Album, GT: Genre](
         item_artists = {artist.name for artist in other.artists}
 
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
+
+
+class Track[RT: Artist, AT: Album, GT: Genre](TrackTagsMixin[RT, AT, GT], HasURI, HasLength):
+    """Represents a track resource and its properties."""
+    pass
 
 
 class HasTracks[TK, TV: Track](_CollectionModel):

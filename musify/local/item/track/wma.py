@@ -1,7 +1,9 @@
 import struct
-from collections.abc import Iterable
+from collections.abc import Collection
+from typing import Literal
 
 import mutagen.asf
+from mutagen.asf import ASFByteArrayAttribute
 import mutagen.id3
 from PIL import Image
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, field_validator
@@ -11,12 +13,19 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.model.properties.date import SparseDate
-from musify.model.properties.image import ImageLink
+from musify.model.properties.image import ImageLink, PICTURE_TYPES
 from musify.model.properties.music import KeySignature
 from musify.model.properties.order import Position
 
 
 class WMA(LocalTrack[mutagen.asf.ASF]):
+    format: Literal["wma"] = Field(
+        description="The format (or file type) of the file.",
+        validation_alias=AliasChoices("ext", "extension"),
+        default=None,
+        exclude=True,
+    )
+
     name: str | None = Field(
         description="A title of this track.",
         default=None,
@@ -66,12 +75,12 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default=None,
         validation_alias=AliasChoices("WM/Year", "WM/OriginalReleaseYear")
     )
-    comments: list[str] | None = Field(
+    comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
-        default=None,
+        default_factory=list,
         validation_alias=AliasChoices("Description", "WM/Comments")
     )
-    images: list[InstanceOf[Image.Image] | ImageLink] | None = Field(
+    images: dict[str, InstanceOf[Image.Image] | ImageLink] | None = Field(
         description="Images associated with this track.",
         default=None,
         validation_alias="WM/Picture"
@@ -87,7 +96,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         mode="before"
     )
     @classmethod
-    def _from_unicode_attribute[T](cls, value: T) -> T | str:
+    def _deserialize_unicode_attribute[T](cls, value: T) -> T | str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_single_sequence(value)
@@ -102,34 +111,36 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         mode="before"
     )
     @classmethod
-    def _from_unicode_attributes[T](cls, value: T) -> T | list[str]:
+    def _deserialize_unicode_attributes[T](cls, value: T) -> T | list[str]:
         if not isinstance(value, tuple | list):
             return value
-        return [cls._from_unicode_attribute(v) for v in value]
+        return [cls._deserialize_unicode_attribute(v) for v in value]
 
     # noinspection PyNestedDecorators
     @field_validator("images", mode="before")
     @classmethod
-    def _extract_images[T](cls, data: T | Iterable[T]) -> T | list[T | bytes]:
-        if data is None:
-            return
-        if not isinstance(data, tuple | list):
-            data = [data]
+    def _deserialize_images_from_wma_attributes[T](
+            cls, attributes: T | bytes | ASFByteArrayAttribute | Collection[bytes | ASFByteArrayAttribute]
+    ) -> T | dict[int, bytes]:
+        if isinstance(attributes, bytes | ASFByteArrayAttribute):
+            attributes = [attributes]
 
-        values_converted: list[T | bytes] = []
-        for attribute in data:
-            if isinstance(attribute, mutagen.asf.ASFByteArrayAttribute):
+        if not isinstance(attributes, tuple | list):
+            return attributes
+        elif not all(isinstance(img, bytes | ASFByteArrayAttribute) for img in attributes):
+            return attributes
+
+        images: dict[int, T | bytes] = {}
+        for attribute in attributes:
+            if isinstance(attribute, ASFByteArrayAttribute):
                 attribute = attribute.value
 
             id3_type, size = struct.unpack_from(b"<bi", attribute)
 
-            id3_types = {
-                int(val) for val in vars(mutagen.id3.PictureType).values() if isinstance(val, mutagen.id3.PictureType)
-            }
-            if id3_type not in id3_types:  # first byte gives the id3 picture type in WMA-spec header
+            if id3_type not in PICTURE_TYPES.values():  # first byte gives the id3 picture type in WMA-spec header
                 # assume bytes don't contain WMA-spec header
-                # assume bytes are raw image data
-                values_converted.append(attribute)
+                # assume bytes are raw image data for the cover front
+                images[int(mutagen.id3.PictureType.COVER_FRONT)] = attribute
                 continue
 
             # extract WMA-spec header information
@@ -147,7 +158,6 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
                 pos += 2
             pos += 2
 
-            attribute_bytes = attribute[pos:pos + size]
-            values_converted.append(attribute_bytes)
+            images[id3_type] = attribute[pos:pos + size]
 
-        return values_converted
+        return images

@@ -38,22 +38,22 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
             )
         return self
 
-    @computed_field(description="The remote repository that this URI is from.")
     @property
     @abstractmethod
     def source(self) -> str:
+        """The remote repository that this URI is from."""
         raise NotImplementedError
 
-    @computed_field(description="The type of resource this URI represents.")
     @property
     @abstractmethod
     def type(self) -> str:
+        """The type of resource this URI represents."""
         raise NotImplementedError
 
-    @computed_field(description="The unique identifier for this URI.")
     @property
     @abstractmethod
     def id(self) -> str:
+        """The unique identifier for this URI."""
         raise NotImplementedError
 
     @classmethod
@@ -61,10 +61,10 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     def from_id[T](cls, value: T, kind: str) -> T | Self:
         raise NotImplementedError
 
-    @computed_field(description="The URL of the API endpoint for this remote resource.")
     @property
     @abstractmethod
     def href(self) -> URL:
+        """The URL of the API endpoint for this remote resource."""
         raise NotImplementedError
 
     # noinspection PyNestedDecorators
@@ -74,10 +74,10 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     def from_href[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
         raise NotImplementedError
 
-    @computed_field(description="The public URL for this remote resource.")
     @property
     @abstractmethod
     def url(self) -> URL:
+        """The public URL for this remote resource."""
         raise NotImplementedError
 
     # noinspection PyNestedDecorators
@@ -87,11 +87,9 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     def from_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
         raise NotImplementedError
 
-    @computed_field(
-        description="Whether this URI relates to a resource which actually exists in the remote repository."
-    )
     @property
     def exists(self) -> bool:
+        """Whether this URI relates to a resource which actually exists in the remote repository."""
         return self.id != self._unavailable_id
 
     def __str__(self):
@@ -122,7 +120,7 @@ class HasURI[T: URI](_AttributeModel):
     _uri = PrivateAttr(default=None)
 
     @computed_field(
-        description="The URI for this resource on the remote repository"
+        description="The URI for this resource on the remote repository",
     )
     @property
     def uri(self) -> T | None:
@@ -137,7 +135,6 @@ class HasURI[T: URI](_AttributeModel):
 
 
 class HasMutableURI(HasURI):
-
     source: str | None = Field(
         description=(
             "The type of remote repository this resource is associated with. "
@@ -199,14 +196,13 @@ class HasMutableURI(HasURI):
         idx = next(i for i, uri in enumerate(self.uris) if uri.source == self.source)
         del self.uris[idx]
 
-    @computed_field(
-        description=(
-                "Whether this resource has a URI. Returns None if existence is unknown "
-                "(usually because a mapping has not yet been attempted)."
-        )
-    )
     @property
     def has_uri(self) -> bool | None:
+        """
+        Whether this resource has a URI.
+
+        Returns None if existence is unknown usually because a mapping has not yet been attempted.
+        """
         return next((uri.exists for uri in self.uris if uri.source == self.source), None)
 
     def __eq__(self, other: HasURI):

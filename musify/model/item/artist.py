@@ -38,7 +38,7 @@ class HasArtists[T: Artist](HasSeparableTags):
             return value
         return cls._separate_tags(value)
 
-    @computed_field(description="A string representation of all artists featured on this resource")
     @property
     def artist(self) -> str | None:
+        """A string representation of all artists featured on this resource"""
         return self._join_tags(artist.name for artist in self.artists)

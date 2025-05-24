@@ -33,7 +33,7 @@
     <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredIdentifiers">
         <list>
-          <option value="logging.Logger.stat" />
+          <option value="mutagen.id3._frames.APIC.*" />
         </list>
       </option>
     </inspection_tool>

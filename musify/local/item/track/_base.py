@@ -1,20 +1,19 @@
-from collections.abc import Collection, Sequence
-from io import BytesIO
+from collections.abc import Collection
 from pathlib import Path
 from typing import Self, Any
 
 import mutagen
-from PIL import Image
-from pydantic import field_validator, model_validator, validate_call, field_serializer
-from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo
+import mutagen.id3
+from pydantic import field_validator, model_validator, validate_call, AliasChoices
+from pydantic.fields import FieldInfo
 
 from musify.local._base import LocalResource
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
-from musify.model.item.track import Track
+from musify.model.item.track import Track, TrackTagsMixin
 from musify.model.properties.file import IsFile
-from musify.model.properties.image import ImageLink
+from musify.model.properties.name import HasName
 from musify.model.properties.uri import HasMutableURI
 
 
@@ -42,7 +41,7 @@ class LocalTrack[T: mutagen.FileType](LocalResource, Track[LocalArtist, LocalAlb
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
-    def _from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
+    def _extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
         if not isinstance(file, mutagen.FileType):
             return file
 
@@ -96,6 +95,31 @@ class LocalTrack[T: mutagen.FileType](LocalResource, Track[LocalArtist, LocalAlb
             return value
         return [v for item in value for v in cls._separate_tags(item)]
 
+    @classmethod
+    def _join_split_tags(cls, value: list[Any]) -> str:
+        values = [v.name if isinstance(v, HasName) else v for v in value]
+        return cls._join_tags(str(v) for v in values if v and str(v))
+
+    @classmethod
+    def _get_tag_id(cls, name: str) -> str | None:
+        field: FieldInfo = cls.model_fields[name]
+        tag_id = None
+        if isinstance(field.alias, str):
+            tag_id = field.alias
+        elif isinstance(field.serialization_alias, str):
+            tag_id = field.serialization_alias
+        elif isinstance(field.validation_alias, str):
+            tag_id = field.validation_alias
+        elif isinstance(field.validation_alias, AliasChoices):
+            tag_id = next(iter(field.validation_alias.choices))
+
+        return tag_id
+
+    def to_tags(self) -> dict[str, Any]:
+        include_fields = {*TrackTagsMixin.model_fields}
+        context = {"uri": "comments"}
+        return self.model_dump(include=include_fields, context=context, by_alias=True, exclude_none=True)
+
     async def load(self) -> Any:
         model = await self.from_file(self.path)
         self.__dict__ = model.__dict__
@@ -106,12 +130,3 @@ class LocalTrack[T: mutagen.FileType](LocalResource, Track[LocalArtist, LocalAlb
 
     async def clear_tags(self) -> None:
         pass  # TODO
-
-    def __setattr__(self, key: str, value: Any):
-        if value is None:
-            self.__tags_deleted.add(key)
-        super().__setattr__(key, value)
-
-    def __delattr__(self, item: str):
-        self.__tags_deleted.add(item)
-        super().__delattr__(item)

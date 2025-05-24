@@ -33,7 +33,7 @@ class HasGenres[T: Genre](HasSeparableTags):
             return value
         return cls._separate_tags(value)
 
-    @computed_field(description="A string representation of all genres associated with this resource")
     @property
     def genre(self) -> str | None:
+        """A string representation of all genres associated with this resource"""
         return self._join_tags(genre.name for genre in self.genres)

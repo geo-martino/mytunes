@@ -76,7 +76,7 @@ class TestPathStemMapper(TestPathMapper):
         return PathStemMapper(stem_map=stem_map, available_paths=available_paths)
 
     # noinspection PyTypeChecker
-    def test_map_available_paths_iter(self, model: PathStemMapper, faker: Faker):
+    def test_map_available_paths_from_iterable(self, model: PathStemMapper, faker: Faker):
         paths = list(map(str, _get_file_paths(faker, "windows")))
 
         model.available_paths = paths[0]
@@ -86,7 +86,7 @@ class TestPathStemMapper(TestPathMapper):
         assert model.available_paths == {path.casefold(): path for path in paths}
 
     # noinspection PyTypeChecker
-    def test_map_stem_map_iter(self, model: PathStemMapper, faker: Faker):
+    def test_map_stem_map_from_iterable(self, model: PathStemMapper, faker: Faker):
         paths = list(
             tuple(map(str, item))
             for item in zip(_get_directory_paths(faker, "windows"), _get_directory_paths(faker, "linux"))

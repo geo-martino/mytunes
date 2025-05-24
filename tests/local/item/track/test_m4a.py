@@ -1,7 +1,10 @@
 from datetime import date
 from io import BytesIO
+from pathlib import Path
 from random import choice
+from typing import get_args
 
+import mutagen.id3
 import pytest
 from PIL import Image
 from faker import Faker
@@ -9,26 +12,29 @@ from mutagen.mp4 import MP4FreeForm, MP4Cover
 
 from musify.local.item.track.m4a import M4A
 from musify.model import MusifyModel
+from musify.model.properties.image import get_picture_name_from_id3_value
 from musify.model.properties.uri import URI
 from tests.model.testers import UniqueKeyTester
 
 
 class TestM4A(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
-        return M4A(name=faker.sentence(), uri=uri, path=faker.file_path())
+    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
+        extension = choice(get_args(M4A.model_fields["format"].annotation))
+        path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
+        return M4A(name=faker.sentence(), uri=uri, path=path)
 
-    def test_from_free_form_field(self, faker: Faker):
+    def test_deserialize_free_form_field(self, faker: Faker):
         expected = faker.pystr()
         field = MP4FreeForm(expected.encode())
-        assert M4A._from_free_form_field(field) == expected
+        assert M4A._deserialize_free_form_field(field) == expected
 
-    def test_from_free_form_fields(self, faker: Faker):
+    def test_deserialize_free_form_fields(self, faker: Faker):
         expected = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         attributes = [MP4FreeForm(item.encode()) for item in expected]
-        assert M4A._from_free_form_fields(attributes) == expected
+        assert M4A._deserialize_free_form_fields(attributes) == expected
 
-    def test_from_tags(self, images: list[bytes], faker: Faker):
+    def test_from_tags(self, model: M4A, images: list[bytes], faker: Faker):
         sep = choice(M4A._tag_sep)
         tags = {
             "©nam": ["Sleepwalk My Life Away"],
@@ -50,8 +56,7 @@ class TestM4A(UniqueKeyTester):
             "cpil": True,
         }
 
-        model = M4A.model_validate(tags | dict(path=faker.file_path()))
-
+        model = M4A(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
@@ -64,4 +69,7 @@ class TestM4A(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-        assert model.images == list(map(Image.open, map(BytesIO, images)))
+        # AFAIK, MP4 only supports a single image per track so we just check it took the first available one
+        assert model.images == {
+            get_picture_name_from_id3_value(mutagen.id3.PictureType.COVER_FRONT): Image.open(BytesIO(images[0]))
+        }

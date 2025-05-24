@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Annotated, Any
 
-from pydantic import Field, field_validator, computed_field, model_validator
+from pydantic import Field, field_validator, computed_field, model_validator, model_serializer
 
 from musify.model import MusifyModel
 
@@ -26,12 +26,12 @@ class KeySignature(MusifyModel):
     def _from_key(cls, value: str) -> Any:
         if not isinstance(value, str):
             return value
-        return dict(root=cls._get_root_index_from_key(value), mode=cls._get_mode_index_from_key(value))
+        return dict(root=cls._extract_root_index_from_key(value), mode=cls._extract_mode_index_from_key(value))
 
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @classmethod
-    def _get_root_index_from_key(cls, value: str) -> Any:
+    def _extract_root_index_from_key(cls, value: str) -> Any:
         if not isinstance(value, str):
             return value
         return cls._root_notes.index(value.rstrip("m"))
@@ -39,15 +39,19 @@ class KeySignature(MusifyModel):
     # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
     @classmethod
-    def _get_mode_index_from_key(cls, value: str) -> Any:
+    def _extract_mode_index_from_key(cls, value: str) -> Any:
         if not isinstance(value, str):
             return value
         return int(value.endswith("m"))
 
-    @computed_field(description="A string representation of the key in alphabetical musical notation format.")
     @property
     def key(self) -> str:
+        """A string representation of the key in alphabetical musical notation format."""
         return f"{self._root_notes[self.root]}{'m' if self.mode else ''}"
+
+    @model_serializer
+    def _serialize_key(self) -> str:
+        return self.key
 
     # noinspection PyTypeChecker
     @key.setter

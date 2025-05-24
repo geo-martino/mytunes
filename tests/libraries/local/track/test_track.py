@@ -414,7 +414,7 @@ class TestLocalTrack(TrackTester):
         assert track.album == item_modified.album
         assert track.rating == item_modified.rating
 
-    def test_extract_images(self, track: LocalTrack, tmp_path: Path):
+    def test_from_images(self, track: LocalTrack, tmp_path: Path):
         # all tracks have an embedded image
         # images should be removed in refresh step, they should then be reloaded during extraction call
         assert not track._reader.read_images()

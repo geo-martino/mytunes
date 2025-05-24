@@ -38,15 +38,28 @@ class TestPosition(MusifyModelTester):
         assert model.number == 10
         assert model.total is None
 
-        numbers = "10/20"
+        numbers = Position.sep.join(("10", "20"))
         model = adapter.validate_python(numbers)
         assert model.number == 10
         assert model.total == 20
 
-        numbers = "10/20/30"
+        numbers = Position.sep.join(("10", "20", "30"))
         model = adapter.validate_python(numbers)
         assert model.number == 10
         assert model.total == 20
+
+    def test_serialize_string(self, model: Position) -> None:
+        model.number = 10
+        assert model._serialize_string() == "10"
+        assert model.model_dump() == "10"
+
+        model.total = 20
+        assert model._serialize_string() == "10/20"
+        assert model.model_dump() == "10/20"
+
+        model.number = None
+        assert model._serialize_string() is None
+        assert model.model_dump() is None
 
     def test_number_cannot_exceed_total(self, model: Position) -> None:
         model.total = 5

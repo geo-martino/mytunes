@@ -25,6 +25,10 @@ class TestKeySignature(MusifyModelTester):
         assert model.root == 5
         assert model.mode == 1
 
+    def test_serialize_key(self, model: KeySignature) -> None:
+        assert model._serialize_key() == str(model)
+        assert model.model_dump() == str(model)
+
     def test_key_property(self, model: KeySignature) -> None:
         model.root = 5
         model.mode = False

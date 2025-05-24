@@ -1,17 +1,26 @@
 import types
-from collections.abc import Iterable
-from typing import Any, get_args, _UnionGenericAlias
+from collections.abc import Iterable, Collection
+from typing import Any, Literal, get_args
 
 import mutagen.flac
+import mutagen.id3
 from pydantic import Field, AliasChoices, model_validator, field_validator
 
 from musify.local.item.track import LocalTrack
 from musify.model.properties.date import SparseDate
+from musify.model.properties.image import get_picture_name_from_id3_value
 from musify.model.properties.music import KeySignature
 from musify.model.properties.order import Position
 
 
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
+    format: Literal["flac"] = Field(
+        description="The format (or file type) of the file.",
+        validation_alias=AliasChoices("ext", "extension"),
+        default=None,
+        exclude=True,
+    )
+
     track: Position | None = Field(
         validation_alias=AliasChoices("tracknumber", "tracktotal"),
         default=None,
@@ -31,21 +40,21 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         default=None,
         validation_alias="initialkey",
     )
-    comments: list[str] | None = Field(
+    comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
-        default=None,
+        default_factory=list,
         validation_alias=AliasChoices("comment", "description"),
     )
 
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
-    def _from_mutagen[T](cls, file: T) -> T | dict[str, Any]:
+    def _extract_tags_from_mutagen[T](cls, file: T) -> T | dict[str, Any]:
         if not isinstance(file, mutagen.flac.FLAC):
             return file
 
         # noinspection PyCallingNonCallable
-        tags = super()._from_mutagen(file)
+        tags = super()._extract_tags_from_mutagen(file)
         return tags | dict(images=file.pictures)
 
     # noinspection PyNestedDecorators
@@ -73,7 +82,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
                 # look for total number from 2nd alias choice onward
                 next(aliases)
 
-            values.extend(value.pop(alias, None) for alias in aliases if value.get(alias, None) is not None)
+            values.extend(filter(None, (value.pop(alias, None) for alias in aliases)))
             value[field.validation_alias.choices[0]] = tuple(map(cls._extract_first_value_from_sequence, values))
 
         return value
@@ -81,10 +90,14 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     # noinspection PyNestedDecorators
     @field_validator("images", mode="before")
     @staticmethod
-    def _extract_images[T](pictures: T | Iterable[T | mutagen.flac.Picture]) -> T | list[T | bytes]:
-        if pictures is None:
-            return pictures
-        if not isinstance(pictures, tuple | list):
+    def _deserialize_from_pictures[T](
+            pictures: T | bytes | mutagen.flac.Picture | Collection[mutagen.flac.Picture]
+    ) -> T | dict[int, bytes]:
+        if isinstance(pictures, mutagen.flac.Picture):
             pictures = [pictures]
+        if not isinstance(pictures, tuple | list):
+            return pictures
+        elif not all(isinstance(img, mutagen.flac.Picture) for img in pictures):
+            return pictures
 
-        return [img.data if isinstance(img, mutagen.flac.Picture) else img for img in pictures]
+        return {img.type: img.data for img in pictures}
