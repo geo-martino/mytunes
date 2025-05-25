@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 
 from musify.model import MusifyModel
 from musify.model.properties.music import KeySignature
@@ -16,12 +15,12 @@ class TestKeySignature(MusifyModelTester):
             mode=faker.boolean(),
         )
 
-    def test_from_key(self, adapter: TypeAdapter) -> None:
-        model = adapter.validate_python("F")
+    def test_from_key(self, model: KeySignature) -> None:
+        model = model.model_validate("F")
         assert model.root == 5
         assert model.mode == 0
 
-        model = adapter.validate_python("Fm")
+        model = model.model_validate("Fm")
         assert model.root == 5
         assert model.mode == 1
 

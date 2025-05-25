@@ -4,6 +4,7 @@ from io import BytesIO
 from pathlib import Path
 from random import choice
 from typing import get_args
+from unittest import mock
 
 import mutagen.id3
 import pytest
@@ -14,34 +15,65 @@ from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 
 from musify.local.item.track.wma import WMA
 from musify.model import MusifyModel
-from musify.model.properties.image import PICTURE_TYPES, get_picture_name_from_id3_value
 from musify.model.properties.uri import URI
-from tests.model.testers import UniqueKeyTester
+from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 from tests.utils import assert_validator_skips
 
 
-class TestWMA(UniqueKeyTester):
+@pytest.fixture
+def pictures(images: list[bytes], image_types: set[str]) -> dict[str, ASFByteArrayAttribute]:
+    pictures = {}
+    for img in images:
+        fmt = Image.open(BytesIO(img)).format
+        kind = image_types.pop()
+
+        header = struct.pack("<bi", int(getattr(mutagen.id3.PictureType, kind)), len(img))
+        mime = Image.MIME[fmt].encode("utf-16")
+        description = "".encode("utf-16")
+        data = b"\x00\x00".join((header + mime, description, img))
+
+        pictures[kind] = ASFByteArrayAttribute(data)
+
+    return pictures
+
+
+class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
+    @pytest.fixture
+    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = Image.open(BytesIO(choice(images)))
+        return WMA.EmbeddedImage(
+            path=faker.file_path(category="image"),
+            type=choice(list(image_types)),
+            mime=img.get_format_mimetype(),
+            height=img.height,
+            width=img.width,
+        )
+
+    def test_unpack_bytes(self, pictures: dict[str, ASFByteArrayAttribute]):
+        kind, attr = choice(list(pictures.items()))
+        id3_type, size = WMA.EmbeddedImage._unpack_bytes(attr)
+        assert id3_type == kind
+        assert size < len(attr.value)
+
+        with mock.patch.object(WMA.EmbeddedImage, "_get_type_from_number", side_effect=ValueError):
+            id3_type, _ = WMA.EmbeddedImage._unpack_bytes(next(iter(pictures.values())))
+            assert id3_type is None
+
+    def test_get_bytes(self, pictures: dict[str, ASFByteArrayAttribute]):
+        kind, attr = choice(list(pictures.items()))
+        result = WMA.EmbeddedImage._get_bytes(choice([attr, attr.value]))
+        assert isinstance(result, bytes)
+        assert len(result) < len(attr.value)  # check that the header has been removed
+
+        assert_validator_skips(WMA.EmbeddedImage._get_bytes, b"invalid data")
+
+
+class TestWMA(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
         extension = choice(get_args(WMA.model_fields["format"].annotation))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return WMA(name=faker.sentence(), uri=uri, path=path)
-
-    @pytest.fixture
-    def pictures(self, images: list[bytes]) -> dict[int, ASFByteArrayAttribute]:
-        pictures = {}
-        types = set(PICTURE_TYPES.values())
-        for img in images:
-            fmt = Image.open(BytesIO(img)).format
-            kind = types.pop()
-
-            header = struct.pack("<bi", kind, len(img))
-            header += Image.MIME[fmt].encode("utf-16") + b"\x00\x00"  # mime
-            header += "".encode("utf-16") + b"\x00\x00"  # description
-
-            pictures[kind] = ASFByteArrayAttribute(header + img)
-
-        return pictures
 
     def test_deserialize_unicode_attribute(self, faker: Faker):
         expected = faker.sentence()
@@ -53,22 +85,7 @@ class TestWMA(UniqueKeyTester):
         attributes = [ASFUnicodeAttribute(item) for item in expected]
         assert WMA._deserialize_unicode_attributes(attributes) == expected
 
-    def test_deserialize_images_from_wma_attributes(
-            self, images: list[bytes], pictures: dict[int, ASFByteArrayAttribute]
-    ):
-        pictures = {kind: choice([pic, pic.value]) for kind, pic in pictures.items()}
-        kind, picture = next(iter(pictures.items()))
-        assert WMA._deserialize_images_from_wma_attributes(picture) == {kind: images[0]}
-        assert WMA._deserialize_images_from_wma_attributes(list(pictures.values())) == dict(zip(pictures, images))
-
-    def test_deserialize_images_from_wma_attributes_skips(self, faker: Faker):
-        assert_validator_skips(WMA._deserialize_images_from_wma_attributes, None)
-        assert_validator_skips(WMA._deserialize_images_from_wma_attributes, faker.pyint())
-        assert_validator_skips(WMA._deserialize_images_from_wma_attributes, faker.pytuple())
-        assert_validator_skips(WMA._deserialize_images_from_wma_attributes, faker.pylist())
-        assert_validator_skips(WMA._deserialize_images_from_wma_attributes, faker.pydict())
-
-    def test_from_tags(self, model: WMA, images: list[bytes], pictures: dict[int, ASFByteArrayAttribute], faker: Faker):
+    def test_from_tags(self, model: WMA, images: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker):
         sep = choice(WMA._tag_sep)
         tags = {
             "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],
@@ -103,9 +120,4 @@ class TestWMA(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-
-        expected_images = {
-            get_picture_name_from_id3_value(kind): Image.open(BytesIO(img))
-            for kind, img in zip(pictures, images)
-        }
-        assert model.images == expected_images
+        assert model.images == {kind: WMA.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}

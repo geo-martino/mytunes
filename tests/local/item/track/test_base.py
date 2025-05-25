@@ -1,7 +1,9 @@
+from argparse import Namespace
 from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
+from typing import Any, Mapping
 from unittest import mock
 
 import mutagen
@@ -11,9 +13,10 @@ from faker import Faker
 
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack
+from musify.local.item.track._base import TagDumpContext
 from musify.model import MusifyModel
 from musify.model.properties.file import IsFile
-from musify.model.properties.image import PICTURE_TYPES, get_picture_name_from_id3_value
+from musify.model.properties.image import ImageFile
 from musify.model.properties.length import HasLength
 from musify.model.properties.uri import URI, HasMutableURI
 from tests.model.testers import UniqueKeyTester
@@ -37,18 +40,18 @@ class TestLocalTrack(UniqueKeyTester):
 
     async def test_from_file(self, file: mutagen.FileType):
         with (
-            mock.patch.object(LocalTrack, "_load_mutagen", return_value=file) as mocked_load
+            mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load
         ):
             model = await LocalTrack.from_file(file.filename)
             assert model.name == "Track title"
 
-    async def test_load_mutagen(self, faker: Faker, tmp_path: Path):
+    async def test_load_file(self, faker: Faker, tmp_path: Path):
         path = tmp_path.joinpath(faker.file_name(category="audio"))
         path.touch()  # needs a real file to open
         file = mutagen.FileType()
 
         with mock.patch.object(mutagen, "File", return_value=file) as mocked_file:
-            result = await LocalTrack._load_mutagen(path)
+            result = await LocalTrack.load_file(path)
 
             mocked_file.assert_called_once()
             assert result is file
@@ -131,13 +134,28 @@ class TestLocalTrack(UniqueKeyTester):
         model.artists = artists
         assert model._join_split_tags(artists) == model.artist
 
+    def test_map_images_skips(self, faker: Faker):
+        assert_validator_skips(LocalTrack._map_images, None)
+        assert_validator_skips(LocalTrack._map_images, faker.pystr())
+        assert_validator_skips(LocalTrack._map_images, faker.pyint())
+
+    def test_serialize_images_skips(self, model: LocalTrack, images: list[bytes]):
+        info = Namespace(by_alias=False, context=None)  # skips when not serializing by alias
+        # noinspection PyTypeChecker
+        results = model._serialize_images(model.images, info=info)
+        assert results is model.images
+
+        info = Namespace(by_alias=True, context=TagDumpContext())  # skips when loaded_images are not available
+        # noinspection PyTypeChecker
+        results = model._serialize_images(model.images, info=info)
+        assert results == []
+
+    @pytest.mark.skip(reason="Not implemented yet")
     def test_get_tag_id(self):
         pass  # TODO
 
-    def test_from_tags(self, images: list[bytes], faker: Faker):
+    async def test_from_tags(self, image_files: list[ImageFile], image_types: set[str], faker: Faker):
         sep = choice(LocalTrack._tag_sep)
-        image_types = set(PICTURE_TYPES.items())
-        images = {choice(image_types.pop()): img for img in images}
         tags = {
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
@@ -151,7 +169,7 @@ class TestLocalTrack(UniqueKeyTester):
             "released_at": ["2023-04-14"],
             "comment": ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
             "compilation": ["0"],
-            "images": images,
+            "images": image_files,
         }
 
         model = LocalTrack(**tags, path=faker.file_path())
@@ -167,9 +185,22 @@ class TestLocalTrack(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == tags["comment"]
-        assert model.images == {
-            get_picture_name_from_id3_value(kind): Image.open(BytesIO(image)) for kind, image in images.items()
-        }
+
+        # only sets the first image of each image type
+        expected = {}
+        for img in image_files:
+            if img.type not in expected:
+                expected[img.type] = img
+        assert model.images == expected
+
+    # noinspection PyTypeChecker
+    async def test_to_tags(self, model: LocalTrack):
+        tags = await model.to_tags()
+        assert all(value is not None for value in tags.values())
+        assert all(key not in tags for key in IsFile.model_fields)
+        assert all(key not in tags for key in HasLength.model_fields)
+        assert all(key not in tags for key in HasMutableURI.model_fields)
+        assert all(key not in tags for key in HasMutableURI.model_computed_fields)
 
     async def test_load(self, model: LocalTrack, faker: Faker):
         expected = LocalTrack(
@@ -189,12 +220,3 @@ class TestLocalTrack(UniqueKeyTester):
             assert model.artists == expected.artists
             assert model.album == expected.album
             assert model.genres == expected.genres
-
-    # noinspection PyTypeChecker
-    def test_to_tags(self, model: LocalTrack):
-        tags = model.to_tags()
-        assert all(value is not None for value in tags.values())
-        assert all(key not in tags for key in IsFile.model_fields)
-        assert all(key not in tags for key in HasLength.model_fields)
-        assert all(key not in tags for key in HasMutableURI.model_fields)
-        assert all(key not in tags for key in HasMutableURI.model_computed_fields)

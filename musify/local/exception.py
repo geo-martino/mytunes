@@ -4,6 +4,17 @@ Exceptions relating to local operations.
 from musify.exception import MusifyError
 
 
+class FileError(MusifyError):
+    """
+    Exception raised for file-related errors.
+
+    :param message: Explanation of the error.
+    """
+    def __init__(self, message: str | None = None):
+        self.message = message
+        super().__init__(message)
+
+
 class LocalError(MusifyError):
     """
     Exception raised for local errors.

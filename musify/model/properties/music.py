@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Annotated, Any
 
-from pydantic import Field, field_validator, computed_field, model_validator, model_serializer
+from pydantic import Field, field_validator, model_validator, model_serializer
 
 from musify.model import MusifyModel
 

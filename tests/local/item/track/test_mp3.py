@@ -13,33 +13,53 @@ from PIL import Image
 from faker import Faker
 
 from musify.local.item.artist import LocalArtist
+from musify.local.item.track._base import TagDumpContext
 from musify.local.item.track.mp3 import MP3
 from musify.model import MusifyModel
-from musify.model.properties.image import get_picture_name_from_id3_value, PICTURE_TYPES
 from musify.model.properties.uri import URI
-from tests.model.testers import UniqueKeyTester
-from tests.utils import assert_validator_skips
+from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 
 
-class TestMP3(UniqueKeyTester):
+@pytest.fixture
+def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.id3.APIC]:
+    pictures = {}
+
+    for img in images:
+        picture_type = image_types.pop()
+        pictures[picture_type] = mutagen.id3.APIC(
+            encoding=mutagen.id3.Encoding.UTF8,
+            mime=Image.MIME[Image.open(BytesIO(img)).format],
+            type=getattr(mutagen.id3.PictureType, picture_type),
+            data=img
+        )
+
+    return pictures
+
+
+class TestMP3EmbeddedImage(LocalTrackEmbeddedImageTester):
+    @pytest.fixture
+    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = Image.open(BytesIO(choice(images)))
+        return MP3.EmbeddedImage(
+            path=faker.file_path(category="image"),
+            type=choice(list(image_types)),
+            mime=img.get_format_mimetype(),
+            height=img.height,
+            width=img.width,
+        )
+
+    def test_get_bytes(self, pictures: dict[str, mutagen.id3.APIC]):
+        kind, attr = choice(list(pictures.items()))
+        result = MP3.EmbeddedImage._get_bytes(choice([attr, attr.data]))
+        assert result is attr.data
+
+
+class TestMP3(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
         extension = choice(get_args(MP3.model_fields["format"].annotation))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return MP3(name=faker.sentence(), uri=uri, path=path)
-
-    @pytest.fixture
-    def pictures(self, images: list[bytes]) -> list[mutagen.id3.APIC]:
-        types = set(PICTURE_TYPES.values())
-        return [
-            mutagen.id3.APIC(
-                encoding=mutagen.id3.Encoding.UTF8,
-                mime=Image.MIME[Image.open(BytesIO(img)).format],
-                type=types.pop(),
-                data=img
-            )
-            for img in images
-        ]
     
     def test_merge_suffixed_tags(self, faker: Faker):
         data: dict[str, str | bytes | list] = {
@@ -60,9 +80,7 @@ class TestMP3(UniqueKeyTester):
         # noinspection PyCallingNonCallable
         assert MP3._merge_suffixed_tags(data) == expected
 
-    def test_expand_suffixable_tag_keys(self, model: MP3, pictures: list[mutagen.id3.APIC], faker: Faker):
-        pictures[0].desc = "Cover Front"
-        pictures[1].desc = "Cover Back"
+    def test_expand_suffixable_tag_keys(self, model: MP3, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         tags = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
             "TPE1": mutagen.id3.TPE1(text="Metallica"),
@@ -71,7 +89,7 @@ class TestMP3(UniqueKeyTester):
                 mutagen.id3.COMM(text=faker.sentence(), desc="Description"),
                 mutagen.id3.COMM(text="spotify:track:1WjgFpSxwA0Bqyr7hWc3f1", desc="URI", lang="eng"),
             ],
-            "APIC": pictures,
+            "APIC": list(pictures.values()),
         }
         info = Namespace(by_alias=True, context=None)
 
@@ -81,7 +99,7 @@ class TestMP3(UniqueKeyTester):
             "TALB": mutagen.id3.TALB(text="72 Seasons"),
             "COMM:Description:XXX": tags["COMM"][0],
             "COMM:URI:eng": tags["COMM"][1],
-        } | {f"APIC:{get_picture_name_from_id3_value(pic.type)}": pic for pic in pictures}
+        } | {f"APIC:{kind}": pic for kind, pic in pictures.items()}
 
         # noinspection PyTypeChecker
         assert model.__class__._expand_suffixable_tag_keys(tags, handler=lambda x: x, info=info) == expected
@@ -133,61 +151,17 @@ class TestMP3(UniqueKeyTester):
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
-    def test_serialize_text_frames_includes_uri(self, model: MP3, faker: Faker):
+    def test_serialize_text_frames_includes_uris(self, model: MP3, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
-        expected = value + [model.uri]
-        info = Namespace(field_name="comments", context={"uri": "comments"})
+        expected = value + list(map(str, model.uris))
+        info = Namespace(field_name="comments", context=TagDumpContext(map_uri_to_tag="comments"))
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frames(value, info=info)
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
-    def test_deserialize_images_from_apic_frames(
-            self, images: list[bytes], pictures: list[mutagen.id3.APIC], faker: Faker
-    ):
-        expected = {pic.type: pic.data for pic in pictures}
-        assert MP3._deserialize_images_from_apic_frames(pictures[0]) == {pictures[0].type: pictures[0].data}
-        assert MP3._deserialize_images_from_apic_frames(pictures) == expected
-
-    def test_deserialize_images_from_apic_frames_skips(self, pictures: list[mutagen.id3.APIC], faker: Faker):
-        assert_validator_skips(MP3._deserialize_images_from_apic_frames, None)
-        assert_validator_skips(MP3._deserialize_images_from_apic_frames, faker.pyint())
-        assert_validator_skips(MP3._deserialize_images_from_apic_frames, faker.pytuple())
-        assert_validator_skips(MP3._deserialize_images_from_apic_frames, faker.pylist())
-        assert_validator_skips(MP3._deserialize_images_from_apic_frames, faker.pydict())
-        assert_validator_skips(MP3._deserialize_images_from_apic_frames, [pic.data for pic in pictures])
-
-    def test_serialize_images(self, model: MP3, images: list[bytes], pictures: list[mutagen.id3.APIC]):
-        model.images = {
-            get_picture_name_from_id3_value(pic.type): Image.open(BytesIO(img))
-            for pic, img in zip(pictures, images)
-        }
-        info = Namespace(by_alias=True, context=None)
-
-        # noinspection PyTypeChecker
-        results = model._serialize_images(model.images, info=info)
-        for result, picture in zip(results, pictures):
-            assert result.encoding == picture.encoding
-            assert result.mime == picture.mime
-            assert result.type == picture.type
-            assert result.desc == picture.desc
-            # This is not a reliable check since the data may be modified by PIL
-            # assert result.data == picture.data
-
-    def test_serialize_images_skips(self, model: MP3, images: list[bytes], pictures: list[mutagen.id3.APIC]):
-        model.images = {
-            get_picture_name_from_id3_value(pic.type): Image.open(BytesIO(img))
-            for pic, img in zip(pictures, images)
-        }
-        info = Namespace(by_alias=False, context=None)  # skips when not serializing by alias
-
-        # noinspection PyTypeChecker
-        results = model._serialize_images(model.images, info=info)
-        assert isinstance(results, Mapping)
-        assert all(not isinstance(result, mutagen.id3.APIC) for result in results.values())
-
-    def test_from_tags(self, model: MP3, images: list[bytes], pictures: list[mutagen.id3.APIC], faker: Faker):
+    def test_from_tags(self, model: MP3, images: list[bytes], pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         sep = choice(MP3._tag_sep)
         tags = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
@@ -202,10 +176,7 @@ class TestMP3(UniqueKeyTester):
             choice(("TDRC", "TDAT", "TDOR", "TYER", "TORY")): mutagen.id3.TDRC(text="2023-04-14"),
             choice(("COMM", "COMMENT")) + ":ID3V1 COMMENT:eng": mutagen.id3.COMM(text=faker.sentence()),
             choice(("COMM", "COMMENT")) + ":URI:eng": mutagen.id3.COMM(text="spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"),
-            "APIC:Cover Front": pictures[0],
-            "APIC:Cover Back": pictures[1],
-            "APIC": pictures[2:],
-        }
+        } | {f"APIC:{kind}": pic for kind, pic in pictures.items()}
 
         model = MP3(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
@@ -220,12 +191,4 @@ class TestMP3(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
-
-        expected_images = {
-            get_picture_name_from_id3_value(pic.type): Image.open(BytesIO(img))
-            for pic, img in zip(pictures, images)
-        }
-        assert model.images == expected_images
-
-        for k, v in model.to_tags().items():
-            print(k, v, type(v))
+        assert model.images == {kind: MP3.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}

@@ -6,7 +6,7 @@ from os import sep
 from pathlib import Path, PurePath
 from typing import Any, Collection, Iterable
 
-from pydantic import Field, computed_field, AliasChoices, field_validator, PositiveInt, model_validator
+from pydantic import Field, AliasChoices, field_validator, PositiveInt, model_validator
 
 from musify.exception import MusifyValueError
 from musify.model._base import _AttributeModel, MusifyModel

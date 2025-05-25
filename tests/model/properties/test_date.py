@@ -2,7 +2,6 @@ from datetime import date
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 
 from musify.model import MusifyModel
 from musify.model.properties.date import SparseDate
@@ -14,24 +13,24 @@ class TestSparseDate(MusifyModelTester):
     def model(self, faker: Faker) -> MusifyModel:
         return SparseDate(year=faker.year())
 
-    def test_from_date(self, adapter: TypeAdapter):
-        model = adapter.validate_python("2025-03-01")
+    def test_from_date(self, model: SparseDate):
+        model = model.model_validate("2025-03-01")
         assert model.year == 2025
         assert model.month == 3
         assert model.day == 1
 
-        model = adapter.validate_python(date(2025, 3, 1))
+        model = model.model_validate(date(2025, 3, 1))
         assert model.year == 2025
         assert model.month == 3
         assert model.day == 1
 
-    def test_from_string(self, adapter: TypeAdapter):
-        model = adapter.validate_python("2025-03")
+    def test_from_string(self, model: SparseDate):
+        model = model.model_validate("2025-03")
         assert model.year == 2025
         assert model.month == 3
         assert model.day is None
 
-        model = adapter.validate_python("2025")
+        model = model.model_validate("2025")
         assert model.year == 2025
         assert model.month is None
         assert model.day is None

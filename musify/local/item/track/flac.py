@@ -1,25 +1,47 @@
 import types
-from collections.abc import Iterable, Collection
+from collections.abc import MutableMapping
 from typing import Any, Literal, get_args
 
 import mutagen.flac
 import mutagen.id3
-from pydantic import Field, AliasChoices, model_validator, field_validator
+from PIL import Image
+from pydantic import Field, AliasChoices, model_validator
 
 from musify.local.item.track import LocalTrack
 from musify.model.properties.date import SparseDate
-from musify.model.properties.image import get_picture_name_from_id3_value
+from musify.model.properties.image import ImageFile, ImageURL
 from musify.model.properties.music import KeySignature
 from musify.model.properties.order import Position
 
 
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
-    format: Literal["flac"] = Field(
-        description="The format (or file type) of the file.",
-        validation_alias=AliasChoices("ext", "extension"),
-        default=None,
-        exclude=True,
-    )
+    format: Literal["flac"]
+
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.FLAC, mutagen.flac.Picture]):
+        @classmethod
+        def _get_bytes(cls, value: Any) -> Any:
+            return value.data if isinstance(value, mutagen.flac.Picture) else value
+
+        @classmethod
+        def get_id3_type_from_tag(cls, value: mutagen.flac.Picture) -> str | None:
+            return cls._get_type_from_number(value.type) if isinstance(value, mutagen.flac.Picture) else None
+
+        async def _get_tag_value(self, file: mutagen.flac.FLAC = None) -> mutagen.flac.Picture | None:
+            file = await self._get_file(file)
+            return next((pic for pic in file.pictures if pic.type == self.id3_type), None)
+
+        def build(self, image: bytes | Image.Image | None) -> mutagen.flac.Picture | None:
+            if image is None:
+                return
+
+            image, data = self._get_image_data(image)
+
+            picture = mutagen.flac.Picture()
+            picture.type = self.id3_type
+            picture.mime = Image.MIME[image.format]
+            picture.data = data
+
+            return picture
 
     track: Position | None = Field(
         validation_alias=AliasChoices("tracknumber", "tracktotal"),
@@ -44,6 +66,10 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         description="Freeform comments that are associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("comment", "description"),
+    )
+    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
+        description="Images associated with this track.",
+        default=None,
     )
 
     # noinspection PyNestedDecorators
@@ -86,18 +112,3 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             value[field.validation_alias.choices[0]] = tuple(map(cls._extract_first_value_from_sequence, values))
 
         return value
-
-    # noinspection PyNestedDecorators
-    @field_validator("images", mode="before")
-    @staticmethod
-    def _deserialize_from_pictures[T](
-            pictures: T | bytes | mutagen.flac.Picture | Collection[mutagen.flac.Picture]
-    ) -> T | dict[int, bytes]:
-        if isinstance(pictures, mutagen.flac.Picture):
-            pictures = [pictures]
-        if not isinstance(pictures, tuple | list):
-            return pictures
-        elif not all(isinstance(img, mutagen.flac.Picture) for img in pictures):
-            return pictures
-
-        return {img.type: img.data for img in pictures}

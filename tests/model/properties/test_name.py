@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 
 from musify.model import MusifyModel
 from musify.model.properties.name import HasName
@@ -12,9 +11,9 @@ class TestHasName(MusifyResourceTester):
     def model(self) -> MusifyModel:
         return HasName(name="Test Name")
 
-    def test_from_name(self, adapter: TypeAdapter, faker: Faker):
+    def test_from_name(self, model: HasName, faker: Faker):
         name = faker.word()
-        model = adapter.validate_python(name)
+        model = model.model_validate(name)
         assert model.name == name
 
     def test_rich_comparison_dunder_methods(self) -> None:

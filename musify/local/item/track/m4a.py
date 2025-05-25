@@ -1,28 +1,54 @@
-from collections.abc import Iterable, Collection
-from typing import Literal
+from collections.abc import MutableMapping
+from typing import Literal, Any, ClassVar
 
 import mutagen.id3
 import mutagen.mp4
 from PIL import Image
-from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, field_validator
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator
 
+from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.model.properties.date import SparseDate
-from musify.model.properties.image import ImageLink
+from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature
 from musify.model.properties.order import Position
 
 
 class M4A(LocalTrack[mutagen.mp4.MP4]):
-    format: Literal["m4a"] = Field(
-        description="The format (or file type) of the file.",
-        validation_alias=AliasChoices("ext", "extension"),
-        default=None,
-        exclude=True,
-    )
+    format: Literal["m4a"]
+
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp4.MP4, mutagen.mp4.MP4Cover]):
+        alias: ClassVar[str] = "covr"
+
+        @classmethod
+        def _get_bytes(cls, value: Any) -> Any:
+            return bytes(value) if isinstance(value, mutagen.mp4.MP4Cover) else value
+
+        @classmethod
+        def get_id3_type_from_tag(cls, value: mutagen.mp4.MP4Cover) -> str | None:
+            # AFAIK, MP4 only supports a single image per track
+            # Just return the value for COVER_FRONT type
+            return cls._get_type_from_number(mutagen.id3.PictureType.COVER_FRONT)
+
+        def build(self, image: bytes | Image.Image | None) -> mutagen.mp4.MP4Cover | None:
+            if image is None:
+                return
+
+            image, data = self._get_image_data(image)
+
+            match image.format:
+                case "PNG":
+                    image_format = mutagen.mp4.AtomDataType.PNG
+                case "JPEG" | "JPG":
+                    image_format = mutagen.mp4.AtomDataType.JPEG
+                case _:
+                    name = self.__class__.__name__
+                    raise FileError(f"Unrecognised image format for {name} cover image: {image.format}")
+
+            return mutagen.mp4.MP4Cover(data, imageformat=image_format)
 
     name: str | None = Field(
         description="A title of this track.",
@@ -78,10 +104,10 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default_factory=list,
         validation_alias="©cmt"
     )
-    images: dict[str, InstanceOf[Image.Image] | ImageLink] | None = Field(
+    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
         default=None,
-        validation_alias="covr"
+        validation_alias=EmbeddedImage.alias,
     )
     # compilation: list[str] | None = Field(
     #     default=None,
@@ -107,11 +133,3 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         if not isinstance(value, tuple | list):
             return value
         return [cls._deserialize_free_form_field(v) for v in value]
-
-    # noinspection PyNestedDecorators
-    @field_validator("images", mode="before")
-    @classmethod
-    def _extract_first_image_from_sequence[T](cls, value: T | Iterable[T]) -> T:
-        # AFAIK, MP4 only supports a single image per track
-        # just extract the first one so downstream validators can handle it
-        return cls._extract_first_value_from_sequence(value)

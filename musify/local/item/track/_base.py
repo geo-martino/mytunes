@@ -1,36 +1,143 @@
-from collections.abc import Collection
+from abc import ABCMeta, abstractmethod
+from collections.abc import Collection, Sequence
+from io import BytesIO
 from pathlib import Path
-from typing import Self, Any
+from typing import Self, Any, Literal, ClassVar
 
 import mutagen
 import mutagen.id3
-from pydantic import field_validator, model_validator, validate_call, AliasChoices
-from pydantic.fields import FieldInfo
+from PIL import Image
+from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
+    InstanceOf, field_serializer
+# noinspection PyProtectedMember
+from pydantic.fields import Field, FieldInfo
+from pydantic_core.core_schema import FieldSerializationInfo
 
 from musify.local._base import LocalResource
+from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
+from musify.model import MusifyModel
 from musify.model.item.track import Track, TrackTagsMixin
 from musify.model.properties.file import IsFile
+from musify.model.properties.image import FileEmbeddedImage, ImageSource
 from musify.model.properties.name import HasName
 from musify.model.properties.uri import HasMutableURI
 
 
-class LocalTrack[T: mutagen.FileType](LocalResource, Track[LocalArtist, LocalAlbum, LocalGenre], IsFile, HasMutableURI):
-    __tags_deleted: set[str] = set()
+class TagDumpContext[T](MusifyModel):
+    map_uri_to_tag: Literal["comments"] = Field(
+        description=(
+            "The tag type to use for storing the URIs of the track. "
+            "By default, the URIs will not be dumped to any tag."
+        ),
+        default="comments"
+    )
+    loaded_images: Sequence[tuple[ImageSource, InstanceOf[Image.Image]]] = Field(
+        description="The image properties and their loaded images.",
+        default_factory=tuple
+    )
+
+
+class LocalTrack[T: mutagen.FileType](
+    LocalResource, Track[LocalArtist, LocalAlbum, LocalGenre], IsFile, HasMutableURI
+):
+    class EmbeddedImage[FT: mutagen.FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
+        alias: ClassVar[str | AliasChoices] = "images"
+
+        # noinspection PyNestedDecorators
+        @model_validator(mode="wrap")
+        @classmethod
+        def _from_tag_value(cls, value: TT, handler: ModelWrapValidatorHandler[Self]) -> Self:
+            img_bytes = cls._get_bytes(value)
+            if not isinstance(img_bytes, bytes):
+                return handler(value)
+
+            img = Image.open(BytesIO(img_bytes))
+            obj = handler(img)
+            del img
+
+            img_type = cls.get_id3_type_from_tag(value)
+            if img_type:
+                obj.type = img_type
+            return obj
+
+        @classmethod
+        def from_image_model(cls, model: ImageSource) -> Self:
+            """Create an instance of an this image model from any other type of ImageSource model."""
+            if isinstance(model, cls):
+                return model
+
+            # noinspection PyTypeChecker
+            dump = model.model_dump(
+                include=set(model.__class__.model_fields) & set(cls.model_fields),
+                exclude_none=True,
+                exclude_defaults=True,
+                exclude_unset=True
+            )
+            return cls(**dump)
+
+        async def _get_file(self, file: FT = None) -> FT:
+            if isinstance(file, mutagen.FileType):
+                if self.path is not None and Path(file.filename or "") != self.path:
+                    raise FileError("Given file does not match the path of this image.")
+                return file
+
+            if self.path is None:
+                raise FileError("Path is not set and no loaded file was given, cannot load image.")
+            return await LocalTrack.load_file(self.path)
+
+        async def _get_tag_value(self, file: FT = None) -> Any:
+            file = await self._get_file(file)
+            return file.tags.get(self.alias)
+
+        @staticmethod
+        def _get_image_data(image: bytes | Image.Image) -> tuple[Image. Image, bytes]:
+            if isinstance(image, bytes):
+                data = image
+                image = Image.open(BytesIO(data))
+            else:
+                data = BytesIO()
+                image.save(data, format=image.format)
+                data = data.getvalue()
+
+            return image, data
+
+        @classmethod
+        @abstractmethod
+        def _get_bytes[T](cls, value: T | TT) -> T | bytes | None:
+            raise NotImplementedError
+
+        @classmethod
+        @abstractmethod
+        def get_id3_type_from_tag(cls, value: TT) -> str | None:
+            """Get the ID3 type from the given attribute."""
+            raise NotImplementedError
+
+        async def load(self, file: FT = None) -> Image.Image | None:
+            for attr in await self._get_tag_value(file):
+                id3_type = self.get_id3_type_from_tag(attr)
+                if id3_type == self.type:
+                    img_bytes = self._get_bytes(attr)
+                    return Image.open(BytesIO(img_bytes))
+
+        @abstractmethod
+        def build(self, image: bytes | Image.Image | None) -> TT:
+            """Builds the image tag object for serialization."""
+            raise NotImplementedError
 
     @classmethod
     @validate_call
     async def from_file(cls, path: str | Path) -> Self:
-        file = await cls._load_mutagen(path)
+        file = await cls.load_file(path)
         # some subclasses need to access the file obj on construction so just pass the file obj
         # noinspection PyArgumentList
         return cls.model_validate(file)
 
     @classmethod
     @validate_call
-    async def _load_mutagen(cls, path: str | Path) -> T:
+    async def load_file(cls, path: str | Path) -> T:
         # TODO: figure out how to load file asynchronously here to improve IO-bound performance
         with Path(path).open("rb") as f:
             file = mutagen.File(f)
@@ -100,14 +207,46 @@ class LocalTrack[T: mutagen.FileType](LocalResource, Track[LocalArtist, LocalAlb
         values = [v.name if isinstance(v, HasName) else v for v in value]
         return cls._join_tags(str(v) for v in values if v and str(v))
 
+    # noinspection PyNestedDecorators
+    @field_validator("images", mode="before")
+    @classmethod
+    def _map_images(cls, images: Any) -> Any:
+        if not isinstance(images, tuple | list):
+            return images
+
+        mapped_images = {}
+        for image in images:
+            if isinstance(image, ImageSource):
+                key = image.type
+            else:
+                key = cls.EmbeddedImage.get_id3_type_from_tag(image)
+
+            if key is None:
+                key = mutagen.id3.PictureType.COVER_FRONT
+            if key not in mapped_images:
+                mapped_images[key] = image
+
+        return mapped_images
+
+    @field_serializer("images", mode="plain", when_used="unless-none")
+    def _serialize_images(self, images: Any, info: FieldSerializationInfo) -> Any:
+        if not info.by_alias:  # if not serializing to tag IDs, return the images models
+            return images
+
+        context = info.context
+        if not isinstance(context, TagDumpContext) or not context.loaded_images:
+            return []
+
+        return [self.EmbeddedImage.from_image_model(model).build(image) for model, image in context.loaded_images]
+
     @classmethod
     def _get_tag_id(cls, name: str) -> str | None:
         field: FieldInfo = cls.model_fields[name]
         tag_id = None
-        if isinstance(field.alias, str):
-            tag_id = field.alias
-        elif isinstance(field.serialization_alias, str):
+        if isinstance(field.serialization_alias, str):
             tag_id = field.serialization_alias
+        elif isinstance(field.alias, str):
+            tag_id = field.alias
         elif isinstance(field.validation_alias, str):
             tag_id = field.validation_alias
         elif isinstance(field.validation_alias, AliasChoices):
@@ -115,9 +254,8 @@ class LocalTrack[T: mutagen.FileType](LocalResource, Track[LocalArtist, LocalAlb
 
         return tag_id
 
-    def to_tags(self) -> dict[str, Any]:
+    async def to_tags(self, context: TagDumpContext[T] = None) -> dict[str, Any]:
         include_fields = {*TrackTagsMixin.model_fields}
-        context = {"uri": "comments"}
         return self.model_dump(include=include_fields, context=context, by_alias=True, exclude_none=True)
 
     async def load(self) -> Any:

@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from pydantic import Field, computed_field
+from pydantic import Field
 
 from musify._types import StrippedString
 from musify.model.item.track import Track, HasTracks

@@ -2,7 +2,7 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
-from typing import get_args
+from typing import get_args, Any
 
 import mutagen.id3
 import pytest
@@ -12,12 +12,35 @@ from mutagen.mp4 import MP4FreeForm, MP4Cover
 
 from musify.local.item.track.m4a import M4A
 from musify.model import MusifyModel
-from musify.model.properties.image import get_picture_name_from_id3_value
 from musify.model.properties.uri import URI
-from tests.model.testers import UniqueKeyTester
+from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
 
 
-class TestM4A(UniqueKeyTester):
+@pytest.fixture
+def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.mp4.MP4Cover]:
+    # AFAIK, MP4 only supports a single image per track so we just check for a single image type
+    return {"COVER_FRONT": mutagen.mp4.MP4Cover(choice(images))}
+
+
+class TestM4AEmbeddedImage(LocalTrackEmbeddedImageTester):
+    @pytest.fixture
+    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = Image.open(BytesIO(choice(images)))
+        return M4A.EmbeddedImage(
+            path=faker.file_path(category="image"),
+            type=choice(list(image_types)),
+            mime=img.get_format_mimetype(),
+            height=img.height,
+            width=img.width,
+        )
+
+    def test_get_bytes(self, pictures: dict[str, mutagen.mp4.MP4Cover]):
+        kind, attr = choice(list(pictures.items()))
+        result = M4A.EmbeddedImage._get_bytes(choice([attr, bytes(attr)]))
+        assert result == bytes(attr)
+
+
+class TestM4A(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
         extension = choice(get_args(M4A.model_fields["format"].annotation))
@@ -34,7 +57,7 @@ class TestM4A(UniqueKeyTester):
         attributes = [MP4FreeForm(item.encode()) for item in expected]
         assert M4A._deserialize_free_form_fields(attributes) == expected
 
-    def test_from_tags(self, model: M4A, images: list[bytes], faker: Faker):
+    def test_from_tags(self, model: M4A, images: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
         sep = choice(M4A._tag_sep)
         tags = {
             "©nam": ["Sleepwalk My Life Away"],
@@ -69,7 +92,4 @@ class TestM4A(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-        # AFAIK, MP4 only supports a single image per track so we just check it took the first available one
-        assert model.images == {
-            get_picture_name_from_id3_value(mutagen.id3.PictureType.COVER_FRONT): Image.open(BytesIO(images[0]))
-        }
+        assert model.images == {kind: M4A.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}

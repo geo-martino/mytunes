@@ -1,6 +1,6 @@
 from typing import ClassVar, Any
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, field_validator
 
 from musify._types import StrippedString
 from musify.model.properties import HasSeparableTags

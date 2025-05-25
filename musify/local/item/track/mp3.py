@@ -1,30 +1,51 @@
-from collections.abc import MutableSequence, MutableMapping, Iterable, Collection
-from typing import Any, Literal
+from collections.abc import MutableSequence, MutableMapping, Iterable
+from typing import Any, Literal, ClassVar
 
 import mutagen.id3
 import mutagen.mp3
 from PIL import Image
-from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, field_validator, field_serializer, \
-    model_serializer
+from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
+    field_validator, field_serializer
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.local.item.track._base import TagDumpContext
 from musify.model.properties.date import SparseDate
-from musify.model.properties.image import ImageLink, get_picture_name_from_id3_value
+from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature
 from musify.model.properties.order import Position
 
 
 class MP3(LocalTrack[mutagen.mp3.MP3]):
-    format: Literal["mp3"] = Field(
-        description="The format (or file type) of the file.",
-        validation_alias=AliasChoices("ext", "extension"),
-        default=None,
-        exclude=True,
-    )
+    format: Literal["mp3"]
+
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp3.MP3, mutagen.id3.APIC]):
+        alias: ClassVar[str] = "APIC"
+
+        @classmethod
+        def _get_bytes(cls, value: Any) -> Any:
+            return value.data if isinstance(value, mutagen.id3.APIC) else value
+
+        @classmethod
+        def get_id3_type_from_tag(cls, value: mutagen.id3.APIC) -> str | None:
+            if not isinstance(value, mutagen.id3.APIC):
+                return
+            return cls._get_type_from_number(int(value.type))
+
+        def build(self, image: bytes | Image.Image | None) -> mutagen.id3.APIC | None:
+            if image is None:
+                return
+
+            image, data = self._get_image_data(image)
+            return mutagen.id3.APIC(
+                encoding=mutagen.id3.Encoding.UTF8,
+                mime=Image.MIME[image.format],
+                type=self.id3_type,
+                data=data,
+            )
 
     name: str | None = Field(
         description="A title of this track.",
@@ -87,10 +108,10 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         validation_alias=AliasChoices("COMM", "COMMENT"),
         serialization_alias="COMM",
     )
-    images: dict[str, InstanceOf[Image.Image] | ImageLink] | None = Field(
+    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
         default=None,
-        alias="APIC",
+        validation_alias=EmbeddedImage.alias,
     )
     # compilation: list[str] | None = Field(
     #     default=None,
@@ -147,11 +168,13 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
                     case mutagen.id3.COMM():
                         tag_parts = (tag_id, frame.desc or str(i), frame.lang or None)
                     case mutagen.id3.APIC():
-                        tag_type = get_picture_name_from_id3_value(frame.type) if frame.type is not None else str(i)
+                        tag_type = next(
+                            (name for name, enum in vars(mutagen.id3.PictureType).items() if enum == frame.type), str(i)
+                        )
                         tag_parts = (tag_id, tag_type)
                     case _:
                         tag_parts = (tag_id,)
-                print(tag_parts)
+
                 data[":".join(filter(None, tag_parts))] = frame
 
             data.pop(tag_id)
@@ -196,50 +219,19 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         if not isinstance(value, tuple | list):
             value = [value]
 
-        frame_cls = self._get_frame_class(info)
+        frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
         tag_value = self._join_split_tags(value)
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="plain")
-    def _serialize_text_frames(self, value: Any, info: FieldSerializationInfo) -> list[InstanceOf[mutagen.id3.TextFrame]]:
-        frame_cls = self._get_frame_class(info)
+    def _serialize_text_frames(
+            self, value: Any, info: FieldSerializationInfo
+    ) -> list[InstanceOf[mutagen.id3.TextFrame]]:
+        frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
 
-        value = [frame_cls(text=item) for item in value]
-        if self.uri is not None and info.context and info.context.get("uri") == info.field_name:
-            value.append(frame_cls(text=str(self.uri), desc=f"{self.uri.source}URI"))
+        value: list[frame_cls] = [frame_cls(text=item) for item in value]
+        context = info.context
+        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+            value.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI") for uri in self.uris)
 
         return value
-
-    # noinspection PyNestedDecorators
-    @field_validator("images", mode="before")
-    @classmethod
-    def _deserialize_images_from_apic_frames[T](
-            cls, frames: T | bytes | mutagen.id3.APIC | Collection[mutagen.id3.APIC]
-    ) -> T | dict[int, bytes]:
-        if isinstance(frames, mutagen.id3.APIC):
-            frames = [frames]
-        if not isinstance(frames, tuple | list):
-            return frames
-        elif not all(isinstance(img, mutagen.id3.APIC) for img in frames):
-            return frames
-
-        return {attr.type: attr.data for attr in frames}
-
-    # noinspection PyTypeChecker
-    # noinspection PyNestedDecorators
-    @field_serializer("images", mode="plain", when_used="unless-none")
-    def _serialize_images(
-            self, images: MutableMapping[str, InstanceOf[Image.Image] | ImageLink], info: FieldSerializationInfo
-    ) -> list[InstanceOf[mutagen.id3.APIC]]:
-        if not info.by_alias:  # if not serializing to tag IDs, return the images as bytes
-            return super()._serialize_images(images)
-
-        return [
-            mutagen.id3.APIC(
-                encoding=mutagen.id3.Encoding.UTF8,
-                mime=Image.MIME[images[kind].format],
-                type=getattr(mutagen.id3.PictureType, kind.upper().replace(" ", "_")),
-                data=image,
-            )
-            for kind, image in super()._serialize_images(images).items()
-        ]

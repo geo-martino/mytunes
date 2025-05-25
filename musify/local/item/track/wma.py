@@ -1,30 +1,87 @@
 import struct
-from collections.abc import Collection
-from typing import Literal
+from collections.abc import MutableMapping
+from typing import Literal, ClassVar, Any
 
 import mutagen.asf
-from mutagen.asf import ASFByteArrayAttribute
 import mutagen.id3
 from PIL import Image
-from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, field_validator
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator
 
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.model.properties.date import SparseDate
-from musify.model.properties.image import ImageLink, PICTURE_TYPES
+from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature
 from musify.model.properties.order import Position
 
 
 class WMA(LocalTrack[mutagen.asf.ASF]):
-    format: Literal["wma"] = Field(
-        description="The format (or file type) of the file.",
-        validation_alias=AliasChoices("ext", "extension"),
-        default=None,
-        exclude=True,
-    )
+    format: Literal["wma"]
+
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.asf.ASF, mutagen.asf.ASFByteArrayAttribute]):
+        alias: ClassVar[str] = "WM/Picture"
+
+        @classmethod
+        def _unpack_bytes(cls, attribute: bytes | mutagen.asf.ASFByteArrayAttribute) -> tuple[str | None, int] | None:
+            if isinstance(attribute, mutagen.asf.ASFByteArrayAttribute):
+                attribute = attribute.value
+
+            id3_type, size = struct.unpack_from(b"<bi", attribute)
+            try:  # first byte gives the id3 picture type in WMA-spec header
+                id3_type = cls._get_type_from_number(id3_type)
+            except ValueError:  # the given bytes do not contain WMA-spec header
+                id3_type = None
+
+            return id3_type, size
+
+        @classmethod
+        def _get_bytes(cls, attribute: Any) -> Any:
+            if not isinstance(attribute, bytes | mutagen.asf.ASFByteArrayAttribute):
+                return attribute
+            if isinstance(attribute, mutagen.asf.ASFByteArrayAttribute):
+                attribute = attribute.value
+
+            id3_type, size = cls._unpack_bytes(attribute)
+            if not id3_type:  # assume bytes are raw image data for the cover front
+                return attribute
+
+            pos = 5
+            mime = b""
+            while attribute[pos:pos + 2] != b"\x00\x00":
+                mime += attribute[pos:pos + 2]
+                pos += 2
+
+            pos += 2
+            description = b""
+
+            while attribute[pos:pos + 2] != b"\x00\x00":
+                description += attribute[pos:pos + 2]
+                pos += 2
+            pos += 2
+
+            return attribute[pos:pos + size]
+
+        @classmethod
+        def get_id3_type_from_tag(cls, attribute: bytes | mutagen.asf.ASFByteArrayAttribute) -> str | None:
+            """Get the ID3 type from the given attribute."""
+            id3_type, _ = cls._unpack_bytes(attribute)
+            return id3_type
+
+        def build(self, image: bytes | Image.Image | None) -> mutagen.asf.ASFByteArrayAttribute | None:
+            if image is None:
+                return
+
+            image, data = self._get_image_data(image)
+
+            # noinspection PyTypeChecker
+            header = struct.pack("<bi", int(self.id3_type), len(data))
+            mime = Image.MIME[image.format].encode("utf-16")
+            description = (self.description or "").encode("utf-16")
+
+            data = b"\x00\x00".join((header + mime, description, data))
+            return mutagen.asf.ASFByteArrayAttribute(data)
 
     name: str | None = Field(
         description="A title of this track.",
@@ -80,10 +137,10 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default_factory=list,
         validation_alias=AliasChoices("Description", "WM/Comments")
     )
-    images: dict[str, InstanceOf[Image.Image] | ImageLink] | None = Field(
+    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
         default=None,
-        validation_alias="WM/Picture"
+        validation_alias=EmbeddedImage.alias,
     )
     # compilation: list[str] | None = Field(
     #     default=None,
@@ -115,49 +172,3 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         if not isinstance(value, tuple | list):
             return value
         return [cls._deserialize_unicode_attribute(v) for v in value]
-
-    # noinspection PyNestedDecorators
-    @field_validator("images", mode="before")
-    @classmethod
-    def _deserialize_images_from_wma_attributes[T](
-            cls, attributes: T | bytes | ASFByteArrayAttribute | Collection[bytes | ASFByteArrayAttribute]
-    ) -> T | dict[int, bytes]:
-        if isinstance(attributes, bytes | ASFByteArrayAttribute):
-            attributes = [attributes]
-
-        if not isinstance(attributes, tuple | list):
-            return attributes
-        elif not all(isinstance(img, bytes | ASFByteArrayAttribute) for img in attributes):
-            return attributes
-
-        images: dict[int, T | bytes] = {}
-        for attribute in attributes:
-            if isinstance(attribute, ASFByteArrayAttribute):
-                attribute = attribute.value
-
-            id3_type, size = struct.unpack_from(b"<bi", attribute)
-
-            if id3_type not in PICTURE_TYPES.values():  # first byte gives the id3 picture type in WMA-spec header
-                # assume bytes don't contain WMA-spec header
-                # assume bytes are raw image data for the cover front
-                images[int(mutagen.id3.PictureType.COVER_FRONT)] = attribute
-                continue
-
-            # extract WMA-spec header information
-            pos = 5
-            mime = b""
-            while attribute[pos:pos + 2] != b"\x00\x00":
-                mime += attribute[pos:pos + 2]
-                pos += 2
-
-            pos += 2
-            description = b""
-
-            while attribute[pos:pos + 2] != b"\x00\x00":
-                description += attribute[pos:pos + 2]
-                pos += 2
-            pos += 2
-
-            images[id3_type] = attribute[pos:pos + size]
-
-        return images

@@ -1,26 +1,45 @@
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Sequence, MutableMapping, Mapping
+from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
 from io import BytesIO
-from typing import Any, Self
+from pathlib import Path
+from typing import Any, Self, ClassVar
 
+import aiofiles
 import aiohttp
 import mutagen.id3
 from PIL import Image
-from pydantic import InstanceOf, Field, PositiveInt, field_validator, field_serializer
+from pydantic import InstanceOf, Field, PositiveInt, field_validator, model_validator
+from pydantic.functional_validators import ModelWrapValidatorHandler
 from yarl import URL
 
+from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
 from musify.model import MusifyModel
 from musify.model._base import _AttributeModel
 
 
-class ImageLink(MusifyModel):
-    """Represents an image link."""
-    url: InstanceOf[URL] = Field(
-        description="The URL of the image.",
+class ImageBase(MusifyModel):
+    """Represents an image."""
+    # noinspection PyTypeChecker
+    __type_map: ClassVar[Mapping[str, mutagen.id3.PictureType]] = {
+        name: enum for name, enum in vars(mutagen.id3.PictureType).items()
+        if isinstance(enum, mutagen.id3.PictureType)
+    }
+
+    type: UpperSnakeCase = Field(
+        description="The type of the image, as defined by ID3 tags.",
+        default=mutagen.id3.PictureType.COVER_FRONT,
+    )
+    mime: StrippedString | None = Field(
+        description="The MIME type of the image.",
+        default=None,
+    )
+    description: StrippedString | None = Field(
+        description="A description of the image.",
+        default=None,
     )
     height: PositiveInt | None = Field(
         description="The height of the image in pixels.",
@@ -29,6 +48,129 @@ class ImageLink(MusifyModel):
     width: PositiveInt | None = Field(
         description="The width of the image in pixels.",
         default=None,
+    )
+
+    @property
+    def id3_type(self) -> mutagen.id3.PictureType:
+        """Return the ID3 value for the image type."""
+        name = str(self.type).upper().replace(" ", "_")
+        return self.__type_map[name]
+
+    # noinspection PyNestedDecorators
+    @model_validator(mode="wrap")
+    @classmethod
+    def _from_image_data(cls, data: Image.Image, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, Image.Image):
+            return handler(data)
+
+        try:
+            obj = cls()
+        except TypeError as ex:  # raised when trying to instantiate a model with missing abstract methods
+            raise ValueError(str(ex))
+
+        obj.update_attributes(data)
+        return obj
+
+    # noinspection PyNestedDecorators
+    @model_validator(mode="wrap")
+    @classmethod
+    def _from_image_bytes(cls, data: bytes | bytearray, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, bytes | bytearray):
+            return handler(data)
+
+        img = Image.open(BytesIO(data))
+        obj = handler(img)
+        del img
+        return obj
+
+    # noinspection PyNestedDecorators
+    @field_validator("type", mode="before")
+    @classmethod
+    def _get_type_from_number(cls, value: str | int) -> str:
+        if not isinstance(value, int):
+            return value
+
+        # noinspection PyTypeChecker
+        types = dict(zip(map(int, cls.__type_map.values()), cls.__type_map.keys()))
+        if value not in types:
+            raise MusifyValueError(
+                f"Invalid picture type value: {value}. Valid values are: {", ".join(map(str, types))}"
+            )
+
+        return types[value]
+
+    # noinspection PyNestedDecorators
+    @field_validator("type", mode="after")
+    @classmethod
+    def _validate_id3_type(cls, value: str) -> str:
+        if value not in cls.__type_map:
+            raise MusifyValueError(f"Invalid ID3-tag type: {value}. Valid values are: {', '.join(cls.__type_map)}")
+        return value
+
+    def update_attributes(self, image: Image.Image) -> None:
+        """Update the image attributes based on the loaded image."""
+        self.mime = Image.MIME[image.format]
+        self.height = image.height
+        self.width = image.width
+
+    def __lt__(self, other):
+        return isinstance(other, ImageBase) and self.height < other.height and self.width < other.width
+
+    def __le__(self, other):
+        return isinstance(other, ImageBase) and self.height <= other.height and self.width <= other.width
+
+    def __gt__(self, other):
+        return isinstance(other, ImageBase) and self.height > other.height and self.width > other.width
+
+    def __ge__(self, other):
+        return isinstance(other, ImageBase) and self.height >= other.height and self.width >= other.width
+
+
+class ImageSource(ImageBase, metaclass=ABCMeta):
+    @abstractmethod
+    async def load(self, **kwargs) -> Image.Image:
+        """Load the image."""
+        raise NotImplementedError
+
+
+class ImageFile(ImageSource):
+    """Represents an image file saved on a filesystem."""
+    path: Path = Field(
+        description="The path to the image file.",
+    )
+
+    def __eq__(self, other: Self) -> bool:
+        if self is other:
+            return True
+        if not isinstance(other, self.__class__):
+            return super().__eq__(other)
+        return self.path == other.path and self.type == other.type
+
+    async def load(self) -> Image.Image:
+        async with aiofiles.open(self.path, mode='rb') as f:
+            img = Image.open(BytesIO(await f.read()))
+        return img
+
+
+class FileEmbeddedImage(ImageSource, metaclass=ABCMeta):
+    """Represents an embedded image of a file."""
+    path: Path | None = Field(
+        description="The path to the file containing the embedded image.",
+        default=None,
+    )
+
+    def __eq__(self, other: Self) -> bool:
+        if self is other:
+            return True
+        if not isinstance(other, self.__class__):
+            return super().__eq__(other)
+        return (self.path is None or self.path == other.path) and self.type == other.type
+
+
+class ImageURL(ImageSource):
+    """Represents an image link."""
+    url: InstanceOf[URL] = Field(
+        description="The URL of the image.",
     )
 
     # noinspection PyNestedDecorators
@@ -47,24 +189,9 @@ class ImageLink(MusifyModel):
             return True
         if not isinstance(other, self.__class__):
             return super().__eq__(other)
-        return self.url == other.url
+        return self.url == other.url and self.type == other.type
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __lt__(self, other):
-        return isinstance(other, self.__class__) and self.height < other.height and self.width < other.width
-
-    def __le__(self, other):
-        return isinstance(other, self.__class__) and self.height <= other.height and self.width <= other.width
-
-    def __gt__(self, other):
-        return isinstance(other, self.__class__) and self.height > other.height and self.width > other.width
-
-    def __ge__(self, other):
-        return isinstance(other, self.__class__) and self.height >= other.height and self.width >= other.width
-
-    async def load(self, session: aiohttp.ClientSession = None) -> Image:
+    async def load(self, session: aiohttp.ClientSession = None, **__) -> Image.Image:
         """Load the image from the URL."""
         close_session = False
         if session is None:
@@ -82,90 +209,18 @@ class ImageLink(MusifyModel):
 
 class HasImages(_AttributeModel):
     """Represents a resource that has associated images."""
-    images: MutableMapping[str, InstanceOf[Image.Image] | ImageLink] = Field(
+    images: MutableMapping[str, ImageFile | ImageURL | ImageSource] = Field(
         description="Images associated with this resource mapped to their type.",
         default_factory=dict,
     )
 
-    # noinspection PyNestedDecorators
-    @field_validator("images", mode="before")
-    @staticmethod
-    def _deserialize_images_from_bytes[T](data: T) -> T | dict[str | int, Image.Image]:
-        if isinstance(data, bytes | bytearray):
-            data = {get_picture_name_from_id3_value(mutagen.id3.PictureType.COVER_FRONT): data}
-        if not isinstance(data, Mapping):
-            return data
-
-        return {
-            kind: Image.open(BytesIO(img)) if isinstance(img, bytes | bytearray) else img
-            for kind, img in data.items()
-        }
-
-    # noinspection PyNestedDecorators
-    @field_validator("images", mode="before")
-    @staticmethod
-    def _convert_id3_value_to_picture_type_name[T](data: T) -> T | dict[str, Image.Image]:
-        if not isinstance(data, Mapping):
-            return data
-
-        return {
-            get_picture_name_from_id3_value(kind): img
-            for kind, img in data.items()
-        }
-
-    # noinspection PyNestedDecorators
-    @field_serializer("images", mode="plain", when_used="unless-none")
-    def _serialize_images(
-            self, images: MutableMapping[str, InstanceOf[Image.Image] | ImageLink]
-    ) -> dict[str, bytes]:
-        data: dict[str, bytes] = {}
-        for kind, img in self.load_images().items():
-            img_bytes = BytesIO()
-            img.save(img_bytes, format=img.format)
-            img_bytes = img_bytes.getvalue()
-            data[kind] = img_bytes
-
-        return data
-
-    def load_images(self) -> dict[str, Image.Image]:
+    async def load_images(self, update_attributes: bool = True, **kwargs) -> dict[str, Image.Image]:
         """Return the stored images, loading any images from the URLs if available."""
         images: dict[str, Image.Image] = {}
-        for kind, img in self.images.items():
-            if isinstance(img, ImageLink):
-                loop = asyncio.get_event_loop()
-                img = loop.run_until_complete(img.load())
-
+        for kind, image in self.images.items():
+            img = await image.load(**kwargs)
             images[kind] = img
+            if update_attributes:
+                image.update_attributes(img)
 
         return images
-
-
-# noinspection PyTypeChecker
-PICTURE_TYPES = {
-    name: int(enum) for name, enum in vars(mutagen.id3.PictureType).items()
-    if isinstance(enum, mutagen.id3.PictureType)
-}
-
-
-def get_picture_name_from_id3_value(value: str | int) -> str:
-    """Get the name of the picture type from its ID3 tag value."""
-    if isinstance(value, str) and value.upper().replace(" ", "_") in PICTURE_TYPES:
-        return value
-
-    types = dict(zip(PICTURE_TYPES.values(), PICTURE_TYPES.keys()))
-    if value not in types:
-        raise MusifyValueError(f"Invalid picture type value: {value}. Valid values are: {", ".join(map(str, types))}")
-
-    return types[value].replace("_", " ").title()
-
-
-def get_picture_id3_value_from_name(name: str | int) -> int:
-    """Get the name of the picture ID3 tag value from its name."""
-    if isinstance(name, int) and name in PICTURE_TYPES.values():
-        return name
-
-    name = str(name).upper().replace(" ", "_")
-    if name not in PICTURE_TYPES:
-        raise MusifyValueError(f"Invalid picture type name: {name}. Valid names are: {", ".join(PICTURE_TYPES)}")
-
-    return PICTURE_TYPES[name]

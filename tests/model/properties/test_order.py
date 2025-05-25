@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 
 from musify.model import MusifyModel
 from musify.model.properties.order import Position
@@ -13,38 +12,38 @@ class TestPosition(MusifyModelTester):
         return Position()
 
     # noinspection PyTestUnpassedFixture
-    def test_from_number(self, adapter: TypeAdapter, faker: Faker):
+    def test_from_number(self, model: Position, faker: Faker):
         number = faker.random_int(1, 10)
-        model = adapter.validate_python(number)
+        model = model.model_validate(number)
         assert model.number == number
         assert model.total is None
 
     # noinspection PyTestUnpassedFixture
-    def test_from_numbers(self, adapter: TypeAdapter):
+    def test_from_numbers(self, model: Position):
         number = (10,)
-        model = adapter.validate_python(number)
+        model = model.model_validate(number)
         assert model.number == 10
         assert model.total is None
 
         number = (10, 20, 30)
-        model = adapter.validate_python(number)
+        model = model.model_validate(number)
         assert model.number == 10
         assert model.total == 20
 
     # noinspection PyTestUnpassedFixture
-    def test_from_string(self, adapter: TypeAdapter, faker: Faker):
+    def test_from_string(self, model: Position, faker: Faker):
         numbers = "10"
-        model = adapter.validate_python(numbers)
+        model = model.model_validate(numbers)
         assert model.number == 10
         assert model.total is None
 
         numbers = Position.sep.join(("10", "20"))
-        model = adapter.validate_python(numbers)
+        model = model.model_validate(numbers)
         assert model.number == 10
         assert model.total == 20
 
         numbers = Position.sep.join(("10", "20", "30"))
-        model = adapter.validate_python(numbers)
+        model = model.model_validate(numbers)
         assert model.number == 10
         assert model.total == 20
 
