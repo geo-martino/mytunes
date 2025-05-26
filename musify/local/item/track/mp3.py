@@ -235,9 +235,19 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
 
-        value: list[frame_cls] = [frame_cls(text=item) for item in value]
+        value: list[frame_cls] = [frame_cls(text=item, lang="eng") for item in value]
         context = info.context
         if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
-            value.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI") for uri in self.uris)
+            value.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI", lang="eng") for uri in self.uris)
 
         return value
+
+    @staticmethod
+    def _clear_tag(file: mutagen.mp3.MP3, tag_id: str) -> set[str]:
+        removed = set()
+        for tag_key in file.tags:
+            if tag_key.casefold().startswith(tag_id.casefold()):
+                del file.tags[tag_key]
+                removed.add(tag_key)
+
+        return removed

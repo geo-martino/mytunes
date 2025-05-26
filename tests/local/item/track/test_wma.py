@@ -190,7 +190,7 @@ class TestWMA(LocalTrackTester):
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
         assert model.images == {kind: WMA.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
 
-    async def test_to_tags(self, model: WMA, uri: URI, pictures: dict[str, mutagen.asf.ASFByteArrayAttribute], faker: Faker):
+    def test_to_tags(self, model: WMA, uri: URI, pictures: dict[str, mutagen.asf.ASFByteArrayAttribute], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
@@ -228,7 +228,7 @@ class TestWMA(LocalTrackTester):
             for kind, pic in pictures.items()
         }
         context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
-        result = await model.to_tags(context)
+        result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if k != "WM/Picture"} == expected
         result_image_types = {

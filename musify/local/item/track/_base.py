@@ -15,7 +15,7 @@ from pydantic.fields import Field, FieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo
 
 from musify.local._base import LocalResource
-from musify.local.exception import FileError
+from musify.local.exception import FileError, TagError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
@@ -45,6 +45,9 @@ class TagDumpContext[T](MusifyModel):
 class LocalTrack[T: mutagen.FileType](
     LocalResource, Track[LocalArtist, LocalAlbum, LocalGenre], IsFile, HasMutableURI
 ):
+    # noinspection PyTypeChecker
+    __tag_fields__ = frozenset(TrackTagsMixin.model_fields)
+
     class EmbeddedImage[FT: mutagen.FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
         alias: ClassVar[str | AliasChoices] = "images"
 
@@ -95,7 +98,7 @@ class LocalTrack[T: mutagen.FileType](
             return file.tags.get(self.alias)
 
         @staticmethod
-        def _get_image_data(image: bytes | Image.Image) -> tuple[Image. Image, bytes]:
+        def _get_image_data(image: bytes | Image.Image) -> tuple[Image.Image, bytes]:
             if isinstance(image, bytes):
                 data = image
                 image = Image.open(BytesIO(data))
@@ -129,9 +132,12 @@ class LocalTrack[T: mutagen.FileType](
             """Builds the image tag object for serialization."""
             raise NotImplementedError
 
+    ###########################################################################
+    ## Utility Methods
+    ###########################################################################
     @classmethod
     @validate_call
-    async def from_file(cls, path: str | Path) -> Self:
+    async def from_path(cls, path: str | Path) -> Self:
         file = await cls.load_file(path)
         # some subclasses need to access the file obj on construction so just pass the file obj
         # noinspection PyArgumentList
@@ -147,6 +153,24 @@ class LocalTrack[T: mutagen.FileType](
 
         return file
 
+    @classmethod
+    def _get_tag_id(cls, name: str) -> str | None:
+        field: FieldInfo = cls.model_fields[name]
+        tag_id = None
+        if isinstance(field.serialization_alias, str):
+            tag_id = field.serialization_alias
+        elif isinstance(field.alias, str):
+            tag_id = field.alias
+        elif isinstance(field.validation_alias, str):
+            tag_id = field.validation_alias
+        elif isinstance(field.validation_alias, AliasChoices):
+            tag_id = next(iter(field.validation_alias.choices))
+
+        return tag_id
+
+    ###########################################################################
+    ## Validators/Serializers
+    ###########################################################################
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
@@ -261,7 +285,7 @@ class LocalTrack[T: mutagen.FileType](
 
     @field_serializer("images", mode="plain", when_used="unless-none")
     def _serialize_images(self, images: Any, info: FieldSerializationInfo) -> Any:
-        if not info.by_alias:  # if not serializing to tag IDs, return the images models
+        if not info.by_alias or not self.images:  # if not serializing to tag IDs, return the images models
             return images
 
         context = info.context
@@ -275,32 +299,85 @@ class LocalTrack[T: mutagen.FileType](
             for kind, model in self.images.items()
         ]
 
+    ###########################################################################
+    ## IO
+    ###########################################################################
     @classmethod
-    def _get_tag_id(cls, name: str) -> str | None:
-        field: FieldInfo = cls.model_fields[name]
-        tag_id = None
-        if isinstance(field.serialization_alias, str):
-            tag_id = field.serialization_alias
-        elif isinstance(field.alias, str):
-            tag_id = field.alias
-        elif isinstance(field.validation_alias, str):
-            tag_id = field.validation_alias
-        elif isinstance(field.validation_alias, AliasChoices):
-            tag_id = next(iter(field.validation_alias.choices))
+    def _check_tag_fields(cls, include: Collection[str], exclude: Collection[str]) -> None:
+        if extra_fields := (set(include) | set(exclude)) - cls.__tag_fields__:
+            raise TagError(f"Unrecognised tag fields: {', '.join(extra_fields)}")
 
-        return tag_id
+    async def _check_and_load_file(self, file: T = None) -> T:
+        if file is None:
+            file = await self.load_file(self.path)
+        return file
 
-    async def to_tags(self, context: TagDumpContext[T] = None) -> dict[str, Any]:
-        include_fields = {*TrackTagsMixin.model_fields}
-        return self.model_dump(include=include_fields, context=context, by_alias=True, exclude_none=True)
-
-    async def load(self) -> Any:
-        model = await self.from_file(self.path)
+    async def load(self, file: T = None) -> T:
+        file = await self._check_and_load_file(file=file)
+        model = self.model_validate(file)
         self.__dict__ = model.__dict__
-        del model
+        return file
 
-    async def save(self, *args, **kwargs) -> Any:
-        pass  # TODO
+    async def save(self, file: T) -> T:
+        file.save()
+        return file
 
-    async def clear_tags(self) -> None:
-        pass  # TODO
+    @classmethod
+    def clear(
+            cls,
+            file: T,
+            include: Collection[str] = (),
+            exclude: Collection[str] = (),
+    ) -> dict[str, set[str]]:
+        cls._check_tag_fields(include=include, exclude=exclude)
+
+        names = (set(include or cls.__tag_fields__) - set(exclude)) & cls.__tag_fields__
+        removed = {
+            name: {tag_id for alias in cls._get_aliases(name) for tag_id in cls._clear_tag(file, alias)}
+            for name in names
+        }
+        return {k: v for k, v in removed.items() if v}
+
+    @staticmethod
+    def _clear_tag(file: T, tag_id: str) -> set[str]:
+        removed = set()
+        if tag_id in file.tags:
+            del file.tags[tag_id]
+            removed.add(tag_id)
+        return removed
+
+    def update(
+            self,
+            file: T,
+            include: Collection[str] = (),
+            exclude: Collection[str] = (),
+            context: TagDumpContext = None,
+            replace: bool = False,
+    ) -> Any:
+        self._check_tag_fields(include=include, exclude=exclude)
+
+        tags = self.to_tags(include=include, exclude=exclude, context=context)
+        if not replace:
+            tags = {k: v for k, v in tags.items() if k not in file.tags}
+
+        file.update(tags)
+        return tags
+
+    def to_tags(
+            self,
+            include: Collection[str] = (),
+            exclude: Collection[str] = (),
+            context: TagDumpContext[T] = None
+    ) -> dict[str, Any]:
+        include = set(include or self.__tag_fields__) & self.__tag_fields__
+        exclude = set(exclude) & self.__tag_fields__
+
+        return self.model_dump(
+            include=include,
+            exclude=exclude,
+            context=context,
+            by_alias=True,
+            exclude_none=True,
+            exclude_defaults=True,
+            exclude_unset=True,
+        )

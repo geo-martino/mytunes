@@ -1,5 +1,4 @@
 from collections.abc import MutableMapping
-from copy import copy
 from typing import Literal, Any, ClassVar
 
 import mutagen.id3
@@ -13,7 +12,6 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.local.item.track._base import TagDumpContext
 from musify.model.properties.date import SparseDate
 from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature

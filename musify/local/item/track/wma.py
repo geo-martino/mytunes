@@ -1,20 +1,17 @@
 import struct
-from collections.abc import MutableMapping, Mapping
-from copy import copy
+from collections.abc import MutableMapping
 from typing import Literal, ClassVar, Any
 
 import mutagen.asf
 import mutagen.id3
 from PIL import Image
 from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
-from pydantic.fields import FieldInfo
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.local.item.track._base import TagDumpContext
 from musify.model.properties.date import SparseDate
 from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature

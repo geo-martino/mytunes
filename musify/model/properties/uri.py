@@ -173,7 +173,7 @@ class HasMutableURI(HasURI):
     @uri.setter
     def uri(self, uri: URI):
         if not isinstance(uri, URI):
-            raise MusifyValueError("URI must be a RemoteURI instance")
+            raise MusifyValueError("URI must be a URI instance")
 
         if self.source is None:
             self.source = uri.source

@@ -192,7 +192,7 @@ class TestMP3(LocalTrackTester):
         assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
         assert model.images == {kind: MP3.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
 
-    async def test_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
+    def test_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
@@ -216,13 +216,13 @@ class TestMP3(LocalTrackTester):
             "TBPM": mutagen.id3.TBPM(text="124.931"),
             "TKEY": mutagen.id3.TKEY(text="B"),
             "TDAT": mutagen.id3.TDAT(text="2023-04-14"),
-            "COMM:1:XXX": mutagen.id3.COMM(text=model.comments[0]),
-            f"COMM:{uri.source}URI:XXX": mutagen.id3.COMM(text=str(uri), desc=f"{uri.source}URI"),
+            "COMM:1:eng": mutagen.id3.COMM(text=model.comments[0]),
+            f"COMM:{uri.source}URI:eng": mutagen.id3.COMM(text=str(uri), desc=f"{uri.source}URI"),
         }
 
         loaded_images = {kind: Image.open(BytesIO(pic.data)) for kind, pic in pictures.items()}
         context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
-        result = await model.to_tags(context)
+        result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if not k.startswith("APIC")} == expected
         assert {k for k, v in result.items() if k.startswith("APIC")} == {f"APIC:{kind}" for kind in pictures}

@@ -161,7 +161,7 @@ class TestM4A(LocalTrackTester):
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
         assert model.images == {kind: M4A.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
 
-    async def test_to_tags(self, model: M4A, uri: URI, pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
+    def test_to_tags(self, model: M4A, uri: URI, pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
@@ -191,7 +191,7 @@ class TestM4A(LocalTrackTester):
 
         loaded_images = {kind: Image.open(BytesIO(bytes(pic))) for kind, pic in pictures.items()}
         context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
-        result = await model.to_tags(context)
+        result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if k != "covr"} == expected
         assert sum(len(v) for k, v in result.items() if k.startswith("covr")) == len(pictures)

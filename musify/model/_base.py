@@ -3,7 +3,8 @@ from collections.abc import Hashable
 from functools import cached_property
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator
+from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices
+from pydantic.fields import FieldInfo
 
 
 def abstract_property() -> property:
@@ -69,7 +70,7 @@ class MusifyModel(BaseModel):
         # Allow setting writeable computed fields on init
         computed_field_values = {}
         for field in self.__class__.model_computed_fields.keys():
-            if field in self.__class__.model_fields or field not in kwargs:
+            if field in self.__class__.model_fields or kwargs.get(field) is None:
                 continue
 
             attr = getattr(self.__class__, field)
@@ -84,6 +85,18 @@ class MusifyModel(BaseModel):
         super().__init__(**kwargs)
         for field, value in computed_field_values.items():
             setattr(self, field, value)
+
+    @classmethod
+    def _get_aliases(cls, name: str) -> set[str]:
+        field: FieldInfo = cls.model_fields[name]
+
+        aliases = {name, field.serialization_alias, field.alias}
+        if isinstance(field.validation_alias, str):
+            aliases.add(field.validation_alias)
+        elif isinstance(field.validation_alias, AliasChoices):
+            aliases |= set(al for al in field.validation_alias.choices if isinstance(al, str))
+
+        return {al for al in aliases if al}
 
 
 class MusifyRootModel[T](RootModel[T]):

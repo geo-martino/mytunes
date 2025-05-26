@@ -84,12 +84,8 @@ class IsFile(_IsFile, metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def save(self, dry_run: bool = True, *args, **kwargs) -> Any:
-        """
-        Save this object to file.
-
-        :param dry_run: Run function, but do not modify the file on the disk.
-        """
+    async def save(self, *args, **kwargs) -> Any:
+        """Save this object to file."""
         raise NotImplementedError
 
 
