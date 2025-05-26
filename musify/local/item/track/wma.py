@@ -1,19 +1,24 @@
 import struct
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Mapping
+from copy import copy
 from typing import Literal, ClassVar, Any
 
 import mutagen.asf
 import mutagen.id3
 from PIL import Image
-from pydantic import Field, AliasChoices, PositiveFloat, field_validator
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
+from pydantic.fields import FieldInfo
+from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.local.item.track._base import TagDumpContext
 from musify.model.properties.date import SparseDate
 from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature
+from musify.model.properties.name import HasName
 from musify.model.properties.order import Position
 
 
@@ -173,4 +178,44 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     def _deserialize_unicode_attributes[T](cls, value: T) -> T | list[str]:
         if not isinstance(value, tuple | list):
             return value
-        return [cls._deserialize_unicode_attribute(v) for v in value]
+        return list(map(cls._deserialize_unicode_attribute, value))
+
+    # noinspection PyNestedDecorators
+    @field_serializer(
+        "name", "album", "disc", "bpm", "key", "released_at", "uri",
+        mode="plain"
+    )
+    def _serialize_unicode_attribute[T](self, value: T) -> T | str:
+        if not isinstance(value, tuple | list):
+            value = [value]
+        return mutagen.asf.ASFUnicodeAttribute(self._join_split_tags(value))
+
+    # noinspection PyNestedDecorators
+    @field_serializer(
+        "artists", "genres", "comments",
+        mode="plain"
+    )
+    def _serialize_unicode_attributes[T](self, value: T, info: FieldSerializationInfo) -> T | str:
+        if not isinstance(value, tuple | list):
+            value = [value]
+
+        values = [v.name if isinstance(v, HasName) else v for v in value]
+        context = info.context
+        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+            values.extend(self.uris)
+
+        return list(map(self._serialize_unicode_attribute, values))
+
+    @field_serializer("track", mode="plain")
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+        return super()._serialize_position_tags(value, info=info)
+
+    @model_serializer(mode="wrap")
+    def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
+            return data
+
+        self._flatten_dump(data)
+        self._convert_values_to_list(data)
+        return data

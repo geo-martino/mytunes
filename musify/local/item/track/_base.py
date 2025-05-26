@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, MutableMapping
+from copy import copy
 from io import BytesIO
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar
@@ -23,6 +24,7 @@ from musify.model.item.track import Track, TrackTagsMixin
 from musify.model.properties.file import IsFile
 from musify.model.properties.image import FileEmbeddedImage, ImageSource
 from musify.model.properties.name import HasName
+from musify.model.properties.order import Position
 from musify.model.properties.uri import HasMutableURI
 
 
@@ -206,6 +208,30 @@ class LocalTrack[T: mutagen.FileType](
     def _join_split_tags(cls, value: list[Any]) -> str:
         values = [v.name if isinstance(v, HasName) else v for v in value]
         return cls._join_tags(str(v) for v in values if v and str(v))
+
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
+
+        field: FieldInfo = self.__class__.model_fields[info.field_name]
+        if not isinstance(field.validation_alias, AliasChoices):
+            return str(value)
+
+        aliases = [al for al in field.validation_alias.choices if isinstance(al, str)]
+        data = dict(zip(aliases, (value.number, value.total)))
+        return {k: str(v).zfill(value.zero_fill) for k, v in data.items() if v is not None}
+
+    @staticmethod
+    def _flatten_dump(data: MutableMapping[str, Any]) -> None:
+        for key, val in copy(data).items():
+            if isinstance(val, Mapping):
+                data |= data.pop(key)
+
+    @staticmethod
+    def _convert_values_to_list(data: MutableMapping[str, Any]) -> None:
+        for key, val in data.items():
+            if not isinstance(val, (tuple, list)):
+                data[key] = [val]
 
     # noinspection PyNestedDecorators
     @field_validator("images", mode="before")

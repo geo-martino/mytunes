@@ -141,14 +141,8 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
             return data
 
-        for key, val in copy(data).items():
-            if isinstance(val, Mapping):
-                data |= data.pop(key)
-
-        for key, val in data.items():
-            if not isinstance(val, (tuple, list)):
-                data[key] = [val]
-
+        self._flatten_dump(data)
+        self._convert_values_to_list(data)
         return data
 
     @field_serializer(
@@ -176,13 +170,4 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
     @field_serializer("track", "disc", mode="plain")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
-        if not info.by_alias:  # not serializing to tag IDs
-            return value
-
-        field: FieldInfo = self.__class__.model_fields[info.field_name]
-        if not isinstance(field.validation_alias, AliasChoices):
-            return str(value)
-
-        aliases = [al for al in field.validation_alias.choices if isinstance(al, str)]
-        data = dict(zip(aliases, (value.number, value.total)))
-        return {k: str(v).zfill(value.zero_fill) for k, v in data.items() if v is not None}
+        return super()._serialize_position_tags(value, info=info)

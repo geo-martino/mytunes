@@ -15,6 +15,7 @@ from musify.model import MusifyModel
 from musify.model.properties.file import IsFile
 from musify.model.properties.image import ImageFile
 from musify.model.properties.length import HasLength
+from musify.model.properties.order import Position
 from musify.model.properties.uri import URI, HasMutableURI
 from tests.model.testers import UniqueKeyTester
 from tests.utils import assert_validator_skips
@@ -130,6 +131,7 @@ class TestLocalTrack(UniqueKeyTester):
     def test_join_split_tags(self, model: LocalTrack, artists: list[LocalArtist], faker: Faker):
         model.artists = artists
         assert model._join_split_tags(artists) == model.artist
+
 
     def test_map_images_skips(self, faker: Faker):
         assert_validator_skips(LocalTrack._map_images, None)

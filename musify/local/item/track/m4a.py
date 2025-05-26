@@ -145,12 +145,10 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
             return data
 
+        self._convert_values_to_list(data)
         for key, val in data.items():
-            if not isinstance(val, (tuple, list)):
-                data[key] = [val]
             if key.startswith("----:com.apple.iTunes:"):
                 data[key] = [mutagen.mp4.MP4FreeForm(v.encode()) for v in val]
-
         return data
 
     @field_serializer(

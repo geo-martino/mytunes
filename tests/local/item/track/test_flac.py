@@ -143,7 +143,6 @@ class TestFLAC(LocalTrackTester):
     def test_serialize_string(self, model: FLAC, faker: Faker):
         value = choice(([faker.sentence()], faker.words()))
         expected = model._join_tags(value)
-
         # noinspection PyTypeChecker
         assert model._serialize_string(value) == expected
 
@@ -151,7 +150,6 @@ class TestFLAC(LocalTrackTester):
         value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = [genre.name for genre in genres] + value[len(genres):]
         info = Namespace(field_name="comments", by_alias=True, context=None)
-
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
 
@@ -159,7 +157,6 @@ class TestFLAC(LocalTrackTester):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
         info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
-
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
 

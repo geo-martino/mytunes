@@ -1,4 +1,5 @@
 import struct
+from argparse import Namespace
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -13,8 +14,11 @@ from faker import Faker
 # noinspection PyProtectedMember
 from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 
+from musify.local.item.genre import LocalGenre
+from musify.local.item.track._base import TagDumpContext
 from musify.local.item.track.wma import WMA
 from musify.model import MusifyModel
+from musify.model.properties.order import Position
 from musify.model.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 from tests.utils import assert_validator_skips
@@ -85,6 +89,70 @@ class TestWMA(LocalTrackTester):
         attributes = [ASFUnicodeAttribute(item) for item in expected]
         assert WMA._deserialize_unicode_attributes(attributes) == expected
 
+    def test_serialize_unicode_attribute(self, model: WMA, faker: Faker):
+        value = choice(([faker.sentence()], faker.words()))
+        expected = model._join_tags(value)
+        # noinspection PyTypeChecker
+        assert model._serialize_unicode_attribute(value) == expected
+
+    def test_serialize_unicode_attributes(self, model: WMA, genres: list[LocalGenre], faker: Faker):
+        value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        expected = [genre.name for genre in genres] + value[len(genres):]
+        info = Namespace(field_name="comments", by_alias=True, context=None)
+        # noinspection PyTypeChecker
+        assert model._serialize_unicode_attributes(value, info=info) == expected
+
+    def test_serialize_unicode_attributes_includes_uris(self, model: WMA, faker: Faker):
+        value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        expected = value + list(map(str, model.uris))
+        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+        # noinspection PyTypeChecker
+        assert model._serialize_unicode_attributes(value, info=info) == expected
+
+    def test_serialize_position_tags(self, model: WMA):
+        info = Namespace(field_name="track", by_alias=True, context=None)
+
+        position = Position(number=1, total=2, zero_fill=3)
+        expected = {"WM/TrackNumber": "001", "TotalTracks": "002"}
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(position, info=info) == expected
+
+        position = Position(number=1, zero_fill=2)
+        expected = {"WM/TrackNumber": "01"}
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(position, info=info) == expected
+
+        position = Position(total=3, zero_fill=2)
+        expected = {"TotalTracks": "03"}
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(position, info=info) == expected
+
+    def test_format_to_tags(self, model: WMA, uri: URI, faker: Faker):
+        tags = {
+            "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],
+            "Author": [ASFUnicodeAttribute("Metallica")],
+            "WM/TrackNumber": {
+                "WM/TrackNumber": ASFUnicodeAttribute("04"),
+                "TotalTracks": ASFUnicodeAttribute("08"),
+            },
+            "WM/PartOfSet": ASFUnicodeAttribute("1/2"),
+            "WM/InitialKey": ASFUnicodeAttribute("B"),
+            "WM/Comments": list(map(ASFUnicodeAttribute, [*model.comments, str(uri)])),
+        }
+        expected = {
+            "Title": tags["Title"],
+            "Author": tags["Author"],
+            "WM/TrackNumber": [ASFUnicodeAttribute("04")],
+            "TotalTracks": [ASFUnicodeAttribute("08")],
+            "WM/PartOfSet": [tags["WM/PartOfSet"]],
+            "WM/InitialKey": [tags["WM/InitialKey"]],
+            "WM/Comments": tags["WM/Comments"],
+        }
+        info = Namespace(by_alias=True)
+
+        # noinspection PyTypeChecker
+        assert model._format_to_tags(lambda x: tags, info=info) == expected
+
     def test_from_tags(self, model: WMA, images: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker):
         sep = choice(WMA._tag_sep)
         tags = {
@@ -121,3 +189,52 @@ class TestWMA(LocalTrackTester):
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
         assert model.images == {kind: WMA.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+
+    async def test_to_tags(self, model: WMA, uri: URI, pictures: dict[str, mutagen.asf.ASFByteArrayAttribute], faker: Faker):
+        model.name = "Sleepwalk My Life Away"
+        model.artist = "Metallica"
+        model.album = "72 Seasons"
+        model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
+        model.track = 4
+        model.track.zero_fill = 2
+        model.disc = (1, 2)
+        model.bpm = 124.931
+        model.key = "B"
+        model.released_at = "2023-04-14"
+        model.comments = [faker.sentence()]
+        model.uri = uri
+        model.images = pictures
+
+        expected = {
+            "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],
+            "Author": [ASFUnicodeAttribute("Metallica")],
+            "WM/AlbumTitle": [ASFUnicodeAttribute("72 Seasons")],
+            "WM/Genre": [
+                ASFUnicodeAttribute("Hard Rock"),
+                ASFUnicodeAttribute("Metal"),
+                ASFUnicodeAttribute("Rock"),
+                ASFUnicodeAttribute("Thrash Metal")
+            ],
+            "WM/TrackNumber": [ASFUnicodeAttribute("04")],
+            "WM/PartOfSet": [ASFUnicodeAttribute("1/2")],
+            "WM/BeatsPerMinute": [ASFUnicodeAttribute("124.931")],
+            "WM/InitialKey": [ASFUnicodeAttribute("B")],
+            "WM/Year": [ASFUnicodeAttribute("2023-04-14")],
+            "WM/Comments": list(map(ASFUnicodeAttribute, [*model.comments, str(uri)])),
+        }
+
+        loaded_images = {
+            kind: Image.open(BytesIO(WMA.EmbeddedImage._get_bytes(pic)))
+            for kind, pic in pictures.items()
+        }
+        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        result = await model.to_tags(context)
+
+        assert {k: v for k, v in result.items() if k != "WM/Picture"} == expected
+        result_image_types = {
+            WMA.EmbeddedImage.get_id3_type_from_tag(pic) for k, v in result.items()
+            if k == "WM/Picture" for pic in v
+        }
+        assert result_image_types == {
+            WMA.EmbeddedImage.get_id3_type_from_tag(pic) for pic in pictures.values()
+        }
