@@ -177,10 +177,10 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return list(map(str, values))
 
     @field_serializer("bpm", mode="plain")
-    def _serialize_bpm(self, value: Position, info: FieldSerializationInfo) -> Any:
+    def _serialize_bpm(self, value: PositiveFloat, info: FieldSerializationInfo) -> Any:
         if not info.by_alias:  # not serializing to tag IDs
             return value
-        return [int(self.bpm)]
+        return [int(value)]
 
     @field_serializer("track", "disc", mode="plain")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:

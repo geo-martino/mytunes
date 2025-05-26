@@ -125,8 +125,8 @@ class TestFLAC(LocalTrackTester):
             "comment": [*faker.words(), str(uri)],
         }
         expected = {
-            "title": ["Sleepwalk My Life Away"],
-            "artist": ["Metallica"],
+            "title": tags["title"],
+            "artist": tags["artist"],
             "tracknumber": ["04"],
             "tracktotal": ["08"],
             "discnumber": ["1"],
@@ -166,20 +166,20 @@ class TestFLAC(LocalTrackTester):
     def test_serialize_position_tags(self, model: FLAC):
         info = Namespace(field_name="disc", by_alias=True, context=None)
 
-        discs = Position(number=1, total=2, zero_fill=3)
+        position = Position(number=1, total=2, zero_fill=3)
         expected = {"discnumber": "001", "disctotal": "002"}
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(discs, info=info) == expected
+        assert model._serialize_position_tags(position, info=info) == expected
 
-        discs = Position(number=1, zero_fill=2)
+        position = Position(number=1, zero_fill=2)
         expected = {"discnumber": "01"}
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(discs, info=info) == expected
+        assert model._serialize_position_tags(position, info=info) == expected
 
-        discs = Position(total=3, zero_fill=2)
+        position = Position(total=3, zero_fill=2)
         expected = {"disctotal": "03"}
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(discs, info=info) == expected
+        assert model._serialize_position_tags(position, info=info) == expected
 
     def test_from_tags(self, model: FLAC, images: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker):
         sep = choice(FLAC._tag_sep)

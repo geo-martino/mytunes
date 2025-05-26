@@ -1,3 +1,4 @@
+from argparse import Namespace
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -10,9 +11,11 @@ from PIL import Image
 from faker import Faker
 from mutagen.mp4 import MP4FreeForm, MP4Cover
 
+from musify.local.item.genre import LocalGenre
 from musify.local.item.track._base import TagDumpContext
 from musify.local.item.track.m4a import M4A
 from musify.model import MusifyModel
+from musify.model.properties.order import Position
 from musify.model.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
 
@@ -57,6 +60,69 @@ class TestM4A(LocalTrackTester):
         expected = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         attributes = [MP4FreeForm(item.encode()) for item in expected]
         assert M4A._deserialize_free_form_fields(attributes) == expected
+
+    def test_format_to_tags(self, model: M4A, uri: URI, faker: Faker):
+        tags = {
+            "©nam": ["Sleepwalk My Life Away"],
+            "©ART": "Metallica",
+            "©alb": "72 Seasons",
+            "©gen": ["Hard Rock", "Metal", "Rock", "Thrash Metal"],
+            "trkn": [(4,)],
+            "disk": [(1, 2)],
+            "tmpo": [124],
+            "----:com.apple.iTunes:INITIALKEY": "B",
+            "©day": ["2023-04-14"],
+        }
+        expected = {
+            "©nam": ["Sleepwalk My Life Away"],
+            "©ART": ["Metallica"],
+            "©alb": ["72 Seasons"],
+            "©gen": ["Hard Rock", "Metal", "Rock", "Thrash Metal"],
+            "trkn": [(4,)],
+            "disk": [(1, 2)],
+            "tmpo": [124],
+            "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
+            "©day": ["2023-04-14"],
+        }
+        info = Namespace(by_alias=True)
+
+        # noinspection PyTypeChecker
+        assert model._format_to_tags(lambda x: tags, info=info) == expected
+
+    def test_serialize_string(self, model: M4A, faker: Faker):
+        value = choice(([faker.sentence()], faker.words()))
+        expected = model._join_tags(value)
+
+        # noinspection PyTypeChecker
+        assert model._serialize_string(value) == expected
+
+    def test_serialize_strings(self, model: M4A, genres: list[LocalGenre], faker: Faker):
+        value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        expected = [genre.name for genre in genres] + value[len(genres):]
+        info = Namespace(field_name="comments", by_alias=True, context=None)
+
+        # noinspection PyTypeChecker
+        assert model._serialize_strings(value, info=info) == expected
+
+    def test_serialize_strings_includes_uris(self, model: M4A, faker: Faker):
+        value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        expected = value + list(map(str, model.uris))
+        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+
+        # noinspection PyTypeChecker
+        assert model._serialize_strings(value, info=info) == expected
+
+    def test_serialize_bpm(self, model: M4A, faker: Faker):
+        bpm = faker.random_int(6000, 15000) / 100
+        info = Namespace(by_alias=True)
+        # noinspection PyTypeChecker
+        assert model._serialize_bpm(bpm, info) == [int(bpm)]
+
+    def test_serialize_position_tags(self, model: M4A, faker: Faker):
+        position = Position(number=1, total=2, zero_fill=3)
+        info = Namespace(by_alias=True)
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(position, info) == [position.numbers]
 
     def test_from_tags(self, model: M4A, images: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
         sep = choice(M4A._tag_sep)
@@ -121,11 +187,11 @@ class TestM4A(LocalTrackTester):
             "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
             "©day": ["2023-04-14"],
             "©cmt": [*model.comments, str(uri)],
-            "covr": [mutagen.mp4.MP4Cover(bytes(next(iter(pictures.values()))))],
         }
 
         loaded_images = {kind: Image.open(BytesIO(bytes(pic))) for kind, pic in pictures.items()}
         context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
         result = await model.to_tags(context)
 
-        assert {k: v for k, v in result.items()} == expected
+        assert {k: v for k, v in result.items() if k != "covr"} == expected
+        assert sum(len(v) for k, v in result.items() if k.startswith("covr")) == len(pictures)
