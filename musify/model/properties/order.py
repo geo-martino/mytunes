@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Self, ClassVar
 
-from pydantic import PositiveInt, Field, model_validator, model_serializer
+from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
 
 from musify.exception import MusifyValueError
 from musify.model import MusifyModel
@@ -21,6 +21,19 @@ class Position(MusifyModel):
         description="The total number of resources in the parent resource.",
         default=None,
     )
+    zero_fill: NonNegativeInt = Field(
+        description="Number of digits to zero-fill each number when rendering the position as a string.",
+        default=0,
+    )
+
+    @property
+    def numbers(self) -> tuple[()] | tuple[int] | tuple[int, int]:
+        """Get the numbers in the position as a tuple."""
+        if self.number is None:
+            return ()
+        elif self.total is None:
+            return (self.number,)
+        return (self.number, self.total)
 
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
@@ -49,14 +62,6 @@ class Position(MusifyModel):
         numbers = iter(value.split(cls.sep))
         return dict(number=next(numbers), total=next(numbers, None))
 
-    @model_serializer
-    def _serialize_string(self) -> str | None:
-        if self.number is None:
-            return None
-        if self.total is None:
-            return str(self.number)
-        return f"{self.number}{self.sep}{self.total}"
-
     @model_validator(mode="after")
     def _validate_position_is_less_than_total(self) -> Self:
         if self.number is None or self.total is None:
@@ -65,3 +70,6 @@ class Position(MusifyModel):
         if self.number > self.total:
             raise MusifyValueError("Start position cannot be greater than end position.")
         return self
+
+    def __str__(self) -> str:
+        return self.sep.join(str(val).zfill(self.zero_fill) for val in self.numbers)

@@ -1,5 +1,4 @@
 from argparse import Namespace
-from collections.abc import Mapping
 from copy import deepcopy
 from datetime import date
 from io import BytesIO
@@ -80,7 +79,7 @@ class TestMP3(LocalTrackTester):
         # noinspection PyCallingNonCallable
         assert MP3._merge_suffixed_tags(data) == expected
 
-    def test_expand_suffixable_tag_keys(self, model: MP3, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
+    def test_format_to_tags(self, model: MP3, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         tags = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
             "TPE1": mutagen.id3.TPE1(text="Metallica"),
@@ -102,7 +101,7 @@ class TestMP3(LocalTrackTester):
         } | {f"APIC:{kind}": pic for kind, pic in pictures.items()}
 
         # noinspection PyTypeChecker
-        assert model.__class__._expand_suffixable_tag_keys(tags, handler=lambda x: x, info=info) == expected
+        assert model.__class__._format_to_tags(tags, handler=lambda x: x, info=info) == expected
 
     def test_deserialize_text_frame(self, faker: Faker):
         expected = faker.pystr()
@@ -116,7 +115,7 @@ class TestMP3(LocalTrackTester):
 
     def test_serialize_text_frame_from_string(self, model: MP3, faker: Faker):
         value = faker.sentence()
-        info = Namespace(field_name="name", context=None)
+        info = Namespace(field_name="name", by_alias=True, context=None)
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frame(value, info=info)
@@ -126,7 +125,7 @@ class TestMP3(LocalTrackTester):
     def test_serialize_text_frame_from_strings(self, model: MP3, faker: Faker):
         value = faker.words()
         expected = model._join_tags(value)
-        info = Namespace(field_name="comments", context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None)
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frame(value, info=info)
@@ -135,7 +134,7 @@ class TestMP3(LocalTrackTester):
 
     def test_serialize_text_frame_from_names(self, model: MP3, artists: list[LocalArtist]):
         expected = model._join_tags(artist.name for artist in artists)
-        info = Namespace(field_name="artists", context=None)
+        info = Namespace(field_name="artists", by_alias=True, context=None)
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frame(artists, info=info)
@@ -144,7 +143,7 @@ class TestMP3(LocalTrackTester):
 
     def test_serialize_text_frames(self, model: MP3, faker: Faker):
         expected = [faker.sentence() for _ in range(faker.random_int(3, 6))]
-        info = Namespace(field_name="comments", context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None)
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frames(expected, info=info)
@@ -154,7 +153,7 @@ class TestMP3(LocalTrackTester):
     def test_serialize_text_frames_includes_uris(self, model: MP3, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
-        info = Namespace(field_name="comments", context=TagDumpContext(map_uri_to_tag="comments"))
+        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frames(value, info=info)
@@ -192,3 +191,38 @@ class TestMP3(LocalTrackTester):
         assert model.released_at == date(2023, 4, 14)
         assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
         assert model.images == {kind: MP3.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+
+    async def test_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
+        model.name = "Sleepwalk My Life Away"
+        model.artist = "Metallica"
+        model.album = "72 Seasons"
+        model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
+        model.track = 4
+        model.disc = (1, 2)
+        model.bpm = 124.931
+        model.key = "B"
+        model.released_at = "2023-04-14"
+        model.comments = [faker.sentence()]
+        model.uri = uri
+        model.images = pictures
+
+        expected = {
+            "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
+            "TPE1": mutagen.id3.TPE1(text="Metallica"),
+            "TALB": mutagen.id3.TALB(text="72 Seasons"),
+            "TCON": mutagen.id3.TCON(text=model._join_tags(("Hard Rock", "Metal", "Rock", "Thrash Metal"))),
+            "TRCK": mutagen.id3.TRCK(text="4"),
+            "TPOS": mutagen.id3.TPOS(text="1/2"),
+            "TBPM": mutagen.id3.TBPM(text="124.931"),
+            "TKEY": mutagen.id3.TKEY(text="B"),
+            "TDAT": mutagen.id3.TDAT(text="2023-04-14"),
+            "COMM:1:XXX": mutagen.id3.COMM(text=model.comments[0]),
+            f"COMM:{uri.source}URI:XXX": mutagen.id3.COMM(text=str(uri), desc=f"{uri.source}URI"),
+        }
+
+        loaded_images = {kind: Image.open(BytesIO(pic.data)) for kind, pic in pictures.items()}
+        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        result = await model.to_tags(context)
+
+        assert {k: v for k, v in result.items() if not k.startswith("APIC")} == expected
+        assert {k for k, v in result.items() if k.startswith("APIC")} == {f"APIC:{kind}" for kind in pictures}

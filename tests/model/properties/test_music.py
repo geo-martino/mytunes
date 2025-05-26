@@ -15,6 +15,9 @@ class TestKeySignature(MusifyModelTester):
             mode=faker.boolean(),
         )
 
+    def test_str(self, model: KeySignature) -> None:
+        assert str(model) == model.key
+
     def test_from_key(self, model: KeySignature) -> None:
         model = model.model_validate("F")
         assert model.root == 5
@@ -23,10 +26,6 @@ class TestKeySignature(MusifyModelTester):
         model = model.model_validate("Fm")
         assert model.root == 5
         assert model.mode == 1
-
-    def test_serialize_key(self, model: KeySignature) -> None:
-        assert model._serialize_key() == str(model)
-        assert model.model_dump() == str(model)
 
     def test_key_property(self, model: KeySignature) -> None:
         model.root = 5

@@ -37,3 +37,10 @@ class HasGenres[T: Genre](HasSeparableTags):
     def genre(self) -> str | None:
         """A string representation of all genres associated with this resource"""
         return self._join_tags(genre.name for genre in self.genres)
+
+    @genre.setter
+    def genre(self, value: str | list[str]) -> None:
+        if not value:
+            self.genres = None
+            return
+        self.genres = value

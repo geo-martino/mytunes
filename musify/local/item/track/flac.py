@@ -1,16 +1,23 @@
 import types
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Mapping
+from copy import copy
 from typing import Any, Literal, get_args
 
 import mutagen.flac
 import mutagen.id3
 from PIL import Image
-from pydantic import Field, AliasChoices, model_validator
+from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer
+from pydantic.fields import FieldInfo
+from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
+from musify.local.item.artist import LocalArtist
+from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.local.item.track._base import TagDumpContext
 from musify.model.properties.date import SparseDate
 from musify.model.properties.image import ImageFile, ImageURL
 from musify.model.properties.music import KeySignature
+from musify.model.properties.name import HasName
 from musify.model.properties.order import Position
 
 
@@ -43,29 +50,44 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
             return picture
 
-    track: Position | None = Field(
-        validation_alias=AliasChoices("tracknumber", "tracktotal"),
+    artists: list[LocalArtist] | None = Field(
+        description="The artists featured on this track.",
         default=None,
+        alias="artist",
+    )
+    genres: list[LocalGenre] | None = Field(
+        description="The genres associated with this track.",
+        default=None,
+        alias="genre",
+    )
+    track: Position | None = Field(
+        description="The position of the track in the album that this track is featured on.",
+        default=None,
+        validation_alias=AliasChoices("tracknumber", "tracktotal"),
+        serialization_alias="tracknumber",
     )
     disc: Position | None = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
-        validation_alias=AliasChoices("discnumber", "disctotal")
+        validation_alias=AliasChoices("discnumber", "disctotal"),
+        serialization_alias="discnumber",
     )
     released_at: SparseDate | None = Field(
         description="The date this track was released.",
         default=None,
-        validation_alias=AliasChoices("date", "release date", "year")
+        validation_alias=AliasChoices("date", "release date", "year"),
+        serialization_alias="date",
     )
     key: KeySignature | None = Field(
         description="The key of this track.",
         default=None,
-        validation_alias="initialkey",
+        alias="initialkey",
     )
     comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("comment", "description"),
+        alias="comment",
     )
     images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
@@ -91,7 +113,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             return value
 
         for name, field in cls.model_fields.items():
-            if not isinstance(field.validation_alias, AliasChoices):
+            if not isinstance(field.validation_alias, AliasChoices) or isinstance(value.get(name, None), Position):
                 continue
 
             if isinstance(field.annotation, types.UnionType):
@@ -109,6 +131,58 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
                 next(aliases)
 
             values.extend(filter(None, (value.pop(alias, None) for alias in aliases)))
-            value[field.validation_alias.choices[0]] = tuple(map(cls._extract_first_value_from_sequence, values))
+            value[name] = tuple(map(cls._extract_first_value_from_sequence, values))
 
         return value
+
+    @model_serializer(mode="wrap")
+    def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
+            return data
+
+        for key, val in copy(data).items():
+            if isinstance(val, Mapping):
+                data |= data.pop(key)
+
+        for key, val in data.items():
+            if not isinstance(val, (tuple, list)):
+                data[key] = [val]
+
+        return data
+
+    @field_serializer(
+        "album", "artists", "key", "bpm", "released_at",
+        mode="plain"
+    )
+    def _serialize_string(self, value: Any) -> str:
+        if not isinstance(value, tuple | list):
+            value = [value]
+
+        value = self._join_split_tags(value)
+        return value
+
+    @field_serializer("genres", "comments", mode="plain")
+    def _serialize_strings(self, value: Any, info: FieldSerializationInfo) -> list[str]:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
+
+        values = [v.name if isinstance(v, HasName) else v for v in value]
+        context = info.context
+        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+            values.extend(self.uris)
+
+        return list(map(str, values))
+
+    @field_serializer("track", "disc", mode="plain")
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
+
+        field: FieldInfo = self.__class__.model_fields[info.field_name]
+        if not isinstance(field.validation_alias, AliasChoices):
+            return str(value)
+
+        aliases = [al for al in field.validation_alias.choices if isinstance(al, str)]
+        data = dict(zip(aliases, (value.number, value.total)))
+        return {k: str(v).zfill(value.zero_fill) for k, v in data.items() if v is not None}

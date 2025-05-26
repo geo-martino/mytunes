@@ -2,7 +2,7 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
-from typing import get_args, Any
+from typing import get_args
 
 import mutagen.id3
 import pytest

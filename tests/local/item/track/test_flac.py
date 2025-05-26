@@ -1,3 +1,4 @@
+from argparse import Namespace
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -10,8 +11,11 @@ import pytest
 from PIL import Image
 from faker import Faker
 
+from musify.local.item.genre import LocalGenre
+from musify.local.item.track._base import TagDumpContext
 from musify.local.item.track.flac import FLAC
 from musify.model import MusifyModel
+from musify.model.properties.order import Position
 from musify.model.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
 
@@ -24,8 +28,9 @@ def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.fl
         image_type = image_types.pop()
 
         picture = mutagen.flac.Picture()
-        picture.data = img
         picture.type = getattr(mutagen.id3.PictureType, image_type)
+        picture.mime = Image.MIME[Image.open(BytesIO(img)).format]
+        picture.data = img
         pictures[image_type] = picture
 
     return pictures
@@ -100,11 +105,81 @@ class TestFLAC(LocalTrackTester):
         }
         result = FLAC._merge_position_values(tags)
 
-        assert sum(key.startswith("track") for key in result) == 1
-        assert result["tracknumber"] == (3, 10)
+        assert result["track"] == (3, 10)
+        assert result["disc"] == (2, 5)
 
-        assert sum(key.startswith("disc") for key in result) == 1
-        assert result["discnumber"] == (2, 5)
+    def test_format_to_tags(self, model: FLAC, uri: URI, faker: Faker):
+        tags = {
+            "title": ["Sleepwalk My Life Away"],
+            "artist": ["Metallica"],
+            "track": {
+                "tracknumber": "04",
+                "tracktotal": "08",
+            },
+            "discnumber": {
+                "discnumber": "1",
+                "disctotal": "2",
+            },
+            "bpm": "124.931",
+            "date": "2023-04-14",
+            "comment": [*faker.words(), str(uri)],
+        }
+        expected = {
+            "title": ["Sleepwalk My Life Away"],
+            "artist": ["Metallica"],
+            "tracknumber": ["04"],
+            "tracktotal": ["08"],
+            "discnumber": ["1"],
+            "disctotal": ["2"],
+            "bpm": [tags["bpm"],],
+            "date": [tags["date"]],
+            "comment": tags["comment"],
+        }
+        info = Namespace(by_alias=True)
+
+        # noinspection PyTypeChecker
+        assert model._format_to_tags(lambda x: tags, info=info) == expected
+
+    def test_serialize_string(self, model: FLAC, faker: Faker):
+        value = choice(([faker.sentence()], faker.words()))
+        expected = model._join_tags(value)
+
+        # noinspection PyTypeChecker
+        assert model._serialize_string(value) == expected
+
+    def test_serialize_strings(self, model: FLAC, genres: list[LocalGenre], faker: Faker):
+        value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        expected = [genre.name for genre in genres] + value[len(genres):]
+        info = Namespace(field_name="comments", by_alias=True, context=None)
+
+        # noinspection PyTypeChecker
+        assert model._serialize_strings(value, info=info) == expected
+
+    def test_serialize_strings_includes_uris(self, model: FLAC, faker: Faker):
+        value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        expected = value + list(map(str, model.uris))
+        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+
+        # noinspection PyTypeChecker
+        assert model._serialize_strings(value, info=info) == expected
+
+    def test_serialize_position_tags(self, model: FLAC):
+        info = Namespace(field_name="disc", by_alias=True, context=None)
+
+        discs = Position(number=1, total=2, zero_fill=3)
+        expected = {"discnumber": "001", "disctotal": "002"}
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(discs, info=info) == expected
+
+        discs = Position(number=1, zero_fill=2)
+        expected = {"discnumber": "01"}
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(discs, info=info) == expected
+
+        discs = Position(total=3, zero_fill=2)
+        expected = {"disctotal": "03"}
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags(discs, info=info) == expected
 
     def test_from_tags(self, model: FLAC, images: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker):
         sep = choice(FLAC._tag_sep)
@@ -139,3 +214,40 @@ class TestFLAC(LocalTrackTester):
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
         assert model.images == {kind: FLAC.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+
+    async def test_to_tags(self, model: FLAC, uri: URI, pictures: dict[str, mutagen.flac.Picture], faker: Faker):
+        model.name = "Sleepwalk My Life Away"
+        model.artist = "Metallica"
+        model.album = "72 Seasons"
+        model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
+        model.track = 4
+        model.track.zero_fill = 2
+        model.disc = (1, 2)
+        model.bpm = 124.931
+        model.key = "B"
+        model.released_at = "2023-04-14"
+        model.comments = [faker.sentence()]
+        model.uri = uri
+        model.images = pictures
+
+        expected = {
+            "title": ["Sleepwalk My Life Away"],
+            "artist": ["Metallica"],
+            "album": ["72 Seasons"],
+            "genre": ["Hard Rock", "Metal", "Rock", "Thrash Metal"],
+            "tracknumber": ["04"],
+            "discnumber": ["1"],
+            "disctotal": ["2"],
+            "bpm": ["124.931"],
+            "initialkey": ["B"],
+            "date": ["2023-04-14"],
+            "comment": [*model.comments, str(uri)],
+        }
+
+        loaded_images = {kind: Image.open(BytesIO(pic.data)) for kind, pic in pictures.items()}
+        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        result = await model.to_tags(context)
+
+        assert {k: v for k, v in result.items() if k != "images"} == expected
+        result_image_types = {pic.type for k, v in result.items() if k == "images" for pic in v}
+        assert result_image_types == {pic.type for pic in pictures.values()}

@@ -42,3 +42,10 @@ class HasArtists[T: Artist](HasSeparableTags):
     def artist(self) -> str | None:
         """A string representation of all artists featured on this resource"""
         return self._join_tags(artist.name for artist in self.artists)
+
+    @artist.setter
+    def artist(self, value: str | list[str]) -> None:
+        if not value:
+            self.artists = None
+            return
+        self.artists = value

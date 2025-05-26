@@ -107,9 +107,12 @@ class LocalTrackTester(UniqueKeyTester):
     def test_map_images(model: LocalTrack, pictures: dict[str, Any]):
         assert model._map_images(list(pictures.values())) == pictures
 
-    def test_serialize_images(self, model: LocalTrack, images: list[bytes], pictures: dict[str, Any]):
+    @staticmethod
+    def test_serialize_images(model: LocalTrack, images: list[bytes], pictures: dict[str, Any]):
+        model.images = pictures
+
         image_model = model.EmbeddedImage(mime="image/png", height=100, width=100)
-        loaded_images = [(image_model, Image.open(BytesIO(image))) for image in images]
+        loaded_images = {kind: Image.open(BytesIO(choice(images))) for kind in model.images}
         context = Namespace(by_alias=True, context=TagDumpContext(loaded_images=loaded_images))
         assert loaded_images
 
@@ -123,6 +126,6 @@ class LocalTrackTester(UniqueKeyTester):
             result = model._serialize_images(images, info=context)
             assert len(result) == len(loaded_images)
 
-            for model, image in loaded_images:
-                mocked_from_image_model.assert_any_call(model)
+            for kind, image in loaded_images.items():
+                mocked_from_image_model.assert_any_call(model.images[kind])
                 mocked_build.assert_any_call(image)

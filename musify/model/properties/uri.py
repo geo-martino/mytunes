@@ -92,7 +92,7 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
         """Whether this URI relates to a resource which actually exists in the remote repository."""
         return self.id != self._unavailable_id
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.root
 
     def __hash__(self):

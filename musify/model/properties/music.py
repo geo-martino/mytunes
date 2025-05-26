@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Annotated, Any
 
-from pydantic import Field, field_validator, model_validator, model_serializer
+from pydantic import Field, field_validator, model_validator
 
 from musify.model import MusifyModel
 
@@ -49,15 +49,11 @@ class KeySignature(MusifyModel):
         """A string representation of the key in alphabetical musical notation format."""
         return f"{self._root_notes[self.root]}{'m' if self.mode else ''}"
 
-    @model_serializer
-    def _serialize_key(self) -> str:
-        return self.key
-
     # noinspection PyTypeChecker
     @key.setter
     def key(self, value: str) -> None:
         self.root = value
         self.mode = value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.key

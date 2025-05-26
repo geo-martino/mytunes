@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated, Any
 
-from pydantic import PositiveInt, Field, model_validator, TypeAdapter, model_serializer
+from pydantic import PositiveInt, Field, model_validator, TypeAdapter
 
 from musify.model import MusifyModel
 from musify.model._base import _AttributeModel
@@ -50,19 +50,18 @@ class SparseDate(MusifyModel):
         value = iter(value.split("-"))
         return dict(year=next(value, None), month=next(value, None), day=next(value, None))
 
-    @model_serializer
-    def _serialize_string(self) -> str:
-        if self.month and self.day:
-            return self.date.isoformat()
-        elif self.month and not self.day:
-            return f"{self.year:04d}-{self.month:02d}"
-        return str(self.year)
-
     @property
     def date(self) -> date | None:
         """A :py:class:`date` object representing the full date definition if available."""
         if self.year and self.month and self.day:
             return date(self.year, self.month, self.day)
+
+    def __str__(self) -> str:
+        if self.month and self.day:
+            return self.date.isoformat()
+        elif self.month and not self.day:
+            return f"{self.year:04d}-{self.month:02d}"
+        return str(self.year)
 
     def __eq__(self, other):
         if self is other:

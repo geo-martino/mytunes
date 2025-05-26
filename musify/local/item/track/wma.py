@@ -86,65 +86,67 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     name: str | None = Field(
         description="A title of this track.",
         default=None,
-        validation_alias="Title"
+        alias="Title"
     )
     artists: list[LocalArtist] | None = Field(
         description="The artists featured on this track.",
         default=None,
-        validation_alias="Author"
+        alias="Author"
     )
     album: LocalAlbum | None = Field(
         description="The album this track is featured on.",
         default=None,
-        validation_alias="WM/AlbumTitle"
+        alias="WM/AlbumTitle"
     )
     # album_artist: list[LocalAlbum] | None = Field(
     #     default=None,
-    #     validation_alias="WM/AlbumArtist"
+    #     alias="WM/AlbumArtist"
     # )
     genres: list[LocalGenre] | None = Field(
         description="The genres associated with this track.",
         default=None,
-        validation_alias="WM/Genre"
+        alias="WM/Genre"
     )
     track: Position | None = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
-        validation_alias=AliasChoices("WM/TrackNumber", "TotalTracks")
+        validation_alias=AliasChoices("WM/TrackNumber", "TotalTracks"),
     )
     disc: Position | None = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
-        validation_alias="WM/PartOfSet"
+        alias="WM/PartOfSet"
     )
     bpm: PositiveFloat | None = Field(
         description="The tempo of this track.",
         default=None,
-        validation_alias="WM/BeatsPerMinute"
+        alias="WM/BeatsPerMinute"
     )
     key: KeySignature | None = Field(
         description="The key of this track.",
         default=None,
-        validation_alias="WM/InitialKey"
+        alias="WM/InitialKey"
     )
     released_at: SparseDate | None = Field(
         description="The date this track was released.",
         default=None,
-        validation_alias=AliasChoices("WM/Year", "WM/OriginalReleaseYear")
+        validation_alias=AliasChoices("WM/Year", "WM/OriginalReleaseYear"),
+        serialization_alias="WM/Year",
     )
     comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
-        validation_alias=AliasChoices("Description", "WM/Comments")
+        validation_alias=AliasChoices("WM/Comments", "Description"),
+        serialization_alias="WM/Comments",
     )
     images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
         default=None,
-        validation_alias=EmbeddedImage.alias,
+        alias=EmbeddedImage.alias,
     )
     # compilation: list[str] | None = Field(
     #     default=None,
-    #     validation_alias="COMPILATION"
+    #     alias="COMPILATION"
     # )
 
     # noinspection PyNestedDecorators

@@ -1,14 +1,11 @@
 from argparse import Namespace
 from datetime import date
-from io import BytesIO
 from pathlib import Path
 from random import choice
-from typing import Any, Mapping
 from unittest import mock
 
 import mutagen
 import pytest
-from PIL import Image
 from faker import Faker
 
 from musify.local.item.artist import LocalArtist

@@ -53,65 +53,66 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     name: str | None = Field(
         description="A title of this track.",
         default=None,
-        validation_alias="©nam"
+        alias="©nam"
     )
     artists: list[LocalArtist] | None = Field(
         description="The artists featured on this track.",
         default=None,
-        validation_alias="©ART"
+        alias="©ART"
     )
     album: LocalAlbum | None = Field(
         description="The album this track is featured on.",
         default=None,
-        validation_alias="©alb"
+        alias="©alb"
     )
     # album_artist: list[LocalAlbum] | None = Field(
     #     default=None,
-    #     validation_alias="aART"
+    #     alias="aART"
     # )
     genres: list[LocalGenre] | None = Field(
         description="The genres associated with this track.",
         default=None,
-        validation_alias=AliasChoices("----:com.apple.iTunes:GENRE", "©gen", "gnre")
+        validation_alias=AliasChoices("©gen", "gnre", "----:com.apple.iTunes:GENRE"),
+        serialization_alias="©gen",
     )
     track: Position | None = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
-        validation_alias="trkn"
+        alias="trkn"
     )
     disc: Position | None = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
-        validation_alias="disk"
+        alias="disk"
     )
     bpm: PositiveFloat | None = Field(
         description="The tempo of this track.",
         default=None,
-        validation_alias="tmpo"
+        alias="tmpo"
     )
     key: KeySignature | None = Field(
         description="The key of this track.",
         default=None,
-        validation_alias="----:com.apple.iTunes:INITIALKEY"
+        alias="----:com.apple.iTunes:INITIALKEY"
     )
     released_at: SparseDate | None = Field(
         description="The date this track was released.",
         default=None,
-        validation_alias="©day"
+        alias="©day"
     )
     comments: list[str] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
-        validation_alias="©cmt"
+        alias="©cmt"
     )
     images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
         default=None,
-        validation_alias=EmbeddedImage.alias,
+        alias=EmbeddedImage.alias,
     )
     # compilation: list[str] | None = Field(
     #     default=None,
-    #     validation_alias="cpil"
+    #     alias="cpil"
     # )
 
     # noinspection PyNestedDecorators

@@ -11,6 +11,18 @@ class TestPosition(MusifyModelTester):
     def model(self) -> MusifyModel:
         return Position()
 
+    def test_str(self, model: Position) -> None:
+        model.number = 10
+        model.zero_fill = 2
+        assert str(model) == "10"
+
+        model.total = 20
+        model.zero_fill = 4
+        assert str(model) == "0010/0020"
+
+        model.number = None
+        assert str(model) == ""
+
     # noinspection PyTestUnpassedFixture
     def test_from_number(self, model: Position, faker: Faker):
         number = faker.random_int(1, 10)
@@ -46,19 +58,6 @@ class TestPosition(MusifyModelTester):
         model = model.model_validate(numbers)
         assert model.number == 10
         assert model.total == 20
-
-    def test_serialize_string(self, model: Position) -> None:
-        model.number = 10
-        assert model._serialize_string() == "10"
-        assert model.model_dump() == "10"
-
-        model.total = 20
-        assert model._serialize_string() == "10/20"
-        assert model.model_dump() == "10/20"
-
-        model.number = None
-        assert model._serialize_string() is None
-        assert model.model_dump() is None
 
     def test_number_cannot_exceed_total(self, model: Position) -> None:
         model.total = 5

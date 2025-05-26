@@ -1,4 +1,5 @@
 from collections.abc import MutableSequence, MutableMapping, Iterable
+from copy import copy
 from typing import Any, Literal, ClassVar
 
 import mutagen.id3
@@ -111,7 +112,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
         description="Images associated with this track.",
         default=None,
-        validation_alias=EmbeddedImage.alias,
+        alias=EmbeddedImage.alias,
     )
     # compilation: list[str] | None = Field(
     #     default=None,
@@ -152,14 +153,14 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
     # noinspection PyNestedDecorators
     @model_serializer(mode="wrap")
-    def _expand_suffixable_tag_keys(
+    def _format_to_tags(
             self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
     ) -> dict[str, Any]:
         data = handler(self)
-        if not info.by_alias:  # not serializing to tag IDs
+        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
             return data
 
-        for tag_id, tag_value in data.copy().items():
+        for tag_id, tag_value in copy(data).items():
             if not isinstance(tag_value, tuple | list):
                 continue
 
@@ -216,6 +217,8 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         mode="plain", when_used="unless-none"
     )
     def _serialize_text_frame(self, value: Any, info: FieldSerializationInfo) -> InstanceOf[mutagen.id3.TextFrame]:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
         if not isinstance(value, tuple | list):
             value = [value]
 
@@ -227,6 +230,8 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     def _serialize_text_frames(
             self, value: Any, info: FieldSerializationInfo
     ) -> list[InstanceOf[mutagen.id3.TextFrame]]:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
         frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
 
         value: list[frame_cls] = [frame_cls(text=item) for item in value]

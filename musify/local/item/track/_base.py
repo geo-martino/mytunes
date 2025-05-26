@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Mapping
 from io import BytesIO
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar
@@ -34,9 +34,9 @@ class TagDumpContext[T](MusifyModel):
         ),
         default="comments"
     )
-    loaded_images: Sequence[tuple[ImageSource, InstanceOf[Image.Image]]] = Field(
+    loaded_images: Mapping[str, InstanceOf[Image.Image]] = Field(
         description="The image properties and their loaded images.",
-        default_factory=tuple
+        default_factory=dict
     )
 
 
@@ -161,7 +161,7 @@ class LocalTrack[T: mutagen.FileType](
     )
     @staticmethod
     def _extract_first_value_from_sequence(value: Any) -> str | None:
-        if isinstance(value, tuple | list):
+        if isinstance(value, tuple | list) and len(value) >= 1:
             value = value[0]
         return value
 
@@ -236,8 +236,13 @@ class LocalTrack[T: mutagen.FileType](
         context = info.context
         if not isinstance(context, TagDumpContext) or not context.loaded_images:
             return []
+        if missing_images := set(context.loaded_images) - set(self.images or ()):
+            raise FileError(f"Some image types are missing from the loaded images: {", ".join(missing_images)}")
 
-        return [self.EmbeddedImage.from_image_model(model).build(image) for model, image in context.loaded_images]
+        return [
+            self.EmbeddedImage.from_image_model(model).build(context.loaded_images[kind])
+            for kind, model in self.images.items()
+        ]
 
     @classmethod
     def _get_tag_id(cls, name: str) -> str | None:
