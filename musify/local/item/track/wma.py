@@ -200,10 +200,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
             value = [value]
 
         values = [v.name if isinstance(v, HasName) else v for v in value]
-        context = info.context
-        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
-            values.extend(self.uris)
-
+        self._extend_with_uris(values, info=info)
         return list(map(self._serialize_unicode_attribute, values))
 
     @field_serializer("track", mode="plain")

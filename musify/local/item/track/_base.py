@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, MutableMapping
+from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from io import BytesIO
 from pathlib import Path
@@ -232,6 +232,11 @@ class LocalTrack[T: mutagen.FileType](
         for key, val in data.items():
             if not isinstance(val, (tuple, list)):
                 data[key] = [val]
+
+    def _extend_with_uris(self, values: MutableSequence[Any], info: FieldSerializationInfo) -> None:
+        context = info.context
+        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+            values.extend(self.uris)
 
     # noinspection PyNestedDecorators
     @field_validator("images", mode="before")

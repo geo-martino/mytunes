@@ -232,6 +232,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     ) -> list[InstanceOf[mutagen.id3.TextFrame]]:
         if not info.by_alias:  # not serializing to tag IDs
             return value
+
         frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
 
         value: list[frame_cls] = [frame_cls(text=item) for item in value]
