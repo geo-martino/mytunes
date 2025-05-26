@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
 
-from musify.model import MusifyRootModel
+from musify.model import MusifyRootModel, MusifyModel
 from musify.model.properties.length import Length
 from tests.model.testers import MusifyModelTester
 
@@ -39,3 +42,14 @@ class TestLength(MusifyModelTester):
 
         model.root = 123
         assert float(model) == 123.0
+
+    def test_timedelta_property(self, model: Length) -> None:
+        assert Length(359).timedelta == timedelta(seconds=359, milliseconds=0)
+        assert Length(360.12).timedelta == timedelta(seconds=360, milliseconds=120)
+
+    def test_str(self):
+        assert str(Length(359)) == "05:59"
+        assert str(Length(360)) == "06:00"
+        assert str(Length(360.12)) == "06:00.120"
+        assert str(Length(3671)) == "1:01:11"
+        assert str(Length(123456)) == "34:17:36"

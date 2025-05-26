@@ -13,19 +13,6 @@ class TestSparseDate(MusifyModelTester):
     def model(self, faker: Faker) -> MusifyModel:
         return SparseDate(year=faker.year())
 
-    def test_str(self, model: SparseDate) -> None:
-        model.year = 2025
-        model.month = 3
-        model.day = 1
-        assert str(model) == "2025-03-01"
-
-        model.month = None
-        assert str(model) == "2025"
-
-        model.month = 3
-        model.day = None
-        assert str(model) == "2025-03"
-
     def test_from_date(self, model: SparseDate):
         model = model.model_validate("2025-03-01")
         assert model.year == 2025
@@ -58,6 +45,19 @@ class TestSparseDate(MusifyModelTester):
 
         model.month = faker.random_int(min=1, max=12)
         assert model.date == date(year=model.year, month=model.month, day=model.day)
+
+    def test_str(self, model: SparseDate) -> None:
+        model.year = 2025
+        model.month = 3
+        model.day = 1
+        assert str(model) == "2025-03-01"
+
+        model.month = None
+        assert str(model) == "2025"
+
+        model.month = 3
+        model.day = None
+        assert str(model) == "2025-03"
 
     def test_equality(self):
         model = SparseDate(year=2024, month=3, day=12)

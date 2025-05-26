@@ -139,6 +139,9 @@ class ImageFile(ImageSource):
         description="The path to the image file.",
     )
 
+    def __str__(self) -> str:
+        return str(self.path)
+
     def __eq__(self, other: Self) -> bool:
         if self is other:
             return True

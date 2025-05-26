@@ -11,18 +11,6 @@ class TestPosition(MusifyModelTester):
     def model(self) -> MusifyModel:
         return Position()
 
-    def test_str(self, model: Position) -> None:
-        model.number = 10
-        model.zero_fill = 2
-        assert str(model) == "10"
-
-        model.total = 20
-        model.zero_fill = 4
-        assert str(model) == "0010/0020"
-
-        model.number = None
-        assert str(model) == ""
-
     # noinspection PyTestUnpassedFixture
     def test_from_number(self, model: Position, faker: Faker):
         number = faker.random_int(1, 10)
@@ -66,3 +54,15 @@ class TestPosition(MusifyModelTester):
 
         with pytest.raises(ValueError):
             Position(number=5, total=4)
+
+    def test_str(self, model: Position) -> None:
+        model.number = 10
+        model.zero_fill = 2
+        assert str(model) == "10"
+
+        model.total = 20
+        model.zero_fill = 4
+        assert str(model) == "0010/0020"
+
+        model.number = None
+        assert str(model) == ""

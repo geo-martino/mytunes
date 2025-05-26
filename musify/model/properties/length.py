@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import timedelta
 from typing import Any
 
 from pydantic import PositiveInt, PositiveFloat, field_validator, Field
@@ -37,6 +38,24 @@ class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
             return float(total_seconds + milliseconds)
 
         return total_seconds
+
+    @property
+    def timedelta(self) -> timedelta:
+        """Returns the length as a timedelta object."""
+        return timedelta(seconds=int(self), milliseconds=int(float(self) % 1 * 1000))
+
+    def __str__(self):
+        hours = int(self) // 3600
+        minutes = (int(self) % 3600) // 60
+        seconds = int(self) % 60
+        milliseconds = int(float(self) % 1 * 1000)
+
+        length = f"{minutes:02d}:{seconds:02d}"
+        if hours:
+            length = f"{hours}:{length}"
+        if milliseconds:
+            length += f".{milliseconds:03d}"
+        return length
 
     def __int__(self):
         return int(self.root)
