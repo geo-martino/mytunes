@@ -1,19 +1,23 @@
 from collections.abc import MutableMapping
+from copy import copy
 from typing import Literal, Any, ClassVar
 
 import mutagen.id3
 import mutagen.mp4
 from PIL import Image
-from pydantic import Field, AliasChoices, PositiveFloat, field_validator
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
+from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
 
 from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.local.item.track._base import TagDumpContext
 from musify.model.properties.date import SparseDate
 from musify.model.properties.image import ImageURL, ImageFile
 from musify.model.properties.music import KeySignature
+from musify.model.properties.name import HasName
 from musify.model.properties.order import Position
 
 
@@ -134,3 +138,52 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         if not isinstance(value, tuple | list):
             return value
         return [cls._deserialize_free_form_field(v) for v in value]
+
+    @model_serializer(mode="wrap")
+    def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
+            return data
+
+        for key, val in data.items():
+            if not isinstance(val, (tuple, list)):
+                data[key] = [val]
+            if key.startswith("----:com.apple.iTunes:"):
+                data[key] = [mutagen.mp4.MP4FreeForm(v.encode()) for v in val]
+
+        return data
+
+    @field_serializer(
+        "album", "artists", "key", "released_at",
+        mode="plain"
+    )
+    def _serialize_string(self, value: Any) -> str:
+        if not isinstance(value, tuple | list):
+            value = [value]
+
+        value = self._join_split_tags(value)
+        return value
+
+    @field_serializer("genres", "comments", mode="plain")
+    def _serialize_strings(self, value: Any, info: FieldSerializationInfo) -> list[str]:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
+
+        values = [v.name if isinstance(v, HasName) else v for v in value]
+        context = info.context
+        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+            values.extend(self.uris)
+
+        return list(map(str, values))
+
+    @field_serializer("bpm", mode="plain")
+    def _serialize_bpm(self, value: Position, info: FieldSerializationInfo) -> Any:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
+        return [int(self.bpm)]
+
+    @field_serializer("track", "disc", mode="plain")
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+        if not info.by_alias:  # not serializing to tag IDs
+            return value
+        return [value.numbers]
