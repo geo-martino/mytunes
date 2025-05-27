@@ -2,9 +2,8 @@ from datetime import timedelta
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 
-from musify.model import MusifyRootModel, MusifyModel
+from musify.model import MusifyRootModel
 from musify.model.properties.length import Length
 from tests.model.testers import MusifyModelTester
 
