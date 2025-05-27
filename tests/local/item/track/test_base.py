@@ -22,45 +22,46 @@ from tests.utils import assert_validator_skips
 
 class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
-        return LocalTrack(name=faker.sentence(), uri=uri, path=faker.file_path())
+    def model(self, tags: dict[str, Any], uri: URI, faker: Faker) -> MusifyModel:
+        return LocalTrack(**tags, uri=uri, path=faker.file_path())
 
     @pytest.fixture
-    def file(self, faker: Faker, tmp_path: Path) -> mutagen.FileType:
-        path = tmp_path.joinpath(faker.file_name(category="audio"))
-
-        file = mutagen.FileType()
-        file.filename = str(path)
-        file.tags = {"name": "Track title"}
-
-        return file
-
-    @pytest.fixture
-    def tags(self) -> dict[str, Any]:
+    def tags(self, image_files: list[ImageFile]) -> dict[str, Any]:
+        sep = choice(LocalTrack._tag_sep)
         return {
             "name": ["Sleepwalk My Life Away"],
             "artists": ["Metallica"],
             "album": ["72 Seasons"],
             "album artist": ["Metallica"],
-            "genres": ["Hard Rock", "Metal", "Rock", "Thrash Metal"],
+            "genres": ["Hard Rock", "Metal" + sep + "Rock", "Thrash Metal"],
             "track": ["04"],
-            "disc": ["1"],
+            "disc": ["1/2"],
             "bpm": ["124.931"],
             "key": ["B"],
             "released_at": ["2023-04-14"],
             "comments": ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
             "compilation": ["0"],
+            "images": image_files,
         }
+
+    @pytest.fixture
+    def file(self, tags: dict[str, Any], faker: Faker, tmp_path: Path) -> mutagen.FileType:
+        path = tmp_path.joinpath(faker.file_name(category="audio"))
+
+        file = mutagen.FileType()
+        file.filename = str(path)
+        file.tags = tags
+
+        return file
 
     ###########################################################################
     ## Utility Methods
     ###########################################################################
     async def test_from_path(self, file: mutagen.FileType):
-        with (
-            mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load
-        ):
+        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load:
             model = await LocalTrack.from_path(file.filename)
-            assert model.name == "Track title"
+            mocked_load.assert_called_once_with(file.filename)
+            assert model.name == file["name"][0]
 
     async def test_load_file(self, faker: Faker, tmp_path: Path):
         path = tmp_path.joinpath(faker.file_name(category="audio"))
@@ -82,9 +83,7 @@ class TestLocalTrack(UniqueKeyTester):
     ## Validators/Serializers
     ###########################################################################
     # noinspection PyCallingNonCallable
-    def test_extract_tags_from_mutagen(self, file: mutagen.FileType, faker: Faker):
-        tags = faker.pydict()
-        file.tags = tags
+    def test_extract_tags_from_mutagen(self, file: mutagen.FileType, tags: dict[str, Any]):
         assert file.filename
 
         assert LocalTrack._extract_tags_from_mutagen(tags) is tags
@@ -147,7 +146,6 @@ class TestLocalTrack(UniqueKeyTester):
         tags = faker.words(nb=faker.random_int(10, 20))
         sep = choice(LocalTrack._tag_sep)
         tags_joined = [sep.join(tags[:3]), sep.join(tags[3:7]), sep.join(tags[7:])]
-
         assert LocalTrack._split_joined_tags(tags_joined) == tags
 
     def test_split_joined_tags_skips(self, faker: Faker):
@@ -174,24 +172,7 @@ class TestLocalTrack(UniqueKeyTester):
         results = model._serialize_images(model.images, info=info)
         assert not results
 
-    def test_from_tags(self, image_files: list[ImageFile], image_types: set[str], faker: Faker):
-        sep = choice(LocalTrack._tag_sep)
-        tags = {
-            "title": ["Sleepwalk My Life Away"],
-            "artist": ["Metallica"],
-            "album": ["72 Seasons"],
-            "album artist": ["Metallica"],
-            "genre": ["Hard Rock", "Metal" + sep + "Rock", "Thrash Metal"],
-            "track": ["04"],
-            "disc": ["1/2"],
-            "bpm": ["124.931"],
-            "key": ["B"],
-            "released_at": ["2023-04-14"],
-            "comment": ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
-            "compilation": ["0"],
-            "images": image_files,
-        }
-
+    def test_from_tags(self, image_files: list[ImageFile], tags: dict[str, Any], faker: Faker):
         model = LocalTrack(**tags, path=faker.file_path())
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
@@ -204,7 +185,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert model.bpm == 124.931
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
-        assert model.comments == tags["comment"]
+        assert model.comments == tags["comments"]
 
         # only sets the first image of each image type
         expected = {}
@@ -216,15 +197,8 @@ class TestLocalTrack(UniqueKeyTester):
     ###########################################################################
     ## IO
     ###########################################################################
-    async def test_load(self, model: LocalTrack, file: mutagen.File,faker: Faker):
-        expected = LocalTrack(
-            name=faker.sentence(),
-            artists=faker.pylist(allowed_types=[str]),
-            album=faker.word(),
-            genres=faker.pylist(allowed_types=[str]),
-            path=model.path,
-        )
-        file.update(expected.model_dump(exclude_none=True))
+    async def test_load(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):
+        expected = LocalTrack.model_validate(tags | dict(path=file.filename))
 
         with mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load:
             await model.load()
@@ -241,24 +215,23 @@ class TestLocalTrack(UniqueKeyTester):
             await model.save(file)
             mocked_save.assert_called_once()
 
-    def test_clear_all_tags(self, file: mutagen.File, tags: dict[str, Any], faker: Faker):
-        file.tags = tags.copy()
+    def test_clear_all_tags(self, file: mutagen.File, faker: Faker):
+        expected = set(file.tags.keys())
         result = LocalTrack.clear(file)
-        assert set(result) == set(tags) & LocalTrack.__tag_fields__
+        assert set(result) == expected & LocalTrack.__tag_fields__
 
-    def test_clear_selected_tags(self, file: mutagen.File, tags: dict[str, Any], faker: Faker):
-        file.tags = tags.copy()
-        include = sample(list(set(tags) & LocalTrack.__tag_fields__), k=4)
+    def test_clear_selected_tags(self, file: mutagen.File, faker: Faker):
+        include = sample(list(set(file.tags) & LocalTrack.__tag_fields__), k=4)
         result = LocalTrack.clear(file, include=include)
         assert set(result) == set(include)
 
-        file.tags = tags.copy()
-        exclude = sample(list(set(tags) & LocalTrack.__tag_fields__), k=4)
+    def test_clear_selected_tags_with_exclude(self, file: mutagen.File, faker: Faker):
+        include = sample(list(set(file.tags) & LocalTrack.__tag_fields__), k=4)
+        exclude = sample(list(set(file.tags) & LocalTrack.__tag_fields__), k=4)
         result = LocalTrack.clear(file, include=include, exclude=exclude)
         assert set(result) == set(t for t in include if t not in exclude)
 
     def test_clear_tag(self, file: mutagen.File, tags: dict[str, Any]):
-        file.tags = tags
         tag_id = choice(list(tags))
         assert LocalTrack._clear_tag(file, tag_id=tag_id) == {tag_id}
         assert tag_id not in file.tags
@@ -270,11 +243,6 @@ class TestLocalTrack(UniqueKeyTester):
 
     # noinspection PyTestUnpassedFixture
     def test_to_selected_tags(self, model: LocalTrack):
-        model.name = "Sleepwalk My Life Away"
-        model.artist = "Metallica"
-        model.album = "72 Seasons"
-        model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
-
         tags = model.to_tags(include={"name", "artists", "album", "does not exist"}, exclude={"name"})
         assert "title" not in tags
         assert "artists" in tags
@@ -303,7 +271,6 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in HasLength.model_fields)
 
     def test_update_and_replace(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):
-        model = model.model_validate(tags | dict(path=file.filename))
         include = sample(list(set(tags) & LocalTrack.__tag_fields__), k=4)
         exclude = sample(list(set(tags) & LocalTrack.__tag_fields__), k=4)
         context = TagDumpContext()
