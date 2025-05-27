@@ -116,6 +116,9 @@ def random_genres(size: int | None = None) -> list[str]:
     return sample(GENRES, min(size, len(GENRES)) if size else randrange(0, len(GENRES)))
 
 
+
+
+#### NEW
 def split_list[T](lst: Collection[T], n: int, overlap: int = 0) -> Iterator[list[T]]:
     """
     Split a list into n sub-lists of approximately equal size.

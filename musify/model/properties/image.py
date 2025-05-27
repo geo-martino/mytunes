@@ -10,7 +10,7 @@ from typing import Any, Self, ClassVar
 import aiofiles
 import aiohttp
 import mutagen.id3
-from PIL import Image
+from PIL import Image, ImageFile as PILImageFile
 from pydantic import InstanceOf, Field, PositiveInt, field_validator, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 from yarl import URL
@@ -59,8 +59,8 @@ class ImageBase(MusifyModel):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
-    def _from_image_data(cls, data: Image.Image, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(data, Image.Image):
+    def _from_image_data(cls, data: PILImageFile.ImageFile, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, PILImageFile.ImageFile):
             return handler(data)
 
         try:
@@ -107,7 +107,7 @@ class ImageBase(MusifyModel):
             raise MusifyValueError(f"Invalid ID3-tag type: {value}. Valid values are: {', '.join(cls.__type_map)}")
         return value
 
-    def update_attributes(self, image: Image.Image) -> None:
+    def update_attributes(self, image: PILImageFile.ImageFile) -> None:
         """Update the image attributes based on the loaded image."""
         self.mime = Image.MIME[image.format]
         self.height = image.height
@@ -128,7 +128,7 @@ class ImageBase(MusifyModel):
 
 class ImageSource(ImageBase, metaclass=ABCMeta):
     @abstractmethod
-    async def load(self, **kwargs) -> Image.Image:
+    async def load(self, **kwargs) -> PILImageFile.ImageFile:
         """Load the image."""
         raise NotImplementedError
 
@@ -149,7 +149,7 @@ class ImageFile(ImageSource):
             return super().__eq__(other)
         return self.path == other.path and self.type == other.type
 
-    async def load(self) -> Image.Image:
+    async def load(self) -> PILImageFile.ImageFile:
         async with aiofiles.open(self.path, mode='rb') as f:
             img = Image.open(BytesIO(await f.read()))
         return img
@@ -194,7 +194,7 @@ class ImageURL(ImageSource):
             return super().__eq__(other)
         return self.url == other.url and self.type == other.type
 
-    async def load(self, session: aiohttp.ClientSession = None, **__) -> Image.Image:
+    async def load(self, session: aiohttp.ClientSession = None, **__) -> PILImageFile.ImageFile:
         """Load the image from the URL."""
         close_session = False
         if session is None:
@@ -217,9 +217,9 @@ class HasImages(_AttributeModel):
         default_factory=dict,
     )
 
-    async def load_images(self, update_attributes: bool = True, **kwargs) -> dict[str, Image.Image]:
+    async def load_images(self, update_attributes: bool = True, **kwargs) -> dict[str, PILImageFile.ImageFile]:
         """Return the stored images, loading any images from the URLs if available."""
-        images: dict[str, Image.Image] = {}
+        images: dict[str, PILImageFile.ImageFile] = {}
         for kind, image in self.images.items():
             img = await image.load(**kwargs)
             images[kind] = img

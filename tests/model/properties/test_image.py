@@ -1,12 +1,11 @@
 from contextlib import ExitStack
-from io import BytesIO
 from pathlib import Path
 from random import choice
 from unittest import mock
 
 import mutagen.id3
 import pytest
-from PIL import Image
+from PIL.ImageFile import ImageFile as PILImageFile
 from aioresponses import aioresponses, CallbackResult
 from faker import Faker
 
@@ -59,28 +58,25 @@ class TestImageBase(MusifyModelTester):
         with pytest.raises(MusifyValueError):
             ImageSource._validate_id3_type("This will fail")
 
-    def test_update_attributes(self, model: ImageBase, images: list[bytes]) -> None:
-        img_bytes = choice(images)
-        img = Image.open(BytesIO(img_bytes))
-
+    def test_update_attributes(self, model: ImageBase, image_objects: list[PILImageFile]) -> None:
+        img = choice(image_objects)
         model.update_attributes(img)
         assert model.mime == img.get_format_mimetype()
         assert model.height == img.height
         assert model.width == img.width
 
-    def test_from_image(self, images: list[bytes]) -> None:
-        img_bytes = choice(images)
-        img = Image.open(BytesIO(img_bytes))
+    def test_from_image(self, image_bytes: list[bytes], image_objects: list[PILImageFile]) -> None:
+        img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
 
         result = ImageBase.model_validate(img_bytes)
-        assert result.mime == img.get_format_mimetype()
-        assert result.height == img.height
-        assert result.width == img.width
+        assert result.mime == img_obj.get_format_mimetype()
+        assert result.height == img_obj.height
+        assert result.width == img_obj.width
 
-        result = ImageBase.model_validate(img)
-        assert result.mime == img.get_format_mimetype()
-        assert result.height == img.height
-        assert result.width == img.width
+        result = ImageBase.model_validate(img_obj)
+        assert result.mime == img_obj.get_format_mimetype()
+        assert result.height == img_obj.height
+        assert result.width == img_obj.width
 
 
 class TestImageFile(MusifyModelTester):
@@ -115,16 +111,14 @@ class TestImageFile(MusifyModelTester):
             width=faker.random_int()
         )
 
-    async def test_load(self, model: ImageFile, faker: Faker, tmp_path: Path) -> None:
+    async def test_load(self, model: ImageFile, image_bytes: list[bytes], image_objects: list[PILImageFile], tmp_path: Path) -> None:
         assert model.path.is_relative_to(tmp_path)
-
-        size = (faker.random_int(100, 300), faker.random_int(100, 300))
-        image_bytes = faker.image(size=size, image_format=choice(["jpeg", "png"]))
+        img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
 
         model.path.parent.mkdir(parents=True, exist_ok=True)
-        model.path.write_bytes(image_bytes)
+        model.path.write_bytes(img_bytes)
 
-        assert await model.load() == Image.open(BytesIO(image_bytes))
+        assert await model.load() == img_obj
 
 
 class TestImageURL(MusifyModelTester):
@@ -158,14 +152,14 @@ class TestImageURL(MusifyModelTester):
             width=faker.random_int()
         )
 
-    async def test_load(self, model: ImageURL, faker: Faker, mock_response: aioresponses) -> None:
-        img = faker.image()
+    async def test_load(self, model: ImageURL, image_bytes: list[bytes], image_objects: list[PILImageFile], mock_response: aioresponses) -> None:
+        img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
         mock_response.get(
             model.url,
-            callback=lambda *_, **__: CallbackResult(method="GET", body=img),
+            callback=lambda *_, **__: CallbackResult(method="GET", body=img_bytes),
         )
 
-        assert await model.load() == Image.open(BytesIO(img))
+        assert await model.load() == img_obj
 
 
 class TestHasImages(MusifyModelTester):
@@ -173,10 +167,10 @@ class TestHasImages(MusifyModelTester):
     def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> MusifyModel:
         return HasImages(images={img.type: img for img in image_files + image_urls})
 
-    async def test_load_images(self, model: HasImages, images: list[bytes], faker: Faker) -> None:
+    async def test_load_images(self, model: HasImages, image_objects: list[PILImageFile], faker: Faker) -> None:
         update_attributes = choice([True, False])
         kwargs = faker.pydict()
-        img = Image.open(BytesIO(images[0]))
+        img = choice(image_objects)
 
         classes = {m.__class__ for m in model.images.values()}
         mocked_load = (

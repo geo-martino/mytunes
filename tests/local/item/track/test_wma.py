@@ -10,12 +10,13 @@ from unittest import mock
 import mutagen.id3
 import pytest
 from PIL import Image
+from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 # noinspection PyProtectedMember
 from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track import TagDumpContext
 from musify.local.item.track.wma import WMA
 from musify.model import MusifyModel
 from musify.model.properties.order import Position
@@ -25,16 +26,15 @@ from tests.utils import assert_validator_skips
 
 
 @pytest.fixture
-def pictures(images: list[bytes], image_types: set[str]) -> dict[str, ASFByteArrayAttribute]:
+def pictures(image_bytes: list[bytes], image_objects: list[PILImageFile], image_types: set[str]) -> dict[str, ASFByteArrayAttribute]:
     pictures = {}
-    for img in images:
-        fmt = Image.open(BytesIO(img)).format
+    for img_bytes, img_obj in zip(image_bytes, image_objects):
         kind = image_types.pop()
 
-        header = struct.pack("<bi", int(getattr(mutagen.id3.PictureType, kind)), len(img))
-        mime = Image.MIME[fmt].encode("utf-16")
+        header = struct.pack("<bi", int(getattr(mutagen.id3.PictureType, kind)), len(img_bytes))
+        mime = Image.MIME[img_obj.format].encode("utf-16")
         description = "".encode("utf-16")
-        data = b"\x00\x00".join((header + mime, description, img))
+        data = b"\x00\x00".join((header + mime, description, img_bytes))
 
         pictures[kind] = ASFByteArrayAttribute(data)
 
@@ -43,8 +43,8 @@ def pictures(images: list[bytes], image_types: set[str]) -> dict[str, ASFByteArr
 
 class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
-        img = Image.open(BytesIO(choice(images)))
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = choice(image_objects)
         return WMA.EmbeddedImage(
             path=faker.file_path(category="image"),
             type=choice(list(image_types)),
@@ -153,7 +153,7 @@ class TestWMA(LocalTrackTester):
         # noinspection PyTypeChecker
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
-    def test_from_tags(self, model: WMA, images: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker):
+    def test_from_tags(self, model: WMA, image_bytes: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker):
         sep = choice(WMA._tag_sep)
         tags = {
             "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],

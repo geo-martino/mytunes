@@ -55,6 +55,18 @@ class TestPosition(MusifyModelTester):
         with pytest.raises(ValueError):
             Position(number=5, total=4)
 
+    def test_numbers_property(self, model: Position) -> None:
+        model.number = 10
+        model.total = 20
+        assert model.numbers == (10, 20)
+
+        model.total = None
+        assert model.numbers == (10,)
+
+        model.number = None
+        model.total = 20
+        assert model.numbers == ()
+
     def test_str(self, model: Position) -> None:
         model.number = 10
         model.zero_fill = 2

@@ -7,11 +7,12 @@ from unittest import mock
 
 import mutagen
 import pytest
-from PIL import Image, ImageFile
+from PIL import Image
+from PIL.ImageFile import ImageFile as PILImageFile
 
 from musify.local.exception import FileError
-from musify.local.item.track import LocalTrack
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track import LocalTrack, TagDumpContext
+from musify.model.properties.image import ImageFile
 from tests.model.testers import MusifyModelTester, UniqueKeyTester
 
 
@@ -62,11 +63,11 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
             await model._get_file()
 
     @staticmethod
-    def test_get_image_bytes(model: LocalTrack.EmbeddedImage, images: list[bytes]):
-        image = choice(images)
-        assert model._get_image_data(image) == (Image.open(BytesIO(image)), image)
+    def test_get_image_bytes(model: LocalTrack.EmbeddedImage, image_bytes: list[bytes], image_objects: list[PILImageFile]):
+        img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
+        assert model._get_image_data(img_bytes) == (img_obj, img_bytes)
         # PIL appears to modify the image bytes so we can only check the first part
-        assert model._get_image_data(Image.open(BytesIO(image)))[0] == Image.open(BytesIO(image))
+        assert model._get_image_data(img_obj)[0] == img_obj
 
     @staticmethod
     def test_get_id3_type_from_tag(model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
@@ -108,11 +109,11 @@ class LocalTrackTester(UniqueKeyTester):
         assert model._map_images(list(pictures.values())) == pictures
 
     @staticmethod
-    def test_serialize_images(model: LocalTrack, images: list[bytes], pictures: dict[str, Any]):
+    def test_serialize_images(model: LocalTrack, image_bytes: list[bytes], image_objects: list[PILImageFile], pictures: dict[str, Any]):
         model.images = pictures
 
         image_model = model.EmbeddedImage(mime="image/png", height=100, width=100)
-        loaded_images = {kind: Image.open(BytesIO(choice(images))) for kind in model.images}
+        loaded_images = {kind: choice(image_objects) for kind in model.images}
         context = Namespace(by_alias=True, context=TagDumpContext(loaded_images=loaded_images))
         assert loaded_images
 
@@ -123,7 +124,7 @@ class LocalTrackTester(UniqueKeyTester):
             mock.patch.object(model.EmbeddedImage, "build") as mocked_build,
         ):
             # noinspection PyTypeChecker
-            result = model._serialize_images(images, info=context)
+            result = model._serialize_images(image_bytes, info=context)
             assert len(result) == len(loaded_images)
 
             for kind, image in loaded_images.items():

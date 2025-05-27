@@ -1,4 +1,4 @@
-from random import sample
+from random import sample, choice
 
 import pytest
 from faker import Faker
@@ -9,7 +9,7 @@ from musify.model.item.album import Album
 from musify.model.item.artist import Artist
 from musify.model.item.genre import Genre
 from musify.model.item.track import Track
-from tests.utils import GENRES
+from tests.utils import GENRES, SimpleURI
 
 
 @pytest.fixture
@@ -54,3 +54,26 @@ def genres(faker: Faker) -> list[Genre]:
 @pytest.fixture
 def playlists(faker: Faker) -> list[Playlist]:
     return [MutablePlaylist(name=faker.sentence()) for _ in range(faker.random_int(10, 30))]
+
+
+@pytest.fixture
+def uri(models: list[MusifyResource], faker: Faker) -> SimpleURI:
+    return SimpleURI.from_id(
+        faker.random_int(int(10e9), int(10e10)), kind=choice(models).type, source=faker.word()
+    )
+
+
+@pytest.fixture
+def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
+    seen = set()
+    uris = []
+
+    for model in models:
+        source = None
+        while source is None or source in seen:
+            source = faker.word()
+
+        uris.append(SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=model.type, source=source))
+        seen.add(source)
+
+    return uris

@@ -3,7 +3,7 @@ from typing import Literal, Any, ClassVar
 
 import mutagen.id3
 import mutagen.mp4
-from PIL import Image
+from PIL import ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
 from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
 
@@ -35,7 +35,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
             # Just return the value for COVER_FRONT type
             return cls._get_type_from_number(mutagen.id3.PictureType.COVER_FRONT)
 
-        def build(self, image: bytes | Image.Image | None) -> mutagen.mp4.MP4Cover | None:
+        def build(self, image: bytes | PILImageFile.ImageFile | None) -> mutagen.mp4.MP4Cover | None:
             if image is None:
                 return
 

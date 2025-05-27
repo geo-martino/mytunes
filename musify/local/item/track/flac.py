@@ -4,7 +4,7 @@ from typing import Any, Literal, get_args
 
 import mutagen.flac
 import mutagen.id3
-from PIL import Image
+from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
@@ -34,7 +34,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             file = await self._get_file(file)
             return next((pic for pic in file.pictures if pic.type == self.id3_type), None)
 
-        def build(self, image: bytes | Image.Image | None) -> mutagen.flac.Picture | None:
+        def build(self, image: bytes | PILImageFile.ImageFile | None) -> mutagen.flac.Picture | None:
             if image is None:
                 return
 

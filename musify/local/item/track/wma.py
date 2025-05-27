@@ -4,7 +4,7 @@ from typing import Literal, ClassVar, Any
 
 import mutagen.asf
 import mutagen.id3
-from PIL import Image
+from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
@@ -71,7 +71,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
             id3_type, _ = cls._unpack_bytes(attribute)
             return id3_type
 
-        def build(self, image: bytes | Image.Image | None) -> mutagen.asf.ASFByteArrayAttribute | None:
+        def build(self, image: bytes | PILImageFile.ImageFile | None) -> mutagen.asf.ASFByteArrayAttribute | None:
             if image is None:
                 return
 

@@ -9,10 +9,11 @@ from typing import get_args
 import mutagen.id3
 import pytest
 from PIL import Image
+from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
 from musify.local.item.artist import LocalArtist
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track import TagDumpContext
 from musify.local.item.track.mp3 import MP3
 from musify.model import MusifyModel
 from musify.model.properties.uri import URI
@@ -20,16 +21,16 @@ from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalT
 
 
 @pytest.fixture
-def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.id3.APIC]:
+def pictures(image_bytes: list[bytes], image_types: set[str], image_objects: list[PILImageFile]) -> dict[str, mutagen.id3.APIC]:
     pictures = {}
 
-    for img in images:
+    for img_bytes, img_obj in zip(image_bytes, image_objects):
         picture_type = image_types.pop()
         pictures[picture_type] = mutagen.id3.APIC(
             encoding=mutagen.id3.Encoding.UTF8,
-            mime=Image.MIME[Image.open(BytesIO(img)).format],
+            mime=Image.MIME[img_obj.format],
             type=getattr(mutagen.id3.PictureType, picture_type),
-            data=img
+            data=img_bytes
         )
 
     return pictures
@@ -37,8 +38,8 @@ def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.id
 
 class TestMP3EmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
-        img = Image.open(BytesIO(choice(images)))
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = choice(image_objects)
         return MP3.EmbeddedImage(
             path=faker.file_path(category="image"),
             type=choice(list(image_types)),
@@ -160,7 +161,7 @@ class TestMP3(LocalTrackTester):
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
-    def test_from_tags(self, model: MP3, images: list[bytes], pictures: dict[str, mutagen.id3.APIC], faker: Faker):
+    def test_from_tags(self, model: MP3, image_bytes: list[bytes], pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         sep = choice(MP3._tag_sep)
         tags = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),

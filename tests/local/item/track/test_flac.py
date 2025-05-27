@@ -9,10 +9,11 @@ import mutagen.flac
 import mutagen.id3
 import pytest
 from PIL import Image
+from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track import TagDumpContext
 from musify.local.item.track.flac import FLAC
 from musify.model import MusifyModel
 from musify.model.properties.order import Position
@@ -21,16 +22,16 @@ from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedI
 
 
 @pytest.fixture
-def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.flac.Picture]:
+def pictures(image_bytes: list[bytes], image_objects: list[PILImageFile], image_types: set[str]) -> dict[str, mutagen.flac.Picture]:
     pictures = {}
 
-    for img in images:
+    for img_bytes, img_obj in zip(image_bytes, image_objects):
         image_type = image_types.pop()
 
         picture = mutagen.flac.Picture()
         picture.type = getattr(mutagen.id3.PictureType, image_type)
-        picture.mime = Image.MIME[Image.open(BytesIO(img)).format]
-        picture.data = img
+        picture.mime = Image.MIME[img_obj.format]
+        picture.data = img_bytes
         pictures[image_type] = picture
 
     return pictures
@@ -50,8 +51,8 @@ def file(pictures: dict[str, mutagen.flac.Picture], faker: Faker, tmp_path: Path
 
 class TestFLACEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
-        img = Image.open(BytesIO(choice(images)))
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = choice(image_objects)
         return FLAC.EmbeddedImage(
             path=faker.file_path(category="image"),
             type=choice(list(image_types)),
@@ -178,7 +179,7 @@ class TestFLAC(LocalTrackTester):
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, info=info) == expected
 
-    def test_from_tags(self, model: FLAC, images: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker):
+    def test_from_tags(self, model: FLAC, image_bytes: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker):
         sep = choice(FLAC._tag_sep)
         tags = {
             "title": ["Sleepwalk My Life Away"],

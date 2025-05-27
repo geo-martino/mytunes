@@ -44,7 +44,6 @@ class _Album[RT: Artist, GT: Genre](
 
 
 class Album[RT: Artist, GT: Genre](_Album[RT, GT]):
-
     track_total = writeable_computed_field("track_total")
     disc_total = writeable_computed_field("disc_total")
 

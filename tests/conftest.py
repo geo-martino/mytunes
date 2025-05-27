@@ -4,13 +4,11 @@ from random import choice, sample
 
 import mutagen.id3
 import pytest
-from PIL import Image
+from PIL import Image, ImageFile as PILImageFile
 from aioresponses import aioresponses, CallbackResult
 from faker import Faker
 
-from musify.model import MusifyResource
 from musify.model.properties.image import ImageURL, ImageFile
-from tests.utils import SimpleURI
 
 
 @pytest.fixture(scope="session")
@@ -25,33 +23,8 @@ def mock_response():
         yield m
 
 
-# TODO: this needs to be moved somewhere else, the models fixture is not available at this level
-# add layer to the testers hierarchy to allow this fixture to be used in the model tests
 @pytest.fixture
-def uri(models: list[MusifyResource], faker: Faker) -> SimpleURI:
-    return SimpleURI.from_id(
-        faker.random_int(int(10e9), int(10e10)), kind=choice(models).type, source=faker.word()
-    )
-
-
-@pytest.fixture
-def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
-    seen = set()
-    uris = []
-
-    for model in models:
-        source = None
-        while source is None or source in seen:
-            source = faker.word()
-
-        uris.append(SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=model.type, source=source))
-        seen.add(source)
-
-    return uris
-
-
-@pytest.fixture
-def images(faker: Faker) -> list[bytes]:
+def image_bytes(faker: Faker) -> list[bytes]:
     return [
         faker.image(
             size=(faker.random_int(100, 300), faker.random_int(100, 300)),
@@ -62,13 +35,18 @@ def images(faker: Faker) -> list[bytes]:
 
 
 @pytest.fixture
-def image_types(images: list[bytes]) -> set[str]:
+def image_objects(image_bytes: list[bytes]) -> list[PILImageFile.ImageFile]:
+    return list(map(Image.open, map(BytesIO, image_bytes)))
+
+
+@pytest.fixture
+def image_types(image_bytes: list[bytes]) -> set[str]:
     """Fixture to provide a valid image type."""
     types = {
         name for name, enum in vars(mutagen.id3.PictureType).items()
         if isinstance(enum, mutagen.id3.PictureType)
     }
-    return set(sample(list(types), len(images)))
+    return set(sample(list(types), len(image_bytes)))
 
 
 @pytest.fixture

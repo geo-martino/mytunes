@@ -8,11 +8,12 @@ from typing import get_args
 import mutagen.id3
 import pytest
 from PIL import Image
+from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 from mutagen.mp4 import MP4FreeForm, MP4Cover
 
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track import TagDumpContext
 from musify.local.item.track.m4a import M4A
 from musify.model import MusifyModel
 from musify.model.properties.order import Position
@@ -21,15 +22,15 @@ from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedI
 
 
 @pytest.fixture
-def pictures(images: list[bytes], image_types: set[str]) -> dict[str, mutagen.mp4.MP4Cover]:
+def pictures(image_bytes: list[bytes], image_types: set[str]) -> dict[str, mutagen.mp4.MP4Cover]:
     # AFAIK, MP4 only supports a single image per track so we just check for a single image type
-    return {"COVER_FRONT": mutagen.mp4.MP4Cover(choice(images))}
+    return {"COVER_FRONT": mutagen.mp4.MP4Cover(choice(image_bytes))}
 
 
 class TestM4AEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, images: list[bytes], image_types: set[str], faker: Faker) -> MusifyModel:
-        img = Image.open(BytesIO(choice(images)))
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+        img = choice(image_objects)
         return M4A.EmbeddedImage(
             path=faker.file_path(category="image"),
             type=choice(list(image_types)),
@@ -124,7 +125,7 @@ class TestM4A(LocalTrackTester):
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, info) == [position.numbers]
 
-    def test_from_tags(self, model: M4A, images: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
+    def test_from_tags(self, model: M4A, image_bytes: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
         sep = choice(M4A._tag_sep)
         tags = {
             "©nam": ["Sleepwalk My Life Away"],
@@ -142,7 +143,7 @@ class TestM4A(LocalTrackTester):
             "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
             "©day": ["2023-04-14"],
             "©cmt": ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
-            "covr": list(map(MP4Cover, images)),
+            "covr": list(map(MP4Cover, image_bytes)),
             "cpil": True,
         }
 

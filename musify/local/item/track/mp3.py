@@ -4,7 +4,7 @@ from typing import Any, Literal, ClassVar
 
 import mutagen.id3
 import mutagen.mp3
-from PIL import Image
+from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
     field_validator, field_serializer
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
@@ -36,7 +36,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
                 return
             return cls._get_type_from_number(int(value.type))
 
-        def build(self, image: bytes | Image.Image | None) -> mutagen.id3.APIC | None:
+        def build(self, image: bytes | PILImageFile.ImageFile | None) -> mutagen.id3.APIC | None:
             if image is None:
                 return
 

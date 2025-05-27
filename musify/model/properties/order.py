@@ -26,15 +26,6 @@ class Position(MusifyModel):
         default=0,
     )
 
-    @property
-    def numbers(self) -> tuple[()] | tuple[int] | tuple[int, int]:
-        """Get the numbers in the position as a tuple."""
-        if self.number is None:
-            return ()
-        elif self.total is None:
-            return (self.number,)
-        return (self.number, self.total)
-
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @staticmethod
@@ -70,6 +61,15 @@ class Position(MusifyModel):
         if self.number > self.total:
             raise MusifyValueError("Start position cannot be greater than end position.")
         return self
+
+    @property
+    def numbers(self) -> tuple[()] | tuple[int] | tuple[int, int]:
+        """Get the numbers in the position as a tuple."""
+        if self.number is None:
+            return ()
+        elif self.total is None:
+            return (self.number,)
+        return self.number, self.total
 
     def __str__(self) -> str:
         return self.sep.join(str(val).zfill(self.zero_fill) for val in self.numbers)

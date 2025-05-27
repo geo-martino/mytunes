@@ -1,4 +1,4 @@
-from random import sample
+from random import sample, choice
 
 import pytest
 from faker import Faker
@@ -8,7 +8,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.model import MusifyResource
-from tests.utils import GENRES
+from tests.utils import GENRES, SimpleURI
 
 
 @pytest.fixture
@@ -47,3 +47,26 @@ def albums(faker: Faker) -> list[LocalAlbum]:
 @pytest.fixture
 def genres(faker: Faker) -> list[LocalGenre]:
     return [LocalGenre(name=genre) for genre in sample(GENRES, k=faker.random_int(3, 6))]
+
+
+@pytest.fixture
+def uri(models: list[MusifyResource], faker: Faker) -> SimpleURI:
+    return SimpleURI.from_id(
+        faker.random_int(int(10e9), int(10e10)), kind=choice(models).type, source=faker.word()
+    )
+
+
+@pytest.fixture
+def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
+    seen = set()
+    uris = []
+
+    for model in models:
+        source = None
+        while source is None or source in seen:
+            source = faker.word()
+
+        uris.append(SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=model.type, source=source))
+        seen.add(source)
+
+    return uris

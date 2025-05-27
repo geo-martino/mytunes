@@ -7,7 +7,7 @@ from typing import Self, Any, Literal, ClassVar
 
 import mutagen
 import mutagen.id3
-from PIL import Image
+from PIL import Image, ImageFile as PILImageFile
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
     InstanceOf, field_serializer
 # noinspection PyProtectedMember
@@ -36,7 +36,7 @@ class TagDumpContext[T](MusifyModel):
         ),
         default="comments"
     )
-    loaded_images: Mapping[str, InstanceOf[Image.Image]] = Field(
+    loaded_images: Mapping[str, InstanceOf[PILImageFile.ImageFile]] = Field(
         description="The image properties and their loaded images.",
         default_factory=dict
     )
@@ -98,7 +98,7 @@ class LocalTrack[T: mutagen.FileType](
             return file.tags.get(self.alias)
 
         @staticmethod
-        def _get_image_data(image: bytes | Image.Image) -> tuple[Image.Image, bytes]:
+        def _get_image_data(image: bytes | PILImageFile.ImageFile) -> tuple[PILImageFile.ImageFile, bytes]:
             if isinstance(image, bytes):
                 data = image
                 image = Image.open(BytesIO(data))
@@ -120,7 +120,7 @@ class LocalTrack[T: mutagen.FileType](
             """Get the ID3 type from the given attribute."""
             raise NotImplementedError
 
-        async def load(self, file: FT = None) -> Image.Image | None:
+        async def load(self, file: FT = None) -> PILImageFile.ImageFile | None:
             for attr in await self._get_tag_value(file):
                 id3_type = self.get_id3_type_from_tag(attr)
                 if id3_type == self.type:
@@ -128,7 +128,7 @@ class LocalTrack[T: mutagen.FileType](
                     return Image.open(BytesIO(img_bytes))
 
         @abstractmethod
-        def build(self, image: bytes | Image.Image | None) -> TT:
+        def build(self, image: bytes | PILImageFile.ImageFile | None) -> TT:
             """Builds the image tag object for serialization."""
             raise NotImplementedError
 

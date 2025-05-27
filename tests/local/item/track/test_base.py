@@ -10,8 +10,7 @@ import pytest
 from faker import Faker
 
 from musify.local.item.artist import LocalArtist
-from musify.local.item.track import LocalTrack
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track import LocalTrack, TagDumpContext
 from musify.model import MusifyModel
 from musify.model.properties.file import IsFile
 from musify.model.properties.image import ImageFile
@@ -164,7 +163,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert_validator_skips(LocalTrack._map_images, faker.pystr())
         assert_validator_skips(LocalTrack._map_images, faker.pyint())
 
-    def test_serialize_images_skips(self, model: LocalTrack, images: list[bytes]):
+    def test_serialize_images_skips(self, model: LocalTrack, image_bytes: list[bytes]):
         info = Namespace(by_alias=False, context=None)  # skips when not serializing by alias
         # noinspection PyTypeChecker
         results = model._serialize_images(model.images, info=info)
