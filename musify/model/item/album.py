@@ -58,7 +58,7 @@ class HasAlbum[T: Album](_AttributeModel):
 class HasAlbums[T: Album](HasSeparableTags):
     albums: list[T] = Field(
         description="The albums associated with this resource.",
-        default=None,
+        default_factory=list,
     )
 
     # noinspection PyNestedDecorators

@@ -47,14 +47,14 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
             return picture
 
-    artists: list[LocalArtist] | None = Field(
+    artists: list[LocalArtist] = Field(
         description="The artists featured on this track.",
-        default=None,
+        default_factory=list,
         alias="artist",
     )
-    genres: list[LocalGenre] | None = Field(
+    genres: list[LocalGenre] = Field(
         description="The genres associated with this track.",
-        default=None,
+        default_factory=list,
         alias="genre",
     )
     track: Position | None = Field(

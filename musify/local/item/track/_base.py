@@ -204,7 +204,7 @@ class LocalTrack[T: mutagen.FileType](
 
     # noinspection PyNestedDecorators
     @field_validator(
-        "name", "artists", "album", "genres", "track", "disc", "bpm", "key", "released_at", "uri",
+        "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
         mode="before", check_fields=False
     )
     @staticmethod

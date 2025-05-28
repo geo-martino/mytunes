@@ -57,9 +57,9 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias="©nam"
     )
-    artists: list[LocalArtist] | None = Field(
+    artists: list[LocalArtist] = Field(
         description="The artists featured on this track.",
-        default=None,
+        default_factory=list,
         alias="©ART"
     )
     album: LocalAlbum | None = Field(
@@ -71,9 +71,9 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     #     default=None,
     #     alias="aART"
     # )
-    genres: list[LocalGenre] | None = Field(
+    genres: list[LocalGenre] = Field(
         description="The genres associated with this track.",
-        default=None,
+        default_factory=list,
         validation_alias=AliasChoices("©gen", "gnre", "----:com.apple.iTunes:GENRE"),
         serialization_alias="©gen",
     )

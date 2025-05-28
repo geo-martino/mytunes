@@ -25,9 +25,9 @@ class Artist[GT: Genre](_Artist[GT]):
 
 
 class HasArtists[T: Artist](HasSeparableTags):
-    artists: list[T] | None = Field(
+    artists: list[T] = Field(
         description="The artists associated with this resource.",
-        default_factory=list[T],
+        default_factory=list,
     )
 
     # noinspection PyNestedDecorators
@@ -46,7 +46,7 @@ class HasArtists[T: Artist](HasSeparableTags):
     @artist.setter
     def artist(self, value: str | list[str]) -> None:
         if not value:
-            self.artists = None
+            self.artists = []
             return
 
         if isinstance(value, str):

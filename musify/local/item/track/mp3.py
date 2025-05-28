@@ -53,9 +53,9 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         default=None,
         alias="TIT2",
     )
-    artists: list[LocalArtist] | None = Field(
+    artists: list[LocalArtist] = Field(
         description="The artists featured on this track.",
-        default=None,
+        default_factory=list,
         alias="TPE1",
     )
     album: LocalAlbum | None = Field(
@@ -67,9 +67,9 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     #     default=None,
     #     alias="TPE2",
     # )
-    genres: list[LocalGenre] | None = Field(
+    genres: list[LocalGenre] = Field(
         description="The genres associated with this track.",
-        default=None,
+        default_factory=list,
         alias="TCON",
     )
     track: Position | None = Field(

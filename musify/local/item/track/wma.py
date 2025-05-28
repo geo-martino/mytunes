@@ -90,9 +90,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default=None,
         alias="Title"
     )
-    artists: list[LocalArtist] | None = Field(
+    artists: list[LocalArtist] = Field(
         description="The artists featured on this track.",
-        default=None,
+        default_factory=list,
         alias="Author"
     )
     album: LocalAlbum | None = Field(
@@ -104,9 +104,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     #     default=None,
     #     alias="WM/AlbumArtist"
     # )
-    genres: list[LocalGenre] | None = Field(
+    genres: list[LocalGenre] = Field(
         description="The genres associated with this track.",
-        default=None,
+        default_factory=list,
         alias="WM/Genre"
     )
     track: Position | None = Field(

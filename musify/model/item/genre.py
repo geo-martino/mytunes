@@ -20,9 +20,9 @@ class Genre(HasName):
 
 
 class HasGenres[T: Genre](HasSeparableTags):
-    genres: list[T] | None = Field(
+    genres: list[T] = Field(
         description="The genres associated with this resource.",
-        default_factory=list[T],
+        default_factory=list,
     )
 
     # noinspection PyNestedDecorators
@@ -41,7 +41,7 @@ class HasGenres[T: Genre](HasSeparableTags):
     @genre.setter
     def genre(self, value: str | list[str]) -> None:
         if not value:
-            self.genres = None
+            self.genres = []
             return
 
         if isinstance(value, str):

@@ -54,10 +54,10 @@ class TestTrack(UniqueKeyTester):
         track_different_name = Track(name=faker.sentence(), artist=track.artist, album=track.album)
         assert track != track_different_name, "Tracks with different names should not be equal"
 
-        track_different_artist = Track(name=track.name, artist=choice([None, faker.word()]), album=track.album)
+        track_different_artist = Track(name=track.name, artist=faker.word(), album=track.album)
         assert track != track_different_artist, "Tracks with different artists should not be equal"
 
-        track_different_album = Track(name=track.name, artist=track.artist, album=choice([None, faker.word()]))
+        track_different_album = Track(name=track.name, artist=track.artist, album=faker.word())
         assert track != track_different_album, "Tracks with different albums should not be equal"
 
 

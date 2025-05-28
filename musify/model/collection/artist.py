@@ -48,7 +48,7 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTrack
         if not isinstance(name := data.get("name"), str) or not name.strip():
             return data
 
-        data[key] = [album for album in albums if any(artist.name == name for artist in album.artists or [])]
+        data[key] = [album for album in albums if any(artist.name == name for artist in album.artists)]
         return data
 
     # noinspection PyNestedDecorators

@@ -27,7 +27,7 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
         if not all(isinstance(track, Track) for track in tracks):
             return data
 
-        names = {genre.name for track in tracks for genre in track.genres or []}
+        names = {genre.name for track in tracks for genre in track.genres}
         if len(names) == 0:
             raise MusifyValueError("No genre given and no genres found in tracks")
         if len(names) > 1:
@@ -49,7 +49,7 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
         if not isinstance(name := data.get("name"), str) or not name.strip():
             return data
 
-        data[key] = [track for track in tracks if any(genre.name == name for genre in track.genres or [])]
+        data[key] = [track for track in tracks if any(genre.name == name for genre in track.genres)]
         return data
 
     # noinspection PyNestedDecorators
@@ -58,7 +58,7 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
         if not self.tracks:
             return self
 
-        names = {genre.name for track in self.tracks for genre in track.genres or []}
+        names = {genre.name for track in self.tracks for genre in track.genres}
         if len(names) > 1:
             raise MusifyValueError(f"Tracks are from different genres: {", ".join(map(str, names))}")
 
