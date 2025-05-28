@@ -48,4 +48,7 @@ class HasArtists[T: Artist](HasSeparableTags):
         if not value:
             self.artists = None
             return
+
+        if isinstance(value, str):
+            value = self._separate_tags(value)
         self.artists = value

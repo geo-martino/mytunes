@@ -43,4 +43,7 @@ class HasGenres[T: Genre](HasSeparableTags):
         if not value:
             self.genres = None
             return
+
+        if isinstance(value, str):
+            value = self._separate_tags(value)
         self.genres = value

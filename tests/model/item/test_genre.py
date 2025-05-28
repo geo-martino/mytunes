@@ -1,4 +1,4 @@
-from random import choice
+from random import choice, sample
 
 import pytest
 from faker import Faker
@@ -29,3 +29,11 @@ class TestHasGenres(MusifyResourceTester):
         genre = HasGenres._join_tags(genre.name for genre in genres)
         model = HasGenres(genre=genres)
         assert model.genre == genre
+
+    def test_set_genres_on_property(self, model: HasGenres):
+        genres = sample(GENRES, k=3)
+        model.genre = genres
+        assert [genre.name for genre in model.genres] == genres
+
+        model.genre = genres[0]
+        assert [genre.name for genre in model.genres] == [genres[0]]

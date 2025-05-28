@@ -27,3 +27,11 @@ class TestHasArtists(MusifyResourceTester):
         artist = HasArtists._join_tags(artist.name for artist in artists)
         model = HasArtists(artist=artists)
         assert model.artist == artist
+
+    def test_set_artists_on_property(self, model: HasArtists, faker: Faker):
+        artists = [faker.word() for _ in range(faker.random_int(2, 5))]
+        model.artist = artists
+        assert [artist.name for artist in model.artists] == artists
+
+        model.artist = artists[0]
+        assert [artist.name for artist in model.artists] == [artists[0]]

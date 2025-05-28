@@ -1,6 +1,6 @@
 from typing import ClassVar, Self
 
-from pydantic import Field, model_validator, PositiveInt, computed_field
+from pydantic import Field, model_validator, PositiveInt, computed_field, field_validator
 
 from musify._types import StrippedString
 from musify.model._base import _CollectionModel
