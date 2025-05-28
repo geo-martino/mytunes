@@ -1,10 +1,8 @@
 from collections.abc import Sequence, MutableMapping
 from typing import Self, Any
 
-from pydantic import Field, field_validator, model_validator
-from pydantic_core.core_schema import ValidationInfo
+from pydantic import model_validator
 
-from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.model.item.album import Album
 from musify.model.item.artist import Artist

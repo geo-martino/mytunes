@@ -1,14 +1,12 @@
 from collections.abc import MutableMapping, Sequence
-from typing import ClassVar, Any, Self
+from typing import Any, Self
 
-from pydantic import Field, model_validator
+from pydantic import model_validator
 
-from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.model.item.genre import Genre
 from musify.model.item.track import Track, HasTracks
 from musify.model.properties.length import HasLength
-from musify.model.properties.name import HasName
 
 
 class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):

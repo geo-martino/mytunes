@@ -1,4 +1,4 @@
-from random import choice, sample
+from random import sample
 
 import pytest
 from faker import Faker

@@ -5,13 +5,14 @@ from pydantic import Field, model_validator
 
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
+from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack
 from musify.model.item.track import HasTracks
 from musify.model.properties.length import HasLength
 from musify.model.properties.name import HasName
 
 
-class Folder[TK, TV: LocalTrack](HasTracks[TK, TV], HasName, HasLength):
+class Folder[TK, TV: LocalTrack](LocalCollection, HasTracks[TK, TV], HasName, HasLength):
     """Represents a folder collection and its properties."""
     type: ClassVar[str] = "folder"
 

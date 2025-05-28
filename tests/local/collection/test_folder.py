@@ -7,8 +7,6 @@ from musify.local.collection.folder import Folder
 from musify.local.item.album import LocalAlbum
 from musify.local.item.track import LocalTrack
 from musify.model import MusifyModel
-from musify.model.item.album import Album
-from musify.model.item.track import Track
 from tests.model.testers import MusifyResourceTester
 from tests.utils import split_list
 

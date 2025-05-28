@@ -5,7 +5,6 @@ from faker import Faker
 
 from musify.model import MusifyModel
 from musify.model.collection.album import AlbumCollection
-from musify.model.item.album import Album
 from musify.model.item.track import Track
 from musify.model.properties.uri import URI
 from tests.model.testers import UniqueKeyTester
