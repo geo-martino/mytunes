@@ -8,7 +8,7 @@ import pytest
 from musify.field import TagFields
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
-from musify.model.properties.file import PathMapper, PathStemMapper
+from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors.base import Filter
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterDefinedList, FilterComparers, FilterIncludeExclude

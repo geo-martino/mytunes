@@ -7,7 +7,7 @@ from typing import Any
 
 from yarl import URL
 
-from musify.model._base import MusifyObject
+from musify.models._base import MusifyObject
 
 
 class RemoteResponse(MusifyObject, metaclass=ABCMeta):

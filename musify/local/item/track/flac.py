@@ -11,11 +11,11 @@ from pydantic_core.core_schema import SerializerFunctionWrapHandler, Serializati
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.model.properties.date import SparseDate
-from musify.model.properties.image import ImageFile, ImageURL
-from musify.model.properties.music import KeySignature
-from musify.model.properties.name import HasName
-from musify.model.properties.order import Position
+from musify.models.properties.date import SparseDate
+from musify.models.properties.image import ImageFile, ImageURL
+from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
+from musify.models.properties.order import Position
 
 
 class FLAC(LocalTrack[mutagen.flac.FLAC]):

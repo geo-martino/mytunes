@@ -8,8 +8,8 @@ import pytest
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.playlist import PLAYLIST_CLASSES, LocalPlaylist
 from musify.libraries.local.track import LocalTrack
-from musify.model._base import MusifyResource
-from musify.model.properties.file import PathMapper, PathStemMapper
+from musify.models._base import MusifyResource
+from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 from tests.libraries.local.library.testers import LocalLibraryTester
 from tests.libraries.local.track.utils import random_track, random_tracks

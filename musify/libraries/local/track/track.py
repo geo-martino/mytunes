@@ -12,7 +12,7 @@ from typing import Any, Self
 import mutagen
 from aiorequestful.types import UnitIterable
 from musify.file.exception import FileDoesNotExistError, UnexpectedPathError
-from musify.model.track import Track
+from musify.models.track import Track
 from yarl import URL
 
 from musify.exception import MusifyKeyError, MusifyAttributeError, MusifyTypeError, MusifyValueError
@@ -23,7 +23,7 @@ from musify.libraries.local.base import LocalItem
 from musify.libraries.local.track._tags import TagReader, TagWriter, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField as Tags, LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.model._base import MusifyResource
+from musify.models._base import MusifyResource
 from musify.utils import to_collection
 
 

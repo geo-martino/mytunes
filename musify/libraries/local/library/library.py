@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from aiorequestful.types import UnitCollection, UnitIterable
-from musify.model.object import Library, LibraryMergeType
+from musify.models.object import Library, LibraryMergeType
 
 from musify.base import Result
 from musify.exception import MusifyError
@@ -20,7 +20,7 @@ from musify.libraries.local.track import TRACK_CLASSES, LocalTrack, load_track
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
-from musify.model.properties.file import PathMapper, PathStemMapper
+from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors.base import Filter
 from musify.processors.filter import FilterDefinedList
 from musify.processors.sort import ItemSorter

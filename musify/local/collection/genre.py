@@ -1,7 +1,7 @@
 from musify.local.collection._base import LocalCollection
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.model.collection.genre import GenreCollection
+from musify.models.collection.genre import GenreCollection
 
 
 class LocalGenreCollection[TK, TV: LocalTrack](

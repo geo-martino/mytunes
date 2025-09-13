@@ -8,8 +8,8 @@ from musify.exception import MusifyTypeError
 from musify.libraries.collection import BasicCollection
 from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.core.object import RemoteCollectionLoader
-from musify.model._base import MusifyResource
-from musify.model.collection import MusifyCollection
+from musify.models._base import MusifyResource
+from musify.models.collection import MusifyCollection
 from musify.printer import PrettyPrinter
 from tests.testers import PrettyPrinterTester
 

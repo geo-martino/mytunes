@@ -11,12 +11,12 @@ from faker import Faker
 
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, TagDumpContext
-from musify.model import MusifyModel
-from musify.model.properties.file import IsFile
-from musify.model.properties.image import ImageFile
-from musify.model.properties.length import HasLength
-from musify.model.properties.uri import URI, HasMutableURI
-from tests.model.testers import UniqueKeyTester
+from musify.models import MusifyModel
+from musify.models.properties.file import IsFile
+from musify.models.properties.image import ImageFile
+from musify.models.properties.length import HasLength
+from musify.models.properties.uri import URI, HasMutableURI
+from tests.models.testers import UniqueKeyTester
 from tests.utils import assert_validator_skips
 
 

@@ -14,7 +14,7 @@ from musify.libraries.remote.core.exception import RemoteError, RemoteIDTypeErro
 from musify.libraries.remote.core.types import APIInputValueSingle, APIInputValueMulti, RemoteIDType
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.libraries.remote.spotify import SOURCE_NAME
-from musify.model.collection import MusifyCollection
+from musify.models.collection import MusifyCollection
 from musify.utils import to_collection
 
 

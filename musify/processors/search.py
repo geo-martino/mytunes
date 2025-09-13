@@ -19,8 +19,8 @@ from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.logger import MusifyLogger
 from musify.logger import REPORT
-from musify.model._base import MusifyObject, MusifyItemSettable
-from musify.model.collection import MusifyCollection
+from musify.models._base import MusifyObject, MusifyItemSettable
+from musify.models.collection import MusifyCollection
 from musify.processors.base import Processor
 from musify.processors.match import ItemMatcher
 from musify.utils import align_string, get_max_width

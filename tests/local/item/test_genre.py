@@ -4,8 +4,8 @@ import pytest
 from faker import Faker
 
 from musify.local.item.genre import LocalGenre
-from musify.model import MusifyModel
-from tests.model.testers import UniqueKeyTester
+from musify.models import MusifyModel
+from tests.models.testers import UniqueKeyTester
 from tests.utils import GENRES
 
 

@@ -6,7 +6,7 @@ from collections.abc import Container
 import pytest
 
 from musify.field import Fields, TagField, ALL_FIELDS, Field, TagFields
-from musify.model._base import MusifyObject, MusifyResource
+from musify.models._base import MusifyObject, MusifyResource
 from musify.printer import PrettyPrinter
 from musify.types import MusifyEnum
 

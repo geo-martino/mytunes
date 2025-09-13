@@ -11,7 +11,7 @@ from uuid import uuid4
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
-from musify.model.properties.uri import URI
+from musify.models.properties.uri import URI
 from musify.types import MusifyEnum
 
 path_tests = Path(__file__).parent

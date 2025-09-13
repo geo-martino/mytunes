@@ -11,7 +11,7 @@ from typing import Any
 from aiorequestful.types import UnitSequence, UnitIterable, Number
 
 from musify.field import Field
-from musify.model._base import MusifyResource
+from musify.models._base import MusifyResource
 from musify.processors.base import Processor
 from musify.processors.exception import SorterProcessorError
 from musify.types import MusifyEnum

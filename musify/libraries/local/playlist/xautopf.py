@@ -13,8 +13,8 @@ from musify.field import Fields, Field, TagFields
 from musify.libraries.local.playlist.base import LocalPlaylist
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.model._base import MusifyResource
-from musify.model.properties.file import File, PathMapper
+from musify.models._base import MusifyResource
+from musify.models.properties.file import File, PathMapper
 from musify.printer import PrettyPrinter
 from musify.processors.compare import Comparer
 from musify.processors.exception import SorterProcessorError

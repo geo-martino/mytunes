@@ -11,18 +11,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Self, Literal
 
-from musify.model.album import Album
-from musify.model.artist import Artist
-from musify.model.object import Playlist
-from musify.model.track import Track
+from musify.models.album import Album
+from musify.models.artist import Artist
+from musify.models.object import Playlist
+from musify.models.track import Track
 
 from musify.base import Result
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.base import RemoteObject, RemoteItem
 from musify.libraries.remote.core.exception import RemoteError, APIError
 from musify.libraries.remote.core.types import APIInputValueSingle
-from musify.model._base import MusifyResource
-from musify.model.collection import MusifyCollection
+from musify.models._base import MusifyResource
+from musify.models.collection import MusifyCollection
 from musify.utils import get_most_common_values
 
 

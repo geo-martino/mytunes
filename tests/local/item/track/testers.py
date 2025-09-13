@@ -12,8 +12,8 @@ from PIL.ImageFile import ImageFile as PILImageFile
 
 from musify.local.exception import FileError
 from musify.local.item.track import LocalTrack, TagDumpContext
-from musify.model.properties.image import ImageFile
-from tests.model.testers import MusifyModelTester, UniqueKeyTester
+from musify.models.properties.image import ImageFile
+from tests.models.testers import MusifyModelTester, UniqueKeyTester
 
 
 class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):

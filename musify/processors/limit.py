@@ -6,12 +6,12 @@ from functools import reduce
 from operator import mul
 from random import shuffle
 
-from musify.model._properties import HasLength
-from musify.model.track import Track
+from musify.models._properties import HasLength
+from musify.models.track import Track
 
 from musify.field import Fields
-from musify.model._base import MusifyResource
-from musify.model.properties.file import File
+from musify.models._base import MusifyResource
+from musify.models.properties.file import File
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.processors.exception import LimiterProcessorError
 from musify.processors.sort import ItemSorter

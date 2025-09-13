@@ -8,7 +8,7 @@ from typing import Any
 
 import mutagen
 from aiorequestful.types import UnitIterable
-from musify.model.track import Track
+from musify.models.track import Track
 
 from musify.base import Result
 from musify.libraries.local.track._tags.base import TagProcessor

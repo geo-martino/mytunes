@@ -12,8 +12,8 @@ from aiorequestful.types import UnitIterable
 
 from musify.exception import MusifyEnumError
 from musify.field import Field, Fields
-from musify.model._base import MusifyObject, MusifyResource
-from musify.model.collection import MusifyCollection
+from musify.models._base import MusifyObject, MusifyResource
+from musify.models.collection import MusifyCollection
 from musify.processors.base import InputProcessor
 from musify.utils import to_collection
 

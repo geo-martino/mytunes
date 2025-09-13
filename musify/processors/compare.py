@@ -12,7 +12,7 @@ from typing import Any
 from aiorequestful.types import UnitSequence
 
 from musify.field import Field
-from musify.model._base import MusifyResource
+from musify.models._base import MusifyResource
 from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.processors.exception import ComparerError
 from musify.processors.time import TimeMapper

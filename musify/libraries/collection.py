@@ -6,8 +6,8 @@ from __future__ import annotations
 from collections.abc import Iterable, Collection
 from typing import Any
 
-from musify.model._base import MusifyResource
-from musify.model.collection import MusifyCollection
+from musify.models._base import MusifyResource
+from musify.models.collection import MusifyCollection
 from musify.utils import to_collection
 
 

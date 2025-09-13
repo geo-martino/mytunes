@@ -14,10 +14,10 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.local.item.track._base import TagDumpContext
-from musify.model.properties.date import SparseDate
-from musify.model.properties.image import ImageURL, ImageFile
-from musify.model.properties.music import KeySignature
-from musify.model.properties.order import Position
+from musify.models.properties.date import SparseDate
+from musify.models.properties.image import ImageURL, ImageFile
+from musify.models.properties.music import KeySignature
+from musify.models.properties.order import Position
 
 
 class MP3(LocalTrack[mutagen.mp3.MP3]):

@@ -6,8 +6,8 @@ from faker import Faker
 from musify.local.collection.folder import Folder
 from musify.local.item.album import LocalAlbum
 from musify.local.item.track import LocalTrack
-from musify.model import MusifyModel
-from tests.model.testers import MusifyResourceTester
+from musify.models import MusifyModel
+from tests.models.testers import MusifyResourceTester
 from tests.utils import split_list
 
 

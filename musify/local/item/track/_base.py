@@ -19,13 +19,13 @@ from musify.local.exception import FileError, TagError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
-from musify.model import MusifyModel
-from musify.model.item.track import Track, TrackTagsMixin
-from musify.model.properties.file import IsFile
-from musify.model.properties.image import FileEmbeddedImage, ImageSource
-from musify.model.properties.name import HasName
-from musify.model.properties.order import Position
-from musify.model.properties.uri import HasMutableURI
+from musify.models import MusifyModel
+from musify.models.item.track import Track, TrackTagsMixin
+from musify.models.properties.file import IsFile
+from musify.models.properties.image import FileEmbeddedImage, ImageSource
+from musify.models.properties.name import HasName
+from musify.models.properties.order import Position
+from musify.models.properties.uri import HasMutableURI
 
 
 class TagDumpContext[T](MusifyModel):
@@ -70,7 +70,7 @@ class LocalTrack[T: mutagen.FileType](
 
         @classmethod
         def from_image_model(cls, model: ImageSource) -> Self:
-            """Create an instance of an this image model from any other type of ImageSource model."""
+            """Create an instance of an this image models from any other type of ImageSource models."""
             if isinstance(model, cls):
                 return model
 

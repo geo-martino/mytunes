@@ -6,11 +6,11 @@ from random import choice
 from typing import Any
 
 import pytest
-from musify.model.object import Playlist
+from musify.models.object import Playlist
 
 from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.core.object import RemoteTrack
-from musify.model._base import MusifyResource
+from musify.models._base import MusifyResource
 from tests.libraries.core.object import LibraryTester
 from tests.libraries.local.track.utils import random_tracks
 from tests.libraries.remote.core.object import RemoteCollectionTester

@@ -1,8 +1,8 @@
 import pytest
-from musify.model.album import Album
-from musify.model.artist import Artist
-from musify.model.object import Playlist, Folder
-from musify.model.track import Track
+from musify.models.album import Album
+from musify.models.artist import Artist
+from musify.models.object import Playlist, Folder
+from musify.models.track import Track
 
 from musify.field import FolderField, PlaylistField, AlbumField, ArtistField
 from musify.field import TrackField

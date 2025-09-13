@@ -8,7 +8,7 @@ from PIL import Image, ImageFile as PILImageFile
 from aioresponses import aioresponses, CallbackResult
 from faker import Faker
 
-from musify.model.properties.image import ImageURL, ImageFile
+from musify.models.properties.image import ImageURL, ImageFile
 
 
 @pytest.fixture(scope="session")

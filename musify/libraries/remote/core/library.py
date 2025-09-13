@@ -6,8 +6,8 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, Iterable
 from typing import Any, Literal, Self
 
-from musify.model.object import Library, Playlist
-from musify.model.track import Track
+from musify.models.object import Library, Playlist
+from musify.models.track import Track
 
 from musify._types import Resource
 from musify.libraries.remote.core.api import RemoteAPI
@@ -16,7 +16,7 @@ from musify.libraries.remote.core.object import RemoteCollection, SyncResultRemo
 from musify.libraries.remote.core.object import RemoteTrack, RemotePlaylist, RemoteArtist, RemoteAlbum
 from musify.logger import MusifyLogger
 from musify.logger import STAT
-from musify.model._base import MusifyResource
+from musify.models._base import MusifyResource
 from musify.processors.base import Filter
 from musify.processors.filter import FilterDefinedList
 from musify.utils import align_string, get_max_width, to_collection

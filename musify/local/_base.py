@@ -1,4 +1,4 @@
-from musify.model import MusifyResource
+from musify.models import MusifyResource
 
 
 class LocalResource(MusifyResource):

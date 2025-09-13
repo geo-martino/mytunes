@@ -7,9 +7,9 @@ from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack
-from musify.model.item.track import HasTracks
-from musify.model.properties.length import HasLength
-from musify.model.properties.name import HasName
+from musify.models.item.track import HasTracks
+from musify.models.properties.length import HasLength
+from musify.models.properties.name import HasName
 
 
 class Folder[TK, TV: LocalTrack](LocalCollection, HasTracks[TK, TV], HasName, HasLength):

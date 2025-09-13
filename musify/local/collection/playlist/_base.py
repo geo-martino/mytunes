@@ -4,8 +4,8 @@ from pydantic import Field
 
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack
-from musify.model.collection.playlist import Playlist
-from musify.model.properties.file import IsFile, PathMapper
+from musify.models.collection.playlist import Playlist
+from musify.models.properties.file import IsFile, PathMapper
 
 
 class LocalPlaylist[TK, TV: LocalTrack](LocalCollection, Playlist[TK, TV], IsFile, metaclass=ABCMeta):

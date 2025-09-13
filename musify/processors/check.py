@@ -22,8 +22,8 @@ from musify.libraries.remote.core.object import RemotePlaylist
 from musify.libraries.remote.core.types import RemoteIDType
 from musify.logger import MusifyLogger
 from musify.logger import REPORT
-from musify.model._base import MusifyItemSettable
-from musify.model.collection import MusifyCollection
+from musify.models._base import MusifyItemSettable
+from musify.models.collection import MusifyCollection
 from musify.processors.base import InputProcessor
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher

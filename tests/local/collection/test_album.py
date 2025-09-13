@@ -2,9 +2,9 @@ import pytest
 from faker import Faker
 
 from musify.local.collection.album import LocalAlbumCollection
-from musify.model import MusifyModel
-from musify.model.properties.uri import URI
-from tests.model.testers import UniqueKeyTester
+from musify.models import MusifyModel
+from musify.models.properties.uri import URI
+from tests.models.testers import UniqueKeyTester
 
 
 class TestLocalAlbumCollection(UniqueKeyTester):
