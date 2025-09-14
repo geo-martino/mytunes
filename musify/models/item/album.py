@@ -54,6 +54,11 @@ class HasAlbum[T: Album](_AttributeModel):
         default=None,
     )
 
+    @property
+    def compilation(self) -> bool | None:
+        """Whether the album is a compilation album."""
+        return self.album.compilation if self.album and self.album.compilation is not None else None
+
 
 class HasAlbums[T: Album](HasSeparableTags):
     albums: list[T] = Field(

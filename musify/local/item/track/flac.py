@@ -94,12 +94,12 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
-    def _extract_tags_from_mutagen[T](cls, file: T) -> T | dict[str, Any]:
+    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
         if not isinstance(file, mutagen.flac.FLAC):
             return file
 
         # noinspection PyCallingNonCallable
-        tags = super()._extract_tags_from_mutagen(file)
+        tags = super().extract_tags_from_mutagen(file)
         return tags | dict(images=file.pictures)
 
     # noinspection PyNestedDecorators

@@ -6,6 +6,7 @@ from typing import Any
 from unittest import mock
 
 import mutagen
+import mutagen.wave
 import pytest
 from faker import Faker
 
@@ -52,6 +53,13 @@ class TestLocalTrack(UniqueKeyTester):
         file.filename = str(path)
         file.tags = tags
 
+        stream_info = mutagen.wave.WaveStreamInfo.__new__(mutagen.wave.WaveStreamInfo)
+        stream_info.channels = 2
+        stream_info.bitrate = 320000
+        stream_info.sample_rate = 44100
+        stream_info.bits_per_sample = 16
+        file.info = stream_info
+
         return file
 
     ###########################################################################
@@ -86,19 +94,26 @@ class TestLocalTrack(UniqueKeyTester):
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType, tags: dict[str, Any]):
         assert file.filename
 
-        assert LocalTrack._extract_tags_from_mutagen(tags) is tags
-        assert LocalTrack._extract_tags_from_mutagen(file.filename) is file.filename
+        assert LocalTrack.extract_tags_from_mutagen(tags) is tags
+        assert LocalTrack.extract_tags_from_mutagen(file.filename) is file.filename
 
-        result = LocalTrack._extract_tags_from_mutagen(file)
-        assert result == tags | dict(path=file.filename)
+        result = LocalTrack.extract_tags_from_mutagen(file)
+        assert result == tags | dict(
+            path=file.filename,
+            format=Path(file.filename).suffix.lstrip("."),
+            channels=2,
+            bit_rate=320.0,
+            bit_depth=16,
+            sample_rate=44.1,
+        )
 
     # noinspection PyTypeChecker
     def test_extract_tags_from_mutagen_skips(self, faker: Faker):
-        assert_validator_skips(LocalTrack._extract_tags_from_mutagen, None)
-        assert_validator_skips(LocalTrack._extract_tags_from_mutagen, faker.pyint())
-        assert_validator_skips(LocalTrack._extract_tags_from_mutagen, faker.pytuple())
-        assert_validator_skips(LocalTrack._extract_tags_from_mutagen, faker.pylist())
-        assert_validator_skips(LocalTrack._extract_tags_from_mutagen, faker.pydict())
+        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, None)
+        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pyint())
+        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pytuple())
+        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pylist())
+        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pydict())
 
     def test_extract_first_value_from_sequence(self):
         assert LocalTrack._extract_first_value_from_sequence(None) is None

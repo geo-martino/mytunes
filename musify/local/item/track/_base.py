@@ -21,6 +21,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models import MusifyModel
 from musify.models.item.track import Track, TrackTagsMixin
+from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.file import IsFile
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
 from musify.models.properties.name import HasName
@@ -43,7 +44,7 @@ class TagDumpContext[T](MusifyModel):
 
 
 class LocalTrack[T: mutagen.FileType](
-    LocalResource, Track[LocalArtist, LocalAlbum, LocalGenre], IsFile, HasMutableURI
+    LocalResource, Track[LocalArtist, LocalAlbum, LocalGenre], IsFile, IsAudioFile, HasMutableURI
 ):
     # noinspection PyTypeChecker
     __tag_fields__ = frozenset(TrackTagsMixin.model_fields)
@@ -171,14 +172,14 @@ class LocalTrack[T: mutagen.FileType](
     ###########################################################################
     ## Validators/Serializers
     ###########################################################################
-    # noinspection PyNestedDecorators
+    # noinspection PyNestedDecorators, PyCallingNonCallable
     @model_validator(mode="before")
     @classmethod
-    def _extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
+    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
         if not isinstance(file, mutagen.FileType):
             return file
 
-        return dict(file.tags) | dict(path=file.filename)
+        return dict(file.tags) | IsFile.extract_tags_from_mutagen(file) | IsAudioFile.extract_tags_from_mutagen(file)
 
     # noinspection PyNestedDecorators
     @field_validator(

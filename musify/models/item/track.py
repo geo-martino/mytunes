@@ -12,14 +12,22 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
+from musify.models.properties.order import Position, HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import HasURI
 from musify.models.sequence import MusifyMutableSequence, MusifySequence
 
 
 class TrackTagsMixin[RT: Artist, AT: Album, GT: Genre](
-    HasArtists[RT], HasAlbum[AT], HasGenres[GT], HasName, HasRating, HasReleaseDate, HasImages
+    HasArtists[RT],
+    HasAlbum[AT],
+    HasGenres[GT],
+    HasName,
+    HasTrackPosition,
+    HasDiscPosition,
+    HasRating,
+    HasReleaseDate,
+    HasImages
 ):
     """A mixin class to add common track tags which can be composed and written as metadata in a track file."""
     type: ClassVar[str] = "track"
@@ -27,14 +35,6 @@ class TrackTagsMixin[RT: Artist, AT: Album, GT: Genre](
     name: StrippedString = Field(
         description="The title of this track.",
         alias="title",
-    )
-    track: Position | None = Field(
-        description="The position this track has on the album it is featured on.",
-        default=None,
-    )
-    disc: Position | None = Field(
-        description="The position of the disc in the album that this track is featured on.",
-        default=None,
     )
     bpm: float | None = Field(
         description="The tempo of this track.",

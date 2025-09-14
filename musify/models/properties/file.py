@@ -4,8 +4,9 @@ from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Collection, Iterable
+from typing import Any, Collection, Iterable, ClassVar
 
+import mutagen
 from pydantic import Field, AliasChoices, field_validator, PositiveInt, model_validator
 
 from musify.exception import MusifyValueError
@@ -13,6 +14,10 @@ from musify.models._base import _AttributeModel, MusifyModel
 
 
 class _IsFile(_AttributeModel):
+    __tag_fields__ = frozenset({
+        "path", "folder", "filename", "ext", "format", "size", "created_at", "modified_at"
+    })
+
     path: Path = Field(
         description="The path to the file"
     )
@@ -22,6 +27,16 @@ class _IsFile(_AttributeModel):
         default=None,
         exclude=True,
     )
+
+    # noinspection PyNestedDecorators
+    @model_validator(mode="before")
+    @classmethod
+    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
+        """Extract the tags from a mutagen file object, if applicable."""
+        if not isinstance(file, mutagen.FileType):
+            return file
+
+        return dict(path=file.filename, format=Path(file.filename).suffix.lstrip("."))
 
     # noinspection PyNestedDecorators
     @model_validator(mode="before")

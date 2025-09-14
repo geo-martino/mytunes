@@ -6,6 +6,7 @@ from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
 
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
+from musify.models._base import _AttributeModel
 
 
 class Position(MusifyModel):
@@ -73,3 +74,39 @@ class Position(MusifyModel):
 
     def __str__(self) -> str:
         return self.sep.join(str(val).zfill(self.zero_fill) for val in self.numbers)
+
+
+class HasTrackPosition(_AttributeModel):
+    """Represents a resource that has a track position."""
+    track: Position | None = Field(
+        description="The position in the collection that this track is featured on.",
+        default=None,
+    )
+
+    @property
+    def track_number(self) -> int | None:
+        """The track number."""
+        return self.track.number if self.track else None
+
+    @property
+    def track_total(self) -> int | None:
+        """The total number of tracks."""
+        return self.track.total if self.track else None
+
+
+class HasDiscPosition(_AttributeModel):
+    """Represents a resource that has a disc position."""
+    disc: Position | None = Field(
+        description="The position of the disc in the collection that this resource is featured on.",
+        default=None,
+    )
+
+    @property
+    def disc_number(self) -> int | None:
+        """The disc number."""
+        return self.disc.number if self.disc else None
+
+    @property
+    def disc_total(self) -> int | None:
+        """The total number of discs."""
+        return self.disc.total if self.disc else None

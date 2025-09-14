@@ -46,6 +46,13 @@ def file(pictures: dict[str, mutagen.flac.Picture], faker: Faker, tmp_path: Path
     file.tags = {"name": "Track title"}
     file.metadata_blocks = [p for p in pictures.values()]
 
+    stream_info = mutagen.flac.StreamInfo.__new__(mutagen.flac.StreamInfo)
+    stream_info.channels = 2
+    stream_info.bitrate = 320000
+    stream_info.sample_rate = 44100
+    stream_info.bits_per_sample = 16
+    file.metadata_blocks.append(stream_info)
+
     return file
 
 
@@ -85,11 +92,19 @@ class TestFLAC(LocalTrackTester):
         assert file.filename
         assert file.pictures
 
-        assert FLAC._extract_tags_from_mutagen(tags) is tags
-        assert FLAC._extract_tags_from_mutagen(file.filename) is file.filename
+        assert FLAC.extract_tags_from_mutagen(tags) is tags
+        assert FLAC.extract_tags_from_mutagen(file.filename) is file.filename
 
-        result = FLAC._extract_tags_from_mutagen(file)
-        assert result == tags | dict(images=file.pictures, path=file.filename)
+        result = FLAC.extract_tags_from_mutagen(file)
+        assert result == tags | dict(
+            path=file.filename,
+            format=Path(file.filename).suffix.lstrip("."),
+            channels=2,
+            bit_rate=320.0,
+            bit_depth=16,
+            sample_rate=44.1,
+            images=file.pictures,
+        )
 
     # noinspection PyCallingNonCallable
     def test_merge_position_values(self):

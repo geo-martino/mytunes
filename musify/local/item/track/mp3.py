@@ -131,7 +131,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         # noinspection PyCallingNonCallable
-        data = cls._extract_tags_from_mutagen(data)
+        data = cls.extract_tags_from_mutagen(data)
         if not isinstance(data, MutableMapping):
             return data
 
