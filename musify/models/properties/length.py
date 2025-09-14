@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 from datetime import timedelta
+from functools import reduce, total_ordering
+from operator import mul
 from typing import Any
 
 from pydantic import PositiveInt, PositiveFloat, field_validator, Field
@@ -11,6 +13,7 @@ from musify.models import MusifyRootModel
 from musify.models._base import _AttributeModel
 
 
+@total_ordering
 class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
@@ -18,26 +21,22 @@ class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
     def _convert_numeric_representation_to_number(value: Any) -> str | int | float:
         if not isinstance(value, str):
             return value
+        if re.match(r"^\d+(\.\d+)?$", value):  # already a number
+            return float(value) if "." in value else int(value)
 
-        # skip string values that are purely numeric, let pydantic handle them
-        if re.match(r"^\d+$", value) or re.match(r"^\d+\.\d+$", value):
-            return value
+        factors = (24, 60, 60, 1)
+        digits_split = value.split(":")
+        digits = tuple(int(n.split(",")[0]) for n in digits_split)
 
-        if matches := re.match(r"^(\d{2}):(\d{2})(?:$|\.\d+$)", value):
-            hours = 0
-            minutes, seconds = tuple(map(int, matches.groups()))
-        elif matches := re.match(r"^(\d+):(\d{2}):(\d{2})(?:$|\.\d+$)", value):
-            hours, minutes, seconds = tuple(map(int, matches.groups()))
-        else:
-            raise MusifyValueError(f"Invalid length format: {value}")
+        seconds = 0
+        if "," in digits_split[-1]:  # add milliseconds if present
+            number = digits_split[-1].split(",")[1]
+            seconds += int(number) / (10 ** len(number))
 
-        total_seconds = seconds + (minutes * 60) + (hours * 3600)
+        for i, digit in enumerate(reversed(digits), 1):  # convert to seconds
+            seconds += digit * reduce(mul, factors[-i:], 1)
 
-        if matches := re.match(r"^.*\.(\d+)$", value):
-            milliseconds = int(matches.group(1)) / (10 ** len(matches.group(1)))
-            return float(total_seconds + milliseconds)
-
-        return total_seconds
+        return seconds
 
     @property
     def timedelta(self) -> timedelta:
@@ -63,6 +62,36 @@ class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
     def __float__(self):
         return float(self.root)
 
+    def __eq__(self, other: Any) -> bool:
+        match other:
+            case Length():
+                return self.root == other.root
+            case int() | float():
+                return float(self.root) == float(other)
+            case str():
+                try:
+                    other_length = Length(other)
+                    return self.root == other_length.root
+                except MusifyValueError:
+                    return False
+            case _:
+                return False
+
+    def __lt__(self, other: Any) -> bool:
+        match other:
+            case Length():
+                return self.root < other.root
+            case int() | float():
+                return float(self.root) < float(other)
+            case str():
+                try:
+                    other_length = Length(other)
+                    return self.root < other_length.root
+                except MusifyValueError:
+                    return NotImplemented
+            case _:
+                return NotImplemented
+
 
 class HasLength(_AttributeModel):
     """Represents a resource that has a length."""
@@ -70,3 +99,6 @@ class HasLength(_AttributeModel):
         description="The length of this resource.",
         default=None,
     )
+
+
+HasLength.__tag_fields__ = frozenset({*HasLength.model_fields})

@@ -14,10 +14,6 @@ from musify.models._base import _AttributeModel, MusifyModel
 
 
 class _IsFile(_AttributeModel):
-    __tag_fields__ = frozenset({
-        "path", "folder", "filename", "ext", "format", "size", "created_at", "modified_at"
-    })
-
     path: Path = Field(
         description="The path to the file"
     )
@@ -92,6 +88,10 @@ class _IsFile(_AttributeModel):
 
 class IsFile(_IsFile, metaclass=ABCMeta):
     """Attributes and operations for a file on a filesystem."""
+    __tag_fields__ = frozenset({
+        *_IsFile.model_fields,
+        *{name for name, method in vars(_IsFile).items() if isinstance(method, property)}
+    })
 
     @abstractmethod
     async def load(self, *args, **kwargs) -> Any:

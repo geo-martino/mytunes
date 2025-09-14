@@ -1,10 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, BeforeValidator
 
+from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
 from musify.models.properties.file import _IsFile, PathMapper, PathInputType
 from musify.processors_new._base import Processor
@@ -73,7 +74,7 @@ class FilterComposite[T](Filter[T], Collection[Filter[T]], metaclass=ABCMeta):
 
 class FilterValues[T](Filter[T]):
     """Filter based on a defined list of values."""
-    values: set[T] = Field(
+    values: Annotated[set[T], BeforeValidator(to_set)] = Field(
         description="Set of values to filter against",
         default_factory=set,
     )
@@ -81,14 +82,6 @@ class FilterValues[T](Filter[T]):
     @property
     def ready(self) -> bool:
         return len(self.values) > 0
-
-    @field_validator("values", mode="before", check_fields=True)
-    @staticmethod
-    def to_set(values: Collection[T]) -> set[T]:
-        """Ensure the values are a set."""
-        if isinstance(values, str):
-            return {values}
-        return set(values)
 
     def check(self, item: T) -> bool:
         return not self.ready or item in self.values
@@ -108,7 +101,7 @@ class FilterValues[T](Filter[T]):
 
 class FilterPaths(FilterValues[str]):
     """Filter based on a defined list of values."""
-    values: set[str] = Field(
+    values: set[StrippedString] = Field(
         description="Set of paths to filter against",
         default_factory=set,
     )
@@ -124,14 +117,12 @@ class FilterPaths(FilterValues[str]):
 
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
-    def extract_values_from_files(values: Collection[Any]) -> Iterator[str]:
-        """Convert all :py:class:`IsFile` objects to strings."""
+    def _extract_values_from_files(values: Collection[Any]) -> Iterator[str]:
         return (str(value.path) if isinstance(value, _IsFile) else value for value in values)
 
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
-    def extract_values_from_paths(values: Collection[Any]) -> Iterator[str]:
-        """Convert all Path objects to strings."""
+    def _extract_values_from_paths(values: Collection[Any]) -> Iterator[str]:
         return (str(value) if isinstance(value, Path) else value for value in values)
 
     def check(self, item: PathInputType) -> bool:

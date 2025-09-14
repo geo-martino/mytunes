@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 import mutagen
 from pydantic import Field, PositiveInt, PositiveFloat, model_validator
@@ -45,3 +45,6 @@ class IsAudioFile(_AttributeModel):
             bit_depth=bit_depth,
             sample_rate=file.info.sample_rate / 1000,  # convert to Hz to kHz
         )
+
+
+IsAudioFile.__tag_fields__ = frozenset({*IsAudioFile.model_fields})

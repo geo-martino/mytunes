@@ -160,6 +160,7 @@ class MusifyResource(MusifyModel):
 
 class _AttributeModel(MusifyResource):
     """Defines a common base models for attributes made of common properties."""
+    __tag_fields__: ClassVar[frozenset[str]] = frozenset()
 
 
 class _CollectionModel(_AttributeModel):

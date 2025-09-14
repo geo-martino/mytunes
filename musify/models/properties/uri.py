@@ -134,6 +134,12 @@ class HasURI[T: URI](_AttributeModel):
         return self.uri is not None and other.uri is not None and self.uri == other.uri
 
 
+HasURI.__tag_fields__ = frozenset({
+    *HasURI.model_fields,
+    *{name for name, method in vars(HasURI).items() if isinstance(method, property)}
+})
+
+
 class HasMutableURI(HasURI):
     source: str | None = Field(
         description=(

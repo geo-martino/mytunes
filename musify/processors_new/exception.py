@@ -8,10 +8,6 @@ class ProcessorError(MusifyError):
     """Exception raised for errors related to processors."""
 
 
-class ProcessorLookupError(ProcessorError):
-    """Exception raised when processor name given is not valid."""
-
-
 class ComparerError(ProcessorError):
     """Exception raised for errors related to :py:class:`Comparer` settings."""
 

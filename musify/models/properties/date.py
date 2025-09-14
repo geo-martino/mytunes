@@ -86,12 +86,18 @@ class HasReleaseDate(_AttributeModel):
     )
 
 
+HasReleaseDate.__tag_fields__ = frozenset({*HasReleaseDate.model_fields})
+
+
 class HasAddedDate(_AttributeModel):
     """Represents a resource that has an associated added date."""
     added_at: datetime | None = Field(
         description="The date this resource was added to the collection.",
         default=None,
     )
+
+
+HasAddedDate.__tag_fields__ = frozenset({*HasAddedDate.model_fields})
 
 
 class HasPlayedDate(_AttributeModel):
@@ -104,3 +110,6 @@ class HasPlayedDate(_AttributeModel):
         description="The number of times this resource has been played.",
         default=None,
     )
+
+
+HasPlayedDate.__tag_fields__ = frozenset({*HasPlayedDate.model_fields})

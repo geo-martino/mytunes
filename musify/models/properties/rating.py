@@ -16,3 +16,6 @@ class HasRating(_AttributeModel):
         description="The rating of this resource.",
         default=None,
     )
+
+
+HasRating.__tag_fields__ = frozenset({*HasRating.model_fields})

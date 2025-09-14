@@ -94,6 +94,12 @@ class HasTrackPosition(_AttributeModel):
         return self.track.total if self.track else None
 
 
+HasTrackPosition.__tag_fields__ = frozenset({
+    *HasTrackPosition.model_fields,
+    *{name for name, method in vars(HasTrackPosition).items() if isinstance(method, property)}
+})
+
+
 class HasDiscPosition(_AttributeModel):
     """Represents a resource that has a disc position."""
     disc: Position | None = Field(
@@ -110,3 +116,9 @@ class HasDiscPosition(_AttributeModel):
     def disc_total(self) -> int | None:
         """The total number of discs."""
         return self.disc.total if self.disc else None
+
+
+HasDiscPosition.__tag_fields__ = frozenset({
+    *HasDiscPosition.model_fields,
+    *{name for name, method in vars(HasDiscPosition).items() if isinstance(method, property)}
+})

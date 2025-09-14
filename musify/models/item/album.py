@@ -55,9 +55,20 @@ class HasAlbum[T: Album](_AttributeModel):
     )
 
     @property
+    def album_artist(self) -> str | None:
+        """The album artist."""
+        return self.album.artist
+
+    @property
     def compilation(self) -> bool | None:
         """Whether the album is a compilation album."""
-        return self.album.compilation if self.album and self.album.compilation is not None else None
+        return self.album.compilation
+
+
+HasAlbum.__tag_fields__ = frozenset({
+    *HasAlbum.model_fields,
+    *{name for name, method in vars(HasAlbum).items() if isinstance(method, property)}
+})
 
 
 class HasAlbums[T: Album](HasSeparableTags):

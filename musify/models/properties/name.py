@@ -32,3 +32,6 @@ class HasName(_AttributeModel):
 
     def __ge__(self, other: Self):
         return self.name >= other.name
+
+
+HasName.__tag_fields__ = frozenset({*HasName.model_fields})

@@ -26,12 +26,12 @@ class TestLength(MusifyModelTester):
         model.root = "260:12:34"
         assert int(model) == 260 * 60 * 60 + 12 * 60 + 34
 
-        model.root = "12:34.123456"
+        model.root = "12:34,123456"
         assert float(model) == 12 * 60 + 34 + 0.123456
 
     def test_numeric_representation_conversion_fails(self, model: Length) -> None:
         with pytest.raises(ValueError):
-            model.root = "12:34:56:78"
+            model.root = "12:34:56:78.90"
         with pytest.raises(ValueError):
             model.root = "ab:cd"
 
