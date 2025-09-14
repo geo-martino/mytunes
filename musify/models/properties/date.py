@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated, Any
 
-from pydantic import PositiveInt, Field, model_validator, TypeAdapter
+from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt
 
 from musify.models import MusifyModel
 from musify.models._base import _AttributeModel
@@ -82,5 +82,25 @@ class HasReleaseDate(_AttributeModel):
     """Represents a resource that has an associated release date."""
     released_at: SparseDate | None = Field(
         description="The date this resource was released.",
+        default=None,
+    )
+
+
+class HasAddedDate(_AttributeModel):
+    """Represents a resource that has an associated added date."""
+    added_at: SparseDate | None = Field(
+        description="The date this resource was added to the collection.",
+        default=None,
+    )
+
+
+class HasPlayedDate(_AttributeModel):
+    """Represents a resource that has an associated played date."""
+    last_played_at: SparseDate | None = Field(
+        description="The date this resource was last played.",
+        default=None,
+    )
+    play_count: NonNegativeInt | None = Field(
+        description="The number of times this resource has been played.",
         default=None,
     )

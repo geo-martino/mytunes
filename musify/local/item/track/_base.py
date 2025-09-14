@@ -22,6 +22,7 @@ from musify.local.item.genre import LocalGenre
 from musify.models import MusifyModel
 from musify.models.item.track import Track, TrackTagsMixin
 from musify.models.properties.audio import IsAudioFile
+from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsFile
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
 from musify.models.properties.name import HasName
@@ -44,7 +45,13 @@ class TagDumpContext[T](MusifyModel):
 
 
 class LocalTrack[T: mutagen.FileType](
-    LocalResource, Track[LocalArtist, LocalAlbum, LocalGenre], IsFile, IsAudioFile, HasMutableURI
+    LocalResource,
+    Track[LocalArtist, LocalAlbum, LocalGenre],
+    IsFile,
+    IsAudioFile,
+    HasMutableURI,
+    HasAddedDate,
+    HasPlayedDate,
 ):
     # noinspection PyTypeChecker
     __tag_fields__ = frozenset(TrackTagsMixin.model_fields)
