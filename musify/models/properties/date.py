@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, Any
 
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt
@@ -88,7 +88,7 @@ class HasReleaseDate(_AttributeModel):
 
 class HasAddedDate(_AttributeModel):
     """Represents a resource that has an associated added date."""
-    added_at: SparseDate | None = Field(
+    added_at: datetime | None = Field(
         description="The date this resource was added to the collection.",
         default=None,
     )
@@ -96,7 +96,7 @@ class HasAddedDate(_AttributeModel):
 
 class HasPlayedDate(_AttributeModel):
     """Represents a resource that has an associated played date."""
-    last_played_at: SparseDate | None = Field(
+    last_played_at: datetime | None = Field(
         description="The date this resource was last played.",
         default=None,
     )
