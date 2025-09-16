@@ -5,6 +5,7 @@ import inspect
 import re
 import typing
 from collections.abc import Sequence, Collection
+from datetime import datetime
 from types import NoneType
 from typing import Any, Literal, Self
 
@@ -28,6 +29,7 @@ from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import HasURI
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
 from musify.processors_new.exception import ComparerError
+from musify.processors_new.time import TimeMapper
 
 COMPARISON_FIELDS = frozenset({
     *LocalTrack.__tag_fields__,
@@ -83,6 +85,17 @@ class Comparer(DynamicProcessor):
     def _clean_processor_name(name: str) -> str:
         return to_snake(name).replace(" ", "_").strip("_")
 
+    @field_validator("expected", mode="before", check_fields=True)
+    @staticmethod
+    def _convert_expected_to_time_mapper(expected: Any) -> Any:
+        if not isinstance(expected, str):
+            return expected
+
+        try:
+            return TimeMapper.model_validate(expected)
+        except ValueError:
+            return expected
+
     @property
     def _field_type(self) -> type:
         if self.field is None:
@@ -128,9 +141,7 @@ class Comparer(DynamicProcessor):
             return model
 
         annotation = typing.get_type_hints(model._processor_method.func, include_extras=True)
-        print("null", model._field_type, model._actual_type, model._expected_type, annotation)
         if "expected" not in annotation:  # doesn't take an expected value
-            print("null")
             model.expected = None
 
         return model
@@ -151,9 +162,7 @@ class Comparer(DynamicProcessor):
             cls, data: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
         model: Self = handler(data)
-        print("field_type", model._field_type, model._actual_type, model._expected_type)
         if is_typevar(model._actual_type) and is_typevar(model._expected_type):  # expected is same type as actual
-            print("field_type")
             model._convert_expected_value(model._field_type)
 
         return model
@@ -164,9 +173,7 @@ class Comparer(DynamicProcessor):
             cls, data: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
         model: Self = handler(data)
-        print("FUCK", typing.get_args(model._field_type))
         if is_typevar(model._expected_type) and model._field_type is str:
-            print("FUCK1")
             model._convert_expected_value(model._field_type)
         elif (
                 is_typevar(model._expected_type)
@@ -174,7 +181,6 @@ class Comparer(DynamicProcessor):
                 and is_typevar(next(iter(typing.get_args(model._actual_type))))
                 and (expected_type := next(iter(typing.get_args(model._field_type)), None)) is not None
         ):
-            print("FUCK2", model._field_type, model._actual_type, model._expected_type)
             model._convert_expected_value(expected_type)
 
         return model
@@ -185,7 +191,6 @@ class Comparer(DynamicProcessor):
             cls, data: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
         model: Self = handler(data)
-        print("SHIT", typing.get_args(model._field_type))
         if (
                   is_typevar(model._actual_type)
                   and typing.get_origin(model._expected_type) in (Sequence, set)
@@ -198,26 +203,20 @@ class Comparer(DynamicProcessor):
 
     def _convert_expected_value(self, expected_type: type) -> None:
         if self.expected is None or is_typevar(expected_type):
-            print("WHAT", expected_type)
             return
 
-        print("convert", expected_type, self.expected, type(self.expected))
         try:
             value = expected_type(self.expected)
-        except (TypeError, ValueError) as ex:
-            print("ex", ex)
+        except (TypeError, ValueError):
             value = self.expected
 
-        print("convert", expected_type, value, type(value))
         try:
             value = TypeAdapter(expected_type).validate_python(value)
-        except ValueError as ex:
-            print(ex)
+        except ValueError:
             return
 
         # need to explicitly compare types in this way as isinstance(False, int) is True
         if type(value) != type(self.expected) or value != self.expected:
-            print("SETTING", value)
             self.expected = value
 
     def __call__(self, *args, **kwargs) -> bool:
@@ -237,6 +236,8 @@ class Comparer(DynamicProcessor):
         expected_value = self.expected
         if expected_value is None or self.reference_required:
             expected_value = self._get_value_from_item(reference)
+        elif isinstance(expected_value, TimeMapper):  # apply map to current time for comparison
+            expected_value = expected_value.apply(datetime.now())
 
         return super().__call__(actual_value, expected_value)
 

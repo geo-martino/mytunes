@@ -15,6 +15,7 @@ from musify.models.properties.music import KeySignature
 from musify.models.properties.order import Position
 from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
 from musify.processors_new.exception import ComparerError
+from musify.processors_new.time import TimeMapper
 from tests.models.testers import MusifyModelTester
 
 
@@ -139,11 +140,11 @@ class TestComparer(MusifyModelTester):
         comparer = Comparer(condition="is_before", expected="2024-03-06 10:11:12", field="modified_at")
         assert comparer.expected == datetime(2024, 3, 6, 10, 11, 12)
 
-    def test_convert_expected_to_time_delta(self):
+    def test_convert_expected_to_time_mapper(self):
         comparer = Comparer(condition="is_after", expected="4h", field="added_at")
-        assert comparer.expected == timedelta(hours=4)
-        comparer = Comparer(condition="is_before", expected="5d", field="created_at")
-        assert comparer.expected == relativedelta(days=5)
+        assert comparer.expected == TimeMapper(unit="hours", amount=4, add=False)
+        comparer = Comparer(condition="is_before", expected="+5d", field="created_at")
+        assert comparer.expected == TimeMapper(unit="days", amount=5, add=True)
 
     def test_convert_expected_to_position(self):
         comparer = Comparer(condition="is", expected="1", field="track")
@@ -203,3 +204,12 @@ class TestComparer(MusifyModelTester):
         track.album = "album 124 is a great album"
         reference.album = "album"
         assert comparer.compare(item=track, reference=reference)
+
+    def test_compare_with_time_mapper(self, track: MP3):
+        track.added_at = datetime.now() - timedelta(days=3)
+
+        comparer = Comparer(condition="is after", expected="5d", field="added_at")
+        assert comparer.compare(track)
+
+        comparer.expected = "2d"
+        assert not comparer.compare(track)

@@ -19,19 +19,23 @@ class TestKeySignature(MusifyModelTester):
         model = model.model_validate("F")
         assert model.root == 5
         assert model.mode == 0
+        assert model.key == "F"
 
         model = model.model_validate("Fm")
         assert model.root == 5
         assert model.mode == 1
+        assert model.key == "Fm"
 
     def test_from_key_with_sharp_or_flat(self, model: KeySignature) -> None:
         model = model.model_validate("F#")
         assert model.root == 6
         assert model.mode == 0
+        assert model.key == "F#/Gb"
 
-        model = model.model_validate("Bbm")
+        model.key = "Bbm"
         assert model.root == 10
         assert model.mode == 1
+        assert model.key == "A#/Bbm"
 
     def test_key_property(self, model: KeySignature) -> None:
         model.root = 5

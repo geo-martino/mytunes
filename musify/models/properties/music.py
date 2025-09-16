@@ -44,8 +44,8 @@ class KeySignature(MusifyModel):
 
     # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
-    @classmethod
-    def _extract_mode_index_from_key(cls, value: str) -> Any:
+    @staticmethod
+    def _extract_mode_index_from_key(value: str) -> Any:
         if not isinstance(value, str):
             return value
         return int(value.endswith("m"))
