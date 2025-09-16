@@ -127,7 +127,7 @@ class HasURI[T: URI](_AttributeModel):
         return self._uri
 
     def __eq__(self, other: HasURI):
-        if not isinstance(other, HasURI):
+        if not isinstance(other, HasURI) or (self.uri is None and other.uri is None):
             return super().__eq__(other)
         if self is other:
             return True

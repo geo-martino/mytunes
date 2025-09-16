@@ -4,7 +4,7 @@ Processor making comparisons between objects and data types.
 import inspect
 import re
 import typing
-from collections.abc import Sequence
+from collections.abc import Sequence, Collection
 from types import NoneType
 from typing import Any, Literal, Self
 
@@ -46,10 +46,16 @@ COMPARISON_FIELDS = frozenset({
 
 
 class Comparer(DynamicProcessor):
-    """Compares an item or object with another item, object or a given set of expected values to find a match."""
+    """
+    Compares an item or object with another item, object or a given set of expected values to find a match.
+
+    The expected value given will be cast to the appropriate type based on the field being compared
+    according to the type hints of the selected field.
+    Attempts will be made to convert the expected value to the appropriate type based on Pydantic
+    field type conversion rules.
+    """
     condition: LowerSnakeCase = Field(
         description="The condition to match on.",
-        frozen=True,
     )
     expected: Any = Field(
         description="Expected value/s to match on.",
@@ -86,7 +92,7 @@ class Comparer(DynamicProcessor):
         else:  # field is a property
             field = getattr(LocalTrack, self.field).fget
             field_type = typing.get_type_hints(field, include_extras=True)["return"]
-        return field_type
+        return self._extract_type_from_annotation(field_type)
 
     @property
     def _actual_type(self) -> type:
@@ -122,62 +128,96 @@ class Comparer(DynamicProcessor):
             return model
 
         annotation = typing.get_type_hints(model._processor_method.func, include_extras=True)
-        if "expected" in annotation:  # doesn't take an expected value
-            return model
+        print("null", model._field_type, model._actual_type, model._expected_type, annotation)
+        if "expected" not in annotation:  # doesn't take an expected value
+            print("null")
+            model.expected = None
 
-        model.expected = None
         return model
 
     @model_validator(mode="wrap")
     @classmethod
-    def _convert_expected_to_value_when_actual_is_value(
+    def _convert_expected_to_type(
             cls, data: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        print(1, data)
         model: Self = handler(data)
-        if is_typevar(model._actual_type) or is_typevar(model._expected_type):
-            return model
+        model._convert_expected_value(model._expected_type)
 
-        model._convert_expected_value(model._field_type)
         return model
 
     @model_validator(mode="wrap")
     @classmethod
-    def _convert_expected_to_value_when_actual_is_sequence(
+    def _convert_expected_to_exact_field_type(
             cls, data: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        print(2, data)
         model: Self = handler(data)
-        if is_typevar(model._actual_type) and not is_typevar(model._expected_type):
-            return model
+        print("field_type", model._field_type, model._actual_type, model._expected_type)
+        if is_typevar(model._actual_type) and is_typevar(model._expected_type):  # expected is same type as actual
+            print("field_type")
+            model._convert_expected_value(model._field_type)
 
-        args = model._field_type
-        expected_type = typing.Optional[args]
-        model._convert_expected_value(expected_type)
         return model
 
     @model_validator(mode="wrap")
     @classmethod
-    def _convert_expected_to_sequence_when_actual_is_value(
+    def _convert_expected_to_generic_when_actual_is_sequence(
             cls, data: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        print(3, data)
         model: Self = handler(data)
-        if not is_typevar(model._actual_type) and is_typevar(model._expected_type):
-            return model
+        print("FUCK", typing.get_args(model._field_type))
+        if is_typevar(model._expected_type) and model._field_type is str:
+            print("FUCK1")
+            model._convert_expected_value(model._field_type)
+        elif (
+                is_typevar(model._expected_type)
+                and typing.get_origin(model._actual_type) is Sequence
+                and is_typevar(next(iter(typing.get_args(model._actual_type))))
+                and (expected_type := next(iter(typing.get_args(model._field_type)), None)) is not None
+        ):
+            print("FUCK2", model._field_type, model._actual_type, model._expected_type)
+            model._convert_expected_value(expected_type)
 
-        args = typing.get_args(model._field_type)
-        expected_type = typing.Sequence[typing.Union[args + (None,)]]
-        model._convert_expected_value(expected_type)
+        return model
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _convert_expected_to_sequence_when_actual_is_generic(
+            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        model: Self = handler(data)
+        print("SHIT", typing.get_args(model._field_type))
+        if (
+                  is_typevar(model._actual_type)
+                  and typing.get_origin(model._expected_type) in (Sequence, set)
+                  and is_typevar(next(iter(typing.get_args(model._expected_type)), None))
+        ):
+            expected_type = set[model._field_type]
+            model._convert_expected_value(expected_type)
+
         return model
 
     def _convert_expected_value(self, expected_type: type) -> None:
-        try:
-            value = TypeAdapter(expected_type).validate_python(self.expected)
-        except ValueError:
+        if self.expected is None or is_typevar(expected_type):
+            print("WHAT", expected_type)
             return
 
-        if not isinstance(value, type(self.expected)) or value != self.expected:
+        print("convert", expected_type, self.expected, type(self.expected))
+        try:
+            value = expected_type(self.expected)
+        except (TypeError, ValueError) as ex:
+            print("ex", ex)
+            value = self.expected
+
+        print("convert", expected_type, value, type(value))
+        try:
+            value = TypeAdapter(expected_type).validate_python(value)
+        except ValueError as ex:
+            print(ex)
+            return
+
+        # need to explicitly compare types in this way as isinstance(False, int) is True
+        if type(value) != type(self.expected) or value != self.expected:
+            print("SETTING", value)
             self.expected = value
 
     def __call__(self, *args, **kwargs) -> bool:
@@ -195,7 +235,7 @@ class Comparer(DynamicProcessor):
 
         actual_value = self._get_value_from_item(item)
         expected_value = self.expected
-        if self.reference_required:
+        if expected_value is None or self.reference_required:
             expected_value = self._get_value_from_item(reference)
 
         return super().__call__(actual_value, expected_value)
@@ -241,11 +281,11 @@ class Comparer(DynamicProcessor):
         return actual < expected
 
     @dynamicprocessormethod
-    def _is_in[T](self, actual: T, expected: Sequence[T] | None) -> bool:
+    def _is_in[T](self, actual: T, expected: set[T] | None) -> bool:
         return expected is not None and actual in expected
 
     @dynamicprocessormethod
-    def _is_not_in[T](self, actual: T, expected: Sequence[T] | None) -> bool:
+    def _is_not_in[T](self, actual: T, expected: set[T] | None) -> bool:
         return not self._is_in(actual=actual, expected=expected)
 
     @dynamicprocessormethod
@@ -259,11 +299,11 @@ class Comparer(DynamicProcessor):
         return not self._in_range(actual=actual, expected=expected)
 
     @dynamicprocessormethod
-    def _is_not_null(self, actual: Any, _=None) -> bool:
+    def _is_not_null(self, actual: Any, *_) -> bool:
         return actual is not None or actual is True
 
     @dynamicprocessormethod
-    def _is_null(self, actual: Any, _=None) -> bool:
+    def _is_null(self, actual: Any, *_) -> bool:
         return actual is None or actual is False
 
     @dynamicprocessormethod
@@ -289,20 +329,20 @@ class Comparer(DynamicProcessor):
         return not self._contains(actual=actual, expected=expected)
 
     @dynamicprocessormethod
-    def _matches_reg_ex[T: str](self, actual: T | None, expected: T | re.Pattern | None) -> bool:
+    def _matches_reg_ex(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False
         return bool(re.search(expected, actual))
 
     @dynamicprocessormethod
-    def _matches_reg_ex_ignore_case[T: str](self, actual: T | None, expected: T | re.Pattern | None) -> bool:
+    def _matches_reg_ex_ignore_case(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None or expected[0] is None:
             return False
         return bool(re.search(expected, actual, flags=re.I))
 
     def __hash__(self):
         return hash((
-            self.condition, tuple(self.expected or ()), self.field or "", self.reference_required
+            self.condition, tuple(self.expected or ""), self.field or "", self.reference_required
         ))
 
     def __eq__(self, item: Any):

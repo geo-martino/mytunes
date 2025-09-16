@@ -34,7 +34,13 @@ class KeySignature(MusifyModel):
     def _extract_root_index_from_key(cls, value: str) -> Any:
         if not isinstance(value, str):
             return value
-        return cls._root_notes.index(value.rstrip("m"))
+
+        try:
+            root_notes = [note.split("/")[0] for note in cls._root_notes]
+            return root_notes.index(value.rstrip("m"))
+        except ValueError:
+            root_notes = [note.split("/")[-1] for note in cls._root_notes]
+            return root_notes.index(value.rstrip("m"))
 
     # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
