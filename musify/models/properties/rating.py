@@ -7,7 +7,8 @@ from musify.models._base import _AttributeModel
 
 
 class Rating(MusifyRootModel[PositiveFloat]):
-    pass
+    def __hash__(self) -> int:
+        return hash(self.root)
 
 
 class HasRating(_AttributeModel):

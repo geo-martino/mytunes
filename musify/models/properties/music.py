@@ -63,3 +63,6 @@ class KeySignature(MusifyModel):
 
     def __str__(self) -> str:
         return self.key
+
+    def __hash__(self) -> int:
+        return hash((self.root, self.mode))

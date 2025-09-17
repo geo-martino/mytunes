@@ -63,6 +63,9 @@ class SparseDate(MusifyModel):
             return f"{self.year:04d}-{self.month:02d}"
         return str(self.year)
 
+    def __hash__(self) -> int:
+        return hash((self.year, self.month or 0, self.day or 0))
+
     def __eq__(self, other):
         if self is other:
             return True

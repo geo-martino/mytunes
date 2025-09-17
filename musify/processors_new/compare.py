@@ -343,7 +343,7 @@ class Comparer(DynamicProcessor):
 
     def __hash__(self):
         return hash((
-            self.condition, tuple(self.expected or ""), self.field or "", self.reference_required
+            self.condition, self.expected or "", self.field or "", self.reference_required
         ))
 
     def __eq__(self, item: Any):

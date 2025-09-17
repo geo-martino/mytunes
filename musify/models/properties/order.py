@@ -75,6 +75,9 @@ class Position(MusifyModel):
     def __str__(self) -> str:
         return self.sep.join(str(val).zfill(self.zero_fill) for val in self.numbers)
 
+    def __hash__(self) -> int:
+        return hash((self.number or 0, self.total or 0, self.zero_fill))
+
 
 class HasTrackPosition(_AttributeModel):
     """Represents a resource that has a track position."""

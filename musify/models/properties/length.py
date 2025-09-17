@@ -62,6 +62,9 @@ class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
     def __float__(self):
         return float(self.root)
 
+    def __hash__(self) -> int:
+        return hash(self.root)
+
     def __eq__(self, other: Any) -> bool:
         match other:
             case Length():
