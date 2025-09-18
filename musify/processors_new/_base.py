@@ -13,6 +13,11 @@ from musify.exception import MusifyValueError
 from musify.models import MusifyModel
 
 
+class Result(MusifyModel):
+    """Stores the results of an operation"""
+    model_config = ConfigDict(frozen=True)
+
+
 class Processor(MusifyModel):
     """Generic base class for processors"""
     pass

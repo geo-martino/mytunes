@@ -1,16 +1,16 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Annotated, Self
+from typing import Any, Annotated, Self, Literal
 
 from pydantic import Field, field_validator, BeforeValidator
 
-from musify._types import StrippedString, to_set, to_tuple
+from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
 from musify.models import MusifyResource
 from musify.models.properties.file import _IsFile, PathMapper, PathInputType
-from musify.processors_new._base import Processor
-from musify.processors_new.compare import Comparer
+from musify.processors_new._base import Processor, Result
+from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
 
 
 class Filter[T](Processor, metaclass=ABCMeta):
@@ -154,7 +154,10 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
         return self.include, self.exclude
 
     def check(self, item: T, *_, **__) -> bool:
-        return self.include.check(item) and not self.exclude.check(item)
+        match = self.include.check(item)
+        if self.exclude.ready:
+            match &= not self.exclude.check(item)
+        return match
 
     def __eq__(self, item: Any):
         return isinstance(item, self.__class__) and all((
@@ -164,8 +167,12 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
 
 
 class ComparerFilter[T: str | MusifyResource](Filter[T]):
+    """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     comparers: Mapping[Comparer, tuple[bool, Self]] = Field(
-        description="Comparers to filter against",
+        description=(
+            "Comparers to filter against. Mapped to additional filters where the first boolean indicates "
+            "whether to AND (True) or OR (False) the comparer and sub-filter results."
+        ),
         default_factory=dict,
     )
     match_all: bool = Field(
@@ -204,4 +211,99 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
         return isinstance(item, self.__class__) and all((
             self.comparers == item.comparers,
             self.match_all == item.match_all
+        ))
+
+
+class MatchResult[T: Any](Result):
+    """Results from :py:class:`MatchFilter` separated by individual filter results."""
+    included: Sequence[T] = Field(
+        description="Objects that matched include settings.",
+        default_factory=tuple,
+    )
+    excluded: Sequence[T] = Field(
+        description="Objects that matched exclude settings.",
+        default_factory=tuple,
+    )
+    compared: Sequence[T] = Field(
+        description="Objects that matched :py:class:`Comparer` settings",
+        default_factory=tuple,
+    )
+    grouped: Sequence[T] = Field(
+        description="Objects that matched on any ``group_by`` settings",
+        default_factory=tuple,
+    )
+
+    @property
+    def combined(self) -> list[T]:
+        """Combine the individual results to one combined list"""
+        return [track for track in [*self.compared, *self.included, *self.grouped] if track not in self.excluded]
+
+
+class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
+    """
+    Filter which matches based on include, exclude and comparer filters,
+    with additional option for including a given tag grouping.
+    """
+    compare: ComparerFilter[T] = Field(
+        description="Comparer filter to use when matching.",
+        default_factory=ComparerFilter,
+    )
+    group_by: Literal[*COMPARISON_FIELDS] | None = Field(
+        description=(
+            "Once all other filters are applied, also include all other items that match this tag type "
+            "from the matched items for the remaining items given."
+        ),
+        default=None,
+    )
+
+    def check(self, item: T, reference: T | None = None, *_, **__) -> bool:
+        if self.exclude.check(item, reference=reference):
+            return False
+
+        match = self.include.check(item, reference=reference)
+        if self.compare.ready:
+            match |= self.compare.check(item, reference=reference)
+
+        return match  # cannot apply group_by logic as it depends on the full set of values
+
+    def apply(self, values: Collection[T], reference: T | None = None, *_, **__) -> list[T]:
+        return self.match(values=values, reference=reference).combined
+
+    def match(self, values: Collection[T], reference: T | None = None) -> MatchResult:
+        """Same as :py:meth:`apply` but returns the results of each filter to a :py:class`MatchResult` object"""
+        if len(values) == 0:
+            return MatchResult()
+
+        included = self.include.apply(values)
+        excluded = self.exclude.apply(values) if self.exclude.ready else ()
+
+        compared = ()
+        if self.compare.ready:
+            not_included = [item for item in values if item not in included]
+            compared = self.compare.apply(not_included, reference=reference)
+
+        combined = [track for track in [*compared, *included] if track not in excluded]
+        grouped = self._match_on_group_by(values, matched=combined)
+
+        return MatchResult(included=included, excluded=excluded, compared=compared, grouped=grouped)
+
+    def _match_on_group_by(self, values: Collection[T], matched: Collection[T]) -> tuple[T, ...]:
+        if not self.group_by or len(values) == len(matched):
+            return ()
+
+        tag_values = {
+            getattr(item, self.group_by) for item in matched if getattr(item, self.group_by, None) is not None
+        }
+
+        return tuple(
+            item for item in values
+            if item not in matched and hasattr(item, self.group_by) and getattr(item, self.group_by) in tag_values
+        )
+
+    def __eq__(self, item: Any):
+        return isinstance(item, self.__class__) and all((
+            self.include == item.include,
+            self.exclude == item.exclude,
+            self.compare == item.compare,
+            self.group_by == item.group_by,
         ))

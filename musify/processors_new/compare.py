@@ -342,8 +342,16 @@ class Comparer(DynamicProcessor):
         return bool(re.search(expected, actual, flags=re.I))
 
     def __hash__(self):
+        match self.expected:
+            case None:
+                expected = ""
+            case set():
+                expected = tuple(self.expected)
+            case _:
+                expected = self.expected
+
         return hash((
-            self.condition, self.expected or "", self.field or "", self.reference_required
+            self.condition, expected, self.field or "", self.reference_required
         ))
 
     def __eq__(self, item: Any):
