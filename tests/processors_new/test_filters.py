@@ -302,7 +302,7 @@ class TestMatcherFilter(FilterTester):
     @pytest.fixture
     def tracks_include(self, tracks: list[LocalTrack], tracks_name: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
         """Sample the list of tracks to test and set the path to be included for all these tracks"""
-        include_paths = [f"{self.library_folder}/include/{faker.file_name(extension=".mp3")}" for _ in range(20)]
+        include_paths = [f"{self.library_folder}/include/{faker.file_name(extension="mp3")}" for _ in range(20)]
         tracks_include = sample([track for track in tracks if track not in tracks_name], 7)
         tracks_include.sort(key=lambda tr: tracks.index(tr))
 
@@ -313,7 +313,7 @@ class TestMatcherFilter(FilterTester):
     @pytest.fixture
     def tracks_exclude(self, tracks_released_at: list[LocalTrack], tracks_include: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
         """Sample the list of tracks to test and set the path to be excluded for all these tracks"""
-        exclude_paths = [f"{self.library_folder}/exclude/{faker.file_name(extension=".mp3")}" for _ in range(20)]
+        exclude_paths = [f"{self.library_folder}/exclude/{faker.file_name(extension="mp3")}" for _ in range(20)]
         tracks_exclude = sample(tracks_released_at, 3) + sample(tracks_include, 2)
         tracks_exclude.sort(
             key=lambda tr: tracks_released_at.index(tr) if tr in tracks_released_at else tracks_include.index(tr)

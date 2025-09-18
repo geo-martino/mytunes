@@ -30,7 +30,7 @@ class TestComparer(MusifyModelTester):
         """Returns a random MP3 track from the provided tracks."""
         return MP3(
             name=faker.sentence(nb_words=faker.random_int(1, 5)),
-            path=faker.file_path(extension=".mp3")
+            path=faker.file_path(extension="mp3")
         )
 
     def test_init_fails(self):
