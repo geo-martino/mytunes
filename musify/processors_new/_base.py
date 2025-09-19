@@ -7,7 +7,7 @@ from collections.abc import Callable
 from functools import partial, update_wrapper
 from typing import Any, Optional, Literal, Self
 
-from pydantic import ConfigDict, model_validator, TypeAdapter
+from pydantic import ConfigDict, model_validator, TypeAdapter, PrivateAttr
 
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
@@ -70,6 +70,7 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
 
     #: The set of processor methods on this processor and any alternative names for them.
     __processor_method_map__: dict[str, str] = {}
+    _processor_required: bool = PrivateAttr(default=True)  # whether a processor method is required or not
 
     @staticmethod
     def _clean_processor_name(name: str) -> str:
@@ -103,6 +104,8 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
     def _validate_processor(self) -> Self:
         processor_name = self._clean_processor_name(self._processor_name)
         if self._processor_name is None:
+            if not self._processor_required:
+                return self
             raise MusifyValueError(f"No processor given.")
 
         TypeAdapter(Literal[*list(self.__processor_method_map__)]).validate_python(processor_name)

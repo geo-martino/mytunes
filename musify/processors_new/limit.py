@@ -11,8 +11,8 @@ from pydantic import NonNegativeInt, Field, field_validator
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
+from musify.models.item.album import HasAlbum
 from musify.models.properties.length import HasLength
-from musify.models.item.track import Track
 
 from musify.field import Fields
 from musify.models import MusifyResource
@@ -28,6 +28,7 @@ class LimitType(MusifyEnum):
     ITEMS = 0
     ALBUMS = 1
 
+    # units digit is used to determine the scale factor of each unit for time and byte limits
     SECONDS = 11
     MINUTES = 12
     HOURS = 13
@@ -43,6 +44,8 @@ class LimitType(MusifyEnum):
 
 class ItemLimiter(DynamicProcessor):
     """Limit items in a Sequence in-place based on given conditions."""
+
+    _processor_required = False
 
     limit_by: NonNegativeInt = Field(
         description="The number of items to limit to. A value of 0 applies no limiting.",
@@ -99,6 +102,17 @@ class ItemLimiter(DynamicProcessor):
         if self.sorted_by:  # sort the input items in-place if sort method given
             super().__call__(items)
 
+        items_limit = self._get_items_to_limit(items, ignore)
+        match self.kind:
+            case LimitType.ITEMS:
+                items.extend(items_limit[:self.limit_by])
+            case LimitType.ALBUMS:
+                items.extend(self._limit_on_albums(items_limit))
+            case _:
+                items.extend(self._limit_on_numeric(items_limit))
+
+    @staticmethod
+    def _get_items_to_limit[T](items: list[T], ignore: Collection[T] = ()) -> list[T]:
         if ignore:  # filter out the ignore items if given
             items_limit = [item for item in items if item not in ignore]
             items_ignore = [item for item in items if item in ignore]
@@ -108,20 +122,17 @@ class ItemLimiter(DynamicProcessor):
             items_limit = [t for t in items]
             items.clear()
 
-        if self.kind == LimitType.ITEMS:
-            items.extend(items_limit[:self.limit_by])
-        elif self.kind == LimitType.ALBUMS:
-            items.extend(self._limit_on_albums(items_limit))
-        else:
-            items.extend(self._limit_on_numeric(items_limit))
+        return items_limit
 
     def _limit_on_albums[T: MusifyResource](self, items: MutableSequence[T]) -> list[T]:
         seen_albums = []
         result = []
 
         for item in items:
-            if not isinstance(item, Track):
-                LimiterProcessorError("In order to limit on Album, all items must be of type 'Track'")
+            if not isinstance(item, HasAlbum):
+                raise LimiterProcessorError("The given item cannot be limited on albums as it does not have an album.")
+            elif item.album is None:
+                continue
 
             if len(seen_albums) < self.limit_by and item.album not in seen_albums:
                 # album limit not yet reached
@@ -136,37 +147,47 @@ class ItemLimiter(DynamicProcessor):
         result = []
 
         for item in items:
-            value = self._convert(item)
-            if count + value <= self.limit_by * self.allowance:  # limit not yet reached
+            value = self._convert_numeric(item)
+            if value is None:
+                continue
+
+            count += value
+            if count <= self.limit_by * self.allowance:  # limit not yet reached
                 result.append(item)
-                count += value
             if count > self.limit_by:  # limit reached
                 break
 
         return result
 
-    def _convert(self, item: MusifyResource) -> float:
+    def _convert_numeric(self, item: MusifyResource) -> float | None:
         """
         Convert units for item length or size and return the value.
 
         :raise ItemLimiterError: When the given limit type cannot be found
         """
-        if 10 < self.kind.value < 20:
-            if not isinstance(item, HasLength):
-                raise LimiterProcessorError("The given item cannot be limited on length as it does not have a length.")
+        match self.kind.value:
+            case num if 10 < num < 20:
+                if not isinstance(item, HasLength):
+                    raise LimiterProcessorError(
+                        "The given item cannot be limited on length as it does not have a length."
+                    )
+                elif item.length is None:
+                    return
 
-            factors = (1, 60, 60, 24, 7)[:self.kind.value % 10]
-            return item.length / reduce(mul, factors, 1)
+                factors = (1, 60, 60, 24, 7)[:num % 10]
+                return float(item.length) / reduce(mul, factors, 1)
 
-        elif 20 <= self.kind.value < 30:
-            if not isinstance(item, IsFile):
-                raise LimiterProcessorError("The given item cannot be limited on bytes as it is not a file.")
+            case num if 20 <= num < 30:
+                if not isinstance(item, IsFile):
+                    raise LimiterProcessorError("The given item cannot be limited on bytes as it is not a file.")
+                elif item.size is None:
+                    return
 
-            bytes_scale = 1000
-            return item.size / (bytes_scale ** (self.kind.value % 10))
+                bytes_scale = 1000
+                return item.size / (bytes_scale ** (num % 10))
 
-        else:
-            raise LimiterProcessorError(f"Unrecognised LimitType: {self.kind}")
+            case _:
+                raise LimiterProcessorError(f"Unrecognised LimitType: {self.kind}")
 
     @dynamicprocessormethod
     def _random(self, items: MutableSequence[MusifyResource]) -> None:

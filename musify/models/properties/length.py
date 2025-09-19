@@ -66,34 +66,22 @@ class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
         return hash(self.root)
 
     def __eq__(self, other: Any) -> bool:
-        match other:
-            case Length():
-                return self.root == other.root
-            case int() | float():
-                return float(self.root) == float(other)
-            case str():
-                try:
-                    other_length = Length(other)
-                    return self.root == other_length.root
-                except MusifyValueError:
-                    return False
-            case _:
-                return False
+        return self.root == float(other)
 
     def __lt__(self, other: Any) -> bool:
-        match other:
-            case Length():
-                return self.root < other.root
-            case int() | float():
-                return float(self.root) < float(other)
-            case str():
-                try:
-                    other_length = Length(other)
-                    return self.root < other_length.root
-                except MusifyValueError:
-                    return NotImplemented
-            case _:
-                return NotImplemented
+        return self.root < float(other)
+
+    def __add__(self, other: Any) -> Length:
+        return self.model_validate(self.root + float(other))
+
+    def __sub__(self, other: Any) -> Length:
+        return self.model_validate(self.root - float(other))
+
+    def __mul__(self, other: Any) -> Length:
+        return self.model_validate(self.root * float(other))
+
+    def __truediv__(self, other: Any) -> Length:
+        return self.model_validate(self.root / float(other))
 
 
 class HasLength(_AttributeModel):
