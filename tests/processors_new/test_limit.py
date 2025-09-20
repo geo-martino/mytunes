@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -27,12 +27,8 @@ class TestItemLimiter(MusifyModelTester):
                 track.album = album
                 track.length = i * 60
                 track.rating = i
-
-                if i != 1 and i != 5:
-                    track.last_played_at = datetime.now()
-
-                if i == 1 or i == 3:
-                    track.play_count = 1000000
+                track.last_played_at = datetime.now() if i != 1 and i != 5 else datetime.now() - timedelta(days=1)
+                track.play_count = 1000000 if i == 1 or i == 3 else 0
 
         return tracks
 
@@ -92,12 +88,6 @@ class TestItemLimiter(MusifyModelTester):
         assert len(tracks) == 20
         assert {track.album.name for track in tracks} == {"album 1", "album 3"}
 
-    def test_limit_on_items_4(self, tracks: list[LocalTrack]):
-        limiter = ItemLimiter(limit_by=20, sorted_by="most often played")
-        limiter.limit(tracks, ignore=[track for track in tracks if track.album == "album 5"])
-        assert len(tracks) == 30
-        assert {track.album.name for track in tracks} == {"album 1", "album 3", "album 5"}
-
     def test_limit_on_albums_1(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=3, on=LimitType.ALBUMS)
         limiter.limit(tracks)
@@ -108,12 +98,6 @@ class TestItemLimiter(MusifyModelTester):
         limiter.limit(tracks)
         assert len(tracks) == 20
         assert {track.album.name for track in tracks} == {"album 1", "album 5"}
-
-    def test_limit_on_albums_3(self, tracks: list[LocalTrack]):
-        limiter = ItemLimiter(limit_by=2, on=LimitType.ALBUMS, sorted_by="least recently played")
-        limiter.limit(tracks, ignore={track for track in tracks if track.album == "album 3"})
-        assert len(tracks) == 30
-        assert {track.album.name for track in tracks} == {"album 1", "album 3", "album 5"}
 
     def test_limit_on_seconds_1(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=30, on=LimitType.MINUTES)

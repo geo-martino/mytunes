@@ -9,7 +9,7 @@ from random import shuffle
 from typing import Any, Literal, Annotated
 
 from aiorequestful.types import UnitIterable, Number
-from pydantic import Field, field_validator, field_serializer
+from pydantic import Field, field_validator, field_serializer, PrivateAttr
 
 from musify.local.item.track import LocalTrack
 from musify.models import MusifyResource
@@ -131,32 +131,27 @@ class ItemSorter(Processor):
                 items.reverse()
             return
 
-        tag_name = field.map(field)[0].name.lower()
-
         # attempt to find an example value to determine the value type for this sort
-        example_value = None
-        for item in items:
-            example_value = getattr(item, tag_name)
-            if example_value is not None:
-                break
-        if example_value is None:
+        try:
+            example_value = next(iter(value for item in items if (value := getattr(item, field)) is not None))
+        except StopIteration:
             # if no example value found, all values are None and so no sort can happen safely. Skip
             return
 
-        # get sort key based on value type
-        if isinstance(example_value, datetime):  # key converts datetime to floats
-            def sort_key(it: MusifyResource) -> float:
-                """Get the sort key for timestamp tags from the given ``it``"""
-                value = it[tag_name]
-                return value.timestamp() if value is not None else 0.0
-        elif isinstance(example_value, str):  # key strips ignore words from string
-            def sort_key(it: MusifyResource) -> tuple[bool, str]:
-                """Get the sort key for string tags from the given ``it``"""
-                not_special_start, value = strip_ignore_words(it[tag_name], words=ignore_words)
-                return not_special_start, value.casefold()
-        else:
-            sort_key: Callable[[MusifyResource], object] = \
-                lambda t: getattr(item, tag_name) if hasattr(item, tag_name) else 0
+        match example_value:  # get sort key based on value type
+            case str():  # key strips ignore words from string
+                def sort_key(it: MusifyResource) -> tuple[bool, str]:
+                    """Get the sort key for string tags from the given ``it``"""
+                    not_special_start, value = strip_ignore_words(getattr(it, field), words=ignore_words)
+                    return not_special_start, value.casefold()
+            case datetime():  # key converts datetime to floats
+                def sort_key(it: MusifyResource) -> float:
+                    """Get the sort key for timestamp tags from the given ``it``"""
+                    value = getattr(it, field)
+                    return value.timestamp() if value is not None else 0.0
+            case _:
+                def sort_key(it: MusifyResource) -> float:
+                    return getattr(it, field) if hasattr(it, field) else 0
 
         items.sort(key=sort_key, reverse=reverse)
 
@@ -216,10 +211,6 @@ class ItemSorter(Processor):
         elif self.shuffle_mode == ShuffleMode.DIFFERENT_ARTIST:
             self._shuffle_on_artist(items)
 
-    def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
-        weight_factor = random.uniform(-1, 1) * self.shuffle_weight
-        return abs(value - weight_factor * (value - max_value))
-
     # noinspection PyUnresolvedReferences
     def _shuffle_on_rating(self, items: list[MusifyResource]) -> None:
         if not all(isinstance(item, HasRating) for item in items):
@@ -247,6 +238,10 @@ class ItemSorter(Processor):
             key=lambda item: self._get_weighted_shuffle_value(item.added_at.timestamp(), max_value),
             reverse=self.shuffle_weight >= 0
         )
+
+    def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
+        weight_factor = random.uniform(-1, 1) * self.shuffle_weight
+        return abs(value - weight_factor * (value - max_value))
 
     # noinspection PyUnresolvedReferences
     def _shuffle_on_artist(self, items: list[MusifyResource]) -> None:
