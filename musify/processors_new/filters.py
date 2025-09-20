@@ -3,7 +3,7 @@ from collections.abc import Collection, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Annotated, Self, Literal
 
-from pydantic import Field, field_validator, BeforeValidator
+from pydantic import Field, field_validator, BeforeValidator, field_serializer
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
@@ -189,6 +189,12 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
             value = {comparer: (False, ComparerFilter()) for comparer in value}
 
         return value
+
+    @field_serializer("comparers", check_fields=True)
+    def _flatten_comparers(self, comparers: Mapping[Comparer, tuple[bool, Self]]) -> Any:
+        if all(not sub_filter.ready for _, sub_filter in comparers.values()):
+            return list(self.comparers.keys())
+        return comparers
 
     @property
     def ready(self) -> bool:

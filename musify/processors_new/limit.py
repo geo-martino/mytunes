@@ -14,12 +14,11 @@ from musify._types import LowerSnakeCase
 from musify.models.item.album import HasAlbum
 from musify.models.properties.length import HasLength
 
-from musify.field import Fields
 from musify.models import MusifyResource
 from musify.models.properties.file import IsFile
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
 from musify.processors_new.exception import LimiterProcessorError
-#from musify.processors_new.sort import ItemSorter
+from musify.processors_new.sort import ItemSorter
 from musify.types import MusifyEnum
 
 
@@ -55,7 +54,7 @@ class ItemLimiter(DynamicProcessor):
     kind: LimitType = Field(
         description="The type to limit on e.g. items, albums, minutes.",
         default=LimitType.ITEMS,
-        validation_alias="on",
+        alias="on",
     )
     sorted_by: LowerSnakeCase | None = Field(
         description="Before limiting, sort the collection of items by this function first.",
@@ -195,32 +194,32 @@ class ItemLimiter(DynamicProcessor):
 
     @dynamicprocessormethod
     def _highest_rating(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.RATING, reverse=True)
+        ItemSorter.sort_by_field(items, "rating", reverse=True)
 
     @dynamicprocessormethod
     def _lowest_rating(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.RATING)
+        ItemSorter.sort_by_field(items, "rating")
 
     @dynamicprocessormethod
     def _most_recently_played(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.LAST_PLAYED, reverse=True)
+        ItemSorter.sort_by_field(items, "last_played_at", reverse=True)
 
     @dynamicprocessormethod
     def _least_recently_played(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.LAST_PLAYED)
+        ItemSorter.sort_by_field(items, "last_played_at")
 
     @dynamicprocessormethod
     def _most_often_played(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.PLAY_COUNT, reverse=True)
+        ItemSorter.sort_by_field(items, "play_count", reverse=True)
 
     @dynamicprocessormethod
     def _least_often_played(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.PLAY_COUNT)
+        ItemSorter.sort_by_field(items, "play_count")
 
     @dynamicprocessormethod
     def _most_recently_added(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.DATE_ADDED, reverse=True)
+        ItemSorter.sort_by_field(items, "added_at", reverse=True)
 
     @dynamicprocessormethod
     def _least_recently_added(self, items: list[MusifyResource]) -> None:
-        ItemSorter.sort_by_field(items, Fields.DATE_ADDED)
+        ItemSorter.sort_by_field(items, "added_at")

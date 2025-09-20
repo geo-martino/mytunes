@@ -84,19 +84,19 @@ class TestItemLimiter(MusifyModelTester):
         limiter = ItemLimiter(limit_by=10, sorted_by="HighestRating")
         limiter(tracks)
         assert len(tracks) == 10
-        assert {track.album for track in tracks} == {"album 5"}
+        assert {track.album.name for track in tracks} == {"album 5"}
 
     def test_limit_on_items_3(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=20, sorted_by="most often played")
         limiter(tracks)
         assert len(tracks) == 20
-        assert {track.album for track in tracks} == {"album 1", "album 3"}
+        assert {track.album.name for track in tracks} == {"album 1", "album 3"}
 
     def test_limit_on_items_4(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=20, sorted_by="most often played")
         limiter.limit(tracks, ignore=[track for track in tracks if track.album == "album 5"])
         assert len(tracks) == 30
-        assert {track.album for track in tracks} == {"album 1", "album 3", "album 5"}
+        assert {track.album.name for track in tracks} == {"album 1", "album 3", "album 5"}
 
     def test_limit_on_albums_1(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=3, on=LimitType.ALBUMS)
@@ -107,13 +107,13 @@ class TestItemLimiter(MusifyModelTester):
         limiter = ItemLimiter(limit_by=2, on=LimitType.ALBUMS, sorted_by="least recently played")
         limiter.limit(tracks)
         assert len(tracks) == 20
-        assert {track.album for track in tracks} == {"album 1", "album 5"}
+        assert {track.album.name for track in tracks} == {"album 1", "album 5"}
 
     def test_limit_on_albums_3(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=2, on=LimitType.ALBUMS, sorted_by="least recently played")
         limiter.limit(tracks, ignore={track for track in tracks if track.album == "album 3"})
         assert len(tracks) == 30
-        assert {track.album for track in tracks} == {"album 1", "album 3", "album 5"}
+        assert {track.album.name for track in tracks} == {"album 1", "album 3", "album 5"}
 
     def test_limit_on_seconds_1(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=30, on=LimitType.MINUTES)
