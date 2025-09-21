@@ -43,7 +43,7 @@ class SafeDict(dict):
 IGNORE_WORDS_DEFAULT = frozenset({"The", "A"})
 
 
-def strip_ignore_words(value: str, words: Iterable[str] | None = IGNORE_WORDS_DEFAULT) -> tuple[bool, str]:
+def strip_ignore_words(value: str, words: Iterable[str] | None = IGNORE_WORDS_DEFAULT) -> tuple[bool, bool, str]:
     """
     Remove ignorable words from the beginning of a string.
 
@@ -53,22 +53,24 @@ def strip_ignore_words(value: str, words: Iterable[str] | None = IGNORE_WORDS_DE
     :return: Tuple of (True if the string starts with some special character, the formatted string)
     """
     if not value:
-        return False, value
+        return False, True, value
 
     special_chars = list('!"£$%^&*()_+-=…')
     special_start = any(value.startswith(c) for c in special_chars)
     value = re.sub(r"^\W+", "", value).strip()
 
     if not words:
-        return not special_start, value
+        return not special_start, True, value
 
     new_value = value
+    trimmed = False
     for word in words:
         new_value = re.sub(rf"^{word}\s+", "", value, flags=re.I)
         if new_value != value:
+            trimmed = True
             break
 
-    return not special_start, new_value
+    return not special_start, not trimmed, new_value
 
 
 def safe_format_map[T](value: T, format_map: Mapping[str, Any]) -> T:

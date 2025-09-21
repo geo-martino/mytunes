@@ -13,17 +13,17 @@ from musify.utils import strip_ignore_words, safe_format_map, get_max_width, ali
 ###########################################################################
 def test_strip_ignore_words():
     # marks as not special
-    assert strip_ignore_words("Hello", None) == (True, "Hello")
-    assert strip_ignore_words("I am a string", ["A"]) == (True, "I am a string")
-    assert strip_ignore_words("special end??", ["A"]) == (True, "special end??")
+    assert strip_ignore_words("Hello", None) == (True, True, "Hello")
+    assert strip_ignore_words("I am a string", ["A"]) == (True, True, "I am a string")
+    assert strip_ignore_words("special end??", ["A"]) == (True, True, "special end??")
 
     # marks as special
-    assert strip_ignore_words("!special1", ["special"]) == (False, "special1")
-    assert strip_ignore_words("*%2I am very special!", ["very", "i"]) == (False, "2I am very special!")
+    assert strip_ignore_words("!special1", ["special"]) == (False, True, "special1")
+    assert strip_ignore_words("*%2I am very special!", ["very", "i"]) == (False, True, "2I am very special!")
 
     # marks as special as needed and strips words
-    assert strip_ignore_words("I am a string", ["i"]) == (True, "am a string")
-    assert strip_ignore_words("*%I   am very special!", ["am", "i"]) == (False, "am very special!")
+    assert strip_ignore_words("I am a string", ["i"]) == (True, False, "am a string")
+    assert strip_ignore_words("*%I   am very special!", ["am", "i"]) == (False, False, "am very special!")
 
 
 def test_safe_format_map():

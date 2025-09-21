@@ -67,7 +67,7 @@ class TestPosition(MusifyModelTester):
         model.total = 20
         assert model.numbers == ()
 
-    def test_str(self, model: Position) -> None:
+    def test_to_string(self, model: Position) -> None:
         model.number = 10
         model.zero_fill = 2
         assert str(model) == "10"
@@ -78,3 +78,13 @@ class TestPosition(MusifyModelTester):
 
         model.number = None
         assert str(model) == ""
+
+    def test_to_int(self, model: Position) -> None:
+        model.number = 6
+        assert int(model) == 6
+
+    def test_ordering(self, model: Position, faker: Faker) -> None:
+        model.number = faker.random_int(1, 10)
+        assert model == model.number
+        assert model < model.number + 2
+        assert model > model.number - 2

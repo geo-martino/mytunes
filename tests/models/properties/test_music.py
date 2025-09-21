@@ -59,5 +59,5 @@ class TestKeySignature(MusifyModelTester):
         assert model.root == 0
         assert model.mode
 
-    def test_str(self, model: KeySignature) -> None:
+    def test_to_string(self, model: KeySignature) -> None:
         assert str(model) == model.key

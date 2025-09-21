@@ -46,7 +46,7 @@ class TestSparseDate(MusifyModelTester):
         model.month = faker.random_int(min=1, max=12)
         assert model.date == date(year=model.year, month=model.month, day=model.day)
 
-    def test_str(self, model: SparseDate) -> None:
+    def test_to_string(self, model: SparseDate) -> None:
         model.year = 2025
         model.month = 3
         model.day = 1

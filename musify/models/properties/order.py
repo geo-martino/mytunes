@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import total_ordering
 from typing import Any, Self, ClassVar
 
 from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
@@ -9,6 +10,7 @@ from musify.models import MusifyModel
 from musify.models._base import _AttributeModel
 
 
+@total_ordering
 class Position(MusifyModel):
     """Represents the index position of a resource within a parent resource."""
     #: The separator to use when parsing a string representation of the position.
@@ -75,8 +77,18 @@ class Position(MusifyModel):
     def __str__(self) -> str:
         return self.sep.join(str(val).zfill(self.zero_fill) for val in self.numbers)
 
+    def __int__(self):
+        return self.number
+
     def __hash__(self) -> int:
         return hash((self.number or 0, self.total or 0, self.zero_fill))
+
+    def __eq__(self, other: Any) -> bool:
+        return self.number == int(other)
+
+    def __lt__(self, other: Any) -> bool:
+        return self.number < int(other)
+
 
 
 class HasTrackPosition(_AttributeModel):

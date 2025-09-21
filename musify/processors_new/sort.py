@@ -1,16 +1,16 @@
 """
 Processor that sorts the given collection of items based on given configuration.
 """
-import random
-from collections.abc import Callable, Mapping, MutableMapping, Sequence, Iterable
+from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collection, Iterator
 from copy import copy
 from datetime import datetime
-from random import shuffle
-from typing import Any, Literal, Annotated
+from random import random, randrange, shuffle, uniform
+from typing import Any, Literal, Annotated, Mapping
 
 from aiorequestful.types import UnitIterable, Number
-from pydantic import Field, field_validator, field_serializer, PrivateAttr
+from pydantic import Field, field_validator, field_serializer
 
+from musify._types import to_tuple
 from musify.local.item.track import LocalTrack
 from musify.models import MusifyResource
 from musify.models.item.album import HasAlbum
@@ -70,7 +70,7 @@ class ItemSorter(Processor):
         * A ``shuffle_weight`` of -1 will shuffle the items randomly.
     """
 
-    sort_fields: Mapping[_SORT_FIELDS_TYPE | None, bool] = Field(
+    sort_fields: Mapping[_SORT_FIELDS_TYPE, bool] = Field(
         description=(
             "Fields to sort by. If defined, this value will always take priority over any shuffle settings "
             "i.e. shuffle settings will be ignored."
@@ -131,55 +131,56 @@ class ItemSorter(Processor):
                 items.reverse()
             return
 
-        # attempt to find an example value to determine the value type for this sort
-        try:
-            example_value = next(iter(value for item in items if (value := getattr(item, field)) is not None))
-        except StopIteration:
-            # if no example value found, all values are None and so no sort can happen safely. Skip
-            return
+        sort_key = cls._get_sort_key_by_type(items, field=field, ignore_words=ignore_words)
+        items.sort(key=sort_key, reverse=reverse)
 
-        match example_value:  # get sort key based on value type
+    @staticmethod
+    def _get_sort_key_by_type(
+            items: Collection[MusifyResource], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
+    ) -> Any:
+        try:  # attempt to find an example value to determine the value type for this sort
+            value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
+        except StopIteration:  # if no example value found, all values are None and so no sort can happen safely. Skip
+            raise ValueError(f"No value set for {field} in {items}")
+
+        match value:  # get sort key based on value type
             case str():  # key strips ignore words from string
-                def sort_key(it: MusifyResource) -> tuple[bool, str]:
-                    """Get the sort key for string tags from the given ``it``"""
-                    not_special_start, value = strip_ignore_words(getattr(it, field), words=ignore_words)
-                    return not_special_start, value.casefold()
+                def _sort_key(item: MusifyResource) -> tuple[bool, bool, str]:
+                    not_special_start, not_trimmed, val = strip_ignore_words(getattr(item, field), words=ignore_words)
+                    return not_special_start, not_trimmed, val.casefold()
             case datetime():  # key converts datetime to floats
-                def sort_key(it: MusifyResource) -> float:
-                    """Get the sort key for timestamp tags from the given ``it``"""
-                    value = getattr(it, field)
+                def _sort_key(item: MusifyResource) -> float:
+                    value = getattr(item, field)
                     return value.timestamp() if value is not None else 0.0
             case _:
-                def sort_key(it: MusifyResource) -> float:
-                    return getattr(it, field) if hasattr(it, field) else 0
+                def _sort_key(item: MusifyResource) -> float:
+                    return getattr(item, field) if hasattr(item, field) else 0
 
-        items.sort(key=sort_key, reverse=reverse)
+        return _sort_key
 
     @classmethod
     def group_by_field[T: MusifyResource](
-            cls, items: UnitIterable[T], field: _SORT_FIELDS_TYPE | None = None
+            cls, items: Iterable[T], field: _SORT_FIELDS_TYPE
     ) -> dict[Any, list[T]]:
         """
         Group items by the values of a given field.
 
         :param items: List of items to sort.
-        :param field: Tag or property to group by. None returns map of ``{None: <items>}``.
+        :param field: Tag or property to group by.
         :return: Map of grouped items.
         """
-        if field is None:  # group by None
-            return {None: to_collection(items, list)}
-
-        tag_name = field.map(field)[0].name.lower()
-
         def group(v: Any) -> None:
             """Group items by the given value ``v``"""
+            if isinstance(v, HasName):
+                v = v.name
+
             if grouped.get(v) is None:
                 grouped[v] = []
             grouped[v].append(item)
 
-        grouped: dict[Any | None, list[T]] = {}
+        grouped: dict[Any, list[T]] = {}
         for item in items:  # produce map of grouped values
-            value = to_collection(getattr(item, tag_name))
+            value = to_tuple(getattr(item, field))
             if isinstance(value, Iterable):
                 for val in value:
                     group(val)
@@ -196,20 +197,49 @@ class ItemSorter(Processor):
         if len(items) == 0:
             return
 
-        if self.sort_fields:
-            items_nested = self._sort_by_fields(
-                {None: items}, fields=dict(self.sort_fields), ignore_words=self.ignore_words
-            )
-            items.clear()
-            items.extend(flatten_nested(items_nested))
-        elif self.shuffle_mode == ShuffleMode.RANDOM:
-            shuffle(items)
-        elif self.shuffle_mode == ShuffleMode.HIGHER_RATING:
-            self._shuffle_on_rating(items)
-        elif self.shuffle_mode == ShuffleMode.RECENT_ADDED:
-            self._shuffle_on_added_at(items)
-        elif self.shuffle_mode == ShuffleMode.DIFFERENT_ARTIST:
-            self._shuffle_on_artist(items)
+        match self.shuffle_mode:
+            case _ if self.sort_fields:
+                items_nested = self._sort_by_fields(items, fields=iter(self.sort_fields.items()))
+                items.clear()
+                items.extend(flatten_nested(items_nested))
+            case ShuffleMode.RANDOM:
+                shuffle(items)
+            case ShuffleMode.HIGHER_RATING:
+                self._shuffle_on_rating(items)
+            case ShuffleMode.RECENT_ADDED:
+                self._shuffle_on_added_at(items)
+            case ShuffleMode.DIFFERENT_ARTIST:
+                self._shuffle_on_artist(items)
+
+    def _sort_by_fields[T: MusifyResource](
+            self,
+            groups: list[T] | MutableMapping[Any, T],
+            fields: Iterator[tuple[_SORT_FIELDS_TYPE, bool]],
+    ) -> list[T] | MutableMapping[Any, T]:
+        """
+        Sort items by the given fields recursively in the order given.
+
+        :param groups: Map of items grouped by the last sort value.
+        :param fields: Iterator of fields to sort by and whether to reverse the sort for that field.
+        :return: Map of grouped and sorted items.
+        """
+        try:
+            field, reverse = next(fields)
+        except StopIteration:  # recursive sorting complete
+            return groups
+
+        if not isinstance(groups, Mapping):
+            groups = {None: groups}
+
+        for key, items in groups.items():  # sort each group and recurse through each field for each group
+            self.sort_by_field(items=items, field=field, reverse=reverse, ignore_words=self.ignore_words)
+            items_grouped = self.group_by_field(items, field=field)
+            groups[key] = self._sort_by_fields(items_grouped, fields=copy(fields))
+
+        if set(groups) == {None}:
+            groups = {None: groups}
+
+        return groups
 
     # noinspection PyUnresolvedReferences
     def _shuffle_on_rating(self, items: list[MusifyResource]) -> None:
@@ -219,11 +249,12 @@ class ItemSorter(Processor):
                 "as they do not all have a rating."
             )
 
-        max_value: float = max(item.rating for item in items)
-        items.sort(
-            key=lambda item: self._get_weighted_shuffle_value(item.rating, max_value),
-            reverse=self.shuffle_weight >= 0
-        )
+        max_value = max(item.rating for item in items)
+
+        def _sort_key(item: MusifyResource) -> float:
+            return self._get_weighted_shuffle_value(item.rating, max_value)
+
+        items.sort(key=_sort_key, reverse=self.shuffle_weight >= 0)
 
     # noinspection PyUnresolvedReferences
     def _shuffle_on_added_at(self, items: list[MusifyResource]) -> None:
@@ -233,14 +264,15 @@ class ItemSorter(Processor):
                 "as they do not all have an added at date."
             )
 
-        max_value: float = max(item.added_at.timestamp() for item in items)
-        items.sort(
-            key=lambda item: self._get_weighted_shuffle_value(item.added_at.timestamp(), max_value),
-            reverse=self.shuffle_weight >= 0
-        )
+        max_value = max(item.added_at.timestamp() for item in items)
+
+        def _sort_key(item: MusifyResource) -> float:
+            return self._get_weighted_shuffle_value(item.added_at.timestamp(), max_value)
+
+        items.sort(key=_sort_key, reverse=self.shuffle_weight >= 0)
 
     def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
-        weight_factor = random.uniform(-1, 1) * self.shuffle_weight
+        weight_factor = uniform(-1, 1) * self.shuffle_weight
         return abs(value - weight_factor * (value - max_value))
 
     # noinspection PyUnresolvedReferences
@@ -255,38 +287,9 @@ class ItemSorter(Processor):
         artists: list[str] = list({item.artist for item in items})
         shuffle(artists)
 
-        def sort_key(artist: str) -> int:
-            """Get sort key for a given ``artist``"""
-            return artists.index(artist) if random.random() <= shuffle_weight else random.randrange(0, len(artists))
+        def _sort_key(item: MusifyResource) -> int:
+            artist = item.artist
+            return artists.index(artist) if random() <= shuffle_weight else randrange(0, len(artists))
 
         shuffle(items)
-        items.sort(key=lambda item: sort_key(item.artist))
-
-    @classmethod
-    def _sort_by_fields(
-            cls,
-            items_grouped: MutableMapping,
-            fields: MutableMapping[_SORT_FIELDS_TYPE | None, bool],
-            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
-    ) -> MutableMapping:
-        """
-        Sort items by the given fields recursively in the order given.
-
-        :param items_grouped: Map of items grouped by the last sort value.
-        :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
-        :return: Map of grouped and sorted items.
-        """
-        field, reverse = next(iter(fields.items()), (None, None))
-        if field is None:  # sorting complete
-            return items_grouped
-
-        fields = copy(fields)
-        fields.pop(field)
-
-        # sort each group and recurse through each field for each group
-        for i, (key, items) in enumerate(items_grouped.items(), 1):
-            cls.sort_by_field(items=items, field=field, reverse=reverse, ignore_words=ignore_words)
-            groups = cls.group_by_field(items, field=field)
-            items_grouped[key] = cls._sort_by_fields(groups, fields=fields, ignore_words=ignore_words)
-
-        return items_grouped
+        items.sort(key=_sort_key)

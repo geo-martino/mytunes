@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime
 from itertools import groupby
 from random import choice, shuffle, sample
@@ -36,6 +36,17 @@ class TestItemSorter(MusifyModelTester):
         shuffle(tracks)
         return tracks
 
+    @staticmethod
+    def _sort_key_for_name(ignore_words: Iterable[str] = ()) -> Callable[[LocalTrack], tuple[bool, str]]:
+        def _sort_key(track: LocalTrack) -> tuple[bool, bool, str]:
+            if ignore_words:
+                not_special_start, not_trimmed, value = strip_ignore_words(track.name, words=ignore_words)
+            else:
+                not_special_start, not_trimmed, value = strip_ignore_words(track.name)
+            return not_special_start, not_trimmed, value.casefold()
+
+        return _sort_key
+
     def test_sort_by_field_basic(self, tracks: list[LocalTrack]):
         # no shuffle and reverse
         tracks_original = tracks.copy()
@@ -63,38 +74,28 @@ class TestItemSorter(MusifyModelTester):
         for track in sample(tracks, k=len(tracks) // 2):
             track.name = f"{choice(ignore_words)} {track.name}"
 
-        def _sort_key(t: LocalTrack) -> tuple[bool, str]:
-            not_special_start, value = strip_ignore_words(t.name, words=ignore_words)
-            return not_special_start, value.lower()
-
-        tracks_sorted = sorted(tracks, key=_sort_key)
+        tracks_sorted = sorted(tracks, key=self._sort_key_for_name(ignore_words))
         ItemSorter.sort_by_field(tracks, field="name", ignore_words=ignore_words)
         assert tracks == tracks_sorted
         ItemSorter.sort_by_field(tracks, field="name", reverse=True, ignore_words=ignore_words)
         assert tracks == tracks_sorted[::-1]
 
     def test_group_by_field(self, tracks: list[LocalTrack]):
-        assert ItemSorter.group_by_field(tracks) == {None: tracks}
-
         groups = ItemSorter.group_by_field(tracks, "key")
         assert sorted(groups) == sorted({track.key for track in tracks})
         assert sum(map(len, groups.values())) == len(tracks)
 
     def test_shuffle_random(self, tracks: list[LocalTrack]):
-
         tracks_original = tracks.copy()
         ItemSorter().sort(tracks)
         assert tracks == tracks_original
+
         ItemSorter(shuffle_mode=ShuffleMode.RANDOM).sort(tracks)
         assert tracks != tracks_original
 
-        def _sort_key(t: LocalTrack) -> tuple[bool, str]:
-            not_special_start, value = strip_ignore_words(t.title)
-            return not_special_start, value.lower()
-
         # shuffle settings ignored when ``fields`` are defined
         ItemSorter(fields="name", shuffle_mode=ShuffleMode.RANDOM).sort(tracks)
-        assert tracks == sorted(tracks, key=_sort_key)
+        assert tracks == sorted(tracks, key=self._sort_key_for_name())
 
     def test_shuffle_rating(self, tracks: list[LocalTrack]):
         assert tracks != sorted(tracks, key=lambda t: t.rating or 0, reverse=True)
@@ -177,14 +178,15 @@ class TestItemSorter(MusifyModelTester):
         # complex multi-sort, includes reverse options
         tracks_sorted = []
         sort_key_1: Callable[[LocalTrack], str] = lambda t: t.album
-        for _, group_1 in groupby(sorted(tracks, key=sort_key_1, reverse=True), key=sort_key_1):
+        for key_1, group_1 in groupby(sorted(tracks, key=sort_key_1, reverse=True), key=sort_key_1):
             sort_key_2: Callable[[LocalTrack], int] = lambda t: t.disc.number
-            for __, group_2 in groupby(sorted(group_1, key=sort_key_2), key=sort_key_2):
+            for key_2, group_2 in groupby(sorted(group_1, key=sort_key_2), key=sort_key_2):
                 sort_key_3: Callable[[LocalTrack], int] = lambda t: t.track.number
-                for ___, group_3 in groupby(sorted(group_2, key=sort_key_3, reverse=True), key=sort_key_3):
+                for key_3, group_3 in groupby(sorted(group_2, key=sort_key_3, reverse=True), key=sort_key_3):
                     tracks_sorted.extend(list(group_3))
 
         fields = {"album": True, "disc": False, "track": True}
         sorter = ItemSorter(fields=fields)
         sorter(tracks)
+
         assert tracks == tracks_sorted

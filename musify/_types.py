@@ -8,6 +8,7 @@ from pydantic import StringConstraints, BeforeValidator, validate_call
 from pydantic.alias_generators import to_snake
 
 from musify.exception import MusifyValueError
+from musify.models import MusifyModel
 
 type Character = Annotated[str, StringConstraints(min_length=1, max_length=1)]
 type StrippedCharacter = Annotated[str, StringConstraints(min_length=1, max_length=1, strip_whitespace=True)]
@@ -44,7 +45,7 @@ def to_tuple(value: Any) -> tuple[Any] | None:
     match value:
         case None:
             return
-        case str():
+        case str() | MusifyModel():
             return (value,)
         case Iterable():
             return tuple(value)

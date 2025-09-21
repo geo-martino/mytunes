@@ -45,7 +45,7 @@ class TestTimeMapper(MusifyModelTester):
         assert model.amount == 20  # remains unchanged
         assert not model.add  # remains unchanged
 
-    def test_str(self, model: TimeMapper) -> None:
+    def test_to_string(self, model: TimeMapper) -> None:
         assert str(model) == model.key
 
     def test_apply_with_timedelta(self, model: TimeMapper) -> None:

@@ -39,16 +39,21 @@ class TestLength(MusifyModelTester):
         assert Length(359).timedelta == timedelta(seconds=359, milliseconds=0)
         assert Length(360.12).timedelta == timedelta(seconds=360, milliseconds=120)
 
-    def test_str(self):
+    def test_to_str(self):
         assert str(Length(359)) == "05:59"
         assert str(Length(360)) == "06:00"
         assert str(Length(360.12)) == "06:00.120"
         assert str(Length(3671)) == "1:01:11"
         assert str(Length(123456)) == "34:17:36"
 
-    def test_int_float(self, model: Length) -> None:
+    def test_to_number(self, model: Length) -> None:
         model.root = 123.45
         assert int(model) == 123
 
         model.root = 123
         assert float(model) == 123.0
+
+    def test_ordering(self, model: Length) -> None:
+        assert model == model.root
+        assert model < model.root + 2
+        assert model > model.root - 2
