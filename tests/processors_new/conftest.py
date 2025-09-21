@@ -1,16 +1,7 @@
-from random import sample, choice
-
 import pytest
 from faker import Faker
 
 from musify.local.item.track import LocalTrack
-from musify.models import MusifyResource
-from musify.models.collection.playlist import Playlist, MutablePlaylist
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.genre import Genre
-from musify.models.item.track import Track
-from tests.utils import GENRES, SimpleURI
 
 
 @pytest.fixture

@@ -1,7 +1,6 @@
 from random import choice
 
 import pytest
-from pydantic import PrivateAttr
 
 from musify.processors_new import DynamicProcessor, dynamicprocessormethod
 from tests.models.testers import MusifyModelTester

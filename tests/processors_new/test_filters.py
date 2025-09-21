@@ -9,8 +9,7 @@ from faker import Faker
 
 from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
-from musify.models.properties.file import _IsFile, PathStemMapper, PathMapper
-from musify.models.properties.order import Position
+from musify.models.properties.file import _IsFile
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import Filter, ValuesFilter, PathsFilter, IncludeExcludeFilter, ComparerFilter, \
     MatchFilter

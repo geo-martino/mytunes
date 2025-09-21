@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Hashable
+from enum import IntEnum
 from functools import cached_property
 from typing import Any, ClassVar
 
@@ -165,3 +166,7 @@ class _AttributeModel(MusifyResource):
 
 class _CollectionModel(_AttributeModel):
     """Defines a common base models for attributes made of common collection properties."""
+
+
+class MusifyEnum(IntEnum):
+    """Generic class for :py:class:`IntEnum` implementations for the entire package."""

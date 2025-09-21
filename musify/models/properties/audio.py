@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import Any
 
 import mutagen
 from pydantic import Field, PositiveInt, PositiveFloat, model_validator

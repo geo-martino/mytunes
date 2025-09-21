@@ -4,7 +4,6 @@ from datetime import datetime, date, timedelta
 from random import choice, sample
 
 import pytest
-from dateutil.relativedelta import relativedelta
 from faker import Faker
 
 from musify.local.item.track import LocalTrack

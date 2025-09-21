@@ -1,7 +1,6 @@
 """
 Base classes for all processors in this module. Also contains decorators for use in implementations.
 """
-import functools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 from functools import partial, update_wrapper

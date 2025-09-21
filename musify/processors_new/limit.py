@@ -11,15 +11,13 @@ from pydantic import NonNegativeInt, Field, field_validator
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
+from musify.models import MusifyResource, MusifyEnum
 from musify.models.item.album import HasAlbum
-from musify.models.properties.length import HasLength
-
-from musify.models import MusifyResource
 from musify.models.properties.file import IsFile
+from musify.models.properties.length import HasLength
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
 from musify.processors_new.exception import LimiterProcessorError
 from musify.processors_new.sort import ItemSorter
-from musify.types import MusifyEnum
 
 
 class LimitType(MusifyEnum):

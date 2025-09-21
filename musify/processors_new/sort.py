@@ -1,18 +1,18 @@
 """
 Processor that sorts the given collection of items based on given configuration.
 """
-from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collection, Iterator
+from collections.abc import MutableMapping, Sequence, Iterable, Collection, Iterator
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
 from typing import Any, Literal, Annotated, Mapping
 
-from aiorequestful.types import UnitIterable, Number
+from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
 from musify._types import to_tuple
 from musify.local.item.track import LocalTrack
-from musify.models import MusifyResource
+from musify.models import MusifyResource, MusifyEnum
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
 from musify.models.properties.audio import IsAudioFile
@@ -24,8 +24,7 @@ from musify.models.properties.order import HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
 from musify.processors_new._base import Processor
 from musify.processors_new.exception import SorterProcessorError
-from musify.types import MusifyEnum
-from musify.utils import flatten_nested, strip_ignore_words, to_collection, IGNORE_WORDS_DEFAULT
+from musify.utils import flatten_nested, strip_ignore_words, IGNORE_WORDS_DEFAULT
 
 SORT_FIELDS = frozenset({
     *LocalTrack.__tag_fields__,

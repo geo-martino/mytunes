@@ -4,7 +4,7 @@ Processor making comparisons between objects and data types.
 import inspect
 import re
 import typing
-from collections.abc import Sequence, Collection
+from collections.abc import Sequence
 from datetime import datetime
 from types import NoneType
 from typing import Any, Literal, Self
