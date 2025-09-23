@@ -94,7 +94,7 @@ class M3U(LocalPlaylist[FilterDefinedList[str | Path | File]]):
 
             if not path_list:  # empty playlist file
                 self.clear()
-                self._original = []
+                self._original.clear()
                 return self
 
         self.matcher = FilterDefinedList(values=path_list)

@@ -1,7 +1,7 @@
 """
 Processor that sorts the given collection of items based on given configuration.
 """
-from collections.abc import MutableMapping, Sequence, Iterable, Collection, Iterator
+from collections.abc import MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
@@ -11,10 +11,10 @@ from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
 from musify._types import to_tuple
-from musify.local.item.track import LocalTrack
 from musify.models import MusifyResource, MusifyEnum
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
+from musify.models.item.track import TrackTagsMixin
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsFile
@@ -26,19 +26,26 @@ from musify.processors_new._base import Processor
 from musify.processors_new.exception import SorterProcessorError
 from musify.utils import flatten_nested, strip_ignore_words, IGNORE_WORDS_DEFAULT
 
-SORT_FIELDS = frozenset({
-    *LocalTrack.__tag_fields__,
-    *IsFile.__tag_fields__,
-    *IsAudioFile.__tag_fields__,
-    *HasAddedDate.__tag_fields__,
-    *HasPlayedDate.__tag_fields__,
-    *HasLength.__tag_fields__,
-    *HasName.__tag_fields__,
-    *HasTrackPosition.__tag_fields__,
-    *HasDiscPosition.__tag_fields__,
-    *HasRating.__tag_fields__,
-    *HasAlbum.__tag_fields__,
+_SORT_TAG_TYPES = frozenset({
+    TrackTagsMixin,
+    IsFile,
+    IsAudioFile,
+    HasAddedDate,
+    HasPlayedDate,
+    HasLength,
+    HasName,
+    HasTrackPosition,
+    HasDiscPosition,
+    HasRating,
+    HasAlbum,
 })
+
+_SORT_FIELDS_MAP = {
+    field: cls for cls in _SORT_TAG_TYPES for field in cls.__tag_fields__
+}
+_SORT_FIELDS_MAP.update({field: TrackTagsMixin for field in TrackTagsMixin.model_fields})
+
+SORT_FIELDS = frozenset(_SORT_FIELDS_MAP)
 _SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 
 
@@ -68,7 +75,6 @@ class ItemSorter(Processor):
         * A ``shuffle_weight`` of 1 will group the tracks by artist, shuffling artists randomly.
         * A ``shuffle_weight`` of -1 will shuffle the items randomly.
     """
-
     sort_fields: Mapping[_SORT_FIELDS_TYPE, bool] = Field(
         description=(
             "Fields to sort by. If defined, this value will always take priority over any shuffle settings "
@@ -112,7 +118,7 @@ class ItemSorter(Processor):
     @classmethod
     def sort_by_field(
             cls,
-            items: list[MusifyResource],
+            items: MutableSequence[MusifyResource],
             field: _SORT_FIELDS_TYPE | None = None,
             reverse: bool = False,
             ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
@@ -121,7 +127,7 @@ class ItemSorter(Processor):
         Sort items by the values of a given field.
 
         :param items: List of items to sort
-        :param field: Tag or property to sort on. If None and reverse is True, reverse the order of the list.
+        :param field: Tag or property to sort on. If None and reverse is True, reverse the order of the sequence.
         :param reverse: If true, reverse the order of the sort.
         :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
         """
@@ -131,7 +137,7 @@ class ItemSorter(Processor):
             return
 
         sort_key = cls._get_sort_key_by_type(items, field=field, ignore_words=ignore_words)
-        items.sort(key=sort_key, reverse=reverse)
+        items[:] = sorted(items, key=sort_key, reverse=reverse)
 
     @staticmethod
     def _get_sort_key_by_type(
@@ -149,8 +155,8 @@ class ItemSorter(Processor):
                     return not_special_start, not_trimmed, val.casefold()
             case datetime():  # key converts datetime to floats
                 def _sort_key(item: MusifyResource) -> float:
-                    value = getattr(item, field)
-                    return value.timestamp() if value is not None else 0.0
+                    field_value = getattr(item, field)
+                    return field_value.timestamp() if field_value is not None else 0.0
             case _:
                 def _sort_key(item: MusifyResource) -> float:
                     return getattr(item, field) if hasattr(item, field) else 0
@@ -168,6 +174,8 @@ class ItemSorter(Processor):
         :param field: Tag or property to group by.
         :return: Map of grouped items.
         """
+        grouped: dict[Any, list[T]] = {}
+
         def group(v: Any) -> None:
             """Group items by the given value ``v``"""
             if isinstance(v, HasName):
@@ -177,7 +185,6 @@ class ItemSorter(Processor):
                 grouped[v] = []
             grouped[v].append(item)
 
-        grouped: dict[Any, list[T]] = {}
         for item in items:  # produce map of grouped values
             value = to_tuple(getattr(item, field))
             if isinstance(value, Iterable):
@@ -191,16 +198,15 @@ class ItemSorter(Processor):
     def __call__(self, *args, **kwargs) -> None:
         return self.sort(*args, **kwargs)
 
-    def sort(self, items: list[MusifyResource]) -> None:
-        """Sorts a list of ``items`` in-place."""
+    def sort(self, items: MutableSequence[MusifyResource]) -> None:
+        """Sorts a sequence of ``items`` in-place."""
         if len(items) == 0:
             return
 
         match self.shuffle_mode:
             case _ if self.sort_fields:
                 items_nested = self._sort_by_fields(items, fields=iter(self.sort_fields.items()))
-                items.clear()
-                items.extend(flatten_nested(items_nested))
+                items[:] = flatten_nested(items_nested)
             case ShuffleMode.RANDOM:
                 shuffle(items)
             case ShuffleMode.HIGHER_RATING:
@@ -212,9 +218,9 @@ class ItemSorter(Processor):
 
     def _sort_by_fields[T: MusifyResource](
             self,
-            groups: list[T] | MutableMapping[Any, T],
+            groups: MutableSequence[T] | MutableMapping[Any, T],
             fields: Iterator[tuple[_SORT_FIELDS_TYPE, bool]],
-    ) -> list[T] | MutableMapping[Any, T]:
+    ) -> MutableSequence[T] | MutableMapping[Any, T]:
         """
         Sort items by the given fields recursively in the order given.
 
@@ -241,7 +247,7 @@ class ItemSorter(Processor):
         return groups
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_rating(self, items: list[MusifyResource]) -> None:
+    def _shuffle_on_rating(self, items: MutableSequence[MusifyResource]) -> None:
         if not all(isinstance(item, HasRating) for item in items):
             raise SorterProcessorError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
@@ -253,10 +259,10 @@ class ItemSorter(Processor):
         def _sort_key(item: MusifyResource) -> float:
             return self._get_weighted_shuffle_value(item.rating, max_value)
 
-        items.sort(key=_sort_key, reverse=self.shuffle_weight >= 0)
+        items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_added_at(self, items: list[MusifyResource]) -> None:
+    def _shuffle_on_added_at(self, items: MutableSequence[MusifyResource]) -> None:
         if not all(isinstance(item, HasAddedDate) for item in items):
             raise SorterProcessorError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
@@ -268,14 +274,14 @@ class ItemSorter(Processor):
         def _sort_key(item: MusifyResource) -> float:
             return self._get_weighted_shuffle_value(item.added_at.timestamp(), max_value)
 
-        items.sort(key=_sort_key, reverse=self.shuffle_weight >= 0)
+        items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
 
     def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
         weight_factor = uniform(-1, 1) * self.shuffle_weight
         return abs(value - weight_factor * (value - max_value))
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_artist(self, items: list[MusifyResource]) -> None:
+    def _shuffle_on_artist(self, items: MutableSequence[MusifyResource]) -> None:
         if not all(isinstance(item, HasArtists) for item in items):
             raise SorterProcessorError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
@@ -291,4 +297,4 @@ class ItemSorter(Processor):
             return artists.index(artist) if random() <= shuffle_weight else randrange(0, len(artists))
 
         shuffle(items)
-        items.sort(key=_sort_key)
+        items[:] = sorted(items, key=_sort_key)

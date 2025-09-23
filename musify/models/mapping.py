@@ -68,6 +68,8 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
     def __eq__(self, other: Self):
         if self is other:
             return True
+        elif isinstance(other, Mapping):
+            return self._items == other
         elif not isinstance(other, self.__class__):
             return super().__eq__(other)
 

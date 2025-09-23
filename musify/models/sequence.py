@@ -1,4 +1,5 @@
-from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Set, Iterator
+from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Set, Iterator, Collection
+from copy import copy
 from typing import Any, Self, overload, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
@@ -83,6 +84,8 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
         """Matching type and all keys in this mapping present in the other mapping"""
         if self is other:
             return True
+        elif isinstance(other, Sequence):
+            return self._items == other
         elif not isinstance(other, self.__class__):
             return super().__eq__(other)
 
@@ -109,6 +112,10 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
             except IndexError:
                 pass
         return self._items_mapped[index]
+
+    def get(self, key: TK | TV, default: TV | None = None) -> TV | None:
+        """Get an item by its key, returning `default` if not found."""
+        return self._items_mapped.get(key, default)
 
     def copy(self) -> Self:
         """Return a shallow copy of this sequence"""
@@ -155,11 +162,19 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __setitem__(self, index: int | slice, value: TV | Iterable[TV]):
-        self._items[index] = value
+        if isinstance(value, Iterator):
+            # when index is slice, __value is Iterator which exhausts before being added to _items_mapped
+            value = list(value)
+            self._items[index] = iter(value)
+        else:
+            self._items[index] = value
+
         if isinstance(value, MusifyResource):
             self._items_mapped.add(value)
         else:
             self._items_mapped.update(value)
+
+        assert len(self._items_mapped) >= len(self._items)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
@@ -259,45 +274,20 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
         self.extend(MusifySequence.outer_difference(reference, other), allow_duplicates=False)
 
     @validate_call
-    def remove(self, __value: TV) -> None:
+    def remove(self, __value: TV | Sequence[TV]) -> None:
         """Remove one item from this sequence"""
-        self._items.remove(__value)
-        del self._items_mapped[__value]
+        if isinstance(__value, MusifyResource):
+            __value = (__value,)
+
+        for item in __value:
+            self._items.remove(item)
+            del self._items_mapped[item]
 
     def clear(self) -> None:
         """Remove all items from this sequence"""
         self._items.clear()
         self._items_mapped.clear()
 
-    # TODO: figure this out
-    # def sort(
-    #         self,
-    #         fields: UnitSequence[Field | None] | Mapping[Field | None, bool] = (),
-    #         shuffle_mode: ShuffleMode | None = None,
-    #         shuffle_weight: float = 1.0,
-    #         key: Field | None = None,
-    #         reverse: bool = False,
-    # ) -> None:
-    #     """
-    #     Sort items in this collection in-place based on given conditions.
-    #     If key is given,
-    #
-    #     :param fields:
-    #         * When None and ShuffleMode is RANDOM, shuffle the tracks. Otherwise, do nothing.
-    #         * List of tags/properties to sort by.
-    #         * Map of `{<tag/property>: <reversed>}`. If reversed is true, sort the ``tag/property`` in reverse.
-    #     :param shuffle_mode: The mode to use for shuffling.
-    #     :param shuffle_weight: The weights (between 0 and 1) to apply to shuffling modes that can use it.
-    #         This value will automatically be limited to within the accepted range 0 and 1.
-    #     :param key: Tag or property to sort on. Can be given instead of ``fields`` for a simple sort.
-    #         If set, all other fields apart from ``reverse`` are ignored.
-    #         If None, ``fields``, ``shuffle_mode``, ``shuffle_by``, and ``shuffle_weight`` are used to apply sorting.
-    #     :param reverse: If true, reverse the order of the sort at the end.
-    #     """
-    #     if key is not None:
-    #         ItemSorter.sort_by_field(self._items, field=key)
-    #     else:
-    #         ItemSorter(fields=fields, shuffle_mode=shuffle_mode, shuffle_weight=shuffle_weight)(self._items)
-    #
-    #     if reverse:
-    #         self._items.reverse()
+    def sort(self, key=None, reverse: bool = False) -> None:
+        """Sort the items in this sequence in place"""
+        self._items.sort(key=key, reverse=reverse)

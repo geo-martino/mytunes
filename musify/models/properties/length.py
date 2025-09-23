@@ -65,10 +65,10 @@ class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
         return hash(self.root)
 
     def __eq__(self, other: Any) -> bool:
-        return self.root == float(other)
+        return other is not None and self.root == float(other)
 
     def __lt__(self, other: Any) -> bool:
-        return self.root < float(other)
+        return other is not None and self.root < float(other)
 
     def __add__(self, other: Any) -> Length:
         return self.model_validate(self.root + float(other))

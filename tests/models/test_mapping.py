@@ -81,7 +81,7 @@ class TestMusifyMapping:
 
         initial = models[2:]
         assert mapping != MusifyMapping(initial)
-        assert MusifyMapping(initial) == mapping
+        assert MusifyMapping(initial) != mapping
 
     def test_copy(self, mapping: MusifyMapping, models: list[MusifyResource]):
         mapping_copy = mapping.copy()

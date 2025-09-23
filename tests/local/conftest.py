@@ -1,3 +1,4 @@
+from pathlib import Path
 from random import sample, choice
 
 import pytest
@@ -21,9 +22,12 @@ def models(
 
 
 @pytest.fixture
-def tracks(faker: Faker) -> list[LocalTrack]:
+def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     return [
-        LocalTrack(name=faker.sentence(nb_words=faker.random_int(1, 5)), path=faker.file_path())
+        LocalTrack(
+            name=faker.sentence(nb_words=faker.random_int(1, 5)),
+            path=tmp_path.joinpath(faker.file_path(absolute=False))
+        )
         for _ in range(faker.random_int(15, 30))
     ]
 

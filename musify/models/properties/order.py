@@ -84,11 +84,10 @@ class Position(MusifyModel):
         return hash((self.number or 0, self.total or 0, self.zero_fill))
 
     def __eq__(self, other: Any) -> bool:
-        return self.number == int(other)
+        return other is not None and self.number == int(other)
 
     def __lt__(self, other: Any) -> bool:
-        return self.number < int(other)
-
+        return other is not None and self.number < int(other)
 
 
 class HasTrackPosition(_AttributeModel):

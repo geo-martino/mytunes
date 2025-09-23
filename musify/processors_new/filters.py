@@ -108,7 +108,7 @@ class ValuesFilter[T](Filter[T]):
 
 class PathsFilter(ValuesFilter[str]):
     """Filter based on a defined list of values."""
-    values: set[StrippedString] = Field(
+    values: Annotated[set[StrippedString], BeforeValidator(to_set)] = Field(
         description="Set of paths to filter against",
         default_factory=set,
     )
@@ -136,7 +136,7 @@ class PathsFilter(ValuesFilter[str]):
         if not isinstance(item, str | Path | _IsFile):
             raise MusifyTypeError(f"Unrecognised type for path filtering: {type(item)}")
 
-        return self.path_mapper.map(item, check_existence=False) in self.values
+        return self.path_mapper.unmap(item, check_existence=False) in self.values
 
 
 class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):

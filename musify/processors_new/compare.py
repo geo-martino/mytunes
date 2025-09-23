@@ -16,9 +16,9 @@ from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase
-from musify.local.item.track import LocalTrack
 from musify.models import MusifyResource
 from musify.models.item.album import HasAlbum
+from musify.models.item.track import TrackTagsMixin
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsFile
@@ -31,20 +31,28 @@ from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
 from musify.processors_new.exception import ComparerError
 from musify.processors_new.time import TimeMapper
 
-COMPARISON_FIELDS = frozenset({
-    *LocalTrack.__tag_fields__,
-    *IsFile.__tag_fields__,
-    *IsAudioFile.__tag_fields__,
-    *HasAddedDate.__tag_fields__,
-    *HasPlayedDate.__tag_fields__,
-    *HasLength.__tag_fields__,
-    *HasName.__tag_fields__,
-    *HasTrackPosition.__tag_fields__,
-    *HasDiscPosition.__tag_fields__,
-    *HasRating.__tag_fields__,
-    *HasURI.__tag_fields__,
-    *HasAlbum.__tag_fields__,
+_COMPARISON_TAG_TYPES = frozenset({
+    TrackTagsMixin,
+    IsFile,
+    IsAudioFile,
+    HasAddedDate,
+    HasPlayedDate,
+    HasLength,
+    HasName,
+    HasTrackPosition,
+    HasDiscPosition,
+    HasRating,
+    HasURI,
+    HasAlbum,
 })
+
+_COMPARISON_FIELDS_MAP = {
+    field: cls for cls in _COMPARISON_TAG_TYPES for field in cls.__tag_fields__
+}
+_COMPARISON_FIELDS_MAP.update({field: TrackTagsMixin for field in TrackTagsMixin.model_fields})
+
+COMPARISON_FIELDS = frozenset(_COMPARISON_FIELDS_MAP)
+_COMPARISON_FIELDS_TYPE = Literal[*COMPARISON_FIELDS]
 
 
 class Comparer(DynamicProcessor):
@@ -63,7 +71,7 @@ class Comparer(DynamicProcessor):
         description="Expected value/s to match on.",
         default=None,
     )
-    field: Literal[*COMPARISON_FIELDS] | None = Field(
+    field: _COMPARISON_FIELDS_TYPE | None = Field(
         description="The field to match on.",
         default=None,
     )
@@ -100,10 +108,12 @@ class Comparer(DynamicProcessor):
     def _field_type(self) -> type:
         if self.field is None:
             field_type = NoneType
-        elif (field := LocalTrack.__pydantic_fields__.get(self.field)) is not None:  # field is a model field
+        elif (field := _COMPARISON_FIELDS_MAP[self.field].__pydantic_fields__.get(self.field)) is not None:
+            # field is a model field
             field_type = field.annotation
-        else:  # field is a property
-            field = getattr(LocalTrack, self.field).fget
+        else:
+            # field is a property
+            field = getattr(_COMPARISON_FIELDS_MAP[self.field], self.field).fget
             field_type = typing.get_type_hints(field, include_extras=True)["return"]
         return self._extract_type_from_annotation(field_type)
 

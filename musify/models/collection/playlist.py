@@ -25,14 +25,6 @@ class Playlist[TK, TV: Track](HasTracks[TK, TV], HasName, HasURI, HasLength, Has
         description="The description of the playlist.",
         default=None,
     )
-    created_at: SparseDate | None = Field(
-        description="The date that the playlist was created.",
-        default=None,
-    )
-    modified_at: SparseDate | None = Field(
-        description="The date that the playlist was last modified.",
-        default=None,
-    )
 
 
 class MutablePlaylist[TK, TV: Track](Playlist[TK, TV], HasMutableTracks[TK, TV]):

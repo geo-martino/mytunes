@@ -86,7 +86,7 @@ class ItemLimiter(DynamicProcessor):
     def __call__(self, *args, **kwargs) -> None:
         return self.limit(*args, **kwargs)
 
-    def limit[T: MusifyResource](self, items: list[T], ignore: Collection[T] = ()) -> None:
+    def limit[T: MusifyResource](self, items: MutableSequence[T], ignore: Collection[T] = ()) -> None:
         """
         Limit ``items`` in-place based on set conditions.
 
@@ -109,12 +109,10 @@ class ItemLimiter(DynamicProcessor):
                 items.extend(self._limit_on_numeric(items_limit))
 
     @staticmethod
-    def _get_items_to_limit[T](items: list[T], ignore: Collection[T] = ()) -> list[T]:
+    def _get_items_to_limit[T](items: MutableSequence[T], ignore: Collection[T] = ()) -> list[T]:
         if ignore:  # filter out the ignore items if given
             items_limit = [item for item in items if item not in ignore]
-            items_ignore = [item for item in items if item in ignore]
-            items.clear()
-            items.extend(items_ignore)
+            items[:] = [item for item in items if item in ignore]
         else:  # make a copy of the given items and clear the original list
             items_limit = [t for t in items]
             items.clear()
@@ -191,15 +189,15 @@ class ItemLimiter(DynamicProcessor):
         shuffle(items)
 
     @dynamicprocessormethod
-    def _highest_rating(self, items: list[MusifyResource]) -> None:
+    def _highest_rating(self, items: MutableSequence[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, "rating", reverse=True)
 
     @dynamicprocessormethod
-    def _lowest_rating(self, items: list[MusifyResource]) -> None:
+    def _lowest_rating(self, items: MutableSequence[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, "rating")
 
     @dynamicprocessormethod
-    def _most_recently_played(self, items: list[MusifyResource]) -> None:
+    def _most_recently_played(self, items: MutableSequence[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, "last_played_at", reverse=True)
 
     @dynamicprocessormethod
