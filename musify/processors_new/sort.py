@@ -11,6 +11,7 @@ from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
 from musify._types import to_tuple
+from musify.exception import MusifyValueError
 from musify.models import MusifyResource, MusifyEnum
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
@@ -147,7 +148,7 @@ class ItemSorter(Processor):
         try:  # attempt to find an example value to determine the value type for this sort
             value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
         except StopIteration:  # if no example value found, all values are None and so no sort can happen safely. Skip
-            raise ValueError(f"No value set for {field} in {items}")
+            raise MusifyValueError(f"No value set for {field} in {items}")
 
         match value:  # get sort key based on value type
             case str():  # key strips ignore words from string

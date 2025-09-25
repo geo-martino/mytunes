@@ -96,6 +96,9 @@ class TimeMapper(DynamicProcessor):
     def __str__(self) -> str:
         return self.key
 
+    def __hash__(self) -> int:
+        return hash(self.key)
+
     def __call__[T: date | datetime](self, value: T) -> T:
         return self.apply(value)
 

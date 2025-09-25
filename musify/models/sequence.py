@@ -174,8 +174,6 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
         else:
             self._items_mapped.update(value)
 
-        assert len(self._items_mapped) >= len(self._items)
-
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
         if isinstance(item := self[index], MusifyResource):  # index is an int

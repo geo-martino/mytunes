@@ -66,7 +66,7 @@ class ImageBase(MusifyModel):
         try:
             obj = cls()
         except TypeError as ex:  # raised when trying to instantiate a models with missing abstract methods
-            raise ValueError(str(ex))
+            raise MusifyValueError(str(ex))
 
         obj.update_attributes(data)
         return obj

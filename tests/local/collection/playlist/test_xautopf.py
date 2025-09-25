@@ -23,141 +23,265 @@ from musify.utils import required_modules_installed
 from tests.models.testers import UniqueKeyTester, MusifyModelTester
 
 
+@pytest.fixture
+def xml_playlist_basic() -> str:
+    """A basic XAutoPF playlist XML structure for testing purposes."""
+    return """
+<?xml version="1.0" encoding="utf-8"?>
+<SmartPlaylist SaveStaticCopy="True" LiveUpdating="True" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
+  <Source Type="1">
+    <Description>I am a description</Description>
+    <Conditions CombineMethod="All">
+      <Condition Field="Album" Comparison="Contains" Value="an album" />
+      <Condition Field="ArtistPeople" Comparison="IsNull" />
+      <Condition Field="TrackNo" Comparison="LessThan" Value="30" />
+    </Conditions>
+    <Limit FilterDuplicates="False" Enabled="False" Count="25" Type="Minutes" SelectedBy="MostRecentlyAdded" />
+    <SortBy Field="86" Order="Ascending" />
+    <Fields>
+      <Group Id="TrackDetail">
+        <Field Code="20" Width="24" />
+        <Field Code="78" Width="48" />
+        <Field Code="65" Width="769" />
+        <Field Code="16" Width="121" />
+        <Field Code="32" Width="534" />
+        <Field Code="30" Width="531" />
+        <Field Code="12" Width="354" />
+        <Field Code="14" Width="97" />
+      </Group>
+    </Fields>
+    <ExceptionsInclude>../track/NOISE_FLaC.flac|../track/noiSE_mP3.mp3|../track/noise_wma.wma</ExceptionsInclude>
+    <Exceptions>../playlist/exclude_me.flac|../playlist/exclude_me_2.mp3|../track/noiSE_mP3.mp3</Exceptions>
+  </Source>
+</SmartPlaylist>
+    """.strip()
+
+
+@pytest.fixture
+def xml_playlist_complex() -> str:
+    """A complex XAutoPF playlist XML structure for testing purposes."""
+    return """
+<?xml version="1.0" encoding="utf-8"?>
+<SmartPlaylist SaveStaticCopy="True" LiveUpdating="True" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
+  <Source Type="1">
+    <Description>This has got some complex matching</Description>
+    <Conditions CombineMethod="Any">
+      <Condition Field="Album" Comparison="Contains" Value="an album" />
+      <Condition Field="Rating" Comparison="InRange" Value1="40" Value2="80">
+        <And CombineMethod="Any">
+          <Condition Field="FolderName" Comparison="IsIn" Value1="Jazz" Value2="Rock" Value3="Pop" />
+          <Condition Field="TrackNo" Comparison="LessThan" Value="50" />
+        </And>
+      </Condition>
+      <Condition Field="Rating" Comparison="Is" Value="5">
+        <Or CombineMethod="All">
+          <Condition Field="Title" Comparison="StartsWith" Value="a title" />
+          <Condition Field="FileLastPlayed" Comparison="InTheLast" Value="7d" />
+        </Or>
+      </Condition>
+    </Conditions>
+    <Limit FilterDuplicates="False" Enabled="True" Count="1" Type="Seconds" SelectedBy="MostRecentlyAdded" />
+    <DefinedSort Id="6" />
+    <Fields>
+      <Group Id="TrackDetail">
+        <Field Code="20" Width="24" />
+        <Field Code="78" Width="48" />
+        <Field Code="65" Width="769" />
+        <Field Code="16" Width="121" />
+        <Field Code="32" Width="534" />
+        <Field Code="30" Width="531" />
+        <Field Code="12" Width="354" />
+        <Field Code="14" Width="97" />
+      </Group>
+    </Fields>
+    <ExceptionsInclude>../track/include_me.flac|../track/include_me.mp3</ExceptionsInclude>
+    <Exceptions>../track/ignore_me.flac|../track/ignore_me.mp3</Exceptions>
+  </Source>
+</SmartPlaylist>
+    """.strip()
+
+
+@pytest.fixture
+def xml_playlist_recent() -> str:
+    """A recently added tracks XAutoPF playlist XML structure for testing purposes."""
+    return """
+<?xml version="1.0" encoding="utf-8"?>
+<SmartPlaylist SaveStaticCopy="False" LiveUpdating="True" Layout="4" LayoutGroupBy="0" ShuffleMode="DifferentArtist" ShuffleSameArtistWeight="-0.2" GroupBy="track" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
+  <Source Type="1">
+    <Conditions CombineMethod="Any">
+      <Condition Field="Album" Comparison="Contains" Value="" />
+    </Conditions>
+    <Limit FilterDuplicates="True" Enabled="True" Count="20" Type="Items" SelectedBy="MostRecentlyAdded" />
+    <SortBy Field="12" Order="Descending" />
+    <Fields>
+      <Group Id="TrackDetail">
+        <Field Code="20" Width="24" />
+        <Field Code="78" Width="48" />
+        <Field Code="65" Width="751" />
+        <Field Code="16" Width="117" />
+        <Field Code="32" Width="562" />
+        <Field Code="30" Width="517" />
+        <Field Code="12" Width="336" />
+        <Field Code="14" Width="128" />
+      </Group>
+      <Group Id="Album">
+        <Field Code="78" Width="25" />
+        <Field Code="31" Width="135" />
+        <Field Code="65" Width="160" />
+        <Field Code="30" Width="110" />
+        <Field Code="59" Width="130" />
+        <Field Code="75" Width="75" />
+        <Field Code="16" Width="34" />
+        <Field Code="12" Width="75" />
+      </Group>
+    </Fields>
+  </Source>
+</SmartPlaylist>
+    """.strip()
+
+
+# noinspection PyUnresolvedReferences
+@pytest.fixture(params=[
+    pytest.lazy_fixture("xml_playlist_basic"),
+    pytest.lazy_fixture("xml_playlist_complex"),
+    pytest.lazy_fixture("xml_playlist_recent"),
+])
+def xml_playlist(request) -> str:
+    """Yields different XAutoPF playlist XML structures for testing purposes."""
+    return request.param
+
+
 class TestXAutoPF(UniqueKeyTester):
 
     @pytest.fixture
     async def model(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path) -> XAutoPF:
-        playlist = XAutoPF(path=tmp_path.joinpath(faker.file_path(absolute=False, extension=".xautopf")))
+        playlist = XAutoPF(path=tmp_path.joinpath(faker.file_path(absolute=False, extension="xautopf")))
         return await playlist.load(tracks=tracks)
 
-    async def test_load_playlist_bp_settings(self, tracks: list[LocalTrack], path_mapper: PathMapper):
-        pl = XAutoPF(path=path_playlist_xautopf_bp, path_mapper=path_mapper)
-        await pl.load()
+    @pytest.fixture
+    def path_mapper(self, tracks: list[LocalTrack]) -> PathStemMapper:
+        stem_map = {parent: "./" for parent in set(track.path.parent for track in tracks)}
+        return PathStemMapper(stem_map=stem_map)
 
-        assert pl.name == path_playlist_xautopf_bp.stem
-        assert pl.description == "I am a description"
-        assert pl.path == path_playlist_xautopf_bp
-        assert pl.ext == path_playlist_xautopf_bp.suffix
+    async def assert_load(
+            self,
+            path: Path,
+            xml: _XMLRoot,
+            tracks: list[LocalTrack],
+            path_mapper: PathMapper
+    ) -> None:
+        """Asserts loading of a playlist from a given path with expected XML structure and tracks."""
+        pl = XAutoPF(path=path, path_mapper=path_mapper)
+        assert pl._xml is None
         assert not pl.tracks
-
-        # fine-grained processor settings are tested in class-specific tests
-        assert pl.matcher.ready
-        assert len(pl.matcher.comparers.comparers) == 3
+        assert not pl.description
+        assert not pl.matcher
         assert not pl.limiter
-        assert not pl.limiter_deduplication
-        assert pl.sorter
+        assert not pl.sorter
+
+        await pl.load()
+        assert pl._xml == xml
+        assert not pl.tracks
+        assert pl.description == xml.smart_playlist.source.description
+
+        matcher = xml.smart_playlist.matcher
+        matcher.include.path_mapper = path_mapper
+        matcher.exclude.path_mapper = path_mapper
+        assert pl.matcher == matcher
+        assert pl.limiter == xml.smart_playlist.source.limit.limiter
+        assert pl.sorter == xml.smart_playlist.sorter
+
+        with (
+            mock.patch.object(XAutoPF, "_match", return_value=None) as mock_match,
+            mock.patch.object(XAutoPF, "_limit", return_value=None) as mock_limit,
+            mock.patch.object(XAutoPF, "_sort", return_value=None) as mock_sort,
+        ):
+            await pl.load(tracks)
+
+            mock_match.assert_called_once_with(tracks=tracks, reference=tracks[0])
+            mock_limit.assert_called_once_with(ignore=pl.matcher.exclude.values)
+            mock_sort.assert_called_once_with()
+
+    async def test_load_from_no_file(
+            self,
+            model: XAutoPF,
+            xml_playlist: str,
+            tracks: list[LocalTrack],
+            path_mapper: PathMapper,
+            faker: Faker,
+            tmp_path: Path
+    ):
+        await self.assert_load(model.path, _XMLRoot(), tracks, path_mapper)
+
+    async def test_load_from_file(
+            self,
+            model: XAutoPF,
+            xml_playlist: str,
+            tracks: list[LocalTrack],
+            path_mapper: PathMapper,
+            faker: Faker,
+            tmp_path: Path
+    ):
+        model.path.parent.mkdir(parents=True, exist_ok=True)
+        with model.path.open("w", encoding="utf-8") as file:
+            file.write(xml_playlist)
+
+        xml = _XMLRoot.model_validate(xml_playlist)
+        await self.assert_load(model.path, xml, tracks, path_mapper)
+
+    async def test_limiter_deduplication(
+            self,
+            model: XAutoPF,
+            xml_playlist_recent: str,
+            tracks: list[LocalTrack],
+            path_mapper: PathMapper,
+            faker: Faker
+    ):
+        model.path.parent.mkdir(parents=True, exist_ok=True)
+        with model.path.open("w", encoding="utf-8") as file:
+            file.write(xml_playlist_recent)
+
+        for track in tracks:
+            track.added_at = datetime(2024, 1, faker.random_int(1, 28))
+
+        pl = XAutoPF(path=model.path)
+        await pl.load()
+        assert not pl.tracks
+        assert pl.limiter_deduplication
+
+        limit = pl.limiter.limit_by
+        tracks_expected = sorted(tracks, key=lambda t: t.added_at, reverse=True)[:limit]
 
         await pl.load(tracks)
-        assert [track.path.name for track in pl.tracks] == [path_track_flac.name, path_track_wma.name]
-
-    async def test_load_playlist_bp_tracks(self, tracks: list[LocalTrack], path_mapper: PathMapper):
-        # prepare tracks to search through
-        tracks_actual = sorted(tracks)
-        tracks = random_tracks(50)
-        for i, track in enumerate(tracks[10:40]):
-            track.album = "an album"
-        for i, track in enumerate(tracks[20:50]):
-            track.artist = None
-        for i, track in enumerate(tracks, 1):
-            track.track_number = i
-        tracks += tracks_actual
-        tracks_expected = [tracks_actual[0], tracks_actual[3]]
-
-        pl = XAutoPF(path=path_playlist_xautopf_bp, path_mapper=path_mapper)
-        await pl.load(tracks=tracks_actual)
         assert pl.tracks == tracks_expected
 
-        pl = XAutoPF(path=path_playlist_xautopf_bp, path_mapper=path_mapper)
-        await pl.load(tracks=tracks)
-
-        assert len(pl.tracks) == 32
-        tracks_expected += [
-            track for track in tracks if 20 < track.track_number < 30 or track.album == "an album"
-        ]
-        assert pl.tracks == sorted(tracks_expected, key=lambda t: t.track_number)
-
-    async def test_load_playlist_ra_settings(self, path_mapper: PathMapper):
-        pl = XAutoPF(path=path_playlist_xautopf_ra, path_mapper=path_mapper)
-        await pl.load(tracks=random_tracks(20))
-
-        assert pl.name == path_playlist_xautopf_ra.stem
-        assert pl.description is None
-        assert pl.path == path_playlist_xautopf_ra
-        assert pl.ext == path_playlist_xautopf_ra.suffix
-
-        # fine-grained processor settings are tested in class-specific tests
-        assert not pl.matcher.ready
-        assert not pl.matcher.comparers
-        assert pl.limiter
-        assert pl.limiter_deduplication
-        assert pl.sorter
-
-    async def test_load_playlist_ra_tracks(self, path_mapper: PathMapper):
-        # prepare tracks to search through
-        tracks = random_tracks(50)
-        for i, track in enumerate(tracks):
-            track.date_added = datetime.now().replace(minute=i)
-
-        pl = XAutoPF(path=path_playlist_xautopf_ra, path_mapper=path_mapper)
-        await pl.load(tracks=tracks)
-
-        limit = pl.limiter.limit_max
-        assert len(pl.tracks) == limit
-        tracks_expected = sorted(tracks, key=lambda t: t.date_added, reverse=True)[:limit]
-        assert pl.tracks == sorted(tracks_expected, key=lambda t: t.date_added, reverse=True)
-
-    async def test_limiter_deduplication(self):
-        tracks = random_tracks(10)
-
-        pl = XAutoPF(path=path_playlist_xautopf_ra)
-        await pl.load(tracks=tracks)
-
-        limit = pl.limiter.limit_max
-        tracks_expected = sorted(tracks, key=lambda t: t.date_added, reverse=True)[:limit]
-        assert pl.limiter_deduplication
-        assert pl.tracks == tracks_expected
-
-        pl = XAutoPF(path=path_playlist_xautopf_ra)
+        # add duplicates and apply deduplication
         await pl.load(tracks=tracks + tracks)
-
-        assert pl.limiter_deduplication
         assert pl.tracks == tracks_expected
 
-    async def test_save_new_file(self, tmp_path: Path, faker: Faker):
-        path = tmp_path.joinpath(faker.file_path(absolute=False, extension=".xautopf"))
+    async def test_save_to_new_file(self, faker: Faker, tmp_path: Path):
+        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="xautopf"))
         pl = XAutoPF(path=path)
+
         await pl.load()
-
         assert not path.exists()
-
-        # default values were assigned according to class attribute defaults
-        for key, default in pl.default_xml["SmartPlaylist"].items():
-            if key == "Source":
-                continue
-            assert pl._parser.xml_smart_playlist[key] == default
-        assert pl._parser.xml_source["@Type"] == pl.default_xml["SmartPlaylist"]["Source"]["@Type"]
-        assert pl.description is None
-
-        # default processor settings were applied
-        assert not pl.matcher.ready
-        assert not pl.limiter
-        assert pl.sorter.sort_fields == pl._parser.defined_sort[6]
-        assert pl.sorter.shuffle_mode is None
-
         assert not pl.tracks  # no tracks given so no tracks loaded
+        assert pl._xml
 
         await pl.save(dry_run=True)
         assert not path.exists()
         await pl.save(dry_run=False)
         assert path.is_file()
 
-    async def test_save_existing_file(
+        with path.open("r") as file:
+            assert file.read() == pl._xml.unparse_xml()
+
+    async def test_save_to_existing_file(
             self, tracks: list[LocalTrack], path_mapper: PathMapper, tmp_path: Path
     ):
         path = path_playlist_xautopf_bp
         # prepare tracks to search through
         tracks_actual = [track for track in tracks if track.path in [path_track_flac, path_track_wma]]
-        tracks = random_tracks(50)
         for i, track in enumerate(tracks[10:40]):
             track.album = "an album"
         for i, track in enumerate(tracks[20:50]):
@@ -171,8 +295,8 @@ class TestXAutoPF(UniqueKeyTester):
 
         assert pl.path == path
         assert len(pl.tracks) == 32
-        original_dt_modified = pl.date_modified
-        original_dt_created = pl.date_created
+        original_dt_modified = pl.added_at
+        original_dt_created = pl.created_at
         original_parser = deepcopy(pl._parser)
 
         # perform some operations on the playlist
@@ -354,14 +478,14 @@ class TestXMLConditions(MusifyModelTester):
         condition1 = _XMLCondition()
         condition1.field = "TrackNo"
         condition1.comparison = "IsIn"
-        condition1.value = {"a", "b", "c"}
-        condition1.And = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value={"1", "2", "3"})])
+        condition1.value = ["a", "b", "c"]
+        condition1.And = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["1", "2", "3"])])
 
         condition2 = _XMLCondition()
         condition2.field = "Album Artist"
         condition2.comparison = "EndsWith"
         condition2.value = "an album"
-        condition2.Or = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value={"4", "5", "6"})])
+        condition2.Or = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["4", "5", "6"])])
 
         comparers = ComparerFilter[LocalTrack](
             comparers={
@@ -454,24 +578,27 @@ class TestXMLLimit(MusifyModelTester):
 
 
 class TestXMLDisplayField(MusifyModelTester):
+    @staticmethod
+    def get_valid_code() -> int:
+        """Returns a random valid field code."""
+        code = 0
+        while code in (0, 20, 78):
+            code = choice(tuple(_XMLCondition.code_name_map))
+        return code
+
     @pytest.fixture
     def model(self) -> _XMLDisplayField:
-        return _XMLDisplayField(code=choice([code for code in _XMLCondition.code_name_map if code > 0]), width=100)
+        return _XMLDisplayField(code=self.get_valid_code(), width=100)
 
     def test_validate_code_is_mapped(self, model: _XMLDisplayField) -> None:
         with pytest.raises(ValueError):
             _XMLDisplayField(code=9999)
 
-        _XMLDisplayField(code=choice([code for code in _XMLCondition.code_name_map if code > 0]), width=100)
-
     def test_field(self, model: _XMLDisplayField) -> None:
         assert model.field in _XMLCondition.field_name_map
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayField], faker: Faker) -> None:
-        xml = {
-            "@Code": choice([code for code in _XMLCondition.code_name_map if code > 0]),
-            "@Width": faker.random_int(1, 100)
-        }
+        xml = {"@Code": self.get_valid_code(), "@Width": faker.random_int(1, 100)}
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
@@ -489,7 +616,7 @@ class TestXMLDisplayGroup(MusifyModelTester):
             "@Id": choice(("TrackDetail", "Album")),
             "Field": [
                 {
-                    "@Code": choice([code for code in _XMLCondition.code_name_map if code > 0]),
+                    "@Code": TestXMLDisplayField.get_valid_code(),
                     "@Width": faker.random_int(1, 100)
                 }
                 for _ in range(faker.random_int(1, 10))
@@ -529,10 +656,7 @@ class TestXMLDisplayFields(MusifyModelTester):
                 {
                     "@Id": choice(("TrackDetail", "Album")),
                     "Field": [
-                        {
-                            "@Code": choice([code for code in _XMLCondition.code_name_map if code > 0]),
-                            "@Width": faker.random_int(1, 100)
-                        }
+                        {"@Code": TestXMLDisplayField.get_valid_code(), "@Width": faker.random_int(1, 100)}
                         for _ in range(faker.random_int(1, 10))
                     ]
                 }
@@ -550,11 +674,10 @@ class TestXMLSortBy(MusifyModelTester):
         with pytest.raises(ValueError):
             model.field = 9999
 
-        model.field = choice([code for code in _XMLCondition.code_name_map if code > 0])
+        model.field = TestXMLDisplayField.get_valid_code()
 
     def test_field_name(self, model: _XMLDisplayField) -> None:
-        while model.field in (0, 20, 78):
-            model.field = choice(tuple(_XMLCondition.code_name_map))
+        model.field = TestXMLDisplayField.get_valid_code()
         assert model.field_name in _XMLCondition.field_name_map
 
     def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy) -> None:
@@ -577,7 +700,7 @@ class TestXMLSortBy(MusifyModelTester):
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLSortBy]) -> None:
         xml = {
-            "@Field": choice([code for code in _XMLCondition.code_name_map if code > 0]),
+            "@Field": TestXMLDisplayField.get_valid_code(),
             "@Order": choice(("Ascending", "Descending"))
         }
         assert adapter.validate_python(xml).model_dump_xml() == xml
@@ -716,7 +839,7 @@ class TestXMLSource(MusifyModelTester):
                         "@Id": choice(("TrackDetail", "Album")),
                         "Field": [
                             {
-                                "@Code": choice([code for code in _XMLCondition.code_name_map if code > 0]),
+                                "@Code": TestXMLDisplayField.get_valid_code(),
                                 "@Width": faker.random_int(0, 100)
                             }
                             for _ in range(faker.random_int(1, 10))
@@ -728,9 +851,9 @@ class TestXMLSource(MusifyModelTester):
             "Exceptions": "|".join(sorted(faker.file_path() for _ in range(faker.random_int(1, 10)))),
         }
 
-        if False:
+        if choice([True, False]):
             xml["SortBy"] = {
-                "@Field": choice([code for code in _XMLCondition.code_name_map if code > 0]),
+                "@Field": TestXMLDisplayField.get_valid_code(),
                 "@Order": choice(["Ascending", "Descending"])
             }
         else:
@@ -798,14 +921,13 @@ class TestXMLSmartPlaylist(MusifyModelTester):
 
         model.parse_sorter(sorter)
         assert model.shuffle_mode == _XMLSmartPlaylist.model_fields["shuffle_mode"].default
-        shuffle_same_artist_weight_default = _XMLSmartPlaylist.model_fields["shuffle_same_artist_weight"].default
-        assert model.shuffle_same_artist_weight == shuffle_same_artist_weight_default
+        assert model.shuffle_same_artist_weight == sorter.shuffle_weight
 
     def test_parse_sorter(self, model: _XMLSmartPlaylist, faker: Faker) -> None:
         sorter = ItemSorter(
             sort_fields={"name": choice([True, False])},
             shuffle_mode=ShuffleMode.RECENT_ADDED,
-            shuffle_weight=faker.random_int(0, 10) / 10,
+            shuffle_weight=faker.random_int(-10, 10) / 10,
         )
 
         with mock.patch.object(_XMLSource, "parse_sorter") as mock_parse:
@@ -836,130 +958,6 @@ class TestXMLRoot(MusifyModelTester):
     @pytest.fixture
     def model(self) -> _XMLRoot:
         return _XMLRoot()
-
-    @pytest.fixture
-    def xml_playlist_basic(self) -> str:
-        """A basic XAutoPF playlist XML structure for testing purposes."""
-        return """
-<?xml version="1.0" encoding="utf-8"?>
-<SmartPlaylist SaveStaticCopy="True" LiveUpdating="True" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
-  <Source Type="1">
-    <Description>I am a description</Description>
-    <Conditions CombineMethod="All">
-      <Condition Field="Album" Comparison="Contains" Value="an album" />
-      <Condition Field="ArtistPeople" Comparison="IsNull" />
-      <Condition Field="TrackNo" Comparison="LessThan" Value="30" />
-    </Conditions>
-    <Limit FilterDuplicates="False" Enabled="False" Count="25" Type="Minutes" SelectedBy="MostRecentlyAdded" />
-    <SortBy Field="86" Order="Ascending" />
-    <Fields>
-      <Group Id="TrackDetail">
-        <Field Code="20" Width="24" />
-        <Field Code="78" Width="48" />
-        <Field Code="65" Width="769" />
-        <Field Code="16" Width="121" />
-        <Field Code="32" Width="534" />
-        <Field Code="30" Width="531" />
-        <Field Code="12" Width="354" />
-        <Field Code="14" Width="97" />
-      </Group>
-    </Fields>
-    <ExceptionsInclude>../track/NOISE_FLaC.flac|../track/noiSE_mP3.mp3|../track/noise_wma.wma</ExceptionsInclude>
-    <Exceptions>../playlist/exclude_me.flac|../playlist/exclude_me_2.mp3|../track/noiSE_mP3.mp3</Exceptions>
-  </Source>
-</SmartPlaylist>
-        """.strip()
-
-    @pytest.fixture
-    def xml_playlist_complex(self) -> str:
-        """A complex XAutoPF playlist XML structure for testing purposes."""
-        return """
-<?xml version="1.0" encoding="utf-8"?>
-<SmartPlaylist SaveStaticCopy="True" LiveUpdating="True" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
-  <Source Type="1">
-    <Description>This has got some complex matching</Description>
-    <Conditions CombineMethod="Any">
-      <Condition Field="Album" Comparison="Contains" Value="an album" />
-      <Condition Field="Rating" Comparison="InRange" Value1="40" Value2="80">
-        <And CombineMethod="Any">
-          <Condition Field="GenreSplits" Comparison="IsIn" Value1="Jazz" Value2="Rock" Value3="Pop" />
-          <Condition Field="TrackNo" Comparison="LessThan" Value="50" />
-        </And>
-      </Condition>
-      <Condition Field="Year" Comparison="Is" Value="2024">
-        <Or CombineMethod="All">
-          <Condition Field="ArtistPeople" Comparison="StartsWith" Value="an artist" />
-          <Condition Field="FileLastPlayed" Comparison="InTheLast" Value="7d" />
-        </Or>
-      </Condition>
-    </Conditions>
-    <Limit FilterDuplicates="False" Enabled="True" Count="1" Type="Seconds" SelectedBy="MostRecentlyAdded" />
-    <DefinedSort Id="6" />
-    <Fields>
-      <Group Id="TrackDetail">
-        <Field Code="20" Width="24" />
-        <Field Code="78" Width="48" />
-        <Field Code="65" Width="769" />
-        <Field Code="16" Width="121" />
-        <Field Code="32" Width="534" />
-        <Field Code="30" Width="531" />
-        <Field Code="12" Width="354" />
-        <Field Code="14" Width="97" />
-      </Group>
-    </Fields>
-    <ExceptionsInclude>../track/include_me.flac|../track/include_me.mp3</ExceptionsInclude>
-    <Exceptions>../track/ignore_me.flac|../track/ignore_me.mp3</Exceptions>
-  </Source>
-</SmartPlaylist>
-        """.strip()
-
-    @pytest.fixture
-    def xml_playlist_recent(self) -> str:
-        """A recently added tracks XAutoPF playlist XML structure for testing purposes."""
-        return """
-<?xml version="1.0" encoding="utf-8"?>
-<SmartPlaylist SaveStaticCopy="False" LiveUpdating="True" Layout="4" LayoutGroupBy="0" ShuffleMode="DifferentArtist" ShuffleSameArtistWeight="-0.2" GroupBy="track" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
-  <Source Type="1">
-    <Conditions CombineMethod="Any">
-      <Condition Field="Album" Comparison="Contains" Value="" />
-    </Conditions>
-    <Limit FilterDuplicates="True" Enabled="True" Count="20" Type="Items" SelectedBy="MostRecentlyAdded" />
-    <SortBy Field="12" Order="Descending" />
-    <Fields>
-      <Group Id="TrackDetail">
-        <Field Code="20" Width="24" />
-        <Field Code="78" Width="48" />
-        <Field Code="65" Width="751" />
-        <Field Code="16" Width="117" />
-        <Field Code="32" Width="562" />
-        <Field Code="30" Width="517" />
-        <Field Code="12" Width="336" />
-        <Field Code="14" Width="128" />
-      </Group>
-      <Group Id="Album">
-        <Field Code="78" Width="25" />
-        <Field Code="31" Width="135" />
-        <Field Code="65" Width="160" />
-        <Field Code="30" Width="110" />
-        <Field Code="59" Width="130" />
-        <Field Code="75" Width="75" />
-        <Field Code="16" Width="34" />
-        <Field Code="12" Width="75" />
-      </Group>
-    </Fields>
-  </Source>
-</SmartPlaylist>
-        """.strip()
-
-    # noinspection PyUnresolvedReferences
-    @pytest.fixture(params=[
-        pytest.lazy_fixture("xml_playlist_basic"),
-        pytest.lazy_fixture("xml_playlist_complex"),
-        pytest.lazy_fixture("xml_playlist_recent"),
-    ])
-    def xml_playlist(self, request) -> str:
-        """Yields different XAutoPF playlist XML structures for testing purposes."""
-        return request.param
 
     def test_parse_xml(self, adapter: TypeAdapter, xml_playlist: str):
         model = _XMLRoot.model_validate(xml_playlist)

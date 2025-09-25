@@ -16,7 +16,7 @@ from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase
-from musify.models import MusifyResource
+from musify.models import MusifyResource, MusifyModel
 from musify.models.item.album import HasAlbum
 from musify.models.item.track import TrackTagsMixin
 from musify.models.properties.audio import IsAudioFile

@@ -31,7 +31,7 @@ class TestM3U(UniqueKeyTester):
 
     @pytest.fixture
     async def model(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path) -> M3U:
-        playlist = M3U(path=tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u")))
+        playlist = M3U(path=tmp_path.joinpath(faker.file_path(absolute=False, extension="m3u")))
         return await playlist.load(tracks=tracks)
 
     @pytest.fixture
@@ -86,7 +86,7 @@ class TestM3U(UniqueKeyTester):
     async def test_load_from_empty_file(
             self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path
     ):
-        path = tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u"))
+        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="m3u"))
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch(exist_ok=True)
         pl = M3U(path=path)
@@ -104,7 +104,7 @@ class TestM3U(UniqueKeyTester):
             faker: Faker,
             tmp_path: Path,
     ):
-        path = tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u"))
+        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="m3u"))
         pl = M3U(path=path)
         assert len(pl.tracks) == 0
 
@@ -166,7 +166,7 @@ class TestM3U(UniqueKeyTester):
         assert pl.tracks == tracks_on_disk
 
     async def test_save_file_dry_run(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path):
-        path = tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u"))
+        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="m3u"))
 
         pl = M3U(path=path)
         pl.tracks.extend(tracks)
@@ -186,7 +186,7 @@ class TestM3U(UniqueKeyTester):
             faker: Faker,
             tmp_path: Path,
     ):
-        path = tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u"))
+        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="m3u"))
 
         pl = M3U(path=path, path_mapper=path_mapper)
         await pl.load(tracks=tracks_on_disk)

@@ -6,13 +6,12 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping
 from copy import deepcopy
+from pathlib import Path
 from random import choice
 from typing import Any, Self, Literal, Annotated, ClassVar, get_origin
 
-from attr.filters import exclude
 from pydantic import Field, field_validator, model_validator, ConfigDict, BeforeValidator, model_serializer, \
-    field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, NonNegativeFloat, \
-    ModelWrapValidatorHandler, AliasChoices
+    field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices
 from pydantic.alias_generators import to_pascal, to_snake
 from pydantic.fields import FieldInfo, PrivateAttr
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
@@ -70,19 +69,26 @@ class SyncResultXAutoPF(Result):
     @classmethod
     def from_xml(cls, initial_count: int, initial_xml: _XMLRoot, final_count: int, final_xml: _XMLRoot) -> Self:
         """Create a SyncResultXAutoPF from the given XML objects."""
+        start_sorter_count = 0
+        if initial_xml.smart_playlist.source.sort_by is not None:
+            start_sorter_count = len(initial_xml.smart_playlist.source.sort_by.sort_fields)
+        final_sorter_count = 0
+        if final_xml.smart_playlist.source.sort_by is not None:
+            final_sorter_count = len(final_xml.smart_playlist.source.sort_by.sort_fields)
+
         return cls(
             start=initial_count,
-            start_included=len(initial_xml.smart_playlist.source.exceptions_include),
-            start_excluded=len(initial_xml.smart_playlist.source.exceptions_exclude),
+            start_included=len(initial_xml.smart_playlist.source.exceptions_include or ()),
+            start_excluded=len(initial_xml.smart_playlist.source.exceptions or ()),
             start_compared=len(initial_xml.smart_playlist.source.conditions.condition),
             start_limiter=initial_xml.smart_playlist.source.limit.enabled,
-            start_sorter=len(initial_xml.smart_playlist.source.sort_by.sort_fields) > 0,
+            start_sorter=start_sorter_count > 0,
             final=final_count,
-            final_included=len(final_xml.smart_playlist.source.exceptions_include),
-            final_excluded=len(final_xml.smart_playlist.source.exceptions_exclude),
+            final_included=len(final_xml.smart_playlist.source.exceptions_include or ()),
+            final_excluded=len(final_xml.smart_playlist.source.exceptions or ()),
             final_compared=len(final_xml.smart_playlist.source.conditions.condition),
             final_limiter=final_xml.smart_playlist.source.limit.enabled,
-            final_sorter=len(final_xml.smart_playlist.source.sort_by.sort_fields) > 0,
+            final_sorter=final_sorter_count > 0,
         )
 
 
@@ -116,41 +122,36 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         if self.path.is_file():
             with self.path.open("r") as file:
                 self._xml = _XMLRoot.model_validate(file.read())
-        elif self._xml is None:  # this is a new playlist, assign default values to parser
+        elif self._xml is None:  # this is a new playlist, assign default values
             self._xml = _XMLRoot()
+
+        self.description = self._xml.smart_playlist.source.description
 
         matcher = self._xml.smart_playlist.matcher
         matcher.include.path_mapper = self.path_mapper
         matcher.exclude.path_mapper = self.path_mapper
 
         self.matcher = matcher
-        self.limiter = self._xml.smart_playlist.source.limiter.limiter
+        self.limiter = self._xml.smart_playlist.source.limit.limiter
         self.sorter = self._xml.smart_playlist.sorter
 
         tracks_list = list(tracks)
-        self.sorter.sort_by_field(tracks_list, field="last_played_at", reverse=True)
+        try:
+            self.sorter.sort_by_field(tracks_list, field="last_played_at", reverse=True)
+        except MusifyValueError:
+            pass
 
         self._match(tracks=tracks, reference=tracks_list[0] if len(tracks) > 0 else None)
-        self._limit(ignore=self.matcher.exclude)
+        self._limit(ignore=self.matcher.exclude.values)
         self._sort()
 
         self._original = self.tracks.copy()
 
         return self
 
-    def _limit(self, ignore: Collection[LocalTrack]) -> None:
+    def _limit(self, ignore: Collection[Path]) -> None:
         if self.limiter is not None and self.tracks is not None and self.limiter_deduplication:
-            # preprocess tracks by applying deduplication first before sending to the actual limiter
-            tracks_seen = set()
-            tracks_deduplicated: list[LocalTrack] = []
-
-            for track in self.tracks:
-                if track in ignore or track.path not in tracks_seen:
-                    tracks_seen.add(track.path)
-                    tracks_deduplicated.append(track)
-
-            self.tracks = tracks_deduplicated
-
+            self.tracks[:] = self.tracks.unique
         super()._limit(ignore=ignore)
 
     async def save(self, dry_run: bool = True, *_, **__) -> SyncResultXAutoPF:
@@ -164,12 +165,15 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         initial_count = len(self._original)
         xml = self._xml if not dry_run else deepcopy(self._xml)
 
+        xml.smart_playlist.source.description = self.description
+
         self._clean_matcher_paths()
         xml.smart_playlist.parse_matcher(self.matcher)
         xml.smart_playlist.source.limit.parse_limiter(self.limiter, filter_duplicates=self.limiter_deduplication)
         xml.smart_playlist.parse_sorter(self.sorter)
 
         if not dry_run:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("w", encoding="utf-8") as file:
                 file.write(xml.unparse_xml())
             self._original = self.tracks.copy()
@@ -462,7 +466,7 @@ class _XMLCondition(_XMLBaseModel):
 
         self.field = field or self.__class__.model_fields["field"].default
         self.comparison = to_pascal(comparer.condition)
-        self.value[:] = to_list(comparer.expected) or []
+        self.value[:] = sorted(to_list(comparer.expected)) or []
         return self
 
     def parse_sub_comparers(self, combine: bool, comparers: ComparerFilter) -> Self:
@@ -859,7 +863,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
     def sorter(self) -> ItemSorter:
         """Build the sorter for this configuration."""
         return ItemSorter(
-            sort_fields=self.source.sort_by.sort_fields,
+            sort_fields=self.source.sort_by.sort_fields if self.source.sort_by is not None else {},
             shuffle_mode=self.shuffle_mode,
             shuffle_weight=self.shuffle_same_artist_weight,
         )
@@ -868,14 +872,13 @@ class _XMLSmartPlaylist(_XMLBaseModel):
         """Parse the given ``sorter`` into this configuration."""
         self.source.parse_sorter(sorter)
 
-        shuffle_same_artist_weight_default = self.__class__.model_fields["shuffle_same_artist_weight"].default
         if sorter is None:
             self.shuffle_mode = None
-            self.shuffle_same_artist_weight = shuffle_same_artist_weight_default
+            self.shuffle_same_artist_weight = self.__class__.model_fields["shuffle_same_artist_weight"].default
             return self
 
-        self.shuffle_mode = to_pascal(sorter.shuffle_mode.name) if sorter.shuffle_mode else None
-        self.shuffle_same_artist_weight = sorter.shuffle_weight or shuffle_same_artist_weight_default
+        self.shuffle_mode = to_pascal(sorter.shuffle_mode.name) if sorter.shuffle_mode is not None else None
+        self.shuffle_same_artist_weight = sorter.shuffle_weight
         return self
 
 
