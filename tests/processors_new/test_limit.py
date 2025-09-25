@@ -15,7 +15,7 @@ class TestItemLimiter(MusifyModelTester):
 
     @pytest.fixture
     def model(self) -> ItemLimiter:
-        return ItemLimiter(limit_by=30, kind=LimitType.MINUTES, sorted_by="HighestRating", allowance=2)
+        return ItemLimiter(limit_by=30, on=LimitType.MINUTES, sorted_by="HighestRating", allowance=2)
 
     @pytest.fixture
     def tracks(self, tracks: list[LocalTrack]) -> list[LocalTrack]:

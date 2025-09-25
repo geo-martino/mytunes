@@ -10,6 +10,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pydantic.alias_generators import to_pascal
 
+# noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, _XMLRoot, \
     _XMLDisplayFields
@@ -160,11 +161,12 @@ class TestXAutoPF(UniqueKeyTester):
 
     @pytest.fixture
     def path_mapper(self, tracks: list[LocalTrack]) -> PathStemMapper:
-        stem_map = {parent: "./" for parent in set(track.path.parent for track in tracks)}
+        """Creates a basic PathStemMapper for the given tracks."""
+        stem_map = {str(parent): "./" for parent in set(track.path.parent for track in tracks)}
         return PathStemMapper(stem_map=stem_map)
 
+    @staticmethod
     async def assert_load(
-            self,
             path: Path,
             xml: _XMLRoot,
             tracks: list[LocalTrack],
@@ -351,6 +353,9 @@ class TestXMLCondition(MusifyModelTester):
     @pytest.fixture
     def model(self) -> _XMLCondition:
         return _XMLCondition()
+
+    def test_all_fields_have_codes(self):
+        assert not set(_XMLCondition.name_field_map) - set(_XMLCondition.name_code_map)
 
     def test_reference_required(self, model: _XMLCondition) -> None:
         assert model.reference_values
@@ -543,7 +548,7 @@ class TestXMLLimit(MusifyModelTester):
     def test_parse_limiter(self, model: _XMLLimit) -> None:
         limiter = ItemLimiter(
             limit_by=23,
-            kind=LimitType.HOURS,
+            on=LimitType.HOURS,
             sorted_by="most_often_played",
         )
 
@@ -660,7 +665,8 @@ class TestXMLDisplayFields(MusifyModelTester):
                         for _ in range(faker.random_int(1, 10))
                     ]
                 }
-            for _ in range(faker.random_int(1, 3))]
+                for _ in range(faker.random_int(1, 3))
+            ]
         }
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
@@ -779,7 +785,7 @@ class TestXMLSource(MusifyModelTester):
 
     def test_parse_matcher(self, model: _XMLSource) -> None:
         matcher = MatchFilter(
-            comparers=ComparerFilter[LocalTrack](),
+            compare=ComparerFilter[LocalTrack](),
             include=PathsFilter(values={"a", "b", "c"}),
             exclude=PathsFilter(values={"1", "2", "3"}),
             group_by="album",
@@ -890,7 +896,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
 
     def test_parse_matcher(self, model: _XMLSmartPlaylist) -> None:
         matcher = MatchFilter(
-            comparers=ComparerFilter[LocalTrack](),
+            compare=ComparerFilter[LocalTrack](),
             include=PathsFilter(values={"a", "b", "c"}),
             exclude=PathsFilter(values={"1", "2", "3"}),
             group_by="album",
@@ -953,12 +959,12 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         assert result == xml
 
 
-@pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="xmltodict not installed")
 class TestXMLRoot(MusifyModelTester):
     @pytest.fixture
     def model(self) -> _XMLRoot:
         return _XMLRoot()
 
+    @pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="xmltodict not installed")
     def test_parse_xml(self, adapter: TypeAdapter, xml_playlist: str):
         model = _XMLRoot.model_validate(xml_playlist)
         assert model.unparse_xml() == xml_playlist
