@@ -51,10 +51,11 @@ _SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 
 class ShuffleMode(MusifyEnum):
     """Represents the possible shuffle modes to use when shuffling items using :py:class:`ItemSorter`."""
-    RANDOM = 0
-    HIGHER_RATING = 1
-    RECENT_ADDED = 2
-    DIFFERENT_ARTIST = 3
+    NONE = 0
+    RANDOM = 1
+    HIGHER_RATING = 2
+    RECENT_ADDED = 3
+    DIFFERENT_ARTIST = 4
 
 
 class ItemSorter(Processor):

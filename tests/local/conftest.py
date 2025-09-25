@@ -28,7 +28,7 @@ def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
             name=faker.sentence(nb_words=faker.random_int(1, 5)),
             path=tmp_path.joinpath(faker.file_path(absolute=False))
         )
-        for _ in range(faker.random_int(15, 30))
+        for _ in range(faker.random_int(30, 50))
     ]
 
 

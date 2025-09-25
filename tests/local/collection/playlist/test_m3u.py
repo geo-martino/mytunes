@@ -1,4 +1,3 @@
-import time
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Generator
@@ -8,7 +7,7 @@ import pytest
 from faker import Faker
 
 from musify.local.collection.playlist.m3u import M3U, SyncResultM3U
-from musify.local.item.track import LocalTrack, LocalTrackType
+from musify.local.item.track import LocalTrack
 from musify.models.properties.file import PathMapper, PathStemMapper
 from tests.models.testers import UniqueKeyTester
 
@@ -31,23 +30,23 @@ class TestM3UResult:
 class TestM3U(UniqueKeyTester):
 
     @pytest.fixture
-    async def model(self, tracks: list[LocalTrackType], faker: Faker, tmp_path: Path) -> M3U:
+    async def model(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path) -> M3U:
         playlist = M3U(path=tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u")))
         return await playlist.load(tracks=tracks)
 
     @pytest.fixture
-    def path_mapper(self, tracks: list[LocalTrackType]) -> PathStemMapper:
+    def path_mapper(self, tracks: list[LocalTrack]) -> PathStemMapper:
         stem_map = {parent: Path(parent.parent, "folder") for parent in set(track.path.parent for track in tracks)}
         return PathStemMapper(stem_map=stem_map)
 
     @pytest.fixture
-    def path(self, tracks_on_disk: list[LocalTrackType], path_mapper: PathMapper, faker: Faker, tmp_path: Path) -> Path:
+    def path(self, tracks_on_disk: list[LocalTrack], path_mapper: PathMapper, faker: Faker, tmp_path: Path) -> Path:
         path = tmp_path.joinpath(faker.file_name(extension="m3u"))
         path.parent.mkdir(parents=True, exist_ok=True)
 
         track_paths = path_mapper.unmap_many(tracks_on_disk, check_existence=False)
-        with path.open("w", encoding="utf-8") as f:
-            f.writelines((f"{path}\n" for path in track_paths))
+        with path.open("w", encoding="utf-8") as file:
+            file.writelines((f"{path}\n" for path in track_paths))
 
         return path
 
@@ -128,8 +127,8 @@ class TestM3U(UniqueKeyTester):
             tracks_in_memory: list[LocalTrack]
     ):
         # add tracks that don't exist on disk to playlist file
-        with path.open("a", encoding="utf-8") as f:
-            f.writelines((f"{track.path}\n" for track in tracks_in_memory))
+        with path.open("a", encoding="utf-8") as file:
+            file.writelines((f"{track.path}\n" for track in tracks_in_memory))
 
         pl = M3U(path=path, path_mapper=path_mapper)
 
@@ -166,7 +165,7 @@ class TestM3U(UniqueKeyTester):
         await pl.load(tracks_on_disk + tracks_in_memory)
         assert pl.tracks == tracks_on_disk
 
-    async def test_save_file_dry_run(self, tracks: list[LocalTrackType], faker: Faker, tmp_path: Path):
+    async def test_save_file_dry_run(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path):
         path = tmp_path.joinpath(faker.file_path(absolute=False, extension=".m3u"))
 
         pl = M3U(path=path)
@@ -202,8 +201,8 @@ class TestM3U(UniqueKeyTester):
         assert pl.modified_at is not None
         assert pl.created_at is not None
 
-        with open(path, "r") as f:
-            paths = [line.strip() for line in f]
+        with open(path, "r") as file:
+            paths = [line.strip() for line in file]
 
         assert len(paths) == result.final
         assert paths != [track.path for track in pl.tracks]
@@ -220,8 +219,8 @@ class TestM3U(UniqueKeyTester):
             tmp_path: Path,
     ):
         # add tracks that don't exist on disk to playlist file to check that remapping happens
-        with path.open("a", encoding="utf-8") as f:
-            f.writelines((f"{path_mapper.unmap(track.path, check_existence=False)}\n" for track in tracks_in_memory))
+        with path.open("a", encoding="utf-8") as file:
+            file.writelines((f"{path_mapper.unmap(track.path, check_existence=False)}\n" for track in tracks_in_memory))
 
         pl = M3U(path=path, path_mapper=path_mapper)
         await pl.load(tracks_on_disk + tracks_in_memory[:2])
@@ -236,8 +235,8 @@ class TestM3U(UniqueKeyTester):
         assert pl.modified_at > original_dt_modified
         # assert pl.created_at == original_dt_created  # doesn't work
 
-        with open(path, "r") as f:
-            paths = [line.strip() for line in f]
+        with open(path, "r") as file:
+            paths = [line.strip() for line in file]
 
         assert len(paths) == result.final
         assert paths != [track.path for track in pl.tracks]

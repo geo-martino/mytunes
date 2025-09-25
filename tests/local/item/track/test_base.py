@@ -9,6 +9,7 @@ import mutagen
 import mutagen.wave
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
 
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, TagDumpContext
@@ -212,8 +213,14 @@ class TestLocalTrack(UniqueKeyTester):
     ###########################################################################
     ## IO
     ###########################################################################
-    async def test_load(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):
-        expected = LocalTrack.model_validate(tags | dict(path=file.filename))
+    async def test_load(
+        self,
+        model: LocalTrack,
+        adapter: TypeAdapter[LocalTrack],
+        file: mutagen.File,
+        tags: dict[str, Any]
+    ):
+        expected = adapter.validate_python(tags | dict(path=file.filename))
 
         with mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load:
             await model.load()
@@ -299,10 +306,10 @@ class TestLocalTrack(UniqueKeyTester):
             mocked_to_tags.assert_called_once_with(include=include, exclude=exclude, context=context)
             mocked_update.assert_called_once_with(mocked_to_tags.return_value)
 
-    def test_update_no_replace(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):
+    def test_update_no_replace(self, adapter: TypeAdapter[LocalTrack], file: mutagen.File, tags: dict[str, Any]):
         file.tags = dict(sample(list(tags.items()), k=4))
         expected = {k: v for k, v in tags.items() if k not in file.tags}
-        model = model.model_validate(tags | dict(path=file.filename))
+        model = adapter.validate_python(tags | dict(path=file.filename))
 
         with (
             mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mocked_to_tags,

@@ -9,6 +9,7 @@ import mutagen
 import pytest
 from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
+from pydantic import TypeAdapter
 
 from musify.local.exception import FileError
 from musify.local.item.track import LocalTrack, TagDumpContext
@@ -23,10 +24,14 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
         raise NotImplementedError
 
     @staticmethod
-    def test_from_tag_value(model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
+    def test_from_tag_value(
+        model: LocalTrack.EmbeddedImage,
+        adapter: TypeAdapter[LocalTrack.EmbeddedImage],
+        pictures: dict[str, Any]
+    ):
         kind, picture = choice(list(pictures.items()))
         image = Image.open(BytesIO(model._get_bytes(picture)))
-        assert model.model_validate(picture) == model.__class__(
+        assert adapter.validate_python(picture) == model.__class__(
             type=kind,
             mime=image.get_format_mimetype(),
             height=image.height,
@@ -76,17 +81,21 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
             assert model.__class__.get_id3_type_from_tag(attr) == mocked_get_type.return_value
 
     @staticmethod
-    def test_from_tag(model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
+    def test_from_tag(
+        model: LocalTrack.EmbeddedImage,
+        adapter: TypeAdapter[LocalTrack.EmbeddedImage],
+        pictures: dict[str, Any]
+    ):
         kind, tag_value = choice(list(pictures.items()))
         img = Image.open(BytesIO(model.__class__._get_bytes(tag_value)))
 
-        assert model.__class__.model_validate(tag_value) == model.__class__(
+        assert adapter.validate_python(tag_value) == model.__class__(
             type=kind, mime=img.get_format_mimetype(), height=img.height, width=img.width,
         )
-        assert model.__class__.model_validate(model.__class__._get_bytes(tag_value)) == model.__class__(
+        assert adapter.validate_python(model.__class__._get_bytes(tag_value)) == model.__class__(
             mime=img.get_format_mimetype(), height=img.height, width=img.width,
         )
-        assert model.__class__.model_validate(img) == model.__class__(
+        assert adapter.validate_python(img) == model.__class__(
             mime=img.get_format_mimetype(), height=img.height, width=img.width,
         )
 

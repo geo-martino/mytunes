@@ -25,7 +25,11 @@ class TestMusifyMapping:
         return TypeAdapter(MusifyMapping)
 
     def test_validate_pydantic_schema(
-            self, mapping: MusifyMapping, adapter: TypeAdapter, models: list[MusifyResource], faker: Faker
+            self,
+            mapping: MusifyMapping,
+            adapter: TypeAdapter[MusifyMapping],
+            models: list[MusifyResource],
+            faker: Faker
     ) -> None:
         assert adapter.validate_python(mapping) is mapping, "Failed to validate existing models"
 

@@ -2,10 +2,16 @@ from abc import abstractmethod
 from collections.abc import Hashable
 from enum import IntEnum
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
-from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices
+from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
+    GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import core_schema, CoreSchema
+
+from musify.exception import MusifyValueError
 
 
 def abstract_property() -> property:
@@ -170,3 +176,26 @@ class _CollectionModel(_AttributeModel):
 
 class MusifyEnum(IntEnum):
     """Generic class for :py:class:`IntEnum` implementations for the entire package."""
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            cls._validate,
+            core_schema.union_schema(
+                [core_schema.str_schema(), core_schema.int_schema()]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x.name),
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        return {'enum': [m.name for m in cls], 'type': 'string'}
+
+    @classmethod
+    def _validate(cls, value: Any) -> Self:
+        match value:
+            case str():
+                return cls[to_snake(value).upper()]
+            case int():
+                return cls(value)
+            case _:
+                raise MusifyValueError(f"Cannot get enum for {value!r}")

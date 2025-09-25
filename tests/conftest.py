@@ -1,6 +1,9 @@
+from collections import defaultdict
+from copy import copy
 from io import BytesIO
 from pathlib import Path
 from random import choice, sample
+from types import MethodType
 
 import mutagen.id3
 import pytest
@@ -96,3 +99,207 @@ def image_urls(image_types: set[str], faker: Faker, mock_response: aioresponses)
         image_urls.append(image_url)
 
     return image_urls
+
+# This is a fork of the pytest-lazy-fixture package
+# Fixes applied for issues with pytest >8.0: https://github.com/TvoroG/pytest-lazy-fixture/issues/65
+# noinspection PyProtectedMember
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    if hasattr(item, "_request"):
+        item._request._fillfixtures = MethodType(
+            fillfixtures(item._request._fillfixtures), item._request
+        )
+
+
+def fillfixtures(_fillfixtures):
+    # noinspection PyProtectedMember
+    def fill(request):
+        item = request._pyfuncitem
+        fixturenames = getattr(item, "fixturenames", None)
+        if fixturenames is None:
+            fixturenames = request.fixturenames
+
+        if hasattr(item, "callspec"):
+            for param, val in sorted_by_dependency(item.callspec.params, fixturenames):
+                if val is not None and is_lazy_fixture(val):
+                    item.callspec.params[param] = request.getfixturevalue(val.name)
+                elif param not in item.funcargs:
+                    item.funcargs[param] = request.getfixturevalue(param)
+
+        _fillfixtures()
+    return fill
+
+
+# noinspection PyUnusedLocal
+@pytest.hookimpl(tryfirst=True)
+def pytest_fixture_setup(fixturedef, request):
+    val = getattr(request, "param", None)
+    if is_lazy_fixture(val):
+        request.param = request.getfixturevalue(val.name)
+
+
+# noinspection PyProtectedMember
+def pytest_runtest_call(item):
+    if hasattr(item, "funcargs"):
+        for arg, val in item.funcargs.items():
+            if is_lazy_fixture(val):
+                item.funcargs[arg] = item._request.getfixturevalue(val.name)
+
+
+# noinspection PyUnusedLocal
+@pytest.hookimpl(hookwrapper=True)
+def pytest_pycollect_makeitem(collector, name, obj):
+    # noinspection PyGlobalUndefined
+    global current_node
+    current_node = collector
+    yield
+    current_node = None
+
+
+# noinspection PyUnusedLocal
+def pytest_make_parametrize_id(config, val, argname):
+    if is_lazy_fixture(val):
+        return val.name
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_generate_tests(metafunc):
+    yield
+
+    normalize_metafunc_calls(metafunc)
+
+
+# noinspection PyProtectedMember
+def normalize_metafunc_calls(metafunc, used_keys=None):
+    newcalls = []
+    for callspec in metafunc._calls:
+        calls = normalize_call(callspec, metafunc, used_keys)
+        newcalls.extend(calls)
+    metafunc._calls = newcalls
+
+
+# noinspection PyProtectedMember
+def copy_metafunc(metafunc):
+    copied = copy(metafunc)
+    copied.fixturenames = copy(metafunc.fixturenames)
+    copied._calls = []
+
+    try:
+        copied._ids = copy(metafunc._ids)
+    except AttributeError:
+        # pytest>=5.3.0
+        pass
+
+    copied._arg2fixturedefs = copy(metafunc._arg2fixturedefs)
+    return copied
+
+
+# noinspection PyProtectedMember
+def normalize_call(callspec, metafunc, used_keys):
+    fm = metafunc.config.pluginmanager.get_plugin("funcmanage")
+
+    used_keys = used_keys or set()
+    keys = set(callspec.params.keys()) - used_keys
+
+    for arg in keys:
+        val = callspec.params[arg]
+        if is_lazy_fixture(val):
+            try:
+                if pytest.version_tuple >= (8, 0, 0):
+                    fixturenames_closure, arg2fixturedefs = fm.getfixtureclosure(
+                        metafunc.definition.parent, [val.name], {}
+                    )
+                else:
+                    _, fixturenames_closure, arg2fixturedefs = fm.getfixtureclosure(
+                        [val.name], metafunc.definition.parent
+                    )
+
+            except ValueError:
+                # 3.6.0 <= pytest < 3.7.0; `FixtureManager.getfixtureclosure` returns 2 values
+                fixturenames_closure, arg2fixturedefs = fm.getfixtureclosure([val.name], metafunc.definition.parent)
+            except AttributeError:
+                # pytest < 3.6.0; `Metafunc` has no `definition` attribute
+                fixturenames_closure, arg2fixturedefs = fm.getfixtureclosure([val.name], current_node)
+
+            extra_fixturenames = [fname for fname in fixturenames_closure if fname not in callspec.params]
+
+            newmetafunc = copy_metafunc(metafunc)
+            newmetafunc.fixturenames = extra_fixturenames
+            newmetafunc._arg2fixturedefs.update(arg2fixturedefs)
+            newmetafunc._calls = [callspec]
+            fm.pytest_generate_tests(newmetafunc)
+
+            normalize_metafunc_calls(newmetafunc, used_keys | {arg})
+            return newmetafunc._calls
+
+        used_keys.add(arg)
+    return [callspec]
+
+
+def sorted_by_dependency(params, fixturenames):
+    free_fm = []
+    non_free_fm = defaultdict(list)
+
+    for key in _sorted_argnames(params, fixturenames):
+        val = params.get(key)
+
+        if key not in params or not is_lazy_fixture(val) or val.name not in params:
+            free_fm.append(key)
+        else:
+            non_free_fm[val.name].append(key)
+
+    non_free_fm_list = []
+    for free_key in free_fm:
+        non_free_fm_list.extend(
+            _tree_to_list(non_free_fm, free_key)
+        )
+
+    return [(key, params.get(key)) for key in (free_fm + non_free_fm_list)]
+
+
+def _sorted_argnames(params, fixturenames):
+    argnames = set(params.keys())
+
+    for name in fixturenames:
+        if name in argnames:
+            argnames.remove(name)
+        yield name
+
+    if argnames:
+        for name in argnames:
+            yield name
+
+
+def _tree_to_list(trees, leave):
+    lst = []
+    for ls in trees[leave]:
+        lst.append(ls)
+        lst.extend(
+            _tree_to_list(trees, ls)
+        )
+    return lst
+
+
+def lazy_fixture(names):
+    if isinstance(names, str):
+        return LazyFixture(names)
+    else:
+        return [LazyFixture(name) for name in names]
+
+
+pytest.lazy_fixture = lazy_fixture
+
+
+def is_lazy_fixture(val):
+    return isinstance(val, LazyFixture)
+
+
+class LazyFixture(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return '<{} "{}">'.format(self.__class__.__name__, self.name)
+
+    def __eq__(self, other):
+        return self.name == other.name

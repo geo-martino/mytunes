@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from functools import reduce
 from operator import mul
 from typing import Annotated, Any
@@ -32,7 +32,7 @@ def to_set(value: Any) -> set[Any] | None:
     match value:
         case None:
             return
-        case str():
+        case str() | Mapping() | MusifyModel():
             return {value}
         case Iterable():
             return set(value)
@@ -45,7 +45,7 @@ def to_tuple(value: Any) -> tuple[Any] | None:
     match value:
         case None:
             return
-        case str() | MusifyModel():
+        case str() | Mapping() | MusifyModel():
             return (value,)
         case Iterable():
             return tuple(value)
@@ -58,7 +58,7 @@ def to_list(value: Any) -> list[Any] | None:
     match value:
         case None:
             return
-        case str():
+        case str() | Mapping() | MusifyModel():
             return [value]
         case Iterable():
             return list(value)

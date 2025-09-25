@@ -276,7 +276,7 @@ def required_modules_installed(modules: list, this: object = None) -> bool:
         if isinstance(this, str):
             message = f"Cannot run {this}. Required modules: {", ".join(names)}"
         else:
-            message = f"Cannot create {this.__class__.__name__} object. Required modules: {", ".join(names)}"
+            message = f"Cannot create {this.__name__} object. Required modules: {", ".join(names)}"
 
         raise MusifyImportError(message)
 

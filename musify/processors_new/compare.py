@@ -355,7 +355,7 @@ class Comparer(DynamicProcessor):
         match self.expected:
             case None:
                 expected = ""
-            case set():
+            case set() | list():
                 expected = tuple(self.expected)
             case _:
                 expected = self.expected

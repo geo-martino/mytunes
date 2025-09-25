@@ -150,8 +150,8 @@ class ImageFile(ImageSource):
         return self.path == other.path and self.type == other.type
 
     async def load(self) -> PILImageFile.ImageFile:
-        async with aiofiles.open(self.path, mode='rb') as f:
-            img = Image.open(BytesIO(await f.read()))
+        async with aiofiles.open(self.path, mode='rb') as file:
+            img = Image.open(BytesIO(await file.read()))
         return img
 
 
