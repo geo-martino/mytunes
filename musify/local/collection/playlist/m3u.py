@@ -82,7 +82,8 @@ class M3U(LocalPlaylist[PathsFilter]):
         if tracks:  # match paths from given tracks using the matcher
             self._match(tracks)
         else:  # use the paths in the matcher to load tracks from scratch
-            self.tracks[:] = await asyncio.gather(*map(LocalTrack.from_path, paths))
+            # TODO: support m3u playlists with duplicate paths?
+            self.tracks[:] = await asyncio.gather(*map(LocalTrack.from_path, set(paths)))
 
         self._limit(ignore=paths)
         self._sort(paths=list(map(Path, paths)))
