@@ -1,4 +1,3 @@
-import os
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -10,10 +9,11 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pydantic.alias_generators import to_pascal
 
+from tests.local.collection.playlist.testers import LocalPlaylistTester
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, _XMLRoot, \
-    _XMLDisplayFields
+    _XMLDisplayFields, SyncResultXAutoPF
 from musify.local.item.track import LocalTrack
 from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
@@ -21,7 +21,53 @@ from musify.processors_new.filters import ComparerFilter, PathsFilter, MatchFilt
 from musify.processors_new.limit import LimitType, ItemLimiter
 from musify.processors_new.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from musify.utils import required_modules_installed
-from tests.models.testers import UniqueKeyTester, MusifyModelTester
+from tests.models.testers import MusifyModelTester
+
+
+class TestSyncResultXAutoPF(MusifyModelTester):
+    def test_from_xml(self, tracks: list[LocalTrack], xml_playlist_recent: str, faker: Faker):
+        for track in tracks:
+            track.added_at = datetime(2024, 1, faker.random_int(1, 28))
+            track.last_played_at = datetime(2024, 3, faker.random_int(1, 28))
+
+        initial_xml = _XMLRoot.model_validate(xml_playlist_recent)
+        final_xml = deepcopy(initial_xml)
+
+        initial_matcher = MatchFilter(
+            compare=ComparerFilter(
+                comparers=Comparer(field="path", condition="IsIn", expected={tr.path for tr in tracks[:20]})
+            ),
+            include=PathsFilter(values=tracks[10:25]),
+            exclude=PathsFilter(values=tracks[18:22]),
+        )
+        initial_xml.smart_playlist.parse_matcher(initial_matcher)
+
+        final_matcher = deepcopy(initial_matcher)
+        final_matcher.include = PathsFilter(values=tracks[10:13])
+        final_matcher.exclude = PathsFilter(values=tracks[18:20])
+        final_xml.smart_playlist.parse_matcher(final_matcher)
+
+        limiter = final_xml.smart_playlist.source.limit
+        limiter.count -= 5
+
+        initial_tracks = tracks[5:29]
+        final_tracks = tracks[:12] + tracks[23:27]
+
+        result = SyncResultXAutoPF.from_xml(initial_tracks, initial_xml, final_tracks, final_xml)
+        assert result == SyncResultXAutoPF(
+            start=len(initial_tracks),
+            start_included=len(initial_matcher.include.values),
+            start_excluded=len(initial_matcher.exclude.values),
+            start_compared=15,
+            start_limiter=20,
+            start_sorter=True,
+            final=len(final_tracks),
+            final_included=len(final_matcher.include.values),
+            final_excluded=len(final_matcher.exclude.values),
+            final_compared=12,
+            final_limiter=15,
+            final_sorter=True,
+        )
 
 
 @pytest.fixture
@@ -141,6 +187,7 @@ def xml_playlist_recent() -> str:
     """.strip()
 
 
+# TODO: add back empty Description, Exceptions, ExceptionsInclude fields - Pydantic 2.12.0+ required
 # noinspection PyUnresolvedReferences
 @pytest.fixture(params=[
     pytest.lazy_fixture("xml_playlist_basic"),
@@ -152,200 +199,206 @@ def xml_playlist(request) -> str:
     return request.param
 
 
-class TestXAutoPF(UniqueKeyTester):
+class TestXAutoPF(LocalPlaylistTester):
 
     @pytest.fixture
-    async def model(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path) -> XAutoPF:
-        playlist = XAutoPF(path=tmp_path.joinpath(faker.file_path(absolute=False, extension="xautopf")))
-        return await playlist.load(tracks=tracks)
+    async def model(self, path_mapper: PathMapper, faker: Faker, tmp_path: Path) -> XAutoPF:
+        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="xautopf"))
+        playlist = XAutoPF(path=path, path_mapper=path_mapper)
+        return await playlist.load()
 
     @pytest.fixture
-    def path_mapper(self, tracks: list[LocalTrack]) -> PathStemMapper:
-        """Creates a basic PathStemMapper for the given tracks."""
-        stem_map = {str(parent): "./" for parent in set(track.path.parent for track in tracks)}
-        return PathStemMapper(stem_map=stem_map)
+    async def model_with_tracks(
+            self, model: XAutoPF, tracks: list[LocalTrack], tracks_summed: list[LocalTrack]
+    ) -> XAutoPF:
+        """A model with tracks already loaded for testing purposes."""
+        model._original[:] = tracks
+        model.tracks[:] = tracks_summed
+        return model
+
+    @pytest.fixture
+    def tracks(self, tracks: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
+        """A list of tracks with varied added_at and last_played_at dates."""
+        for track in tracks:
+            track.added_at = datetime(2024, 1, faker.random_int(1, 28))
+            track.last_played_at = datetime(2024, 3, faker.random_int(1, 28))
+
+        return tracks
+
+    @pytest.fixture
+    def tracks_compared(self, model: XAutoPF, tracks: list[LocalTrack]) -> list[LocalTrack]:
+        """Tracks to be included in the playlist via comparers."""
+        return tracks[:20]
+
+    @pytest.fixture
+    def tracks_included(self, model: XAutoPF, tracks: list[LocalTrack]) -> list[LocalTrack]:
+        """Tracks to be included in the playlist."""
+        return tracks[10:25]
+
+    @pytest.fixture
+    def tracks_excluded(self, model: XAutoPF, tracks: list[LocalTrack]) -> list[LocalTrack]:
+        """Tracks to be excluded in the playlist."""
+        return tracks[18:22]
+
+    @pytest.fixture
+    def tracks_summed(self, tracks: list[LocalTrack]) -> list[LocalTrack]:
+        return tracks[:18] + tracks[22:25]
+
+    @pytest.fixture
+    def matcher(
+            self,
+            tracks_compared: list[LocalTrack],
+            tracks_included: list[LocalTrack],
+            tracks_excluded: list[LocalTrack],
+            path_mapper: PathMapper
+    ) -> MatchFilter:
+        return MatchFilter(
+            compare=ComparerFilter(
+                comparers=Comparer(field="path", condition="IsIn", expected={tr.path for tr in tracks_compared})
+            ),
+            include=PathsFilter(values=tracks_included, path_mapper=path_mapper),
+            exclude=PathsFilter(values=tracks_excluded, path_mapper=path_mapper),
+        )
+
+    @pytest.fixture
+    def path(self, model: XAutoPF, xml_playlist_recent: str) -> Path:
+        """Creates an actual playlist file."""
+        model.path.parent.mkdir(parents=True, exist_ok=True)
+        with model.path.open("w", encoding="utf-8") as file:
+            file.write(xml_playlist_recent)
+
+        return model.path
+
+    async def test_limiter_deduplication(
+            self,
+            model: XAutoPF,
+            path: Path,
+            tracks: list[LocalTrack],
+            path_mapper: PathMapper,
+            faker: Faker
+    ):
+        await model.load()
+        assert not model.tracks
+        assert model.limiter_deduplication
+
+        limit = model.limiter.limit_by
+        tracks_expected = sorted(tracks, key=lambda t: t.added_at, reverse=True)[:limit]
+
+        await model.load(tracks)
+        assert model.tracks == tracks_expected
+
+        # add duplicates and apply deduplication
+        await model.load(tracks=tracks + tracks)
+        assert model.tracks == tracks_expected
 
     @staticmethod
-    async def assert_load(
-            path: Path,
-            xml: _XMLRoot,
-            tracks: list[LocalTrack],
-            path_mapper: PathMapper
-    ) -> None:
+    async def assert_load(model: XAutoPF, xml: _XMLRoot, tracks: list[LocalTrack]) -> None:
         """Asserts loading of a playlist from a given path with expected XML structure and tracks."""
-        pl = XAutoPF(path=path, path_mapper=path_mapper)
-        assert pl._xml is None
-        assert not pl.tracks
-        assert not pl.description
-        assert not pl.matcher
-        assert not pl.limiter
-        assert not pl.sorter
+        assert model._xml is None
+        assert not model.tracks
+        assert not model.description
+        assert not model.matcher
+        assert not model.limiter
+        assert not model.sorter
 
-        await pl.load()
-        assert pl._xml == xml
-        assert not pl.tracks
-        assert pl.description == xml.smart_playlist.source.description
+        await model.load()
+        assert model._xml == xml
+        assert not model.tracks
+        assert model.description == xml.smart_playlist.source.description
 
         matcher = xml.smart_playlist.matcher
-        matcher.include.path_mapper = path_mapper
-        matcher.exclude.path_mapper = path_mapper
-        assert pl.matcher == matcher
-        assert pl.limiter == xml.smart_playlist.source.limit.limiter
-        assert pl.sorter == xml.smart_playlist.sorter
+        matcher.include.path_mapper = model.path_mapper
+        matcher.exclude.path_mapper = model.path_mapper
+        assert model.matcher == matcher
+        assert model.limiter == xml.smart_playlist.source.limit.limiter
+        assert model.sorter == xml.smart_playlist.sorter
 
         with (
             mock.patch.object(XAutoPF, "_match", return_value=None) as mock_match,
             mock.patch.object(XAutoPF, "_limit", return_value=None) as mock_limit,
             mock.patch.object(XAutoPF, "_sort", return_value=None) as mock_sort,
         ):
-            await pl.load(tracks)
+            reference = model._get_reference_for_last_played_track(tracks.copy())
+            await model.load(tracks)
 
-            mock_match.assert_called_once_with(tracks=tracks, reference=tracks[0])
-            mock_limit.assert_called_once_with(ignore=pl.matcher.exclude.values)
+            mock_match.assert_called_once_with(tracks=tracks, reference=reference)
+            mock_limit.assert_called_once_with(ignore=model.matcher.exclude.values)
             mock_sort.assert_called_once_with()
 
-    async def test_load_from_no_file(
-            self,
-            model: XAutoPF,
-            xml_playlist: str,
-            tracks: list[LocalTrack],
-            path_mapper: PathMapper,
-            faker: Faker,
-            tmp_path: Path
-    ):
-        await self.assert_load(model.path, _XMLRoot(), tracks, path_mapper)
+    async def test_load_from_no_file(self, model: XAutoPF, tracks: list[LocalTrack]):
+        model = XAutoPF(path=model.path, path_mapper=model.path_mapper)
+        await self.assert_load(model, _XMLRoot(), tracks)
 
-    async def test_load_from_file(
-            self,
-            model: XAutoPF,
-            xml_playlist: str,
-            tracks: list[LocalTrack],
-            path_mapper: PathMapper,
-            faker: Faker,
-            tmp_path: Path
-    ):
+    async def test_load_from_file(self, model: XAutoPF, xml_playlist: str, tracks: list[LocalTrack]):
         model.path.parent.mkdir(parents=True, exist_ok=True)
         with model.path.open("w", encoding="utf-8") as file:
             file.write(xml_playlist)
 
+        model = XAutoPF(path=model.path, path_mapper=model.path_mapper)
         xml = _XMLRoot.model_validate(xml_playlist)
-        await self.assert_load(model.path, xml, tracks, path_mapper)
+        await self.assert_load(model, xml, tracks)
 
-    async def test_limiter_deduplication(
-            self,
-            model: XAutoPF,
-            xml_playlist_recent: str,
-            tracks: list[LocalTrack],
-            path_mapper: PathMapper,
-            faker: Faker
+    def test_clean_matcher_paths_filters_paths(
+            self, model_with_tracks: XAutoPF, matcher: MatchFilter, tracks: list[LocalTrack],
     ):
-        model.path.parent.mkdir(parents=True, exist_ok=True)
-        with model.path.open("w", encoding="utf-8") as file:
-            file.write(xml_playlist_recent)
+        assert matcher.compare.ready
+        model_with_tracks.matcher = matcher
 
-        for track in tracks:
-            track.added_at = datetime(2024, 1, faker.random_int(1, 28))
+        model_with_tracks._clean_matcher_paths()
+        # drops paths already in compared and excluded paths not in compared
+        assert matcher.include.paths == {tr.path for tr in tracks[22:25]}
+        # drops paths not in compared or included
+        assert matcher.exclude.paths == {tr.path for tr in tracks[18:20]}
 
-        pl = XAutoPF(path=model.path)
-        await pl.load()
-        assert not pl.tracks
-        assert pl.limiter_deduplication
+    def test_clean_matcher_paths_sets_paths(self, model_with_tracks: XAutoPF, matcher: MatchFilter):
+        matcher.compare = ComparerFilter()
+        model_with_tracks.matcher = matcher
 
-        limit = pl.limiter.limit_by
-        tracks_expected = sorted(tracks, key=lambda t: t.added_at, reverse=True)[:limit]
+        model_with_tracks._clean_matcher_paths()
+        assert matcher.include.paths == {tr.path for tr in model_with_tracks.tracks}
+        assert not matcher.exclude.paths
 
-        await pl.load(tracks)
-        assert pl.tracks == tracks_expected
-
-        # add duplicates and apply deduplication
-        await pl.load(tracks=tracks + tracks)
-        assert pl.tracks == tracks_expected
-
-    async def test_save_to_new_file(self, faker: Faker, tmp_path: Path):
-        path = tmp_path.joinpath(faker.file_path(absolute=False, extension="xautopf"))
-        pl = XAutoPF(path=path)
-
-        await pl.load()
-        assert not path.exists()
-        assert not pl.tracks  # no tracks given so no tracks loaded
-        assert pl._xml
-
-        await pl.save(dry_run=True)
-        assert not path.exists()
-        await pl.save(dry_run=False)
-        assert path.is_file()
-
-        with path.open("r") as file:
-            assert file.read() == pl._xml.unparse_xml()
-
-    async def test_save_to_existing_file(
-            self, tracks: list[LocalTrack], path_mapper: PathMapper, tmp_path: Path
-    ):
-        path = path_playlist_xautopf_bp
-        # prepare tracks to search through
-        tracks_actual = [track for track in tracks if track.path in [path_track_flac, path_track_wma]]
-        for i, track in enumerate(tracks[10:40]):
-            track.album = "an album"
-        for i, track in enumerate(tracks[20:50]):
-            track.artist = None
-        for i, track in enumerate(tracks, 1):
-            track.track_number = i
-        tracks += tracks_actual
-
-        pl = XAutoPF(path=path, path_mapper=path_mapper)
-        await pl.load(tracks=tracks)
-
-        assert pl.path == path
-        assert len(pl.tracks) == 32
-        original_dt_modified = pl.added_at
-        original_dt_created = pl.created_at
-        original_parser = deepcopy(pl._parser)
-
-        # perform some operations on the playlist
-        tracks_added = random_tracks(3)
-        pl.tracks += tracks_added
-        # noinspection PyAsyncCall
-        pl.tracks.pop(5)
-        # noinspection PyAsyncCall
-        pl.tracks.pop(6)
-        pl.tracks.remove(tracks_actual[0])
-
-        # first test results on a dry run
-        result = await pl.save(dry_run=True)
-
-        assert result.start == 32
-        assert result.start_included == 3
-        assert result.start_excluded == 3
-        assert result.start_compared == 3
-        assert not result.start_limiter
-        assert result.start_sorter
-        assert result.final == len(pl.tracks)
-        assert result.final_included == 4
-        assert result.final_excluded == 2
-        assert result.final_compared == 3
-        assert not result.start_limiter
-        assert result.start_sorter
-
-        assert pl.date_modified == original_dt_modified
-        assert pl.date_created == original_dt_created
-        assert pl._parser.xml == original_parser.xml
-
-        pl.description = "new description"
-        await pl.save(dry_run=False)
-
-        if not os.getenv("GITHUB_ACTIONS"):
-            # TODO: these assertions always fail on GitHub actions but not locally, why?
-            assert pl.date_modified > original_dt_modified
-
-        assert pl._parser.xml != original_parser
-        assert pl._parser.xml_smart_playlist["@GroupBy"] == original_parser.xml_smart_playlist["@GroupBy"]
-        assert pl._parser.xml_source["Conditions"] == original_parser.xml_source["Conditions"]
+    def assert_saved_file(self, model: XAutoPF) -> None:
+        """Asserts that the saved playlist file contains the correct mapped paths."""
+        with model.path.open("r") as file:  # changed file
+            assert file.read() == model._xml.unparse_xml()
 
         # assert file has reported path count and paths in the file have been mapped to relative paths
-        paths = pl._parser.xml_source["ExceptionsInclude"].split("|")
-        assert len(paths) == result.final_included
-        for path in paths:
-            assert path.startswith("../")
+        paths = model._xml.smart_playlist.source.exceptions or set()
+        paths |= model._xml.smart_playlist.source.exceptions_include or set()
+        self.assert_paths_are_mapped(paths)
+
+    async def test_save_file_dry_run(
+            self, model_with_tracks: XAutoPF, tracks: list[LocalTrack], xml_playlist_complex: str
+    ):
+        model_with_tracks._xml = _XMLRoot.model_validate(xml_playlist_complex)
+        await model_with_tracks.load()
+        await self.assert_save_dry_run(model_with_tracks)
+
+    async def test_save_to_new_file(
+            self, model_with_tracks: XAutoPF, matcher: MatchFilter, xml_playlist_complex: str
+    ):
+        model_with_tracks._xml = _XMLRoot.model_validate(xml_playlist_complex)
+        await model_with_tracks.load()
+        model_with_tracks.matcher = matcher
+
+        await self.assert_save(model_with_tracks)
+        self.assert_saved_file(model_with_tracks)
+
+    async def test_save_to_existing_file(
+            self, model_with_tracks: XAutoPF, path: Path, matcher: MatchFilter
+    ):
+        await model_with_tracks.load()
+        model_with_tracks.matcher = matcher
+
+        original_xml = deepcopy(model_with_tracks._xml)
+        await self.assert_save_to_existing_file(model_with_tracks)
+        assert model_with_tracks._xml != original_xml
+        self.assert_saved_file(model_with_tracks)
+
+    async def test_save_to_new_file_from_existing(self, model_with_tracks: XAutoPF, path: Path):
+        await model_with_tracks.load()
+        await self.assert_save_to_new_file(model_with_tracks, path)
 
 
 class TestXMLCondition(MusifyModelTester):
@@ -846,7 +899,7 @@ class TestXMLSource(MusifyModelTester):
                         "Field": [
                             {
                                 "@Code": TestXMLDisplayField.get_valid_code(),
-                                "@Width": faker.random_int(0, 100)
+                                "@Width": faker.random_int(1, 100)
                             }
                             for _ in range(faker.random_int(1, 10))
                         ]

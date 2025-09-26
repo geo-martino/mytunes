@@ -65,6 +65,14 @@ class _LocalPlaylist[TF: Filter](
             return
         self.sorter.sort(self.tracks)
 
+    async def rename(self) -> None:
+        """Rename the playlist file to match the name of the playlist."""
+        if self.name == self.path.stem:
+            return
+
+        path = self.path.with_stem(self.name)
+        self.path = self.path.rename(path)
+
 
 class LocalPlaylist[TF: Filter](_LocalPlaylist[TF], IsFile, metaclass=ABCMeta):
     @abstractmethod

@@ -130,7 +130,7 @@ class PathMapper(MusifyModel):
         if not check_existence or os.path.exists(path):
             return path
 
-    def map_many(self, values: Collection[PathInputType], check_existence: bool = False) -> list[str]:
+    def map_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
         """Run :py:meth:`map` operation on many ``values`` only returning those values that are not None or empty."""
         paths = [self.map(value=value, check_existence=check_existence) for value in values]
         return [path for path in paths if path]
@@ -152,7 +152,7 @@ class PathMapper(MusifyModel):
         if not check_existence or os.path.exists(path):
             return path
 
-    def unmap_many(self, values: Collection[PathInputType], check_existence: bool = False) -> list[str]:
+    def unmap_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
         """Run :py:meth:`unmap` operation on many ``values`` only returning those values that are not None or empty."""
         paths = [self.unmap(value=value, check_existence=check_existence) for value in values]
         return [path for path in paths if path]

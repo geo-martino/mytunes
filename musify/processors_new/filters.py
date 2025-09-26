@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence, Iterable
 from pathlib import Path
 from typing import Any, Annotated, Self, Literal
 
-from pydantic import Field, field_validator, BeforeValidator, field_serializer
+from pydantic import Field, field_validator, BeforeValidator, field_serializer, model_validator
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
@@ -109,28 +109,45 @@ class ValuesFilter[T](Filter[T]):
 class PathsFilter(ValuesFilter[str]):
     """Filter based on a defined list of values."""
     values: Annotated[set[StrippedString], BeforeValidator(to_set)] = Field(
-        description="Set of paths to filter against",
+        description="Set of paths to filter against. These will be stored as un-mapped paths if a PathMapper is set.",
         default_factory=set,
     )
     path_mapper: PathMapper = Field(
-        description="Mapper to use when mapping string paths.",
+        description="Mapper to use to map paths.",
         default_factory=PathMapper,
     )
 
     @property
     def paths(self) -> set[Path]:
         """Get the values as Path objects."""
-        return set(map(Path, self.values))
+        paths = self.values
+        if self.path_mapper is not None:
+            paths = self.path_mapper.map_many(paths, check_existence=False)
+        return set(map(Path, paths))
+
+    @paths.setter
+    def paths(self, value: set[Path]) -> None:
+        self.values = set(map(str, value))
 
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
-    def _extract_values_from_files(values: Collection[Any]) -> Iterator[str]:
+    def _extract_values_from_files(values: Iterable[Any]) -> Iterator[str]:
         return (str(value.path) if isinstance(value, _IsFile) else value for value in values)
 
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
-    def _extract_values_from_paths(values: Collection[Any]) -> Iterator[str]:
+    def _extract_values_from_paths(values: Iterable[Any]) -> Iterator[str]:
         return (str(value) if isinstance(value, Path) else value for value in values)
+
+    @model_validator(mode="after")
+    def _unmap_paths(self) -> Self:
+        if self.path_mapper is None:
+            return self
+
+        values = set(self.path_mapper.unmap_many(self.values, check_existence=False))
+        if values != self.values:
+            self.values = values
+        return self
 
     def check(self, item: PathInputType, *_, **__) -> bool:
         if not isinstance(item, str | Path | _IsFile):

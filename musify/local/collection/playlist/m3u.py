@@ -52,6 +52,7 @@ class SyncResultM3U(Result):
             final=len(final),
         )
 
+
 class M3U(LocalPlaylist[PathsFilter]):
     """For reading and writing data from M3U playlist format."""
     format: Literal["m3u"]
@@ -76,16 +77,15 @@ class M3U(LocalPlaylist[PathsFilter]):
                 return self
 
         self.matcher = PathsFilter(values=set(paths), path_mapper=self.path_mapper)
+        paths = self.path_mapper.map_many(paths, check_existence=not bool(tracks))
 
         if tracks:  # match paths from given tracks using the matcher
-            paths_mapped = list(map(Path, self.path_mapper.map_many(paths, check_existence=False)))
             self._match(tracks)
         else:  # use the paths in the matcher to load tracks from scratch
-            paths_mapped = list(map(Path, self.path_mapper.map_many(paths, check_existence=True)))
-            self.tracks[:] = await asyncio.gather(*map(LocalTrack.from_path, paths_mapped))
+            self.tracks[:] = await asyncio.gather(*map(LocalTrack.from_path, paths))
 
-        self._limit(ignore=paths_mapped)
-        self._sort(paths=paths_mapped)
+        self._limit(ignore=paths)
+        self._sort(paths=list(map(Path, paths)))
 
         self._original = self.tracks.copy() if self.path.is_file() else []
 
@@ -107,9 +107,7 @@ class M3U(LocalPlaylist[PathsFilter]):
         start_paths = list(map(Path, self.path_mapper.unmap_many(self._original, check_existence=False)))
 
         if not dry_run:
-            if self.name != self.path.stem:
-                path = self.path.with_stem(self.name)
-                self.path = self.path.rename(path)
+            await self.rename()
 
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("w", encoding="utf-8") as file:

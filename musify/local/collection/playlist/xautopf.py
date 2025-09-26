@@ -4,7 +4,7 @@ The XAutoPF implementation of a :py:class:`LocalPlaylist`.
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, MutableMapping
+from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
 from copy import deepcopy
 from pathlib import Path
 from random import choice
@@ -21,6 +21,7 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models import MusifyModel
+from musify.models.sequence import MusifySequence, MusifyMutableSequence
 from musify.processors_new import Result
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter
@@ -48,8 +49,8 @@ class SyncResultXAutoPF(Result):
     start_excluded: int
     #: The number of tracks that matched all the :py:class:`Comparer` settings before the sync.
     start_compared: int
-    #: Was a limiter present on the playlist before the sync.
-    start_limiter: bool
+    #: The limit count before the sync. 0 if no limiter was present.
+    start_limiter: int
     #: Was a sorter present on the playlist before the sync.
     start_sorter: bool
 
@@ -61,34 +62,50 @@ class SyncResultXAutoPF(Result):
     final_excluded: int
     #: The number of tracks that matched all the :py:class:`Comparer` settings after the sync.
     final_compared: int
-    #: Was a limiter present on the playlist after the sync.
-    final_limiter: bool
+    #: The limit count after the sync. 0 if no limiter was present.
+    final_limiter: int
     #: Was a sorter present on the playlist after the sync.
     final_sorter: bool
 
     @classmethod
-    def from_xml(cls, initial_count: int, initial_xml: _XMLRoot, final_count: int, final_xml: _XMLRoot) -> Self:
+    def from_xml(
+            cls,
+            initial_tracks: MutableSequence[LocalTrack],
+            initial_xml: _XMLRoot,
+            final_tracks: MutableSequence[LocalTrack],
+            final_xml: _XMLRoot,
+            reference: LocalTrack | None = None,
+    ) -> Self:
         """Create a SyncResultXAutoPF from the given XML objects."""
-        start_sorter_count = 0
-        if initial_xml.smart_playlist.source.sort_by is not None:
-            start_sorter_count = len(initial_xml.smart_playlist.source.sort_by.sort_fields)
-        final_sorter_count = 0
-        if final_xml.smart_playlist.source.sort_by is not None:
-            final_sorter_count = len(final_xml.smart_playlist.source.sort_by.sort_fields)
-
         return cls(
-            start=initial_count,
+            start=len(initial_tracks),
             start_included=len(initial_xml.smart_playlist.source.exceptions_include or ()),
             start_excluded=len(initial_xml.smart_playlist.source.exceptions or ()),
-            start_compared=len(initial_xml.smart_playlist.source.conditions.condition),
-            start_limiter=initial_xml.smart_playlist.source.limit.enabled,
-            start_sorter=start_sorter_count > 0,
-            final=final_count,
+            start_compared=len(
+                initial_xml.smart_playlist.source.conditions.comparers.apply(initial_tracks, reference=reference)
+            ),
+            start_limiter=(
+                initial_xml.smart_playlist.source.limit.count
+                if initial_xml.smart_playlist.source.limit.enabled else 0
+            ),
+            start_sorter=(
+                len(initial_xml.smart_playlist.source.sort_by.sort_fields) > 0
+                if initial_xml.smart_playlist.source.sort_by is not None else False
+            ),
+            final=len(final_tracks),
             final_included=len(final_xml.smart_playlist.source.exceptions_include or ()),
             final_excluded=len(final_xml.smart_playlist.source.exceptions or ()),
-            final_compared=len(final_xml.smart_playlist.source.conditions.condition),
-            final_limiter=final_xml.smart_playlist.source.limit.enabled,
-            final_sorter=final_sorter_count > 0,
+            final_compared=len(
+                final_xml.smart_playlist.source.conditions.comparers.apply(final_tracks, reference=reference)
+            ),
+            final_limiter=(
+                final_xml.smart_playlist.source.limit.count
+                if final_xml.smart_playlist.source.limit.enabled else 0
+            ),
+            final_sorter=(
+                len(final_xml.smart_playlist.source.sort_by.sort_fields) > 0
+                if final_xml.smart_playlist.source.sort_by is not None else False
+            ),
         )
 
 
@@ -97,6 +114,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     format: Literal["xautopf"]
 
     _xml: _XMLRoot | None = PrivateAttr(default=None)
+    _original: MusifyMutableSequence = PrivateAttr(default_factory=MusifyMutableSequence)
 
     @property
     def limiter_deduplication(self) -> bool:
@@ -110,6 +128,14 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     def __new__(cls, *args, **kwargs):
         required_modules_installed(REQUIRED_MODULES, cls)
         return super().__new__(cls)
+
+    @staticmethod
+    def _get_reference_for_last_played_track(tracks: MutableSequence[LocalTrack]) -> LocalTrack | None:
+        try:
+            ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
+            return tracks[0]
+        except MusifyValueError as ex:
+            return
 
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """
@@ -135,13 +161,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         self.limiter = self._xml.smart_playlist.source.limit.limiter
         self.sorter = self._xml.smart_playlist.sorter
 
-        tracks_list = list(tracks)
-        try:
-            self.sorter.sort_by_field(tracks_list, field="last_played_at", reverse=True)
-        except MusifyValueError:
-            pass
-
-        self._match(tracks=tracks, reference=tracks_list[0] if len(tracks) > 0 else None)
+        self._match(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
         self._limit(ignore=self.matcher.exclude.values)
         self._sort()
 
@@ -161,8 +181,11 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: The results of the sync as a :py:class:`SyncResultXAutoPF` object.
         """
+        if self._xml is None:
+            self._xml = _XMLRoot()
+
         initial_xml = deepcopy(self._xml)
-        initial_count = len(self._original)
+        initial_tracks = self._original.copy()
         xml = self._xml if not dry_run else deepcopy(self._xml)
 
         xml.smart_playlist.source.description = self.description
@@ -173,39 +196,54 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         xml.smart_playlist.parse_sorter(self.sorter)
 
         if not dry_run:
+            await self.rename()
+
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("w", encoding="utf-8") as file:
                 file.write(xml.unparse_xml())
+
             self._original = self.tracks.copy()
 
+        reference = self._get_reference_for_last_played_track(initial_tracks + self.tracks)
         return SyncResultXAutoPF.from_xml(
-            initial_count=initial_count, initial_xml=initial_xml, final_count=len(self.tracks), final_xml=xml,
+            initial_xml=initial_xml,
+            initial_tracks=initial_tracks,
+            final_xml=xml,
+            final_tracks=self.tracks,
+            reference=reference,
         )
 
     def _clean_matcher_paths(self) -> None:
+        """
+        Ensures that the paths included in the XML output do not include paths that match
+        any of the comparer or group_by conditions.
+
+        Match original and current tracks again on current conditions to check for differences
+        between compare, include and exclude settings.
+        """
         if self.matcher is None or not self.matcher.ready:
             return
 
         track_paths = set(track.path for track in self.tracks)
-        if not self.matcher.comparers or not self.matcher.comparers.ready:
-            self.matcher.include.values = track_paths
+        if not self.matcher.compare or not self.matcher.compare.ready:
+            # no compare conditions so all tracks are included, none are excluded
+            self.matcher.include.paths = track_paths
+            self.matcher.exclude.paths = {}
             return
 
-        # match again on current conditions to check for differences from original list
-        # which ensures that the paths included in the XML output
-        # do not include paths that match any of the comparer or group_by conditions
+        tracks = self._original + self.tracks
+        reference = self._get_reference_for_last_played_track(tracks)
+        compared = {track.path for track in tracks if self.matcher.compare.check(track, reference=reference)}
 
-        # copy the list of tracks as the sorter will modify the list order
-        tracks = self.tracks.copy()
-        # get the last played track as reference in case comparer is looking for the playing tracks as reference
-        ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
+        included = compared | self.matcher.exclude.paths
+        if self.matcher.include.path_mapper is not None:
+            included = self.matcher.include.path_mapper.unmap_many(included, check_existence=False)
+        self.matcher.include.values -= set(map(str, included))
 
-        matched_paths = set(track.path for track in tracks if self.matcher.check(track.path, reference=track))
-        self.matcher.include.values = track_paths - matched_paths
-
-        # get new include/exclude paths based on the leftovers after matching on comparers and group_by settings
-        self.matcher.exclude.values = matched_paths - track_paths
-        self.matcher.include.values = track_paths - matched_paths
+        excluded = compared | self.matcher.include.paths
+        if self.matcher.exclude.path_mapper is not None:
+            excluded = self.matcher.exclude.path_mapper.unmap_many(excluded, check_existence=False)
+        self.matcher.exclude.values &= set(map(str, excluded))
 
 
 class _XMLField(metaclass=ABCMeta):
@@ -789,7 +827,7 @@ class _XMLSource(_XMLBaseModel):
                 dump[key := "DefinedSort"] = dump.pop(alias := "SortBy")
                 order[order.index(alias)] = key
                 dump = dict(sorted(dump.items(), key=lambda it: order.index(it[0])))
-            except KeyError as ex:
+            except KeyError:
                 pass
 
         return self._serialize_xml(dump)
