@@ -211,13 +211,25 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         return [cls._deserialize_text_frame(v) for v in value]
 
+    @field_serializer("album", mode="plain", when_used="unless-none")
+    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+        if info.mode == "json":
+            return self._extract_name(value)
+        return self._serialize_text_frame(value, info=info)
+
+    @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
+    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+        if info.mode == "json":
+            return self._extract_names(value)
+        return self._serialize_text_frame(value, info=info)
+
     # noinspection PyNestedDecorators
     @field_serializer(
-        "name", "artists", "album", "genres", "track", "disc", "bpm", "key", "released_at",
+        "name", "track", "disc", "bpm", "key", "released_at",
         mode="plain", when_used="unless-none"
     )
     def _serialize_text_frame(self, value: Any, info: FieldSerializationInfo) -> InstanceOf[mutagen.id3.TextFrame]:
-        if not info.by_alias:  # not serializing to tag IDs
+        if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return value
         if not isinstance(value, tuple | list):
             value = [value]
@@ -226,11 +238,11 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         tag_value = self._join_split_tags(value)
         return frame_cls(text=tag_value)
 
-    @field_serializer("comments", mode="plain")
+    @field_serializer("comments", mode="plain", when_used="unless-none")
     def _serialize_text_frames(
             self, value: Any, info: FieldSerializationInfo
     ) -> list[InstanceOf[mutagen.id3.TextFrame]]:
-        if not info.by_alias:  # not serializing to tag IDs
+        if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return value
 
         frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)

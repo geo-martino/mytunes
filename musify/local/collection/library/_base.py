@@ -170,10 +170,10 @@ class LocalLibrary(
         )
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        tracks = await self.logger.get_asynchronous_iterator(
-            map(self.load_track, paths), desc="Loading tracks", unit="tracks", total=len(paths)
+        bar = self.logger.get_synchronous_iterator(
+            paths, desc="Loading tracks", unit="tracks", total=len(paths)
         )
-        self.tracks[:] = filter(lambda tr: tr is not None, tracks)
+        self.tracks[:] = filter(lambda tr: tr is not None, [await self.load_track(path) for path in bar])
 
         self._log_errors("Could not load the following tracks")
         self.logger.debug(f"Load {self.source} tracks: DONE\n")
@@ -226,15 +226,13 @@ class LocalLibrary(
         )
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        playlists = await self.logger.get_asynchronous_iterator(
-            map(self.load_playlist, paths), desc="Loading playlists", unit="playlists", total=len(paths)
+        bar = self.logger.get_synchronous_iterator(
+            paths, desc="Loading playlists", unit="playlists", total=len(paths)
         )
-        playlists = {
-            pl.name: pl for pl in sorted(filter(lambda pl: pl is not None, playlists), key=lambda x: x.name.casefold())
-        }
+        playlists = filter(lambda pl: pl is not None, [await self.load_playlist(path) for path in bar])
 
         self.playlists.clear()
-        self.playlists.update(playlists, extract_keys=False)
+        self.playlists.update({pl.name: pl for pl in sorted(playlists, key=lambda x: x.name.casefold())}, extract_keys=False)
 
         self._log_errors("Could not load the following playlists")
         self.logger.debug(f"Load {self.source} playlists: DONE\n")

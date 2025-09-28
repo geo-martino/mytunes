@@ -16,6 +16,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.mp3 import MP3
 from musify.models import MusifyModel
+from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 
@@ -91,7 +92,7 @@ class TestMP3(LocalTrackTester):
             ],
             "APIC": list(pictures.values()),
         }
-        info = Namespace(by_alias=True, context=None)
+        info = Namespace(by_alias=True, context=None, mode="python")
 
         expected = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
@@ -116,7 +117,7 @@ class TestMP3(LocalTrackTester):
 
     def test_serialize_text_frame_from_string(self, model: MP3, faker: Faker):
         value = faker.sentence()
-        info = Namespace(field_name="name", by_alias=True, context=None)
+        info = Namespace(field_name="name", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frame(value, info=info)
@@ -126,7 +127,7 @@ class TestMP3(LocalTrackTester):
     def test_serialize_text_frame_from_strings(self, model: MP3, faker: Faker):
         value = faker.words()
         expected = model._join_tags(value)
-        info = Namespace(field_name="comments", by_alias=True, context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frame(value, info=info)
@@ -135,7 +136,7 @@ class TestMP3(LocalTrackTester):
 
     def test_serialize_text_frame_from_names(self, model: MP3, artists: list[LocalArtist]):
         expected = model._join_tags(artist.name for artist in artists)
-        info = Namespace(field_name="artists", by_alias=True, context=None)
+        info = Namespace(field_name="artists", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frame(artists, info=info)
@@ -144,7 +145,7 @@ class TestMP3(LocalTrackTester):
 
     def test_serialize_text_frames(self, model: MP3, faker: Faker):
         expected = [faker.sentence() for _ in range(faker.random_int(3, 6))]
-        info = Namespace(field_name="comments", by_alias=True, context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frames(expected, info=info)
@@ -154,7 +155,9 @@ class TestMP3(LocalTrackTester):
     def test_serialize_text_frames_includes_uris(self, model: MP3, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
-        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+        info = Namespace(
+            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+        )
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frames(value, info=info)

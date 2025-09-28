@@ -178,12 +178,14 @@ class TestLocalTrack(UniqueKeyTester):
         assert_validator_skips(LocalTrack._map_images, faker.pyint())
 
     def test_serialize_images_skips(self, model: LocalTrack, image_bytes: list[bytes]):
-        info = Namespace(by_alias=False, context=None)  # skips when not serializing by alias
+        # skips when not serializing by alias
+        info = Namespace(by_alias=False, context=None, mode="python")
         # noinspection PyTypeChecker
         results = model._serialize_images(model.images, info=info)
         assert results is model.images
 
-        info = Namespace(by_alias=True, context=TagDumpContext())  # skips when loaded_images are not available
+        # skips when loaded_images are not available
+        info = Namespace(by_alias=True, context=TagDumpContext(), mode="python")
         # noinspection PyTypeChecker
         results = model._serialize_images(model.images, info=info)
         assert not results

@@ -9,11 +9,13 @@ import mutagen
 import pytest
 from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
+from faker import Faker
 from pydantic import TypeAdapter
 
 from musify.local.exception import FileError
 from musify.local.item.track import LocalTrack, TagDumpContext
 from musify.models.properties.image import ImageFile
+from musify.models.properties.name import HasName
 from tests.models.testers import MusifyModelTester, UniqueKeyTester
 
 
@@ -116,6 +118,20 @@ class LocalTrackTester(UniqueKeyTester):
     @staticmethod
     def test_map_images(model: LocalTrack, pictures: dict[str, Any]):
         assert model._map_images(list(pictures.values())) == pictures
+
+    def test_serialize_name(self, model: LocalTrack, faker: Faker):
+        expected = faker.sentence()
+        value = HasName(name=expected)
+        info = Namespace(field_name="album", by_alias=True, context=None, mode="json")
+        # noinspection PyTypeChecker
+        assert model._serialize_name(value, info=info) == expected
+
+    def test_serialize_names(self, model: LocalTrack, faker: Faker):
+        expected = faker.words()
+        value = [HasName(name=word) for word in expected]
+        info = Namespace(field_name="artists", by_alias=True, context=None, mode="json")
+        # noinspection PyTypeChecker
+        assert model._serialize_names(value, info=info) == expected
 
     @staticmethod
     def test_serialize_images(model: LocalTrack, image_bytes: list[bytes], image_objects: list[PILImageFile], pictures: dict[str, Any]):

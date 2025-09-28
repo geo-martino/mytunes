@@ -15,7 +15,6 @@ from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
-from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
@@ -177,30 +176,46 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
             return value
         return list(map(cls._deserialize_unicode_attribute, value))
 
-    # noinspection PyNestedDecorators
-    @field_serializer(
-        "name", "album", "disc", "bpm", "key", "released_at", "uri",
-        mode="plain"
-    )
-    def _serialize_unicode_attribute[T](self, value: T) -> T | str:
-        if not isinstance(value, tuple | list):
-            value = [value]
-        return mutagen.asf.ASFUnicodeAttribute(self._join_split_tags(value))
+    @field_serializer("album", mode="plain", when_used="unless-none")
+    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+        if info.mode == "json":
+            return self._extract_name(value)
+        return self._serialize_unicode_attribute(value, info=info)
+
+    @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
+    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+        if info.mode == "json":
+            return self._extract_names(value)
+        return self._serialize_unicode_attributes(value, info=info)
 
     # noinspection PyNestedDecorators
     @field_serializer(
-        "artists", "genres", "comments",
-        mode="plain"
+        "name", "disc", "bpm", "key", "released_at", "uri",
+        mode="plain", when_used="unless-none",
     )
-    def _serialize_unicode_attributes[T](self, value: T, info: FieldSerializationInfo) -> T | str:
+    def _serialize_unicode_attribute[T](self, value: T, info: SerializationInfo) -> T | str:
+        if not info.by_alias or info.mode == "json":
+            return value
         if not isinstance(value, tuple | list):
             value = [value]
 
-        values = [v.name if isinstance(v, HasName) else v for v in value]
+        value = self._join_split_tags(value)
+        return mutagen.asf.ASFUnicodeAttribute(value)
+
+    # noinspection PyNestedDecorators
+    @field_serializer(
+        "comments",
+        mode="plain", when_used="unless-none"
+    )
+    def _serialize_unicode_attributes[T](self, value: T, info: SerializationInfo) -> T | str:
+        if not isinstance(value, tuple | list):
+            value = [value]
+
+        values = self._extract_names(value)
         self._extend_with_uris(values, info=info)
-        return list(map(self._serialize_unicode_attribute, values))
+        return [self._serialize_unicode_attribute(val, info=info) for val in values]
 
-    @field_serializer("track", mode="plain")
+    @field_serializer("track", mode="plain", when_used="unless-none")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
         return super()._serialize_position_tags(value, info=info)
 

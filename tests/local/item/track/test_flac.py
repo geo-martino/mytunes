@@ -16,6 +16,9 @@ from musify.local.item.genre import LocalGenre
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.flac import FLAC
 from musify.models import MusifyModel
+from musify.models.properties.date import SparseDate
+from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
@@ -107,6 +110,19 @@ class TestFLAC(LocalTrackTester):
         )
 
     # noinspection PyCallingNonCallable
+    def test_merge_position_values_skips(self):
+        tags = {
+            "title": ["Sleepwalk My Life Away"],
+            "artist": ["Metallica"],
+            "album": ["72 Seasons"],
+            "album artist": ["Metallica"],
+        }
+        result = FLAC._merge_position_values(tags)
+
+        assert "track" not in result
+        assert "disc" not in result
+
+    # noinspection PyCallingNonCallable
     def test_merge_position_values(self):
         tags = {
             "title": ["Sleepwalk My Life Away"],
@@ -151,33 +167,43 @@ class TestFLAC(LocalTrackTester):
             "date": [tags["date"]],
             "comment": tags["comment"],
         }
-        info = Namespace(by_alias=True)
+        info = Namespace(by_alias=True, mode="python")
 
         # noinspection PyTypeChecker
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
     def test_serialize_string(self, model: FLAC, faker: Faker):
-        value = choice(([faker.sentence()], faker.words()))
-        expected = model._join_tags(value)
+        value = choice([
+            SparseDate(year=2021, month=12, day=31),
+            KeySignature(root=2, mode=1)
+        ])
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_string(value) == expected
+        assert model._serialize_string(value, info=info) == str(value)
 
     def test_serialize_strings(self, model: FLAC, genres: list[LocalGenre], faker: Faker):
         value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = [genre.name for genre in genres] + value[len(genres):]
-        info = Namespace(field_name="comments", by_alias=True, context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
 
     def test_serialize_strings_includes_uris(self, model: FLAC, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
-        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+        info = Namespace(
+            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+        )
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
 
+    def test_serialize_position_tags_skips(self, model: FLAC):
+        info = Namespace(by_alias=True, mode="python")
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags((), info) is None
+
     def test_serialize_position_tags(self, model: FLAC):
-        info = Namespace(field_name="disc", by_alias=True, context=None)
+        info = Namespace(field_name="disc", by_alias=True, context=None, mode="python")
 
         position = Position(number=1, total=2, zero_fill=3)
         expected = {"discnumber": "001", "disctotal": "002"}

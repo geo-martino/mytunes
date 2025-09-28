@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
+from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable
 from copy import copy
 from io import BytesIO
 from pathlib import Path
@@ -191,7 +191,7 @@ class LocalTrack[T: mutagen.FileType](
     # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "bpm", "key", "uri",
-        mode="before", check_fields=False
+        mode="before", check_fields=True
     )
     @staticmethod
     def _extract_first_value_from_sequence(value: Any) -> str | None:
@@ -202,10 +202,10 @@ class LocalTrack[T: mutagen.FileType](
     # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
-        mode="before", check_fields=False
+        mode="before", check_fields=True
     )
     @staticmethod
-    def _extract_first_value_from_single_sequence(value: Any) -> str | None:
+    def _extract_first_value_from_single_sequence(value: Any, info: FieldSerializationInfo = None) -> str | None:
         if isinstance(value, tuple | list) and len(value) == 1:
             value = value[0]
         return value
@@ -213,7 +213,7 @@ class LocalTrack[T: mutagen.FileType](
     # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
-        mode="before", check_fields=False
+        mode="before", check_fields=True
     )
     @staticmethod
     def _nullify[T](value: T) -> T | None:
@@ -228,7 +228,7 @@ class LocalTrack[T: mutagen.FileType](
     # noinspection PyNestedDecorators
     @field_validator(
         "genres", "comments",
-        mode="before", check_fields=False
+        mode="before", check_fields=True
     )
     @classmethod
     def _split_joined_tags[T](cls, value: T) -> T | list[str]:
@@ -238,12 +238,27 @@ class LocalTrack[T: mutagen.FileType](
 
     @classmethod
     def _join_split_tags(cls, value: list[Any]) -> str:
-        values = [v.name if isinstance(v, HasName) else v for v in value]
+        values = map(cls._extract_name, value)
         return cls._join_tags(str(v) for v in values if v and str(v))
+
+    @staticmethod
+    def _extract_name(value: Any) -> str | None:
+        if not isinstance(value, HasName):
+            return value
+        return value.name if value is not None else None
+
+    def _extract_names(self, values: Any) -> list[str]:
+        if not isinstance(values, Iterable):
+            return values
+
+        values = list(map(self._extract_name, values))
+        return values
 
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
         if not info.by_alias:  # not serializing to tag IDs
             return value
+        if not isinstance(value, Position):
+            return
 
         field: FieldInfo = self.__class__.model_fields[info.field_name]
         if not isinstance(field.validation_alias, AliasChoices):

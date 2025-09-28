@@ -243,3 +243,14 @@ class TestLocalLibrary(MusifyResourceTester):
 
         expected_genres = len(set(genre.name for track in model.tracks for genre in track.genres))
         assert len(list(model.genres())) == expected_genres > 0
+
+    ###########################################################################
+    ## Backup/Restore
+    ###########################################################################
+    def test_backup_dump(self, model: LocalLibrary, tracks: list[LocalTrack]) -> None:
+        import json
+        model.tracks[:] = sorted(tracks, key=lambda t: t.ext)
+
+        dump = model.model_dump(mode="json", include={"tracks"})
+        print(json.dumps(dump, indent=2))
+        raise

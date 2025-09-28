@@ -19,6 +19,7 @@ from musify.local.item.genre import LocalGenre
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.wma import WMA
 from musify.models import MusifyModel
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
@@ -89,28 +90,43 @@ class TestWMA(LocalTrackTester):
         attributes = [ASFUnicodeAttribute(item) for item in expected]
         assert WMA._deserialize_unicode_attributes(attributes) == expected
 
+    def test_serialize_unicode_attribute_skips_on_json(self, model: WMA, faker: Faker):
+        value = choice(([faker.sentence()], faker.words()))
+        expected = model._join_tags(value)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="json")
+        # noinspection PyTypeChecker
+        assert not isinstance(model._serialize_unicode_attribute(value, info=info), ASFUnicodeAttribute)
+
     def test_serialize_unicode_attribute(self, model: WMA, faker: Faker):
         value = choice(([faker.sentence()], faker.words()))
         expected = model._join_tags(value)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_unicode_attribute(value) == expected
+        assert model._serialize_unicode_attribute(value, info=info) == expected
 
     def test_serialize_unicode_attributes(self, model: WMA, genres: list[LocalGenre], faker: Faker):
         value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = [genre.name for genre in genres] + value[len(genres):]
-        info = Namespace(field_name="comments", by_alias=True, context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
         assert model._serialize_unicode_attributes(value, info=info) == expected
 
     def test_serialize_unicode_attributes_includes_uris(self, model: WMA, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
-        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+        info = Namespace(
+            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+        )
         # noinspection PyTypeChecker
         assert model._serialize_unicode_attributes(value, info=info) == expected
 
+    def test_serialize_position_tags_skips(self, model: WMA):
+        info = Namespace(by_alias=True, mode="python")
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags((), info) is None
+
     def test_serialize_position_tags(self, model: WMA):
-        info = Namespace(field_name="track", by_alias=True, context=None)
+        info = Namespace(field_name="track", by_alias=True, context=None, mode="python")
 
         position = Position(number=1, total=2, zero_fill=3)
         expected = {"WM/TrackNumber": "001", "TotalTracks": "002"}
@@ -148,7 +164,7 @@ class TestWMA(LocalTrackTester):
             "WM/InitialKey": [tags["WM/InitialKey"]],
             "WM/Comments": tags["WM/Comments"],
         }
-        info = Namespace(by_alias=True)
+        info = Namespace(by_alias=True, mode="python")
 
         # noinspection PyTypeChecker
         assert model._format_to_tags(lambda x: tags, info=info) == expected

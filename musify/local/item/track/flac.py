@@ -14,7 +14,6 @@ from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageFile, ImageURL
 from musify.models.properties.music import KeySignature
-from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
@@ -128,7 +127,8 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
                 next(aliases)
 
             values.extend(filter(None, (value.pop(alias, None) for alias in aliases)))
-            value[name] = tuple(map(cls._extract_first_value_from_sequence, values))
+            if values:
+                value[name] = tuple(map(cls._extract_first_value_from_sequence, values))
 
         return value
 
@@ -142,26 +142,36 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         self._convert_values_to_list(data)
         return data
 
+    @field_serializer("album", mode="plain", when_used="unless-none")
+    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+        if not info.by_alias and info.mode == "json":
+            return self._extract_name(value)
+        return self._extract_name(value)
+
+    @field_serializer("artists", mode="plain", when_used="unless-none")
+    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+        if info.mode == "json":
+            return self._extract_names(value)
+        return self._join_split_tags(value)
+
     @field_serializer(
-        "album", "artists", "key", "bpm", "released_at",
-        mode="plain"
+        "key", "bpm", "released_at",
+        mode="plain", when_used="unless-none",
     )
-    def _serialize_string(self, value: Any) -> str:
-        if not isinstance(value, tuple | list):
-            value = [value]
+    def _serialize_string(self, value: Any, info: SerializationInfo) -> str:
+        if not info.by_alias or info.mode == "json":
+            return value
+        return str(value)
 
-        value = self._join_split_tags(value)
-        return value
-
-    @field_serializer("genres", "comments", mode="plain")
+    @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
     def _serialize_strings(self, value: Any, info: FieldSerializationInfo) -> list[str]:
-        if not info.by_alias:  # not serializing to tag IDs
+        if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             return value
 
-        values = [v.name if isinstance(v, HasName) else v for v in value]
+        values = self._extract_names(value)
         self._extend_with_uris(values, info=info)
         return list(map(str, values))
 
-    @field_serializer("track", "disc", mode="plain")
+    @field_serializer("track", "disc", mode="plain", when_used="unless-none")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
         return super()._serialize_position_tags(value, info=info)

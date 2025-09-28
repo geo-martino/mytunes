@@ -16,6 +16,9 @@ from musify.local.item.genre import LocalGenre
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.m4a import M4A
 from musify.models import MusifyModel
+from musify.models.properties.date import SparseDate
+from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
@@ -85,22 +88,24 @@ class TestM4A(LocalTrackTester):
             "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
             "©day": ["2023-04-14"],
         }
-        info = Namespace(by_alias=True)
+        info = Namespace(by_alias=True, mode="python")
 
         # noinspection PyTypeChecker
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
     def test_serialize_string(self, model: M4A, faker: Faker):
-        value = choice(([faker.sentence()], faker.words()))
-        expected = model._join_tags(value)
-
+        value = choice([
+            SparseDate(year=2021, month=12, day=31),
+            KeySignature(root=2, mode=1)
+        ])
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_string(value) == expected
+        assert model._serialize_string(value, info=info) == str(value)
 
     def test_serialize_strings(self, model: M4A, genres: list[LocalGenre], faker: Faker):
         value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = [genre.name for genre in genres] + value[len(genres):]
-        info = Namespace(field_name="comments", by_alias=True, context=None)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
@@ -108,20 +113,32 @@ class TestM4A(LocalTrackTester):
     def test_serialize_strings_includes_uris(self, model: M4A, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
-        info = Namespace(field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"))
+        info = Namespace(
+            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+        )
 
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
 
+    def test_serialize_bpm_skips(self, model: M4A, faker: Faker):
+        info = Namespace(by_alias=True, mode="python")
+        # noinspection PyTypeChecker
+        assert model._serialize_bpm(None, info) is None
+
     def test_serialize_bpm(self, model: M4A, faker: Faker):
         bpm = faker.random_int(6000, 15000) / 100
-        info = Namespace(by_alias=True)
+        info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
         assert model._serialize_bpm(bpm, info) == [int(bpm)]
 
-    def test_serialize_position_tags(self, model: M4A, faker: Faker):
+    def test_serialize_position_tags_skips(self, model: M4A):
+        info = Namespace(by_alias=True, mode="python")
+        # noinspection PyTypeChecker
+        assert model._serialize_position_tags((), info) is None
+
+    def test_serialize_position_tags(self, model: M4A):
         position = Position(number=1, total=2, zero_fill=3)
-        info = Namespace(by_alias=True)
+        info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, info) == [position.numbers]
 
