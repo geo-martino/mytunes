@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from random import choice
+from random import choice, sample
 from typing import get_args, Generator
 from unittest import mock
 from unittest.mock import Mock
@@ -11,11 +11,15 @@ from pydantic import TypeAdapter
 
 from musify.local.collection.library._base import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist, LocalPlaylistType
+from musify.local.item.album import LocalAlbum
+from musify.local.item.artist import LocalArtist
+from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.processors_new.filters import ValuesFilter
 from musify.utils import get_discriminator_values
 from tests.models.testers import MusifyResourceTester
+from tests.utils import GENRES
 
 
 class TestLocalLibrary(MusifyResourceTester):
@@ -46,10 +50,18 @@ class TestLocalLibrary(MusifyResourceTester):
             faker: Faker
     ) -> list[LocalTrack]:
         """The tracks available in all library folders"""
+        artists = [LocalArtist(name=f"artist {i+1}") for i in range(faker.random_int(10, 20))]
+        albums = [LocalAlbum(name=f"album {i+1}") for i in range(faker.random_int(2, 5))]
+        genres = [LocalGenre(name=genre) for genre in sample(GENRES, k=faker.random_int(10, 20))]
+
         for track in tracks:
             track.path = choice(library_folders).joinpath(choice(track_folders)).joinpath(track.path.name)
             track.path.parent.mkdir(parents=True, exist_ok=True)
             track.path.touch()
+
+            track.artists = sample(artists, k=faker.random_int(1, 5))
+            track.album = choice(albums)
+            track.genres = sample(genres, k=faker.random_int(1, 5))
 
         return tracks
 
@@ -220,8 +232,14 @@ class TestLocalLibrary(MusifyResourceTester):
     ###########################################################################
     ## Collections
     ###########################################################################
-    def test_collection_creators(self, model: LocalLibrary):
-        assert len(list(model.folders())) == len(set(track.folder for track in model.tracks))
-        assert len(list(model.albums())) == len(set(track.album for track in model.tracks))
-        assert len(list(model.artists())) == len(set(artist for track in model.tracks for artist in track.artists))
-        assert len(list(model.genres())) == len(set(genre for track in model.tracks for genre in track.genres))
+    def test_collections(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]) -> None:
+        model.tracks[:] = tracks
+
+        assert len(list(model.folders())) == len(set(track_folders)) > 0
+        assert len(list(model.albums())) == len(set(track.album.name for track in model.tracks)) > 0
+
+        expected_artists = len(set(artist.name for track in model.tracks for artist in track.artists))
+        assert len(list(model.artists())) == expected_artists > 0
+
+        expected_genres = len(set(genre.name for track in model.tracks for genre in track.genres))
+        assert len(list(model.genres())) == expected_genres > 0

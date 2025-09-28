@@ -57,8 +57,9 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTrack
         if not self.albums:
             return self
 
-        names = {album.artist for album in self.albums}
-        if len(names) > 1:
-            raise MusifyValueError(f"Albums are from different artists: {", ".join(map(str, names))}")
+        for album in self.albums:
+            names = {artist.name for artist in album.artists}
+            if self.name not in names:
+                raise MusifyValueError(f"Album does not contain the artist {self.name!r}: {", ".join(map(str, names))}")
 
-        return self.albums
+        return self

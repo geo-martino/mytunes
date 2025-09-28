@@ -56,8 +56,9 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
         if not self.tracks:
             return self
 
-        names = {genre.name for track in self.tracks for genre in track.genres}
-        if len(names) > 1:
-            raise MusifyValueError(f"Tracks are from different genres: {", ".join(map(str, names))}")
+        for track in self.tracks:
+            names = {genre.name for genre in track.genres}
+            if self.name not in names:
+                raise MusifyValueError(f"Track does not contain the genre {self.name!r}: {", ".join(map(str, names))}")
 
-        return self.tracks
+        return self

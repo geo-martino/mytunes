@@ -57,7 +57,7 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](Album[RT, GT], HasTr
             return self
 
         names = {track.album.name if track.album is not None else None for track in self.tracks}
-        if len(names) > 1:
+        if len(set(filter(lambda x: x is not None, names))) > 1:
             raise MusifyValueError(f"Tracks are from different albums: {", ".join(map(str, names))}")
 
         return self.tracks

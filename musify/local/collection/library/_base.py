@@ -292,22 +292,22 @@ class LocalLibrary(
             """Return path of a track relative to the library folders of this library"""
             for folder in self.library_folders:
                 if track.path.is_relative_to(folder):
-                    return track.path.relative_to(folder)
+                    return track.path.relative_to(folder).parent
 
             raise MusifyValueError(f"Track path is not relative to any library folders: {track.path}")
 
-        groups = itertools.groupby(sorted(self.tracks, key=lambda track: track.path), get_relative_path)
+        groups = itertools.groupby(sorted(self.tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
             yield Folder(tracks=group, name=path.name)
 
     def albums(self) -> Generator[LocalAlbumCollection, None, None]:
         """Dynamically generate a set of album collections from the tracks in this library"""
-        tracks = sorted(self.tracks, key=lambda track: track.album.name)
+        tracks = sorted(self.tracks, key=lambda track: track.album.name if track.album else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="album")
         for album, group in grouped.items():
             if album is None:
                 continue
-            yield LocalAlbumCollection(tracks=group, name=album.name)
+            yield LocalAlbumCollection(tracks=group, name=album)
 
     def artists(self) -> Generator[LocalArtistCollection, None, None]:
         """Dynamically generate a set of artist collections from the tracks in this library"""
@@ -316,7 +316,7 @@ class LocalLibrary(
         for artist, group in grouped.items():
             if artist is None:
                 continue
-            yield LocalArtistCollection(tracks=group, name=artist.name)
+            yield LocalArtistCollection(tracks=group, name=artist)
 
     def genres(self) -> Generator[LocalGenreCollection, None, None]:
         """Dynamically generate a set of genre collections from the tracks in this library"""
@@ -325,7 +325,7 @@ class LocalLibrary(
         for genre, group in grouped.items():
             if genre is None:
                 continue
-            yield LocalGenreCollection(tracks=group, name=genre.name)
+            yield LocalGenreCollection(tracks=group, name=genre)
 
     ###########################################################################
     ## Backup/restore
