@@ -161,18 +161,18 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         self.limiter = self._xml.smart_playlist.source.limit.limiter
         self.sorter = self._xml.smart_playlist.sorter
 
-        self._match(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
-        self._limit(ignore=self.matcher.exclude.values)
-        self._sort()
+        self._match_tracks(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
+        self._limit_tracks(ignore=self.matcher.exclude.values)
+        self._sort_tracks()
 
         self._original = self.tracks.copy()
 
         return self
 
-    def _limit(self, ignore: Collection[Path]) -> None:
+    def _limit_tracks(self, ignore: Collection[Path]) -> None:
         if self.limiter is not None and self.tracks is not None and self.limiter_deduplication:
             self.tracks[:] = self.tracks.unique
-        super()._limit(ignore=ignore)
+        super()._limit_tracks(ignore=ignore)
 
     async def save(self, dry_run: bool = True, *_, **__) -> SyncResultXAutoPF:
         """

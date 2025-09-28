@@ -1,13 +1,10 @@
 from collections.abc import Iterable, Mapping
-from functools import reduce
-from operator import mul
 from typing import Annotated, Any
 
 from annotated_types import MinLen
-from pydantic import StringConstraints, BeforeValidator, validate_call
+from pydantic import StringConstraints, BeforeValidator
 from pydantic.alias_generators import to_snake
 
-from musify.exception import MusifyValueError
 from musify.models import MusifyModel
 
 type Character = Annotated[str, StringConstraints(min_length=1, max_length=1)]

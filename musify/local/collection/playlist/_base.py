@@ -3,10 +3,10 @@ from collections.abc import Collection
 from pathlib import Path, PurePath
 from typing import Self, Any
 
-from pydantic import Field, model_validator, PrivateAttr
+from pydantic import Field, model_validator, PrivateAttr, TypeAdapter
 
 from musify.local.collection._base import LocalCollection
-from musify.local.item.track import LocalTrack
+from musify.local.item.track import LocalTrack, LocalTrackType
 from musify.models.collection.playlist import Playlist
 from musify.models.item.track import HasMutableTracks
 from musify.models.properties.file import _IsFile, IsFile, PathMapper
@@ -49,18 +49,18 @@ class _LocalPlaylist[TF: Filter](
             return value
         return value | {"name": PurePath(str(path)).stem}
 
-    def _match(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
+    def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
         if self.matcher is None:
             return
         self.tracks[:] = self.matcher.apply(tracks, reference=reference)
 
-    def _limit(self, ignore: Collection[str | Path | LocalTrack]) -> None:
+    def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:
         if self.limiter is None or not self.tracks:
             return
         ignore = [i if isinstance(i, LocalTrack) else self.tracks.get(str(i)) for i in ignore]
         self.limiter.limit(self.tracks, ignore=[i for i in ignore if i is not None])
 
-    def _sort(self) -> None:
+    def _sort_tracks(self) -> None:
         if self.sorter is None or not self.tracks:
             return
         self.sorter.sort(self.tracks)

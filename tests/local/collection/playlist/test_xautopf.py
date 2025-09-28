@@ -314,9 +314,9 @@ class TestXAutoPF(LocalPlaylistTester):
         assert model.sorter == xml.smart_playlist.sorter
 
         with (
-            mock.patch.object(XAutoPF, "_match", return_value=None) as mock_match,
-            mock.patch.object(XAutoPF, "_limit", return_value=None) as mock_limit,
-            mock.patch.object(XAutoPF, "_sort", return_value=None) as mock_sort,
+            mock.patch.object(XAutoPF, "_match_tracks", return_value=None) as mock_match,
+            mock.patch.object(XAutoPF, "_limit_tracks", return_value=None) as mock_limit,
+            mock.patch.object(XAutoPF, "_sort_tracks", return_value=None) as mock_sort,
         ):
             reference = model._get_reference_for_last_played_track(tracks.copy())
             await model.load(tracks)

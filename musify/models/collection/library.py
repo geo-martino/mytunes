@@ -10,6 +10,7 @@ from pydantic import Field
 
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
+from musify.models.properties.logger import HasLogger
 
 type LibraryMergeType[T] = Library[T] | Collection[Playlist[T]] | Mapping[str, Playlist[T]]
 
@@ -23,7 +24,9 @@ class _HasTracksAndPlaylistsMixin[TK, TV: Track, KP, VP: Playlist](HasTracks[TK,
         return list(itertools.chain.from_iterable(map(_playlist_tracks_in_tracks, self.playlists.values())))
 
 
-class Library[TK, TV: Track, KP, VP: Playlist](_HasTracksAndPlaylistsMixin[TK, TV, KP, VP], metaclass=ABCMeta):
+class Library[TK, TV: Track, KP, VP: Playlist](
+    _HasTracksAndPlaylistsMixin[TK, TV, KP, VP], HasLogger, metaclass=ABCMeta
+):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"
 
@@ -33,15 +36,12 @@ class Library[TK, TV: Track, KP, VP: Playlist](_HasTracksAndPlaylistsMixin[TK, T
 
     @abstractmethod
     async def load(self):
-        """Implementations of this function should load all data for this library and log results."""
+        """Loads all tracks and playlists in this library from scratch and log results."""
         raise NotImplementedError
 
     @abstractmethod
     async def load_tracks(self) -> None:
-        """
-        Implementations of this function should load all tracks for this library
-        and store them within the library object to be retrieved with property ``tracks``.
-        """
+        """Loads all tracks found in the available library folders. Replaces all currently loaded tracks."""
         raise NotImplementedError
 
     @abstractmethod
@@ -52,8 +52,8 @@ class Library[TK, TV: Track, KP, VP: Playlist](_HasTracksAndPlaylistsMixin[TK, T
     @abstractmethod
     async def load_playlists(self) -> None:
         """
-        Implementations of this function should load all playlists for this library
-        and store them within the library object to be retrieved with property ``playlists``.
+        Load all playlists found in this library's ``playlist_folder``,
+        filtered down using the ``playlist_filter`` if given, replacing currently loaded playlists.
         """
         raise NotImplementedError
 
@@ -64,6 +64,6 @@ class Library[TK, TV: Track, KP, VP: Playlist](_HasTracksAndPlaylistsMixin[TK, T
 
 
 class MutableLibrary[TK, TV: Track, KP, VP: Playlist](
-    Library[TK, TV, KP, VP], HasMutableTracks[TK, TV], HasMutablePlaylists[TK, VP], metaclass=ABCMeta
+    HasMutableTracks[TK, TV], HasMutablePlaylists[KP, VP], Library[TK, TV, KP, VP], metaclass=ABCMeta
 ):
     """A mutable library of tracks and playlists and other object types."""

@@ -8,6 +8,7 @@ from musify.models import MusifyModel, MusifyRootModel, MusifyResource
 
 
 class MusifyModelTester(metaclass=ABCMeta):
+    """Generic base class for testing :py:class:`.MusifyModel` implementations"""
     @abstractmethod
     def model(self, **kwargs) -> MusifyModel | MusifyRootModel:
         """Fixture for the models to test"""
@@ -20,6 +21,7 @@ class MusifyModelTester(metaclass=ABCMeta):
 
 
 class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
+    """Generic base class for testing :py:class:`.MusifyResource` implementations"""
     def test_check_unique_key_tester_enabled(self, model: MusifyResource):
         """Test that the unique key tester is enabled"""
         if model.__unique_attributes__:
@@ -36,6 +38,7 @@ class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
 
 
 class UniqueKeyTester(MusifyModelTester, metaclass=ABCMeta):
+    """Generic base class for testing :py:class:`.MusifyResource` implementations with unique keys set"""
     @staticmethod
     def test_check_unique_keys(model: MusifyResource):
         """Test that the unique keys are set correctly"""

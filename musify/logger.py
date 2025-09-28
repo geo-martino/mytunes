@@ -11,6 +11,8 @@ from collections.abc import Iterable, Awaitable
 from pathlib import Path
 from typing import Any
 
+from termcolor import colored
+
 try:
     from tqdm.auto import tqdm
 except ImportError:
@@ -34,8 +36,6 @@ logging.STAT = STAT
 
 class MusifyLogger(logging.Logger):
     """The logger for all logging operations in Musify."""
-
-    __slots__ = ()
 
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
@@ -184,3 +184,5 @@ class MusifyLogger(logging.Logger):
 
 
 logging.setLoggerClass(MusifyLogger)
+
+HEADER_PREFIX = colored("  > ", "magenta", attrs=["bold"])

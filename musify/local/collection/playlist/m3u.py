@@ -3,12 +3,12 @@ import os
 from collections import Counter
 from collections.abc import Sequence, Collection
 from pathlib import Path
-from typing import Literal, Self
+from typing import Literal, Self, ClassVar
 
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack
+from musify.local.item.track import LocalTrack, LocalTrackType
 from musify.processors_new import Result
 from musify.processors_new.filters import PathsFilter
 
@@ -57,6 +57,11 @@ class M3U(LocalPlaylist[PathsFilter]):
     """For reading and writing data from M3U playlist format."""
     format: Literal["m3u"]
 
+    @staticmethod
+    async def _load_track(path: str | Path) -> LocalTrack:
+        file = await LocalTrack.load_file(path)
+        return TypeAdapter(LocalTrackType).validate_python(file)
+
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """
         Read the playlist file and update the tracks in this playlist instance.
@@ -80,21 +85,21 @@ class M3U(LocalPlaylist[PathsFilter]):
         paths = self.path_mapper.map_many(paths, check_existence=not bool(tracks))
 
         if tracks:  # match paths from given tracks using the matcher
-            self._match(tracks)
+            self._match_tracks(tracks)
         else:  # use the paths in the matcher to load tracks from scratch
             # TODO: support m3u playlists with duplicate paths?
-            self.tracks[:] = await asyncio.gather(*map(LocalTrack.from_path, set(paths)))
+            self.tracks[:] = await asyncio.gather(*map(self._load_track, set(paths)))
 
-        self._limit(ignore=paths)
-        self._sort(paths=list(map(Path, paths)))
+        self._limit_tracks(ignore=paths)
+        self._sort_tracks(paths=list(map(Path, paths)))
 
         self._original = self.tracks.copy() if self.path.is_file() else []
 
         return self
 
-    def _sort(self, paths: Sequence[Path] = ()) -> None:
+    def _sort_tracks(self, paths: Sequence[Path] = ()) -> None:
         if self.sorter is not None or not paths:
-            return super()._sort()
+            return super()._sort_tracks()
 
         self.tracks.sort(key=lambda track: paths.index(track.path))
 

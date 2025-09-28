@@ -58,10 +58,10 @@ class TestM3U(LocalPlaylistTester):
             track.path.parent.mkdir(parents=True, exist_ok=True)
             track.path.touch(exist_ok=True)
 
-        def _from_path(path: str | Path) -> LocalTrack:
+        def _load_track(path: str | Path) -> LocalTrack:
             return next(tr for tr in tracks if tr.path == Path(path_mapper.map(path)))
 
-        with mock.patch.object(LocalTrack, "from_path", side_effect=_from_path):
+        with mock.patch.object(M3U, "_load_track", side_effect=_load_track):
             yield tracks
 
     @pytest.fixture

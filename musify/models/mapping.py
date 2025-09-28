@@ -124,14 +124,15 @@ class MusifyMutableMapping[TK, TV: MusifyResource](MusifyMapping[TK, TV], Mutabl
         for key in __item.unique_keys:
             self._items[key] = __item
 
-    @validate_call
-    def update(self, __m: Iterable[TV] | Mapping[TK | TV, TV], **kwargs) -> None:
+    # @validate_call
+    def update(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
         """Merge this mapping with another mapping or iterable of items"""
-        if isinstance(__m, Mapping):
-            __m = __m.values()
+        if extract_keys:
+            if isinstance(__m, Mapping):
+                __m = __m.values()
+            __m = dict((key, item) for item in __m for key in item.unique_keys)
 
-        items = dict((key, item) for item in __m for key in item.unique_keys)
-        self._items.update(items)
+        self._items.update(__m)
 
     @validate_call
     def remove(self, __item: TV) -> None:
