@@ -93,16 +93,17 @@ class Comparer(DynamicProcessor):
     def _clean_processor_name(name: str) -> str:
         return to_snake(name).replace(" ", "_").strip("_")
 
-    @field_validator("expected", mode="before", check_fields=True)
-    @staticmethod
-    def _convert_expected_to_time_mapper(expected: Any) -> Any:
-        if not isinstance(expected, str):
-            return expected
+    @model_validator(mode="after")
+    def _convert_expected_to_time_mapper(self) -> Self:
+        if not isinstance(self.expected, str) or self._expected_type is str:
+            return self
 
         try:
-            return TimeMapper.model_validate(expected)
+            self.expected = TimeMapper.model_validate(self.expected)
         except ValueError:
-            return expected
+            pass
+
+        return self
 
     @property
     def _field_type(self) -> type:
@@ -130,7 +131,8 @@ class Comparer(DynamicProcessor):
 
         return self._extract_type_from_annotation(annotation["expected"])
 
-    def _extract_type_from_annotation(self, annotation) -> type:
+    @staticmethod
+    def _extract_type_from_annotation(annotation) -> type:
         origin = typing.get_origin(annotation)
         if is_union_origin(origin):
             types = typing.get_args(annotation)
@@ -214,6 +216,10 @@ class Comparer(DynamicProcessor):
     def _convert_expected_value(self, expected_type: type) -> None:
         if self.expected is None or is_typevar(expected_type):
             return
+
+        # prevent strings being split into list of characters
+        if isinstance(self.expected, str) and typing.get_origin(expected_type) in (set, tuple, list):
+            self.expected = (self.expected,)
 
         try:
             value = expected_type(self.expected)

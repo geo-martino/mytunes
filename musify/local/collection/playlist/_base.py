@@ -43,8 +43,9 @@ class _LocalPlaylist[TF: Filter](
 
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
-    @staticmethod
-    def _extract_name_from_path[T](value: T) -> T | dict[str, Any]:
+    @classmethod
+    def _extract_name_from_path[T](cls, value: T) -> T | dict[str, Any]:
+        value = cls._map_path(value)
         if not isinstance(value, dict) or "name" in value or (path := value.get("path")) is None:
             return value
         return value | {"name": PurePath(str(path)).stem}

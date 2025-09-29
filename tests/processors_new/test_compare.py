@@ -145,6 +145,14 @@ class TestComparer(MusifyModelTester):
         comparer = Comparer(condition="is_before", expected="+5d", field="created_at")
         assert comparer.expected == TimeMapper(unit="days", amount=5, add=True)
 
+    def test_convert_expected_skips_time_mapper(self):
+        comparer = Comparer(condition="ends_with", expected="4h", field="name")
+        assert comparer.expected == "4h"
+
+        comparer = Comparer(condition="starts_with", expected="1950s", field="album")
+        assert comparer.expected == "1950s"
+        assert not isinstance(comparer.expected, TimeMapper)
+
     def test_convert_expected_to_position(self):
         comparer = Comparer(condition="is", expected="1", field="track")
         assert comparer.expected == Position(number=1)
@@ -156,7 +164,7 @@ class TestComparer(MusifyModelTester):
         assert comparer.expected == KeySignature.model_validate("C#m")
 
     def test_convert_expected_to_set(self):
-        comparer = Comparer(condition="is_in", expected="abc", field="name")
+        comparer = Comparer(condition="is_in", expected=["a", "b", "c"], field="name")
         assert comparer.expected == {"a", "b", "c"}
         comparer = Comparer(condition="is_not_in", expected=(1, 2, 3), field="track_number")
         assert comparer.expected == {1, 2, 3}
@@ -166,6 +174,12 @@ class TestComparer(MusifyModelTester):
         assert comparer.expected == (10, 20)
         comparer = Comparer(condition="not_in_range", expected=[1, 10], field="track_total")
         assert comparer.expected == (1, 10)
+
+    def test_convert_expected_skips_sequences(self):
+        comparer = Comparer(condition="is_in", expected="album 1", field="album")
+        assert comparer.expected == {"album 1"}
+        comparer = Comparer(condition="is_in", expected="album 1", field="album")
+        assert comparer.expected == {"album 1"}
 
     def test_compare_with_no_expected_and_no_reference_fails(self, track: MP3, tracks: list[LocalTrack]):
         comparer = Comparer(condition="is", field="name")

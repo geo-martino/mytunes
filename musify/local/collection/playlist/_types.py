@@ -1,6 +1,6 @@
 from typing import Annotated, Union
 
-from pydantic import Field, Tag, Discriminator
+from pydantic import Field, Discriminator
 
 from musify.local.collection.playlist.m3u import M3U
 from musify.local.collection.playlist.xautopf import XAutoPF

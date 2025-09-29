@@ -48,8 +48,15 @@ class _IsFile(_AttributeModel):
         """Extract the tags from a mutagen file object, if applicable."""
         if not isinstance(file, mutagen.FileType):
             return file
-
         return dict(path=file.filename)
+
+    # noinspection PyNestedDecorators
+    @model_validator(mode="before")
+    @classmethod
+    def _map_path[F](cls, value: F) -> F | dict[str, Any]:
+        if not isinstance(value, str | Path):
+            return value
+        return dict(path=Path(value))
 
     @property
     def folder(self) -> str:
