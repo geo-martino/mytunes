@@ -149,7 +149,7 @@ class LocalLibrary(
         Handles exceptions by logging paths which produce errors to internal list of ``errors``.
         """
         try:
-            file = await LocalTrack.from_path(path)
+            file = await LocalTrack.load_file(path)
             track: LocalTrack = TypeAdapter(LocalTrackType).validate_python(file)
             return track
         except (MusifyError, ValueError, FileNotFoundError) as ex:
