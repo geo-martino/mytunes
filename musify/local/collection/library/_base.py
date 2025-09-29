@@ -72,7 +72,7 @@ class LocalLibrary(
         extensions = get_discriminator_values(LocalTrackType)
         for folder in self.library_folders:
             for path in folder.rglob(f"[!.]*"):
-                if path.suffix.lstrip(".") not in extensions:
+                if path.suffix.lstrip(".").casefold() not in extensions:
                     continue
                 if any(part in path.parts for part in self._ignore_folders):
                     continue
@@ -98,7 +98,7 @@ class LocalLibrary(
         filtered = 0
         for folder in folders:
             for path in folder.rglob(f"[!.]*"):
-                if path.suffix.lstrip(".") not in extensions:
+                if path.suffix.lstrip(".").casefold() not in extensions:
                     continue
                 if any(part in path.parts for part in self._ignore_folders):
                     continue
@@ -152,7 +152,7 @@ class LocalLibrary(
             file = await LocalTrack.load_file(path)
             track: LocalTrack = TypeAdapter(LocalTrackType).validate_python(file)
             return track
-        except (MusifyError, ValueError, FileNotFoundError) as ex:
+        except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
             self.logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
 

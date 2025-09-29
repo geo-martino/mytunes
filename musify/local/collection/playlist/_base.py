@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from pathlib import Path, PurePath
-from typing import Self, Any
+from typing import Self, Any, ClassVar
 
 from pydantic import Field, model_validator, PrivateAttr, TypeAdapter
 

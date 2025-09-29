@@ -31,7 +31,7 @@ class ImageBase(MusifyModel):
 
     type: UpperSnakeCase = Field(
         description="The type of the image, as defined by ID3 tags.",
-        default=mutagen.id3.PictureType.COVER_FRONT,
+        default="COVER_FRONT",
     )
     mime: StrippedString | None = Field(
         description="The MIME type of the image.",

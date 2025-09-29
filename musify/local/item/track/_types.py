@@ -1,13 +1,25 @@
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Any, Union
 
-from pydantic import Field
+import mutagen
+from pydantic import Field, Discriminator, Tag
 
+from musify.local.item.track import LocalTrack
 from musify.local.item.track.flac import FLAC
 from musify.local.item.track.m4a import M4A
 from musify.local.item.track.mp3 import MP3
 from musify.local.item.track.wma import WMA
+from musify.models.properties.file import IsFile
 
+
+def _get_format(value: Any) -> str | None:
+    if isinstance(value, mutagen.FileType):
+        value = Path(value.filename)
+    return IsFile.get_ext_from_input(value)
+
+
+_track_classes = (MP3, FLAC, M4A, WMA)
 type LocalTrackType = Annotated[
-    MP3 | FLAC | M4A | WMA,
-    Field(discriminator="format")
+    Union[*(cls.get_annotation_from_supported_extensions() for cls in _track_classes)],
+    Field(discriminator=Discriminator(_get_format)),
 ]

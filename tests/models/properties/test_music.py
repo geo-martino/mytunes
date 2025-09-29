@@ -35,7 +35,12 @@ class TestKeySignature(MusifyModelTester):
         model.key = "Bbm"
         assert model.root == 10
         assert model.mode == 1
-        assert model.key == "A#/Bbm"
+        assert model.key == "A#m/Bbm"
+
+        model.key = "G#m/Abm"
+        assert model.root == 8
+        assert model.mode == 1
+        assert model.key == "G#m/Abm"
 
     def test_key_property(self, model: KeySignature) -> None:
         model.root = 5

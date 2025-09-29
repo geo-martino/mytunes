@@ -14,11 +14,10 @@ def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     tracks = []
     for _ in range(50):
         cls = choice(classes)
-        extension = choice(get_args((cls.model_fields["format"]).annotation))
+        extension = choice(tuple(get_args(cls)[0].__supported_extensions__))
         track = cls.model_validate(dict(
             name=faker.sentence(nb_words=faker.random_int(1, 5)),
             path=tmp_path.joinpath(faker.file_path(absolute=False, extension=extension)),
-            format=extension,
         ))
         tracks.append(track)
 

@@ -1,6 +1,6 @@
 import types
 from collections.abc import MutableMapping
-from typing import Any, Literal, get_args
+from typing import Any, Literal, get_args, ClassVar
 
 import mutagen.flac
 import mutagen.id3
@@ -18,7 +18,7 @@ from musify.models.properties.order import Position
 
 
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
-    format: Literal["flac"]
+    __supported_extensions__ = frozenset({"flac"})
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.FLAC, mutagen.flac.Picture]):
         @classmethod
@@ -99,6 +99,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
         # noinspection PyCallingNonCallable
         tags = super().extract_tags_from_mutagen(file)
+        tags.pop("source", None)  # clashes with HasMutableURI field
         return tags | dict(images=file.pictures)
 
     # noinspection PyNestedDecorators

@@ -190,7 +190,7 @@ class LocalTrack[T: mutagen.FileType](
 
     # noinspection PyNestedDecorators
     @field_validator(
-        "name", "album", "bpm", "key", "uri",
+        "name", "album", "bpm", "key", "uri", "rating",
         mode="before", check_fields=True
     )
     @staticmethod
@@ -300,7 +300,7 @@ class LocalTrack[T: mutagen.FileType](
                 key = cls.EmbeddedImage.get_id3_type_from_tag(image)
 
             if key is None:
-                key = mutagen.id3.PictureType.COVER_FRONT
+                key = "COVER_FRONT"
             if key not in mapped_images:
                 mapped_images[key] = image
 

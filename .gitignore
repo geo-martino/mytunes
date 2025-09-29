@@ -151,4 +151,4 @@ _site
 vendor
 
 test.py
-./test*.py
+test_*.py

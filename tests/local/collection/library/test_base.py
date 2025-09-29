@@ -98,7 +98,7 @@ class TestLocalLibrary(MusifyResourceTester):
                 ))
             path = choice(library_folders).joinpath(playlist_folder).joinpath(path_relative)
 
-            playlist = TypeAdapter(LocalPlaylistType).validate_python(dict(path=path, format=path.suffix.lstrip(".")))
+            playlist = TypeAdapter(LocalPlaylistType).validate_python(dict(path=path))
             playlist.path.parent.mkdir(parents=True, exist_ok=True)
             playlist.path.touch()
 

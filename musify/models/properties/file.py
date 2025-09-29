@@ -4,25 +4,42 @@ from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Collection, Iterable
+from typing import Any, Collection, Iterable, ClassVar, Annotated
 
 import mutagen
-from pydantic import Field, AliasChoices, field_validator, PositiveInt, model_validator
+from pydantic import Field, AliasChoices, field_validator, PositiveInt, model_validator, Tag
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models._base import _AttributeModel, MusifyModel
 
 
 class _IsFile(_AttributeModel):
+    __supported_extensions__: ClassVar[frozenset[str]] = frozenset()
+
     path: Path = Field(
         description="The path to the file"
     )
-    format: str = Field(
-        description="The format (or file type) of the file.",
-        validation_alias=AliasChoices("ext", "extension"),
-        default=None,
-        exclude=True,
-    )
+
+    @staticmethod
+    def get_ext_from_input(value: Any) -> str:
+        """Get the file extension from the input value."""
+        match value:
+            case str():
+                path = Path(value)
+            case Mapping():
+                path = Path(value["path"])
+            case Path():
+                path = value
+            case _:
+                raise MusifyTypeError(f"Cannot discern discriminator value. Unrecognised value type: {type(value)}")
+
+        # noinspection PyUnboundLocalVariable
+        return path.suffix.lstrip(".").casefold()
+
+    @classmethod
+    def get_annotation_from_supported_extensions(cls) -> type[Annotated]:
+        """Get the type annotation from the supported extensions."""
+        return Annotated[cls, *(Tag(ext) for ext in cls.__supported_extensions__)]
 
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
@@ -32,15 +49,7 @@ class _IsFile(_AttributeModel):
         if not isinstance(file, mutagen.FileType):
             return file
 
-        return dict(path=file.filename, format=Path(file.filename).suffix.lstrip("."))
-
-    # noinspection PyNestedDecorators
-    @model_validator(mode="before")
-    @staticmethod
-    def _extract_format_from_path[T](value: T) -> T | dict[str, Any]:
-        if not isinstance(value, dict) or "format" in value or (path := value.get("path")) is None:
-            return value
-        return value | {"format": PurePath(str(path)).suffix.lstrip(".")}
+        return dict(path=file.filename)
 
     @property
     def folder(self) -> str:

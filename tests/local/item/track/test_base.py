@@ -55,6 +55,7 @@ class TestLocalTrack(UniqueKeyTester):
         file.tags = tags
 
         stream_info = mutagen.wave.WaveStreamInfo.__new__(mutagen.wave.WaveStreamInfo)
+        stream_info.length = faker.random_int() / 100
         stream_info.channels = 2
         stream_info.bitrate = 320000
         stream_info.sample_rate = 44100
@@ -101,7 +102,7 @@ class TestLocalTrack(UniqueKeyTester):
         result = LocalTrack.extract_tags_from_mutagen(file)
         assert result == tags | dict(
             path=file.filename,
-            format=Path(file.filename).suffix.lstrip("."),
+            length=file.info.length,
             channels=2,
             bit_rate=320.0,
             bit_depth=16,

@@ -21,7 +21,7 @@ from musify.models.properties.order import Position
 
 
 class MP3(LocalTrack[mutagen.mp3.MP3]):
-    format: Literal["mp3"]
+    __supported_extensions__ = frozenset({"mp3"})
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp3.MP3, mutagen.id3.APIC]):
         alias: ClassVar[str] = "APIC"
@@ -210,6 +210,17 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
             value = [value]
 
         return [cls._deserialize_text_frame(v) for v in value]
+
+    # noinspection PyNestedDecorators
+    @field_validator("rating", mode="before")
+    @classmethod
+    def _deserialize_rating_frame[T](cls, value: T) -> T | str:
+        value = cls._extract_first_value_from_single_sequence(value)
+        if not isinstance(value, mutagen.id3.POPM):
+            return value
+
+        # noinspection PyUnresolvedReferences
+        return value.rating
 
     @field_serializer("album", mode="plain", when_used="unless-none")
     def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:

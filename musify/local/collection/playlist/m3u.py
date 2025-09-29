@@ -55,8 +55,8 @@ class SyncResultM3U(Result):
 
 class M3U(LocalPlaylist[PathsFilter]):
     """For reading and writing data from M3U playlist format."""
-    format: Literal["m3u"]
-
+    __supported_extensions__ = frozenset({"m3u"})
+    
     @staticmethod
     async def _load_track(path: str | Path) -> LocalTrack:
         file = await LocalTrack.load_file(path)

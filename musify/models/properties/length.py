@@ -6,14 +6,14 @@ from functools import reduce, total_ordering
 from operator import mul
 from typing import Any
 
-from pydantic import PositiveInt, PositiveFloat, field_validator, Field
+from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
 
 from musify.models import MusifyRootModel
 from musify.models._base import _AttributeModel
 
 
 @total_ordering
-class Length(MusifyRootModel[PositiveInt | PositiveFloat]):
+class Length(MusifyRootModel[NonNegativeInt | NonNegativeFloat]):
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @staticmethod

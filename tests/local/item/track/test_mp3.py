@@ -58,7 +58,7 @@ class TestMP3EmbeddedImage(LocalTrackEmbeddedImageTester):
 class TestMP3(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
-        extension = choice(get_args(MP3.model_fields["format"].annotation))
+        extension = choice(tuple(MP3.__supported_extensions__))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return MP3(name=faker.sentence(), uri=uri, path=path)
     
@@ -114,6 +114,10 @@ class TestMP3(LocalTrackTester):
         expected = [faker.pystr() for _ in range(faker.random_int(3, 6))]
         data = [mutagen.id3.TextFrame(text=item) for item in expected]
         assert MP3._deserialize_text_frame(data) == expected
+
+    def test_deserialize_rating_frame(self, faker: Faker):
+        rating = mutagen.id3.POPM(email=faker.email(), rating=faker.random_int(1, 5), count=1)
+        assert MP3._deserialize_rating_frame(rating) == rating.rating
 
     def test_serialize_text_frame_from_string(self, model: MP3, faker: Faker):
         value = faker.sentence()

@@ -19,7 +19,7 @@ from musify.models.properties.order import Position
 
 
 class WMA(LocalTrack[mutagen.asf.ASF]):
-    format: Literal["wma"]
+    __supported_extensions__ = frozenset({"wma"})
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.asf.ASF, mutagen.asf.ASFByteArrayAttribute]):
         alias: ClassVar[str] = "WM/Picture"

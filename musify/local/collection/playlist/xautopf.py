@@ -111,7 +111,7 @@ class SyncResultXAutoPF(Result):
 
 class XAutoPF(LocalPlaylist[AutoMatcher]):
     """For reading and writing data from MusicBee's auto-playlist format."""
-    format: Literal["xautopf"]
+    __supported_extensions__ = frozenset({"xautopf"})
 
     _xml: _XMLRoot | None = PrivateAttr(default=None)
     _original: MusifyMutableSequence = PrivateAttr(default_factory=MusifyMutableSequence)

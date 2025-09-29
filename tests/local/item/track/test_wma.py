@@ -76,7 +76,7 @@ class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
 class TestWMA(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
-        extension = choice(get_args(WMA.model_fields["format"].annotation))
+        extension = choice(tuple(WMA.__supported_extensions__))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return WMA(name=faker.sentence(), uri=uri, path=path)
 

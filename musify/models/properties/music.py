@@ -35,12 +35,13 @@ class KeySignature(MusifyModel):
         if not isinstance(value, str):
             return value
 
+        value_split = tuple(v.rstrip("m") for v in value.split("/"))
         try:
             root_notes = [note.split("/")[0] for note in cls._root_notes]
-            return root_notes.index(value.rstrip("m"))
+            return root_notes.index(value_split[0])
         except ValueError:
             root_notes = [note.split("/")[-1] for note in cls._root_notes]
-            return root_notes.index(value.rstrip("m"))
+            return root_notes.index(value_split[-1])
 
     # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
@@ -53,7 +54,10 @@ class KeySignature(MusifyModel):
     @property
     def key(self) -> str:
         """A string representation of the key in alphabetical musical notation format."""
-        return f"{self._root_notes[self.root]}{'m' if self.mode else ''}"
+        key_base = self._root_notes[self.root].split("/")
+        if self.mode:
+            key_base = (v + "m" for v in key_base)
+        return "/".join(key_base)
 
     # noinspection PyTypeChecker
     @key.setter

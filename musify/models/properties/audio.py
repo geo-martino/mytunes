@@ -4,9 +4,10 @@ import mutagen
 from pydantic import Field, PositiveInt, PositiveFloat, model_validator
 
 from musify.models._base import _AttributeModel
+from musify.models.properties.length import HasLength
 
 
-class IsAudioFile(_AttributeModel):
+class IsAudioFile(HasLength):
     """Attributes and operations for an audio on a filesystem."""
 
     channels: PositiveInt | None = Field(
@@ -40,6 +41,7 @@ class IsAudioFile(_AttributeModel):
             bit_depth = None
 
         return dict(
+            length=file.info.length,
             channels=file.info.channels,
             bit_rate=file.info.bitrate / 1000,  # convert to bps to kbps
             bit_depth=bit_depth,
