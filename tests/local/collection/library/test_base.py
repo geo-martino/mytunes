@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from random import choice, sample
-from typing import get_args, Generator
+from typing import get_args, Generator, Any
 from unittest import mock
 from unittest.mock import Mock
 
@@ -247,10 +247,35 @@ class TestLocalLibrary(MusifyResourceTester):
     ###########################################################################
     ## Backup/Restore
     ###########################################################################
-    def test_backup_dump(self, model: LocalLibrary, tracks: list[LocalTrack]) -> None:
-        import json
+    def test_backup_dump(self, model: LocalLibrary, tracks: list[LocalTrack], playlists: list[LocalPlaylist]) -> None:
         model.tracks[:] = sorted(tracks, key=lambda t: t.ext)
+        model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
 
-        dump = model.model_dump(mode="json", include={"tracks"})
-        print(json.dumps(dump, indent=2))
-        raise
+        dump = model.generate_backup()
+        assert len(dump["tracks"]) == len(tracks)
+        assert len(dump["playlists"]) == len(model.playlists)
+
+    def test_restore_tracks(self, model: LocalLibrary):
+        new_title = "brand new title"
+        new_artist = "brand new artist"
+
+        for track in model.tracks:
+            assert track.name != "brand new title"
+            assert track.artist != new_artist
+
+        backup: list[dict[str, Any]] = model.generate_backup()["tracks"]
+        for track in backup:
+            track["name"] = new_title
+
+        model.restore_tracks(backup)
+        for track in model.tracks:
+            assert track.name == "brand new title"
+            assert track.artist != new_artist
+
+        for track in backup:
+            track["artist"] = new_artist
+
+        model.restore_tracks({Path(track["path"]): track for track in backup})
+        for track in model.tracks:
+            assert track.name == "brand new title"
+            assert track.artist == new_artist

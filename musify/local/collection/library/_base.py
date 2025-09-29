@@ -3,11 +3,11 @@ import functools
 import itertools
 import os
 import textwrap
-from collections.abc import Generator, Collection, Iterable
+from collections.abc import Generator, Collection, Iterable, Mapping
 from pathlib import Path
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Any
 
-from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter
+from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, validate_call
 from tabulate import tabulate
 from termcolor import colored
 
@@ -27,6 +27,8 @@ from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
 from musify.utils import get_discriminator_values
+
+type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mapping[str, Any]]
 
 
 class LocalLibrary(
@@ -328,3 +330,43 @@ class LocalLibrary(
     ###########################################################################
     ## Backup/restore
     ###########################################################################
+    def generate_backup(self) -> dict:
+        """Generate a backup dictionary of this library's state."""
+        dump = self.model_dump(
+            mode="json", exclude_none=True
+        )
+        return dump
+
+    @validate_call
+    def restore_tracks(
+            self, backup: RestoreTracksType, tags: Annotated[set[str], BeforeValidator(to_set)] = ()
+    ) -> int:
+        """
+        Restore track tags from a backup to loaded track objects. This does not save the updated tags.
+
+        :param backup: Backup data in the form ``{<path>: {<Map of JSON formatted track data>}}``
+        :param tags: Set of tags to restore.
+        :return: The number of tracks restored.
+        """
+        tags = (tags or LocalTrack.__tag_fields__) | LocalTrack.__tag_fields__
+        backup = self._extract_tracks_from_backup(backup)
+
+        count = 0
+        for track in self.tracks:
+            if not (track_backup := backup.get(track.path)):
+                continue
+
+            for tag in tags:
+                if tag in track_backup:
+                    setattr(track, tag, track_backup[tag])
+            count += 1
+
+        return count
+
+    @staticmethod
+    def _extract_tracks_from_backup(backup: RestoreTracksType) -> dict[Path, Mapping[str, Any]]:
+        if isinstance(backup, Mapping):
+            backup = {Path(path): track_map for path, track_map in backup.items()}
+        else:
+            backup = {Path(track_map["path"]): track_map for track_map in backup}
+        return backup
