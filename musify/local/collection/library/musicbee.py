@@ -125,7 +125,7 @@ class MusicBee(LocalLibrary, IsFile):
         if not xml:
             xml = await self.load_settings_xml()
 
-        paths = self.path_mapper.map_many(to_set(xml.get("OrganisationMonitoredFolders", {}).get("string")))
+        paths = self.path_mapper.map_many(to_set(xml.get("OrganisationMonitoredFolders", {}).get("string") or ()))
         self.library_folders.clear()
         self.library_folders.update(map(Path, paths))
 
@@ -168,7 +168,6 @@ class MusicBee(LocalLibrary, IsFile):
                 track_xml=track_xml, track_map=track_map, library_folder=xml["Music Folder"]
             )
             if track is None:
-                self.errors.append(track_xml["Location"])
                 continue
 
             track_xml_map[track.path] = track_xml

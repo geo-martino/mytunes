@@ -137,7 +137,7 @@ class LocalLibrary(
             return
 
         header = colored(message, "white") + ":"
-        errors = list(map(lambda e: colored(e, "red"), sorted(self.errors)))
+        errors = list(map(lambda e: colored(e, "red"), sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
         self.logger.warning(log)
@@ -154,6 +154,7 @@ class LocalLibrary(
         Handles exceptions by logging paths which produce errors to internal list of ``errors``.
         """
         try:
+            self.logger.debug(f"Loading track: {path}")
             file = await LocalTrack.load_file(path)
             track: LocalTrack = TypeAdapter(LocalTrackType).validate_python(file)
             return track
@@ -210,6 +211,7 @@ class LocalLibrary(
         Handles exceptions by logging paths which produce errors to internal list of ``errors``.
         """
         try:
+            self.logger.debug(f"Loading playlist: {path}")
             playlist: LocalPlaylist = TypeAdapter(LocalPlaylistType).validate_python(path)
             playlist.path_mapper = self.path_mapper
             return await playlist.load(self.tracks)

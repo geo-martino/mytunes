@@ -197,7 +197,7 @@ class TestLocalLibrary(MusifyResourceTester):
 
     def test_log_tracks(self, model: LocalLibrary, tracks: list[LocalTrack]) -> None:
         model.tracks[:] = tracks
-        print(model.log_tracks())
+        # print(model.log_tracks())
         assert len(model.log_tracks().split("\n")) == 1  # just summarises
 
     ###########################################################################
@@ -220,7 +220,7 @@ class TestLocalLibrary(MusifyResourceTester):
 
     def test_log_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]) -> None:
         model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
-        print(model.log_playlists())
+        # print(model.log_playlists())
         assert len(model.log_playlists().split("\n")) == len(playlists) + 1  # +1 for the header
 
     async def test_save_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]) -> None:
