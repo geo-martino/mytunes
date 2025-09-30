@@ -1,6 +1,6 @@
 import struct
 from collections.abc import MutableMapping
-from typing import Literal, ClassVar, Any
+from typing import ClassVar, Any
 
 import mutagen.asf
 import mutagen.id3

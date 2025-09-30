@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping
-from typing import Literal, Any, ClassVar
+from typing import Any, ClassVar
 
 import mutagen.id3
 import mutagen.mp4

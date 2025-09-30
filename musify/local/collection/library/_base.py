@@ -1,9 +1,7 @@
-import asyncio
-import functools
 import itertools
-import os
+import itertools
 import textwrap
-from collections.abc import Generator, Collection, Iterable, Mapping
+from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
 from typing import Annotated, ClassVar, Any
 
@@ -11,7 +9,7 @@ from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, Typ
 from tabulate import tabulate
 from termcolor import colored
 
-from musify._types import to_list, to_set
+from musify._types import to_set
 from musify.exception import MusifyError, MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.collection.album import LocalAlbumCollection
@@ -34,6 +32,11 @@ type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mappi
 class LocalLibrary(
     LocalCollection, MutableLibrary[str, LocalTrack, str, LocalPlaylist]
 ):
+    """
+    Represents a local library, providing various methods for manipulating
+    tracks and playlists across an entire local library collection.
+    """
+
     _ignore_folders: ClassVar[frozenset[str]] = frozenset({"$RECYCLE.BIN"})
     source: ClassVar[str] = "local"
 
@@ -250,6 +253,9 @@ class LocalLibrary(
                 colored(f"{len(playlist.tracks)} total", "blue", attrs=["bold"]),
             )
             rows.append(row)
+
+        if not rows:
+            return ""
 
         header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"]) + ":\n"
         log = header + tabulate(

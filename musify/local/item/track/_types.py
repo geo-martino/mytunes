@@ -2,9 +2,8 @@ from pathlib import Path
 from typing import Annotated, Any, Union
 
 import mutagen
-from pydantic import Field, Discriminator, Tag
+from pydantic import Field, Discriminator
 
-from musify.local.item.track import LocalTrack
 from musify.local.item.track.flac import FLAC
 from musify.local.item.track.m4a import M4A
 from musify.local.item.track.mp3 import MP3

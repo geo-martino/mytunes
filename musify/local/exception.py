@@ -1,18 +1,9 @@
 """
 Exceptions relating to local operations.
 """
+from pathlib import Path
+
 from musify.exception import MusifyError
-
-
-class FileError(MusifyError):
-    """
-    Exception raised for file-related errors.
-
-    :param message: Explanation of the error.
-    """
-    def __init__(self, message: str | None = None):
-        self.message = message
-        super().__init__(message)
 
 
 class LocalError(MusifyError):
@@ -52,6 +43,36 @@ class LocalCollectionError(LocalError):
         self.kind = kind
         formatted = f"{kind} | {message}" if kind else message
         super().__init__(formatted)
+
+
+###########################################################################
+## File errors
+###########################################################################
+class FileError(MusifyError, OSError):
+    """
+    Exception raised for file-related errors.
+
+    :param path: The path that caused the error.
+    :param message: Explanation of the error.
+    """
+    def __init__(self, path: str | Path | None = None, message: str | None = None):
+        self.path = Path(path)
+        self.message = message
+        formatted = f"{path} | {message}" if path else message
+        super().__init__(formatted)
+
+
+class FileDoesNotExistError(FileError, FileNotFoundError):
+    """
+    Exception raised when a file cannot be found.
+
+    :param path: The path that caused the error.
+    :param message: Explanation of the error.
+    """
+    def __init__(self, path: str | Path, message: str = "File cannot be found"):
+        self.message = message
+        super().__init__(path=path, message=message)
+
 
 
 ###########################################################################

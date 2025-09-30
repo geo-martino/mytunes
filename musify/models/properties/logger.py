@@ -2,7 +2,7 @@ import logging
 from functools import cached_property
 
 from musify.logger import MusifyLogger
-from musify.models._base import _AttributeModel, MusifyModel
+from musify.models._base import MusifyModel
 
 
 class HasLogger(MusifyModel):

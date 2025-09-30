@@ -31,7 +31,7 @@ class TestValuesFilter(FilterTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> ValuesFilter:
-        values = {"".join(faker.random_letters(faker.random_int(30, 50))) for _ in range(20)}
+        values = {faker.pystr(30, 50) for _ in range(20)}
         return ValuesFilter(values=values)
 
     def test_equality(self, model: ValuesFilter):
@@ -47,9 +47,7 @@ class TestValuesFilter(FilterTester):
         values = list(model.values)
         assert all(model.check(value) for value in values)
 
-        values_missing = {
-            "".join(faker.random_letters(faker.random_int(30, 50))) for _ in range(10)
-        } - model.values
+        values_missing = {faker.pystr(30, 50) for _ in range(10)} - model.values
         assert not any(model.check(value) for value in values_missing)
 
     def test_apply_on_empty_filter(self, model: ValuesFilter):
@@ -82,10 +80,8 @@ class TestIncludeExcludeFilter(FilterTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> IncludeExcludeFilter:
-        include_values = {"".join(faker.random_letters(faker.random_int(30, 50))) for _ in range(20)}
-        exclude_values = {
-            "".join(faker.random_letters(faker.random_int(30, 50))) for _ in range(20)
-        } - include_values
+        include_values = {faker.pystr(30, 50) for _ in range(20)}
+        exclude_values = {faker.pystr(30, 50) for _ in range(20)} - include_values
 
         return IncludeExcludeFilter(
             include=ValuesFilter(values=include_values),

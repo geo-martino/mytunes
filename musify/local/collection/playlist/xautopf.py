@@ -21,7 +21,7 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models import MusifyModel
-from musify.models.sequence import MusifySequence, MusifyMutableSequence
+from musify.models.sequence import MusifyMutableSequence
 from musify.processors_new import Result
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter
@@ -199,8 +199,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             await self.rename()
 
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            with self.path.open("w", encoding="utf-8") as file:
-                file.write(xml.unparse_xml())
+            self.path.write_text(xml.unparse_xml(), encoding="utf-8")
 
             self._original = self.tracks.copy()
 
@@ -272,7 +271,7 @@ class _XMLBaseModel(MusifyModel):
 
     @model_validator(mode="wrap")
     @classmethod
-    def _clean_keys(cls, data: Any, handler: ModelWrapValidatorHandler[Self], value: Any) -> Self:
+    def _clean_keys(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if isinstance(data, Mapping):
             data = {key.lstrip("@#"): val for key, val in data.items()}
         return handler(data)

@@ -1,12 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from pathlib import Path, PurePath
-from typing import Self, Any, ClassVar
+from typing import Self, Any
 
-from pydantic import Field, model_validator, PrivateAttr, TypeAdapter
+from pydantic import Field, model_validator, PrivateAttr
 
 from musify.local.collection._base import LocalCollection
-from musify.local.item.track import LocalTrack, LocalTrackType
+from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.models.item.track import HasMutableTracks
 from musify.models.properties.file import _IsFile, IsFile, PathMapper

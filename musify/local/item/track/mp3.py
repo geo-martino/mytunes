@@ -1,6 +1,6 @@
 from collections.abc import MutableSequence, MutableMapping, Iterable
 from copy import copy
-from typing import Any, Literal, ClassVar
+from typing import Any, ClassVar
 
 import mutagen.id3
 import mutagen.mp3

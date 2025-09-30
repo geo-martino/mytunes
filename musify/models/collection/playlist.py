@@ -10,7 +10,6 @@ from musify._types import StrippedString
 from musify.models._base import _CollectionModel
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.mapping import MusifyMapping, MusifyMutableMapping
-from musify.models.properties.date import SparseDate
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName

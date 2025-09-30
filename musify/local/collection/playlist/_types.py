@@ -6,7 +6,6 @@ from musify.local.collection.playlist.m3u import M3U
 from musify.local.collection.playlist.xautopf import XAutoPF
 from musify.models.properties.file import IsFile
 
-
 _playlist_classes = (M3U, XAutoPF)
 type LocalPlaylistType = Annotated[
     Union[*(cls.get_annotation_from_supported_extensions() for cls in _playlist_classes)],

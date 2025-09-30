@@ -4,10 +4,10 @@ from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Collection, Iterable, ClassVar, Annotated
+from typing import Any, Iterable, ClassVar, Annotated
 
 import mutagen
-from pydantic import Field, AliasChoices, field_validator, PositiveInt, model_validator, Tag
+from pydantic import Field, field_validator, PositiveInt, model_validator, Tag
 
 from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models._base import _AttributeModel, MusifyModel

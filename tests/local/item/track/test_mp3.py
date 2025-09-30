@@ -70,7 +70,7 @@ class TestMP3(LocalTrackTester):
             "APIC:Cover Front": faker.image(),
             "APIC:Cover Back": faker.image(),
             "COMM": faker.sentence(),
-            "COMM:URI:eng": f"spotify:track:{"".join(faker.random_letters(19))}",
+            "COMM:URI:eng": f"spotify:track:{faker.pystr(19, 19)}",
             "COMM:ID3V1 COMMENT:eng": faker.sentence(),
         }
 

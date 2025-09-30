@@ -264,9 +264,7 @@ class TestXAutoPF(LocalPlaylistTester):
     def path(self, model: XAutoPF, xml_playlist_recent: str) -> Path:
         """Creates an actual playlist file."""
         model.path.parent.mkdir(parents=True, exist_ok=True)
-        with model.path.open("w", encoding="utf-8") as file:
-            file.write(xml_playlist_recent)
-
+        model.path.write_text(xml_playlist_recent, encoding="utf-8")
         return model.path
 
     async def test_limiter_deduplication(
@@ -331,8 +329,7 @@ class TestXAutoPF(LocalPlaylistTester):
 
     async def test_load_from_file(self, model: XAutoPF, xml_playlist: str, tracks: list[LocalTrack]):
         model.path.parent.mkdir(parents=True, exist_ok=True)
-        with model.path.open("w", encoding="utf-8") as file:
-            file.write(xml_playlist)
+        model.path.write_text(xml_playlist, encoding="utf-8")
 
         model = XAutoPF(path=model.path, path_mapper=model.path_mapper)
         xml = _XMLRoot.model_validate(xml_playlist)

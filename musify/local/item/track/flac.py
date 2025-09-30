@@ -1,6 +1,6 @@
 import types
 from collections.abc import MutableMapping
-from typing import Any, Literal, get_args, ClassVar
+from typing import Any, get_args
 
 import mutagen.flac
 import mutagen.id3
