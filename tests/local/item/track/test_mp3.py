@@ -4,7 +4,6 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
-from typing import get_args
 
 import mutagen.id3
 import pytest
@@ -16,7 +15,6 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.mp3 import MP3
 from musify.models import MusifyModel
-from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 

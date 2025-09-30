@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
 from random import choice, sample
-from typing import get_args, Generator, Any
+from typing import Generator, Any
 from unittest import mock
-from unittest.mock import Mock
 
 import pytest
 from faker import Faker

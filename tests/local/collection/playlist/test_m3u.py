@@ -7,9 +7,9 @@ import pytest
 from faker import Faker
 
 from musify.local.collection.playlist.m3u import M3U, SyncResultM3U
-from tests.local.collection.playlist.testers import LocalPlaylistTester
 from musify.local.item.track import LocalTrack
 from musify.models.properties.file import PathMapper
+from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.models.testers import MusifyModelTester
 
 

@@ -3,7 +3,6 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
-from typing import get_args
 
 import mutagen.flac
 import mutagen.id3
@@ -18,7 +17,6 @@ from musify.local.item.track.flac import FLAC
 from musify.models import MusifyModel
 from musify.models.properties.date import SparseDate
 from musify.models.properties.music import KeySignature
-from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester

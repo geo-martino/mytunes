@@ -9,18 +9,18 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pydantic.alias_generators import to_pascal
 
-from tests.local.collection.playlist.testers import LocalPlaylistTester
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, _XMLRoot, \
     _XMLDisplayFields, SyncResultXAutoPF
 from musify.local.item.track import LocalTrack
-from musify.models.properties.file import PathMapper, PathStemMapper
+from musify.models.properties.file import PathMapper
 from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
 from musify.processors_new.filters import ComparerFilter, PathsFilter, MatchFilter
 from musify.processors_new.limit import LimitType, ItemLimiter
 from musify.processors_new.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from musify.utils import required_modules_installed
+from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.models.testers import MusifyModelTester
 
 

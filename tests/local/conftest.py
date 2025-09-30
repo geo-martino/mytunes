@@ -4,14 +4,12 @@ from typing import get_args
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack, LocalTrackType
 from musify.models import MusifyResource
-from musify.utils import get_discriminator_values
 from tests.utils import GENRES, SimpleURI
 
 
