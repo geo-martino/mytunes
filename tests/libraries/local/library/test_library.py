@@ -34,7 +34,7 @@ class TestLocalLibrary(LocalLibraryTester):
     def collection_merge_items(self) -> Iterable[LocalTrack]:
         return random_tracks(randrange(5, 10))
 
-    def test_library(self) -> None:
+    def test_library(self):
         library = LocalLibrary()
         assert not library.library_folders
         assert len(library._track_paths) == 0

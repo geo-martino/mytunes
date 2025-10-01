@@ -1,4 +1,4 @@
-from collections.abc import MutableSequence, MutableMapping, Iterable
+from collections.abc import MutableSequence, MutableMapping, Iterable, Sequence
 from copy import copy
 from typing import Any, ClassVar, Self
 
@@ -17,6 +17,7 @@ from musify.local.item.track._base import TagDumpContext
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
@@ -126,15 +127,12 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @classmethod
-    def _merge_suffixed_tags(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        # parent class validators always execute after child class validators
-        # need to manually call required upstream parent validators here
-        # noinspection PyCallingNonCallable
-        data = cls.extract_tags_from_mutagen(data)
-        if not isinstance(data, MutableMapping):
-            return handler(data)
+    @staticmethod
+    def _merge_suffixed_tags(file: mutagen.mp3.MP3, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(file, mutagen.mp3.MP3):
+            return handler(file)
 
+        data = dict(file.tags)
         for key in list(data):
             key_prefix = key.split(":")[0]
             if key_prefix.startswith("COMM"):  # special case to merge comment keys correctly
@@ -188,7 +186,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         mode="before"
     )
     @classmethod
-    def _deserialize_text_frame[T](cls, value: T | Iterable[T]) -> T | str:
+    def _deserialize_text_frame(cls, value: mutagen.id3.TextFrame | Sequence[mutagen.id3.TextFrame]) -> str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_single_sequence(value)
@@ -203,18 +201,18 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         mode="before"
     )
     @classmethod
-    def _deserialize_text_frames[T](cls, value: T | Iterable[T]) -> T | list[str]:
+    def _deserialize_text_frames(cls, value: Iterable[mutagen.id3.TextFrame]) -> list[str]:
         if value is None:
             return value
         if not isinstance(value, tuple | list):
             value = [value]
 
-        return [cls._deserialize_text_frame(v) for v in value]
+        return list(map(cls._deserialize_text_frame, value))
 
     # noinspection PyNestedDecorators
     @field_validator("rating", mode="before")
     @classmethod
-    def _deserialize_rating_frame[T](cls, value: T) -> T | str:
+    def _deserialize_rating_frame(cls, value: mutagen.id3.POPM | Sequence[mutagen.id3.POPM]) -> str:
         value = cls._extract_first_value_from_single_sequence(value)
         if not isinstance(value, mutagen.id3.POPM):
             return value
@@ -223,13 +221,15 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return value.rating
 
     @field_serializer("album", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | InstanceOf[mutagen.id3.TextFrame]:
         if info.mode == "json":
             return self._extract_name(value)
         return self._serialize_text_frame(value, info=info)
 
     @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_names(
+        self, value: Iterable[str | HasName], info: SerializationInfo
+    ) -> list[str] | InstanceOf[mutagen.id3.TextFrame]:
         if info.mode == "json":
             return self._extract_names(value)
         return self._serialize_text_frame(value, info=info)
@@ -239,31 +239,31 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         "name", "track", "disc", "bpm", "key", "released_at",
         mode="plain", when_used="unless-none"
     )
-    def _serialize_text_frame(self, value: Any, info: FieldSerializationInfo) -> InstanceOf[mutagen.id3.TextFrame]:
+    def _serialize_text_frame(self, value: str | HasName, info: FieldSerializationInfo) -> InstanceOf[mutagen.id3.TextFrame]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return value
         if not isinstance(value, tuple | list):
             value = [value]
 
-        frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
+        frame_cls = self._get_frame_class(info)
         tag_value = self._join_split_tags(value)
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="plain", when_used="unless-none")
     def _serialize_text_frames(
-            self, value: Any, info: FieldSerializationInfo
+            self, values: Iterable[str | HasName], info: FieldSerializationInfo
     ) -> list[InstanceOf[mutagen.id3.TextFrame]]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
-            return value
+            return values
 
-        frame_cls: type[mutagen.id3.TextFrame] = self._get_frame_class(info)
+        frame_cls = self._get_frame_class(info)
+        values: list[frame_cls] = [frame_cls(text=item, lang="eng") for item in values]
 
-        value: list[frame_cls] = [frame_cls(text=item, lang="eng") for item in value]
         context = info.context
         if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
-            value.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI", lang="eng") for uri in self.uris)
+            values.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI", lang="eng") for uri in self.uris)
 
-        return value
+        return values
 
     @staticmethod
     def _clear_tag(file: mutagen.mp3.MP3, tag_id: str) -> set[str]:

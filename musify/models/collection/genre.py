@@ -1,7 +1,7 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self
 
-from pydantic import model_validator
+from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
 from musify.models.item.genre import Genre
@@ -12,18 +12,18 @@ from musify.models.properties.length import HasLength
 class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
     """Represents a genre collection and its properties."""
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _get_name_from_tracks(data: MutableMapping[str, Any]) -> Any:
+    def _get_name_from_tracks(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
-            return data
+            return handler(data)
         if isinstance(name := data.get(key := "name"), str) and name.strip():
-            return data
+            return handler(data)
 
         if not isinstance(tracks := data.get("tracks", []), Sequence):
-            return data
+            return handler(data)
         if not all(isinstance(track, Track) for track in tracks):
-            return data
+            return handler(data)
 
         names = {genre.name for track in tracks for genre in track.genres}
         if len(names) == 0:
@@ -34,21 +34,21 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
             )
 
         data[key] = names.pop()
-        return data
+        return handler(data)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _filter_tracks_on_genre_name(data: MutableMapping[str, Any]) -> Any:
+    def _filter_tracks_on_genre_name(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
-            return data
+            return handler(data)
         if not isinstance(tracks := data.get(key := "tracks"), Sequence):
-            return data
+            return handler(data)
         if not isinstance(name := data.get("name"), str) or not name.strip():
-            return data
+            return handler(data)
 
         data[key] = [track for track in tracks if any(genre.name == name for genre in track.genres)]
-        return data
+        return handler(data)
 
     # noinspection PyNestedDecorators
     @model_validator(mode="after")

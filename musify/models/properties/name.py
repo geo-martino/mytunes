@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Self
+from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
 from musify._types import StrippedString
 from musify.models._base import _AttributeModel
@@ -14,12 +14,14 @@ class HasName(_AttributeModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _from_name[T](value: T) -> T | dict[str, Any]:
+    def _from_name(value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str):
-            return value
-        return dict(name=value)
+            return handler(value)
+
+        data = dict(name=value)
+        return handler(data)
 
     def __lt__(self, other: Self):
         return self.name < other.name

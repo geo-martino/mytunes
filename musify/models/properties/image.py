@@ -5,7 +5,7 @@ from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Self, ClassVar
+from typing import Self, ClassVar
 
 import aiofiles
 import aiohttp
@@ -59,26 +59,26 @@ class ImageBase(MusifyModel):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
-    def _from_image_data(cls, data: PILImageFile.ImageFile, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(data, PILImageFile.ImageFile):
-            return handler(data)
+    def _from_image_data(cls, image: PILImageFile.ImageFile, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(image, PILImageFile.ImageFile):
+            return handler(image)
 
         try:
             obj = cls()
         except TypeError as ex:  # raised when trying to instantiate a models with missing abstract methods
             raise MusifyValueError(str(ex))
 
-        obj.update_attributes(data)
+        obj.update_attributes(image)
         return obj
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @classmethod
-    def _from_image_bytes(cls, data: bytes | bytearray, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(data, bytes | bytearray):
-            return handler(data)
+    @staticmethod
+    def _from_image_bytes(value: bytes | bytearray, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(value, bytes | bytearray):
+            return handler(value)
 
-        img = Image.open(BytesIO(data))
+        img = Image.open(BytesIO(value))
         obj = handler(img)
         del img
         return obj
@@ -179,7 +179,7 @@ class ImageURL(ImageSource):
     # noinspection PyNestedDecorators
     @field_validator("url", mode="before", check_fields=True)
     @staticmethod
-    def _cast_to_url(value: str) -> Any:
+    def _cast_to_url(value: str) -> URL:
         if not isinstance(value, str):
             return value
         return URL(value)

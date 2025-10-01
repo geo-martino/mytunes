@@ -3,10 +3,10 @@ Processor that converts representations of time units to python time objects.
 """
 import re
 from datetime import timedelta, datetime, date
-from typing import Any, Annotated
+from typing import Any, Annotated, Self
 
 from dateutil.relativedelta import relativedelta
-from pydantic import field_validator, Field, model_validator
+from pydantic import field_validator, Field, model_validator, ModelWrapValidatorHandler
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
@@ -32,21 +32,23 @@ class TimeMapper(DynamicProcessor):
         return self.unit
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _from_key(cls, value: str) -> Any:
+    def _from_key(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
-            return value
-        return dict(
+            return handler(value)
+
+        data = dict(
             unit=cls._extract_unit_from_key(value),
             amount=cls._extract_amount_from_key(value),
             add=cls._extract_sign_from_key(value),
         )
+        return handler(data)
 
     # noinspection PyNestedDecorators
     @field_validator("unit", mode="before", check_fields=True)
     @staticmethod
-    def _extract_unit_from_key(value: str) -> Any:
+    def _extract_unit_from_key(value: str) -> str:
         if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
             return value
         return re.match(r"^[-+]?\d+(\D+)$", value).group(1)
@@ -68,7 +70,7 @@ class TimeMapper(DynamicProcessor):
     # noinspection PyNestedDecorators
     @field_validator("amount", mode="before", check_fields=True)
     @staticmethod
-    def _extract_amount_from_key(value: str) -> Any:
+    def _extract_amount_from_key(value: str) -> str:
         if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
             return value
         return re.match(r"^[-+]?(\d+)\D+$", value).group(1)
@@ -76,7 +78,7 @@ class TimeMapper(DynamicProcessor):
     # noinspection PyNestedDecorators
     @field_validator("add", mode="before", check_fields=True)
     @staticmethod
-    def _extract_sign_from_key(value: str) -> Any:
+    def _extract_sign_from_key(value: str) -> bool:
         if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
             return value
         return value.startswith("+")

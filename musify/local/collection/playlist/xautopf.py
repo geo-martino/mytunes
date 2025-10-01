@@ -270,10 +270,12 @@ class _XMLBaseModel(MusifyModel):
     )
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _clean_keys(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if isinstance(data, Mapping):
-            data = {key.lstrip("@#"): val for key, val in data.items()}
+    @staticmethod
+    def _clean_keys(data: Mapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, Mapping):
+            return handler(data)
+
+        data = {key.lstrip("@#"): val for key, val in data.items()}
         return handler(data)
 
     def model_dump_xml(self) -> dict[str, Any]:
@@ -447,19 +449,19 @@ class _XMLCondition(_XMLBaseModel):
         value = next(iter(self.value), None)
         return isinstance(value, str) and value in self.reference_values
 
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _merge_values[T](value: T) -> T | dict[str, Any]:
-        if not isinstance(value, MutableMapping):
-            return value
+    def _merge_values(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, MutableMapping):
+            return handler(data)
 
         key = "value"
-        if sum(k.lstrip("@").casefold().startswith(key) for k in value) == 1:
-            value[key] = next((value.pop(k) for k in tuple(value) if k.lstrip("@").casefold().startswith(key)))
-            return value
+        if sum(k.lstrip("@").casefold().startswith(key) for k in data) == 1:
+            data[key] = next((data.pop(k) for k in tuple(data) if k.lstrip("@").casefold().startswith(key)))
+            return handler(data)
 
-        value[key] = [value.pop(k) for k in tuple(value) if k.lstrip("@").casefold().startswith(key)]
-        return value
+        data[key] = [data.pop(k) for k in tuple(data) if k.lstrip("@").casefold().startswith(key)]
+        return handler(data)
 
     @field_validator("field", mode="before", check_fields=True)
     @classmethod
@@ -475,16 +477,13 @@ class _XMLCondition(_XMLBaseModel):
         return self
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _from_comparer(
-            cls, comparer: Comparer, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        if isinstance(comparer, Comparer):
-            model: Self = handler({})
-            model.parse_comparer(comparer)
-        else:
-            model = handler(comparer)
+    @staticmethod
+    def _from_comparer(comparer: Comparer, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(comparer, Comparer):
+            return handler(comparer)
 
+        model: Self = handler({})
+        model.parse_comparer(comparer)
         return model
 
     @property
@@ -551,16 +550,13 @@ class _XMLConditions(_XMLBaseModel):
         return ComparerFilter[LocalTrack](comparers=comparers, match_all=self.combine_method == "All")
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _from_comparers(
-            cls, comparers: ComparerFilter, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        if isinstance(comparers, ComparerFilter):
-            model: Self = handler({})
-            model.parse_comparers(comparers)
-        else:
-            model = handler(comparers)
+    @staticmethod
+    def _from_comparers(comparers: ComparerFilter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(comparers, ComparerFilter):
+            return handler(comparers)
 
+        model: Self = handler({})
+        model.parse_comparers(comparers)
         return model
 
     def parse_comparers(self, comparers: ComparerFilter) -> Self:
@@ -600,16 +596,13 @@ class _XMLLimit(_XMLBaseModel):
         )
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _from_limiter(
-            cls, limiter: ItemLimiter, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        if isinstance(limiter, ItemLimiter):
-            model: Self = handler({})
-            model.parse_limiter(limiter)
-        else:
-            model = handler(limiter)
+    @staticmethod
+    def _from_limiter(limiter: ItemLimiter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(limiter, ItemLimiter):
+            return handler(limiter)
 
+        model: Self = handler({})
+        model.parse_limiter(limiter)
         return model
 
     def parse_limiter(self, limiter: ItemLimiter | None = None, filter_duplicates: bool | None = None) -> Self:
@@ -694,16 +687,13 @@ class _XMLSortBy(_XMLBaseModel):
         return {self.field_name: self.order == "Descending"}
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _from_sorter(
-            cls, sorter: ItemSorter, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        if isinstance(sorter, ItemSorter):
-            model: Self = handler({})
-            model.parse_sorter(sorter)
-        else:
-            model = handler(sorter)
+    @staticmethod
+    def _from_sorter(sorter: ItemSorter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(sorter, ItemSorter):
+            return handler(sorter)
 
+        model: Self = handler({})
+        model.parse_sorter(sorter)
         return model
 
     def parse_sorter(self, sorter: ItemSorter) -> Self:
@@ -759,16 +749,13 @@ class _XMLDefinedSort(_XMLBaseModel):
 
     @model_validator(mode="wrap")
     @classmethod
-    def _from_sorter(
-            cls, sorter: ItemSorter, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        if isinstance(sorter, ItemSorter):
-            # just select any random id for now, will be overwritten in parse_sorter
-            model: Self = handler({"id": choice(tuple(cls.fields_map.keys()))})
-            model.parse_sorter(sorter)
-        else:
-            model = handler(sorter)
+    def _from_sorter(cls, sorter: ItemSorter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(sorter, ItemSorter):
+            return handler(sorter)
 
+        # just select any random id for now, will be overwritten in parse_sorter
+        model: Self = handler({"id": choice(tuple(cls.fields_map.keys()))})
+        model.parse_sorter(sorter)
         return model
 
     def parse_sorter(self, sorter: ItemSorter) -> Self:
@@ -810,13 +797,13 @@ class _XMLSource(_XMLBaseModel):
 
     @field_validator("exceptions", "exceptions_include", mode="before", check_fields=True)
     @staticmethod
-    def _split_exceptions[T](value: T) -> T | set[str]:
+    def _split_exceptions(value: str) -> set[str]:
         if not isinstance(value, str):
             return value
         return set(value.split("|"))
 
     @field_serializer("exceptions", "exceptions_include", check_fields=True)
-    def _join_exceptions(self, value: Collection[str] | None) -> str | None:
+    def _join_exceptions(self, value: Collection[str]) -> str | None:
         return "|".join(sorted(value)) if value else None
 
     @model_serializer(mode="wrap")
@@ -927,15 +914,17 @@ class _XMLRoot(_XMLBaseModel):
 
     def __new__(cls, *args, **kwargs):
         required_modules_installed(REQUIRED_MODULES, cls)
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def parse_xml[T](value: T) -> T | dict[str, Any]:
+    def parse_xml(value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         """Parse the given XML string."""
         if not isinstance(value, str):
-            return value
-        return xmltodict.parse(value, attr_prefix="")
+            return handler(value)
+
+        xml = xmltodict.parse(value, attr_prefix="")
+        return handler(xml)
 
     def unparse_xml(self) -> str:
         """Dump the model to an XML string."""

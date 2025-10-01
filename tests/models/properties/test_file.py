@@ -3,11 +3,14 @@ from pathlib import PurePosixPath, Path, PureWindowsPath, PurePath, PosixPath
 from random import choice
 from typing import Literal
 
+import mutagen
 import pytest
 from faker import Faker
 
+from musify.exception import MusifyTypeError
 # noinspection PyProtectedMember
 from musify.models.properties.file import _IsFile, PathMapper, PathStemMapper
+from tests.models.testers import MusifyResourceTester
 
 
 def _generate_file_paths(
@@ -27,6 +30,40 @@ def _generate_directory_paths(
         system: Literal["linux", "windows"] = "linux" if isinstance(Path.home(), PosixPath) else "windows"
 
     return (path.parent for path in _generate_file_paths(faker, system=system, count=count))
+
+
+class TestIsFile(MusifyResourceTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> _IsFile:
+        return _IsFile(path=Path(faker.file_path()))
+
+    def test_get_ext_from_input_fails(self):
+        with pytest.raises(MusifyTypeError):
+            _IsFile.get_ext_from_input(123)
+
+    def test_get_ext_from_input(self, faker: Faker):
+        path = Path(faker.file_path())
+        expected = path.suffix.lstrip(".").casefold()
+
+        assert _IsFile.get_ext_from_input(str(path)) == expected
+        assert _IsFile.get_ext_from_input(path) == expected
+        assert _IsFile.get_ext_from_input(dict(path=path)) == expected
+        assert _IsFile.get_ext_from_input(_IsFile(path=path)) == expected
+
+    def test_map_path(self, faker: Faker):
+        path = Path(faker.file_path())
+        value = str(path) if choice([True, False]) else path
+        model = _IsFile.model_validate(value)
+        assert model.path == path
+
+    def test_extract_tags_from_mutagen(self, model: _IsFile, faker: Faker):
+        file = mutagen.FileType()
+        file.filename = str(model.path)
+
+        data = _IsFile.extract_tags_from_mutagen(file)
+        assert data == dict(path=str(model.path))
+
+
 
 
 class TestPathMapper:

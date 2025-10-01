@@ -1,11 +1,11 @@
 import struct
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Sequence, Iterable
 from typing import ClassVar, Any
 
 import mutagen.asf
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, InstanceOf
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.album import LocalAlbum
@@ -15,6 +15,7 @@ from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
@@ -156,7 +157,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         mode="before"
     )
     @classmethod
-    def _deserialize_unicode_attribute[T](cls, value: T) -> T | str:
+    def _deserialize_unicode_attribute(
+        cls, value: mutagen.asf.ASFUnicodeAttribute | Sequence[mutagen.asf.ASFUnicodeAttribute]
+    ) -> str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_single_sequence(value)
@@ -171,19 +174,23 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         mode="before"
     )
     @classmethod
-    def _deserialize_unicode_attributes[T](cls, value: T) -> T | list[str]:
+    def _deserialize_unicode_attributes(cls, value: Iterable[mutagen.asf.ASFUnicodeAttribute]) -> list[str]:
         if not isinstance(value, tuple | list):
             return value
         return list(map(cls._deserialize_unicode_attribute, value))
 
     @field_serializer("album", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_name(
+        self, value: str | HasName, info: SerializationInfo
+    ) -> str | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if info.mode == "json":
             return self._extract_name(value)
         return self._serialize_unicode_attribute(value, info=info)
 
     @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_names(
+        self, value: Iterable[str | HasName], info: SerializationInfo
+    ) -> list[str] | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if info.mode == "json":
             return self._extract_names(value)
         return self._serialize_unicode_attributes(value, info=info)
@@ -193,7 +200,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         "name", "disc", "bpm", "key", "released_at", "uri",
         mode="plain", when_used="unless-none",
     )
-    def _serialize_unicode_attribute[T](self, value: T, info: SerializationInfo) -> T | str:
+    def _serialize_unicode_attribute(
+        self, value: str | HasName, info: SerializationInfo
+    ) -> InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if not info.by_alias or info.mode == "json":
             return value
         if not isinstance(value, tuple | list):
@@ -213,7 +222,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         return [self._serialize_unicode_attribute(val, info=info) for val in values]
 
     @field_serializer("track", mode="plain", when_used="unless-none")
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
         return super()._serialize_position_tags(value, info=info)
 
     @model_serializer(mode="wrap")

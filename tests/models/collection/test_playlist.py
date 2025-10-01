@@ -33,7 +33,7 @@ class TestHasMutablePlaylists(MusifyResourceTester):
     def model(self, playlists: list[Playlist]) -> MusifyModel:
         return HasMutablePlaylists(playlists=playlists)
 
-    def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists) -> None:
+    def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists):
         assert model._get_playlists_map_from_merge_input(None) is None
         playlists = model.playlists
         assert model._get_playlists_map_from_merge_input(playlists) is playlists
@@ -42,7 +42,7 @@ class TestHasMutablePlaylists(MusifyResourceTester):
         assert model._get_playlists_map_from_merge_input(dict(playlists)) is not playlists
         assert model._get_playlists_map_from_merge_input(dict(playlists)) == playlists
 
-    def test_merge_playlists(self, model: HasMutablePlaylists, playlists: list[Playlist]) -> None:
+    def test_merge_playlists(self, model: HasMutablePlaylists, playlists: list[Playlist]):
         initial, other, overlap = split_list(playlists, 2, 6)
         model = HasMutablePlaylists(playlists=initial)
 

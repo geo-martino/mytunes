@@ -24,7 +24,7 @@ class TestImageBase(MusifyModelTester):
             width=faker.random_int(min=600, max=1000),
         )
 
-    def test_rich_comparison_dunder_methods(self, model: ImageSource, image_types: set[str], faker: Faker) -> None:
+    def test_rich_comparison_dunder_methods(self, model: ImageSource, image_types: set[str], faker: Faker):
         assert model < ImageBase(type=choice(list(image_types)), height=model.height + 100, width=model.width + 100)
         assert model <= ImageBase(type=choice(list(image_types)), height=model.height + 100, width=model.width)
         assert model <= ImageBase(type=choice(list(image_types)), height=model.height, width=model.width)
@@ -33,7 +33,7 @@ class TestImageBase(MusifyModelTester):
         assert model >= ImageBase(type=choice(list(image_types)), height=model.height - 100, width=model.width, )
         assert model >= ImageBase(type=choice(list(image_types)), height=model.height, width=model.width)
 
-    def test_id3_type_property(self, model: ImageSource) -> None:
+    def test_id3_type_property(self, model: ImageSource):
         model.type = "COVER_FRONT"
         assert model.id3_type == mutagen.id3.PictureType.COVER_FRONT
         model.type = "ARTIST"
@@ -58,14 +58,14 @@ class TestImageBase(MusifyModelTester):
         with pytest.raises(MusifyValueError):
             ImageSource._validate_id3_type("This will fail")
 
-    def test_update_attributes(self, model: ImageBase, image_objects: list[PILImageFile]) -> None:
+    def test_update_attributes(self, model: ImageBase, image_objects: list[PILImageFile]):
         img = choice(image_objects)
         model.update_attributes(img)
         assert model.mime == img.get_format_mimetype()
         assert model.height == img.height
         assert model.width == img.width
 
-    def test_from_image(self, image_bytes: list[bytes], image_objects: list[PILImageFile]) -> None:
+    def test_from_image(self, image_bytes: list[bytes], image_objects: list[PILImageFile]):
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
 
         result = ImageBase.model_validate(img_bytes)
@@ -89,7 +89,7 @@ class TestImageFile(MusifyModelTester):
             width=faker.random_int(min=600, max=1000),
         )
 
-    def test_equality(self, model: ImageFile, image_types: set[str], faker: Faker) -> None:
+    def test_equality(self, model: ImageFile, image_types: set[str], faker: Faker):
         assert model == model
         assert model == ImageFile(
             path=model.path,
@@ -111,7 +111,7 @@ class TestImageFile(MusifyModelTester):
             width=faker.random_int()
         )
 
-    async def test_load(self, model: ImageFile, image_bytes: list[bytes], image_objects: list[PILImageFile], tmp_path: Path) -> None:
+    async def test_load(self, model: ImageFile, image_bytes: list[bytes], image_objects: list[PILImageFile], tmp_path: Path):
         assert model.path.is_relative_to(tmp_path)
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
 
@@ -130,7 +130,7 @@ class TestImageURL(MusifyModelTester):
             width=faker.random_int(min=600, max=1000),
         )
 
-    def test_equality(self, model: ImageURL, image_types: set[str], faker: Faker) -> None:
+    def test_equality(self, model: ImageURL, image_types: set[str], faker: Faker):
         assert model == model
         assert model == ImageURL(
             url=model.url,
@@ -152,7 +152,7 @@ class TestImageURL(MusifyModelTester):
             width=faker.random_int()
         )
 
-    async def test_load(self, model: ImageURL, image_bytes: list[bytes], image_objects: list[PILImageFile], mock_response: aioresponses) -> None:
+    async def test_load(self, model: ImageURL, image_bytes: list[bytes], image_objects: list[PILImageFile], mock_response: aioresponses):
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
         mock_response.get(
             model.url,
@@ -167,7 +167,7 @@ class TestHasImages(MusifyModelTester):
     def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> MusifyModel:
         return HasImages(images={img.type: img for img in image_files + image_urls})
 
-    async def test_load_images(self, model: HasImages, image_objects: list[PILImageFile], faker: Faker) -> None:
+    async def test_load_images(self, model: HasImages, image_objects: list[PILImageFile], faker: Faker):
         update_attributes = choice([True, False])
         kwargs = faker.pydict()
         img = choice(image_objects)

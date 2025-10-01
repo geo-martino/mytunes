@@ -1,4 +1,4 @@
-from typing import ClassVar, Any
+from typing import ClassVar
 
 from pydantic import Field, field_validator
 
@@ -28,7 +28,7 @@ class HasGenres[T: Genre](HasSeparableTags):
     # noinspection PyNestedDecorators
     @field_validator("genres", mode="before", check_fields=True)
     @classmethod
-    def _from_string(cls, value: Any) -> Any:
+    def _from_string(cls, value: str) -> list[str]:
         if not isinstance(value, str):
             return value
         return cls._separate_tags(value)

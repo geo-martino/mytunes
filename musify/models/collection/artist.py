@@ -1,7 +1,7 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self
 
-from pydantic import model_validator
+from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbums, Album
@@ -13,18 +13,18 @@ from musify.models.item.track import HasTracks, Track
 class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTracks[TK, TV], HasAlbums[AT]):
     """Represents a collection of artists and their properties."""
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _get_name_from_albums(data: MutableMapping[str, Any]) -> Any:
+    def _get_name_from_albums(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
-            return data
+            return handler(data)
         if isinstance(name := data.get(key := "name"), str) and name.strip():
-            return data
+            return handler(data)
 
         if not isinstance(albums := data.get("albums", []), Sequence):
-            return data
+            return handler(data)
         if not all(isinstance(album, Album) for album in albums):
-            return data
+            return handler(data)
 
         names = {album.artist for album in albums}
         if len(names) == 0:
@@ -35,21 +35,21 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTrack
             )
 
         data[key] = names.pop()
-        return data
+        return handler(data)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _filter_albums_on_artist_name(data: MutableMapping[str, Any]) -> Any:
+    def _filter_albums_on_artist_name(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
-            return data
+            return handler(data)
         if not isinstance(albums := data.get(key := "albums"), Sequence):
-            return data
+            return handler(data)
         if not isinstance(name := data.get("name"), str) or not name.strip():
-            return data
+            return handler(data)
 
         data[key] = [album for album in albums if any(artist.name == name for artist in album.artists)]
-        return data
+        return handler(data)
 
     # noinspection PyNestedDecorators
     @model_validator(mode="after")

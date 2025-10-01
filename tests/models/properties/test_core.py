@@ -13,13 +13,13 @@ class TestHasSeparableTags(MusifyResourceTester):
     def model(self) -> MusifyModel:
         return HasSeparableTags()
 
-    def test_join_tags(self, faker: Faker) -> None:
+    def test_join_tags(self, faker: Faker):
         tags = faker.words(nb=faker.random_int(10, 20))
 
         HasSeparableTags._tag_sep = ("/", ";")
         assert HasSeparableTags._join_tags(tags) == "/".join(tags), "Should only join on first item in the sequence"
 
-    def test_separate_tags(self, faker: Faker) -> None:
+    def test_separate_tags(self, faker: Faker):
         tags = faker.words(nb=faker.random_int(10, 20))
 
         seps = ("/", ";")

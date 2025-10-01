@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import ClassVar, Self
+from collections.abc import Iterable
+from typing import ClassVar, Self, Any
 
 from pydantic import PrivateAttr, model_validator, computed_field, field_validator, Field
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -71,7 +72,7 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     @field_validator("root", mode="wrap", check_fields=True)
     @classmethod
     @abstractmethod
-    def from_href[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
+    def from_href(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
         raise NotImplementedError
 
     @property
@@ -84,7 +85,7 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     @field_validator("root", mode="wrap", check_fields=True)
     @classmethod
     @abstractmethod
-    def from_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
+    def from_url(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
         raise NotImplementedError
 
     @property
@@ -157,7 +158,7 @@ class HasMutableURI(HasURI):
     # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @staticmethod
-    def _uris_must_be_from_unique_sources(uris: list[URI]) -> list[URI]:
+    def _uris_must_be_from_unique_sources(uris: Iterable[URI]) -> list[URI]:
         sources: set[str] = set()
         duplicates: set[str] = set()
 

@@ -4,10 +4,10 @@ from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Iterable, ClassVar, Annotated
+from typing import Any, Iterable, ClassVar, Annotated, Self
 
 import mutagen
-from pydantic import Field, field_validator, PositiveInt, model_validator, Tag
+from pydantic import Field, field_validator, PositiveInt, model_validator, Tag, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models._base import _AttributeModel, MusifyModel
@@ -20,6 +20,31 @@ class _IsFile(_AttributeModel):
         description="The path to the file"
     )
 
+    # noinspection PyNestedDecorators
+    @model_validator(mode="wrap")
+    @classmethod
+    def _map_path(cls, path: str | Path, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(path, str | Path):
+            return handler(path)
+
+        data = dict(path=Path(path))
+        return handler(data)
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(file, mutagen.FileType):
+            return handler(file)
+
+        tags = cls.extract_tags_from_mutagen(file)
+        return handler(tags)
+
+    @classmethod
+    def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
+        """Extract the tags from a mutagen file object."""
+        data = dict(path=file.filename)
+        return data
+
     @staticmethod
     def get_ext_from_input(value: Any) -> str:
         """Get the file extension from the input value."""
@@ -30,6 +55,8 @@ class _IsFile(_AttributeModel):
                 path = Path(value["path"])
             case Path():
                 path = value
+            case _IsFile():
+                path = value.path
             case _:
                 raise MusifyTypeError(f"Cannot discern discriminator value. Unrecognised value type: {type(value)}")
 
@@ -40,23 +67,6 @@ class _IsFile(_AttributeModel):
     def get_annotation_from_supported_extensions(cls) -> type[Annotated]:
         """Get the type annotation from the supported extensions."""
         return Annotated[cls, *(Tag(ext) for ext in cls.__supported_extensions__)]
-
-    # noinspection PyNestedDecorators
-    @model_validator(mode="before")
-    @classmethod
-    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
-        """Extract the tags from a mutagen file object, if applicable."""
-        if not isinstance(file, mutagen.FileType):
-            return file
-        return dict(path=file.filename)
-
-    # noinspection PyNestedDecorators
-    @model_validator(mode="before")
-    @classmethod
-    def _map_path[F](cls, value: F) -> F | dict[str, Any]:
-        if not isinstance(value, str | Path):
-            return value
-        return dict(path=Path(value))
 
     @property
     def folder(self) -> str:
@@ -87,19 +97,6 @@ class _IsFile(_AttributeModel):
     def modified_at(self) -> datetime | None:
         """The date that the file was last modified."""
         return datetime.fromtimestamp(self.path.stat().st_mtime) if self.path.is_file() else None
-
-    @classmethod
-    def get_filepaths(cls, folder: str | Path) -> set[Path]:
-        """Get all files in a given folder that match this File object's valid filetypes recursively."""
-        paths: set[Path] = set()
-        folder = Path(folder)
-
-        for ext in cls.valid_extensions:
-            paths |= set(folder.rglob(str(Path("**", f"[!.]*{ext}"))))
-            # paths |= set(folder.rglob(str(Path("**", f".*{ext}"))))
-
-        # do not return paths in the recycle bin in Windows-based folders
-        return {path for path in paths if "$RECYCLE.BIN" not in path.parts}
 
 
 class IsFile(_IsFile, metaclass=ABCMeta):
@@ -223,9 +220,7 @@ class PathStemMapper(PathMapper):
     # noinspection PyNestedDecorators
     @field_validator("stem_map", mode="before", check_fields=True)
     @staticmethod
-    def _map_stem_map_from_iterable(
-            value: Iterable[tuple[str | PurePath, str | PurePath]] | Mapping[str | PurePath, str | PurePath]
-    ) -> dict[str, str]:
+    def _map_stem_map_from_iterable[T: str | Path](value: Iterable[tuple[T, T]] | Mapping[T, T]) -> dict[str, str]:
         if isinstance(value, Mapping):
             value = value.items()
         elif not isinstance(value, Iterable):

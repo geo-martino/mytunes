@@ -407,7 +407,7 @@ class TestXMLCondition(MusifyModelTester):
     def test_all_fields_have_codes(self):
         assert not set(_XMLCondition.name_field_map) - set(_XMLCondition.name_code_map)
 
-    def test_reference_required(self, model: _XMLCondition) -> None:
+    def test_reference_required(self, model: _XMLCondition):
         assert model.reference_values
 
         model.value = [choice(list(model.reference_values))]
@@ -416,7 +416,7 @@ class TestXMLCondition(MusifyModelTester):
         model.value = ["not a reference value"]
         assert not model.reference_required
 
-    def test_merge_values(self, adapter: TypeAdapter[_XMLCondition]) -> None:
+    def test_merge_values(self, adapter: TypeAdapter[_XMLCondition]):
         model = adapter.validate_python({"@Value": "a"})
         assert model.value == ["a"]
 
@@ -428,13 +428,13 @@ class TestXMLCondition(MusifyModelTester):
         model.value = ["1", "2", "3"]
         assert model.value == ["1", "2", "3"]
 
-    def test_validate_field_is_mapped(self, model: _XMLCondition) -> None:
+    def test_validate_field_is_mapped(self, model: _XMLCondition):
         with pytest.raises(ValueError):
             model.field = "NotAField"
 
         model.field = choice(tuple(model.name_field_map))
 
-    def test_validate_only_and_either_or_set(self, model: _XMLCondition) -> None:
+    def test_validate_only_and_either_or_set(self, model: _XMLCondition):
         assert model.And is None and model.Or is None
         model.And = _XMLConditions()
         with pytest.raises(ValueError):
@@ -445,7 +445,7 @@ class TestXMLCondition(MusifyModelTester):
         with pytest.raises(ValueError):
             model.And = _XMLConditions()
 
-    def test_build_comparer(self, model: _XMLCondition) -> None:
+    def test_build_comparer(self, model: _XMLCondition):
         model.field = "TrackNo"
         model.comparison = "IsIn"
         model.value = ["a", "b", "c"]
@@ -458,7 +458,7 @@ class TestXMLCondition(MusifyModelTester):
             reference_required=model.reference_required,
         )
 
-    def test_parse_comparer(self, adapter: TypeAdapter[_XMLCondition]) -> None:
+    def test_parse_comparer(self, adapter: TypeAdapter[_XMLCondition]):
         comparer = Comparer(
             field="album_artist",
             condition="ends_with",
@@ -470,7 +470,7 @@ class TestXMLCondition(MusifyModelTester):
         assert model.comparison == "EndsWith"
         assert model.value == ["an album"]
 
-    def test_parse_sub_comparers(self, model: _XMLCondition) -> None:
+    def test_parse_sub_comparers(self, model: _XMLCondition):
         assert model.And is None and model.Or is None
         comparers = ComparerFilter()
 
@@ -493,7 +493,7 @@ class TestXMLCondition(MusifyModelTester):
         model.parse_sub_comparers(combine=False, comparers=comparers)
         assert model.And is None and model.Or is not None
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLCondition]) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLCondition]):
         xml = {"@Comparison": "InRange", "@Field": "TrackNo", "@Value1": "10", "@Value2": "20"}
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
@@ -504,7 +504,7 @@ class TestXMLConditions(MusifyModelTester):
     def model(self) -> _XMLConditions:
         return _XMLConditions()
 
-    def test_build_comparers(self, model: _XMLConditions) -> None:
+    def test_build_comparers(self, model: _XMLConditions):
         condition1 = _XMLCondition(
             field="TrackNo",
             comparison="IsIn",
@@ -529,7 +529,7 @@ class TestXMLConditions(MusifyModelTester):
             match_all=model.combine_method == "All",
         )
 
-    def test_parse_comparers(self, model: _XMLConditions) -> None:
+    def test_parse_comparers(self, model: _XMLConditions):
         condition1 = _XMLCondition()
         condition1.field = "TrackNo"
         condition1.comparison = "IsIn"
@@ -554,7 +554,7 @@ class TestXMLConditions(MusifyModelTester):
         assert model.combine_method == "All" if comparers.match_all else "Any"
         assert model.condition == [condition1, condition2]
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLConditions]) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLConditions]):
         xml = {
             "@CombineMethod": choice(["All", "Any"]),
             "Condition": [
@@ -580,7 +580,7 @@ class TestXMLLimit(MusifyModelTester):
         model.type = expected
         assert model.type == expected
 
-    def test_build_limiter(self, model: _XMLLimit) -> None:
+    def test_build_limiter(self, model: _XMLLimit):
         model.enabled = True
         model.count = 25
         model.type = "Minutes"
@@ -595,7 +595,7 @@ class TestXMLLimit(MusifyModelTester):
         model.enabled = False
         assert model.limiter is None
 
-    def test_parse_limiter(self, model: _XMLLimit) -> None:
+    def test_parse_limiter(self, model: _XMLLimit):
         limiter = ItemLimiter(
             limit_by=23,
             on=LimitType.HOURS,
@@ -613,7 +613,7 @@ class TestXMLLimit(MusifyModelTester):
         assert not model.enabled
         assert model.filter_duplicates
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLLimit], faker: Faker) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLLimit], faker: Faker):
         xml = {
             "@FilterDuplicates": choice([True, False]),
             "@Enabled": choice([True, False]),
@@ -645,14 +645,14 @@ class TestXMLDisplayField(MusifyModelTester):
     def model(self) -> _XMLDisplayField:
         return _XMLDisplayField(code=self.get_valid_code(), width=100)
 
-    def test_validate_code_is_mapped(self, model: _XMLDisplayField) -> None:
+    def test_validate_code_is_mapped(self, model: _XMLDisplayField):
         with pytest.raises(ValueError):
             _XMLDisplayField(code=9999)
 
-    def test_field(self, model: _XMLDisplayField) -> None:
+    def test_field(self, model: _XMLDisplayField):
         assert model.field in _XMLCondition.field_name_map
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayField], faker: Faker) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayField], faker: Faker):
         xml = {"@Code": self.get_valid_code(), "@Width": faker.random_int(1, 100)}
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
@@ -666,7 +666,7 @@ class TestXMLDisplayGroup(MusifyModelTester):
             _XMLDisplayField(code=65, width=769),
         ])
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayGroup], faker: Faker) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayGroup], faker: Faker):
         xml = {
             "@Id": choice(("TrackDetail", "Album")),
             "Field": [
@@ -705,7 +705,7 @@ class TestXMLDisplayFields(MusifyModelTester):
             ]
         )
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayFields], faker: Faker) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLDisplayFields], faker: Faker):
         xml = {
             "Group": [
                 {
@@ -726,27 +726,27 @@ class TestXMLSortBy(MusifyModelTester):
     def model(self) -> _XMLSortBy:
         return _XMLSortBy()
 
-    def test_validate_field_is_mapped(self, model: _XMLCondition) -> None:
+    def test_validate_field_is_mapped(self, model: _XMLCondition):
         with pytest.raises(ValueError):
             model.field = 9999
 
         model.field = TestXMLDisplayField.get_valid_code()
 
-    def test_field_name(self, model: _XMLDisplayField) -> None:
+    def test_field_name(self, model: _XMLDisplayField):
         model.field = TestXMLDisplayField.get_valid_code()
         assert model.field_name in _XMLCondition.field_name_map
 
-    def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={"released_at": True})
         with pytest.raises(ValueError):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): choice([True, False]) for _ in range(3)})
         with pytest.raises(ValueError):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter(self, model: _XMLSortBy):
         field = "name"
         sorter = ItemSorter(sort_fields={field: choice([True, False])})
 
@@ -754,7 +754,7 @@ class TestXMLSortBy(MusifyModelTester):
         assert model.field_name == field
         assert model.order == "Descending" if sorter.sort_fields[field] else "Ascending"
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLSortBy]) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLSortBy]):
         xml = {
             "@Field": TestXMLDisplayField.get_valid_code(),
             "@Order": choice(("Ascending", "Descending"))
@@ -767,39 +767,39 @@ class TestDefinedSort(MusifyModelTester):
     def model(self) -> _XMLDefinedSort:
         return _XMLDefinedSort(id=choice(tuple(_XMLDefinedSort.fields_map)))
 
-    def test_validate_id_is_mapped(self, model: _XMLDefinedSort) -> None:
+    def test_validate_id_is_mapped(self, model: _XMLDefinedSort):
         with pytest.raises(ValueError):
             model.id = 9999
 
         model.id = choice(tuple(_XMLDefinedSort.fields_map))
 
-    def test_fields_map_has_valid_fields(self, model: _XMLDefinedSort) -> None:
+    def test_fields_map_has_valid_fields(self, model: _XMLDefinedSort):
         for fields in _XMLDefinedSort.fields_map.values():
             for field in fields:
                 assert field in _XMLCondition.name_field_map
 
-    def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={"released_at": True, "compilation": False})
         with pytest.raises(ValueError, match="Field code mapping not found"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={"disc_number": True, "track_number": False})
         with pytest.raises(ValueError, match="No sort defined"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_single_fields(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter_fails_on_single_fields(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): choice([True, False])})
         with pytest.raises(ValueError, match="Only use this sorter for multi-field sorts"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter(self, model: _XMLSortBy) -> None:
+    def test_parse_sorter(self, model: _XMLSortBy):
         fields = choice(tuple(_XMLDefinedSort.fields_map.values()))
         sorter = ItemSorter(sort_fields={_XMLCondition.name_field_map[k]: v for k, v in fields.items()})
         model.parse_sorter(sorter=sorter)
         assert model.id == next((code for code, val in _XMLDefinedSort.fields_map.items() if val == fields), None)
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLSortBy]) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLSortBy]):
         xml = {"@Id": choice(tuple(_XMLDefinedSort.fields_map))}
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
@@ -809,21 +809,21 @@ class TestXMLSource(MusifyModelTester):
     def model(self) -> _XMLSource:
         return _XMLSource()
 
-    def test_split_exceptions(self, model: _XMLSource) -> None:
+    def test_split_exceptions(self, model: _XMLSource):
         model.exceptions_include = "a|b|c"
         assert model.exceptions_include == {"a", "b", "c"}
 
         model.exceptions = "1|2|3"
         assert model.exceptions == {"1", "2", "3"}
 
-    def test_join_exceptions(self, model: _XMLSource) -> None:
+    def test_join_exceptions(self, model: _XMLSource):
         model.exceptions_include = {"a", "b", "c"}
         assert model.model_dump(include={"exceptions_include"})["exceptions_include"] == "a|b|c"
 
         model.exceptions = {"1", "2", "3"}
         assert model.model_dump(include={"exceptions"})["exceptions"] == "1|2|3"
 
-    def test_parse_matcher_when_none(self, model: _XMLSource) -> None:
+    def test_parse_matcher_when_none(self, model: _XMLSource):
         model.conditions = _XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])])
         model.exceptions_include = {"a", "b", "c"}
         model.exceptions = {"1", "2", "3"}
@@ -833,7 +833,7 @@ class TestXMLSource(MusifyModelTester):
         assert model.exceptions_include is None
         assert model.exceptions is None
 
-    def test_parse_matcher(self, model: _XMLSource) -> None:
+    def test_parse_matcher(self, model: _XMLSource):
         matcher = MatchFilter(
             compare=ComparerFilter[LocalTrack](),
             include=PathsFilter(values={"a", "b", "c"}),
@@ -846,12 +846,12 @@ class TestXMLSource(MusifyModelTester):
         assert model.exceptions_include == {"a", "b", "c"}
         assert model.exceptions == {"1", "2", "3"}
 
-    def test_parse_sorter_when_none(self, model: _XMLSource) -> None:
+    def test_parse_sorter_when_none(self, model: _XMLSource):
         model.sort_by = _XMLSortBy()
         model.parse_sorter()
         assert model.sort_by is None
 
-    def test_parse_sorter(self, model: _XMLSource) -> None:
+    def test_parse_sorter(self, model: _XMLSource):
         fields = choice(tuple(_XMLDefinedSort.fields_map.values()))
         sorter = ItemSorter(sort_fields={_XMLCondition.name_field_map[k]: v for k, v in fields.items()})
 
@@ -862,7 +862,7 @@ class TestXMLSource(MusifyModelTester):
         model.parse_sorter(sorter=sorter)
         assert isinstance(model.sort_by, _XMLSortBy)
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLSource], faker: Faker) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLSource], faker: Faker):
         xml = {
             "@Type": faker.random_int(1, 10),
             "Description": faker.sentence(),
@@ -925,7 +925,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
     def model(self) -> _XMLSmartPlaylist:
         return _XMLSmartPlaylist()
 
-    def test_build_matcher(self, model: _XMLSmartPlaylist) -> None:
+    def test_build_matcher(self, model: _XMLSmartPlaylist):
         model.source.exceptions_include = {"a", "b", "c"}
         model.source.exceptions = {"1", "2", "3"}
 
@@ -934,17 +934,17 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         assert model.matcher.exclude.values == model.source.exceptions
         assert model.matcher.group_by == model.group_by
 
-    def test_parse_matcher_when_none(self, model: _XMLSmartPlaylist) -> None:
+    def test_parse_matcher_when_none(self, model: _XMLSmartPlaylist):
         model.group_by = "track"
         model.parse_matcher()
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 
-    def test_parse_matcher_with_no_group_by(self, model: _XMLSmartPlaylist) -> None:
+    def test_parse_matcher_with_no_group_by(self, model: _XMLSmartPlaylist):
         matcher = MatchFilter(group_by=None)
         model.parse_matcher(matcher)
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 
-    def test_parse_matcher(self, model: _XMLSmartPlaylist) -> None:
+    def test_parse_matcher(self, model: _XMLSmartPlaylist):
         matcher = MatchFilter(
             compare=ComparerFilter[LocalTrack](),
             include=PathsFilter(values={"a", "b", "c"}),
@@ -957,7 +957,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
             mock_parse.assert_called_once_with(matcher)
             assert model.group_by == matcher.group_by
 
-    def test_build_sorter(self, model: _XMLSmartPlaylist, faker: Faker) -> None:
+    def test_build_sorter(self, model: _XMLSmartPlaylist, faker: Faker):
         model.shuffle_mode = "RecentAdded"
         model.shuffle_same_artist_weight = faker.random_int(-10, 10) / 10
         model.source.sort_by = _XMLDefinedSort(id=choice(tuple(_XMLDefinedSort.fields_map.keys())))
@@ -966,20 +966,20 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         assert model.sorter.shuffle_mode == ShuffleMode.RECENT_ADDED
         assert model.sorter.shuffle_weight == model.shuffle_same_artist_weight
 
-    def test_parse_sorter_when_none(self, model: _XMLSmartPlaylist) -> None:
+    def test_parse_sorter_when_none(self, model: _XMLSmartPlaylist):
         model.parse_sorter()
         assert model.shuffle_mode == _XMLSmartPlaylist.model_fields["shuffle_mode"].default
         shuffle_same_artist_weight_default = _XMLSmartPlaylist.model_fields["shuffle_same_artist_weight"].default
         assert model.shuffle_same_artist_weight == shuffle_same_artist_weight_default
 
-    def test_parse_sorter_with_no_options(self, model: _XMLSmartPlaylist) -> None:
+    def test_parse_sorter_with_no_options(self, model: _XMLSmartPlaylist):
         sorter = ItemSorter(sort_fields={"name": choice([True, False])})
 
         model.parse_sorter(sorter)
         assert model.shuffle_mode == _XMLSmartPlaylist.model_fields["shuffle_mode"].default
         assert model.shuffle_same_artist_weight == sorter.shuffle_weight
 
-    def test_parse_sorter(self, model: _XMLSmartPlaylist, faker: Faker) -> None:
+    def test_parse_sorter(self, model: _XMLSmartPlaylist, faker: Faker):
         sorter = ItemSorter(
             sort_fields={"name": choice([True, False])},
             shuffle_mode=ShuffleMode.RECENT_ADDED,
@@ -992,7 +992,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
             assert model.shuffle_mode == to_pascal(sorter.shuffle_mode.name)
             assert model.shuffle_same_artist_weight == sorter.shuffle_weight
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLSmartPlaylist], faker: Faker) -> None:
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLSmartPlaylist], faker: Faker):
         xml = {
             "@SaveStaticCopy": choice([True, False]),
             "@LiveUpdating": choice([True, False]),

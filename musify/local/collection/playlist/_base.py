@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection
-from pathlib import Path, PurePath
+from collections.abc import Collection, MutableMapping
+from pathlib import Path
 from typing import Self, Any
 
-from pydantic import Field, model_validator, PrivateAttr
+from pydantic import Field, model_validator, PrivateAttr, ModelWrapValidatorHandler
 
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack
@@ -42,13 +42,19 @@ class _LocalPlaylist[TF: Filter](
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
-    @classmethod
-    def _extract_name_from_path[T](cls, value: T) -> T | dict[str, Any]:
-        value = cls._map_path(value)
-        if not isinstance(value, dict) or "name" in value or (path := value.get("path")) is None:
-            return value
-        return value | {"name": PurePath(str(path)).stem}
+    @model_validator(mode="wrap")
+    @staticmethod
+    def _extract_name_from_path(
+            data: str | Path | MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        if isinstance(data, str | Path):
+            data = dict(path=Path(data))
+        if not isinstance(data, MutableMapping) or "name" in data or (path := data.get("path")) is None:
+            return handler(data)
+
+        path = Path(path)
+        data["name"] = path.stem
+        return handler(data)
 
     def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
         if self.matcher is None:

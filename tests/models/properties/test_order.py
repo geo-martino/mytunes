@@ -47,7 +47,7 @@ class TestPosition(MusifyModelTester):
         assert model.number == 10
         assert model.total == 20
 
-    def test_number_cannot_exceed_total(self, model: Position) -> None:
+    def test_number_cannot_exceed_total(self, model: Position):
         model.total = 5
         with pytest.raises(ValueError):
             model.number = model.total + 1
@@ -55,7 +55,7 @@ class TestPosition(MusifyModelTester):
         with pytest.raises(ValueError):
             Position(number=5, total=4)
 
-    def test_numbers_property(self, model: Position) -> None:
+    def test_numbers_property(self, model: Position):
         model.number = 10
         model.total = 20
         assert model.numbers == (10, 20)
@@ -67,7 +67,7 @@ class TestPosition(MusifyModelTester):
         model.total = 20
         assert model.numbers == ()
 
-    def test_to_string(self, model: Position) -> None:
+    def test_to_string(self, model: Position):
         model.number = 10
         model.zero_fill = 2
         assert str(model) == "10"
@@ -79,11 +79,11 @@ class TestPosition(MusifyModelTester):
         model.number = None
         assert str(model) == ""
 
-    def test_to_int(self, model: Position) -> None:
+    def test_to_int(self, model: Position):
         model.number = 6
         assert int(model) == 6
 
-    def test_ordering(self, model: Position, faker: Faker) -> None:
+    def test_ordering(self, model: Position, faker: Faker):
         model.number = faker.random_int(1, 10)
         assert model == model.number
         assert model < model.number + 2

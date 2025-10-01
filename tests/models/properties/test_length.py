@@ -13,7 +13,7 @@ class TestLength(MusifyModelTester):
     def model(self, faker: Faker) -> MusifyRootModel:
         return Length(faker.random_int())
 
-    def test_numeric_representation_conversion(self, model: Length) -> None:
+    def test_numeric_representation_conversion(self, model: Length):
         model.root = "12"
         assert int(model) == 12
 
@@ -29,13 +29,13 @@ class TestLength(MusifyModelTester):
         model.root = "12:34,123456"
         assert float(model) == 12 * 60 + 34 + 0.123456
 
-    def test_numeric_representation_conversion_fails(self, model: Length) -> None:
+    def test_numeric_representation_conversion_fails(self, model: Length):
         with pytest.raises(ValueError):
             model.root = "12:34:56:78.90"
         with pytest.raises(ValueError):
             model.root = "ab:cd"
 
-    def test_timedelta_property(self, model: Length) -> None:
+    def test_timedelta_property(self, model: Length):
         assert Length(359).timedelta == timedelta(seconds=359, milliseconds=0)
         assert Length(360.12).timedelta == timedelta(seconds=360, milliseconds=120)
 
@@ -46,14 +46,14 @@ class TestLength(MusifyModelTester):
         assert str(Length(3671)) == "1:01:11"
         assert str(Length(123456)) == "34:17:36"
 
-    def test_to_number(self, model: Length) -> None:
+    def test_to_number(self, model: Length):
         model.root = 123.45
         assert int(model) == 123
 
         model.root = 123
         assert float(model) == 123.0
 
-    def test_ordering(self, model: Length) -> None:
+    def test_ordering(self, model: Length):
         assert model == model.root
         assert model < model.root + 2
         assert model > model.root - 2

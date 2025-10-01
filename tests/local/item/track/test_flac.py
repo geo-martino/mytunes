@@ -90,14 +90,12 @@ class TestFLAC(LocalTrackTester):
     # noinspection PyCallingNonCallable
     def test_extract_tags_from_mutagen(self, file: mutagen.flac.FLAC, faker: Faker):
         tags = faker.pydict()
+        tags.pop("source", None)  # just in case the faker generates this key
         file.tags = tags
         assert file.filename
         assert file.pictures
 
-        assert FLAC.extract_tags_from_mutagen(tags, lambda x: x) is tags
-        assert FLAC.extract_tags_from_mutagen(file.filename, lambda x: x) is file.filename
-
-        result = FLAC.extract_tags_from_mutagen(file, lambda x: x)
+        result = FLAC.extract_tags_from_mutagen(file)
         assert result == tags | dict(
             path=file.filename,
             length=file.info.length,

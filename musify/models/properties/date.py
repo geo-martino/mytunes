@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
-from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt
+from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ModelWrapValidatorHandler
 
 from musify.models import MusifyModel
 from musify.models._base import _AttributeModel
@@ -29,26 +29,26 @@ class SparseDate(MusifyModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _from_date[T](value: T) -> T | dict[str, Any]:
+    def _from_date(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         try:
             dt = TypeAdapter(date).validate_python(value)
-            return dict(year=dt.year, month=dt.month, day=dt.day)
+            data = dict(year=dt.year, month=dt.month, day=dt.day)
+            return handler(data)
         except ValueError:
-            pass
-
-        return value
+            return handler(value)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _from_string[T](value: T) -> T | dict[str, Any]:
+    def _from_string(value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str):
-            return value
+            return handler(value)
 
         value = iter(value.split("-"))
-        return dict(year=next(value, None), month=next(value, None), day=next(value, None))
+        data = dict(year=next(value, None), month=next(value, None), day=next(value, None))
+        return handler(data)
 
     @property
     def date(self) -> date | None:

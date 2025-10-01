@@ -30,7 +30,7 @@ class TestMusifySequence:
             adapter: TypeAdapter[MusifySequence],
             models: list[MusifyResource],
             faker: Faker
-    ) -> None:
+    ):
         assert adapter.validate_python(sequence) is sequence, "Failed to validate existing models"
 
         sequence_single = MusifySequence([models[0]])
@@ -38,14 +38,14 @@ class TestMusifySequence:
         assert adapter.validate_python(models) == sequence, "Failed to validate list of models"
         assert adapter.validate_python(tuple(models)) == sequence, "Failed to validate tuple of models"
 
-    def test_validate_pydantic_schema_on_generics(self, tracks: list[Track], artists: list[Artist]) -> None:
+    def test_validate_pydantic_schema_on_generics(self, tracks: list[Track], artists: list[Artist]):
         adapter = TypeAdapter(MusifySequence[Any, Track])
         assert adapter.validate_python(tracks) == MusifySequence(tracks), "Failed to validate list of tracks"
 
         with pytest.raises(ValueError):
             adapter.validate_python(artists)
 
-    def test_init(self, sequence: MusifySequence, models: list[MusifyResource], faker: Faker) -> None:
+    def test_init(self, sequence: MusifySequence, models: list[MusifyResource], faker: Faker):
         assert MusifySequence(sequence) is not sequence
         assert MusifySequence(sequence) == sequence
 
@@ -60,7 +60,7 @@ class TestMusifySequence:
         reason="Pydantic 2.12.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
-    def test_validates_generic_types_when_accessing(self, tracks: list[Track], artists: list[Artist]) -> None:
+    def test_validates_generic_types_when_accessing(self, tracks: list[Track], artists: list[Artist]):
         sequence = MusifySequence[int, Track](tracks)
 
         with pytest.raises(ValueError):
@@ -75,14 +75,14 @@ class TestMusifySequence:
         with pytest.raises(ValueError):
             assert sequence.outer_difference(artists)
 
-    def test_container_methods(self, sequence: MusifySequence, models: list[MusifyResource]) -> None:
+    def test_container_methods(self, sequence: MusifySequence, models: list[MusifyResource]):
         assert choice(models) in sequence
         assert all(key in sequence for key in choice(models).unique_keys)
 
         assert sequence._items in sequence
         assert (key for model in sequence._items for key in model.unique_keys) in sequence
 
-    def test_collection_methods(self, sequence: MusifySequence, models: list[MusifyResource]) -> None:
+    def test_collection_methods(self, sequence: MusifySequence, models: list[MusifyResource]):
         assert len(sequence) == len(models)
         assert list(iter(sequence)) == sequence._items
 
@@ -150,7 +150,7 @@ class TestMusifyMutableSequence:
         reason="Pydantic 2.12.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
-    def test_validates_generic_types_when_mutating(self, tracks: list[Track], artists: list[Artist]) -> None:
+    def test_validates_generic_types_when_mutating(self, tracks: list[Track], artists: list[Artist]):
         sequence = MusifyMutableSequence[int, Track](tracks)
 
         with pytest.raises(ValueError):
@@ -181,7 +181,7 @@ class TestMusifyMutableSequence:
         with pytest.raises(ValueError):
             sequence.remove(choice(artists))
 
-    def test_setitem(self, models: list[MusifyResource]) -> None:
+    def test_setitem(self, models: list[MusifyResource]):
         initial, other, _ = split_list(models, 2)
         sequence = MusifyMutableSequence(initial)
 
@@ -198,14 +198,14 @@ class TestMusifyMutableSequence:
         assert sequence._items[0:2] == initial[1:3]
         assert all(key in sequence._items_mapped for m in initial[1:3] for key in m.unique_keys)
 
-    def test_setitem_fails(self, models: list[MusifyResource]) -> None:
+    def test_setitem_fails(self, models: list[MusifyResource]):
         initial = models[:3]
         sequence = MusifyMutableSequence(initial)
 
         with pytest.raises(ValueError):
             sequence[0] = "invalid value"
 
-    def test_delitem(self, models: list[MusifyResource]) -> None:
+    def test_delitem(self, models: list[MusifyResource]):
         sequence = MusifyMutableSequence(models)
         model = models[0]
         assert model in sequence
@@ -218,12 +218,12 @@ class TestMusifyMutableSequence:
         assert all(model not in sequence for model in models[1:3])
         assert all(key not in sequence._items_mapped for m in models[1:3] for key in m.unique_keys)
 
-    def test_delitem_fails(self, models: list[MusifyResource]) -> None:
+    def test_delitem_fails(self, models: list[MusifyResource]):
         sequence = MusifyMutableSequence()
         with pytest.raises(KeyError):
             del sequence[0]
 
-    def test_mutable_dunder_methods(self, models: list[MusifyResource]) -> None:
+    def test_mutable_dunder_methods(self, models: list[MusifyResource]):
         initial, other, _ = split_list(models, 2)
         sequence = MusifyMutableSequence(initial)
         original = sequence.copy()
@@ -244,7 +244,7 @@ class TestMusifyMutableSequence:
         assert sequence._items == other
         assert all(key in sequence._items_mapped for m in other for key in m.unique_keys)
 
-    def test_append(self, models: list[MusifyResource]) -> None:
+    def test_append(self, models: list[MusifyResource]):
         initial = models[3:]
         sequence = MusifyMutableSequence(initial)
         original_length = len(sequence._items)
@@ -286,7 +286,7 @@ class TestMusifyMutableSequence:
         assert sequence._items[-len(other) * 2:-len(other)] == other
         assert sequence._items_mapped.keys() == expected_keys
 
-    def test_insert(self, models: list[MusifyResource]) -> None:
+    def test_insert(self, models: list[MusifyResource]):
         initial = models[3:]
         sequence = MusifyMutableSequence(initial)
         original_length = len(sequence._items)
@@ -348,7 +348,7 @@ class TestMusifyMutableSequence:
         assert other == other_original
         assert reference == reference_original
 
-    def test_remove(self, models: list[MusifyResource]) -> None:
+    def test_remove(self, models: list[MusifyResource]):
         sequence = MusifyMutableSequence(models)
         model = choice(models)
         assert model in sequence

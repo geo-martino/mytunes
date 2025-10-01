@@ -1,5 +1,4 @@
 import itertools
-import itertools
 import textwrap
 from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
@@ -63,7 +62,7 @@ class LocalLibrary(
 
     @field_validator("playlist_filter", mode="before", check_fields=True)
     @staticmethod
-    def _convert_playlist_names_to_filter[T](names: T | str | Iterable[str]) -> T | ValuesFilter[str]:
+    def _convert_playlist_names_to_filter(names: str | Iterable[str]) -> ValuesFilter[str]:
         if not names or isinstance(names, Filter):
             return names
 

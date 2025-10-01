@@ -1,12 +1,13 @@
 from typing import Any
 
 import mutagen
-from pydantic import Field, PositiveInt, PositiveFloat, model_validator
+from pydantic import Field, PositiveInt, PositiveFloat
 
+from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
 
 
-class IsAudioFile(HasLength):
+class IsAudioFile(HasLength, IsFile):
     """Attributes and operations for an audio on a filesystem."""
 
     channels: PositiveInt | None = Field(
@@ -26,26 +27,23 @@ class IsAudioFile(HasLength):
         default=None,
     )
 
-    # noinspection PyNestedDecorators
-    @model_validator(mode="before")
     @classmethod
-    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
-        """Extract the tags from a mutagen file object, if applicable."""
-        if not isinstance(file, mutagen.FileType):
-            return file
-
+    def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
+        """Extract the tags from a mutagen file object."""
         try:
             bit_depth = file.info.bits_per_sample
         except AttributeError:
             bit_depth = None
 
-        return dict(
+        data = super().extract_tags_from_mutagen(file)
+        data |= dict(
             length=file.info.length,
             channels=file.info.channels,
             bit_rate=file.info.bitrate / 1000,  # convert to bps to kbps
             bit_depth=bit_depth,
             sample_rate=file.info.sample_rate / 1000,  # convert to Hz to kHz
         )
+        return data
 
 
 IsAudioFile.__tag_fields__ = frozenset({*IsAudioFile.model_fields})

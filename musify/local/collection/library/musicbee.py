@@ -76,35 +76,35 @@ class MusicBee(LocalLibrary, IsFile):
         """The path to the MusicBee library file."""
         return self.musicbee_folder.joinpath(self._xml_library_path)
 
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _add_library_path(cls, value: Any) -> Any:
-        if not isinstance(value, MutableMapping) or (key := "musicbee_folder") not in value:
-            return value
+    def _add_library_path(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, MutableMapping) or (key := "musicbee_folder") not in data:
+            return handler(data)
 
-        value["path"] = Path(value[key]).joinpath(cls._xml_library_path)
-        return value
+        data["path"] = Path(data[key]).joinpath(cls._xml_library_path)
+        return handler(data)
 
     @model_validator(mode="wrap")
     @staticmethod
-    def _validate_settings_file_exists(data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model = handler(data)
+    def _validate_settings_file_exists(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model = handler(value)
         if not model.xml_settings_path.is_file():
             raise FileDoesNotExistError(model.xml_settings_path, "MusicBee settings file does not exist")
         return model
 
     @model_validator(mode="wrap")
     @staticmethod
-    def _validate_library_file_exists(data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model = handler(data)
+    def _validate_library_file_exists(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model = handler(value)
         if not model.xml_library_path.is_file():
             raise FileDoesNotExistError(model.xml_library_path, "MusicBee library file does not exist")
         return model
 
     @model_validator(mode="wrap")
     @staticmethod
-    def _validate_playlists_folder_exists(data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model = handler(data)
+    def _validate_playlists_folder_exists(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model = handler(value)
         if model.playlist_folder.is_absolute():
             return model
 

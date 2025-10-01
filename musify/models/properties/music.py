@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import ClassVar, Annotated, Any
+from typing import ClassVar, Annotated, Self
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, ModelWrapValidatorHandler
 
 from musify.models import MusifyModel
 
@@ -21,17 +21,19 @@ class KeySignature(MusifyModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _from_key(cls, value: str) -> Any:
+    def _from_key(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str):
-            return value
-        return dict(root=cls._extract_root_index_from_key(value), mode=cls._extract_mode_index_from_key(value))
+            return handler(value)
+
+        data = dict(root=cls._extract_root_index_from_key(value), mode=cls._extract_mode_index_from_key(value))
+        return handler(data)
 
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @classmethod
-    def _extract_root_index_from_key(cls, value: str) -> Any:
+    def _extract_root_index_from_key(cls, value: str) -> int:
         if not isinstance(value, str):
             return value
 
@@ -46,7 +48,7 @@ class KeySignature(MusifyModel):
     # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
     @staticmethod
-    def _extract_mode_index_from_key(value: str) -> Any:
+    def _extract_mode_index_from_key(value: str) -> int:
         if not isinstance(value, str):
             return value
         return int(value.endswith("m"))

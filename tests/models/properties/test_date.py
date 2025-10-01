@@ -35,7 +35,7 @@ class TestSparseDate(MusifyModelTester):
         assert model.month is None
         assert model.day is None
 
-    def test_date_property(self, model: SparseDate, faker: Faker) -> None:
+    def test_date_property(self, model: SparseDate, faker: Faker):
         model.month = None
         model.day = None
         assert model.date is None
@@ -46,7 +46,7 @@ class TestSparseDate(MusifyModelTester):
         model.month = faker.random_int(min=1, max=12)
         assert model.date == date(year=model.year, month=model.month, day=model.day)
 
-    def test_to_string(self, model: SparseDate) -> None:
+    def test_to_string(self, model: SparseDate):
         model.year = 2025
         model.month = 3
         model.day = 1

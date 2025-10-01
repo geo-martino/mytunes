@@ -199,7 +199,9 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
 
     @field_validator("comparers", mode="before", check_fields=True)
     @staticmethod
-    def _comparer_to_mapping(value: Any) -> Any:
+    def _comparer_to_mapping(
+        value: Comparer | Iterable[Comparer] | Mapping[str, tuple[bool, Self]]
+    ) -> Mapping[str, tuple[bool, Self]]:
         if isinstance(value, Comparer):
             value = [value]
         if not isinstance(value, Mapping):
@@ -208,7 +210,7 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
         return value
 
     @field_serializer("comparers", check_fields=True)
-    def _flatten_comparers(self, comparers: Mapping[Comparer, tuple[bool, Self]]) -> Any:
+    def _flatten_comparers[T: Mapping[Comparer, tuple]](self, comparers: T) -> T | list[Comparer]:
         if all(not sub_filter.ready for _, sub_filter in comparers.values()):
             return list(self.comparers.keys())
         return comparers

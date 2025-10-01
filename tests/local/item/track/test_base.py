@@ -96,9 +96,6 @@ class TestLocalTrack(UniqueKeyTester):
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType, tags: dict[str, Any]):
         assert file.filename
 
-        assert LocalTrack.extract_tags_from_mutagen(tags) is tags
-        assert LocalTrack.extract_tags_from_mutagen(file.filename) is file.filename
-
         result = LocalTrack.extract_tags_from_mutagen(file)
         assert result == tags | dict(
             path=file.filename,
@@ -108,14 +105,6 @@ class TestLocalTrack(UniqueKeyTester):
             bit_depth=16,
             sample_rate=44.1,
         )
-
-    # noinspection PyTypeChecker
-    def test_extract_tags_from_mutagen_skips(self, faker: Faker):
-        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, None)
-        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pyint())
-        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pytuple())
-        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pylist())
-        assert_validator_skips(LocalTrack.extract_tags_from_mutagen, faker.pydict())
 
     def test_extract_first_value_from_sequence(self):
         assert LocalTrack._extract_first_value_from_sequence(None) is None

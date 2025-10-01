@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import Any, Self, ClassVar
 
-from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
+from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
@@ -30,31 +30,36 @@ class Position(MusifyModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _from_number[T](value: T) -> T | dict[str, Any]:
+    def _from_number(value: int | float, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, int | float):
-            return value
-        return dict(number=int(value))
+            return handler(value)
+
+        data = dict(number=int(value))
+        return handler(data)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @staticmethod
-    def _from_numbers[T](value: T) -> T | dict[str, Any]:
+    def _from_numbers(value: tuple | list, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, tuple | list):
-            return value
+            return handler(value)
 
         numbers = iter(value)
-        return dict(number=next(numbers, None), total=next(numbers, None))
+        data = dict(number=next(numbers, None), total=next(numbers, None))
+        return handler(data)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _from_string[T](cls, value: T) -> T | dict[str, Any]:
+    def _from_string(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str):
-            return value
+            return handler(value)
+
         numbers = iter(value.split(cls.sep))
-        return dict(number=next(numbers), total=next(numbers, None))
+        data = dict(number=next(numbers), total=next(numbers, None))
+        return handler(data)
 
     @model_validator(mode="after")
     def _validate_position_is_less_than_total(self) -> Self:

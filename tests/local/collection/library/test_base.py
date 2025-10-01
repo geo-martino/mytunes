@@ -126,24 +126,24 @@ class TestLocalLibrary(MusifyResourceTester):
     ) -> LocalLibrary:
         return LocalLibrary(library_folders=library_folders, playlist_folder=playlist_folder)
 
-    def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]) -> None:
+    def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]):
         names = {pl.name for pl in playlists}
 
         model.playlist_filter = names
         assert isinstance(model.playlist_filter, ValuesFilter)
         assert model.playlist_filter.values == names
 
-    def test_gets_all_track_paths(self, model: LocalLibrary, tracks: list[LocalTrack]) -> None:
+    def test_gets_all_track_paths(self, model: LocalLibrary, tracks: list[LocalTrack]):
         expected = {track.path for track in tracks}
         assert expected
         assert set(model._iter_track_paths()) == expected
 
-    def test_gets_all_playlist_paths(self, model: LocalLibrary, playlists: list[LocalPlaylist]) -> None:
+    def test_gets_all_playlist_paths(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         expected = {pl.path for pl in playlists}
         assert expected
         assert set(model._iter_playlist_paths()) == expected
 
-    def test_gets_filtered_playlist_paths(self, model: LocalLibrary, playlists: list[LocalPlaylist]) -> None:
+    def test_gets_filtered_playlist_paths(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         all_playlist_names = [pl.name for pl in playlists]
         names = set([pl.name for pl in playlists][:len(playlists) // 2])
         assert names != all_playlist_names
@@ -172,7 +172,7 @@ class TestLocalLibrary(MusifyResourceTester):
             mock_load_track: mock.MagicMock,
             playlists: list[LocalPlaylist],
             mock_load_playlist: mock.MagicMock
-    ) -> None:
+    ):
         await model.load()
         self.assert_tracks_loaded(model, tracks, mock_load_track)
         self.assert_playlists_loaded(model, playlists, mock_load_playlist)
@@ -180,14 +180,14 @@ class TestLocalLibrary(MusifyResourceTester):
     ###########################################################################
     ## Tracks
     ###########################################################################
-    async def test_load_track_logs_error_safely(self, model: LocalLibrary, faker: Faker) -> None:
+    async def test_load_track_logs_error_safely(self, model: LocalLibrary, faker: Faker):
         path = faker.file_path(extension="m3u")
         await model.load_track(path)
         assert model.errors == [path]
 
     async def test_load_tracks(
             self, model: LocalLibrary, tracks: list[LocalTrack], mock_load_track: mock.MagicMock,
-    ) -> None:
+    ):
         for track in tracks[:10]:  # ensure these tracks preloaded tracks are replaced
             model.tracks.append(track)
             os.remove(track.path)
@@ -195,7 +195,7 @@ class TestLocalLibrary(MusifyResourceTester):
         await model.load_tracks()
         self.assert_tracks_loaded(model, tracks[10:], mock_load_track)
 
-    def test_log_tracks(self, model: LocalLibrary, tracks: list[LocalTrack]) -> None:
+    def test_log_tracks(self, model: LocalLibrary, tracks: list[LocalTrack]):
         model.tracks[:] = tracks
         # print(model.log_tracks())
         assert len(model.log_tracks().split("\n")) == 1  # just summarises
@@ -203,14 +203,14 @@ class TestLocalLibrary(MusifyResourceTester):
     ###########################################################################
     ## Playlists
     ###########################################################################
-    async def test_load_playlist_logs_error_safely(self, model: LocalLibrary, faker: Faker) -> None:
+    async def test_load_playlist_logs_error_safely(self, model: LocalLibrary, faker: Faker):
         path = faker.file_path(extension="mp3")
         await model.load_playlist(path)
         assert model.errors == [path]
 
     async def test_load_playlists(
             self, model: LocalLibrary, playlists: list[LocalPlaylist], mock_load_playlist: mock.MagicMock,
-    ) -> None:
+    ):
         for pl in playlists[:5]:  # ensure these tracks preloaded playlists are replaced
             model.playlists[pl.name] = pl
             os.remove(pl.path)
@@ -218,12 +218,12 @@ class TestLocalLibrary(MusifyResourceTester):
         await model.load_playlists()
         self.assert_playlists_loaded(model, playlists[5:], mock_load_playlist)
 
-    def test_log_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]) -> None:
+    def test_log_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
         # print(model.log_playlists())
         assert len(model.log_playlists().split("\n")) == len(playlists) + 1  # +1 for the header
 
-    async def test_save_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]) -> None:
+    async def test_save_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
         results = await model.save_playlists(dry_run=True)
         assert results.keys() == model.playlists.keys()
@@ -231,7 +231,7 @@ class TestLocalLibrary(MusifyResourceTester):
     ###########################################################################
     ## Collections
     ###########################################################################
-    def test_collections(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]) -> None:
+    def test_collections(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks[:] = tracks
 
         assert len(list(model.folders())) == len(set(track_folders)) > 0
@@ -246,7 +246,7 @@ class TestLocalLibrary(MusifyResourceTester):
     ###########################################################################
     ## Backup/Restore
     ###########################################################################
-    def test_backup_dump(self, model: LocalLibrary, tracks: list[LocalTrack], playlists: list[LocalPlaylist]) -> None:
+    def test_backup_dump(self, model: LocalLibrary, tracks: list[LocalTrack], playlists: list[LocalPlaylist]):
         model.tracks[:] = sorted(tracks, key=lambda t: t.ext)
         model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
 

@@ -14,7 +14,7 @@ class TestRemoteURI(MusifyModelTester):
     def model(self, uri: SimpleURI) -> MusifyRootModel:
         return uri
 
-    def test_marks_existence(self, model: SimpleURI) -> None:
+    def test_marks_existence(self, model: SimpleURI):
         assert model._unavailable_id not in str(model)
         assert model.exists
 
@@ -45,7 +45,7 @@ class TestHasURI(UniqueKeyTester):
     def model(self, uri: URI) -> MusifyModel:
         return HasURI(uri=uri)
 
-    def test_uri_field_is_read_only(self, model: HasURI, uri: URI) -> None:
+    def test_uri_field_is_read_only(self, model: HasURI, uri: URI):
         assert model.uri is uri
 
         with pytest.raises(AttributeError):
@@ -77,7 +77,7 @@ class TestHasMutableURI(UniqueKeyTester):
         with pytest.raises(ValueError):
             HasMutableURI(uris=[*uris, new_uri])
 
-    def test_get_uri(self, model: HasMutableURI, uris: list[URI]) -> None:
+    def test_get_uri(self, model: HasMutableURI, uris: list[URI]):
         assert model.uris == uris
         assert model.uri.source == model.source
         assert model.uri == next(uri for uri in uris if uri.source == model.source)
@@ -121,7 +121,7 @@ class TestHasMutableURI(UniqueKeyTester):
         assert uri not in model.uris
 
     # noinspection PyTestUnpassedFixture
-    def test_has_uri(self, model: HasMutableURI, uris: list[URI]) -> None:
+    def test_has_uri(self, model: HasMutableURI, uris: list[URI]):
         assert model.uri.exists
         assert model.has_uri is True
 
@@ -134,7 +134,7 @@ class TestHasMutableURI(UniqueKeyTester):
         assert model.uri is None
         assert model.has_uri is None
 
-    def test_equality(self, model: HasMutableURI, uris: list[URI]) -> None:
+    def test_equality(self, model: HasMutableURI, uris: list[URI]):
         assert model == model
         assert model == HasMutableURI(source=model.source, uris=uris)
 

@@ -1,5 +1,6 @@
+import itertools
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable
+from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
 from copy import copy
 from io import BytesIO
 from pathlib import Path
@@ -23,7 +24,6 @@ from musify.models import MusifyModel
 from musify.models.item.track import Track, TrackTagsMixin
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
-from musify.models.properties.file import IsFile
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
@@ -47,7 +47,6 @@ class TagDumpContext[T](MusifyModel):
 class LocalTrack[T: mutagen.FileType](
     LocalResource,
     Track[LocalArtist, LocalAlbum, LocalGenre],
-    IsFile,
     IsAudioFile,
     HasMutableURI,
     HasAddedDate,
@@ -179,14 +178,12 @@ class LocalTrack[T: mutagen.FileType](
     ###########################################################################
     ## Validators/Serializers
     ###########################################################################
-    # noinspection PyNestedDecorators, PyCallingNonCallable
-    @model_validator(mode="before")
     @classmethod
-    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
-        if not isinstance(file, mutagen.FileType):
-            return file
-
-        return dict(file.tags) | IsFile.extract_tags_from_mutagen(file) | IsAudioFile.extract_tags_from_mutagen(file)
+    def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
+        """Extract tags from a mutagen file object."""
+        data = super().extract_tags_from_mutagen(file)
+        data |= dict(file.tags)
+        return data
 
     # noinspection PyNestedDecorators
     @field_validator(
@@ -194,7 +191,7 @@ class LocalTrack[T: mutagen.FileType](
         mode="before", check_fields=True
     )
     @staticmethod
-    def _extract_first_value_from_sequence(value: Any) -> str | None:
+    def _extract_first_value_from_sequence[T](value: Sequence[T]) -> T:
         if isinstance(value, tuple | list) and len(value) >= 1:
             value = value[0]
         return value
@@ -205,7 +202,7 @@ class LocalTrack[T: mutagen.FileType](
         mode="before", check_fields=True
     )
     @staticmethod
-    def _extract_first_value_from_single_sequence(value: Any, info: FieldSerializationInfo = None) -> str | None:
+    def _extract_first_value_from_single_sequence[T](value: Sequence[T]) -> T:
         if isinstance(value, tuple | list) and len(value) == 1:
             value = value[0]
         return value
@@ -231,30 +228,30 @@ class LocalTrack[T: mutagen.FileType](
         mode="before", check_fields=True
     )
     @classmethod
-    def _split_joined_tags[T](cls, value: T) -> T | list[str]:
+    def _split_joined_tags(cls, value: str) -> list[str]:
         if not isinstance(value, tuple | list) or not all(isinstance(v, str) for v in value):
             return value
-        return [v for item in value for v in cls._separate_tags(item)]
+        return list(itertools.chain.from_iterable(map(cls._separate_tags, value)))
 
     @classmethod
-    def _join_split_tags(cls, value: list[Any]) -> str:
+    def _join_split_tags(cls, value: Iterable[Any]) -> str:
         values = map(cls._extract_name, value)
         return cls._join_tags(str(v) for v in values if v and str(v))
 
     @staticmethod
-    def _extract_name(value: Any) -> str | None:
+    def _extract_name(value: str | HasName) -> str | None:
         if not isinstance(value, HasName):
             return value
         return value.name if value is not None else None
 
-    def _extract_names(self, values: Any) -> list[str]:
+    def _extract_names(self, values: Iterable[str | HasName]) -> list[str]:
         if not isinstance(values, Iterable):
             return values
 
         values = list(map(self._extract_name, values))
         return values
 
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, Position):
@@ -288,11 +285,11 @@ class LocalTrack[T: mutagen.FileType](
     # noinspection PyNestedDecorators
     @field_validator("images", mode="before")
     @classmethod
-    def _map_images(cls, images: Any) -> Any:
+    def _map_images[T](cls, images: Iterable) -> T | dict[str, ImageSource]:
         if not isinstance(images, tuple | list):
             return images
 
-        mapped_images = {}
+        mapped_images: dict[str, ImageSource] = {}
         for image in images:
             if isinstance(image, ImageSource):
                 key = image.type
@@ -307,7 +304,7 @@ class LocalTrack[T: mutagen.FileType](
         return mapped_images
 
     @field_serializer("images", mode="plain", when_used="unless-none")
-    def _serialize_images(self, images: Any, info: FieldSerializationInfo) -> Any:
+    def _serialize_images(self, images: Any, info: FieldSerializationInfo) -> list:
         if not info.by_alias or not self.images:  # if not serializing to tag IDs, return the images models
             return images
 

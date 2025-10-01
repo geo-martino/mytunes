@@ -104,12 +104,12 @@ class ItemSorter(Processor):
 
     @field_validator("sort_fields", mode="before", check_fields=True)
     @staticmethod
-    def _map_fields(fields: Any) -> Any:
+    def _map_fields(fields: str | Iterable[str] | Mapping[str, bool]) -> Mapping[str, bool]:
         if not fields:
             fields = {}
         if isinstance(fields, str):
             fields = (fields,)
-        if isinstance(fields, Sequence) and not isinstance(fields, Mapping):
+        if isinstance(fields, Iterable) and not isinstance(fields, Mapping):
             fields = {field: False for field in fields}
         return fields
 

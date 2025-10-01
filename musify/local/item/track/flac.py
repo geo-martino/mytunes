@@ -1,5 +1,5 @@
 import types
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Iterable
 from typing import Any, get_args, Self
 
 import mutagen.flac
@@ -14,6 +14,7 @@ from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageFile, ImageURL
 from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
@@ -90,28 +91,23 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         default=None,
     )
 
-    # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
     @classmethod
-    def extract_tags_from_mutagen[F](cls, file: F, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(file, mutagen.flac.FLAC):
-            return handler(file)
-
+    def extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
         # noinspection PyCallingNonCallable
-        tags = super().extract_tags_from_mutagen(file)
-        tags.pop("source", None)  # clashes with HasMutableURI field
-        data = tags | dict(images=file.pictures)
-        return handler(data)
+        data = super().extract_tags_from_mutagen(file)
+        data |= dict(images=file.pictures)
+        data.pop("source", None)  # clashes with HasMutableURI field
+        return data
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
-    def _merge_position_values[T](cls, value: T, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, dict):
-            return handler(value)
+    def _merge_position_values(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(data, MutableMapping):
+            return handler(data)
 
         for name, field in cls.model_fields.items():
-            if not isinstance(field.validation_alias, AliasChoices) or isinstance(value.get(name, None), Position):
+            if not isinstance(field.validation_alias, AliasChoices) or isinstance(data.get(name, None), Position):
                 continue
 
             if isinstance(field.annotation, types.UnionType):
@@ -122,17 +118,17 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
             aliases = (al for al in field.validation_alias.choices if isinstance(al, str))
             values = []
-            if cls.model_config.get("validate_by_name") and value.get(name, None) is not None:
-                values.append(value.pop(name))
+            if cls.model_config.get("validate_by_name") and data.get(name, None) is not None:
+                values.append(data.pop(name))
                 # assume first alias choice is an alias for the position number
                 # look for total number from 2nd alias choice onward
                 next(aliases)
 
-            values.extend(filter(None, (value.pop(alias, None) for alias in aliases)))
+            values.extend(filter(None, (data.pop(alias, None) for alias in aliases)))
             if values:
-                value[name] = tuple(map(cls._extract_first_value_from_sequence, values))
+                data[name] = tuple(map(cls._extract_first_value_from_sequence, values))
 
-        return handler(value)
+        return handler(data)
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
@@ -145,13 +141,13 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return data
 
     @field_serializer("album", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
         if not info.by_alias and info.mode == "json":
             return self._extract_name(value)
         return self._extract_name(value)
 
     @field_serializer("artists", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
         if info.mode == "json":
             return self._extract_names(value)
         return self._join_split_tags(value)
@@ -166,7 +162,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return str(value)
 
     @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
-    def _serialize_strings(self, value: Any, info: FieldSerializationInfo) -> list[str]:
+    def _serialize_strings(self, value: Iterable[str], info: FieldSerializationInfo) -> list[str]:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             return value
 
@@ -175,5 +171,5 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return list(map(str, values))
 
     @field_serializer("track", "disc", mode="plain", when_used="unless-none")
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
         return super()._serialize_position_tags(value, info=info)

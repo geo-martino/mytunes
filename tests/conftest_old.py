@@ -1,9 +1,6 @@
 import asyncio
-import copy
 import logging.config
 import shutil
-import types
-from collections import defaultdict
 from pathlib import Path
 
 import pytest

@@ -15,7 +15,7 @@ class TestKeySignature(MusifyModelTester):
             mode=faker.boolean(),
         )
 
-    def test_from_key(self, model: KeySignature) -> None:
+    def test_from_key(self, model: KeySignature):
         model = model.model_validate("F")
         assert model.root == 5
         assert model.mode == 0
@@ -26,7 +26,7 @@ class TestKeySignature(MusifyModelTester):
         assert model.mode == 1
         assert model.key == "Fm"
 
-    def test_from_key_with_sharp_or_flat(self, model: KeySignature) -> None:
+    def test_from_key_with_sharp_or_flat(self, model: KeySignature):
         model = model.model_validate("F#")
         assert model.root == 6
         assert model.mode == 0
@@ -42,7 +42,7 @@ class TestKeySignature(MusifyModelTester):
         assert model.mode == 1
         assert model.key == "G#m/Abm"
 
-    def test_key_property(self, model: KeySignature) -> None:
+    def test_key_property(self, model: KeySignature):
         model.root = 5
         model.mode = False
         assert model.key == str(model) == "F"
@@ -50,7 +50,7 @@ class TestKeySignature(MusifyModelTester):
         model.mode = True
         assert model.key == str(model) == "Fm"
 
-    def test_set_by_key_signature(self, model: KeySignature) -> None:
+    def test_set_by_key_signature(self, model: KeySignature):
         model.mode = False
         model.root = "Gm"
         assert model.root == 7
@@ -64,5 +64,5 @@ class TestKeySignature(MusifyModelTester):
         assert model.root == 0
         assert model.mode
 
-    def test_to_string(self, model: KeySignature) -> None:
+    def test_to_string(self, model: KeySignature):
         assert str(model) == model.key

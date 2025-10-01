@@ -14,7 +14,7 @@ class TestLibrary(MusifyResourceTester):
     def model(self, faker: Faker) -> MusifyModel:
         return _HasTracksAndPlaylistsMixin()
 
-    def test_tracks_in_playlists(self, tracks: list[Track], playlists: list[Playlist]) -> None:
+    def test_tracks_in_playlists(self, tracks: list[Track], playlists: list[Playlist]):
         for pl in playlists:
             tracks += pl.tracks[:len(pl.tracks) // 2]
 

@@ -144,11 +144,9 @@ class Comparer(DynamicProcessor):
         return annotation_type
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_null(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        model: Self = handler(data)
+    @staticmethod
+    def _convert_expected_to_null(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model: Self = handler(value)
         if model.expected is None:
             return model
 
@@ -159,32 +157,27 @@ class Comparer(DynamicProcessor):
         return model
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_type(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        model: Self = handler(data)
+    @staticmethod
+    def _convert_expected_to_type(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model: Self = handler(value)
         model._convert_expected_value(model._expected_type)
-
         return model
 
     @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_exact_field_type(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        model: Self = handler(data)
+    @staticmethod
+    def _convert_expected_to_exact_field_type(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model: Self = handler(value)
         if is_typevar(model._actual_type) and is_typevar(model._expected_type):  # expected is same type as actual
             model._convert_expected_value(model._field_type)
 
         return model
 
     @model_validator(mode="wrap")
-    @classmethod
+    @staticmethod
     def _convert_expected_to_generic_when_actual_is_sequence(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
+             value: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        model: Self = handler(data)
+        model: Self = handler(value)
         if is_typevar(model._expected_type) and model._field_type is str:
             model._convert_expected_value(model._field_type)
         elif (
@@ -198,11 +191,11 @@ class Comparer(DynamicProcessor):
         return model
 
     @model_validator(mode="wrap")
-    @classmethod
+    @staticmethod
     def _convert_expected_to_sequence_when_actual_is_generic(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
+            value: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        model: Self = handler(data)
+        model: Self = handler(value)
         if (
                   is_typevar(model._actual_type)
                   and typing.get_origin(model._expected_type) in (Sequence, set)

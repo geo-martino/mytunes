@@ -1,4 +1,4 @@
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Iterable
 from typing import Any, ClassVar
 
 import mutagen.id3
@@ -15,6 +15,7 @@ from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
+from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
@@ -119,7 +120,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     # noinspection PyNestedDecorators
     @field_validator("key", mode="before")
     @classmethod
-    def _deserialize_free_form_field[T](cls, value: T) -> T | str:
+    def _deserialize_free_form_field(cls, value: mutagen.mp4.MP4FreeForm) -> str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_sequence(value)
@@ -131,10 +132,10 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     # noinspection PyNestedDecorators
     @field_validator("genres", mode="before")
     @classmethod
-    def _deserialize_free_form_fields[T](cls, value: T) -> T | str:
+    def _deserialize_free_form_fields(cls, value: Iterable[mutagen.mp4.MP4FreeForm]) -> list[str]:
         if not isinstance(value, tuple | list):
             return value
-        return [cls._deserialize_free_form_field(v) for v in value]
+        return list(map(cls._deserialize_free_form_field, value))
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
@@ -149,13 +150,13 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return data
 
     @field_serializer("album", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
         if info.by_alias or info.mode == "json":
             return self._extract_name(value)
         return self._extract_name(value)
 
     @field_serializer("artists", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Any, info: SerializationInfo) -> Any:
+    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
         if info.mode == "json":
             return self._extract_names(value)
         return self._join_split_tags(value)
@@ -170,7 +171,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return str(value)
 
     @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
-    def _serialize_strings(self, value: Any, info: FieldSerializationInfo) -> list[str]:
+    def _serialize_strings(self, value: Iterable[str], info: FieldSerializationInfo) -> list[str]:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             return value
 
@@ -179,7 +180,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return list(map(str, values))
 
     @field_serializer("bpm", mode="plain", when_used="unless-none")
-    def _serialize_bpm(self, value: PositiveFloat, info: FieldSerializationInfo) -> Any:
+    def _serialize_bpm(self, value: int | float, info: FieldSerializationInfo) -> list[int] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, int | float):
@@ -187,7 +188,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return [int(value)]
 
     @field_serializer("track", "disc", mode="plain", when_used="unless-none")
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> Any:
+    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> list[tuple] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, Position):
