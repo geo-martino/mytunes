@@ -365,6 +365,7 @@ class _XMLCondition(_XMLBaseModel):
         "Comment": "comments",
         "FileDuration": "length",
         "Rating": "rating",
+        "Artwork": "images",
         # "ComposerPeople": "composer",  # currently not supported by this program
         # "Conductor": "conductor",  # currently not supported by this program
         # "Publisher": "publisher",  # currently not supported by this program
@@ -391,8 +392,7 @@ class _XMLCondition(_XMLBaseModel):
     #: Map of MusicBee name to field code
     name_code_map: ClassVar[Mapping[str, int]] = {
         "None": 0,
-        "Unknown": 20,
-        "Manual": 78,
+        "#": 78,
         "Title": 65,
         "ArtistPeople": 32,
         "Album": 30,  # album ignoring articles like 'the' and 'a' etc.
@@ -404,10 +404,12 @@ class _XMLCondition(_XMLBaseModel):
         "BeatsPerMin": 85,
         "DiscNo": 52,
         "DiscCount": 54,
+        "DiscTrackNo": 53,
         # "": 904,  # unmapped for compare
         "Comment": 44,
         "FileDuration": 16,
         "Rating": 75,
+        "Artwork": 40,
         # "ComposerPeople": 43,  # currently not supported by this program
         # "Conductor": 45,  # currently not supported by this program
         # "Publisher": 73,  # currently not supported by this program
@@ -426,6 +428,7 @@ class _XMLCondition(_XMLBaseModel):
         "FileDateAdded": 12,
         "FileLastPlayed": 13,
         "FilePlayCount": 14,
+        "FileDuplicateFlag": 20,
     }
     #: Map of field code to MusicBee name
     code_name_map: ClassVar[Mapping[int, str]] = {code: name for name, code in name_code_map.items()}

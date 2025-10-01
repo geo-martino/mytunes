@@ -203,10 +203,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         return mutagen.asf.ASFUnicodeAttribute(value)
 
     # noinspection PyNestedDecorators
-    @field_serializer(
-        "comments",
-        mode="plain", when_used="unless-none"
-    )
+    @field_serializer("comments", mode="plain", when_used="unless-none")
     def _serialize_unicode_attributes[T](self, value: T, info: SerializationInfo) -> T | str:
         if not isinstance(value, tuple | list):
             value = [value]
