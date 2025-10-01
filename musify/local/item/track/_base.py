@@ -181,8 +181,7 @@ class LocalTrack[T: mutagen.FileType](
     @classmethod
     def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         """Extract tags from a mutagen file object."""
-        data = super().extract_tags_from_mutagen(file)
-        data |= dict(file.tags)
+        data = dict(file.tags) | super().extract_tags_from_mutagen(file)
         return data
 
     # noinspection PyNestedDecorators

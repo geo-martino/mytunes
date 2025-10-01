@@ -1,4 +1,5 @@
 from argparse import Namespace
+from copy import deepcopy
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -96,7 +97,11 @@ class TestFLAC(LocalTrackTester):
     def test_extract_tags_from_mutagen(self, file: mutagen.flac.FLAC, faker: Faker):
         tags = faker.pydict()
         tags.pop("source", None)  # just in case the faker generates this key
-        file.tags = tags
+
+        file.tags = deepcopy(tags)
+        file.tags["length"] = [str(faker.random_int())]  # should be overridden by file.info.length
+        file.tags["source"] = [faker.word()]  # should be dropped
+
         assert file.filename
         assert file.pictures
 
