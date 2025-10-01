@@ -87,6 +87,11 @@ class TestFLAC(LocalTrackTester):
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return FLAC(name=faker.sentence(), uri=uri, path=path)
 
+    # noinspection PyMethodOverriding
+    @pytest.fixture
+    def file(self, file: mutagen.flac.FLAC) -> mutagen.flac.FLAC:
+        return file
+
     # noinspection PyCallingNonCallable
     def test_extract_tags_from_mutagen(self, file: mutagen.flac.FLAC, faker: Faker):
         tags = faker.pydict()
@@ -134,23 +139,26 @@ class TestFLAC(LocalTrackTester):
         }
         result = FLAC._merge_position_values(tags, lambda x: x)
 
-        assert result["track"] == (3, 10)
-        assert result["disc"] == (2, 5)
+        assert result["track"] == ("3", "10")
+        assert result["disc"] == ("2", "5")
 
     # noinspection PyCallingNonCallable
-    def test_merge_position_values_on_model_validate(self):
+    def test_merge_position_values_splits_appropriately(self):
         tags = {
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
             "album": ["72 Seasons"],
             "album artist": ["Metallica"],
-            "track": ["3"],
-            "tracktotal": ["10"],
+            "track": ["3/5"],
+            "tracktotal": ["10/20"],
+            "discnumber": 2,
+            "disctotal": ["5/15"],
             "path": "/music/Metallica/72 Seasons/04 Sleepwalk My Life Away.flac",
         }
-        result = FLAC._merge_position_values(tags, FLAC.model_validate)
+        result = FLAC._merge_position_values(tags, lambda x: x)
 
-        assert result.track == Position(number=3, total=10)
+        assert result["track"] == ("3", "20")
+        assert result["disc"] == ("2", "15")
 
     def test_format_to_tags(self, model: FLAC, uri: URI, faker: Faker):
         tags = {

@@ -1,11 +1,13 @@
 from abc import ABCMeta, abstractmethod
 from argparse import Namespace
 from io import BytesIO
+from pathlib import Path
 from random import choice
 from typing import Any
 from unittest import mock
 
 import mutagen
+import mutagen.wave
 import pytest
 from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
@@ -115,6 +117,33 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
 
 
 class LocalTrackTester(UniqueKeyTester):
+    @pytest.fixture
+    def file(self, faker: Faker, tmp_path: Path) -> mutagen.FileType:
+        path = tmp_path.joinpath(faker.file_name(category="audio"))
+
+        file = mutagen.FileType()
+        file.filename = str(path)
+        file.tags = {}
+
+        stream_info = mutagen.wave.WaveStreamInfo.__new__(mutagen.wave.WaveStreamInfo)
+        stream_info.length = faker.random_int() / 100
+        stream_info.channels = 2
+        stream_info.bitrate = 320000
+        stream_info.sample_rate = 44100
+        stream_info.bits_per_sample = 16
+        file.info = stream_info
+
+        return file
+
+    def test_extract_tags_from_mutagen_called_on_validate(self, model: LocalTrack, file: mutagen.FileType):
+        with mock.patch.object(
+                model.__class__,
+                "extract_tags_from_mutagen",
+                side_effect=model.__class__.extract_tags_from_mutagen
+        ) as mock_extract_tags:
+            model.__class__.model_validate(file)
+            mock_extract_tags.assert_called_once_with(file)
+
     @staticmethod
     def test_map_images(model: LocalTrack, pictures: dict[str, Any]):
         assert model._map_images(list(pictures.values())) == pictures

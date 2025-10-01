@@ -125,8 +125,12 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
                 next(aliases)
 
             values.extend(filter(None, (data.pop(alias, None) for alias in aliases)))
+            values[:] = list(map(cls._extract_first_value_from_sequence, values))
+            if len(values) > 1:
+                # if multiple values with divider, assume first is position, second is total
+                values[:] = [str(v).split("/")[min(len(str(v).split("/")) - 1, i)] for i, v in enumerate(values)]
             if values:
-                data[name] = tuple(map(cls._extract_first_value_from_sequence, values))
+                data[name] = tuple(values)
 
         return handler(data)
 
