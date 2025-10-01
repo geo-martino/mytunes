@@ -636,9 +636,10 @@ class TestXMLDisplayField(MusifyModelTester):
     @staticmethod
     def get_valid_code() -> int:
         """Returns a random valid field code."""
-        code = 0
-        while code in (0, 20, 78):
-            code = choice(tuple(_XMLCondition.code_name_map))
+        code = -1
+        name = None
+        while code <= 0 or name is None or name not in _XMLCondition.name_field_map:
+            code, name = choice(tuple(_XMLCondition.code_name_map.items()))
         return code
 
     @pytest.fixture

@@ -128,11 +128,13 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @staticmethod
-    def _merge_suffixed_tags(file: mutagen.mp3.MP3, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(file, mutagen.mp3.MP3):
-            return handler(file)
+    def _merge_suffixed_tags(
+            file: mutagen.mp3.MP3 | MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        data = dict(file.tags) if isinstance(file, mutagen.mp3.MP3) else file
+        if not isinstance(data, MutableMapping):
+            return handler(data)
 
-        data = dict(file.tags)
         for key in list(data):
             key_prefix = key.split(":")[0]
             if key_prefix.startswith("COMM"):  # special case to merge comment keys correctly

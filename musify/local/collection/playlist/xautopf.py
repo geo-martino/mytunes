@@ -455,6 +455,7 @@ class _XMLCondition(_XMLBaseModel):
         if not isinstance(data, MutableMapping):
             return handler(data)
 
+        data = deepcopy(data)
         key = "value"
         if sum(k.lstrip("@").casefold().startswith(key) for k in data) == 1:
             data[key] = next((data.pop(k) for k in tuple(data) if k.lstrip("@").casefold().startswith(key)))
