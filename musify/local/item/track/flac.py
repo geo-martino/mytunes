@@ -1,11 +1,11 @@
 import types
 from collections.abc import MutableMapping
-from typing import Any, get_args
+from typing import Any, get_args, Self
 
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer
+from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, ModelWrapValidatorHandler
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.artist import LocalArtist
@@ -91,23 +91,24 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def extract_tags_from_mutagen[F](cls, file: F) -> F | dict[str, Any]:
+    def extract_tags_from_mutagen[F](cls, file: F, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(file, mutagen.flac.FLAC):
-            return file
+            return handler(file)
 
         # noinspection PyCallingNonCallable
         tags = super().extract_tags_from_mutagen(file)
         tags.pop("source", None)  # clashes with HasMutableURI field
-        return tags | dict(images=file.pictures)
+        data = tags | dict(images=file.pictures)
+        return handler(data)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _merge_position_values[T](cls, value: T) -> T | dict[str, Any]:
+    def _merge_position_values[T](cls, value: T, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, dict):
-            return value
+            return handler(value)
 
         for name, field in cls.model_fields.items():
             if not isinstance(field.validation_alias, AliasChoices) or isinstance(value.get(name, None), Position):
@@ -131,7 +132,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             if values:
                 value[name] = tuple(map(cls._extract_first_value_from_sequence, values))
 
-        return value
+        return handler(value)
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:

@@ -1,12 +1,12 @@
 from collections.abc import MutableSequence, MutableMapping, Iterable
 from copy import copy
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer
+    field_validator, field_serializer, ModelWrapValidatorHandler
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
 from musify.local.item.album import LocalAlbum
@@ -125,15 +125,15 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return getattr(mutagen.id3, tag_id)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _merge_suffixed_tags[T](cls, data: T) -> T | dict[str, Any]:
+    def _merge_suffixed_tags(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         # noinspection PyCallingNonCallable
         data = cls.extract_tags_from_mutagen(data)
         if not isinstance(data, MutableMapping):
-            return data
+            return handler(data)
 
         for key in list(data):
             key_prefix = key.split(":")[0]
@@ -149,7 +149,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
             data[key_prefix].append(data.pop(key))
 
-        return data
+        return handler(data)
 
     # noinspection PyNestedDecorators
     @model_serializer(mode="wrap")
