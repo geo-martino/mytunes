@@ -12,7 +12,7 @@ from tests.models.testers import UniqueKeyTester
 
 class TestArtistCollection(UniqueKeyTester):
     @pytest.fixture
-    def model(self, albums: list[Album], uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, albums: list[Album], uri: URI, faker: Faker) -> ArtistCollection:
         return ArtistCollection(name=faker.word(), albums=albums, uri=uri)
 
     def test_artist_name_cannot_be_empty(self, albums: list[Album], faker: Faker):

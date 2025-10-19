@@ -353,16 +353,16 @@ class _XMLCondition(_XMLBaseModel):
     name_field_map: ClassVar[Mapping[str, str]] = {
         "None": None,
         "Title": "name",
-        "ArtistPeople": "artists",
+        "ArtistPeople": "artist",
         "Album": "album",  # album ignoring articles like 'the' and 'a' etc.
-        "Album Artist": "album_artist",
-        "TrackNo": "track_number",
-        "TrackCount": "track_total",
+        "Album Artist": "album.artist",
+        "TrackNo": "track.number",
+        "TrackCount": "track.total",
         "GenreSplits": "genres",
-        "Year": "year",  # could also be 'YearOnly'?
+        "Year": "released_at.year",  # could also be 'YearOnly'?
         "BeatsPerMin": "bpm",
-        "DiscNo": "disc_number",
-        "DiscCount": "disc_total",
+        "DiscNo": "disc.number",
+        "DiscCount": "disc.total",
         # "": "compilation",  # unmapped for compare
         "Comment": "comments",
         "FileDuration": "length",

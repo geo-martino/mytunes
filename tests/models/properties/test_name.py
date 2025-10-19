@@ -8,7 +8,7 @@ from tests.models.testers import MusifyResourceTester
 
 class TestHasName(MusifyResourceTester):
     @pytest.fixture
-    def model(self) -> MusifyModel:
+    def model(self) -> HasName:
         return HasName(name="Test Name")
 
     def test_from_name(self, model: HasName, faker: Faker):

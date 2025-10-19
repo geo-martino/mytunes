@@ -6,14 +6,13 @@ from faker import Faker
 from musify.local.collection.folder import Folder
 from musify.local.item.album import LocalAlbum
 from musify.local.item.track import LocalTrack
-from musify.models import MusifyModel
 from tests.models.testers import MusifyResourceTester
 from tests.utils import split_list
 
 
 class TestFolder(MusifyResourceTester):
     @pytest.fixture
-    def model(self, tracks: list[LocalTrack]) -> MusifyModel:
+    def model(self, tracks: list[LocalTrack]) -> Folder:
         parent = choice(tracks).path.parent
         for track in tracks:
             track.path = parent.joinpath(track.path.name)

@@ -13,7 +13,7 @@ from tests.models.testers import UniqueKeyTester
 class TestAlbumCollection(UniqueKeyTester):
 
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker) -> AlbumCollection:
         return AlbumCollection(name=faker.word(), uri=uri)
 
     def test_album_name_cannot_be_empty(self, tracks: list[Track], faker: Faker):

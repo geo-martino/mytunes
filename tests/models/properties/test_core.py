@@ -10,7 +10,7 @@ from tests.models.testers import MusifyResourceTester
 
 class TestHasSeparableTags(MusifyResourceTester):
     @pytest.fixture
-    def model(self) -> MusifyModel:
+    def model(self) -> HasSeparableTags:
         return HasSeparableTags()
 
     def test_join_tags(self, faker: Faker):

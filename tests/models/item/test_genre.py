@@ -11,13 +11,13 @@ from tests.utils import GENRES
 
 class TestGenre(UniqueKeyTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> MusifyModel:
+    def model(self, faker: Faker) -> Genre:
         return Genre(name=choice(GENRES))
 
 
 class TestHasGenres(MusifyResourceTester):
     @pytest.fixture
-    def model(self, genres: list[Genre]) -> MusifyModel:
+    def model(self, genres: list[Genre]) -> HasGenres:
         return HasGenres(genres=genres)
 
     def test_from_string(self, genres: list[Genre]):

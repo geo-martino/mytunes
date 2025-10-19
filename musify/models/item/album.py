@@ -4,7 +4,7 @@ from typing import ClassVar
 from pydantic import Field, field_validator, computed_field, PositiveInt
 
 from musify._types import StrippedString
-from musify.models._base import _AttributeModel, writeable_computed_field, abstract_property
+from musify.models._base import AttributeResource, writeable_computed_field, abstract_property
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.item.genre import HasGenres, Genre
 from musify.models.properties import HasSeparableTags
@@ -48,27 +48,16 @@ class Album[RT: Artist, GT: Genre](_Album[RT, GT]):
     disc_total = writeable_computed_field("disc_total")
 
 
-class HasAlbum[T: Album](_AttributeModel):
+class HasAlbum[T: Album](AttributeResource):
     album: T | None = Field(
         description="The album associated with this resource.",
         default=None,
     )
 
     @property
-    def album_artist(self) -> str | None:
-        """The album artist."""
-        return self.album.artist if self.album is not None else None
-
-    @property
     def compilation(self) -> bool | None:
         """Whether the album is a compilation album."""
         return self.album.compilation if self.album is not None else None
-
-
-HasAlbum.__tag_fields__ = frozenset({
-    *HasAlbum.model_fields,
-    *{name for name, method in vars(HasAlbum).items() if isinstance(method, property)}
-})
 
 
 class HasAlbums[T: Album](HasSeparableTags):

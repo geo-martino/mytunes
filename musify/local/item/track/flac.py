@@ -16,6 +16,7 @@ from musify.models.properties.image import ImageFile, ImageURL
 from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
+from musify.utils import get_base_types
 
 
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
@@ -109,11 +110,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         for name, field in cls.model_fields.items():
             if not isinstance(field.validation_alias, AliasChoices) or isinstance(data.get(name, None), Position):
                 continue
-
-            if isinstance(field.annotation, types.UnionType):
-                if Position not in get_args(field.annotation):
-                    continue
-            elif field.annotation is not Position:
+            if Position not in get_base_types(field.annotation):
                 continue
 
             aliases = (al for al in field.validation_alias.choices if isinstance(al, str))

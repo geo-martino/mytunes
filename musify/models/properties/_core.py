@@ -6,10 +6,10 @@ from typing import ClassVar, Iterable, Any
 from pydantic import PrivateAttr
 
 from musify._types import String
-from musify.models._base import _AttributeModel
+from musify.models._base import AttributeResource
 
 
-class HasSeparableTags(_AttributeModel):
+class HasSeparableTags(AttributeResource):
     """Represents a resource that has a tag separator."""
     _tag_sep: ClassVar[Sequence[String]] = PrivateAttr(
         # description="The separator used to separate tags in this resource.",

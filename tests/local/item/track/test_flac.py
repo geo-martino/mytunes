@@ -61,7 +61,7 @@ def file(pictures: dict[str, mutagen.flac.Picture], faker: Faker, tmp_path: Path
 
 class TestFLACEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> FLAC:
         img = choice(image_objects)
         return FLAC.EmbeddedImage(
             path=faker.file_path(category="image"),
@@ -83,7 +83,7 @@ class TestFLACEmbeddedImage(LocalTrackEmbeddedImageTester):
 
 class TestFLAC(LocalTrackTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> FLAC:
         extension = choice(tuple(FLAC.__supported_extensions__))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return FLAC(name=faker.sentence(), uri=uri, path=path)

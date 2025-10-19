@@ -24,7 +24,7 @@ from tests.utils import assert_validator_skips
 
 class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
-    def model(self, tags: dict[str, Any], uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, tags: dict[str, Any], uri: URI, faker: Faker) -> LocalTrack:
         return LocalTrack(**tags, uri=uri, path=faker.file_path())
 
     @pytest.fixture
@@ -235,13 +235,13 @@ class TestLocalTrack(UniqueKeyTester):
         assert set(result) == expected & LocalTrack.__tag_fields__
 
     def test_clear_selected_tags(self, file: mutagen.File, faker: Faker):
-        include = sample(list(set(file.tags) & LocalTrack.__tag_fields__), k=4)
+        include = sample(list(set(file.tags) & set(LocalTrack.__tag_attributes__)), k=4)
         result = LocalTrack.clear(file, include=include)
         assert set(result) == set(include)
 
     def test_clear_selected_tags_with_exclude(self, file: mutagen.File, faker: Faker):
-        include = sample(list(set(file.tags) & LocalTrack.__tag_fields__), k=4)
-        exclude = sample(list(set(file.tags) & LocalTrack.__tag_fields__), k=4)
+        include = sample(list(set(file.tags) & set(LocalTrack.__tag_attributes__)), k=4)
+        exclude = sample(list(set(file.tags) & set(LocalTrack.__tag_attributes__)), k=4)
         result = LocalTrack.clear(file, include=include, exclude=exclude)
         assert set(result) == set(t for t in include if t not in exclude)
 
@@ -274,6 +274,7 @@ class TestLocalTrack(UniqueKeyTester):
         tags = model.to_tags()
         assert "title" in tags
         assert all(value is not None for value in tags.values())
+
         assert all(key not in tags for key in IsFile.model_fields)
         assert all(key not in tags for key in HasLength.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_fields)
@@ -285,8 +286,8 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in HasLength.model_fields)
 
     def test_update_and_replace(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):
-        include = sample(list(set(tags) & LocalTrack.__tag_fields__), k=4)
-        exclude = sample(list(set(tags) & LocalTrack.__tag_fields__), k=4)
+        include = sample(list(set(tags) & set(LocalTrack.__tag_attributes__)), k=4)
+        exclude = sample(list(set(tags) & set(LocalTrack.__tag_attributes__)), k=4)
         context = TagDumpContext()
 
         with (

@@ -6,13 +6,14 @@ from typing import Any, Self, ClassVar
 from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyModel
-from musify.models._base import _AttributeModel
+from musify.models._base import AttributeModel, AttributeResource
 
 
 @total_ordering
-class Position(MusifyModel):
+class Position(AttributeModel):
     """Represents the index position of a resource within a parent resource."""
+    __tag_attributes__ = ("number", "total")
+
     #: The separator to use when parsing a string representation of the position.
     sep: ClassVar[str] = "/"
 
@@ -95,49 +96,17 @@ class Position(MusifyModel):
         return other is not None and self.number < int(other)
 
 
-class HasTrackPosition(_AttributeModel):
+class HasTrackPosition(AttributeResource):
     """Represents a resource that has a track position."""
     track: Position | None = Field(
         description="The position in the collection that this track is featured on.",
         default=None,
     )
 
-    @property
-    def track_number(self) -> int | None:
-        """The track number."""
-        return self.track.number if self.track else None
 
-    @property
-    def track_total(self) -> int | None:
-        """The total number of tracks."""
-        return self.track.total if self.track else None
-
-
-HasTrackPosition.__tag_fields__ = frozenset({
-    *HasTrackPosition.model_fields,
-    *{name for name, method in vars(HasTrackPosition).items() if isinstance(method, property)}
-})
-
-
-class HasDiscPosition(_AttributeModel):
+class HasDiscPosition(AttributeResource):
     """Represents a resource that has a disc position."""
     disc: Position | None = Field(
         description="The position of the disc in the collection that this resource is featured on.",
         default=None,
     )
-
-    @property
-    def disc_number(self) -> int | None:
-        """The disc number."""
-        return self.disc.number if self.disc else None
-
-    @property
-    def disc_total(self) -> int | None:
-        """The total number of discs."""
-        return self.disc.total if self.disc else None
-
-
-HasDiscPosition.__tag_fields__ = frozenset({
-    *HasDiscPosition.model_fields,
-    *{name for name, method in vars(HasDiscPosition).items() if isinstance(method, property)}
-})

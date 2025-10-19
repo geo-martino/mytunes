@@ -17,7 +17,7 @@ from tests.models.testers import MusifyModelTester
 
 class TestImageBase(MusifyModelTester):
     @pytest.fixture
-    def model(self, image_types: set[str], faker: Faker) -> MusifyModel:
+    def model(self, image_types: set[str], faker: Faker) -> ImageBase:
         return ImageBase(
             type=image_types.pop(),
             height=faker.random_int(min=600, max=1000),
@@ -81,7 +81,7 @@ class TestImageBase(MusifyModelTester):
 
 class TestImageFile(MusifyModelTester):
     @pytest.fixture
-    def model(self, image_types: set[str], faker: Faker, tmp_path: Path) -> MusifyModel:
+    def model(self, image_types: set[str], faker: Faker, tmp_path: Path) -> ImageFile:
         return ImageFile(
             path=tmp_path.joinpath(faker.file_name(category="image")),
             type=choice(list(image_types)),
@@ -123,7 +123,7 @@ class TestImageFile(MusifyModelTester):
 
 class TestImageURL(MusifyModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> MusifyModel:
+    def model(self, faker: Faker) -> ImageURL:
         return ImageURL(
             url=faker.url(),
             height=faker.random_int(min=600, max=1000),
@@ -164,7 +164,7 @@ class TestImageURL(MusifyModelTester):
 
 class TestHasImages(MusifyModelTester):
     @pytest.fixture
-    def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> MusifyModel:
+    def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> HasImages:
         return HasImages(images={img.type: img for img in image_files + image_urls})
 
     async def test_load_images(self, model: HasImages, image_objects: list[PILImageFile], faker: Faker):

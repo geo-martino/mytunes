@@ -15,7 +15,7 @@ from musify.exception import MusifyValueError
 from musify.models import MusifyResource, MusifyEnum
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
-from musify.models.item.track import TrackTagsMixin
+from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsFile
@@ -28,24 +28,15 @@ from musify.processors_new.exception import SorterProcessorError
 from musify.utils import flatten_nested, strip_ignore_words, IGNORE_WORDS_DEFAULT
 
 _SORT_TAG_TYPES = frozenset({
-    TrackTagsMixin,
+    Track,
     IsFile,
     IsAudioFile,
     HasAddedDate,
     HasPlayedDate,
-    HasLength,
-    HasName,
-    HasTrackPosition,
-    HasDiscPosition,
-    HasRating,
-    HasAlbum,
 })
-
 _SORT_FIELDS_MAP = {
-    field: cls for cls in _SORT_TAG_TYPES for field in cls.__tag_fields__
+    field: cls for cls in _SORT_TAG_TYPES for field in cls.__tag_attributes__
 }
-_SORT_FIELDS_MAP.update({field: TrackTagsMixin for field in TrackTagsMixin.model_fields})
-
 SORT_FIELDS = frozenset(_SORT_FIELDS_MAP)
 _SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 

@@ -42,7 +42,7 @@ def pictures(image_bytes: list[bytes], image_objects: list[PILImageFile], image_
 
 class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> WMA:
         img = choice(image_objects)
         return WMA.EmbeddedImage(
             path=faker.file_path(category="image"),
@@ -73,7 +73,7 @@ class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
 
 class TestWMA(LocalTrackTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> WMA:
         extension = choice(tuple(WMA.__supported_extensions__))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return WMA(name=faker.sentence(), uri=uri, path=path)

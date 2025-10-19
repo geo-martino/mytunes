@@ -8,7 +8,7 @@ from tests.models.testers import MusifyModelTester
 
 class TestPosition(MusifyModelTester):
     @pytest.fixture
-    def model(self) -> MusifyModel:
+    def model(self) -> Position:
         return Position()
 
     # noinspection PyTestUnpassedFixture

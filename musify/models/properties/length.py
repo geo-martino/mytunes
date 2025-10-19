@@ -9,7 +9,7 @@ from typing import Any
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
 
 from musify.models import MusifyRootModel
-from musify.models._base import _AttributeModel
+from musify.models._base import AttributeResource
 
 
 @total_ordering
@@ -83,12 +83,9 @@ class Length(MusifyRootModel[NonNegativeInt | NonNegativeFloat]):
         return self.model_validate(self.root / float(other))
 
 
-class HasLength(_AttributeModel):
+class HasLength(AttributeResource):
     """Represents a resource that has a length."""
     length: Length | None = Field(
         description="The length of this resource.",
         default=None,
     )
-
-
-HasLength.__tag_fields__ = frozenset({*HasLength.model_fields})

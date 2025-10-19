@@ -37,7 +37,7 @@ def pictures(image_bytes: list[bytes], image_types: set[str], image_objects: lis
 
 class TestMP3EmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MP3:
         img = choice(image_objects)
         return MP3.EmbeddedImage(
             path=faker.file_path(category="image"),
@@ -55,7 +55,7 @@ class TestMP3EmbeddedImage(LocalTrackEmbeddedImageTester):
 
 class TestMP3(LocalTrackTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MP3:
         extension = choice(tuple(MP3.__supported_extensions__))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return MP3(name=faker.sentence(), uri=uri, path=path)

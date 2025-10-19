@@ -21,7 +21,7 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models import MusifyModel
-from musify.models.item.track import Track, TrackTagsMixin
+from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
@@ -52,8 +52,7 @@ class LocalTrack[T: mutagen.FileType](
     HasAddedDate,
     HasPlayedDate,
 ):
-    # noinspection PyTypeChecker
-    __tag_fields__ = frozenset(TrackTagsMixin.model_fields)
+    __tag_fields__ = frozenset(set(Track.model_fields.keys()) | {"compilation"})
 
     class EmbeddedImage[FT: mutagen.FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
         alias: ClassVar[str | AliasChoices] = "images"
@@ -323,7 +322,7 @@ class LocalTrack[T: mutagen.FileType](
     ###########################################################################
     @classmethod
     def _check_tag_fields(cls, include: Collection[str], exclude: Collection[str]) -> None:
-        if extra_fields := (set(include) | set(exclude)) - cls.__tag_fields__:
+        if extra_fields := (set(include) | set(exclude)) - set(cls.__tag_fields__):
             raise TagError(f"Unrecognised tag fields: {', '.join(extra_fields)}")
 
     async def _check_and_load_file(self, file: T = None) -> T:
@@ -388,8 +387,8 @@ class LocalTrack[T: mutagen.FileType](
             exclude: Collection[str] = (),
             context: TagDumpContext[T] = None
     ) -> dict[str, Any]:
-        include = set(include or self.__tag_fields__) & self.__tag_fields__
-        exclude = set(exclude) & self.__tag_fields__
+        include = set(include or self.__tag_fields__) & set(self.__tag_fields__)
+        exclude = set(exclude) & set(self.__tag_fields__)
 
         return self.model_dump(
             include=include,

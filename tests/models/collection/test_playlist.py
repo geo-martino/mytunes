@@ -3,34 +3,33 @@ from unittest import mock
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist
 from musify.models.properties.uri import URI
-from tests.models.testers import MusifyResourceTester, UniqueKeyTester
+from tests.models.testers import MusifyModelTester, UniqueKeyTester
 from tests.utils import split_list
 
 
 class TestPlaylist(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker) -> Playlist:
         return Playlist(name=faker.sentence(), uri=uri)
 
 
 class TestMutablePlaylist(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker) -> MutablePlaylist:
         return MutablePlaylist(name=faker.sentence(), uri=uri)
 
 
-class TestHasPlaylists(MusifyResourceTester):
+class TestHasPlaylists(MusifyModelTester):
     @pytest.fixture
-    def model(self, playlists: list[Playlist]) -> MusifyModel:
+    def model(self, playlists: list[Playlist]) -> HasPlaylists:
         return HasPlaylists(playlists=playlists)
 
 
-class TestHasMutablePlaylists(MusifyResourceTester):
+class TestHasMutablePlaylists(MusifyModelTester):
     @pytest.fixture
-    def model(self, playlists: list[Playlist]) -> MusifyModel:
+    def model(self, playlists: list[Playlist]) -> HasMutablePlaylists:
         return HasMutablePlaylists(playlists=playlists)
 
     def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists):

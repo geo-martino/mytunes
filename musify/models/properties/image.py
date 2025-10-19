@@ -18,7 +18,7 @@ from yarl import URL
 from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
-from musify.models._base import _AttributeModel
+from musify.models._base import AttributeResource
 
 
 class ImageBase(MusifyModel):
@@ -210,7 +210,7 @@ class ImageURL(ImageSource):
         return Image.open(BytesIO(image_bytes))
 
 
-class HasImages(_AttributeModel):
+class HasImages(AttributeResource):
     """Represents a resource that has associated images."""
     images: MutableMapping[str, ImageFile | ImageURL | ImageSource] = Field(
         description="Images associated with this resource mapped to their type.",

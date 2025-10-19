@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 
 from musify.exception import MusifyTypeError
-from musify.utils import flatten_nested, merge_maps, get_most_common_values, unicode_len
+from musify.utils import flatten_nested, merge_maps, get_most_common_values, unicode_len, get_base_types
 from musify.utils import limit_value, to_collection
 from musify.utils import strip_ignore_words, safe_format_map, get_max_width, align_string
 
@@ -267,3 +267,21 @@ def tests_merge_maps():
 def test_get_most_common_values():
     assert get_most_common_values([1, 1, 2, 3, 3, 3, 4]) == [3, 1, 2, 4]
     assert get_most_common_values(["asd", 6, "five", "asd", "five", "asd"]) == ["asd", "five", 6]
+
+
+def test_get_base_types_basic():
+    assert get_base_types(str) == (str,)
+    assert get_base_types(int) == (int,)
+    assert get_base_types(dict[str, int]) == (dict,)
+
+
+def test_get_base_types_union():
+    type annotation = str | int | float | bool | None
+    expected = (str, int, float, bool, type(None))
+
+    assert get_base_types(annotation) == expected
+    assert get_base_types(str | int | float | bool | None) == expected
+
+
+def test_get_base_types_generic():
+    assert get_base_types(dict[str, int] | int | tuple[int, ...]) == (dict, int, tuple)

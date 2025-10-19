@@ -36,6 +36,12 @@ class TestComparer(MusifyModelTester):
         with pytest.raises(ValueError):
             Comparer(condition="this cond does not exist", field="ext")
 
+        with pytest.raises(ValueError):
+            Comparer(condition="Contains", field="track_total")
+
+        with pytest.raises(ValueError):
+            Comparer(condition="Contains", field="album_artist")
+
     def test_init_simple(self):
         comparer = Comparer(condition="Contains", field="comments")
         assert comparer.field == "comments"
@@ -64,10 +70,10 @@ class TestComparer(MusifyModelTester):
         assert model != new_filter
 
     def test_convert_expected_to_none(self):
-        comparer = Comparer(condition="is", expected=None, field="disc_total")
+        comparer = Comparer(condition="is", expected=None, field="disc.total")
         assert comparer.expected is None
 
-        comparer = Comparer(condition="is_null", expected="drop me", field="artists")
+        comparer = Comparer(condition="is_null", expected="drop me", field="artist")
         assert comparer.expected is None
 
         comparer = Comparer(condition="is_not_null", expected="drop me", field="album")
@@ -102,14 +108,14 @@ class TestComparer(MusifyModelTester):
         assert comparer.expected == re.compile(r"\w+")
 
     def test_convert_expected_to_int(self):
-        comparer = Comparer(condition="is", expected=123, field="track_number")
+        comparer = Comparer(condition="is", expected=123, field="track.number")
         assert comparer.expected == 123
-        comparer = Comparer(condition="is_not", expected=123.12, field="track_total")
+        comparer = Comparer(condition="is_not", expected=123.12, field="track.total")
         assert comparer.expected == 123
 
-        comparer = Comparer(condition="is_after", expected="123", field="disc_number")
+        comparer = Comparer(condition="is_after", expected="123", field="disc.number")
         assert comparer.expected == 123
-        comparer = Comparer(condition="is_before", expected="123.0", field="disc_total")
+        comparer = Comparer(condition="is_before", expected="123.0", field="disc.total")
         assert comparer.expected == 123
 
     def test_convert_expected_to_float(self):
@@ -166,13 +172,13 @@ class TestComparer(MusifyModelTester):
     def test_convert_expected_to_set(self):
         comparer = Comparer(condition="is_in", expected=["a", "b", "c"], field="name")
         assert comparer.expected == {"a", "b", "c"}
-        comparer = Comparer(condition="is_not_in", expected=(1, 2, 3), field="track_number")
+        comparer = Comparer(condition="is_not_in", expected=(1, 2, 3), field="track.number")
         assert comparer.expected == {1, 2, 3}
 
     def test_convert_expected_to_tuple(self):
-        comparer = Comparer(condition="in_range", expected=["10", "20"], field="track_number")
+        comparer = Comparer(condition="in_range", expected=["10", "20"], field="track.number")
         assert comparer.expected == (10, 20)
-        comparer = Comparer(condition="not_in_range", expected=[1, 10], field="track_total")
+        comparer = Comparer(condition="not_in_range", expected=[1, 10], field="track.total")
         assert comparer.expected == (1, 10)
 
     def test_convert_expected_skips_sequences(self):
@@ -195,7 +201,7 @@ class TestComparer(MusifyModelTester):
         # no expected value and no reference needed for null checks
         track.disc = Position(number=4, total=None)
 
-        comparer = Comparer(condition="is null", field="disc_total")
+        comparer = Comparer(condition="is null", field="disc.total")
         assert comparer.compare(track)
 
         comparer.condition = "is not null"

@@ -3,7 +3,6 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.item.album import Album
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.order import Position
@@ -13,7 +12,7 @@ from tests.models.testers import MusifyResourceTester, UniqueKeyTester
 
 class TestTrack(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker) -> Track:
         return Track(name=faker.sentence(), uri=uri)
 
     # noinspection PyUnresolvedReferences
@@ -63,7 +62,7 @@ class TestTrack(UniqueKeyTester):
 
 class TestHasTracks(MusifyResourceTester):
     @pytest.fixture
-    def model(self, tracks: list[Track]) -> MusifyModel:
+    def model(self, tracks: list[Track]) -> HasTracks:
         return HasTracks(tracks=tracks)
 
     def test_track_total(self, model: HasTracks):
@@ -85,5 +84,5 @@ class TestHasTracks(MusifyResourceTester):
 
 class TestHasMutableTracks(MusifyResourceTester):
     @pytest.fixture
-    def model(self, tracks: list[Track]) -> MusifyModel:
+    def model(self, tracks: list[Track]) -> HasMutableTracks:
         return HasMutableTracks(tracks=tracks)

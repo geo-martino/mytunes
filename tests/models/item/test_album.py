@@ -9,13 +9,13 @@ from tests.models.testers import MusifyResourceTester, UniqueKeyTester
 
 class TestAlbum(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker) -> Album:
         return Album(name=faker.word(), uri=uri)
 
 
 class TestHasAlbums(MusifyResourceTester):
     @pytest.fixture
-    def model(self, albums: list[Album]) -> MusifyModel:
+    def model(self, albums: list[Album]) -> HasAlbums:
         return HasAlbums(albums=albums)
 
     def test_from_string(self, albums: list[Album]):

@@ -10,10 +10,10 @@ import mutagen
 from pydantic import Field, field_validator, PositiveInt, model_validator, Tag, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError, MusifyTypeError
-from musify.models._base import _AttributeModel, MusifyModel
+from musify.models._base import AttributeResource, MusifyModel
 
 
-class _IsFile(_AttributeModel):
+class _IsFile(AttributeResource):
     __supported_extensions__: ClassVar[frozenset[str]] = frozenset()
 
     path: Path = Field(
@@ -101,10 +101,10 @@ class _IsFile(_AttributeModel):
 
 class IsFile(_IsFile, metaclass=ABCMeta):
     """Attributes and operations for a file on a filesystem."""
-    __tag_fields__ = frozenset({
-        *_IsFile.model_fields,
-        *{name for name, method in vars(_IsFile).items() if isinstance(method, property)}
-    })
+
+    @classmethod
+    def tag_attributes(cls) -> tuple[str]:
+        return _IsFile.__tag_attributes__
 
     @abstractmethod
     async def load(self, *args, **kwargs) -> Any:

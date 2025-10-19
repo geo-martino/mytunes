@@ -11,7 +11,7 @@ from yarl import URL
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.models import MusifyRootModel
-from musify.models._base import _AttributeModel
+from musify.models._base import AttributeResource
 
 
 class URI(MusifyRootModel[str], metaclass=ABCMeta):
@@ -116,7 +116,7 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
         return super().__eq__(other)
 
 
-class HasURI[T: URI](_AttributeModel):
+class HasURI[T: URI](AttributeResource):
     __unique_attributes__ = frozenset({"uri"})
     _uri = PrivateAttr(default=None)
 
@@ -133,12 +133,6 @@ class HasURI[T: URI](_AttributeModel):
         if self is other:
             return True
         return self.uri is not None and other.uri is not None and self.uri == other.uri
-
-
-HasURI.__tag_fields__ = frozenset({
-    *HasURI.model_fields,
-    *{name for name, method in vars(HasURI).items() if isinstance(method, property)}
-})
 
 
 class HasMutableURI(HasURI):

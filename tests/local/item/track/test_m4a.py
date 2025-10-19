@@ -30,7 +30,7 @@ def pictures(image_bytes: list[bytes], image_types: set[str]) -> dict[str, mutag
 
 class TestM4AEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MusifyModel:
+    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> M4A:
         img = choice(image_objects)
         return M4A.EmbeddedImage(
             path=faker.file_path(category="image"),
@@ -48,7 +48,7 @@ class TestM4AEmbeddedImage(LocalTrackEmbeddedImageTester):
 
 class TestM4A(LocalTrackTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker, tmp_path: Path) -> M4A:
         extension = choice(tuple(M4A.__supported_extensions__))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return M4A(name=faker.sentence(), uri=uri, path=path)

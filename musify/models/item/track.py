@@ -3,7 +3,7 @@ from typing import ClassVar, Self
 from pydantic import Field, model_validator, PositiveInt, computed_field
 
 from musify._types import StrippedString
-from musify.models._base import _CollectionModel
+from musify.models._base import AttributeResource, CollectionResource
 from musify.models.item.album import HasAlbum, Album
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.item.genre import HasGenres, Genre
@@ -18,7 +18,7 @@ from musify.models.properties.uri import HasURI
 from musify.models.sequence import MusifyMutableSequence, MusifySequence
 
 
-class TrackTagsMixin[RT: Artist, AT: Album, GT: Genre](
+class Track[RT: Artist, AT: Album, GT: Genre](
     HasArtists[RT],
     HasAlbum[AT],
     HasGenres[GT],
@@ -27,9 +27,11 @@ class TrackTagsMixin[RT: Artist, AT: Album, GT: Genre](
     HasDiscPosition,
     HasRating,
     HasReleaseDate,
-    HasImages
+    HasImages,
+    HasURI,
+    HasLength
 ):
-    """A mixin class to add common track tags which can be composed and written as metadata in a track file."""
+    """Represents a track resource and its properties."""
     type: ClassVar[str] = "track"
 
     name: StrippedString = Field(
@@ -93,12 +95,7 @@ class TrackTagsMixin[RT: Artist, AT: Album, GT: Genre](
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
 
 
-class Track[RT: Artist, AT: Album, GT: Genre](TrackTagsMixin[RT, AT, GT], HasURI, HasLength):
-    """Represents a track resource and its properties."""
-    pass
-
-
-class HasTracks[TK, TV: Track](_CollectionModel):
+class HasTracks[TK, TV: Track](AttributeResource, CollectionResource):
     """A mixin class to add a `tracks` property to a MusifyCollection."""
     tracks: MusifySequence[TK, TV] = Field(
         description="The tracks in this collection",

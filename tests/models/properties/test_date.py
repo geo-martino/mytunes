@@ -10,7 +10,7 @@ from tests.models.testers import MusifyModelTester
 
 class TestSparseDate(MusifyModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> MusifyModel:
+    def model(self, faker: Faker) -> SparseDate:
         return SparseDate(year=faker.year())
 
     def test_from_date(self, model: SparseDate):

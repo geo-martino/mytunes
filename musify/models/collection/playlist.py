@@ -7,7 +7,7 @@ from typing import ClassVar
 from pydantic import Field, validate_call
 
 from musify._types import StrippedString
-from musify.models._base import _CollectionModel
+from musify.models._base import CollectionModel
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.mapping import MusifyMapping, MusifyMutableMapping
 from musify.models.properties.image import HasImages
@@ -39,7 +39,7 @@ class MutablePlaylist[TK, TV: Track](Playlist[TK, TV], HasMutableTracks[TK, TV])
 type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 
 
-class HasPlaylists[TK, TV: Playlist](_CollectionModel):
+class HasPlaylists[TK, TV: Playlist](CollectionModel):
     """A mixin class to add a `playlists` property to a MusifyCollection."""
     playlists: MusifyMapping[TK, TV] = Field(
         description="The playlists in this collection",

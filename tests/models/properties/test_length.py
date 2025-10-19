@@ -10,7 +10,7 @@ from tests.models.testers import MusifyModelTester
 
 class TestLength(MusifyModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> MusifyRootModel:
+    def model(self, faker: Faker) -> Length:
         return Length(faker.random_int())
 
     def test_numeric_representation_conversion(self, model: Length):

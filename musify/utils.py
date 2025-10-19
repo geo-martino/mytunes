@@ -5,10 +5,12 @@ import re
 import unicodedata
 from collections import Counter
 from collections.abc import Iterable, Collection, MutableSequence, Mapping, MutableMapping
-from typing import Any, TypeVar, get_args, TypeAliasType
+from types import UnionType, GenericAlias
+from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
 
 from aiorequestful.types import Number
 from pydantic import Tag
+from typing_extensions import get_origin
 
 from musify.exception import MusifyTypeError, MusifyImportError
 
@@ -17,12 +19,11 @@ from musify.exception import MusifyTypeError, MusifyImportError
 ## Properties
 ###########################################################################
 # noinspection PyPep8Naming
-class classproperty:
+class classproperty(property):
     """Set an immutable class property with this decorator"""
-    def __init__(self, func):
-        self.fget = func
-
     def __get__(self, instance, owner):
+        if owner is None:
+            owner = type(instance)
         return self.fget(owner)
 
 
@@ -299,3 +300,49 @@ def get_discriminator_values(cls: TypeAliasType) -> set[str]:
         for t in get_args(get_args(cls.__value__)[0])
         for arg in get_args(t) if isinstance(arg, Tag)
     }
+
+
+def get_base_types(
+        annotation: type | UnionType | GenericAlias | TypeAliasType,
+        ignore_none: bool = True,
+        resolve_generics: bool = False,
+) -> tuple[type, ...]:
+    """
+    Get all base types for a given type annotation.
+
+    :param annotation: The type annotation to get the base types for.
+    :param ignore_none: Whether to drop NoneType base types.
+    :return: A tuple of all base types.
+    """
+    if isinstance(annotation, TypeAliasType):
+        annotation = annotation.__value__
+
+    bases = []
+    match annotation:
+        case UnionType():
+            for kls in get_args(annotation):
+                bases.extend(get_base_types(kls))
+        case GenericAlias():
+            bases.append(get_origin(annotation))
+        case ForwardRef():
+            bases.extend(get_base_types(annotation._evaluate(globals(), locals(), recursive_guard=frozenset())))
+        case _:
+            bases.append(annotation)
+
+    if ignore_none:
+        bases = [b for b in bases if b is not type(None)]
+        for i, b in enumerate(bases):
+            if type(None) in (args := get_args(b)):
+                bases[i] = Union[*(arg for arg in args if arg is not type(None))]
+
+    if resolve_generics:
+        for i, b in enumerate(bases):
+            if not isinstance(b, TypeVar):
+                continue
+
+            if b.__constraints__:
+                bases[i] = Union[*b.__constraints__]
+            elif b.__bound__ is not None:
+                bases[i] = b.__bound__
+
+    return tuple(bases)

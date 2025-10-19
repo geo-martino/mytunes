@@ -12,47 +12,32 @@ from typing import Any, Literal, Self
 from pydantic import Field, field_validator, TypeAdapter, model_validator, \
     ModelWrapValidatorHandler
 from pydantic.alias_generators import to_snake
+from pydantic.fields import FieldInfo
 from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase
-from musify.models import MusifyResource
-from musify.models.item.album import HasAlbum
-from musify.models.item.track import TrackTagsMixin
+from musify.models import AttributeModel
+from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsFile
-from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
-from musify.models.properties.order import HasTrackPosition, HasDiscPosition
-from musify.models.properties.rating import HasRating
-from musify.models.properties.uri import HasURI
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
 from musify.processors_new.exception import ComparerError
 from musify.processors_new.time import TimeMapper
 
 _COMPARISON_TAG_TYPES = frozenset({
-    TrackTagsMixin,
+    Track,
     IsFile,
     IsAudioFile,
     HasAddedDate,
     HasPlayedDate,
-    HasLength,
-    HasName,
-    HasTrackPosition,
-    HasDiscPosition,
-    HasRating,
-    HasURI,
-    HasAlbum,
 })
-
 _COMPARISON_FIELDS_MAP = {
-    field: cls for cls in _COMPARISON_TAG_TYPES for field in cls.__tag_fields__
+    field: cls for cls in _COMPARISON_TAG_TYPES for field in cls.__tag_attributes__
 }
-_COMPARISON_FIELDS_MAP.update({field: TrackTagsMixin for field in TrackTagsMixin.model_fields})
-
-COMPARISON_FIELDS = frozenset(_COMPARISON_FIELDS_MAP)
-_COMPARISON_FIELDS_TYPE = Literal[*COMPARISON_FIELDS]
+COMPARISON_FIELDS = tuple(_COMPARISON_FIELDS_MAP)
 
 
 class Comparer(DynamicProcessor):
@@ -71,7 +56,7 @@ class Comparer(DynamicProcessor):
         description="Expected value/s to match on.",
         default=None,
     )
-    field: _COMPARISON_FIELDS_TYPE | None = Field(
+    field: Literal[*COMPARISON_FIELDS] | None = Field(
         description="The field to match on.",
         default=None,
     )
@@ -109,13 +94,13 @@ class Comparer(DynamicProcessor):
     def _field_type(self) -> type:
         if self.field is None:
             field_type = NoneType
-        elif (field := _COMPARISON_FIELDS_MAP[self.field].__pydantic_fields__.get(self.field)) is not None:
-            # field is a model field
+        elif isinstance(field := getattr(_COMPARISON_FIELDS_MAP[self.field], self.field), FieldInfo):
             field_type = field.annotation
+        elif isinstance(field, property):
+            field_type = typing.get_type_hints(field.fget, include_extras=True)["return"]
         else:
-            # field is a property
-            field = getattr(_COMPARISON_FIELDS_MAP[self.field], self.field).fget
-            field_type = typing.get_type_hints(field, include_extras=True)["return"]
+            field_type = field
+
         return self._extract_type_from_annotation(field_type)
 
     @property
@@ -258,7 +243,7 @@ class Comparer(DynamicProcessor):
             raise ComparerError("No comparative item given and no expected values set")
 
     def _get_value_from_item(self, item: Any) -> Any:
-        if self.field and isinstance(item, MusifyResource):
+        if self.field and isinstance(item, AttributeModel):
             value = getattr(item, self.field.lower())
         else:
             value = item

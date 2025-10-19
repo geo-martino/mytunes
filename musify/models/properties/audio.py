@@ -44,6 +44,3 @@ class IsAudioFile(HasLength, IsFile):
             sample_rate=file.info.sample_rate / 1000,  # convert to Hz to kHz
         )
         return data
-
-
-IsAudioFile.__tag_fields__ = frozenset({*IsAudioFile.model_fields})

@@ -8,7 +8,7 @@ from tests.models.testers import MusifyModelTester
 
 class TestKeySignature(MusifyModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> MusifyModel:
+    def model(self, faker: Faker) -> KeySignature:
         # noinspection PyProtectedMember
         return KeySignature(
             root=faker.random_int(min=0, max=len(KeySignature._root_notes) - 1),

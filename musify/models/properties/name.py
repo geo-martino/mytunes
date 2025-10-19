@@ -5,10 +5,10 @@ from typing import Self
 from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
 from musify._types import StrippedString
-from musify.models._base import _AttributeModel
+from musify.models._base import AttributeResource
 
 
-class HasName(_AttributeModel):
+class HasName(AttributeResource):
     name: StrippedString = Field(
         description="The name of this resource."
     )
@@ -34,6 +34,3 @@ class HasName(_AttributeModel):
 
     def __ge__(self, other: Self):
         return self.name >= other.name
-
-
-HasName.__tag_fields__ = frozenset({*HasName.model_fields})

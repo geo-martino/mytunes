@@ -14,8 +14,9 @@ from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, 
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, _XMLRoot, \
     _XMLDisplayFields, SyncResultXAutoPF
 from musify.local.item.track import LocalTrack
+from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
-from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
+from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import ComparerFilter, PathsFilter, MatchFilter
 from musify.processors_new.limit import LimitType, ItemLimiter
 from musify.processors_new.sort import ShuffleMode, ItemSorter, SORT_FIELDS
@@ -452,7 +453,7 @@ class TestXMLCondition(MusifyModelTester):
 
         comparer = model.comparer
         assert comparer == Comparer(
-            field="track_number",
+            field="track.number",
             condition="IsIn",
             expected=["a", "b", "c"],
             reference_required=model.reference_required,
@@ -460,7 +461,7 @@ class TestXMLCondition(MusifyModelTester):
 
     def test_parse_comparer(self, adapter: TypeAdapter[_XMLCondition]):
         comparer = Comparer(
-            field="album_artist",
+            field="album.artist",
             condition="ends_with",
             expected="an album",
         )
@@ -481,7 +482,7 @@ class TestXMLCondition(MusifyModelTester):
         assert model.Or is None
 
         comparer = Comparer(
-            field="album_artist",
+            field="album.artist",
             condition="ends_with",
             expected="an album",
         )
@@ -785,7 +786,7 @@ class TestDefinedSort(MusifyModelTester):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLSortBy):
-        sorter = ItemSorter(sort_fields={"disc_number": True, "track_number": False})
+        sorter = ItemSorter(sort_fields={"disc.number": True, "track.number": False})
         with pytest.raises(ValueError, match="No sort defined"):
             model.parse_sorter(sorter=sorter)
 
@@ -1001,7 +1002,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
             "@LayoutGroupBy": faker.random_int(0, 10),
             "@ShuffleMode": to_pascal(choice([enum for enum in ShuffleMode]).name),
             "@ShuffleSameArtistWeight": faker.random_int(0, 10) / 10,
-            "@GroupBy": choice(tuple(COMPARISON_FIELDS)),
+            "@GroupBy": choice(Track.__tag_attributes__),
             "@ConsolidateAlbums": choice([True, False]),
             "@MusicLibraryPath": faker.file_path(),
         }

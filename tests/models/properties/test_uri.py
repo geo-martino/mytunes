@@ -11,7 +11,7 @@ from tests.utils import SimpleURI
 
 class TestRemoteURI(MusifyModelTester):
     @pytest.fixture
-    def model(self, uri: SimpleURI) -> MusifyRootModel:
+    def model(self, uri: SimpleURI) -> URI:
         return uri
 
     def test_marks_existence(self, model: SimpleURI):
@@ -42,7 +42,7 @@ class TestRemoteURI(MusifyModelTester):
 
 class TestHasURI(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI) -> MusifyModel:
+    def model(self, uri: URI) -> HasURI:
         return HasURI(uri=uri)
 
     def test_uri_field_is_read_only(self, model: HasURI, uri: URI):
@@ -65,7 +65,7 @@ class TestHasURI(UniqueKeyTester):
 
 class TestHasMutableURI(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uris: list[URI]) -> MusifyModel:
+    def model(self, uris: list[URI]) -> HasMutableURI:
         return HasMutableURI(source=choice(uris).source, uris=uris)
 
     def test_validates_uris_are_from_unique_sources(self, uris: list[URI]):

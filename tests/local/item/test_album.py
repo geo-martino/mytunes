@@ -9,5 +9,5 @@ from tests.models.testers import UniqueKeyTester
 
 class TestAlbum(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MusifyModel:
+    def model(self, uri: URI, faker: Faker) -> LocalAlbum:
         return LocalAlbum(name=faker.word(), uri=uri)

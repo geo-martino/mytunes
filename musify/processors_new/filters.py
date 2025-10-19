@@ -10,7 +10,7 @@ from musify.exception import MusifyTypeError
 from musify.models import MusifyResource
 from musify.models.properties.file import _IsFile, PathMapper, PathInputType
 from musify.processors_new._base import Processor, Result
-from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
+from musify.processors_new.compare import Comparer
 
 
 class Filter[T](Processor, metaclass=ABCMeta):
@@ -273,7 +273,7 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
         description="Comparer filter to use when matching.",
         default_factory=ComparerFilter,
     )
-    group_by: Literal[*COMPARISON_FIELDS] | None = Field(
+    group_by: StrippedString | None = Field(
         description=(
             "Once all other filters are applied, also include all other items that match this tag type "
             "from the matched items for the remaining items given."

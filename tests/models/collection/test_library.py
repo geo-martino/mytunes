@@ -11,7 +11,7 @@ from tests.models.testers import MusifyResourceTester
 
 class TestLibrary(MusifyResourceTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> MusifyModel:
+    def model(self, faker: Faker) -> _HasTracksAndPlaylistsMixin:
         return _HasTracksAndPlaylistsMixin()
 
     def test_tracks_in_playlists(self, tracks: list[Track], playlists: list[Playlist]):
