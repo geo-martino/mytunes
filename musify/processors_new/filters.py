@@ -40,6 +40,7 @@ class Filter[T](Processor, metaclass=ABCMeta):
         :return: A sequence of items that match the filter.
         """
         if not self.ready:  # always return all items if filter is not setup
+            print("NOT APPLYING", len(items))
             return list(items)
 
         def _filter(item: T) -> bool:
