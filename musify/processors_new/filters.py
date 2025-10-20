@@ -40,10 +40,12 @@ class Filter[T](Processor, metaclass=ABCMeta):
         :return: A sequence of items that match the filter.
         """
         if not self.ready:  # always return all items if filter is not setup
+            print("MATCH NOT APPLYING")
             return list(items)
 
         def _filter(item: T) -> bool:
             return self.check(item, *args, **kwargs)
+        print("MATCH APPLYING")
         return list(filter(_filter, items))
 
 

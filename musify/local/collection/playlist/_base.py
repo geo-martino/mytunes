@@ -61,6 +61,7 @@ class _LocalPlaylist[TF: Filter](
             return
         print("MATCHING TRACKS", self.matcher)
         self.tracks[:] = self.matcher.apply(tracks, reference=reference)
+        print("MATCHING TRACKS", "DONE")
 
     def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:
         if self.limiter is None or not self.tracks:
