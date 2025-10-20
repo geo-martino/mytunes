@@ -4,7 +4,7 @@ The core abstract implementations of :py:class:`MusifyItem` and :py:class:`Musif
 import itertools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, Iterator
-from typing import ClassVar
+from typing import ClassVar, Any
 
 from pydantic import Field
 
@@ -45,7 +45,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         raise NotImplementedError
 
     @abstractmethod
-    def log_tracks(self) -> None:
+    def log_tracks(self) -> Any:
         """Log stats on currently loaded tracks"""
         raise NotImplementedError
 
@@ -58,7 +58,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         raise NotImplementedError
 
     @abstractmethod
-    def log_playlists(self) -> None:
+    def log_playlists(self) -> Any:
         """Log stats on currently loaded playlists"""
         raise NotImplementedError
 

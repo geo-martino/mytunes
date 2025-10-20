@@ -125,8 +125,13 @@ class LocalLibrary(
         await self.load_playlists()
 
         self.logger.print_line(STAT)
-        self.log_tracks()
-        self.log_playlists()
+        rows = [self.log_tracks()] + self.log_playlists()
+        log = tabulate(
+            rows,
+            tablefmt="orgtbl",
+            colalign=("left", "right", "right", "right", "right"),
+        )
+        self.logger.stat(log)
 
         self.logger.print_line()
         self.logger.debug(f"Load {self.source} library: DONE\n")
@@ -183,7 +188,7 @@ class LocalLibrary(
         self._log_errors("Could not load the following tracks")
         self.logger.debug(f"Load {self.source} tracks: DONE\n")
 
-    def log_tracks(self) -> str:
+    def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
         row = (
             colored(textwrap.shorten("LIBRARY URIS", 20, placeholder="..."), "cyan", attrs=["bold"]),
             colored(f"{sum(track.has_uri is True for track in self.tracks)} available", "green"),
@@ -191,14 +196,16 @@ class LocalLibrary(
             colored(f"{sum(track.has_uri is False for track in self.tracks)} unavailable", "yellow"),
             colored(f"{len(self.tracks)} total", "blue", attrs=["bold"]),
         )
-        log = tabulate(
-            [row],
-            tablefmt="orgtbl",
-            colalign=("left", "right", "right", "right", "right"),
-        )
 
-        self.logger.stat(log)
-        return log
+        if not skip_log:
+            log = tabulate(
+                [row],
+                tablefmt="orgtbl",
+                colalign=("left", "right", "right", "right", "right"),
+            )
+            self.logger.stat(log)
+
+        return row
 
     ###########################################################################
     ## Playlists
@@ -243,7 +250,7 @@ class LocalLibrary(
         self._log_errors("Could not load the following playlists")
         self.logger.debug(f"Load {self.source} playlists: DONE\n")
 
-    def log_playlists(self) -> str:
+    def log_playlists(self, skip_log: bool = False) -> list[tuple[str, ...]]:
         rows = []
         for name, playlist in self.playlists.items():
             row = (
@@ -256,17 +263,19 @@ class LocalLibrary(
             rows.append(row)
 
         if not rows:
-            return ""
+            return rows
 
-        header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"]) + ":\n"
-        log = header + tabulate(
-            rows,
-            tablefmt="orgtbl",
-            colalign=("left", "right", "right", "right", "right"),
-        )
+        if not skip_log:
+            header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"]) + ":\n"
+            log = header + tabulate(
+                rows,
+                tablefmt="orgtbl",
+                colalign=("left", "right", "right", "right", "right"),
+            )
 
-        self.logger.stat(log)
-        return log
+            self.logger.stat(log)
+
+        return rows
 
     async def save_playlists(self, dry_run: bool = True) -> dict[str, Result]:
         """
