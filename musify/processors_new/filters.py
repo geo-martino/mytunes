@@ -43,6 +43,7 @@ class Filter[T](Processor, metaclass=ABCMeta):
             return list(items)
 
         def _filter(item: T) -> bool:
+            print("APPLYING", item.name)
             return self.check(item, *args, **kwargs)
         return list(filter(_filter, items))
 
@@ -224,6 +225,7 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
         matched = self.ready and self.match_all
 
         for comparer, (sub_combine, sub_filter) in self.comparers.items():
+            print("COMPARING", comparer, sub_combine, sub_filter)
             cmp_match = comparer.compare(item, reference=reference)
             sub_match = sub_filter.check(item, reference=reference)
 

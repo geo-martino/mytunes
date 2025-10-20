@@ -160,7 +160,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         self.matcher = matcher
         self.limiter = self._xml.smart_playlist.source.limit.limiter
         self.sorter = self._xml.smart_playlist.sorter
-        print("MATCHING TRACKS")
+
         self._match_tracks(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
         self._limit_tracks(ignore=self.matcher.exclude.values)
         self._sort_tracks()
