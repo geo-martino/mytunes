@@ -224,7 +224,6 @@ class Comparer(DynamicProcessor):
         :return: True if a match is found, False otherwise.
         :raise LocalProcessorError: If no reference given and no expected values set for this comparer.
         """
-        print("GO COMPARE")
         self._validate_compare_args(reference=reference)
 
         actual_value = self._get_value_from_item(item)

@@ -161,6 +161,7 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __setitem__(self, index: int | slice, value: TV | Iterable[TV]):
+        print("SETTING", len(value))
         if isinstance(value, Iterator):
             # when index is slice, __value is Iterator which exhausts before being added to _items_mapped
             value = list(value)
@@ -172,6 +173,7 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
             self._items_mapped.add(value)
         else:
             self._items_mapped.update(value)
+        print("SETTING", "DONE")
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
