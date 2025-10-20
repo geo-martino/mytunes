@@ -290,6 +290,10 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
 
     Adds support for getting and setting nested attributes using dot notation.
     """
+    __tag_attributes__: ClassVar[frozenset[str] | tuple[str] | None] = None
+    __include_fields__: ClassVar[bool] = False
+    __include_properties__: ClassVar[bool] = False
+
     def __getattr__(self, key: str) -> Any:
         if len(key_split := key.split(".")) == 1:
             return super().__getattr__(key)

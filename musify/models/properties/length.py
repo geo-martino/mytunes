@@ -8,8 +8,7 @@ from typing import Any
 
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
 
-from musify.models import MusifyRootModel
-from musify.models._base import AttributeResource
+from musify.models._base import MusifyRootModel, AttributeResource
 
 
 @total_ordering

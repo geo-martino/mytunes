@@ -10,8 +10,7 @@ from yarl import URL
 
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
-from musify.models import MusifyRootModel
-from musify.models._base import AttributeResource
+from musify.models._base import MusifyRootModel, AttributeResource
 
 
 class URI(MusifyRootModel[str], metaclass=ABCMeta):

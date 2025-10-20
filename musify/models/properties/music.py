@@ -4,7 +4,7 @@ from typing import ClassVar, Annotated, Self
 
 from pydantic import Field, field_validator, model_validator, ModelWrapValidatorHandler
 
-from musify.models import MusifyModel
+from musify.models._base import MusifyModel
 
 
 class KeySignature(MusifyModel):

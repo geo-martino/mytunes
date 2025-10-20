@@ -5,17 +5,18 @@ from typing import Annotated, Any, Self
 
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ModelWrapValidatorHandler
 
-from musify.models import MusifyModel
-from musify.models._base import AttributeResource
+from musify.models._base import AttributeResource, AttributeModel
 
 
-class SparseDate(MusifyModel):
+class SparseDate(AttributeModel):
     """
     A sparse date represents a date which may not have all parts to make up a full date.
 
     This allows for defining a date as just the year, or just the year and month,
     while also allowing for a full date definition of year, month, and day.
     """
+    __tag_attributes__ = ("year", "month", "day")
+
     year: PositiveInt = Field(
         description="The year.",
     )

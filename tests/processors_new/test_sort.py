@@ -55,6 +55,14 @@ class TestItemSorter(MusifyModelTester):
         ItemSorter.sort_by_field(tracks, reverse=True)
         assert tracks == tracks_original[::-1]
 
+    def test_sort_by_field_with_missing_values(self, tracks: list[LocalTrack], faker: Faker):
+        for track in sample(tracks, k=len(tracks) // 3):
+            track.play_count = choice([None, faker.random_int()])
+
+        tracks_sorted = sorted(tracks, key=lambda t: t.play_count or 0)
+        ItemSorter.sort_by_field(tracks, field="play_count")
+        assert tracks == tracks_sorted
+
     def test_sort_by_track_number(self, tracks: list[LocalTrack]):
         tracks_sorted = sorted(tracks, key=lambda t: t.track.number)
         ItemSorter.sort_by_field(tracks, field="track")

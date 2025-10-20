@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pydantic import PositiveFloat, Field
 
-from musify.models import MusifyRootModel
-from musify.models._base import AttributeResource
+from musify.models._base import MusifyRootModel, AttributeResource
 
 
 class Rating(MusifyRootModel[PositiveFloat]):

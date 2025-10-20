@@ -17,8 +17,7 @@ from yarl import URL
 
 from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
-from musify.models import MusifyModel
-from musify.models._base import AttributeResource
+from musify.models._base import MusifyModel, AttributeResource
 
 
 class ImageBase(MusifyModel):

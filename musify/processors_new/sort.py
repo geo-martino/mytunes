@@ -152,7 +152,8 @@ class ItemSorter(Processor):
                     return field_value.timestamp() if field_value is not None else 0.0
             case _:
                 def _sort_key(item: MusifyResource) -> float:
-                    return getattr(item, field) if hasattr(item, field) else 0
+                    val = getattr(item, field, None)
+                    return val if val else 0
 
         return _sort_key
 
