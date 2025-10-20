@@ -355,7 +355,7 @@ class LocalLibrary(
         :param tags: Set of tags to restore.
         :return: The number of tracks restored.
         """
-        tags = (tags or set(LocalTrack.__tag_attributes__)) | set(LocalTrack.__tag_attributes__)
+        tags = (tags or set(LocalTrack.tag_attributes())) | set(LocalTrack.tag_attributes())
         backup = self._extract_tracks_from_backup(backup)
 
         count = 0
