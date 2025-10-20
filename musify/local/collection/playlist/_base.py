@@ -59,6 +59,8 @@ class _LocalPlaylist[TF: Filter](
     def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
         if self.matcher is None:
             return
+        print("MATCHING TRACKS - START")
+        print(self.matcher)
         self.tracks[:] = self.matcher.apply(tracks, reference=reference)
 
     def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:

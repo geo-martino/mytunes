@@ -145,39 +145,28 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             If no tracks are given, the playlist will be loaded empty.
         :return: Self
         """
-        from datetime import datetime
-        print(datetime.now(), "LOADING PLAYLIST")
         if self.path.is_file():
             with self.path.open("r") as file:
                 self._xml = _XMLRoot.model_validate(file.read())
         elif self._xml is None:  # this is a new playlist, assign default values
             self._xml = _XMLRoot()
-        print(datetime.now(), "LOADING PLAYLIST - DONE")
 
         self.description = self._xml.smart_playlist.source.description
 
-        print(datetime.now(), "SETUP MATCHER")
         matcher = self._xml.smart_playlist.matcher
         matcher.include.path_mapper = self.path_mapper
         matcher.exclude.path_mapper = self.path_mapper
 
         self.matcher = matcher
-        print(datetime.now(), "SETUP LIMITER")
         self.limiter = self._xml.smart_playlist.source.limit.limiter
-        print(datetime.now(), "SETUP SORTER")
         self.sorter = self._xml.smart_playlist.sorter
-
-        print(datetime.now(), "MATCHING TRACKS")
+        print("MATCHING TRACKS")
         self._match_tracks(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
-        print(datetime.now(), "LIMITING TRACKS")
         self._limit_tracks(ignore=self.matcher.exclude.values)
-        print(datetime.now(), "SORTING TRACKS")
         self._sort_tracks()
 
-        print(datetime.now(), "COPYING TRACKS")
         self._original = self.tracks.copy()
 
-        print(datetime.now(), "DONE")
         return self
 
     def _limit_tracks(self, ignore: Collection[Path]) -> None:
