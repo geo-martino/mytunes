@@ -14,7 +14,7 @@ from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyValueError, MusifyTypeError, MusifyAttributeError
 from musify.utils import classproperty, get_base_types
 
 
@@ -299,13 +299,17 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
             return super().__getattr__(key)
 
         key_iter = iter(key_split)
-        return reduce(getattr, key_iter, getattr(self, next(key_iter)))
+        if (initial := getattr(self, next(key_iter))) is None:
+            return
+
+        return reduce(getattr, key_iter, initial)
 
     def __setattr__(self, key: str, value: Any) -> None:
         if len(key_split := key.split(".")) == 1:
             return super().__setattr__(key, value)
 
-        item = getattr(self, ".".join(key_split[:-1]))
+        if (item := getattr(self, ".".join(key_split[:-1]))) is None:
+            raise MusifyAttributeError(f"Item not found for setting attribute: {key}")
         setattr(item, key_split[-1], value)
 
 
