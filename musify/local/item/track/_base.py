@@ -24,6 +24,7 @@ from musify.models import MusifyModel
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
+from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
@@ -48,6 +49,9 @@ class LocalTrack[T: mutagen.FileType](
     LocalResource,
     Track[LocalArtist, LocalAlbum, LocalGenre],
     IsAudioFile,
+    IsReadableFile,
+    IsWriteableFile,
+    IsLocalFile,
     HasMutableURI,
     HasAddedDate,
     HasPlayedDate,

@@ -13,8 +13,7 @@ from pydantic import TypeAdapter
 
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, TagDumpContext
-from musify.models import MusifyModel
-from musify.models.properties.file import IsFile
+from musify.models.properties.file import IsLocalFile
 from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import URI, HasMutableURI
@@ -275,14 +274,14 @@ class TestLocalTrack(UniqueKeyTester):
         assert "title" in tags
         assert all(value is not None for value in tags.values())
 
-        assert all(key not in tags for key in IsFile.model_fields)
+        assert all(key not in tags for key in IsLocalFile.model_fields)
         assert all(key not in tags for key in HasLength.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_computed_fields)
 
         # ignores properties even when explicitly given to include
         tags = model.to_tags(include={"path", "length"})
-        assert all(key not in tags for key in IsFile.model_fields)
+        assert all(key not in tags for key in IsLocalFile.model_fields)
         assert all(key not in tags for key in HasLength.model_fields)
 
     def test_update_and_replace(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):

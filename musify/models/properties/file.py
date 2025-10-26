@@ -13,11 +13,70 @@ from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models._base import AttributeResource, MusifyModel
 
 
-class _IsFile(AttributeResource):
+class IsFile(AttributeResource, metaclass=ABCMeta):
+    """Attributes and operations for a file on some system."""
     __supported_extensions__: ClassVar[frozenset[str]] = frozenset()
 
+    @classmethod
+    def get_annotation_from_supported_extensions(cls) -> type[Annotated]:
+        """Get the type annotation from the supported extensions."""
+        return Annotated[cls, *(Tag(ext) for ext in cls.__supported_extensions__)]
+
+    @property
+    @abstractmethod
+    def folder(self) -> str:
+        """The name of the parent folder of the file."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def filename(self) -> str:
+        """The filename without extension."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def ext(self) -> str:
+        """The file extension in lowercase."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def size(self) -> int | None:
+        """The size of the file in bytes."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def created_at(self) -> datetime | None:
+        """The date that the file was created."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def modified_at(self) -> datetime | None:
+        """The date that the file was last modified."""
+        raise NotImplementedError
+
+
+class IsReadableFile(IsFile, metaclass=ABCMeta):
+    @abstractmethod
+    async def load(self, *args, **kwargs) -> Any:
+        """Load the file to this object"""
+        raise NotImplementedError
+
+
+class IsWriteableFile(IsFile, metaclass=ABCMeta):
+    @abstractmethod
+    async def save(self, *args, **kwargs) -> Any:
+        """Save this object to file."""
+        raise NotImplementedError
+
+
+class IsLocalFile(IsFile):
+    """Attributes and operations for a file on a local filesystem."""
     path: Path = Field(
-        description="The path to the file"
+        description="The path to the file on the local filesystem."
     )
 
     # noinspection PyNestedDecorators
@@ -55,7 +114,7 @@ class _IsFile(AttributeResource):
                 path = Path(value["path"])
             case Path():
                 path = value
-            case _IsFile():
+            case IsLocalFile():
                 path = value.path
             case _:
                 raise MusifyTypeError(f"Cannot discern discriminator value. Unrecognised value type: {type(value)}")
@@ -63,61 +122,32 @@ class _IsFile(AttributeResource):
         # noinspection PyUnboundLocalVariable
         return path.suffix.lstrip(".").casefold()
 
-    @classmethod
-    def get_annotation_from_supported_extensions(cls) -> type[Annotated]:
-        """Get the type annotation from the supported extensions."""
-        return Annotated[cls, *(Tag(ext) for ext in cls.__supported_extensions__)]
-
     @property
     def folder(self) -> str:
-        """The name of the parent folder of the file."""
         return self.path.parent.name
 
     @property
     def filename(self) -> str:
-        """The filename without extension."""
         return self.path.stem
 
     @property
     def ext(self) -> str:
-        """The file extension in lowercase."""
         return self.path.suffix.lower()
 
     @property
-    def size(self) -> PositiveInt | None:
-        """The size of the file in bytes."""
+    def size(self) -> int | None:
         return self.path.stat().st_size if self.path.is_file() else None
 
     @property
     def created_at(self) -> datetime | None:
-        """The date that the file was created."""
         return datetime.fromtimestamp(self.path.stat().st_ctime) if self.path.is_file() else None
 
     @property
     def modified_at(self) -> datetime | None:
-        """The date that the file was last modified."""
         return datetime.fromtimestamp(self.path.stat().st_mtime) if self.path.is_file() else None
 
 
-class IsFile(_IsFile, metaclass=ABCMeta):
-    """Attributes and operations for a file on a filesystem."""
-
-    @classmethod
-    def tag_attributes(cls) -> tuple[str]:
-        return _IsFile.__tag_attributes__
-
-    @abstractmethod
-    async def load(self, *args, **kwargs) -> Any:
-        """Load the file to this object"""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def save(self, *args, **kwargs) -> Any:
-        """Save this object to file."""
-        raise NotImplementedError
-
-
-type PathInputType = str | Path | _IsFile | None
+type PathInputType = str | Path | IsLocalFile | None
 
 
 class PathMapper(MusifyModel):
@@ -139,7 +169,7 @@ class PathMapper(MusifyModel):
         if not value:
             return
 
-        path = str(value.path if isinstance(value, _IsFile) else value)
+        path = str(value.path if isinstance(value, IsLocalFile) else value)
         if not check_existence or os.path.exists(path):
             return path
 
@@ -161,7 +191,7 @@ class PathMapper(MusifyModel):
         if not value:
             return
 
-        path = str(value.path if isinstance(value, _IsFile) else value)
+        path = str(value.path if isinstance(value, IsLocalFile) else value)
         if not check_existence or os.path.exists(path):
             return path
 
@@ -242,7 +272,7 @@ class PathStemMapper(PathMapper):
         if not value:
             return
 
-        path = str(value.path if isinstance(value, _IsFile) else value)
+        path = str(value.path if isinstance(value, IsLocalFile) else value)
 
         seps = ()
         for stem, replacement in self.stem_map.items():
@@ -277,7 +307,7 @@ class PathStemMapper(PathMapper):
         if not value:
             return
 
-        path = str(value.path if isinstance(value, _IsFile) else value)
+        path = str(value.path if isinstance(value, IsLocalFile) else value)
 
         seps = ()
         for stem, replacement in self.stem_map_reversed.items():

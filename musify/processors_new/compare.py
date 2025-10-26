@@ -21,7 +21,7 @@ from musify.models import AttributeModel
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
-from musify.models.properties.file import IsFile
+from musify.models.properties.file import IsFile, IsLocalFile
 from musify.models.properties.name import HasName
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
 from musify.processors_new.exception import ComparerError
@@ -30,6 +30,7 @@ from musify.processors_new.time import TimeMapper
 _COMPARISON_TAG_TYPES = frozenset({
     Track,
     IsFile,
+    IsLocalFile,
     IsAudioFile,
     HasAddedDate,
     HasPlayedDate,

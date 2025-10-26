@@ -8,7 +8,7 @@ from pydantic import Field, field_validator, BeforeValidator, field_serializer, 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
 from musify.models import MusifyResource
-from musify.models.properties.file import _IsFile, PathMapper, PathInputType
+from musify.models.properties.file import IsLocalFile, PathMapper, PathInputType
 from musify.processors_new._base import Processor, Result
 from musify.processors_new.compare import Comparer
 
@@ -134,7 +134,7 @@ class PathsFilter(ValuesFilter[str]):
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
     def _extract_values_from_files(values: Iterable[Any]) -> Iterator[str]:
-        return (str(value.path) if isinstance(value, _IsFile) else value for value in values)
+        return (str(value.path) if isinstance(value, IsLocalFile) else value for value in values)
 
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
@@ -152,7 +152,7 @@ class PathsFilter(ValuesFilter[str]):
         return self
 
     def check(self, item: PathInputType, *_, **__) -> bool:
-        if not isinstance(item, str | Path | _IsFile):
+        if not isinstance(item, str | Path | IsLocalFile):
             raise MusifyTypeError(f"Unrecognised type for path filtering: {type(item)}")
 
         return self.path_mapper.unmap(item, check_existence=False) in self.values

@@ -20,7 +20,7 @@ from musify.local.collection.playlist import LocalPlaylist
 from musify.local.exception import MusicBeeIDError, XMLReaderError, FileDoesNotExistError
 from musify.local.item.track import LocalTrack
 from musify.models import MusifyModel
-from musify.models.properties.file import IsFile, PathStemMapper
+from musify.models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
 from musify.utils import required_modules_installed
 
 try:
@@ -38,7 +38,7 @@ except ImportError:
 REQUIRED_MODULES = [xmltodict, etree]
 
 
-class MusicBee(LocalLibrary, IsFile):
+class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
     """
     Represents a local MusicBee library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.

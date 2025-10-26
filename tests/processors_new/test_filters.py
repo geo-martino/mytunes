@@ -9,7 +9,7 @@ from faker import Faker
 
 from musify.local.item.track import LocalTrack
 from musify.models.properties.date import SparseDate
-from musify.models.properties.file import _IsFile
+from musify.models.properties.file import IsLocalFile
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import Filter, ValuesFilter, PathsFilter, IncludeExcludeFilter, ComparerFilter, \
     MatchFilter
@@ -71,7 +71,7 @@ class TestPathsFilter(TestValuesFilter):
 
     def test_extract_values(self, model: PathsFilter, faker: Faker):
         expected = [faker.file_path() for _ in range(10)]
-        values = [choice([value, Path(value), _IsFile(path=Path(value))]) for value in expected]
+        values = [choice([value, Path(value), IsLocalFile(path=Path(value))]) for value in expected]
         # noinspection PyTypeChecker
         assert PathsFilter(values=values).values == set(expected)
 

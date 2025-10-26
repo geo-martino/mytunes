@@ -13,15 +13,12 @@ from pydantic import Field, field_validator, field_serializer
 from musify._types import to_tuple
 from musify.exception import MusifyValueError
 from musify.models import MusifyResource, MusifyEnum
-from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
-from musify.models.properties.file import IsFile
-from musify.models.properties.length import HasLength
+from musify.models.properties.file import IsFile, IsLocalFile
 from musify.models.properties.name import HasName
-from musify.models.properties.order import HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
 from musify.processors_new._base import Processor
 from musify.processors_new.exception import SorterProcessorError
@@ -30,6 +27,7 @@ from musify.utils import flatten_nested, strip_ignore_words, IGNORE_WORDS_DEFAUL
 _SORT_TAG_TYPES = frozenset({
     Track,
     IsFile,
+    IsLocalFile,
     IsAudioFile,
     HasAddedDate,
     HasPlayedDate,

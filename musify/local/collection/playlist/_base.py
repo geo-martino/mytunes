@@ -9,7 +9,7 @@ from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.models.item.track import HasMutableTracks
-from musify.models.properties.file import _IsFile, IsFile, PathMapper
+from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.sequence import MusifyMutableSequence
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter
@@ -18,7 +18,7 @@ from musify.processors_new.sort import ItemSorter
 
 
 class _LocalPlaylist[TF: Filter](
-    LocalCollection, HasMutableTracks[str, LocalTrack], Playlist[str, LocalTrack], _IsFile
+    LocalCollection, HasMutableTracks[str, LocalTrack], Playlist[str, LocalTrack], IsLocalFile
 ):
     __unique_attributes__ = frozenset({"path"})
 
@@ -83,7 +83,7 @@ class _LocalPlaylist[TF: Filter](
         self.path = self.path.rename(path)
 
 
-class LocalPlaylist[TF: Filter](_LocalPlaylist[TF], IsFile, metaclass=ABCMeta):
+class LocalPlaylist[TF: Filter](_LocalPlaylist[TF], IsLocalFile, IsReadableFile, IsWriteableFile, metaclass=ABCMeta):
     @abstractmethod
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """
