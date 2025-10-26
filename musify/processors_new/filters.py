@@ -311,7 +311,8 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
         compared = ()
         if self.compare.ready:
             print(datetime.now(), "RUNNING COMPARER FILTER")
-            not_included = [item for item in values if item not in included]
+            included_ids = {id(item) for item in included}
+            not_included = [item for item in values if id(item) not in included_ids]
             compared = self.compare.apply(not_included, reference=reference)
             print(datetime.now(), "RUNNING COMPARER FILTER", "DONE", len(compared))
 
