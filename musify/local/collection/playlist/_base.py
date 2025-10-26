@@ -65,23 +65,30 @@ class LocalPlaylistFile[TF: Filter](
             case MatchFilter():
                 result = self.matcher.match(tracks, reference=reference)
                 lengths = ' '.join(f"{k}={v}" for k, v in result.lengths.items())
-                self.logger.debug(f"Playlist {self.name!r} matches: {lengths}")
                 tracks = result.combined
+                self.logger.debug(f"{self.name!r} matched: {lengths} combined={len(tracks)}")
             case _:
                 tracks = self.matcher.apply(tracks, reference=reference)
+                self.logger.debug(f"{self.name!r} matched: {len(tracks)}")
 
         self.tracks[:] = tracks
 
     def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:
         if self.limiter is None or not self.tracks:
             return
+
+        start = len(self.tracks)
         ignore = [i if isinstance(i, LocalTrack) else self.tracks.get(str(i)) for i in ignore]
         self.limiter.limit(self.tracks, ignore=[i for i in ignore if i is not None])
+
+        self.logger.debug(f"{self.name!r} limited: initial={start} final={len(self.tracks)} ignored={len(ignore)}")
 
     def _sort_tracks(self) -> None:
         if self.sorter is None or not self.tracks:
             return
+
         self.sorter.sort(self.tracks)
+        self.logger.debug(f"{self.name!r} sorted: {len(self.tracks)}")
 
     async def rename(self) -> None:
         """Rename the playlist file to match the name of the playlist."""
