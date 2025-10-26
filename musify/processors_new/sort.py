@@ -156,7 +156,6 @@ class ItemSorter(Processor):
                     val = getattr(item, field, None)
                     return val if val else 0
 
-        print(type(value), isinstance(value, HasName))
         return _sort_key
 
     @classmethod
