@@ -928,6 +928,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         return _XMLSmartPlaylist()
 
     def test_build_matcher(self, model: _XMLSmartPlaylist):
+        model.group_by = "album"
         model.source.exceptions_include = {"a", "b", "c"}
         model.source.exceptions = {"1", "2", "3"}
 
@@ -935,6 +936,10 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         assert model.matcher.include.values == model.source.exceptions_include
         assert model.matcher.exclude.values == model.source.exceptions
         assert model.matcher.group_by == model.group_by
+
+    def test_build_matcher_drops_group_by_on_tracks(self, model: _XMLSmartPlaylist):
+        model.group_by = "track"
+        assert model.matcher.group_by is None
 
     def test_parse_matcher_when_none(self, model: _XMLSmartPlaylist):
         model.group_by = "track"

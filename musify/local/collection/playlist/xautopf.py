@@ -868,11 +868,16 @@ class _XMLSmartPlaylist(_XMLBaseModel):
         include = PathsFilter(values=self.source.exceptions_include or set())
         exclude = PathsFilter(values=self.source.exceptions or set())
 
+        # grouping by track is equivalent to no grouping
+        group_by = self.group_by or "track"
+        if group_by == "track":
+            group_by = None
+
         return AutoMatcher(
             compare=self.source.conditions.comparers,
             include=include,
             exclude=exclude,
-            group_by=self.group_by,
+            group_by=group_by,
         )
 
     def parse_matcher(self, matcher: AutoMatcher | None = None) -> Self:

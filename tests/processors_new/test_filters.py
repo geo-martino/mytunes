@@ -252,6 +252,7 @@ class TestComparerFilter(FilterTester):
         filter_ = ComparerFilter(comparers=comparers, match_all=True)
         assert filter_.apply(tracks) == tracks[10:18]
 
+
 class TestMatcherFilter(FilterTester):
 
     library_folder = "/path/to/library"

@@ -311,6 +311,8 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
         compared = ()
         if self.compare.ready:
             print(datetime.now(), "RUNNING COMPARER FILTER")
+            # use object id matching to filter out already included items
+            # doing this because using Pydantic __contains__ comparison between models is too slow
             included_ids = {id(item) for item in included}
             not_included = [item for item in values if id(item) not in included_ids]
             compared = self.compare.apply(not_included, reference=reference)
