@@ -11,15 +11,16 @@ from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.models.item.track import HasMutableTracks
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
+from musify.models.properties.logger import HasLogger
 from musify.models.sequence import MusifyMutableSequence
 from musify.processors_new import Result
-from musify.processors_new.filters import Filter
+from musify.processors_new.filters import Filter, MatchFilter
 from musify.processors_new.limit import ItemLimiter
 from musify.processors_new.sort import ItemSorter
 
 
 class LocalPlaylistFile[TF: Filter](
-    LocalCollection, HasMutableTracks[str, LocalTrack], Playlist[str, LocalTrack], IsLocalFile
+    LocalCollection, HasMutableTracks[str, LocalTrack], Playlist[str, LocalTrack], IsLocalFile, HasLogger
 ):
     __unique_attributes__ = frozenset({"path"})
 
@@ -58,9 +59,17 @@ class LocalPlaylistFile[TF: Filter](
         return handler(data)
 
     def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
-        if self.matcher is None:
-            return
-        self.tracks[:] = self.matcher.apply(tracks, reference=reference)
+        match self.matcher:
+            case None:
+                return
+            case MatchFilter():
+                result = self.matcher.match(tracks, reference=reference)
+                self.logger.debug(f"Playlist {self.name!r} matches: {result}")
+                tracks = result.combined
+            case _:
+                tracks = self.matcher.apply(tracks, reference=reference)
+
+        self.tracks[:] = tracks
 
     def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:
         if self.limiter is None or not self.tracks:
