@@ -21,6 +21,7 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models import MusifyModel
+from musify.models.properties.logger import HasLogger
 from musify.models.sequence import MusifyMutableSequence
 from musify.processors_new import Result
 from musify.processors_new.compare import Comparer
@@ -109,7 +110,7 @@ class SyncResultXAutoPF(Result):
         )
 
 
-class XAutoPF(LocalPlaylist[AutoMatcher]):
+class XAutoPF(LocalPlaylist[AutoMatcher], HasLogger):
     """For reading and writing data from MusicBee's auto-playlist format."""
     __supported_extensions__ = frozenset({"xautopf"})
 
@@ -161,7 +162,10 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         self.limiter = self._xml.smart_playlist.source.limit.limiter
         self.sorter = self._xml.smart_playlist.sorter
 
-        self._match_tracks(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
+        result = matcher.match(values=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
+        self.logger.debug(f"Playlist {self.name!r} matches: {result}")
+        self.tracks[:] = result.combined
+
         self._limit_tracks(ignore=self.matcher.exclude.values)
         self._sort_tracks()
 

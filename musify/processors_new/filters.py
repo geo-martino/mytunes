@@ -41,12 +41,10 @@ class Filter[T](Processor, metaclass=ABCMeta):
         :return: A sequence of items that match the filter.
         """
         if not self.ready:  # always return all items if filter is not setup
-            print(datetime.now(), "MATCH NOT APPLYING", self)
             return list(items)
 
         def _filter(item: T) -> bool:
             return self.check(item, *args, **kwargs)
-        print(datetime.now(), "MATCH APPLYING", self)
         return list(filter(_filter, items))
 
 
@@ -302,26 +300,19 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
         if len(values) == 0:
             return MatchResult()
 
-        print(datetime.now(), "RUNNING INCLUDE+EXCLUDE FILTER")
         included = self.include.apply(values)
         excluded = self.exclude.apply(values) if self.exclude.ready else ()
 
-        print(datetime.now(), "RUNNING INCLUDE+EXCLUDE FILTER", "DONE", len(included), len(excluded))
-
         compared = ()
         if self.compare.ready:
-            print(datetime.now(), "RUNNING COMPARER FILTER")
             # use object id matching to filter out already included items
             # doing this because using Pydantic __contains__ comparison between models is too slow
             included_ids = {id(item) for item in included}
             not_included = [item for item in values if id(item) not in included_ids]
             compared = self.compare.apply(not_included, reference=reference)
-            print(datetime.now(), "RUNNING COMPARER FILTER", "DONE", len(compared))
 
-        print(datetime.now(), "RUNNING GROUP BY")
         combined = [track for track in [*compared, *included] if track not in excluded]
         grouped = self._match_on_group_by(values, matched=combined)
-        print(datetime.now(), "RUNNING GROUP BY", "DONE", len(grouped))
 
         return MatchResult(included=included, excluded=excluded, compared=compared, grouped=grouped)
 
