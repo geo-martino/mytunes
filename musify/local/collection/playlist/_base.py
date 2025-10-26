@@ -81,7 +81,7 @@ class LocalPlaylistFile[TF: Filter](
         ignore = [i if isinstance(i, LocalTrack) else self.tracks.get(str(i)) for i in ignore]
         self.limiter.limit(self.tracks, ignore=[i for i in ignore if i is not None])
 
-        self.logger.debug(f"{self.name!r} limited: initial={start} final={len(self.tracks)} ignored={len(ignore)}")
+        self.logger.debug(f"{self.name!r} limited: start={start} final={len(self.tracks)} ignored={len(ignore)}")
 
     def _sort_tracks(self) -> None:
         if self.sorter is None or not self.tracks:

@@ -45,6 +45,7 @@ class Filter[T](Processor, metaclass=ABCMeta):
 
         def _filter(item: T) -> bool:
             return self.check(item, *args, **kwargs)
+        print("APPLYING FILTER", self)
         return list(filter(_filter, items))
 
 
@@ -154,6 +155,7 @@ class PathsFilter(ValuesFilter[str]):
         if not isinstance(item, str | Path | IsLocalFile):
             raise MusifyTypeError(f"Unrecognised type for path filtering: {type(item)}")
 
+        print("UNMAPPING PATH", self.path_mapper.unmap(item, check_existence=False))
         return self.path_mapper.unmap(item, check_existence=False) in self.values
 
 
