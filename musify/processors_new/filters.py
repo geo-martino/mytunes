@@ -155,7 +155,7 @@ class PathsFilter(ValuesFilter[str]):
         if not isinstance(item, str | Path | IsLocalFile):
             raise MusifyTypeError(f"Unrecognised type for path filtering: {type(item)}")
 
-        print("UNMAPPING PATH", self.path_mapper.unmap(item, check_existence=False))
+        print("UNMAPPING PATH", self.path_mapper.map(item, check_existence=False), self.path_mapper.unmap(item, check_existence=False))
         return self.path_mapper.unmap(item, check_existence=False) in self.values
 
 
