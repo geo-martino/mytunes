@@ -302,16 +302,23 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
         if len(values) == 0:
             return MatchResult()
 
+        print(datetime.now(), "RUNNING INCLUDE+EXCLUDE FILTER")
         included = self.include.apply(values)
         excluded = self.exclude.apply(values) if self.exclude.ready else ()
 
+        print(datetime.now(), "RUNNING INCLUDE+EXCLUDE FILTER", "DONE", len(included), len(excluded))
+
         compared = ()
         if self.compare.ready:
+            print(datetime.now(), "RUNNING COMPARER FILTER")
             not_included = [item for item in values if item not in included]
             compared = self.compare.apply(not_included, reference=reference)
+            print(datetime.now(), "RUNNING COMPARER FILTER", "DONE", len(compared))
 
+        print(datetime.now(), "RUNNING GROUP BY")
         combined = [track for track in [*compared, *included] if track not in excluded]
         grouped = self._match_on_group_by(values, matched=combined)
+        print(datetime.now(), "RUNNING GROUP BY", "DONE", len(grouped))
 
         return MatchResult(included=included, excluded=excluded, compared=compared, grouped=grouped)
 
