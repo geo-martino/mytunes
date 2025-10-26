@@ -36,14 +36,34 @@ class TestItemSorter(MusifyModelTester):
         shuffle(tracks)
         return tracks
 
+    ignore_words = ("This", "and", "that")
+
+    @pytest.fixture
+    def tracks_with_ignore_words(self, tracks: list[LocalTrack]) -> list[LocalTrack]:
+        for track in sample(tracks, k=len(tracks) // 2):
+            track.name = f"{choice(self.ignore_words)} {track.name}"
+            track.album = LocalAlbum(name=f"{choice(self.ignore_words)} {track.album.name}")
+        return tracks
+
     @staticmethod
     def _sort_key_for_name(ignore_words: Iterable[str] = ()) -> Callable[[LocalTrack], tuple[bool, str]]:
-        def _sort_key(track: LocalTrack) -> tuple[bool, bool, str]:
+        def _sort_key(track: LocalTrack) -> tuple[bool, str]:
             if ignore_words:
-                not_special_start, not_trimmed, value = strip_ignore_words(track.name, words=ignore_words)
+                not_special_start, _, value = strip_ignore_words(track.name, words=ignore_words)
             else:
-                not_special_start, not_trimmed, value = strip_ignore_words(track.name)
-            return not_special_start, not_trimmed, value.casefold()
+                not_special_start, _, value = strip_ignore_words(track.name)
+            return not_special_start, value.casefold()
+
+        return _sort_key
+
+    @staticmethod
+    def _sort_key_for_album(ignore_words: Iterable[str] = ()) -> Callable[[LocalTrack], tuple[bool, str]]:
+        def _sort_key(track: LocalTrack) -> tuple[bool, str]:
+            if ignore_words:
+                not_special_start, _, value = strip_ignore_words(track.album.name, words=ignore_words)
+            else:
+                not_special_start, _, value = strip_ignore_words(track.album.name)
+            return not_special_start, value.casefold()
 
         return _sort_key
 
@@ -77,21 +97,41 @@ class TestItemSorter(MusifyModelTester):
         ItemSorter.sort_by_field(tracks, field="added_at", reverse=True)
         assert tracks == tracks_sorted[::-1]
 
-    def test_sort_by_name_with_ignore_words(self, tracks: list[LocalTrack]):
-        ignore_words = ("This", "and", "that")
-        for track in sample(tracks, k=len(tracks) // 2):
-            track.name = f"{choice(ignore_words)} {track.name}"
+    def test_sort_by_name_with_ignore_words(self, tracks_with_ignore_words: list[LocalTrack]):
+        tracks_sorted = sorted(tracks_with_ignore_words, key=self._sort_key_for_name(self.ignore_words))
+        ItemSorter.sort_by_field(tracks_with_ignore_words, field="name", ignore_words=self.ignore_words)
+        assert tracks_with_ignore_words == tracks_sorted
 
-        tracks_sorted = sorted(tracks, key=self._sort_key_for_name(ignore_words))
-        ItemSorter.sort_by_field(tracks, field="name", ignore_words=ignore_words)
-        assert tracks == tracks_sorted
-        ItemSorter.sort_by_field(tracks, field="name", reverse=True, ignore_words=ignore_words)
-        assert tracks == tracks_sorted[::-1]
+    def test_sort_by_album_with_ignore_words(self, tracks_with_ignore_words: list[LocalTrack]):
+        tracks_sorted = sorted(tracks_with_ignore_words, key=self._sort_key_for_album(self.ignore_words))
+        ItemSorter(fields="album", ignore_words=self.ignore_words).sort(tracks_with_ignore_words)
+        assert tracks_with_ignore_words == tracks_sorted
+
+    def test_sort_by_name_with_ignore_words_reversed(self, tracks_with_ignore_words: list[LocalTrack]):
+        tracks_sorted = sorted(tracks_with_ignore_words, key=self._sort_key_for_name(self.ignore_words), reverse=True)
+        ItemSorter.sort_by_field(tracks_with_ignore_words, field="name", reverse=True, ignore_words=self.ignore_words)
+        assert tracks_with_ignore_words == tracks_sorted
+
+    def test_sort_by_album_with_ignore_words_reversed(self, tracks_with_ignore_words: list[LocalTrack]):
+        tracks_sorted = sorted(tracks_with_ignore_words, key=self._sort_key_for_album(self.ignore_words), reverse=True)
+        ItemSorter(fields={"album": True}, ignore_words=self.ignore_words).sort(tracks_with_ignore_words)
+        assert tracks_with_ignore_words == tracks_sorted
 
     def test_group_by_field(self, tracks: list[LocalTrack]):
-        groups = ItemSorter.group_by_field(tracks, "key")
-        assert sorted(groups) == sorted({track.key for track in tracks})
+        expected_keys = {track.disc for track in tracks}
+        assert len(expected_keys) > 1
+
+        groups = ItemSorter.group_by_field(tracks, "disc")
+        assert sorted(groups) == sorted({track.disc for track in tracks})
         assert sum(map(len, groups.values())) == len(tracks)
+
+    def test_group_by_field_with_ignore_words(self, tracks_with_ignore_words: list[LocalTrack]):
+        sort_keys = map(self._sort_key_for_album(self.ignore_words), tracks_with_ignore_words)
+        expected = {key[-1] for key in sort_keys}
+
+        groups = ItemSorter.group_by_field(tracks_with_ignore_words, "album", ignore_words=self.ignore_words)
+        assert groups.keys() == expected
+        assert sum(map(len, groups.values())) == len(tracks_with_ignore_words)
 
     def test_shuffle_random(self, tracks: list[LocalTrack]):
         tracks_original = tracks.copy()

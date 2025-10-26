@@ -140,51 +140,56 @@ class ItemSorter(Processor):
             raise MusifyValueError(f"No value set for {field} in {items}")
 
         match value:  # get sort key based on value type
-            case str():  # key strips ignore words from string
-                def _sort_key(item: MusifyResource) -> tuple[bool, bool, str]:
-                    not_special_start, not_trimmed, val = strip_ignore_words(getattr(item, field), words=ignore_words)
-                    return not_special_start, not_trimmed, val.casefold()
+            case str() | HasName():  # key gets name and strips ignore words from string
+                def _sort_key(item: MusifyResource) -> tuple[bool, str]:
+                    if (val := getattr(item, field)) is not None and isinstance(val, HasName):
+                        val = val.name
+
+                    not_special_start, _, val = strip_ignore_words(val, words=ignore_words)
+                    return not_special_start, val.casefold()
             case datetime():  # key converts datetime to floats
                 def _sort_key(item: MusifyResource) -> float:
                     field_value = getattr(item, field)
                     return field_value.timestamp() if field_value is not None else 0.0
             case _:
-                def _sort_key(item: MusifyResource) -> float:
+                def _sort_key(item: MusifyResource) -> Any:
                     val = getattr(item, field, None)
                     return val if val else 0
 
+        print(type(value), isinstance(value, HasName))
         return _sort_key
 
     @classmethod
     def group_by_field[T: MusifyResource](
-            cls, items: Iterable[T], field: _SORT_FIELDS_TYPE
+            cls,
+            items: Collection[T],
+            field: _SORT_FIELDS_TYPE,
+            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT,
     ) -> dict[Any, list[T]]:
         """
         Group items by the values of a given field.
 
         :param items: List of items to sort.
         :param field: Tag or property to group by.
+        :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
         :return: Map of grouped items.
         """
         grouped: dict[Any, list[T]] = {}
 
-        def group(v: Any) -> None:
+        def group(it: Any) -> None:
             """Group items by the given value ``v``"""
-            if isinstance(v, HasName):
-                v = v.name
+            value = getattr(it, field)
+            if isinstance(value, HasName):
+                value = value.name
+            if isinstance(value, str):
+                value = strip_ignore_words(value, words=ignore_words)[-1].casefold()
 
-            if grouped.get(v) is None:
-                grouped[v] = []
-            grouped[v].append(item)
+            if grouped.get(value) is None:
+                grouped[value] = []
+            grouped[value].append(it)
 
-        for item in items:  # produce map of grouped values
-            value = to_tuple(getattr(item, field))
-            if isinstance(value, Iterable):
-                for val in value:
-                    group(val)
-            else:
-                group(value)
-
+        for item in items:
+            group(item)
         return grouped
 
     def __call__(self, *args, **kwargs) -> None:
@@ -230,7 +235,7 @@ class ItemSorter(Processor):
 
         for key, items in groups.items():  # sort each group and recurse through each field for each group
             self.sort_by_field(items=items, field=field, reverse=reverse, ignore_words=self.ignore_words)
-            items_grouped = self.group_by_field(items, field=field)
+            items_grouped = self.group_by_field(items, field=field, ignore_words=self.ignore_words)
             groups[key] = self._sort_by_fields(items_grouped, fields=copy(fields))
 
         if set(groups) == {None}:
