@@ -1,2 +1,2 @@
-from ._base import LocalPlaylist
+from ._base import LocalPlaylistFile, LocalPlaylist
 from ._types import LocalPlaylistType
