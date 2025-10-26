@@ -41,12 +41,12 @@ class Filter[T](Processor, metaclass=ABCMeta):
         :return: A sequence of items that match the filter.
         """
         if not self.ready:  # always return all items if filter is not setup
-            print(datetime.now(), "MATCH NOT APPLYING")
+            print(datetime.now(), "MATCH NOT APPLYING", self)
             return list(items)
 
         def _filter(item: T) -> bool:
             return self.check(item, *args, **kwargs)
-        print(datetime.now(), "MATCH APPLYING")
+        print(datetime.now(), "MATCH APPLYING", self)
         return list(filter(_filter, items))
 
 
