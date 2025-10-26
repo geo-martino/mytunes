@@ -125,7 +125,7 @@ class LocalLibrary(
         await self.load_playlists()
 
         self.logger.print_line(STAT)
-        rows = [self.log_tracks()] + self.log_playlists()
+        rows = [self.log_tracks(skip_log=True)] + self.log_playlists(skip_log=True)
         log = tabulate(
             rows,
             tablefmt="orgtbl",

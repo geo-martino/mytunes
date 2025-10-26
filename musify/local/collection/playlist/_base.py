@@ -1,3 +1,4 @@
+from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, MutableMapping
 from pathlib import Path
@@ -59,9 +60,9 @@ class LocalPlaylistFile[TF: Filter](
     def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
         if self.matcher is None:
             return
-        print("MATCHING TRACKS", self.matcher)
+        print(datetime.now(), "MATCHING TRACKS", self.matcher)
         self.tracks[:] = self.matcher.apply(tracks, reference=reference)
-        print("MATCHING TRACKS", "DONE")
+        print(datetime.now(), "MATCHING TRACKS", "DONE")
 
     def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:
         if self.limiter is None or not self.tracks:
