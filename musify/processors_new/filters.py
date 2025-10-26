@@ -264,6 +264,11 @@ class MatchResult[T: Any](Result):
         """Combine the individual results to one combined list"""
         return [track for track in [*self.compared, *self.included, *self.grouped] if track not in self.excluded]
 
+    @property
+    def lengths(self) -> dict[str, int]:
+        """Get lengths of each individual result set."""
+        return dict(map(lambda key: (key, len(getattr(self, key))), self.model_fields.keys()))
+
 
 class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
     """

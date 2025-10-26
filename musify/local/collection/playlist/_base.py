@@ -64,7 +64,8 @@ class LocalPlaylistFile[TF: Filter](
                 return
             case MatchFilter():
                 result = self.matcher.match(tracks, reference=reference)
-                self.logger.debug(f"Playlist {self.name!r} matches: {result}")
+                lengths = ' '.join(f"{k}={v}" for k, v in result.lengths.items())
+                self.logger.debug(f"Playlist {self.name!r} matches: {lengths}")
                 tracks = result.combined
             case _:
                 tracks = self.matcher.apply(tracks, reference=reference)
