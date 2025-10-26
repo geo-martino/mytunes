@@ -26,7 +26,13 @@ class TestLocalPlaylist(UniqueKeyTester):
 @pytest.fixture(scope="module")
 async def library() -> LocalLibrary:
     """Yields a loaded :py:class:`LocalLibrary` to supply tracks for manual checking of custom playlist files"""
-    mapper = PathStemMapper({"../..": os.getenv("TEST_PL_LIBRARY", "")})
+    mapper = PathStemMapper(stem_map={
+        "/mnt/media/Music": os.getenv("TEST_PL_LIBRARY", ""),
+        "../": os.getenv("TEST_PL_LIBRARY", ""),
+        "M:/Music": os.getenv("TEST_PL_LIBRARY", ""),
+        r"M:\Music": os.getenv("TEST_PL_LIBRARY", ""),
+    })
+
     library = MusicBee(musicbee_folder=Path(os.getenv("TEST_PL_LIBRARY")).joinpath("MusicBee"), path_mapper=mapper)
     await library.load_tracks()
     return library
@@ -40,7 +46,10 @@ async def library() -> LocalLibrary:
 )
 @pytest.mark.parametrize("source,expected", [
     (path, Path(os.getenv("TEST_PL_COMPARISON", "")).joinpath(path.stem).with_suffix(".m3u"))
-    for path in Path(os.getenv("TEST_PL_SOURCE", "")).rglob(str(Path("**", "*.xautopf")))
+    for path in (
+            list(Path(os.getenv("TEST_PL_SOURCE", "")).rglob(str(Path("**", "*.xautopf")))) +
+            list(Path(os.getenv("TEST_PL_SOURCE", "")).rglob(str(Path("**", "*.m3u"))))
+    )
 ])
 async def test_playlist_paths_manual(library: LocalLibrary, source: Path, expected: Path):
     assert source.is_file()
@@ -49,7 +58,7 @@ async def test_playlist_paths_manual(library: LocalLibrary, source: Path, expect
     pl = await library.load_playlist(source)
 
     with open(expected, "r", encoding="utf-8") as f:
-        paths_expected = [library.path_mapper.map(line.strip()) for line in f]
+        paths_expected = [library.path_mapper.map(line.strip(), check_existence=False) for line in f]
 
-    assert sorted(track.path for track in pl) == sorted(paths_expected)
-    assert [track.path for track in pl] == paths_expected
+    assert sorted(track.path for track in pl.tracks) == sorted(paths_expected)
+    assert [track.path for track in pl.tracks] == paths_expected
