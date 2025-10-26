@@ -53,6 +53,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
 
     @model_validator(mode="after")
     def _set_track_total_from_album(self) -> Self:
+        print("SET TRACK TOTAL", self.album)
         if self.album is None or (total := self.album.track_total) is None:
             return self
 

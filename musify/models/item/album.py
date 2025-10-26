@@ -16,7 +16,7 @@ from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import HasURI
 
 
-class _Album[RT: Artist, GT: Genre](
+class Album[RT: Artist, GT: Genre](
     ABC, HasArtists[RT], HasGenres[GT], HasName, HasURI, HasLength, HasRating, HasReleaseDate, HasImages
 ):
     type: ClassVar[str] = "album"
@@ -31,21 +31,16 @@ class _Album[RT: Artist, GT: Genre](
     )
     # noinspection PyArgumentList
     track_total = computed_field(
-        abstract_property(),
+        lambda x: None,
         description="The total number of tracks on this album",
         return_type=PositiveInt | None,
     )
     # noinspection PyArgumentList
     disc_total = computed_field(
-        abstract_property(),
+        lambda x: None,
         description="The total number of discs for this album",
         return_type=PositiveInt | None,
     )
-
-
-class Album[RT: Artist, GT: Genre](_Album[RT, GT]):
-    track_total = writeable_computed_field("track_total")
-    disc_total = writeable_computed_field("disc_total")
 
 
 class HasAlbum[T: Album](AttributeResource):

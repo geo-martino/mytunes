@@ -15,7 +15,7 @@ from musify.models.properties.logger import HasLogger
 type LibraryMergeType[T] = Library[T] | Collection[Playlist[T]] | Mapping[str, Playlist[T]]
 
 
-class _HasTracksAndPlaylistsMixin[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):
+class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):
     @property
     def tracks_in_playlists(self) -> list[TV]:
         """All unique tracks from all playlists in this library"""
@@ -25,7 +25,7 @@ class _HasTracksAndPlaylistsMixin[TK, TV: Track, KP, VP: Playlist](HasTracks[TK,
 
 
 class Library[TK, TV: Track, KP, VP: Playlist](
-    _HasTracksAndPlaylistsMixin[TK, TV, KP, VP], HasLogger, metaclass=ABCMeta
+    HasTracksAndPlaylists[TK, TV, KP, VP], HasLogger, metaclass=ABCMeta
 ):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"

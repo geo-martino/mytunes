@@ -3,7 +3,7 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.models.item.album import Album
+from musify.local.item.album import LocalAlbum
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
@@ -17,12 +17,13 @@ class TestTrack(UniqueKeyTester):
 
     # noinspection PyUnresolvedReferences
     def test_set_track_total_from_album(self, faker: Faker):
-        track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
+        track = Track(name=faker.sentence(), album=LocalAlbum(name=faker.sentence()))
         assert track.track is None, "Default value not replaced when no number found on Album"
 
-        album = Album(name=faker.sentence(), track_total=faker.random_int(10, 20))
+        album = LocalAlbum(name=faker.sentence(), track_total=faker.random_int(10, 20))
 
         track = Track(name=faker.sentence(), album=album)
+        assert track.track is not None
         assert track.track.number is None
         assert track.track.total == album.track_total
 
@@ -32,12 +33,13 @@ class TestTrack(UniqueKeyTester):
 
     # noinspection PyUnresolvedReferences
     def test_set_disc_total_from_album(self, faker: Faker):
-        track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
+        track = Track(name=faker.sentence(), album=LocalAlbum(name=faker.sentence()))
         assert track.disc is None, "Default value not replaced when no number found on Album"
 
-        album = Album(name=faker.sentence(), disc_total=faker.random_int(10, 20))
+        album = LocalAlbum(name=faker.sentence(), disc_total=faker.random_int(10, 20))
 
         track = Track(name=faker.sentence(), album=album)
+        assert track.disc is not None
         assert track.disc.number is None
         assert track.disc.total == album.disc_total
 

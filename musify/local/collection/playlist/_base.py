@@ -17,7 +17,7 @@ from musify.processors_new.limit import ItemLimiter
 from musify.processors_new.sort import ItemSorter
 
 
-class _LocalPlaylist[TF: Filter](
+class LocalPlaylistFile[TF: Filter](
     LocalCollection, HasMutableTracks[str, LocalTrack], Playlist[str, LocalTrack], IsLocalFile
 ):
     __unique_attributes__ = frozenset({"path"})
@@ -83,7 +83,7 @@ class _LocalPlaylist[TF: Filter](
         self.path = self.path.rename(path)
 
 
-class LocalPlaylist[TF: Filter](_LocalPlaylist[TF], IsLocalFile, IsReadableFile, IsWriteableFile, metaclass=ABCMeta):
+class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteableFile, metaclass=ABCMeta):
     @abstractmethod
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """
