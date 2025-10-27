@@ -45,13 +45,18 @@ class TagDumpContext[T](MusifyModel):
     )
 
 
+class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile, metaclass=ABCMeta):
+    @classmethod
+    def extract_tags_from_mutagen(cls, file: mutagen.FileType):
+        data = IsLocalFile.extract_tags_from_mutagen(file)
+        data |= IsAudioFile.extract_tags_from_mutagen(file)
+        return data
+
+
 class LocalTrack[T: mutagen.FileType](
     LocalResource,
     Track[LocalArtist, LocalAlbum, LocalGenre],
-    IsAudioFile,
-    IsReadableFile,
-    IsWriteableFile,
-    IsLocalFile,
+    LocalAudioFile,
     HasMutableURI,
     HasAddedDate,
     HasPlayedDate,

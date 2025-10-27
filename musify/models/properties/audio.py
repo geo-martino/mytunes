@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from typing import Any
 
 import mutagen
@@ -7,7 +8,7 @@ from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
 
 
-class IsAudioFile(HasLength, IsFile):
+class IsAudioFile(HasLength, IsFile, metaclass=ABCMeta):
     """Attributes and operations for an audio on a filesystem."""
 
     channels: PositiveInt | None = Field(
@@ -35,8 +36,7 @@ class IsAudioFile(HasLength, IsFile):
         except AttributeError:
             bit_depth = None
 
-        data = super().extract_tags_from_mutagen(file)
-        data |= dict(
+        data = dict(
             length=file.info.length,
             channels=file.info.channels,
             bit_rate=file.info.bitrate / 1000,  # convert to bps to kbps

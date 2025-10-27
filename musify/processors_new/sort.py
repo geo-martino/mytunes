@@ -175,20 +175,34 @@ class ItemSorter(Processor):
         """
         grouped: dict[Any, list[T]] = {}
 
-        def group(it: Any) -> None:
-            """Group items by the given value ``v``"""
-            value = getattr(it, field)
-            if isinstance(value, HasName):
-                value = value.name
-            if isinstance(value, str):
-                value = strip_ignore_words(value, words=ignore_words)[-1].casefold()
+        def get_value(val: Any) -> Any:
+            """Get the value to group by from the given value ``val``"""
+            match val:
+                case str() | HasName():
+                    if isinstance(val, HasName):
+                        val = val.name
+                    _, _, val = strip_ignore_words(val, words=ignore_words)
+                    val = val.casefold()
+                case _:
+                    pass
 
-            if grouped.get(value) is None:
-                grouped[value] = []
-            grouped[value].append(it)
+            return val
+
+        def group(it: Any, val: Any) -> None:
+            """Group items by the given value ``v``"""
+            if isinstance(val, list):
+                for v in val:
+                    group(it=it, val=get_value(v))
+                return
+
+            if grouped.get(val) is None:
+                grouped[val] = []
+            grouped[val].append(it)
 
         for item in items:
-            group(item)
+            value = get_value(getattr(item, field))
+            group(item, val=value)
+
         return grouped
 
     def __call__(self, *args, **kwargs) -> None:

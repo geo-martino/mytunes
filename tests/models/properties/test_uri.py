@@ -9,7 +9,7 @@ from tests.models.testers import MusifyModelTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
-class TestRemoteURI(MusifyModelTester):
+class TestURI(MusifyModelTester):
     @pytest.fixture
     def model(self, uri: SimpleURI) -> URI:
         return uri
