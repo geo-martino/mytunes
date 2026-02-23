@@ -25,13 +25,13 @@ classifiers = [
 ]
 dependencies = [
     "mutagen~=1.47.0",
-    "aiofiles~=24.1.0",
+    "aiofiles~=25.1.0",
     "aiorequestful~=1.0.20",
     "python-dateutil~=2.9.0",
-    "Pillow~=11.2.1",
-    "pydantic~=2.11.4",
+    "Pillow~=12.1.1",
+    "pydantic~=2.12.5",
     "tabulate[widechars]~=0.9.0",
-    "termcolor~=3.1.0",
+    "termcolor~=3.3.0",
 ]
 
 [project.optional-dependencies]
@@ -39,11 +39,11 @@ all = [
     "musify[bars,musicbee,sqlite]",
 ]
 bars = [
-    "tqdm~=4.67.1",
+    "tqdm~=4.67.3",
 ]
 musicbee = [
-    "xmltodict~=0.14.2",
-    "lxml~=5.4.0",
+    "xmltodict~=1.0.4",
+    "lxml~=6.0.2",
 ]
 sqlite = [
     "aiorequestful[sqlite]~=1.0.20",
@@ -60,29 +60,27 @@ Issues = "https://github.com/geo-martino/musify/issues"
 dev = [
     "flake8",
     "grip",
-    "jupyterlab",
-    "ipywidgets",
 ]
 test = [
     "musify[all]",
-    "pytest~=8.3.5",
-    "pytest-asyncio~=0.26.0",
-    "pytest-xdist~=3.6.1",
-    "pytest-mock~=3.14.0",
-    "Faker~=37.1.0",
+    "pytest~=9.0.2",
+    "pytest-asyncio~=1.3.0",
+    "pytest-xdist~=3.8.0",
+    "pytest-mock~=3.15.1",
+    "Faker~=40.4.0",
     "aioresponses~=0.7.8",
-    "pyyaml~=6.0.2",
-    "pycountry~=24.6.1",
+    "pyyaml~=6.0.3",
+    "pycountry~=26.2.16",
 ]
 docs = [
     "sphinx~=8.2.3",
-    "sphinx-rtd-theme~=3.0.2",
-    "graphviz~=0.20.3",
-    "sphinx-autodoc-typehints~=3.2.0",
+    "sphinx-rtd-theme~=3.1.0",
+    "sphinx-autodoc-typehints~=3.5.0",
+    "sphinxext-opengraph~=0.13.0",
+    "sphinx-new-tab-link~=0.8.1",
     "autodocsumm~=0.2.14",
-    "sphinxext-opengraph~=0.10.0",
-    "matplotlib~=3.10.1",
-    "sphinx-new-tab-link~=0.8.0",
+    "graphviz~=0.21",
+    "matplotlib~=3.10.8",
 ]
 
 [tool.uv]

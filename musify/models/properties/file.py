@@ -18,9 +18,9 @@ class IsFile(AttributeResource, metaclass=ABCMeta):
     __supported_extensions__: ClassVar[frozenset[str]] = frozenset()
 
     @classmethod
-    def get_annotation_from_supported_extensions(cls) -> type[Annotated]:
+    def get_annotation_from_supported_extensions(cls) -> tuple[type[Annotated], ...]:
         """Get the type annotation from the supported extensions."""
-        return Annotated[cls, *(Tag(ext) for ext in cls.__supported_extensions__)]
+        return tuple(Annotated[cls, Tag(ext)] for ext in cls.__supported_extensions__)
 
     @property
     @abstractmethod

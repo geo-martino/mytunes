@@ -1,6 +1,8 @@
 from copy import deepcopy
+from typing import Annotated
 
 import pytest
+from pydantic import StringConstraints
 
 from musify.exception import MusifyTypeError
 from musify.utils import flatten_nested, merge_maps, get_most_common_values, unicode_len, get_base_types
@@ -285,3 +287,7 @@ def test_get_base_types_union():
 
 def test_get_base_types_generic():
     assert get_base_types(dict[str, int] | int | tuple[int, ...]) == (dict, int, tuple)
+
+
+def test_get_base_types_annotated():
+    assert get_base_types(Annotated[str, StringConstraints(min_length=1)]) == (str,)

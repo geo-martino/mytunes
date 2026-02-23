@@ -76,7 +76,7 @@ def xml_playlist_basic() -> str:
     """A basic XAutoPF playlist XML structure for testing purposes."""
     return """
 <?xml version="1.0" encoding="utf-8"?>
-<SmartPlaylist SaveStaticCopy="True" LiveUpdating="True" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
+<SmartPlaylist SaveStaticCopy="true" LiveUpdating="true" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="false" MusicLibraryPath="/mnt/d/Music/">
   <Source Type="1">
     <Description>I am a description</Description>
     <Conditions CombineMethod="All">
@@ -84,7 +84,7 @@ def xml_playlist_basic() -> str:
       <Condition Field="ArtistPeople" Comparison="IsNull" />
       <Condition Field="TrackNo" Comparison="LessThan" Value="30" />
     </Conditions>
-    <Limit FilterDuplicates="False" Enabled="False" Count="25" Type="Minutes" SelectedBy="MostRecentlyAdded" />
+    <Limit FilterDuplicates="false" Enabled="false" Count="25" Type="Minutes" SelectedBy="MostRecentlyAdded" />
     <SortBy Field="86" Order="Ascending" />
     <Fields>
       <Group Id="TrackDetail">
@@ -110,7 +110,7 @@ def xml_playlist_complex() -> str:
     """A complex XAutoPF playlist XML structure for testing purposes."""
     return """
 <?xml version="1.0" encoding="utf-8"?>
-<SmartPlaylist SaveStaticCopy="True" LiveUpdating="True" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
+<SmartPlaylist SaveStaticCopy="true" LiveUpdating="true" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="false" MusicLibraryPath="/mnt/d/Music/">
   <Source Type="1">
     <Description>This has got some complex matching</Description>
     <Conditions CombineMethod="Any">
@@ -128,7 +128,7 @@ def xml_playlist_complex() -> str:
         </Or>
       </Condition>
     </Conditions>
-    <Limit FilterDuplicates="False" Enabled="True" Count="1" Type="Seconds" SelectedBy="MostRecentlyAdded" />
+    <Limit FilterDuplicates="false" Enabled="true" Count="1" Type="Seconds" SelectedBy="MostRecentlyAdded" />
     <DefinedSort Id="6" />
     <Fields>
       <Group Id="TrackDetail">
@@ -154,12 +154,12 @@ def xml_playlist_recent() -> str:
     """A recently added tracks XAutoPF playlist XML structure for testing purposes."""
     return """
 <?xml version="1.0" encoding="utf-8"?>
-<SmartPlaylist SaveStaticCopy="False" LiveUpdating="True" Layout="4" LayoutGroupBy="0" ShuffleMode="DifferentArtist" ShuffleSameArtistWeight="-0.2" GroupBy="track" ConsolidateAlbums="False" MusicLibraryPath="/mnt/d/Music/">
+<SmartPlaylist SaveStaticCopy="false" LiveUpdating="true" Layout="4" LayoutGroupBy="0" ShuffleMode="DifferentArtist" ShuffleSameArtistWeight="-0.2" GroupBy="track" ConsolidateAlbums="false" MusicLibraryPath="/mnt/d/Music/">
   <Source Type="1">
     <Conditions CombineMethod="Any">
       <Condition Field="Album" Comparison="Contains" Value="" />
     </Conditions>
-    <Limit FilterDuplicates="True" Enabled="True" Count="20" Type="Items" SelectedBy="MostRecentlyAdded" />
+    <Limit FilterDuplicates="true" Enabled="true" Count="20" Type="Items" SelectedBy="MostRecentlyAdded" />
     <SortBy Field="12" Order="Descending" />
     <Fields>
       <Group Id="TrackDetail">

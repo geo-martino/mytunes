@@ -167,7 +167,7 @@ class MusifyResource(MusifyModel):
 
 class AttributeModelMetaclass(ModelMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
-    __tag_attributes__: ClassVar[frozenset[str] | tuple[str] | None] = None
+    __tag_attributes__: ClassVar[frozenset[str] | tuple[str, ...] | None] = None
     __include_fields__: ClassVar[bool] = False
     __include_properties__: ClassVar[bool] = False
 
@@ -182,7 +182,7 @@ class AttributeModelMetaclass(ModelMetaclass):
         **kwargs: Any,
     ) -> type:
         # noinspection PyTypeChecker
-        cls: MusifyModel = super().__new__(
+        cls: AttributeModel = super().__new__(
             mcs,
             cls_name,
             bases,
@@ -198,7 +198,8 @@ class AttributeModelMetaclass(ModelMetaclass):
         if cls.__tag_attributes__ is None:
             attribute_names = []
             if cls.__include_fields__:
-                attribute_names.extend(name for name in cls.__annotations__.keys() if not name.startswith("_"))
+                keys = cls.__annotations__.keys() - cls.__class_vars__  # exclude class vars
+                attribute_names.extend(name for name in keys if not name.startswith("_"))
             if cls.__include_properties__:
                 attribute_names.extend(name for name, method in namespace.items() if isinstance(method, property))
 
@@ -290,7 +291,7 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
 
     Adds support for getting and setting nested attributes using dot notation.
     """
-    __tag_attributes__: ClassVar[frozenset[str] | tuple[str] | None] = None
+    __tag_attributes__: ClassVar[frozenset[str] | tuple[str, ...] | None] = None
     __include_fields__: ClassVar[bool] = False
     __include_properties__: ClassVar[bool] = False
 

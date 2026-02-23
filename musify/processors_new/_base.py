@@ -2,7 +2,7 @@
 Base classes for all processors in this module. Also contains decorators for use in implementations.
 """
 from abc import ABCMeta, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, MutableSequence, Mapping
 from functools import partial, update_wrapper
 from typing import Any, Optional, Literal, Self
 
@@ -10,6 +10,8 @@ from pydantic import ConfigDict, model_validator, TypeAdapter, PrivateAttr
 
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
+from musify.models.properties.logger import HasLogger
+from musify.utils import get_user_input
 
 
 class Result(MusifyModel):
@@ -113,3 +115,31 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
     def __call__(self, *args, **kwargs) -> Any:
         """Run the dynamic processor"""
         return self._processor_method(*args, **kwargs)
+
+
+class InputProcessor(Processor, HasLogger, metaclass=ABCMeta):
+    """
+    Processor that gets user input as part of it processing.
+
+    Contains methods for getting user input and printing formatted options text to the terminal.
+    """
+
+    def _get_user_input(self, text: str | None = None) -> str:
+        """Print dialog with optional text and get the user's input."""
+        inp = get_user_input(text)
+        self.logger.debug(f"User input: {inp}")
+        return inp.strip()
+
+    @staticmethod
+    def _format_help_text(options: Mapping[str, str], header: MutableSequence[str] | None = None) -> str:
+        """Format help text with a given mapping of options. Add an option header to include before options."""
+        max_width = get_max_width(options)
+
+        help_text = header or []
+        help_text.append("\n\t\33[96mEnter one of the following: \33[0m\n\t")
+        help_text.extend(
+            f"\33[1m{align_string(k, max_width=max_width)}\33[0m{': ' + v or ''}" for k, v in options.items()
+        )
+
+        return "\n\t".join(help_text) + '\n'
+

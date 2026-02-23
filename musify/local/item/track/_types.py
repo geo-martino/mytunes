@@ -19,6 +19,6 @@ def _get_format(value: Any) -> str | None:
 
 _track_classes = (MP3, FLAC, M4A, WMA)
 type LocalTrackType = Annotated[
-    Union[*(cls.get_annotation_from_supported_extensions() for cls in _track_classes)],
+    Union[*(ano for cls in _track_classes for ano in cls.get_annotation_from_supported_extensions())],
     Field(discriminator=Discriminator(_get_format)),
 ]

@@ -150,5 +150,5 @@ _site
 .jekyll-metadata
 vendor
 
-test.py
-test_*.py
+./test.py
+./test_*.py

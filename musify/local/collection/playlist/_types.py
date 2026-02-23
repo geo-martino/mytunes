@@ -8,6 +8,6 @@ from musify.models.properties.file import IsLocalFile
 
 _playlist_classes = (M3U, XAutoPF)
 type LocalPlaylistType = Annotated[
-    Union[*(cls.get_annotation_from_supported_extensions() for cls in _playlist_classes)],
+    Union[*(ano for cls in _playlist_classes for ano in cls.get_annotation_from_supported_extensions())],
     Field(discriminator=Discriminator(IsLocalFile.get_ext_from_input)),
 ]

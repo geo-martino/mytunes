@@ -6,7 +6,7 @@ import unicodedata
 from collections import Counter
 from collections.abc import Iterable, Collection, MutableSequence, Mapping, MutableMapping
 from types import UnionType, GenericAlias
-from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
+from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union, get_type_hints
 
 from aiorequestful.types import Number
 from pydantic import Tag
@@ -314,9 +314,6 @@ def get_base_types(
     :param ignore_none: Whether to drop NoneType base types.
     :return: A tuple of all base types.
     """
-    if isinstance(annotation, TypeAliasType):
-        annotation = annotation.__value__
-
     bases = []
     match annotation:
         case UnionType():
@@ -326,6 +323,12 @@ def get_base_types(
             bases.append(get_origin(annotation))
         case ForwardRef():
             bases.extend(get_base_types(annotation._evaluate(globals(), locals(), recursive_guard=frozenset())))
+        case TypeAliasType():
+            ano = annotation.__value__
+            bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
+        case _ if hasattr(annotation, "__metadata__"):  # Annotated types
+            ano = annotation.__origin__
+            bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case _:
             bases.append(annotation)
 

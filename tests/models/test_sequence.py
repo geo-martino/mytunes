@@ -56,8 +56,8 @@ class TestMusifySequence:
 
     # noinspection PyTypeChecker
     @pytest.mark.skipif(
-        tuple(map(int, pydantic.__version__.split("."))) < (2, 12, 0),
-        reason="Pydantic 2.12.0+ required as lower versions do not support generics validation as expected"
+        tuple(map(int, pydantic.__version__.split("."))) < (2, 13, 0),
+        reason="Pydantic 2.13.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
     def test_validates_generic_types_when_accessing(self, tracks: list[Track], artists: list[Artist]):
@@ -146,8 +146,8 @@ class TestMusifySequence:
 class TestMusifyMutableSequence:
     # noinspection PyTypeChecker
     @pytest.mark.skipif(
-        tuple(map(int, pydantic.__version__.split("."))) < (2, 12, 0),
-        reason="Pydantic 2.12.0+ required as lower versions do not support generics validation as expected"
+        tuple(map(int, pydantic.__version__.split("."))) < (2, 13, 0),
+        reason="Pydantic 2.13.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
     def test_validates_generic_types_when_mutating(self, tracks: list[Track], artists: list[Artist]):
