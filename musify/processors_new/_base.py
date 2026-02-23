@@ -1,12 +1,16 @@
 """
 Base classes for all processors in this module. Also contains decorators for use in implementations.
 """
+import os
+import textwrap
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, MutableSequence, Mapping
 from functools import partial, update_wrapper
 from typing import Any, Optional, Literal, Self
 
 from pydantic import ConfigDict, model_validator, TypeAdapter, PrivateAttr
+from tabulate import tabulate
+from termcolor import colored
 
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
@@ -131,15 +135,29 @@ class InputProcessor(Processor, HasLogger, metaclass=ABCMeta):
         return inp.strip()
 
     @staticmethod
-    def _format_help_text(options: Mapping[str, str], header: MutableSequence[str] | None = None) -> str:
+    def _format_help_text(options: Mapping[str, str], header: str | None = None) -> str:
         """Format help text with a given mapping of options. Add an option header to include before options."""
-        max_width = get_max_width(options)
+        try:
+            cols = os.get_terminal_size().columns
+        except OSError:
+            cols = 120
 
-        help_text = header or []
-        help_text.append("\n\t\33[96mEnter one of the following: \33[0m\n\t")
-        help_text.extend(
-            f"\33[1m{align_string(k, max_width=max_width)}\33[0m{': ' + v or ''}" for k, v in options.items()
+        max_key_width = max(len(key) for key in options)
+
+        rows = []
+        for key, description in options.items():
+            row = (
+                colored(key, "blue", attrs=["bold"]) + (":" if description else ""),
+                colored("\n".join(textwrap.wrap(description, cols - max_key_width)), "white"),
+            )
+            rows.append(row)
+
+        header = "\n".join(textwrap.wrap(header, cols)) + "\n\n"
+        sub_header = colored("Enter one of the following", "cyan") + ":\n"
+        log = header + sub_header + tabulate(
+            rows,
+            tablefmt="plain",
+            colalign=("left", "left"),
         )
 
-        return "\n\t".join(help_text) + '\n'
-
+        return log

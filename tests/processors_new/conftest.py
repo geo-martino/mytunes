@@ -5,7 +5,11 @@ from typing import get_args
 import pytest
 from faker import Faker
 
+from musify.local.item.album import LocalAlbum
+from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, LocalTrackType
+from musify.models.collection.playlist import MutablePlaylist, Playlist
+from musify.models.item.artist import Artist
 
 
 @pytest.fixture
@@ -22,3 +26,27 @@ def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
         tracks.append(track)
 
     return tracks
+
+
+@pytest.fixture
+def artists(faker: Faker) -> list[LocalArtist]:
+    return [
+        LocalArtist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(5, 10))
+    ]
+
+
+@pytest.fixture
+def albums(faker: Faker) -> list[LocalAlbum]:
+    return [
+        LocalAlbum(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(5, 10))
+    ]
+
+
+@pytest.fixture
+def playlists(tracks: list[LocalTrack], faker: Faker) -> list[Playlist]:
+    return [
+        MutablePlaylist(name=faker.sentence(), tracks=faker.random_elements(tracks, length=faker.random_int(5, 15)))
+        for _ in range(faker.random_int(10, 30))
+    ]

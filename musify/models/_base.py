@@ -303,7 +303,10 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
         if (initial := getattr(self, next(key_iter))) is None:
             return
 
-        return reduce(getattr, key_iter, initial)
+        try:
+            return reduce(getattr, key_iter, initial)
+        except AttributeError:
+            return None
 
     def __setattr__(self, key: str, value: Any) -> None:
         if len(key_split := key.split(".")) == 1:
