@@ -3,8 +3,7 @@ Processor that helps user download songs from collections based on given configu
 """
 import itertools
 import math
-import re
-from collections.abc import Iterable, Collection, Sequence
+from collections.abc import Iterable, Collection, Sequence, Iterator
 from itertools import batched
 from typing import Any, Annotated
 from urllib.parse import quote
@@ -14,7 +13,8 @@ from pydantic import Field, validate_call, field_validator, HttpUrl, TypeAdapter
 from termcolor import colored
 
 from musify._types import StrippedString
-from musify.models.item.track import HasTracks, Track
+from musify.models import AttributeModel
+from musify.models.item.track import HasTracks
 from musify.models.properties.name import HasName
 from musify.processors_new._base import InputProcessor
 
@@ -27,15 +27,20 @@ class ItemDownloadHelper(InputProcessor):
             "The given sites should contain exactly 1 '{}' placeholder into which the processor can place "
             "a query for the item being searched. e.g. *bandcamp.com/search?q={}&item_type=t*"
         ),
-        default_factory=tuple,
     )
-    fields: Sequence[StrippedString] | None = Field(
-        description="The default fields to take from an item for use as the query string when initially opening sites.",
-        default=None,
+    fields: Sequence[StrippedString] = Field(
+        description="The fields to take from an item for use as the query string when opening sites.",
     )
     interval: PositiveInt = Field(
         description="The number of tracks to open sites for before pausing for user input.",
         default=1,
+    )
+    unique_only: bool = Field(
+        description=(
+            "Only open sites for items with unique queries. If false, sites will be opened for all items "
+            "regardless of whether their query is the same as another item or not."
+        ),
+        default=True,
     )
 
     @field_validator("urls", mode="after", check_fields=True)
@@ -56,31 +61,42 @@ class ItemDownloadHelper(InputProcessor):
         return self.open_sites(tracks)
 
     @validate_call
-    def open_sites(self, tracks: Sequence[Track] | HasTracks) -> None:
+    def open_sites(self, items: Sequence[AttributeModel] | HasTracks) -> None:
         """
         Run the download helper for the given ``tracks``.
 
         Opens the formatted ``urls`` for each item in all tracks in the user's browser.
         """
-        if isinstance(tracks, HasTracks):
-            tracks = tracks.tracks
+        if isinstance(items, HasTracks):
+            items = items.tracks
 
-        pages_total = math.ceil(len(tracks) / self.interval)
+        queries = self._format_queries_for_items(items, fields=self.fields)
+        if self.unique_only:
+            queries = self._filter_queries_for_items(queries)
 
-        for page, page_tracks in enumerate(batched(tracks, self.interval), 1):
-            not_queried = self._open_sites_for_tracks(tracks=page_tracks, fields=self.fields)
-            self._pause(tracks=page_tracks, not_queried=not_queried, page=page, total=pages_total)
+        pages_total = math.ceil(len(queries) / self.interval)
+        self.logger.info(f"Opening {len(self.urls)} sites for all {len(queries)} filtered items.")
 
-    def _open_sites_for_tracks[T: Track](self, tracks: Iterable[T], fields: Iterable[str]) -> list[T]:
-        not_queried = []
-        for item in tracks:
-            queried = self._open_sites_for_item(item=item, fields=fields)
-            if not queried:
-                not_queried.append(item)
+        for page_no, page_batch in enumerate(batched(queries, self.interval), 1):
+            queried, not_queried = self._open_sites_for_queries(page_batch)
+            self._pause(queried=queried, not_queried=not_queried, page=page_no, total=pages_total)
 
-        return not_queried
+    def _open_sites_for_items[T: AttributeModel](
+            self, items: Collection[T], fields: Iterable[str]
+    ) -> tuple[list[T], list[T]]:
+        queries = self._format_queries_for_items(items, fields=fields)
+        if self.unique_only:
+            queries = self._filter_queries_for_items(queries)
+        return self._open_sites_for_queries(queries)
 
-    def _open_sites_for_item(self, item: Any, fields: Iterable[str]) -> bool:
+    def _format_queries_for_items[T: AttributeModel](
+            self, items: Collection[T], fields: Iterable[str]
+    ) -> list[tuple[str, T]]:
+        self.logger.info(f"Formatting queries for {len(items)} items using fields: {', '.join(fields)}")
+        return [(self._format_query_for_item(item, fields=fields), item) for item in items]
+
+    @staticmethod
+    def _format_query_for_item(item: Any, fields: Iterable[str]) -> str:
         query_parts = []
         for field in fields:
             if (value := getattr(item, field, None)) is None:
@@ -97,26 +113,79 @@ class ItemDownloadHelper(InputProcessor):
             if value is not None:
                 query_parts.append(str(value))
 
-        query = quote(" ".join(query_parts))
-        if not query:
-            item_log = item.name if isinstance(item, HasName) else item
-            self.logger.debug(f"Could not get query for item: {item_log}")
-            return False
+        return quote(" ".join(query_parts))
 
-        self.logger.debug(f"Opening {len(self.urls)} URLs with query: {query}")
-        for url in self.urls:
-            webopen(url.format(query))
+    def _filter_queries_for_items[T: AttributeModel](self, queries: Iterable[tuple[str, T]]) -> list[tuple[str, T]]:
+        result: dict[str, T] = {}
+        repeated: int = 0
 
-        return True
+        for query, item in queries:
+            if not query:
+                continue
 
-    def _pause[T: Track](self, tracks: Collection[T], not_queried: Collection[T], page: int, total: int):
-        opened = len(self.urls) * (self.interval - len(not_queried))
-        not_opened = f" - Could not open sites for {len(not_queried)} tracks. " if not_queried else ". "
+            if query in result:
+                repeated += 1
+                continue
 
-        available_fields = set(
-            itertools.chain.from_iterable(cls.__tag_attributes__ for cls in {it.__class__ for it in tracks})
-        )
-        valid_fields = {field for field in available_fields if any(getattr(item, field) is not None for item in tracks)}
+            result[query] = item
+
+        self.logger.warning(f"{repeated} queries were repeated and will only be opened once.")
+        return list(result.items())
+
+    def _open_sites_for_queries[T: AttributeModel](self, queries: Iterable[tuple[str, T]]) -> tuple[list[T], list[T]]:
+        queried = []
+        not_queried = []
+
+        for query, item in queries:
+            if not query:
+                item_log = item.name if isinstance(item, HasName) else item
+                self.logger.debug(f"Could not get query for item: {item_log}")
+                not_queried.append(item)
+                continue
+
+            self.logger.debug(f"Opening {len(self.urls)} URLs with query: {query}")
+            for url in self.urls:
+                webopen(url.format(query))
+            queried.append(item)
+
+        return queried, not_queried
+
+    def _pause[T: AttributeModel](self, queried: Collection[T], not_queried: Collection[T], page: int, total: int):
+        valid_fields = self._get_valid_fields_for_items(queried) | self._get_valid_fields_for_items(not_queried)
+        help_text = self._format_help_text_for_items(not_queried=len(not_queried), valid_fields=valid_fields)
+        self.logger.print_message("\n" + help_text)
+
+        while True:
+            match self._get_user_input(f"Enter ({page}/{total})").casefold():
+                case "":  # continue to next batch
+                    break
+
+                case "h":  # print help text
+                    self.logger.print_message("\n" + help_text)
+
+                case "r":  # re-open all sites
+                    self._open_sites_for_items(queried, fields=self.fields)
+
+                # open sites for fields in input for all items
+                case inp if not inp.startswith("n ") and (
+                    filtered_fields := self._get_filtered_fields_from_input(inp, valid_fields=valid_fields)
+                ):
+                    self._open_sites_for_items(queried, fields=filtered_fields)
+
+                # open sites for fields in input but only for items which sites could not be opened for
+                case inp if inp.startswith("n ") and (
+                    filtered_fields := self._get_filtered_fields_from_input(
+                        inp.lstrip("n").strip(), valid_fields=valid_fields
+                    )
+                ):
+                    self._open_sites_for_items(not_queried, fields=filtered_fields)
+
+                case inp:
+                    self.logger.warning(f"Unrecognised input: {inp}. Enter 'h' to see valid options.")
+
+    def _format_help_text_for_items(self, not_queried: int, valid_fields: Collection[str]) -> str:
+        opened = len(self.urls) * (self.interval - not_queried)
+        not_opened = f" - Could not open sites for {not_queried} tracks. " if not_queried else ". "
 
         header = colored(
             f"Opened {opened} sites" +
@@ -135,34 +204,33 @@ class ItemDownloadHelper(InputProcessor):
 
         if not_queried:
             options["n <Fields>"] = (
-                f"Same as above, but only open sites for the {len(not_queried)} tracks "
+                f"Same as above, but only open sites for the {not_queried} tracks "
                 "which sites could not be opened for"
             )
         options["h"] = "Show this dialogue again"
 
         help_text = self._format_help_text(options=options, header=header)
-        help_text += f"\n\t\33[90mValid fields for this batch: {" ".join(valid_fields)}\33[0m\n"
+        help_text += colored(f"\n\nValid fields for this batch: {" ".join(valid_fields)}", "dark_grey")
 
-        self.logger.print_message("\n" + help_text)
-        while True:
-            match self._get_user_input(f"Enter ({page}/{total})").casefold():
-                case "":
-                    break
-                case "h":  # print help text
-                    self.logger.print_message("\n" + help_text)
-                case "r":  # re-open all sites
-                    self._open_sites_for_tracks(tracks=tracks, fields=self.fields)
-                case inp if (
-                    filtered_fields := (fields := set(re.sub(r"^n ", "", inp).split())) & valid_fields
-                ):
-                    if filtered_fields != fields:
-                        self.logger.warning(
-                            f"Some fields were not recognised: {", ".join(fields - filtered_fields)}. "
-                            f"Using recognised fields: {", ".join(filtered_fields)}."
-                        )
+        return help_text + "\n"
 
-                    self._open_sites_for_tracks(
-                        tracks=not_queried if inp.startswith("n ") else tracks, fields=filtered_fields
-                    )
-                case inp:
-                    self.logger.warning(f"Unrecognised input: {inp}. Please enter one of the valid options.")
+    @staticmethod
+    def _get_valid_fields_for_items(items: Collection[AttributeModel]) -> set[str]:
+        available_fields = set(
+            itertools.chain.from_iterable(cls.__tag_attributes__ for cls in {it.__class__ for it in items})
+        )
+        valid_fields = {field for field in available_fields if any(getattr(item, field) is not None for item in items)}
+
+        return valid_fields
+
+    def _get_filtered_fields_from_input(self, inp: str, valid_fields: set[str]) -> set[str]:
+        input_fields = set(inp.split())
+        filtered_fields = input_fields & valid_fields
+
+        if filtered_fields and filtered_fields != input_fields:
+            self.logger.warning(
+                f"Some fields were not recognised: {", ".join(input_fields - filtered_fields)}. "
+                f"Using only recognised fields: {", ".join(filtered_fields)}."
+            )
+
+        return filtered_fields

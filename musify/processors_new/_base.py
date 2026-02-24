@@ -130,9 +130,14 @@ class InputProcessor(Processor, HasLogger, metaclass=ABCMeta):
 
     def _get_user_input(self, text: str | None = None) -> str:
         """Print dialog with optional text and get the user's input."""
-        inp = get_user_input(text)
+        if not text:
+            text = "Enter input"
+
+        log = " ".join((colored(text, "yellow"), colored("|", "white", attrs=["bold"])))
+        inp = input(log + " ").strip()
+
         self.logger.debug(f"User input: {inp}")
-        return inp.strip()
+        return inp
 
     @staticmethod
     def _format_help_text(options: Mapping[str, str], header: str | None = None) -> str:
@@ -152,7 +157,7 @@ class InputProcessor(Processor, HasLogger, metaclass=ABCMeta):
             )
             rows.append(row)
 
-        header = "\n".join(textwrap.wrap(header, cols)) + "\n\n"
+        header = "\n".join(textwrap.wrap(header, cols)) + "\n\n" if header else ""
         sub_header = colored("Enter one of the following", "cyan") + ":\n"
         log = header + sub_header + tabulate(
             rows,

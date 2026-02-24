@@ -1,5 +1,6 @@
 import itertools
 import math
+from collections.abc import Generator
 from copy import copy
 from random import sample, randrange
 from unittest import mock
@@ -36,7 +37,43 @@ class TestItemDownloadHelper(MusifyModelTester):
             urls=sample(sites, k=randrange(2, len(sites))),
             fields=["name", "artists"],
             interval=faker.random_int(1, 5),
+            unique_only=False,
         )
+
+    @pytest.fixture
+    def urls(self) -> list[str]:
+        """Empty list as a fixture to be used by the mock to populate with queried urls"""
+        return []
+    
+    @pytest.fixture(autouse=True)
+    def mock_webopen(self, urls: list[str]):
+        """Mock for webopen which appends the queried url to the urls fixture list"""
+        with mock.patch(f"{MODULE_ROOT}.processors_new.download.webopen", new=urls.append):
+            yield
+
+    @pytest.fixture
+    def mock_pause(self) -> Generator[mock.MagicMock, None, None]:
+        """Mock for pause functionality"""
+        with mock.patch.object(ItemDownloadHelper, "_pause") as mock_pause:
+            yield mock_pause
+
+    @pytest.fixture
+    def unique_tracks(
+            self, tracks: list[Track], artists: list[Artist], albums: list[Album], faker: Faker
+    ) -> list[Track]:
+        """Fixture which returns a list of unique tracks"""
+        tracks = list(map(copy, tracks[:10]))
+
+        for track in tracks:
+            track.artists = faker.random_elements(artists, length=faker.random_int(1, 3))
+            track.album = faker.random_element(albums)
+
+        return tracks
+
+    @pytest.fixture
+    def duplicate_tracks(self, unique_tracks: list[Track]) -> list[Track]:
+        """Fixture which returns a list of tracks with some duplicates present"""
+        return unique_tracks * 4
 
     def test_validate_urls(self):
         with pytest.raises(ValueError, match="String should match pattern"):
@@ -49,27 +86,54 @@ class TestItemDownloadHelper(MusifyModelTester):
                 "https://example.com/search?q={}&type=t", "not_a_valid_url_with_placeholder_{}"
             ])
 
-    def test_url_counts(self, model: ItemDownloadHelper, playlists: list[Playlist]):
-        track_total = sum(pl.track_total for pl in playlists)
-        with (
-            mock.patch(f"{MODULE_ROOT}.processors_new.download.webopen") as mock_webopen,
-            mock.patch.object(ItemDownloadHelper, "_pause") as mock_pause,
-        ):
+    def test_open_sites_for_collections(self, model: ItemDownloadHelper, playlists: list[Playlist]):
+        tracks = tuple(tr for pl in playlists for tr in pl.tracks)
+
+        with mock.patch.object(ItemDownloadHelper, "open_sites") as mock_open_sites:
             model.open_sites_for_collections(playlists)
+            mock_open_sites.assert_called_once_with(tracks)
 
-            assert mock_pause.call_count == math.ceil(track_total / model.interval)
-            assert mock_webopen.call_count == track_total * len(model.urls)
+    def test_open_sites_unique_queries(
+            self,
+            model: ItemDownloadHelper,
+            urls: list[str],
+            unique_tracks: list[Track],
+            duplicate_tracks: list[Track],
+            mock_pause: mock.MagicMock,
+    ):
+        model.unique_only = True
 
-    def test_url_formats(self, model: ItemDownloadHelper, tracks: list[Track], artists: list[Artist], faker: Faker):
+        model.open_sites(duplicate_tracks)
+        assert mock_pause.call_count == math.ceil(len(unique_tracks) / model.interval)
+        assert len(urls) == len(unique_tracks) * len(model.urls)
+
+    def test_open_sites_duplicate_queries(
+            self,
+            model: ItemDownloadHelper,
+            urls: list[str],
+            unique_tracks: list[Track],
+            duplicate_tracks: list[Track],
+            mock_pause: mock.MagicMock,
+    ):
+        model.unique_only = False
+
+        model.open_sites(duplicate_tracks)
+        assert mock_pause.call_count == math.ceil(len(duplicate_tracks) / model.interval)
+        assert len(urls) == len(duplicate_tracks) * len(model.urls)
+
+    def test_url_formats(
+            self,
+            model: ItemDownloadHelper,
+            urls: list[str],
+            tracks: list[Track],
+            artists: list[Artist],
+            faker: Faker,
+            mock_pause: mock.MagicMock,
+    ):
         for track in tracks:
             track.artists = sample(artists, k=faker.random_int(0, 3))
 
-        urls: list[str] = []
-        with (
-            mock.patch(f"{MODULE_ROOT}.processors_new.download.webopen", new=urls.append),
-            mock.patch.object(ItemDownloadHelper, "_pause"),
-        ):
-            model.open_sites(tracks)
+        model.open_sites(tracks)
 
         urls_batched = itertools.batched(urls, len(model.urls))
         for track in tracks:
@@ -86,17 +150,15 @@ class TestItemDownloadHelper(MusifyModelTester):
                 if len(track.artists) > 1:
                     assert track.artist not in url
 
-    def test_pause_1(self, model: ItemDownloadHelper, tracks: list[Track], log_capturer: LogCapturer):
-        total = len(tracks)
+    def test_pause_1(
+            self, model: ItemDownloadHelper, urls: list[str], unique_tracks: list[Track], log_capturer: LogCapturer
+    ):
+        total = len(unique_tracks)
         pages_total = math.ceil(total / model.interval)
 
-        urls = []
-        with (
-            mock.patch(f"{MODULE_ROOT}.processors_new.download.webopen", new=urls.append),
-            patch_input(["r", "", "name artists", "r", "bad_tag", "r", "name bad_tag", ""] + [""] * total),
-            log_capturer(loggers=model.logger),
-        ):
-            model.open_sites(tracks)
+        inputs = ["r", "", "name artists", "r", "bad_tag", "r", "name bad_tag", ""] + [""] * total
+        with (patch_input(inputs), log_capturer(loggers=model.logger)):
+            model.open_sites(unique_tracks)
 
         # 5 extra for 3*r input + 2*<Fields> input
         assert len(urls) == (total + 5 * model.interval) * len(model.urls)
@@ -108,36 +170,28 @@ class TestItemDownloadHelper(MusifyModelTester):
     def test_pause_2(
             self,
             model: ItemDownloadHelper,
-            tracks: list[Track],
+            urls: list[str],
+            unique_tracks: list[Track],
             artists: list[Artist],
             albums: list[Album],
             faker: Faker,
             log_capturer: LogCapturer
     ):
-        for track in tracks:
-            track.artists = faker.random_elements(artists, length=faker.random_int(1, 3))
-            track.album = faker.random_element(albums)
-
         # force a few poison apples
-        test_tracks = list(map(copy, tracks[:10]))
-        for item in sample(test_tracks, k=3):
+        for item in sample(unique_tracks, k=3):
             item.artist = None
             item.album = None
 
         model.fields = ["artists", "album"]
-        model.interval = len(test_tracks)
+        model.interval = len(unique_tracks)
 
-        urls = []
-        with (
-            mock.patch(f"{MODULE_ROOT}.processors_new.download.webopen", new=urls.append),
-            patch_input(["h", "artists", "h", "n name", "h", "", "h", "h"]),
-            log_capturer(loggers=model.logger),
-        ):
-            model.open_sites(test_tracks)
+        inputs = ["h", "artists", "h", "n name", "h", "", "h", "h"]
+        with (patch_input(inputs), log_capturer(loggers=model.logger)):
+            model.open_sites(unique_tracks)
 
         # Extra:
         # 1*<Fields>*tracks input - 2*3 for poison apples input failing + 3*n<Fields> for poison apples input repeat
-        assert len(urls) == (2 * len(test_tracks) - 3) * len(model.urls)
+        assert len(urls) == (2 * len(unique_tracks) - 3) * len(model.urls)
 
         assert log_capturer.text.count("Enter one of the following") == 4
         assert log_capturer.text.count("Could not open sites for 3 tracks") == 4
