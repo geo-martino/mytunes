@@ -13,8 +13,8 @@ from musify.models.item.track import Track, HasTracks
 class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](Album[RT, GT], HasTracks[TK, TV]):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _get_name_from_tracks(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _get_name_from_tracks(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
             return handler(data)
         if isinstance(name := data.get(key := "name"), str) and name.strip():
@@ -38,8 +38,10 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](Album[RT, GT], HasTr
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _filter_tracks_on_album_name(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _filter_tracks_on_album_name(
+            cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
         if not isinstance(data, MutableMapping):
             return handler(data)
         if not isinstance(tracks := data.get(key := "tracks"), Sequence):

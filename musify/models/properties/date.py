@@ -31,8 +31,8 @@ class SparseDate(AttributeModel):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_date(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_date(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         try:
             dt = TypeAdapter(date).validate_python(value)
             data = dict(year=dt.year, month=dt.month, day=dt.day)
@@ -42,8 +42,8 @@ class SparseDate(AttributeModel):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_string(value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_string(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str):
             return handler(value)
 

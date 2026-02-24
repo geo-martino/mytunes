@@ -14,8 +14,8 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTrack
     """Represents a collection of artists and their properties."""
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _get_name_from_albums(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _get_name_from_albums(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
             return handler(data)
         if isinstance(name := data.get(key := "name"), str) and name.strip():
@@ -39,8 +39,10 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTrack
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _filter_albums_on_artist_name(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _filter_albums_on_artist_name(
+            cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
         if not isinstance(data, MutableMapping):
             return handler(data)
         if not isinstance(albums := data.get(key := "albums"), Sequence):

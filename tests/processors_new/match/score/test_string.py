@@ -1,0 +1,162 @@
+from abc import ABCMeta
+from unittest.mock import patch, Mock
+
+import pytest
+from faker import Faker
+from pydantic import InstanceOf
+
+from musify.models.item.track import Track
+from musify.processors_new.match.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
+    ArtistScorer, \
+    AlbumScorer
+from tests.models.testers import MusifyModelTester
+
+
+class StringScorerTester(MusifyModelTester, metaclass=ABCMeta):
+    @staticmethod
+    def test_calculate_score_returns_on_missing_values(model: StringScorer):
+        assert model._calculate_score("", "other value") == 0
+        assert model._calculate_score("test value", "") == 0
+
+
+class StringScoreReducerTester(MusifyModelTester, metaclass=ABCMeta):
+    @staticmethod
+    def test_reduce_score(model: StringScorer):
+        with patch.object(StringScoreReducer, "_reduce_score") as mock_reduce_score:
+            model._calculate_score("test value", "other value")
+            mock_reduce_score.assert_called_once()
+
+
+class TestStringScoreReducer(MusifyModelTester):
+    @pytest.fixture
+    @patch.multiple(
+        StringScoreReducer,
+        __abstractmethods__=set(),
+        _calculate_score=Mock(),
+    )
+    def model(self) -> StringScoreReducer:
+        return StringScoreReducer[InstanceOf[Mock]](type="test", cleaner=Mock())
+
+    def test_reduce_score_skips(self, model: StringScoreReducer, faker: Faker):
+        score = faker.random_int()
+        assert model._reduce_score(score=score, value="", other="other value") == score
+        assert model._reduce_score(score=score, value="test value", other=None) == score
+
+        model.reduce_on_phrases = set()
+        model.reduce_factor = 0.5
+        assert model._reduce_score(score=score, value="test value", other="other value") == score
+
+        model.reduce_on_phrases = {"other"}
+        model.reduce_factor = 1
+        assert model._reduce_score(score=score, value="test value", other="other value") == score
+
+        model.reduce_factor = 0.5
+        assert model._reduce_score(score=0, value="test value", other="other value") == 0
+
+
+class TestKaraokeScorer(StringScorerTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> KaraokeScorer:
+        return KaraokeScorer(weight=faker.random_int())
+
+    # noinspection PyMethodOverriding
+    @staticmethod
+    def test_calculate_score_returns_on_missing_values(model: KaraokeScorer, faker: Faker):
+        assert model._calculate_score(None) is False
+        assert model._calculate_score("") is False
+
+    def test_calculate_score(self, model: KaraokeScorer, faker: Faker):
+        model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
+
+        assert model._calculate_score("test value") is False
+        assert model._calculate_score(f"test {faker.random_element(model.karaoke_phrases)}") is True
+
+    def test_score_on_prefer_not_karaoke(self, model: KaraokeScorer, tracks: list[Track], faker: Faker):
+        model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
+        model.prefer_not_karaoke = True
+
+        track = faker.random_element(tracks)
+        assert model.score(track) == 1 * model.weight
+
+        track.artist = f"test artist {faker.random_element(model.karaoke_phrases)}"
+        assert model.score(track) == 0
+
+    def test_score_on_prefer_karaoke(self, model: KaraokeScorer, tracks: list[Track], faker: Faker):
+        model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
+        model.prefer_not_karaoke = False
+
+        track = faker.random_element(tracks)
+        assert model.score(track) == 0
+
+        track.artist = f"test artist {faker.random_element(model.karaoke_phrases)}"
+        assert model.score(track) == 1 * model.weight
+
+
+class TestNameScorer(StringScorerTester, StringScoreReducerTester):
+    @pytest.fixture
+    def model(self) -> NameScorer:
+        return NameScorer()
+
+    def test_calculate_score(self, model: NameScorer):
+        assert model._calculate_score("test title", "test title") == 1
+        assert model._calculate_score("test title", "other title") == 0.5
+        assert model._calculate_score("this is a title", "this is another title") == 0.75
+
+        assert model._calculate_score("a different title", "this is a different title") == 1
+        assert model._calculate_score("this is a different title", "a different title") == 0.6
+
+
+class TestArtistScorer(StringScorerTester):
+    @pytest.fixture
+    def model(self) -> ArtistScorer:
+        return ArtistScorer(scale_on_many_artists=False)
+
+    def test_calculate_score_simple(self, model: ArtistScorer):
+        model.scale_on_many_artists = False
+
+        artists_1 = ["artist 1", "artist 2", "artist 3"]
+        artists_2 = ["artist 1", "artist 2", "artist 3"]
+        assert model._calculate_score(artists_1, artists_2) == 1
+
+        # matches 1/2 words from each artist
+        artists_1 = ["artist 1", "artist 2", "artist 3"]
+        artists_2 = ["artist"]
+        assert model._calculate_score(artists_1, artists_2) == 0.5
+
+    def test_calculate_score_complex(self, model: ArtistScorer):
+        model.scale_on_many_artists = False
+
+        artists_1 = ["band", "a singer", "artist"]
+        artists_2 = ["artist", "singer", "other"]
+        assert model._calculate_score(artists_1, artists_2) == 0.5
+
+    def test_calculate_score_with_scaling_basic(self, model: ArtistScorer):
+        model.scale_on_many_artists = True
+
+        artists_1 = ["artist", "nope", "other"]
+        artists_2 = ["band", "a singer", "artist"]
+        assert round(model._calculate_score(artists_1, artists_2), 2) == 0.33
+
+        artists_1 = ["nope", "other", "artist"]
+        assert round(model._calculate_score(artists_1, artists_2), 2) == 0.11
+
+    def test_calculate_score_with_scaling_complex(self, model: ArtistScorer):
+        model.scale_on_many_artists = True
+
+        artists_1 = ["band", "a singer", "artist"]
+        artists_2 = ["artist", "singer", "other"]
+        assert round(model._calculate_score(artists_1, artists_2), 2) == 0.19
+
+        artists_1 = ["band", "artist", "a singer"]
+        assert round(model._calculate_score(artists_1, artists_2), 2) == 0.22
+
+
+class TestAlbumScorer(StringScorerTester, StringScoreReducerTester):
+    @pytest.fixture
+    def model(self) -> AlbumScorer:
+        return AlbumScorer()
+
+    def test_calculate_score(self, model: NameScorer):
+        assert model._calculate_score("album name", "name") == 0.5
+        assert model._calculate_score("name", "album name") == 1
+        assert model._calculate_score("brand new album", "this is a brand new really cool album") == 1

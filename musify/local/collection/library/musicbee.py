@@ -86,24 +86,24 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
         return handler(data)
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _validate_settings_file_exists(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _validate_settings_file_exists(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model = handler(value)
         if not model.xml_settings_path.is_file():
             raise FileDoesNotExistError(model.xml_settings_path, "MusicBee settings file does not exist")
         return model
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _validate_library_file_exists(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _validate_library_file_exists(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model = handler(value)
         if not model.xml_library_path.is_file():
             raise FileDoesNotExistError(model.xml_library_path, "MusicBee library file does not exist")
         return model
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _validate_playlists_folder_exists(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _validate_playlists_folder_exists(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model = handler(value)
         if model.playlist_folder.is_absolute():
             return model

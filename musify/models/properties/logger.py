@@ -6,7 +6,7 @@ from musify.models._base import MusifyModel
 
 
 class HasLogger(MusifyModel):
-    """Represents a resource that has a length."""
+    """Represents a resource that has a logger."""
 
     @cached_property
     def logger(self) -> MusifyLogger:

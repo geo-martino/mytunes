@@ -1,7 +1,8 @@
 import os
+from collections.abc import Generator
 from pathlib import Path
 from random import choice, sample
-from typing import Generator, Any
+from typing import Any
 from unittest import mock
 
 import pytest

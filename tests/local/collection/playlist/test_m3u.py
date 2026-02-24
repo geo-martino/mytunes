@@ -1,6 +1,7 @@
+from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 from unittest import mock
 
 import pytest

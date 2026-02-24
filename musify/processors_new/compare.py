@@ -130,8 +130,8 @@ class Comparer(DynamicProcessor):
         return annotation_type
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _convert_expected_to_null(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _convert_expected_to_null(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(value)
         if model.expected is None:
             return model
@@ -143,15 +143,15 @@ class Comparer(DynamicProcessor):
         return model
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _convert_expected_to_type(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _convert_expected_to_type(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(value)
         model._convert_expected_value(model._expected_type)
         return model
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _convert_expected_to_exact_field_type(value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _convert_expected_to_exact_field_type(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(value)
         if is_typevar(model._actual_type) and is_typevar(model._expected_type):  # expected is same type as actual
             model._convert_expected_value(model._field_type)
@@ -159,9 +159,9 @@ class Comparer(DynamicProcessor):
         return model
 
     @model_validator(mode="wrap")
-    @staticmethod
+    @classmethod
     def _convert_expected_to_generic_when_actual_is_sequence(
-             value: Any, handler: ModelWrapValidatorHandler[Self]
+            cls, value: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
         model: Self = handler(value)
         if is_typevar(model._expected_type) and model._field_type is str:
@@ -177,9 +177,9 @@ class Comparer(DynamicProcessor):
         return model
 
     @model_validator(mode="wrap")
-    @staticmethod
+    @classmethod
     def _convert_expected_to_sequence_when_actual_is_generic(
-            value: Any, handler: ModelWrapValidatorHandler[Self]
+            cls, value: Any, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
         model: Self = handler(value)
         if (

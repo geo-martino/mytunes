@@ -44,9 +44,9 @@ class LocalPlaylistFile[TF: Filter](
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
+    @classmethod
     def _extract_name_from_path(
-            data: str | Path | MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
+            cls, data: str | Path | MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
         if isinstance(data, str | Path):
             data = dict(path=Path(data))

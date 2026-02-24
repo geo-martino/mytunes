@@ -270,8 +270,8 @@ class _XMLBaseModel(MusifyModel):
     )
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _clean_keys(data: Mapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _clean_keys(cls, data: Mapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, Mapping):
             return handler(data)
 
@@ -450,8 +450,8 @@ class _XMLCondition(_XMLBaseModel):
         return isinstance(value, str) and value in self.reference_values
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _merge_values(data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _merge_values(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(data, MutableMapping):
             return handler(data)
 
@@ -478,8 +478,8 @@ class _XMLCondition(_XMLBaseModel):
         return self
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_comparer(comparer: Comparer, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_comparer(cls, comparer: Comparer, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(comparer, Comparer):
             return handler(comparer)
 
@@ -551,8 +551,8 @@ class _XMLConditions(_XMLBaseModel):
         return ComparerFilter[LocalTrack](comparers=comparers, match_all=self.combine_method == "All")
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_comparers(comparers: ComparerFilter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_comparers(cls, comparers: ComparerFilter, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(comparers, ComparerFilter):
             return handler(comparers)
 
@@ -597,8 +597,8 @@ class _XMLLimit(_XMLBaseModel):
         )
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_limiter(limiter: ItemLimiter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_limiter(cls, limiter: ItemLimiter, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(limiter, ItemLimiter):
             return handler(limiter)
 
@@ -688,8 +688,8 @@ class _XMLSortBy(_XMLBaseModel):
         return {self.field_name: self.order == "Descending"}
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_sorter(sorter: ItemSorter, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_sorter(cls, sorter: ItemSorter, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(sorter, ItemSorter):
             return handler(sorter)
 
@@ -925,8 +925,8 @@ class _XMLRoot(_XMLBaseModel):
         return super().__new__(cls)
 
     @model_validator(mode="wrap")
-    @staticmethod
-    def parse_xml(value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def parse_xml(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         """Parse the given XML string."""
         if not isinstance(value, str):
             return handler(value)

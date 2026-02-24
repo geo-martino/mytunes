@@ -32,8 +32,8 @@ class Position(AttributeModel):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_number(value: int | float, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_number(cls, value: int | float, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, int | float):
             return handler(value)
 
@@ -42,8 +42,8 @@ class Position(AttributeModel):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_numbers(value: tuple | list, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_numbers(cls, value: tuple | list, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, tuple | list):
             return handler(value)
 

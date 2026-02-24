@@ -72,8 +72,8 @@ class ImageBase(MusifyModel):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_image_bytes(value: bytes | bytearray, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_image_bytes(cls, value: bytes | bytearray, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, bytes | bytearray):
             return handler(value)
 

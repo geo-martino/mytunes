@@ -197,9 +197,9 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
     )
 
     @field_validator("comparers", mode="before", check_fields=True)
-    @staticmethod
+    @classmethod
     def _comparer_to_mapping(
-        value: Comparer | Iterable[Comparer] | Mapping[str, tuple[bool, Self]]
+        cls, value: Comparer | Iterable[Comparer] | Mapping[str, tuple[bool, Self]]
     ) -> Mapping[str, tuple[bool, Self]]:
         if isinstance(value, Comparer):
             value = [value]

@@ -800,28 +800,28 @@ class TestDefinedSort(MusifyModelTester):
             for field in fields:
                 assert field in _XMLCondition.name_field_map
 
-    def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy):
+    def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={"released_at": True, "compilation": False})
         with pytest.raises(ValueError, match="Field code mapping not found"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLSortBy):
+    def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={"disc.number": True, "track.number": False})
         with pytest.raises(ValueError, match="No sort defined"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_single_fields(self, model: _XMLSortBy):
+    def test_parse_sorter_fails_on_single_fields(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): choice([True, False])})
         with pytest.raises(ValueError, match="Only use this sorter for multi-field sorts"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter(self, model: _XMLSortBy):
+    def test_parse_sorter(self, model: _XMLDefinedSort):
         fields = choice(tuple(_XMLDefinedSort.fields_map.values()))
         sorter = ItemSorter(sort_fields={_XMLCondition.name_field_map[k]: v for k, v in fields.items()})
         model.parse_sorter(sorter=sorter)
         assert model.id == next((code for code, val in _XMLDefinedSort.fields_map.items() if val == fields), None)
 
-    def test_parse_xml(self, adapter: TypeAdapter[_XMLSortBy]):
+    def test_parse_xml(self, adapter: TypeAdapter[_XMLDefinedSort]):
         xml = {"@Id": choice(tuple(_XMLDefinedSort.fields_map))}
         assert adapter.validate_python(xml).model_dump_xml() == xml
 

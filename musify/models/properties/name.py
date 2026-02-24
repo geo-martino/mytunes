@@ -15,8 +15,8 @@ class HasName(AttributeResource):
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
-    @staticmethod
-    def _from_name(value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    @classmethod
+    def _from_name(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, str):
             return handler(value)
 
