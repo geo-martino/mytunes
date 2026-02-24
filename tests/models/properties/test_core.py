@@ -3,7 +3,6 @@ from random import choice
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.properties import HasSeparableTags
 from tests.models.testers import MusifyResourceTester
 

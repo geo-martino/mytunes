@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Any
 
 import mutagen
 import mutagen.wave
@@ -7,7 +6,7 @@ import pytest
 from faker import Faker
 
 from musify.models.properties.audio import IsAudioFile
-from musify.models.properties.file import IsLocalFile, IsFile
+from musify.models.properties.file import IsLocalFile
 from tests.models.testers import MusifyResourceTester
 
 

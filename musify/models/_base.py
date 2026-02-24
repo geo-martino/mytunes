@@ -1,9 +1,8 @@
-import itertools
 from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints, get_origin, get_args
+from typing import Any, ClassVar, Self, get_type_hints
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -14,8 +13,8 @@ from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
-from musify.exception import MusifyValueError, MusifyTypeError, MusifyAttributeError
-from musify.utils import classproperty, get_base_types
+from musify.exception import MusifyValueError, MusifyAttributeError
+from musify.utils import get_base_types
 
 
 def abstract_property() -> property:

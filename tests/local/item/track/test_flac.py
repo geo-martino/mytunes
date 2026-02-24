@@ -15,7 +15,6 @@ from faker import Faker
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.flac import FLAC
-from musify.models import MusifyModel
 from musify.models.properties.date import SparseDate
 from musify.models.properties.music import KeySignature
 from musify.models.properties.order import Position

@@ -1,7 +1,6 @@
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.item.album import Album, HasAlbums
 from musify.models.properties.uri import URI
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester

@@ -14,7 +14,6 @@ from faker import Faker
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.mp3 import MP3
-from musify.models import MusifyModel
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 

@@ -3,7 +3,6 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.collection.artist import ArtistCollection
 from musify.models.item.album import Album
 from musify.models.properties.uri import URI

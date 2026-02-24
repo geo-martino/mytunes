@@ -3,7 +3,6 @@ from random import choice
 import pytest
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyRootModel, MusifyModel
 from musify.models.properties.uri import URI, HasURI, HasMutableURI
 from tests.models.testers import MusifyModelTester, UniqueKeyTester
 from tests.utils import SimpleURI

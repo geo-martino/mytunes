@@ -10,7 +10,6 @@ from aioresponses import aioresponses, CallbackResult
 from faker import Faker
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyModel
 from musify.models.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
 from tests.models.testers import MusifyModelTester
 

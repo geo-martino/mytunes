@@ -6,7 +6,7 @@ import unicodedata
 from collections import Counter
 from collections.abc import Iterable, Collection, MutableSequence, Mapping, MutableMapping
 from types import UnionType, GenericAlias
-from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union, get_type_hints
+from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
 
 from aiorequestful.types import Number
 from pydantic import Tag

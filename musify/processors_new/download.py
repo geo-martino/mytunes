@@ -3,7 +3,7 @@ Processor that helps user download songs from collections based on given configu
 """
 import itertools
 import math
-from collections.abc import Iterable, Collection, Sequence, Iterator
+from collections.abc import Iterable, Collection, Sequence
 from itertools import batched
 from typing import Any, Annotated
 from urllib.parse import quote

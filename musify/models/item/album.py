@@ -4,7 +4,7 @@ from typing import ClassVar
 from pydantic import Field, field_validator, computed_field, PositiveInt
 
 from musify._types import StrippedString
-from musify.models._base import AttributeResource, writeable_computed_field, abstract_property
+from musify.models._base import AttributeResource
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.item.genre import HasGenres, Genre
 from musify.models.properties import HasSeparableTags

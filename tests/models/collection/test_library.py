@@ -1,7 +1,6 @@
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 # noinspection PyProtectedMember
 from musify.models.collection.library import HasTracksAndPlaylists
 from musify.models.collection.playlist import Playlist

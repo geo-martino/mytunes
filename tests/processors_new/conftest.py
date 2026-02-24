@@ -9,7 +9,6 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, LocalTrackType
 from musify.models.collection.playlist import MutablePlaylist, Playlist
-from musify.models.item.artist import Artist
 
 
 @pytest.fixture

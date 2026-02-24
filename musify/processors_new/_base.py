@@ -4,7 +4,7 @@ Base classes for all processors in this module. Also contains decorators for use
 import os
 import textwrap
 from abc import ABCMeta, abstractmethod
-from collections.abc import Callable, MutableSequence, Mapping
+from collections.abc import Callable, Mapping
 from functools import partial, update_wrapper
 from typing import Any, Optional, Literal, Self
 
@@ -15,7 +15,6 @@ from termcolor import colored
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel
 from musify.models.properties.logger import HasLogger
-from musify.utils import get_user_input
 
 
 class Result(MusifyModel):

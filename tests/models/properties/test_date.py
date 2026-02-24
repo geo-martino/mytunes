@@ -3,7 +3,6 @@ from datetime import date
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.properties.date import SparseDate
 from tests.models.testers import MusifyModelTester
 

@@ -1,6 +1,6 @@
-import types
 from collections.abc import MutableMapping, Iterable
-from typing import Any, get_args, Self
+from collections.abc import MutableMapping, Iterable
+from typing import Any, Self
 
 import mutagen.flac
 import mutagen.id3

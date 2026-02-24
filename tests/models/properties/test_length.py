@@ -3,7 +3,6 @@ from datetime import timedelta
 import pytest
 from faker import Faker
 
-from musify.models import MusifyRootModel
 from musify.models.properties.length import Length
 from tests.models.testers import MusifyModelTester
 

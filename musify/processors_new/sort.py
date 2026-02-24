@@ -10,7 +10,6 @@ from typing import Any, Literal, Annotated, Mapping
 from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
-from musify._types import to_tuple
 from musify.exception import MusifyValueError
 from musify.models import MusifyResource, MusifyEnum
 from musify.models.item.artist import HasArtists

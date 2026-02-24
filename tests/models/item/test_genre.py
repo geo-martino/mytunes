@@ -3,7 +3,6 @@ from random import choice, sample
 import pytest
 from faker import Faker
 
-from musify.models import MusifyModel
 from musify.models.item.genre import Genre, HasGenres
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester
 from tests.utils import GENRES

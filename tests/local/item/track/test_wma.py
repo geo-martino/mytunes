@@ -17,7 +17,6 @@ from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import TagDumpContext
 from musify.local.item.track.wma import WMA
-from musify.models import MusifyModel
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
