@@ -14,6 +14,17 @@ from tests.models.testers import MusifyModelTester
 
 
 class TestSyncResultM3U(MusifyModelTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> SyncResultM3U:
+        return SyncResultM3U(
+            start=faker.random_int(0, 100),
+            added=faker.random_int(0, 100),
+            removed=faker.random_int(0, 100),
+            unchanged=faker.random_int(0, 100),
+            difference=faker.random_int(-100, 100),
+            final=faker.random_int(0, 100),
+        )
+
     def test_from_paths(self, faker: Faker):
         paths_initial = [Path(faker.file_path()) for _ in range(10)]
         paths_final = paths_initial[:5] + [Path(faker.file_path()) for _ in range(7)]

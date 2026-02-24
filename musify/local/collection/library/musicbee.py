@@ -273,7 +273,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
             "Size": track.size,
             "Kind": track.type,
             # "": track.channels,  # unknown MusicBee mapping
-            "Bit Rate": int(track.bit_rate)  if track.bit_rate is not None else None,
+            "Bit Rate": int(track.bit_rate) if track.bit_rate is not None else None,
             # "": track.bit_depth if track.bit_depth is not None else None,  # unknown MusicBee mapping
             "Sample Rate": int(track.sample_rate * 1000) if track.sample_rate is not None else None,  # in Hz
             "Date Modified": track.modified_at,
@@ -334,12 +334,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
 
 # noinspection PyProtectedMember
 class XMLLibraryParser(MusifyModel):
-    """
-    Parses MusicBee XML files to and from iTunes style XML.
-
-    :param path: Path to the XML file.
-    :param path_keys: A list of keys in the XML file that need to be processed as system paths.
-    """
+    """Parses MusicBee XML files to and from iTunes style XML."""
 
     _iterparse: etree.iterparse | None = PrivateAttr(default=None)
 

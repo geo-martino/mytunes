@@ -24,7 +24,9 @@ from tests.utils import assert_validator_skips
 
 
 @pytest.fixture
-def pictures(image_bytes: list[bytes], image_objects: list[PILImageFile], image_types: set[str]) -> dict[str, ASFByteArrayAttribute]:
+def pictures(
+        image_bytes: list[bytes], image_objects: list[PILImageFile], image_types: set[str]
+) -> dict[str, ASFByteArrayAttribute]:
     pictures = {}
     for img_bytes, img_obj in zip(image_bytes, image_objects):
         kind = image_types.pop()
@@ -89,7 +91,6 @@ class TestWMA(LocalTrackTester):
 
     def test_serialize_unicode_attribute_skips_on_json(self, model: WMA, faker: Faker):
         value = choice(([faker.sentence()], faker.words()))
-        expected = model._join_tags(value)
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="json")
         # noinspection PyTypeChecker
         assert not isinstance(model._serialize_unicode_attribute(value, info=info), ASFUnicodeAttribute)
@@ -166,7 +167,9 @@ class TestWMA(LocalTrackTester):
         # noinspection PyTypeChecker
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
-    def test_from_tags(self, model: WMA, image_bytes: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker):
+    def test_from_tags(
+            self, model: WMA, image_bytes: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker
+    ):
         sep = choice(WMA._tag_sep)
         tags = {
             "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],

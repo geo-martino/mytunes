@@ -19,7 +19,9 @@ from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalT
 
 
 @pytest.fixture
-def pictures(image_bytes: list[bytes], image_types: set[str], image_objects: list[PILImageFile]) -> dict[str, mutagen.id3.APIC]:
+def pictures(
+        image_bytes: list[bytes], image_types: set[str], image_objects: list[PILImageFile]
+) -> dict[str, mutagen.id3.APIC]:
     pictures = {}
 
     for img_bytes, img_obj in zip(image_bytes, image_objects):

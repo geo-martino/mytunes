@@ -34,6 +34,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
             core_schema.list_schema(values_schema),
         ])
 
+        # noinspection PyProtectedMember
         return core_schema.no_info_after_validator_function(
             function=cls._validate,
             schema=handler(schema),

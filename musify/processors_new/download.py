@@ -21,7 +21,7 @@ from musify.processors_new._base import InputProcessor
 
 class ItemDownloadHelper(InputProcessor):
     """Runs operations for helping the user to download tracks from given collections."""
-    urls: Sequence[Annotated[StrippedString, StringConstraints(pattern="^[^{}]*\{\}[^{}]*$")]] = Field(
+    urls: Sequence[Annotated[StrippedString, StringConstraints(pattern=r"^[^{}]*\{\}[^{}]*$")]] = Field(
         description=(
             "The template URLs for websites to open queries for. "
             "The given sites should contain exactly 1 '{}' placeholder into which the processor can place "

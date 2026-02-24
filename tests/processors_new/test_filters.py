@@ -307,7 +307,9 @@ class TestMatcherFilter(FilterTester):
         return tracks_include
 
     @pytest.fixture
-    def tracks_exclude(self, tracks_released_at: list[LocalTrack], tracks_include: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
+    def tracks_exclude(
+            self, tracks_released_at: list[LocalTrack], tracks_include: list[LocalTrack], faker: Faker
+    ) -> list[LocalTrack]:
         """Sample the list of tracks to test and set the path to be excluded for all these tracks"""
         exclude_paths = [f"{self.library_folder}/exclude/{faker.file_name(extension="mp3")}" for _ in range(20)]
         tracks_exclude = sample(tracks_released_at, 3) + sample(tracks_include, 2)
@@ -338,15 +340,16 @@ class TestMatcherFilter(FilterTester):
         new_filter.exclude = deepcopy(model.include)
         assert model != new_filter
 
+    # noinspection PyMethodOverriding
     def test_check(
             self,
             model: MatchFilter,
+            faker: Faker,
             tracks: list[LocalTrack],
             tracks_include: list[LocalTrack],
             tracks_exclude: list[LocalTrack],
             tracks_name: list[LocalTrack],
             tracks_released_at: list[LocalTrack],
-            faker: Faker
     ):
         track = next(
             track for track in tracks

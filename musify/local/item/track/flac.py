@@ -1,5 +1,4 @@
 from collections.abc import MutableMapping, Iterable
-from collections.abc import MutableMapping, Iterable
 from typing import Any, Self
 
 import mutagen.flac

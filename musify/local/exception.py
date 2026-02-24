@@ -74,7 +74,6 @@ class FileDoesNotExistError(FileError, FileNotFoundError):
         super().__init__(path=path, message=message)
 
 
-
 ###########################################################################
 ## Track errors
 ###########################################################################

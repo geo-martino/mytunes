@@ -9,6 +9,7 @@ from typing import Self, Any, Literal, ClassVar
 import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
+from mutagen import FileType
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
     InstanceOf, field_serializer
 # noinspection PyProtectedMember
@@ -53,7 +54,7 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile, 
         return data
 
 
-class LocalTrack[T: mutagen.FileType](
+class LocalTrack[T: FileType](
     LocalResource,
     Track[LocalArtist, LocalAlbum, LocalGenre],
     LocalAudioFile,
@@ -63,7 +64,7 @@ class LocalTrack[T: mutagen.FileType](
 ):
     __tag_fields__ = frozenset(set(Track.model_fields.keys()) | {"compilation"})
 
-    class EmbeddedImage[FT: mutagen.FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
+    class EmbeddedImage[FT: FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
         alias: ClassVar[str | AliasChoices] = "images"
 
         # noinspection PyNestedDecorators
@@ -85,7 +86,7 @@ class LocalTrack[T: mutagen.FileType](
 
         @classmethod
         def from_image_model(cls, model: ImageSource) -> Self:
-            """Create an instance of an this image models from any other type of ImageSource models."""
+            """Create an instance of this image models from any other type of ImageSource models."""
             if isinstance(model, cls):
                 return model
 
@@ -319,6 +320,7 @@ class LocalTrack[T: mutagen.FileType](
         if not isinstance(context, TagDumpContext) or not context.loaded_images:
             return []
         if missing_images := set(context.loaded_images) - set(self.images or ()):
+            # noinspection PyUnboundLocalVariable
             raise FileError(f"Some image types are missing from the loaded images: {", ".join(missing_images)}")
 
         return [

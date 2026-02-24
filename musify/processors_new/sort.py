@@ -207,7 +207,7 @@ class ItemSorter(Processor):
     def __call__(self, *args, **kwargs) -> None:
         return self.sort(*args, **kwargs)
 
-    def sort(self, items: MutableSequence[MusifyResource]) -> None:
+    def sort[T: MusifyResource](self, items: MutableSequence[T]) -> None:
         """Sorts a sequence of ``items`` in-place."""
         if len(items) == 0:
             return
@@ -256,7 +256,7 @@ class ItemSorter(Processor):
         return groups
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_rating(self, items: MutableSequence[MusifyResource]) -> None:
+    def _shuffle_on_rating(self, items: MutableSequence[HasRating]) -> None:
         if not all(isinstance(item, HasRating) for item in items):
             raise SorterProcessorError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
@@ -265,13 +265,13 @@ class ItemSorter(Processor):
 
         max_value = max(item.rating for item in items)
 
-        def _sort_key(item: MusifyResource) -> float:
+        def _sort_key(item: HasRating) -> float:
             return self._get_weighted_shuffle_value(item.rating, max_value)
 
         items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_added_at(self, items: MutableSequence[MusifyResource]) -> None:
+    def _shuffle_on_added_at(self, items: MutableSequence[HasAddedDate]) -> None:
         if not all(isinstance(item, HasAddedDate) for item in items):
             raise SorterProcessorError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
@@ -280,7 +280,7 @@ class ItemSorter(Processor):
 
         max_value = max(item.added_at.timestamp() for item in items)
 
-        def _sort_key(item: MusifyResource) -> float:
+        def _sort_key(item: HasAddedDate) -> float:
             return self._get_weighted_shuffle_value(item.added_at.timestamp(), max_value)
 
         items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
@@ -290,7 +290,7 @@ class ItemSorter(Processor):
         return abs(value - weight_factor * (value - max_value))
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_artist(self, items: MutableSequence[MusifyResource]) -> None:
+    def _shuffle_on_artist(self, items: MutableSequence[HasArtists]) -> None:
         if not all(isinstance(item, HasArtists) for item in items):
             raise SorterProcessorError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
@@ -301,7 +301,7 @@ class ItemSorter(Processor):
         artists: list[str] = list({item.artist for item in items})
         shuffle(artists)
 
-        def _sort_key(item: MusifyResource) -> int:
+        def _sort_key(item: HasArtists) -> int:
             artist = item.artist
             return artists.index(artist) if random() <= shuffle_weight else randrange(0, len(artists))
 

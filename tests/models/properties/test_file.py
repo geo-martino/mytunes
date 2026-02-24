@@ -64,8 +64,6 @@ class TestIsLocalFile(MusifyResourceTester):
         assert data == dict(path=str(model.path))
 
 
-
-
 class TestPathMapper:
     @pytest.fixture
     def model(self, faker: Faker) -> PathMapper:

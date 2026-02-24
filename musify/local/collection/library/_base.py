@@ -243,9 +243,10 @@ class LocalLibrary(
             paths, desc="Loading playlists", unit="playlists", total=len(paths)
         )
         playlists = filter(lambda pl: pl is not None, [await self.load_playlist(path) for path in bar])
+        playlists = {pl.name: pl for pl in sorted(playlists, key=lambda x: x.name.casefold())}
 
         self.playlists.clear()
-        self.playlists.update({pl.name: pl for pl in sorted(playlists, key=lambda x: x.name.casefold())}, extract_keys=False)
+        self.playlists.update(playlists, extract_keys=False)
 
         self._log_errors("Could not load the following playlists")
         self.logger.debug(f"Load {self.source} playlists: DONE\n")

@@ -10,7 +10,7 @@ from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
 
 from aiorequestful.types import Number
 from pydantic import Tag
-from typing_extensions import get_origin
+from typing_extensions import get_origin, evaluate_forward_ref
 
 from musify.exception import MusifyTypeError, MusifyImportError
 
@@ -99,7 +99,7 @@ def unicode_len(value: str) -> int:
     """
     Returns the visible length of ``value`` when rendered with fixed-width font.
 
-    Takes into account unicode characters which render with varying widths.
+    Takes into account Unicode characters which render with varying widths.
     """
     length = sum(unicodedata.category(char) not in _UNICODE_MODIFIERS for char in value)
     length += sum(unicodedata.category(char) in _UNICODE_DOUBLE_WIDTH for char in value)  # takes up 2 spaces
@@ -107,7 +107,7 @@ def unicode_len(value: str) -> int:
 
 
 def unicode_reversed(value: str) -> str:
-    """Returns a reversed string or ``value`` keeping unicode characters which combine in the correct order"""
+    """Returns a reversed string or ``value`` keeping Unicode characters which combine in the correct order"""
     value_reversed = ""
     char_combined = ""
 
@@ -138,7 +138,7 @@ def align_string(value: Any, max_width: int = 0, truncate_left: bool = False) ->
     Align string with space padding and truncate any string longer than ``max_width`` with ``...``
 
     This function aligns based on fixed-width fonts.
-    Therefore, unicode characters (e.g. emojis) will be aligned based on their width in a fixed-width font.
+    Therefore, Unicode characters (e.g. emojis) will be aligned based on their width in a fixed-width font.
 
     :param value: The value to be aligned. Will first be converted to a string.
     :param max_width: The expected width (i.e. number of fixed-width characters)
@@ -162,7 +162,7 @@ def align_string(value: Any, max_width: int = 0, truncate_left: bool = False) ->
             dots_count += 1 if dots_count < 3 and unicode_len(value_truncated) < max_width else 0
             break
 
-        # always add unicode modifiers even if unicode_len == expected_width
+        # always add Unicode modifiers even if unicode_len == expected_width
         if unicodedata.category(char) not in _UNICODE_MODIFIERS and unicode_len(value_truncated) == expected_len:
             break
 
@@ -312,6 +312,7 @@ def get_base_types(
 
     :param annotation: The type annotation to get the base types for.
     :param ignore_none: Whether to drop NoneType base types.
+    :param resolve_generics: Whether to resolve TypeVars to their constraints or bounds.
     :return: A tuple of all base types.
     """
     bases = []
@@ -322,7 +323,7 @@ def get_base_types(
         case GenericAlias():
             bases.append(get_origin(annotation))
         case ForwardRef():
-            bases.extend(get_base_types(annotation._evaluate(globals(), locals(), recursive_guard=frozenset())))
+            bases.extend(get_base_types(evaluate_forward_ref(annotation)))
         case TypeAliasType():
             ano = annotation.__value__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))

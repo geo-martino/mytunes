@@ -110,7 +110,9 @@ class TestImageFile(MusifyModelTester):
             width=faker.random_int()
         )
 
-    async def test_load(self, model: ImageFile, image_bytes: list[bytes], image_objects: list[PILImageFile], tmp_path: Path):
+    async def test_load(
+            self, model: ImageFile, image_bytes: list[bytes], image_objects: list[PILImageFile], tmp_path: Path
+    ):
         assert model.path.is_relative_to(tmp_path)
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
 
@@ -151,7 +153,13 @@ class TestImageURL(MusifyModelTester):
             width=faker.random_int()
         )
 
-    async def test_load(self, model: ImageURL, image_bytes: list[bytes], image_objects: list[PILImageFile], mock_response: aioresponses):
+    async def test_load(
+            self,
+            model: ImageURL,
+            image_bytes: list[bytes],
+            image_objects: list[PILImageFile],
+            mock_response: aioresponses
+    ):
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
         mock_response.get(
             model.url,
@@ -172,25 +180,25 @@ class TestHasImages(MusifyModelTester):
         img = choice(image_objects)
 
         classes = {m.__class__ for m in model.images.values()}
-        mocked_load = (
+        mock_load = (
             mock.patch.object(cls, "load", return_value=img, new_callable=mock.AsyncMock,)
             for cls in classes
         )
-        mocked_update = (
+        mock_update = (
             mock.patch.object(cls, "update_attributes")
             for cls in classes
         )
 
         with ExitStack() as stack:
-            mocked_load = [stack.enter_context(m) for m in mocked_load]
-            mocked_update = [stack.enter_context(m) for m in mocked_update]
+            mock_load = [stack.enter_context(m) for m in mock_load]
+            mock_update = [stack.enter_context(m) for m in mock_update]
 
             await model.load_images(update_attributes, **kwargs)
 
-            assert sum(m.call_count for m in mocked_load) == len(model.images)
-            assert sum(m.call_count for m in mocked_update) == len(model.images) * update_attributes
+            assert sum(m.call_count for m in mock_load) == len(model.images)
+            assert sum(m.call_count for m in mock_update) == len(model.images) * update_attributes
 
-            for mock_load, mock_update in zip(mocked_load, mocked_update):
+            for mock_load, mock_update in zip(mock_load, mock_update):
                 for call in mock_load.mock_calls:
                     assert call.kwargs == kwargs
                 for call in mock_update.mock_calls:

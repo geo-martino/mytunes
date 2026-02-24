@@ -150,7 +150,11 @@ class TestMusicBee(MusifyResourceTester):
         assert await model.load_library_xml() == xml
 
     async def test_load_tracks_sets_library_folders(
-            self, model: MusicBee, library_folders: list[Path], mock_library_xml: mock.MagicMock, mock_settings_xml: dict[str, Any]
+            self,
+            model: MusicBee,
+            library_folders: list[Path],
+            mock_library_xml: mock.MagicMock,
+            mock_settings_xml: dict[str, Any]
     ):
         assert not model.library_folders
         await model.load()
@@ -224,8 +228,9 @@ class TestXMLLibraryParser(MusifyModelTester):
     @pytest.fixture
     def xml(self) -> str:
         """Returns a sample MusicBee XML library as a string."""
+        # noinspection PyPep8
         return """
-        <?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>

@@ -11,8 +11,8 @@ from pydantic.alias_generators import to_pascal
 
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
-    _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, _XMLRoot, \
-    _XMLDisplayFields, SyncResultXAutoPF
+    _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
+    _XMLRoot, _XMLDisplayFields, SyncResultXAutoPF
 from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
@@ -26,6 +26,23 @@ from tests.models.testers import MusifyModelTester
 
 
 class TestSyncResultXAutoPF(MusifyModelTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> SyncResultXAutoPF:
+        return SyncResultXAutoPF(
+            start=faker.random_int(0, 100),
+            start_included=faker.random_int(0, 100),
+            start_excluded=faker.random_int(0, 100),
+            start_compared=faker.random_int(0, 100),
+            start_limiter=faker.random_int(0, 100),
+            start_sorter=choice([True, False]),
+            final=faker.random_int(0, 100),
+            final_included=faker.random_int(0, 100),
+            final_excluded=faker.random_int(0, 100),
+            final_compared=faker.random_int(0, 100),
+            final_limiter=faker.random_int(0, 100),
+            final_sorter=choice([True, False]),
+        )
+
     def test_from_xml(self, tracks: list[LocalTrack], xml_playlist_recent: str, faker: Faker):
         for track in tracks:
             track.added_at = datetime(2024, 1, faker.random_int(1, 28))
@@ -74,6 +91,7 @@ class TestSyncResultXAutoPF(MusifyModelTester):
 @pytest.fixture
 def xml_playlist_basic() -> str:
     """A basic XAutoPF playlist XML structure for testing purposes."""
+    # noinspection PyPep8
     return """
 <?xml version="1.0" encoding="utf-8"?>
 <SmartPlaylist SaveStaticCopy="true" LiveUpdating="true" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="false" MusicLibraryPath="/mnt/d/Music/">
@@ -108,6 +126,7 @@ def xml_playlist_basic() -> str:
 @pytest.fixture
 def xml_playlist_complex() -> str:
     """A complex XAutoPF playlist XML structure for testing purposes."""
+    # noinspection PyPep8
     return """
 <?xml version="1.0" encoding="utf-8"?>
 <SmartPlaylist SaveStaticCopy="true" LiveUpdating="true" Layout="0" LayoutGroupBy="0" ShuffleMode="RecentAdded" ShuffleSameArtistWeight="0.5" GroupBy="album" ConsolidateAlbums="false" MusicLibraryPath="/mnt/d/Music/">
@@ -152,6 +171,7 @@ def xml_playlist_complex() -> str:
 @pytest.fixture
 def xml_playlist_recent() -> str:
     """A recently added tracks XAutoPF playlist XML structure for testing purposes."""
+    # noinspection PyPep8
     return """
 <?xml version="1.0" encoding="utf-8"?>
 <SmartPlaylist SaveStaticCopy="false" LiveUpdating="true" Layout="4" LayoutGroupBy="0" ShuffleMode="DifferentArtist" ShuffleSameArtistWeight="-0.2" GroupBy="track" ConsolidateAlbums="false" MusicLibraryPath="/mnt/d/Music/">
@@ -734,7 +754,7 @@ class TestXMLSortBy(MusifyModelTester):
 
         model.field = TestXMLDisplayField.get_valid_code()
 
-    def test_field_name(self, model: _XMLDisplayField):
+    def test_field_name(self, model: _XMLSortBy):
         model.field = TestXMLDisplayField.get_valid_code()
         assert model.field_name in _XMLCondition.field_name_map
 

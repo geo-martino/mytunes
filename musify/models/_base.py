@@ -6,7 +6,9 @@ from typing import Any, ClassVar, Self, get_type_hints
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
+# noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
+# noinspection PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
@@ -20,6 +22,7 @@ from musify.utils import get_base_types
 def abstract_property() -> property:
     """Create a new abstract property for an attribute."""
 
+    # noinspection PyUnusedLocal
     def fget(self) -> Any:
         raise NotImplementedError
 
@@ -333,6 +336,7 @@ class CollectionResource(CollectionModel, MusifyResource):
 class MusifyEnum(IntEnum):
     """Generic class for :py:class:`IntEnum` implementations for the entire package."""
 
+    # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(
@@ -343,6 +347,7 @@ class MusifyEnum(IntEnum):
             serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x.name),
         )
 
+    # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
         return {'enum': [m.name for m in cls], 'type': 'string'}

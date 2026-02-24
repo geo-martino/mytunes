@@ -134,7 +134,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         try:
             ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
             return tracks[0]
-        except MusifyValueError as ex:
+        except MusifyValueError:
             return
 
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
@@ -537,7 +537,7 @@ class _XMLConditions(_XMLBaseModel):
     @property
     def comparers(self) -> ComparerFilter:
         """Build the comparer filter for this configuration."""
-        comparers: Mapping[Comparer, tuple[bool, Self]] = {}
+        comparers: dict[Comparer, tuple[bool, ComparerFilter]] = {}
         for condition in self.condition:
             if condition.And:
                 value = (True, condition.And.comparers)
@@ -739,7 +739,9 @@ class _XMLDefinedSort(_XMLBaseModel):
     @classmethod
     def _validate_id_is_mapped(cls, value: int) -> int:
         if value not in cls.fields_map:
-            raise MusifyValueError(f"Unrecognised defined sort ID: {value}. Available IDs: {", ".join(map(str, cls.fields_map))}")
+            raise MusifyValueError(
+                f"Unrecognised defined sort ID: {value}. Available IDs: {", ".join(map(str, cls.fields_map))}"
+            )
         return value
 
     @property

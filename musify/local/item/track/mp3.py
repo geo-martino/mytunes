@@ -241,7 +241,9 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         "name", "track", "disc", "bpm", "key", "released_at",
         mode="plain", when_used="unless-none"
     )
-    def _serialize_text_frame(self, value: str | HasName, info: FieldSerializationInfo) -> InstanceOf[mutagen.id3.TextFrame]:
+    def _serialize_text_frame(
+            self, value: str | HasName, info: FieldSerializationInfo
+    ) -> InstanceOf[mutagen.id3.TextFrame]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return value
         if not isinstance(value, tuple | list):

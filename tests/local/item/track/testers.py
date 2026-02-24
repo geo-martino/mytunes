@@ -57,9 +57,9 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
         file.filename = str(model.path)
         assert await model._get_file(file) is file  # doesn't change file when given
 
-        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_get_bytes:
+        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mock_get_bytes:
             assert await model._get_file() is file
-            mocked_get_bytes.assert_called_once_with(model.path)
+            mock_get_bytes.assert_called_once_with(model.path)
 
     @staticmethod
     async def test_get_file_fails(model: LocalTrack.EmbeddedImage):
@@ -72,7 +72,9 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
             await model._get_file()
 
     @staticmethod
-    def test_get_image_bytes(model: LocalTrack.EmbeddedImage, image_bytes: list[bytes], image_objects: list[PILImageFile]):
+    def test_get_image_bytes(
+            model: LocalTrack.EmbeddedImage, image_bytes: list[bytes], image_objects: list[PILImageFile]
+    ):
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
         assert model._get_image_data(img_bytes) == (img_obj, img_bytes)
         # PIL appears to modify the image bytes so we can only check the first part
@@ -80,9 +82,9 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_get_id3_type_from_tag(model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
-        with mock.patch.object(model.__class__, "_get_type_from_number", return_value="test_type") as mocked_get_type:
+        with mock.patch.object(model.__class__, "_get_type_from_number", return_value="test_type") as mock_get_type:
             attr = next(iter(pictures.values()))
-            assert model.__class__.get_id3_type_from_tag(attr) == mocked_get_type.return_value
+            assert model.__class__.get_id3_type_from_tag(attr) == mock_get_type.return_value
 
     @staticmethod
     def test_from_tag(
@@ -103,7 +105,8 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
             mime=img.get_format_mimetype(), height=img.height, width=img.width,
         )
 
-    async def test_build(self, model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
+    @staticmethod
+    async def test_build(model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
         assert model.build(None) is None
 
         expected = next(
@@ -116,7 +119,7 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
         assert isinstance(result, expected.__class__)
 
 
-class LocalTrackTester(UniqueKeyTester):
+class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
     @pytest.fixture
     def file(self, faker: Faker, tmp_path: Path) -> mutagen.FileType:
         path = tmp_path.joinpath(faker.file_name(category="audio"))
@@ -135,7 +138,8 @@ class LocalTrackTester(UniqueKeyTester):
 
         return file
 
-    def test_extract_tags_from_mutagen_called_on_validate(self, model: LocalTrack, file: mutagen.FileType):
+    @staticmethod
+    def test_extract_tags_from_mutagen_called_on_validate(model: LocalTrack, file: mutagen.FileType):
         with mock.patch.object(
                 model.__class__,
                 "extract_tags_from_mutagen",
@@ -148,14 +152,16 @@ class LocalTrackTester(UniqueKeyTester):
     def test_map_images(model: LocalTrack, pictures: dict[str, Any]):
         assert model._map_images(list(pictures.values())) == pictures
 
-    def test_serialize_name(self, model: LocalTrack, faker: Faker):
+    @staticmethod
+    def test_serialize_name(model: LocalTrack, faker: Faker):
         expected = faker.sentence()
         value = HasName(name=expected)
         info = Namespace(field_name="album", by_alias=True, context=None, mode="json")
         # noinspection PyTypeChecker
         assert model._serialize_name(value, info=info) == expected
 
-    def test_serialize_names(self, model: LocalTrack, faker: Faker):
+    @staticmethod
+    def test_serialize_names(model: LocalTrack, faker: Faker):
         expected = faker.words()
         value = [HasName(name=word) for word in expected]
         info = Namespace(field_name="artists", by_alias=True, context=None, mode="json")
@@ -163,7 +169,9 @@ class LocalTrackTester(UniqueKeyTester):
         assert model._serialize_names(value, info=info) == expected
 
     @staticmethod
-    def test_serialize_images(model: LocalTrack, image_bytes: list[bytes], image_objects: list[PILImageFile], pictures: dict[str, Any]):
+    def test_serialize_images(
+            model: LocalTrack, image_bytes: list[bytes], image_objects: list[PILImageFile], pictures: dict[str, Any]
+    ):
         model.images = pictures
 
         image_model = model.EmbeddedImage(mime="image/png", height=100, width=100)
@@ -174,13 +182,13 @@ class LocalTrackTester(UniqueKeyTester):
         with (
             mock.patch.object(
                 model.EmbeddedImage, "from_image_model", return_value=image_model
-            ) as mocked_from_image_model,
-            mock.patch.object(model.EmbeddedImage, "build") as mocked_build,
+            ) as mock_from_image_model,
+            mock.patch.object(model.EmbeddedImage, "build") as mock_build,
         ):
             # noinspection PyTypeChecker
             result = model._serialize_images(image_bytes, info=context)
             assert len(result) == len(loaded_images)
 
             for kind, image in loaded_images.items():
-                mocked_from_image_model.assert_any_call(model.images[kind])
-                mocked_build.assert_any_call(image)
+                mock_from_image_model.assert_any_call(model.images[kind])
+                mock_build.assert_any_call(image)

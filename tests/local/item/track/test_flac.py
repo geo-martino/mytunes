@@ -23,7 +23,9 @@ from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedI
 
 
 @pytest.fixture
-def pictures(image_bytes: list[bytes], image_objects: list[PILImageFile], image_types: set[str]) -> dict[str, mutagen.flac.Picture]:
+def pictures(
+        image_bytes: list[bytes], image_objects: list[PILImageFile], image_types: set[str]
+) -> dict[str, mutagen.flac.Picture]:
     pictures = {}
 
     for img_bytes, img_obj in zip(image_bytes, image_objects):
@@ -244,7 +246,9 @@ class TestFLAC(LocalTrackTester):
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, info=info) == expected
 
-    def test_from_tags(self, model: FLAC, image_bytes: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker):
+    def test_from_tags(
+            self, model: FLAC, image_bytes: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker
+    ):
         sep = choice(FLAC._tag_sep)
         tags = {
             "title": ["Sleepwalk My Life Away"],

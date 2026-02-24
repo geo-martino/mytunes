@@ -67,9 +67,9 @@ class TestLocalTrack(UniqueKeyTester):
     ## Utility Methods
     ###########################################################################
     async def test_from_path(self, file: mutagen.FileType):
-        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load:
+        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
             model = await LocalTrack.from_path(file.filename)
-            mocked_load.assert_called_once_with(file.filename)
+            mock_load.assert_called_once_with(file.filename)
             assert model.name == file["name"][0]
 
     async def test_load_file(self, faker: Faker, tmp_path: Path):
@@ -77,10 +77,10 @@ class TestLocalTrack(UniqueKeyTester):
         path.touch()  # needs a real file to open
         file = mutagen.FileType()
 
-        with mock.patch.object(mutagen, "File", return_value=file) as mocked_file:
+        with mock.patch.object(mutagen, "File", return_value=file) as mock_file:
             result = await LocalTrack.load_file(path)
 
-            mocked_file.assert_called_once()
+            mock_file.assert_called_once()
             assert result is file
             assert result.filename == str(path)
 
@@ -213,10 +213,10 @@ class TestLocalTrack(UniqueKeyTester):
     ):
         expected = adapter.validate_python(tags | dict(path=file.filename))
 
-        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mocked_load:
+        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
             await model.load()
 
-            mocked_load.assert_called_once()
+            mock_load.assert_called_once()
             assert model is not expected
             assert model.name == expected.name
             assert model.artist == expected.artist
@@ -224,9 +224,9 @@ class TestLocalTrack(UniqueKeyTester):
             assert model.genre == expected.genre
 
     async def test_save(self, model: LocalTrack, file: mutagen.File, faker: Faker):
-        with mock.patch.object(file.__class__, "save") as mocked_save:
+        with mock.patch.object(file.__class__, "save") as mock_save:
             await model.save(file)
-            mocked_save.assert_called_once()
+            mock_save.assert_called_once()
 
     def test_clear_all_tags(self, file: mutagen.File, faker: Faker):
         expected = set(file.tags.keys())
@@ -290,13 +290,13 @@ class TestLocalTrack(UniqueKeyTester):
         context = TagDumpContext()
 
         with (
-            mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mocked_to_tags,
-            mock.patch.object(file.__class__, "update") as mocked_update,
+            mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags,
+            mock.patch.object(file.__class__, "update") as mock_update,
         ):
             model.update(file, include=include, exclude=exclude, context=context, replace=True)
 
-            mocked_to_tags.assert_called_once_with(include=include, exclude=exclude, context=context)
-            mocked_update.assert_called_once_with(mocked_to_tags.return_value)
+            mock_to_tags.assert_called_once_with(include=include, exclude=exclude, context=context)
+            mock_update.assert_called_once_with(mock_to_tags.return_value)
 
     def test_update_no_replace(self, adapter: TypeAdapter[LocalTrack], file: mutagen.File, tags: dict[str, Any]):
         file.tags = dict(sample(list(tags.items()), k=4))
@@ -304,8 +304,8 @@ class TestLocalTrack(UniqueKeyTester):
         model = adapter.validate_python(tags | dict(path=file.filename))
 
         with (
-            mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mocked_to_tags,
-            mock.patch.object(file.__class__, "update") as mocked_update,
+            mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()),
+            mock.patch.object(file.__class__, "update") as mock_update,
         ):
             model.update(file, replace=False)
-            mocked_update.assert_called_once_with(expected)
+            mock_update.assert_called_once_with(expected)

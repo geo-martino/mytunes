@@ -45,7 +45,7 @@ class TestHasMutablePlaylists(MusifyModelTester):
         initial, other, overlap = split_list(playlists, 2, 6)
         model = HasMutablePlaylists(playlists=initial)
 
-        with mock.patch.object(initial[0].__class__, "merge") as mocked_merge:
+        with mock.patch.object(initial[0].__class__, "merge") as mock_merge:
             model.merge_playlists(playlists)
-            assert len(mocked_merge.mock_calls) == len(initial)
+            assert len(mock_merge.mock_calls) == len(initial)
             assert len(model.playlists) == len(playlists)

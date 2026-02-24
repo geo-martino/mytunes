@@ -8,7 +8,7 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
-from musify.local.collection.library._base import LocalLibrary
+from musify.local.collection.library import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist, LocalPlaylistType
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist

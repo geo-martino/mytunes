@@ -6,7 +6,7 @@ from collections.abc import Container
 import pytest
 
 from musify.field import Fields, TagField, ALL_FIELDS, Field, TagFields
-from musify.models._base import MusifyObject, MusifyResource
+from musify.models import MusifyObject, MusifyResource
 from musify.printer import PrettyPrinter
 from musify.types import MusifyEnum
 
@@ -42,7 +42,7 @@ class PrettyPrinterTester(metaclass=ABCMeta):
             assert len(obj_dict) == len(obj_json)
             assert obj_dict.keys() == obj_json.keys()
 
-        # check json is serializable
+        # check JSON is serializable
         assert isinstance(json.dumps(obj_json), str)
 
 

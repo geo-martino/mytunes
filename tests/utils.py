@@ -47,7 +47,10 @@ def random_file(tmp_path: Path, size: int | None = None) -> Path:
     return path
 
 
-def random_dt(start: datetime = datetime.date(1970, 1, 3), stop: datetime = datetime.datetime.now()) -> datetime:
+def random_dt(
+        start: datetime.date = datetime.date(1970, 1, 3),
+        stop: datetime.datetime = datetime.datetime.now()
+) -> datetime.datetime:
     """Generates a random date string in the form YYYY-MM-DD."""
     if isinstance(start, datetime.date):
         start = datetime.datetime.combine(start, datetime.time(0, 0, 0))
@@ -57,7 +60,10 @@ def random_dt(start: datetime = datetime.date(1970, 1, 3), stop: datetime = date
     return datetime.datetime.fromtimestamp(timestamp)
 
 
-def random_date_str(start: datetime = datetime.date(1970, 1, 3), stop: datetime = datetime.datetime.now()) -> str:
+def random_date_str(
+        start: datetime.date = datetime.date(1970, 1, 3),
+        stop: datetime.datetime = datetime.datetime.now()
+) -> str:
     """Generates a random date string in the form YYYY-MM-DD."""
     if isinstance(start, datetime.date):
         start = datetime.datetime.combine(start, datetime.time(0, 0, 0))
@@ -114,8 +120,6 @@ GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
 def random_genres(size: int | None = None) -> list[str]:
     """Return a list of random genres."""
     return sample(GENRES, min(size, len(GENRES)) if size else randrange(0, len(GENRES)))
-
-
 
 
 #### NEW

@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from collections.abc import Collection
 from copy import copy
 from io import BytesIO
 from pathlib import Path
@@ -9,10 +10,12 @@ from types import MethodType
 import mutagen.id3
 import pytest
 from PIL import Image, ImageFile as PILImageFile
+# noinspection PyProtectedMember
 from _pytest.logging import LogCaptureHandler, _remove_ansi_escape_sequences
 from aioresponses import aioresponses, CallbackResult
 from faker import Faker
 
+# noinspection PyProtectedMember
 from musify._types import to_list
 from musify.models.properties.image import ImageURL, ImageFile
 
@@ -102,6 +105,7 @@ def image_urls(image_types: set[str], faker: Faker, mock_response: aioresponses)
         image_urls.append(image_url)
 
     return image_urls
+
 
 # This is a fork of the pytest-lazy-fixture package
 # Fixes applied for issues with pytest >8.0: https://github.com/TvoroG/pytest-lazy-fixture/issues/65

@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from musify.processors_new import Result
 from tests.models.testers import UniqueKeyTester
 
 
-class LocalPlaylistTester(UniqueKeyTester):
+class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
     @pytest.fixture
     def path_mapper(self, tmp_path: Path) -> PathStemMapper:
         """Creates a basic PathStemMapper for the given tracks."""

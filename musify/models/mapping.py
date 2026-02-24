@@ -30,6 +30,7 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
             core_schema.list_schema(values_schema),
         ])
 
+        # noinspection PyProtectedMember
         return core_schema.no_info_after_validator_function(
             function=cls._construct,
             schema=handler(schema),
