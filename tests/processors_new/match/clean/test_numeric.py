@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock
 
 import pytest
 
+from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum, Album
 from musify.models.properties.length import HasLength
 from musify.processors_new.match.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner
@@ -11,8 +12,21 @@ from tests.models.testers import MusifyModelTester
 
 class NumericCleanerTester(MusifyModelTester, metaclass=ABCMeta):
     @staticmethod
+    def test_get_item_value_basic(model: NumericCleaner):
+        item = 123
+        assert model._get_item_value(item) == item
+
+        item = 123.45
+        assert model._get_item_value(item) == item
+
+    @staticmethod
     def test_get_item_value_returns_on_missing_value(model: NumericCleaner):
         assert model._get_item_value(None) == 0
+
+    @staticmethod
+    def test_get_item_value_fails(model: NumericCleaner):
+        with pytest.raises(MusifyValueError):
+            model._get_item_value("invalid item")
 
 
 class TestNumericCleaner(MusifyModelTester):
@@ -53,7 +67,10 @@ class TestLengthCleaner(NumericCleanerTester):
     def test_get_item_value(self, model: LengthCleaner):
         length = 10
         item = HasLength(length=length)
+
         assert model._get_item_value(item) == length
+        assert model._get_item_value(item.length) == length
+        assert model._get_item_value(float(item.length)) == length
 
 
 class TestReleaseYearCleaner(NumericCleanerTester):
@@ -64,4 +81,8 @@ class TestReleaseYearCleaner(NumericCleanerTester):
     def test_get_item_value(self, model: ReleaseYearCleaner):
         year = 2020
         item = HasAlbum(album=Album(name="album 1", released_at=f"{year}-02-04"))
+
         assert model._get_item_value(item) == year
+        assert model._get_item_value(item.album) == year
+        assert model._get_item_value(item.album.released_at) == year
+        assert model._get_item_value(item.album.released_at.year) == year

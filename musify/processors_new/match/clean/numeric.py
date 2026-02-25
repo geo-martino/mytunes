@@ -1,11 +1,13 @@
 from abc import ABCMeta
+from typing import Any
 
 from pydantic import Field, NonNegativeInt
 
+from musify.exception import MusifyValueError
 from musify.models import AttributeModel
 from musify.models.item.album import HasAlbum
-from musify.models.properties.date import HasReleaseDate
-from musify.models.properties.length import HasLength
+from musify.models.properties.date import HasReleaseDate, SparseDate
+from musify.models.properties.length import HasLength, Length
 from musify.processors_new.match.clean._base import TagCleaner
 
 
@@ -14,6 +16,10 @@ class NumericCleaner[I: AttributeModel](TagCleaner[I, int | float], metaclass=AB
         description="Round the value to nearest integer.",
         default=0,
     )
+
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        return item is None or isinstance(item, int | float)
 
     def clean(self, item: int | float | I | None) -> int | float:
         if item is None:
@@ -26,19 +32,67 @@ class NumericCleaner[I: AttributeModel](TagCleaner[I, int | float], metaclass=AB
 
         return value
 
+    @classmethod
+    def _get_item_value(cls, item: Any) -> int | float:
+        match item:
+            case int() | float():
+                return item
+            case None:
+                return 0
+            case _:
+                return super()._get_item_value(item)
+
 
 class LengthCleaner(NumericCleaner[HasLength]):
-    def _get_item_value(self, item: HasLength) -> float:
-        if item is None or item.length is None:
-            return 0
-        return float(item.length)
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        match item:
+            case Length():
+                return True
+            case HasLength():
+                return cls.can_clean(item.length)
+            case _:
+                return super().can_clean(item)
+
+    @classmethod
+    def _get_item_value(cls, item: int | float | Length | HasLength | None) -> int | float:
+        match item:
+            case int() | float():
+                length = item
+            case Length():
+                length = float(item)
+            case HasLength():
+                length = cls._get_item_value(item.length)
+            case _:
+                length = super()._get_item_value(item)
+
+        return length
 
 
 class ReleaseYearCleaner(NumericCleaner[HasAlbum | HasReleaseDate]):
-    def _get_item_value(self, item: HasAlbum | HasReleaseDate) -> int:
-        if isinstance(item, HasAlbum):
-            item = item.album
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        print(type(item))
+        match item:
+            case SparseDate():
+                return super().can_clean(item.year)
+            case HasReleaseDate():
+                return cls.can_clean(item.released_at)
+            case HasAlbum():
+                return cls.can_clean(item.album)
+            case _:
+                return super().can_clean(item)
 
-        if item is None or item.released_at is None:
-            return 0
-        return item.released_at.year
+    @classmethod
+    def _get_item_value(cls, item: SparseDate | HasAlbum | HasReleaseDate | None) -> int:
+        match item:
+            case SparseDate():
+                year = item.year
+            case HasReleaseDate():
+                year = cls._get_item_value(item.released_at)
+            case HasAlbum():
+                year = cls._get_item_value(item.album)
+            case _:
+                year = super()._get_item_value(item)
+
+        return year

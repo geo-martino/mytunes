@@ -6,7 +6,7 @@ from musify.processors_new.match.score.numeric import LengthScorer, ReleaseYearS
 from musify.processors_new.match.score.string import NameScorer, ArtistScorer, AlbumScorer
 
 _scorer_classes = (NameScorer, ArtistScorer, AlbumScorer, LengthScorer, ReleaseYearScorer)
-type LocalTrackType = Annotated[
+type ScorerType = Annotated[
     Union[*_scorer_classes],
     Field(discriminator="type"),
 ]

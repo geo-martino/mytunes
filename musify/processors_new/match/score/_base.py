@@ -3,6 +3,7 @@ from typing import MutableSequence, Any
 
 from pydantic import Field
 
+from musify.models import AttributeModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
@@ -21,6 +22,10 @@ class Scorer[C: TagCleaner](Processor, HasLogger, metaclass=ABCMeta):
         description="The weight to be applied to the score.",
         default=1,
     )
+
+    def can_score(self, item: Any) -> bool:
+        """Check whether the item is scorable by this scorer."""
+        return self.cleaner.can_clean(item)
 
     def score[T: HasName](self, item: T, other: T | None = None) -> int | float:
         """Scores the similarity between the source and other attributes."""

@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Literal
+from typing import Literal, Any
 
 from pydantic import Field
 
@@ -62,6 +62,13 @@ class KaraokeScorer(StringScorer):
         ),
         default=True,
     )
+
+    def can_score(self, item: Any) -> bool:
+        return any((
+            NameCleaner.can_clean(item),
+            ArtistCleaner.can_clean(item),
+            AlbumCleaner.can_clean(item),
+        ))
 
     def score[T: HasName](self, item: T, other: T | None = None) -> int | float:
         scores = [

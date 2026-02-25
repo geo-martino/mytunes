@@ -1,11 +1,14 @@
 import re
 from abc import ABCMeta
+from collections.abc import Sequence
+from typing import Any
 
 from pydantic import Field
 
+from musify.exception import MusifyValueError
 from musify.models import AttributeModel
-from musify.models.item.album import HasAlbum
-from musify.models.item.artist import HasArtists
+from musify.models.item.album import HasAlbum, Album
+from musify.models.item.artist import HasArtists, Artist
 from musify.models.properties.name import HasName
 from musify.processors_new.match.clean._base import TagCleaner
 
@@ -35,6 +38,10 @@ class StringCleaner[I: AttributeModel](TagCleaner[I, str], metaclass=ABCMeta):
         default_factory=set,
     )
 
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        return item is None or isinstance(item, str)
+
     def clean(self, item: str | I | None) -> str:
         if item is None:
             return ""
@@ -56,22 +63,87 @@ class StringCleaner[I: AttributeModel](TagCleaner[I, str], metaclass=ABCMeta):
 
         return value.strip()
 
+    @classmethod
+    def _get_item_value(cls, item: Any) -> str:
+        match item:
+            case str():
+                return item
+            case None:
+                return ""
+            case _:
+                return super()._get_item_value(item)
+
 
 class NameCleaner(StringCleaner[HasName]):
-    def _get_item_value(self, item: HasName | None) -> str:
-        return item.name if item is not None else ""
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        match item:
+            case HasName():
+                return super().can_clean(item.name)
+            case _:
+                return super().can_clean(item)
+
+    @classmethod
+    def _get_item_value(cls, item: str | HasName | None) -> str:
+        match item:
+            case HasName():
+                return item.name
+            case _:
+                return super()._get_item_value(item)
 
 
 class ArtistCleaner(StringCleaner[HasArtists]):
-    def clean(self, item: HasArtists) -> list[str]:
-        return [val for val in map(super().clean, item.artists) if val] if item is not None else []
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        match item:
+            case Artist():
+                return super().can_clean(item.name)
+            case HasArtists():
+                return cls.can_clean(item.artists)
+            case list():
+                return all(cls.can_clean(it) for it in item)
+            case _:
+                return super().can_clean(item)
 
-    def _get_item_value(self, item: HasName | None) -> str:
-        return item.name if item is not None else ""
+    def clean(self, item: str | Sequence[str] | Artist | HasArtists) -> list[str]:
+        match item:
+            case str() | Artist():
+                artists = [item]
+            case HasArtists():
+                artists = item.artists
+            case Sequence():
+                artists = item
+            case _ if not self.can_clean(item):
+                raise MusifyValueError(f"Cannot clean item of type {type(item)} with {self.__class__.__name__}")
+
+        return [val for val in map(super().clean, artists) if val]
+
+    @classmethod
+    def _get_item_value(cls, item: str | Artist | None) -> str:
+        match item:
+            case Artist():
+                return item.name
+            case _:
+                return super()._get_item_value(item)
 
 
 class AlbumCleaner(StringCleaner[HasAlbum]):
-    def _get_item_value(self, item: HasAlbum | None) -> str:
-        if item is None or item.album is None:
-            return ""
-        return item.album.name
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        match item:
+            case Album():
+                return super().can_clean(item.name)
+            case HasAlbum():
+                return cls.can_clean(item.album)
+            case _:
+                return super().can_clean(item)
+
+    @classmethod
+    def _get_item_value(cls, item: str | Album | HasAlbum | None) -> str:
+        match item:
+            case Album():
+                return item.name
+            case HasAlbum():
+                return cls._get_item_value(item.album)
+            case _:
+                return super()._get_item_value(item)

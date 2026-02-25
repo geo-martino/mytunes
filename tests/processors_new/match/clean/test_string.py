@@ -3,8 +3,9 @@ from unittest.mock import patch, Mock
 
 import pytest
 
+from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum
-from musify.models.item.artist import HasArtists
+from musify.models.item.artist import HasArtists, Artist
 from musify.models.properties.name import HasName
 from musify.processors_new.match.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from tests.models.testers import MusifyModelTester
@@ -12,11 +13,21 @@ from tests.models.testers import MusifyModelTester
 
 class StringCleanerTester(MusifyModelTester, metaclass=ABCMeta):
     @staticmethod
+    def test_get_item_value_basic(model: StringCleaner):
+        item = "Test Name"
+        assert model._get_item_value(item) == item
+
+    @staticmethod
     def test_get_item_value_returns_on_missing_value(model: StringCleaner):
         assert model._get_item_value(None) == ""
 
+    @staticmethod
+    def test_get_item_value_fails(model: StringCleaner):
+        with pytest.raises(MusifyValueError):
+            model._get_item_value(123)
 
-class TestStringCleaner(MusifyModelTester):
+
+class TestStringCleaner(StringCleanerTester):
     @pytest.fixture
     @patch.multiple(
         StringCleaner,
@@ -68,7 +79,9 @@ class TestNameCleaner(StringCleanerTester):
 
     def test_get_item_value(self, model: NameCleaner):
         item = HasName(name="Test Name")
+
         assert model._get_item_value(item) == item.name
+        assert model._get_item_value(item.name) == item.name
 
 
 class TestArtistCleaner(StringCleanerTester):
@@ -80,13 +93,22 @@ class TestArtistCleaner(StringCleanerTester):
         )
 
     def test_clean(self, model: ArtistCleaner):
+        artist_names = ["Artist One", "Artist Two", "Artist Three"]
         item = HasArtists()
-        item.artists = ["Artist One", "Artist Two", "Artist Three"]
+        item.artists = artist_names
+
         assert model.clean(item) == ["artist one", "artist two", "artist three"]
+        assert model.clean(item.artists) == ["artist one", "artist two", "artist three"]
+        assert model.clean(artist_names) == ["artist one", "artist two", "artist three"]
+
+        assert model.clean(item.artists[0]) == ["artist one"]
+        assert model.clean(artist_names[0]) == ["artist one"]
 
     def test_get_item_value(self, model: NameCleaner):
-        item = HasName(name="Test Name")
+        item = Artist(name="Test Name")
+
         assert model._get_item_value(item) == item.name
+        assert model._get_item_value(item.name) == item.name
 
 
 class TestAlbumCleaner(StringCleanerTester):
@@ -103,3 +125,5 @@ class TestAlbumCleaner(StringCleanerTester):
 
         item.album = "Test Album"
         assert model._get_item_value(item) == item.album.name
+        assert model._get_item_value(item.album) == item.album.name
+        assert model._get_item_value(item.album.name) == item.album.name
