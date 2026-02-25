@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import conlist, Field
 
 from musify.processors_new import Processor
-from musify.processors_new.match.score import ScorerType
+from musify.processors_new.match.score import Scorer, ScorerType
 
 
 class Matcher(Processor):
@@ -30,6 +30,6 @@ class Matcher(Processor):
 
     )
 
-    def get_scorers_for_item(self, item: Any) -> list[ScorerType]:
+    def get_scorers_for_item(self, item: Any) -> list[Scorer]:
         """Get the scorers that can score the given item."""
         return [scorer for scorer in self.scorers if scorer.can_score(item)]

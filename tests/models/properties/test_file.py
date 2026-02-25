@@ -52,7 +52,7 @@ class TestIsLocalFile(MusifyResourceTester):
 
     def test_map_path(self, faker: Faker):
         path = Path(faker.file_path())
-        value = str(path) if choice([True, False]) else path
+        value = str(path) if faker.boolean() else path
         model = IsLocalFile.model_validate(value)
         assert model.path == path
 

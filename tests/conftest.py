@@ -17,7 +17,13 @@ from faker import Faker
 
 # noinspection PyProtectedMember
 from musify._types import to_list
+from musify.models.collection.playlist import Playlist, MutablePlaylist
+from musify.models.item.album import Album
+from musify.models.item.artist import Artist
+from musify.models.item.genre import Genre
+from musify.models.item.track import Track
 from musify.models.properties.image import ImageURL, ImageFile
+from tests.utils import GENRES
 
 
 @pytest.fixture(scope="session")
@@ -33,6 +39,65 @@ def mock_response():
 
 
 @pytest.fixture
+def track(faker: Faker) -> Track:
+    return Track(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+
+
+@pytest.fixture
+def tracks(faker: Faker) -> list[Track]:
+    return [
+        Track(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(15, 30))
+    ]
+
+
+@pytest.fixture
+def artist(faker: Faker) -> Artist:
+    return Artist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+
+
+@pytest.fixture
+def artists(faker: Faker) -> list[Artist]:
+    return [
+        Artist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(5, 10))
+    ]
+
+
+@pytest.fixture
+def album(faker: Faker) -> Album:
+    return Album(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+
+
+@pytest.fixture
+def albums(faker: Faker) -> list[Album]:
+    return [
+        Album(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(5, 10))
+    ]
+
+
+@pytest.fixture
+def genre() -> Genre:
+    return Genre(name=choice(GENRES))
+
+
+@pytest.fixture
+def genres(faker: Faker) -> list[Genre]:
+    return [Genre(name=genre) for genre in sample(GENRES, k=faker.random_int(3, 6))]
+
+
+@pytest.fixture
+def playlist(faker: Faker) -> Playlist:
+    return MutablePlaylist(name=faker.sentence())
+
+
+@pytest.fixture
+def playlists(faker: Faker) -> list[Playlist]:
+    return [MutablePlaylist(name=faker.sentence()) for _ in range(faker.random_int(10, 30))]
+
+
+@pytest.fixture
 def image_bytes(faker: Faker) -> list[bytes]:
     return [
         faker.image(
@@ -44,8 +109,22 @@ def image_bytes(faker: Faker) -> list[bytes]:
 
 
 @pytest.fixture
+def image_object(faker: Faker) -> PILImageFile.ImageFile:
+    image_bytes = faker.image(
+        size=(faker.random_int(100, 300), faker.random_int(100, 300)),
+        image_format=choice(["jpeg", "png"])
+    )
+    return Image.open(BytesIO(image_bytes))
+
+
+@pytest.fixture
 def image_objects(image_bytes: list[bytes]) -> list[PILImageFile.ImageFile]:
     return list(map(Image.open, map(BytesIO, image_bytes)))
+
+
+@pytest.fixture
+def image_type(image_types: set[str]) -> str:
+    return choice(list(image_types))
 
 
 @pytest.fixture

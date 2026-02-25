@@ -18,19 +18,19 @@ class TestItemLimiter(MusifyModelTester):
         return ItemLimiter(limit_by=30, on=LimitType.MINUTES, sorted_by="HighestRating", allowance=2)
 
     @pytest.fixture
-    def tracks(self, tracks: list[LocalTrack]) -> list[LocalTrack]:
+    def tracks(self, local_tracks: list[LocalTrack]) -> list[LocalTrack]:
         """Yields a list of random tracks with dynamically configured properties for limit tests"""
         for i in range(1, 6):
             album = LocalAlbum(name=f"album {i}")
 
-            for track in tracks[(i-1)*10:i*10]:
+            for track in local_tracks[(i-1)*10:i*10]:
                 track.album = album
                 track.length = i * 60
                 track.rating = i
                 track.last_played_at = datetime.now() if i != 1 and i != 5 else datetime.now() - timedelta(days=1)
                 track.play_count = 1000000 if i == 1 or i == 3 else 0
 
-        return tracks
+        return local_tracks
 
     @pytest.fixture
     def tracks_with_sizes(self, tracks: list[LocalTrack], faker: Faker, tmp_path: Path) -> list[LocalTrack]:

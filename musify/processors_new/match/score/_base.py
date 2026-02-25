@@ -3,7 +3,6 @@ from typing import MutableSequence, Any
 
 from pydantic import Field
 
-from musify.models import AttributeModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI

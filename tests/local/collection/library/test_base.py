@@ -19,7 +19,6 @@ from musify.models.collection.playlist import Playlist
 from musify.processors_new.filters import ValuesFilter
 from musify.utils import get_discriminator_values
 from tests.models.testers import MusifyResourceTester
-from tests.utils import GENRES
 
 
 class TestLocalLibrary(MusifyResourceTester):
@@ -45,15 +44,14 @@ class TestLocalLibrary(MusifyResourceTester):
     def tracks(
             self,
             tracks: list[LocalTrack],
+            artists: list[LocalArtist],
+            albums: list[LocalAlbum],
+            genres: list[LocalGenre],
             library_folders: list[Path],
             track_folders: list[Path],
             faker: Faker
     ) -> list[LocalTrack]:
         """The tracks available in all library folders"""
-        artists = [LocalArtist(name=f"artist {i+1}") for i in range(faker.random_int(10, 20))]
-        albums = [LocalAlbum(name=f"album {i+1}") for i in range(faker.random_int(2, 5))]
-        genres = [LocalGenre(name=genre) for genre in sample(GENRES, k=faker.random_int(10, 20))]
-
         for track in tracks:
             track.path = choice(library_folders).joinpath(choice(track_folders)).joinpath(track.path.name)
             track.path.parent.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,7 @@ import itertools
 import math
 from collections.abc import Generator
 from copy import copy
-from random import sample, randrange
+from random import sample, randrange, choice
 from unittest import mock
 from urllib.parse import unquote
 
@@ -65,8 +65,8 @@ class TestItemDownloadHelper(MusifyModelTester):
         tracks = list(map(copy, tracks[:10]))
 
         for track in tracks:
-            track.artists = faker.random_elements(artists, length=faker.random_int(1, 3))
-            track.album = faker.random_element(albums)
+            track.artists = sample(artists, k=faker.random_int(1, 3))
+            track.album = choice(albums)
 
         return tracks
 

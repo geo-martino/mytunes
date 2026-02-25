@@ -114,7 +114,7 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
             next(iter(pictures.values()))
         )
         value = model._get_bytes(expected)
-        result = model.build(choice([value, Image.open(BytesIO(value))]))
+        result = model.build(choice((value, Image.open(BytesIO(value)))))
         # PIL appears to modify the image bytes so we can't check the bytes directly
         assert isinstance(result, expected.__class__)
 
@@ -170,12 +170,12 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_serialize_images(
-            model: LocalTrack, image_bytes: list[bytes], image_objects: list[PILImageFile], pictures: dict[str, Any]
+            model: LocalTrack, image_bytes: list[bytes], image_object: PILImageFile, pictures: dict[str, Any]
     ):
         model.images = pictures
 
         image_model = model.EmbeddedImage(mime="image/png", height=100, width=100)
-        loaded_images = {kind: choice(image_objects) for kind in model.images}
+        loaded_images = {kind: image_object for kind in model.images}
         context = Namespace(by_alias=True, context=TagDumpContext(loaded_images=loaded_images))
         assert loaded_images
 

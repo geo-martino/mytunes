@@ -3,7 +3,6 @@ from typing import Any
 
 from pydantic import Field, NonNegativeInt
 
-from musify.exception import MusifyValueError
 from musify.models import AttributeModel
 from musify.models.item.album import HasAlbum
 from musify.models.properties.date import HasReleaseDate, SparseDate

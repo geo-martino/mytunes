@@ -34,13 +34,13 @@ class TestSyncResultXAutoPF(MusifyModelTester):
             start_excluded=faker.random_int(0, 100),
             start_compared=faker.random_int(0, 100),
             start_limiter=faker.random_int(0, 100),
-            start_sorter=choice([True, False]),
+            start_sorter=faker.boolean(),
             final=faker.random_int(0, 100),
             final_included=faker.random_int(0, 100),
             final_excluded=faker.random_int(0, 100),
             final_compared=faker.random_int(0, 100),
             final_limiter=faker.random_int(0, 100),
-            final_sorter=choice([True, False]),
+            final_sorter=faker.boolean(),
         )
 
     def test_from_xml(self, tracks: list[LocalTrack], xml_playlist_recent: str, faker: Faker):
@@ -540,7 +540,7 @@ class TestXMLConditions(MusifyModelTester):
         )
 
         model.condition = [condition1, condition2]
-        model.combine_method = choice(["All", "Any"])
+        model.combine_method = choice(("All", "Any"))
 
         assert model.comparers == ComparerFilter[LocalTrack](
             comparers={
@@ -550,7 +550,7 @@ class TestXMLConditions(MusifyModelTester):
             match_all=model.combine_method == "All",
         )
 
-    def test_parse_comparers(self, model: _XMLConditions):
+    def test_parse_comparers(self, model: _XMLConditions, faker: Faker):
         condition1 = _XMLCondition()
         condition1.field = "TrackNo"
         condition1.comparison = "IsIn"
@@ -568,7 +568,7 @@ class TestXMLConditions(MusifyModelTester):
                 condition1.comparer: (True, condition1.And.comparers),
                 condition2.comparer: (False, condition2.Or.comparers),
             },
-            match_all=choice([True, False]),
+            match_all=faker.boolean(),
         )
 
         model = model.model_validate(comparers)
@@ -577,7 +577,7 @@ class TestXMLConditions(MusifyModelTester):
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLConditions]):
         xml = {
-            "@CombineMethod": choice(["All", "Any"]),
+            "@CombineMethod": choice(("All", "Any")),
             "Condition": [
                 {"@Comparison": "InRange", "@Field": "TrackNo", "@Value1": "10", "@Value2": "20"},
                 {"@Comparison": "Is", "@Field": "Album Artist", "@Value": "an album"},
@@ -636,8 +636,8 @@ class TestXMLLimit(MusifyModelTester):
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLLimit], faker: Faker):
         xml = {
-            "@FilterDuplicates": choice([True, False]),
-            "@Enabled": choice([True, False]),
+            "@FilterDuplicates": faker.boolean(),
+            "@Enabled": faker.boolean(),
             "@Count": faker.random_int(1, 100),
             "@Type": to_pascal(choice([enum for enum in LimitType]).name),
             "@SelectedBy": choice((
@@ -763,14 +763,14 @@ class TestXMLSortBy(MusifyModelTester):
         with pytest.raises(ValueError):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy):
-        sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): choice([True, False]) for _ in range(3)})
+    def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy, faker: Faker):
+        sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): faker.boolean() for _ in range(3)})
         with pytest.raises(ValueError):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter(self, model: _XMLSortBy):
+    def test_parse_sorter(self, model: _XMLSortBy, faker: Faker):
         field = "name"
-        sorter = ItemSorter(sort_fields={field: choice([True, False])})
+        sorter = ItemSorter(sort_fields={field: faker.boolean()})
 
         model.parse_sorter(sorter=sorter)
         assert model.field_name == field
@@ -810,8 +810,8 @@ class TestDefinedSort(MusifyModelTester):
         with pytest.raises(ValueError, match="No sort defined"):
             model.parse_sorter(sorter=sorter)
 
-    def test_parse_sorter_fails_on_single_fields(self, model: _XMLDefinedSort):
-        sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): choice([True, False])})
+    def test_parse_sorter_fails_on_single_fields(self, model: _XMLDefinedSort, faker: Faker):
+        sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): faker.boolean()})
         with pytest.raises(ValueError, match="Only use this sorter for multi-field sorts"):
             model.parse_sorter(sorter=sorter)
 
@@ -889,7 +889,7 @@ class TestXMLSource(MusifyModelTester):
             "@Type": faker.random_int(1, 10),
             "Description": faker.sentence(),
             "Conditions": {
-                "@CombineMethod": choice(["All", "Any"]),
+                "@CombineMethod": choice(("All", "Any")),
                 "Condition": [
                     {"@Comparison": "InRange", "@Field": "TrackNo", "@Value1": "10", "@Value2": "20"},
                     {"@Comparison": "Is", "@Field": "Album Artist", "@Value": "an album"},
@@ -897,8 +897,8 @@ class TestXMLSource(MusifyModelTester):
                 ]
             },
             "Limit": {
-                "@FilterDuplicates": choice([True, False]),
-                "@Enabled": choice([True, False]),
+                "@FilterDuplicates": faker.boolean(),
+                "@Enabled": faker.boolean(),
                 "@Count": faker.random_int(1, 100),
                 "@Type": to_pascal(choice([enum for enum in LimitType]).name),
                 "@SelectedBy": choice((
@@ -929,10 +929,10 @@ class TestXMLSource(MusifyModelTester):
             "Exceptions": "|".join(sorted(faker.file_path() for _ in range(faker.random_int(1, 10)))),
         }
 
-        if choice([True, False]):
+        if faker.boolean():
             xml["SortBy"] = {
                 "@Field": TestXMLDisplayField.get_valid_code(),
-                "@Order": choice(["Ascending", "Descending"])
+                "@Order": choice(("Ascending", "Descending"))
             }
         else:
             xml["DefinedSort"] = {
@@ -999,8 +999,8 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         shuffle_same_artist_weight_default = _XMLSmartPlaylist.model_fields["shuffle_same_artist_weight"].default
         assert model.shuffle_same_artist_weight == shuffle_same_artist_weight_default
 
-    def test_parse_sorter_with_no_options(self, model: _XMLSmartPlaylist):
-        sorter = ItemSorter(sort_fields={"name": choice([True, False])})
+    def test_parse_sorter_with_no_options(self, model: _XMLSmartPlaylist, faker: Faker):
+        sorter = ItemSorter(sort_fields={"name": faker.boolean()})
 
         model.parse_sorter(sorter)
         assert model.shuffle_mode == _XMLSmartPlaylist.model_fields["shuffle_mode"].default
@@ -1008,7 +1008,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
 
     def test_parse_sorter(self, model: _XMLSmartPlaylist, faker: Faker):
         sorter = ItemSorter(
-            sort_fields={"name": choice([True, False])},
+            sort_fields={"name": faker.boolean()},
             shuffle_mode=ShuffleMode.RECENT_ADDED,
             shuffle_weight=faker.random_int(-10, 10) / 10,
         )
@@ -1021,14 +1021,14 @@ class TestXMLSmartPlaylist(MusifyModelTester):
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLSmartPlaylist], faker: Faker):
         xml = {
-            "@SaveStaticCopy": choice([True, False]),
-            "@LiveUpdating": choice([True, False]),
+            "@SaveStaticCopy": faker.boolean(),
+            "@LiveUpdating": faker.boolean(),
             "@Layout": faker.random_int(0, 10),
             "@LayoutGroupBy": faker.random_int(0, 10),
             "@ShuffleMode": to_pascal(choice([enum for enum in ShuffleMode]).name),
             "@ShuffleSameArtistWeight": faker.random_int(0, 10) / 10,
             "@GroupBy": choice(Track.__tag_attributes__),
-            "@ConsolidateAlbums": choice([True, False]),
+            "@ConsolidateAlbums": faker.boolean(),
             "@MusicLibraryPath": faker.file_path(),
         }
         result = adapter.validate_python(xml).model_dump_xml()

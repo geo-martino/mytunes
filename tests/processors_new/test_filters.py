@@ -19,7 +19,7 @@ from tests.models.testers import MusifyModelTester
 class FilterTester(MusifyModelTester, metaclass=ABCMeta):
     """Base class for testing filters"""
     @abstractmethod
-    def test_equality(self, model: Filter):
+    def test_equality(self, model: Filter, faker: Faker):
         raise NotImplementedError
 
     @abstractmethod
@@ -34,7 +34,7 @@ class TestValuesFilter(FilterTester):
         values = {faker.pystr(30, 50) for _ in range(20)}
         return ValuesFilter(values=values)
 
-    def test_equality(self, model: ValuesFilter):
+    def test_equality(self, model: ValuesFilter, faker: Faker):
         assert model == deepcopy(model)
 
         new_filter = model.__class__(values=deepcopy(model.values))
@@ -88,7 +88,7 @@ class TestIncludeExcludeFilter(FilterTester):
             exclude=ValuesFilter(values=set(list(include_values)[:10] + list(exclude_values))),
         )
 
-    def test_equality(self, model: IncludeExcludeFilter):
+    def test_equality(self, model: IncludeExcludeFilter, faker: Faker):
         new_filter = IncludeExcludeFilter(include=deepcopy(model.include), exclude=deepcopy(model.exclude))
         assert model == new_filter
 
@@ -135,25 +135,25 @@ class TestComparerFilter(FilterTester):
         return ComparerFilter(comparers=comparers)
 
     @pytest.fixture
-    def tracks(self, tracks: list[LocalTrack]) -> list[LocalTrack]:
+    def tracks(self, local_tracks: list[LocalTrack]) -> list[LocalTrack]:
         """
         Yields a list of :py:class:`LocalTrack` objects that match the comparers fixtures
         to be used as pytest.fixture
         """
-        for track in tracks[:18]:
+        for track in local_tracks[:18]:
             track.name = "track name"
 
-        tracks_released_at = tracks[10:25]
+        tracks_released_at = local_tracks[10:25]
         for track in tracks_released_at:
             track.released_at = SparseDate(year=2025, month=1, day=1)
 
-        for track in tracks:
+        for track in local_tracks:
             track.bpm = None
 
-        return tracks
+        return local_tracks
 
-    def test_equality(self, model: ComparerFilter):
-        model.match_all = choice([True, False])
+    def test_equality(self, model: ComparerFilter, faker: Faker):
+        model.match_all = faker.boolean()
         assert model == deepcopy(model)
 
         new_filter = ComparerFilter(comparers=deepcopy(model.comparers), match_all=model.match_all)
@@ -166,11 +166,10 @@ class TestComparerFilter(FilterTester):
         pass
 
     def test_check_with_flat_comparers_and_match_any(
-            self, model: ComparerFilter, tracks: list[LocalTrack], faker: Faker
+            self, model: ComparerFilter, track: LocalTrack, faker: Faker
     ):
         model.comparers = list(model.comparers)  # flatten to just comparers
         model.match_all = False
-        track = choice(tracks)
         track.bpm = 123.45
 
         track.name = "track name"
@@ -186,11 +185,10 @@ class TestComparerFilter(FilterTester):
         assert not model.check(track)
 
     def test_check_with_flat_comparers_and_match_all(
-            self, model: ComparerFilter, tracks: list[LocalTrack], faker: Faker
+            self, model: ComparerFilter, track: LocalTrack, faker: Faker
     ):
         model.comparers = list(model.comparers)  # flatten to just comparers
         model.match_all = True
-        track = choice(tracks)
 
         track.name = "track name"
         track.released_at = SparseDate(year=2025, month=1, day=1)
@@ -205,10 +203,9 @@ class TestComparerFilter(FilterTester):
         assert not model.check(track)
 
     def test_check_with_nested_comparers_and_match_any(
-            self, model: ComparerFilter, comparers: list[Comparer], tracks: list[LocalTrack], faker: Faker
+            self, model: ComparerFilter, comparers: list[Comparer], track: LocalTrack, faker: Faker
     ):
         model.match_all = False
-        track = choice(tracks)
 
         comparer_1_sub = mock.MagicMock()
         comparer_1_sub.check.return_value = True
@@ -280,6 +277,14 @@ class TestMatcherFilter(FilterTester):
         )
 
     @pytest.fixture
+    def tracks(self, local_tracks: list[LocalTrack]) -> list[LocalTrack]:
+        """
+        Yields a list of :py:class:`LocalTrack` objects that match the comparers fixtures
+        to be used as pytest.fixture
+        """
+        return local_tracks
+
+    @pytest.fixture
     def tracks_name(self, tracks: list[LocalTrack]) -> list[LocalTrack]:
         """Sample the list of tracks to test and set the same name for all these tracks"""
         tracks = sample(tracks, 15)
@@ -326,7 +331,7 @@ class TestMatcherFilter(FilterTester):
         """The key to sort on when making assertions in tests"""
         return track.path
 
-    def test_equality(self, model: MatchFilter):
+    def test_equality(self, model: MatchFilter, faker: Faker):
         assert model == deepcopy(model)
 
         new_filter = MatchFilter(

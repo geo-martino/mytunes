@@ -57,12 +57,11 @@ class TestImageBase(MusifyModelTester):
         with pytest.raises(MusifyValueError):
             ImageSource._validate_id3_type("This will fail")
 
-    def test_update_attributes(self, model: ImageBase, image_objects: list[PILImageFile]):
-        img = choice(image_objects)
-        model.update_attributes(img)
-        assert model.mime == img.get_format_mimetype()
-        assert model.height == img.height
-        assert model.width == img.width
+    def test_update_attributes(self, model: ImageBase, image_object: PILImageFile):
+        model.update_attributes(image_object)
+        assert model.mime == image_object.get_format_mimetype()
+        assert model.height == image_object.height
+        assert model.width == image_object.width
 
     def test_from_image(self, image_bytes: list[bytes], image_objects: list[PILImageFile]):
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
@@ -80,10 +79,10 @@ class TestImageBase(MusifyModelTester):
 
 class TestImageFile(MusifyModelTester):
     @pytest.fixture
-    def model(self, image_types: set[str], faker: Faker, tmp_path: Path) -> ImageFile:
+    def model(self, image_type: str, faker: Faker, tmp_path: Path) -> ImageFile:
         return ImageFile(
             path=tmp_path.joinpath(faker.file_name(category="image")),
-            type=choice(list(image_types)),
+            type=image_type,
             height=faker.random_int(min=600, max=1000),
             width=faker.random_int(min=600, max=1000),
         )
@@ -174,14 +173,13 @@ class TestHasImages(MusifyModelTester):
     def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> HasImages:
         return HasImages(images={img.type: img for img in image_files + image_urls})
 
-    async def test_load_images(self, model: HasImages, image_objects: list[PILImageFile], faker: Faker):
-        update_attributes = choice([True, False])
+    async def test_load_images(self, model: HasImages, image_object: PILImageFile, faker: Faker):
+        update_attributes = faker.boolean()
         kwargs = faker.pydict()
-        img = choice(image_objects)
 
         classes = {m.__class__ for m in model.images.values()}
         mock_load = (
-            mock.patch.object(cls, "load", return_value=img, new_callable=mock.AsyncMock,)
+            mock.patch.object(cls, "load", return_value=image_object, new_callable=mock.AsyncMock,)
             for cls in classes
         )
         mock_update = (
@@ -202,4 +200,4 @@ class TestHasImages(MusifyModelTester):
                 for call in mock_load.mock_calls:
                     assert call.kwargs == kwargs
                 for call in mock_update.mock_calls:
-                    assert call.args == (img,)
+                    assert call.args == (image_object,)

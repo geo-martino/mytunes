@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from random import choice
 from unittest.mock import patch, Mock
 
 import pytest
@@ -65,30 +66,28 @@ class TestKaraokeScorer(StringScorerTester):
         assert model._calculate_score(None) is False
         assert model._calculate_score("") is False
 
-    def test_calculate_score(self, model: KaraokeScorer, faker: Faker):
+    def test_calculate_score(self, model: KaraokeScorer):
         model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
 
         assert model._calculate_score("test value") is False
-        assert model._calculate_score(f"test {faker.random_element(model.karaoke_phrases)}") is True
+        assert model._calculate_score(f"test {choice(list(model.karaoke_phrases))}") is True
 
-    def test_score_on_prefer_not_karaoke(self, model: KaraokeScorer, tracks: list[Track], faker: Faker):
+    def test_score_on_prefer_not_karaoke(self, model: KaraokeScorer, track: Track):
         model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
         model.prefer_not_karaoke = True
 
-        track = faker.random_element(tracks)
         assert model.score(track) == 1 * model.weight
 
-        track.artist = f"test artist {faker.random_element(model.karaoke_phrases)}"
+        track.artist = f"test artist {choice(list(model.karaoke_phrases))}"
         assert model.score(track) == 0
 
-    def test_score_on_prefer_karaoke(self, model: KaraokeScorer, tracks: list[Track], faker: Faker):
+    def test_score_on_prefer_karaoke(self, model: KaraokeScorer, track: Track, faker: Faker):
         model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
         model.prefer_not_karaoke = False
 
-        track = faker.random_element(tracks)
         assert model.score(track) == 0
 
-        track.artist = f"test artist {faker.random_element(model.karaoke_phrases)}"
+        track.artist = f"test artist {choice(list(model.karaoke_phrases))}"
         assert model.score(track) == 1 * model.weight
 
 

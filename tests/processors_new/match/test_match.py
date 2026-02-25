@@ -1,13 +1,13 @@
 import pytest
 from faker import Faker
 
-from musify.models.item.album import HasAlbum, HasAlbums, Album
+from musify.models.item.album import HasAlbums, Album
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.item.track import Track
 from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
-from musify.processors_new.match._match import Matcher
+from musify.processors_new.match import Matcher
 from musify.processors_new.match.score import Scorer
 from musify.processors_new.match.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer
 from musify.processors_new.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
@@ -46,15 +46,15 @@ class TestMatcher(MusifyModelTester):
         assert all(isinstance(scorer, ReleaseYearScorer) for scorer in model.get_scorers_for_item(HasReleaseDate()))
 
     def test_get_scorers_for_item_complex(
-            self, model: Matcher, tracks: list[Track], artists: list[Artist], albums: list[Album], faker: Faker
+            self, model: Matcher, track: Track, artist: Artist, album: Album, faker: Faker
     ):
-        assert model.get_scorers_for_item(faker.random_element(tracks)) == [
+        assert model.get_scorers_for_item(track) == [
             NameScorer(), ArtistScorer(), AlbumScorer(), LengthScorer(), ReleaseYearScorer()
         ]
-        assert model.get_scorers_for_item(faker.random_element(artists)) == [
+        assert model.get_scorers_for_item(artist) == [
             NameScorer(), ArtistScorer()
         ]
-        assert model.get_scorers_for_item(faker.random_element(albums)) == [
+        assert model.get_scorers_for_item(album) == [
             NameScorer(), ArtistScorer(), AlbumScorer(), LengthScorer(), ReleaseYearScorer()
         ]
 

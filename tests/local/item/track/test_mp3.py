@@ -38,19 +38,18 @@ def pictures(
 
 class TestMP3EmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> MP3:
-        img = choice(image_objects)
+    def model(self, image_object: PILImageFile, image_type: str, faker: Faker) -> MP3.EmbeddedImage:
         return MP3.EmbeddedImage(
             path=faker.file_path(category="image"),
-            type=choice(list(image_types)),
-            mime=img.get_format_mimetype(),
-            height=img.height,
-            width=img.width,
+            type=image_type,
+            mime=image_object.get_format_mimetype(),
+            height=image_object.height,
+            width=image_object.width,
         )
 
     def test_get_bytes(self, pictures: dict[str, mutagen.id3.APIC]):
         kind, attr = choice(list(pictures.items()))
-        result = MP3.EmbeddedImage._get_bytes(choice([attr, attr.data]))
+        result = MP3.EmbeddedImage._get_bytes(choice((attr, attr.data)))
         assert result is attr.data
 
 

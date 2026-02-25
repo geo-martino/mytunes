@@ -21,20 +21,20 @@ class TestItemSorter(MusifyModelTester):
         return ItemSorter(fields=["album", "disc", "track"])
 
     @pytest.fixture
-    def tracks(self, tracks: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
+    def tracks(self, local_tracks: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
         """Generate a list of random tracks with dynamically configured properties for sort tests"""
         albums = [LocalAlbum(name="album 1"), LocalAlbum(name="album 2")]
         dt = datetime.now()
 
-        for i, track in enumerate(tracks, 1):
+        for i, track in enumerate(local_tracks, 1):
             track.album = choice(albums)
-            track.track = Position(number=i, total=len(tracks))
+            track.track = Position(number=i, total=len(local_tracks))
             track.disc = Position(number=faker.random_int(1, 3))
             track.added_at = dt.replace(second=i)
             track.rating = faker.random_int(100, 500) / 100
 
-        shuffle(tracks)
-        return tracks
+        shuffle(local_tracks)
+        return local_tracks
 
     ignore_words = ("This", "and", "that")
 
@@ -188,10 +188,10 @@ class TestItemSorter(MusifyModelTester):
         assert tracks != sorted(tracks, key=lambda t: t.added_at, reverse=True)
 
     def test_shuffle_artist(self, tracks: list[LocalTrack]):
-        possible_artists = ["artist 1", "artist 2", "artist 3"]
-        assert len(tracks) > len(possible_artists) * 5
+        artist_names = ["artist 1", "artist 2", "artist 3"]
+        assert len(tracks) > len(artist_names) * 5
         for track in tracks:
-            track.artist = choice(possible_artists)
+            track.artist = choice(artist_names)
 
         def get_artist_groups(t: list[LocalTrack]) -> list[str]:
             """Gets a list of artists in the order of the distinct groups in the list of given tracks."""
@@ -202,20 +202,20 @@ class TestItemSorter(MusifyModelTester):
 
             return ar
 
-        assert len(get_artist_groups(tracks)) != len(possible_artists)
+        assert len(get_artist_groups(tracks)) != len(artist_names)
 
         # shuffle_weight == 1 should sort such that all items are grouped by artist
         ItemSorter(shuffle_mode=ShuffleMode.DIFFERENT_ARTIST, shuffle_weight=1).sort(tracks)
-        assert len(get_artist_groups(tracks)) == len(possible_artists)
+        assert len(get_artist_groups(tracks)) == len(artist_names)
 
         # shuffle_weight == -1 should sort such that all items are in order of different artist
         ItemSorter(shuffle_mode=ShuffleMode.DIFFERENT_ARTIST, shuffle_weight=-1).sort(tracks)
-        assert len(get_artist_groups(tracks)) > len(tracks) // 3 > len(possible_artists)  # mostly random
+        assert len(get_artist_groups(tracks)) > len(tracks) // 3 > len(artist_names)  # mostly random
 
         # as shuffle operations are random and therefore difficult to accurately test,
         # just check that the sorted list is not grouped by artist
         ItemSorter(shuffle_mode=ShuffleMode.DIFFERENT_ARTIST, shuffle_weight=0.3).sort(tracks)
-        assert len(get_artist_groups(tracks)) != len(possible_artists)
+        assert len(get_artist_groups(tracks)) != len(artist_names)
 
     def test_multi_sort(self, tracks: list[LocalTrack]):
         tracks_sorted = sorted(tracks, key=lambda t: (t.album, t.disc.number, t.track.number))

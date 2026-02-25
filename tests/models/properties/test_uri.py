@@ -107,9 +107,8 @@ class TestHasMutableURI(UniqueKeyTester):
         with pytest.raises(MusifyValueError):
             model.uri = different_uri
 
-    def test_set_uri_sets_source(self, model: HasMutableURI, uris: list[URI]):
+    def test_set_uri_sets_source(self, model: HasMutableURI, uri: URI):
         model.source = None  # no current source, should set source from URI
-        uri = choice(uris)
 
         model.uri = uri
         assert model.source == uri.source

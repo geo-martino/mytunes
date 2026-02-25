@@ -12,10 +12,10 @@ from tests.utils import split_list
 
 class TestFolder(MusifyResourceTester):
     @pytest.fixture
-    def model(self, tracks: list[LocalTrack]) -> Folder:
-        parent = choice(tracks).path.parent
-        for track in tracks:
-            track.path = parent.joinpath(track.path.name)
+    def model(self, track: LocalTrack, tracks: list[LocalTrack]) -> Folder:
+        parent = track.path.parent
+        for tr in tracks:
+            tr.path = parent.joinpath(tr.path.name)
 
         return Folder(name=parent.name, tracks=tracks)
 
@@ -28,10 +28,10 @@ class TestFolder(MusifyResourceTester):
         with pytest.raises(ValueError, match="tracks are from different folders"):
             Folder(tracks=tracks)
 
-    def test_get_folder_name_from_tracks(self, tracks: list[LocalTrack]):
-        parent = choice(tracks).path.parent
-        for track in tracks:
-            track.path = parent.joinpath(track.path.name)
+    def test_get_folder_name_from_tracks(self, track: LocalTrack, tracks: list[LocalTrack]):
+        parent = track.path.parent
+        for tr in tracks:
+            tr.path = parent.joinpath(tr.path.name)
 
         album = Folder(tracks=tracks)
         assert album.name == parent.name

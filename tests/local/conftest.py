@@ -23,6 +23,19 @@ def models(
 
 
 @pytest.fixture
+def track(faker: Faker, tmp_path: Path) -> LocalTrack:
+    classes = get_args(get_args(LocalTrackType.__value__)[0])
+    cls = choice(classes)
+    extension = choice(tuple(get_args(cls)[0].__supported_extensions__))
+    track = cls.model_validate(dict(
+        name=faker.sentence(nb_words=faker.random_int(1, 5)),
+        path=tmp_path.joinpath(faker.file_path(absolute=False, extension=extension)),
+    ))
+
+    return track
+
+
+@pytest.fixture
 def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     classes = get_args(get_args(LocalTrackType.__value__)[0])
     tracks = []
@@ -39,11 +52,21 @@ def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
 
 
 @pytest.fixture
+def artist(faker: Faker) -> LocalArtist:
+    return LocalArtist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+
+
+@pytest.fixture
 def artists(faker: Faker) -> list[LocalArtist]:
     return [
         LocalArtist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
         for _ in range(faker.random_int(5, 10))
     ]
+
+
+@pytest.fixture
+def album(faker: Faker) -> LocalAlbum:
+    return LocalAlbum(name=faker.sentence(nb_words=faker.random_int(1, 5)))
 
 
 @pytest.fixture
@@ -55,8 +78,13 @@ def albums(faker: Faker) -> list[LocalAlbum]:
 
 
 @pytest.fixture
+def genre() -> list[LocalGenre]:
+    return LocalGenre(name=choice(GENRES))
+
+
+@pytest.fixture
 def genres(faker: Faker) -> list[LocalGenre]:
-    return [LocalGenre(name=genre) for genre in sample(GENRES, k=faker.random_int(3, 6))]
+    return [LocalGenre(name=genre) for genre in sample(GENRES, k=faker.random_int(5, 10))]
 
 
 @pytest.fixture

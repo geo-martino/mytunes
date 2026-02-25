@@ -60,17 +60,17 @@ class TestMusifyMapping:
         reason="Pydantic 2.13.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
-    def test_validates_generic_types_when_accessing(self, tracks: list[Track], artists: list[Artist]):
+    def test_validates_generic_types_when_accessing(self, tracks: list[Track], artist: Artist):
         mapping = MusifyMapping[int, Track](tracks)
 
         with pytest.raises(ValueError):
-            assert choice(artists) in mapping
+            assert artist in mapping
         with pytest.raises(ValueError):
-            assert mapping[choice(artists)]
+            assert mapping[artist]
 
-    def test_container_methods(self, mapping: MusifyMapping, models: list[MusifyResource]):
-        assert choice(models) in mapping
-        assert all(key in mapping for key in choice(models).unique_keys)
+    def test_container_methods(self, mapping: MusifyMapping, model: MusifyResource):
+        assert model in mapping
+        assert all(key in mapping for key in model.unique_keys)
 
         assert mapping.values() in mapping
         assert (key for model in mapping.values() for key in model.unique_keys) in mapping
@@ -87,15 +87,14 @@ class TestMusifyMapping:
         assert mapping != MusifyMapping(initial)
         assert MusifyMapping(initial) != mapping
 
-    def test_copy(self, mapping: MusifyMapping, models: list[MusifyResource]):
+    def test_copy(self, mapping: MusifyMapping):
         mapping_copy = mapping.copy()
         assert isinstance(mapping_copy, mapping.__class__)
         assert mapping_copy is not mapping
         assert mapping_copy._items is not mapping._items
         assert mapping_copy._items == mapping._items
 
-    def test_getitem(self, mapping: MusifyMapping, models: list[MusifyResource]):
-        model = models[0]
+    def test_getitem(self, mapping: MusifyMapping, model: MusifyResource):
         assert mapping[model] == model
         assert mapping[next(iter(model.unique_keys))] == model
 
@@ -116,29 +115,30 @@ class TestMusifyMutableMapping:
         reason="Pydantic 2.13.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
-    def test_validates_generic_types_when_mutating(self, tracks: list[Track], artists: list[Artist]):
+    def test_validates_generic_types_when_mutating(
+            self, track: Track, tracks: list[Track], artist: Artist, artists: list[Artist]
+    ):
         mapping = MusifyMutableMapping[int, Track](tracks)
 
         with pytest.raises(ValueError):
-            mapping["key"] = choice(tracks)
+            mapping["key"] = track
         with pytest.raises(ValueError):
-            mapping[0] = choice(artists)
+            mapping[0] = artist
         with pytest.raises(ValueError):
             del mapping["key"]
 
         with pytest.raises(ValueError):
-            mapping.add(choice(artists))
+            mapping.add(artist)
         with pytest.raises(ValueError):
             mapping.update(artists)
         with pytest.raises(ValueError):
             mapping.update({id(artist): artist for artist in artists})
         with pytest.raises(ValueError):
-            mapping.remove(choice(artists))
+            mapping.remove(artist)
 
-    def test_setitem(self, models: list[MusifyResource]):
+    def test_setitem(self, model: MusifyResource):
         mapping = MusifyMutableMapping()
         assert len(mapping) == 0
-        model = choice(models)
 
         mapping[choice(list(model.unique_keys))] = model
         assert model in mapping
@@ -149,26 +149,24 @@ class TestMusifyMutableMapping:
         assert model in mapping
         assert len(mapping) == 1
 
-    def test_setitem_fails(self, models: list[MusifyResource]):
+    def test_setitem_fails(self, model: MusifyResource):
         mapping = MusifyMutableMapping()
-        model = choice(models)
 
         with pytest.raises(ValueError):
             mapping[choice(list(model.unique_keys))] = "invalid value"
 
-    def test_delitem(self, models: list[MusifyResource]):
+    def test_delitem(self, model: MusifyResource, models: list[MusifyResource]):
         mapping = MusifyMutableMapping(models)
-        model = choice(models)
         assert model in mapping
 
         del mapping[choice(list(model.unique_keys))]
         assert model not in mapping
         assert all(key not in mapping._items for key in model.unique_keys)
 
-    def test_delitem_fails(self, models: list[MusifyResource]):
+    def test_delitem_fails(self, model: MusifyResource):
         mapping = MusifyMutableMapping()
         with pytest.raises(KeyError):
-            del mapping[choice(models)]
+            del mapping[model]
 
     def test_add(self, models: list[MusifyResource]):
         initial = models[2:]

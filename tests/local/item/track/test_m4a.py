@@ -29,19 +29,18 @@ def pictures(image_bytes: list[bytes], image_types: set[str]) -> dict[str, mutag
 
 class TestM4AEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
-    def model(self, image_objects: list[PILImageFile], image_types: set[str], faker: Faker) -> M4A:
-        img = choice(image_objects)
+    def model(self, image_object: PILImageFile, image_type: str, faker: Faker) -> M4A.EmbeddedImage:
         return M4A.EmbeddedImage(
             path=faker.file_path(category="image"),
-            type=choice(list(image_types)),
-            mime=img.get_format_mimetype(),
-            height=img.height,
-            width=img.width,
+            type=image_type,
+            mime=image_object.get_format_mimetype(),
+            height=image_object.height,
+            width=image_object.width,
         )
 
     def test_get_bytes(self, pictures: dict[str, mutagen.mp4.MP4Cover]):
         kind, attr = choice(list(pictures.items()))
-        result = M4A.EmbeddedImage._get_bytes(choice([attr, bytes(attr)]))
+        result = M4A.EmbeddedImage._get_bytes(choice((attr, bytes(attr))))
         assert result == bytes(attr)
 
 
@@ -91,10 +90,10 @@ class TestM4A(LocalTrackTester):
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
     def test_serialize_string(self, model: M4A, faker: Faker):
-        value = choice([
+        value = choice((
             SparseDate(year=2021, month=12, day=31),
             KeySignature(root=2, mode=1)
-        ])
+        ))
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
         assert model._serialize_string(value, info=info) == str(value)
