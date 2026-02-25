@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar
 
+import aiofiles
 import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
@@ -162,9 +163,9 @@ class LocalTrack[T: FileType](
     @classmethod
     @validate_call
     async def load_file(cls, path: str | Path) -> T:
-        # TODO: figure out how to load file asynchronously here to improve IO-bound performance
-        with Path(path).open("rb") as f:
-            file = mutagen.File(f)
+        # TODO: improve async performance?
+        async with aiofiles.open(path, mode='rb') as file:
+            file = mutagen.File(await file.read())
             file.filename = str(path)
 
         return file

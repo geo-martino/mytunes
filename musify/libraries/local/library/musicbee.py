@@ -113,9 +113,9 @@ class MusicBee(LocalLibrary, File):
             raise FileDoesNotExistError(self._settings_xml_path, "Cannot find MusicBee settings file at this path")
 
         try:
-            with open(self._settings_xml_path, "r", encoding="utf-8") as f:
+            with open(self._settings_xml_path, "r", encoding="utf-8") as file:
                 #: A map representation of the loaded XML settings data
-                self.settings_xml: dict[str, Any] = xmltodict.parse(f.read())["ApplicationSettings"]
+                self.settings_xml: dict[str, Any] = xmltodict.parse(file.read())["ApplicationSettings"]
         except (etree.XMLSyntaxError, XMLReaderError) as exc:
             raise XMLReaderError(
                 f"Could not read from settings file at {self._settings_xml_path}. {exc}"

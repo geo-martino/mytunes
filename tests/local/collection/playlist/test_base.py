@@ -57,8 +57,8 @@ async def test_playlist_paths_manual(library: LocalLibrary, source: Path, expect
 
     pl = await library.load_playlist(source)
 
-    with open(expected, "r", encoding="utf-8") as f:
-        paths_expected = [library.path_mapper.map(line.strip(), check_existence=False) for line in f]
+    with open(expected, "r", encoding="utf-8") as file:
+        paths_expected = [library.path_mapper.map(line.strip(), check_existence=False) for line in file]
 
     paths_actual = list(map(str, (track.path for track in pl.tracks)))
     assert sorted(paths_actual) == sorted(paths_expected)

@@ -115,9 +115,9 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
 
     async def load_settings_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
-        with self.xml_settings_path.open("r", encoding="utf-8") as f:
+        with self.xml_settings_path.open("r", encoding="utf-8") as file:
             #: A map representation of the loaded XML settings data
-            settings: dict[str, Any] = xmltodict.parse(f.read())
+            settings: dict[str, Any] = xmltodict.parse(file.read())
         return settings["ApplicationSettings"]
 
     async def set_library_folders(self, xml: dict[str, Any] = None) -> None:
