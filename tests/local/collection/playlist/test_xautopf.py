@@ -2,7 +2,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from random import choice
-from unittest import mock
+from unittest.mock import patch
 
 import pytest
 from faker import Faker
@@ -333,9 +333,9 @@ class TestXAutoPF(LocalPlaylistTester):
         assert model.sorter == xml.smart_playlist.sorter
 
         with (
-            mock.patch.object(XAutoPF, "_match_tracks", return_value=None) as mock_match,
-            mock.patch.object(XAutoPF, "_limit_tracks", return_value=None) as mock_limit,
-            mock.patch.object(XAutoPF, "_sort_tracks", return_value=None) as mock_sort,
+            patch.object(XAutoPF, "_match_tracks", return_value=None) as mock_match,
+            patch.object(XAutoPF, "_limit_tracks", return_value=None) as mock_limit,
+            patch.object(XAutoPF, "_sort_tracks", return_value=None) as mock_sort,
         ):
             reference = model._get_reference_for_last_played_track(tracks.copy())
             await model.load(tracks)
@@ -979,7 +979,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
             group_by="album",
         )
 
-        with mock.patch.object(_XMLSource, "parse_matcher") as mock_parse:
+        with patch.object(_XMLSource, "parse_matcher") as mock_parse:
             model.parse_matcher(matcher)
             mock_parse.assert_called_once_with(matcher)
             assert model.group_by == matcher.group_by
@@ -1013,7 +1013,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
             shuffle_weight=faker.random_int(-10, 10) / 10,
         )
 
-        with mock.patch.object(_XMLSource, "parse_sorter") as mock_parse:
+        with patch.object(_XMLSource, "parse_sorter") as mock_parse:
             model.parse_sorter(sorter)
             mock_parse.assert_called_once_with(sorter)
             assert model.shuffle_mode == to_pascal(sorter.shuffle_mode.name)

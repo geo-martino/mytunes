@@ -2,6 +2,7 @@ import builtins
 from collections.abc import Generator
 from contextlib import contextmanager
 from unittest import mock
+from unittest.mock import patch
 
 
 @contextmanager
@@ -11,5 +12,5 @@ def patch_input(values: list[str]) -> Generator[mock.Mock, None, None]:
         """An order of return values for user input that will test various stages of the pause"""
         return values.pop(0) if values else ""
 
-    with mock.patch.object(builtins, "input", new=input_return) as mock_input:
+    with patch.object(builtins, "input", new=input_return) as mock_input:
         yield mock_input

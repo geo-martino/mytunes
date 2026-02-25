@@ -2,7 +2,7 @@ from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
-from unittest import mock
+from unittest.mock import patch
 
 import pytest
 from faker import Faker
@@ -73,7 +73,7 @@ class TestM3U(LocalPlaylistTester):
         def _load_track(path: str | Path) -> LocalTrack:
             return next(tr for tr in tracks if tr.path == Path(path_mapper.map(path)))
 
-        with mock.patch.object(M3U, "_load_track", side_effect=_load_track):
+        with patch.object(M3U, "_load_track", side_effect=_load_track):
             yield tracks
 
     @pytest.fixture

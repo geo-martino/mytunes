@@ -2,6 +2,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from random import choice
 from unittest import mock
+from unittest.mock import patch
 
 import mutagen.id3
 import pytest
@@ -179,11 +180,11 @@ class TestHasImages(MusifyModelTester):
 
         classes = {m.__class__ for m in model.images.values()}
         mock_load = (
-            mock.patch.object(cls, "load", return_value=image_object, new_callable=mock.AsyncMock,)
+            patch.object(cls, "load", return_value=image_object, new_callable=mock.AsyncMock,)
             for cls in classes
         )
         mock_update = (
-            mock.patch.object(cls, "update_attributes")
+            patch.object(cls, "update_attributes")
             for cls in classes
         )
 

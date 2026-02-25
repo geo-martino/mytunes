@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 from random import choice, sample
 from typing import Any
-from unittest import mock
+from unittest.mock import patch
 
 import mutagen
 import mutagen.wave
@@ -67,7 +67,7 @@ class TestLocalTrack(UniqueKeyTester):
     ## Utility Methods
     ###########################################################################
     async def test_from_path(self, file: mutagen.FileType):
-        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
+        with patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
             model = await LocalTrack.from_path(file.filename)
             mock_load.assert_called_once_with(file.filename)
             assert model.name == file["name"][0]
@@ -77,7 +77,7 @@ class TestLocalTrack(UniqueKeyTester):
         path.touch()  # needs a real file to open
         file = mutagen.FileType()
 
-        with mock.patch.object(mutagen, "File", return_value=file) as mock_file:
+        with patch.object(mutagen, "File", return_value=file) as mock_file:
             result = await LocalTrack.load_file(path)
 
             mock_file.assert_called_once()
@@ -213,7 +213,7 @@ class TestLocalTrack(UniqueKeyTester):
     ):
         expected = adapter.validate_python(tags | dict(path=file.filename))
 
-        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
+        with patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
             await model.load()
 
             mock_load.assert_called_once()
@@ -224,7 +224,7 @@ class TestLocalTrack(UniqueKeyTester):
             assert model.genre == expected.genre
 
     async def test_save(self, model: LocalTrack, file: mutagen.File, faker: Faker):
-        with mock.patch.object(file.__class__, "save") as mock_save:
+        with patch.object(file.__class__, "save") as mock_save:
             await model.save(file)
             mock_save.assert_called_once()
 
@@ -290,8 +290,8 @@ class TestLocalTrack(UniqueKeyTester):
         context = TagDumpContext()
 
         with (
-            mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags,
-            mock.patch.object(file.__class__, "update") as mock_update,
+            patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags,
+            patch.object(file.__class__, "update") as mock_update,
         ):
             model.update(file, include=include, exclude=exclude, context=context, replace=True)
 
@@ -304,8 +304,8 @@ class TestLocalTrack(UniqueKeyTester):
         model = adapter.validate_python(tags | dict(path=file.filename))
 
         with (
-            mock.patch.object(LocalTrack, "to_tags", return_value=tags.copy()),
-            mock.patch.object(file.__class__, "update") as mock_update,
+            patch.object(LocalTrack, "to_tags", return_value=tags.copy()),
+            patch.object(file.__class__, "update") as mock_update,
         ):
             model.update(file, replace=False)
             mock_update.assert_called_once_with(expected)

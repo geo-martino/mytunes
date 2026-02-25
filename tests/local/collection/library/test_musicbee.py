@@ -4,6 +4,7 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 import xmltodict
@@ -42,7 +43,7 @@ class TestMusicBee(MusifyResourceTester):
     @pytest.fixture
     def mock_settings_xml(self, settings_xml) -> Generator[mock.MagicMock, None, None]:
         """Mocks the XML settings parser to return a sample parsed XML dict."""
-        with mock.patch.object(xmltodict, "parse", return_value=settings_xml) as mock_parser:
+        with patch.object(xmltodict, "parse", return_value=settings_xml) as mock_parser:
             yield mock_parser
 
     @pytest.fixture
@@ -69,7 +70,7 @@ class TestMusicBee(MusifyResourceTester):
     @pytest.fixture
     def mock_library_xml(self, library_xml) -> Generator[mock.MagicMock, None, None]:
         """Mocks the XML library parser to return a sample parsed XML dict."""
-        with mock.patch.object(XMLLibraryParser, "parse", return_value=library_xml) as mock_parser:
+        with patch.object(XMLLibraryParser, "parse", return_value=library_xml) as mock_parser:
             yield mock_parser
 
     @pytest.fixture(autouse=True)
@@ -164,7 +165,7 @@ class TestMusicBee(MusifyResourceTester):
     async def test_load_tracks_calls_super(
             self, model: MusicBee, library_folders: list[Path], mock_library_xml: mock.MagicMock
     ):
-        with mock.patch.object(LocalLibrary, "load_tracks", side_effect=mock.AsyncMock()) as mock_load:
+        with patch.object(LocalLibrary, "load_tracks", side_effect=mock.AsyncMock()) as mock_load:
             await model.load_tracks()
             mock_load.assert_called_once()
 
@@ -175,7 +176,7 @@ class TestMusicBee(MusifyResourceTester):
             library_xml: dict[str, Any],
             mock_library_xml: mock.MagicMock,
     ):
-        with mock.patch.object(LocalLibrary, "load_tracks", side_effect=mock.AsyncMock()):
+        with patch.object(LocalLibrary, "load_tracks", side_effect=mock.AsyncMock()):
             model.tracks[:] = tracks  # load is mocked, so set tracks manually
             await model.load_tracks()
 
@@ -196,13 +197,13 @@ class TestMusicBee(MusifyResourceTester):
                 assert track.play_count is None
 
     async def test_save_file_dry_run(self, model: MusicBee, mock_library_xml: mock.MagicMock):
-        with mock.patch.object(XMLLibraryParser, "unparse") as mock_unparse:
+        with patch.object(XMLLibraryParser, "unparse") as mock_unparse:
             await model.save(dry_run=True)
             mock_library_xml.assert_called_once()
             mock_unparse.assert_not_called()
 
     async def test_save_file_saves_xml(self, model: MusicBee, mock_library_xml: mock.MagicMock):
-        with mock.patch.object(XMLLibraryParser, "unparse", return_value="text") as mock_unparse:
+        with patch.object(XMLLibraryParser, "unparse", return_value="text") as mock_unparse:
             result = await model.save(dry_run=False)
             mock_library_xml.assert_called_once()
             mock_unparse.assert_called_once_with(result)

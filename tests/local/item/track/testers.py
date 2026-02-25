@@ -4,7 +4,7 @@ from io import BytesIO
 from pathlib import Path
 from random import choice
 from typing import Any
-from unittest import mock
+from unittest.mock import patch
 
 import mutagen
 import mutagen.wave
@@ -57,7 +57,7 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
         file.filename = str(model.path)
         assert await model._get_file(file) is file  # doesn't change file when given
 
-        with mock.patch.object(LocalTrack, "load_file", return_value=file) as mock_get_bytes:
+        with patch.object(LocalTrack, "load_file", return_value=file) as mock_get_bytes:
             assert await model._get_file() is file
             mock_get_bytes.assert_called_once_with(model.path)
 
@@ -82,7 +82,7 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_get_id3_type_from_tag(model: LocalTrack.EmbeddedImage, pictures: dict[str, Any]):
-        with mock.patch.object(model.__class__, "_get_type_from_number", return_value="test_type") as mock_get_type:
+        with patch.object(model.__class__, "_get_type_from_number", return_value="test_type") as mock_get_type:
             attr = next(iter(pictures.values()))
             assert model.__class__.get_id3_type_from_tag(attr) == mock_get_type.return_value
 
@@ -140,7 +140,7 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_extract_tags_from_mutagen_called_on_validate(model: LocalTrack, file: mutagen.FileType):
-        with mock.patch.object(
+        with patch.object(
                 model.__class__,
                 "extract_tags_from_mutagen",
                 side_effect=model.__class__.extract_tags_from_mutagen
@@ -180,10 +180,10 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
         assert loaded_images
 
         with (
-            mock.patch.object(
+            patch.object(
                 model.EmbeddedImage, "from_image_model", return_value=image_model
             ) as mock_from_image_model,
-            mock.patch.object(model.EmbeddedImage, "build") as mock_build,
+            patch.object(model.EmbeddedImage, "build") as mock_build,
         ):
             # noinspection PyTypeChecker
             result = model._serialize_images(image_bytes, info=context)

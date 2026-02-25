@@ -4,6 +4,7 @@ from pathlib import Path
 from random import choice, sample
 from typing import Any
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 from faker import Faker
@@ -71,7 +72,7 @@ class TestLocalLibrary(MusifyResourceTester):
         async def _load_track(path: Path) -> LocalTrack:
             return tracks_mapped[path]
 
-        with mock.patch.object(LocalLibrary, "load_track", side_effect=_load_track) as mock_load:
+        with patch.object(LocalLibrary, "load_track", side_effect=_load_track) as mock_load:
             yield mock_load
 
     @pytest.fixture
@@ -112,7 +113,7 @@ class TestLocalLibrary(MusifyResourceTester):
         async def _load_playlist(path: Path) -> LocalPlaylist:
             return pl_mapped[path]
 
-        with mock.patch.object(LocalLibrary, "load_playlist", side_effect=_load_playlist) as mock_load:
+        with patch.object(LocalLibrary, "load_playlist", side_effect=_load_playlist) as mock_load:
             yield mock_load
 
     @pytest.fixture

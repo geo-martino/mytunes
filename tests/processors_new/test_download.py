@@ -4,6 +4,7 @@ from collections.abc import Generator
 from copy import copy
 from random import sample, randrange, choice
 from unittest import mock
+from unittest.mock import patch
 from urllib.parse import unquote
 
 import pytest
@@ -48,13 +49,13 @@ class TestItemDownloadHelper(MusifyModelTester):
     @pytest.fixture(autouse=True)
     def mock_webopen(self, urls: list[str]):
         """Mock for webopen which appends the queried url to the urls fixture list"""
-        with mock.patch(f"{MODULE_ROOT}.processors_new.download.webopen", new=urls.append):
+        with patch(f"{MODULE_ROOT}.processors_new.download.webopen", new=urls.append):
             yield
 
     @pytest.fixture
     def mock_pause(self) -> Generator[mock.MagicMock, None, None]:
         """Mock for pause functionality"""
-        with mock.patch.object(ItemDownloadHelper, "_pause") as mock_pause:
+        with patch.object(ItemDownloadHelper, "_pause") as mock_pause:
             yield mock_pause
 
     @pytest.fixture
@@ -89,7 +90,7 @@ class TestItemDownloadHelper(MusifyModelTester):
     def test_open_sites_for_collections(self, model: ItemDownloadHelper, playlists: list[Playlist]):
         tracks = tuple(tr for pl in playlists for tr in pl.tracks)
 
-        with mock.patch.object(ItemDownloadHelper, "open_sites") as mock_open_sites:
+        with patch.object(ItemDownloadHelper, "open_sites") as mock_open_sites:
             model.open_sites_for_collections(playlists)
             mock_open_sites.assert_called_once_with(tracks)
 

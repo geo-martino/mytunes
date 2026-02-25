@@ -4,7 +4,7 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 from random import choice
-from unittest import mock
+from unittest.mock import patch
 
 import mutagen.id3
 import pytest
@@ -58,7 +58,7 @@ class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
         assert id3_type == kind
         assert size < len(attr.value)
 
-        with mock.patch.object(WMA.EmbeddedImage, "_get_type_from_number", side_effect=ValueError):
+        with patch.object(WMA.EmbeddedImage, "_get_type_from_number", side_effect=ValueError):
             id3_type, _ = WMA.EmbeddedImage._unpack_bytes(next(iter(pictures.values())))
             assert id3_type is None
 
