@@ -170,7 +170,6 @@ class SimpleURI(URI):
 
     @classmethod
     def from_id[T](cls, value: T, kind: str, source: str = None) -> T | Self:
-        print(value, kind, source)
         uri = ":".join((source or cls._source, kind, str(value)))
         return cls(uri)
 

@@ -11,8 +11,10 @@ from musify.processors_new.match.clean import TagCleaner
 
 
 class Scorer[C: TagCleaner](Processor, HasLogger, metaclass=ABCMeta):
+    """Scores the similarity between two items based on a specific tag."""
+
     type: str = Field(
-        description="The type of score this is. Used for logging and debugging purposes.",
+        description="The type of score this is.",
     )
     cleaner: C = Field(
         description="The cleaner to use for cleaning the tag value before scoring.",
@@ -20,6 +22,14 @@ class Scorer[C: TagCleaner](Processor, HasLogger, metaclass=ABCMeta):
     weight: int | float = Field(
         description="The weight to be applied to the score.",
         default=1,
+    )
+    required: bool = Field(
+        description=(
+            "Whether this scorer is required for a match. "
+            "If True, the score must be above the max score threshold for a match "
+            "regardless of the aggregate score with other scorer."
+        ),
+        default=False,
     )
 
     def can_score(self, item: Any) -> bool:

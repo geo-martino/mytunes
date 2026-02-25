@@ -71,7 +71,6 @@ class LengthCleaner(NumericCleaner[HasLength]):
 class ReleaseYearCleaner(NumericCleaner[HasAlbum | HasReleaseDate]):
     @classmethod
     def can_clean(cls, item: Any) -> bool:
-        print(type(item))
         match item:
             case SparseDate():
                 return super().can_clean(item.year)
