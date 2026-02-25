@@ -16,6 +16,8 @@ class Matcher(Processor):
             "Only returns the result as a match if the score is above this value.")
         ,
         default=0,
+        ge=0,
+        lt=1,
     )
     max_score: float = Field(
         description=(
@@ -23,6 +25,9 @@ class Matcher(Processor):
             "Scoring will stop once this score has been reached."
         ),
         default=1,
+        gt=0,
+        le=1,
+
     )
 
     def get_scorers_for_item(self, item: Any) -> list[ScorerType]:
