@@ -8,7 +8,7 @@ import re
 from collections.abc import Mapping, Sequence, Iterator, MutableMapping
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Self, Annotated
+from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 from aiorequestful.types import Number
@@ -38,12 +38,14 @@ except ImportError:
 REQUIRED_MODULES = [xmltodict, etree]
 
 
+@final
 class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
     """
     Represents a local MusicBee library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.
     """
     __supported_extensions__ = frozenset({"xml"})
+    __final__ = True
 
     #: The relative path of the MusicBee settings file in the ``musicbee_folder``.
     _xml_settings_path: ClassVar[Path] = Path("MusicBeeLibrarySettings.ini")
