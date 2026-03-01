@@ -2,7 +2,7 @@ import itertools
 import textwrap
 from collections.abc import Generator, Iterable, Mapping
 from pathlib import Path
-from typing import Annotated, ClassVar, Any
+from typing import Annotated, ClassVar, Any, final
 
 from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, validate_call
 from tabulate import tabulate
@@ -27,6 +27,7 @@ from musify.processors_new.sort import ItemSorter
 type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mapping[str, Any]]
 
 
+@final
 class LocalLibrary(
     LocalCollection, MutableLibrary[str, LocalTrack, str, LocalPlaylist]
 ):
@@ -34,6 +35,7 @@ class LocalLibrary(
     Represents a local library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.
     """
+    __final__ = True
 
     _ignore_folders: ClassVar[frozenset[str]] = frozenset({"$RECYCLE.BIN"})
     source: ClassVar[str] = "local"

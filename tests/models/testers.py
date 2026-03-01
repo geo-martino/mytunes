@@ -32,9 +32,9 @@ class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_model_registry(model: MusifyResource):
         if model.__final__:
-            assert model.__class__ in model.__class__.registered_submodels
+            assert model.__class__ in MusifyResource.registered_submodels
         else:
-            assert model.__class__ not in model.__class__.registered_submodels
+            assert model.__class__ not in MusifyResource.registered_submodels
 
     def test_check_unique_key_tester_enabled(self, model: MusifyResource):
         """Test that the unique key tester is enabled"""

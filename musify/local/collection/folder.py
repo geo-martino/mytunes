@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Sequence
-from typing import ClassVar, Any, Self
+from typing import ClassVar, Any, Self, final
 
 from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
@@ -12,8 +12,11 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 
 
+@final
 class Folder[TK, TV: LocalTrack](LocalCollection, HasTracks[TK, TV], HasName, HasLength):
     """Represents a folder collection and its properties."""
+    __final__ = True
+
     type: ClassVar[str] = "folder"
 
     name: StrippedString = Field(
