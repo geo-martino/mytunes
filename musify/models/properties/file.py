@@ -4,23 +4,35 @@ from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Iterable, ClassVar, Annotated, Self
+from types import UnionType
+from typing import Any, Iterable, ClassVar, Annotated, Self, Union
 
 import mutagen
-from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler
+from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models._base import AttributeResource, MusifyModel
+from musify.utils import classproperty
 
 
 class IsFile(AttributeResource, metaclass=ABCMeta):
     """Attributes and operations for a file on some system."""
     __supported_extensions__: ClassVar[frozenset[str]] = frozenset()
 
-    @classmethod
-    def get_annotation_from_supported_extensions(cls) -> tuple[type[Annotated], ...]:
-        """Get the type annotation from the supported extensions."""
-        return tuple(Annotated[cls, Tag(ext)] for ext in cls.__supported_extensions__)
+    # noinspection PyMethodParameters
+    @classproperty
+    def annotation(cls) -> type:
+        classes = cls.registered_submodels
+        types = (Annotated[kls, Tag(ext)] for kls in classes for ext in kls.__supported_extensions__)
+        return Union[*types] if classes else Union
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def supported_extensions(cls) -> set[str]:
+        """The file extensions supported by this file type."""
+        if cls.__final__:
+            return set(cls.__supported_extensions__)
+        return {ext for kls in cls.registered_submodels for ext in kls.__supported_extensions__}
 
     @property
     @abstractmethod
@@ -97,6 +109,16 @@ class IsLocalFile(IsFile):
 
         tags = cls.extract_tags_from_mutagen(file)
         return handler(tags)
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def annotation(cls) -> type:
+        if not cls.registered_submodels:
+            return UnionType
+        return Annotated[
+            super().annotation,
+            Field(discriminator=Discriminator(cls.get_ext_from_input)),
+        ]
 
     @classmethod
     def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:

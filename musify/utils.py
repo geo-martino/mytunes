@@ -9,7 +9,6 @@ from types import UnionType, GenericAlias
 from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
 
 from aiorequestful.types import Number
-from pydantic import Tag
 from typing_extensions import get_origin, evaluate_forward_ref
 
 from musify.exception import MusifyTypeError, MusifyImportError
@@ -283,23 +282,6 @@ def required_modules_installed(modules: list, this: object = None) -> bool:
         raise MusifyImportError(message)
 
     return modules_installed
-
-
-def get_discriminator_values(cls: TypeAliasType) -> set[str]:
-    """
-    Get all possible discriminator values for a given ``cls`` which is a :py:class:`TypeAliasType`.
-
-    :param cls: The type alias to get the discriminator values for.
-    :return: A set of all possible discriminator values.
-    """
-    if not isinstance(cls, TypeAliasType):
-        raise MusifyTypeError(f"Cannot get discriminator values for non-TypeAliasType: {cls}")
-
-    return {
-        arg.tag
-        for t in get_args(get_args(cls.__value__)[0])
-        for arg in get_args(t) if isinstance(arg, Tag)
-    }
 
 
 def get_base_types(

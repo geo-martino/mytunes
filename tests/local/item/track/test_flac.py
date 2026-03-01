@@ -84,7 +84,7 @@ class TestFLACEmbeddedImage(LocalTrackEmbeddedImageTester):
 class TestFLAC(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> FLAC:
-        extension = choice(tuple(FLAC.__supported_extensions__))
+        extension = choice(tuple(FLAC.supported_extensions))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return FLAC(name=faker.sentence(), uri=uri, path=path)
 

@@ -11,14 +11,13 @@ from faker import Faker
 from pydantic import TypeAdapter
 
 from musify.local.collection.library import LocalLibrary
-from musify.local.collection.playlist import LocalPlaylist, LocalPlaylistType
+from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.processors_new.filters import ValuesFilter
-from musify.utils import get_discriminator_values
 from tests.models.testers import MusifyResourceTester
 
 
@@ -84,7 +83,7 @@ class TestLocalLibrary(MusifyResourceTester):
     ) -> list[LocalPlaylist]:
         """The tracks available in all library folders"""
         playlists = []
-        extensions = tuple(get_discriminator_values(LocalPlaylistType))
+        extensions = tuple(LocalPlaylist.supported_extensions)
 
         for _ in range(faker.random_int(10, 20)):
             # need to ensure unique names for tests to work as expected
@@ -97,7 +96,7 @@ class TestLocalLibrary(MusifyResourceTester):
                 ))
             path = choice(library_folders).joinpath(playlist_folder).joinpath(path_relative)
 
-            playlist = TypeAdapter(LocalPlaylistType).validate_python(dict(path=path))
+            playlist = TypeAdapter(LocalPlaylist.annotation).validate_python(dict(path=path))
             playlist.path.parent.mkdir(parents=True, exist_ok=True)
             playlist.path.touch()
 

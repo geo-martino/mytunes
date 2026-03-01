@@ -47,7 +47,7 @@ class TestM4AEmbeddedImage(LocalTrackEmbeddedImageTester):
 class TestM4A(LocalTrackTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> M4A:
-        extension = choice(tuple(M4A.__supported_extensions__))
+        extension = choice(tuple(M4A.supported_extensions))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return M4A(name=faker.sentence(), uri=uri, path=path)
 

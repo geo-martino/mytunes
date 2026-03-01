@@ -2,12 +2,12 @@ import asyncio
 from collections import Counter
 from collections.abc import Sequence, Collection
 from pathlib import Path
-from typing import Self
+from typing import Self, final
 
 from pydantic import Field, TypeAdapter
 
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack, LocalTrackType
+from musify.local.item.track import LocalTrack
 from musify.processors_new import Result
 from musify.processors_new.filters import PathsFilter
 
@@ -52,14 +52,16 @@ class SyncResultM3U(Result):
         )
 
 
+@final
 class M3U(LocalPlaylist[PathsFilter]):
     """For reading and writing data from M3U playlist format."""
     __supported_extensions__ = frozenset({"m3u"})
+    __final__ = True
     
     @staticmethod
     async def _load_track(path: str | Path) -> LocalTrack:
         file = await LocalTrack.load_file(path)
-        return TypeAdapter(LocalTrackType).validate_python(file)
+        return TypeAdapter(LocalTrack.annotation).validate_python(file)
 
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """

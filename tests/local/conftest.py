@@ -8,7 +8,7 @@ from faker import Faker
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track import LocalTrack, LocalTrackType
+from musify.local.item.track import LocalTrack
 from musify.models import MusifyResource
 from tests.utils import GENRES, SimpleURI
 
@@ -24,9 +24,9 @@ def models(
 
 @pytest.fixture
 def track(faker: Faker, tmp_path: Path) -> LocalTrack:
-    classes = get_args(get_args(LocalTrackType.__value__)[0])
+    classes: tuple[type[LocalTrack], ...] = tuple(LocalTrack.registered_submodels)
     cls = choice(classes)
-    extension = choice(tuple(get_args(cls)[0].__supported_extensions__))
+    extension = choice(tuple(cls.supported_extensions))
     track = cls.model_validate(dict(
         name=faker.sentence(nb_words=faker.random_int(1, 5)),
         path=tmp_path.joinpath(faker.file_path(absolute=False, extension=extension)),
@@ -37,11 +37,11 @@ def track(faker: Faker, tmp_path: Path) -> LocalTrack:
 
 @pytest.fixture
 def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
-    classes = get_args(get_args(LocalTrackType.__value__)[0])
+    classes: tuple[type[LocalTrack], ...] = tuple(LocalTrack.registered_submodels)
     tracks = []
     for _ in range(faker.random_int(30, 50)):
         cls = choice(classes)
-        extension = choice(tuple(get_args(cls)[0].__supported_extensions__))
+        extension = choice(tuple(cls.supported_extensions))
         track = cls.model_validate(dict(
             name=faker.sentence(nb_words=faker.random_int(1, 5)),
             path=tmp_path.joinpath(faker.file_path(absolute=False, extension=extension)),

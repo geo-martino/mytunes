@@ -224,6 +224,7 @@ class TestMusicBee(MusifyResourceTester):
 @pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="required modules not installed.")
 class TestXMLLibraryParser(MusifyModelTester):
 
+    @pytest.fixture
     def model(self, xml: str) -> XMLLibraryParser:
         return XMLLibraryParser(source=xml)
 

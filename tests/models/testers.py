@@ -10,18 +10,32 @@ from musify.models import MusifyModel, MusifyRootModel, MusifyResource
 class MusifyModelTester(metaclass=ABCMeta):
     """Generic base class for testing :py:class:`.MusifyModel` implementations"""
     @abstractmethod
-    def model(self, **kwargs) -> MusifyModel | MusifyRootModel:
+    def model(self, **kwargs) -> MusifyModel:
         """Fixture for the models to test"""
         raise NotImplementedError
 
     @pytest.fixture
-    def adapter(self, model: MusifyModel | MusifyRootModel) -> TypeAdapter:
+    def adapter(self, model: MusifyModel) -> TypeAdapter:
         """Fixture for the type adapter to use when validating python objects for this models"""
         return TypeAdapter(model.__class__)
+
+    @staticmethod
+    def test_model_registry(model: MusifyModel):
+        if model.__final__:
+            assert model.__class__ in MusifyModel.__model_registry__
+        else:
+            assert model.__class__ not in MusifyModel.__model_registry__
 
 
 class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
     """Generic base class for testing :py:class:`.MusifyResource` implementations"""
+    @staticmethod
+    def test_model_registry(model: MusifyResource):
+        if model.__final__:
+            assert model.__class__ in model.__class__.registered_submodels
+        else:
+            assert model.__class__ not in model.__class__.registered_submodels
+
     def test_check_unique_key_tester_enabled(self, model: MusifyResource):
         """Test that the unique key tester is enabled"""
         if model.__unique_attributes__:

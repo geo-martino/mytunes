@@ -2,21 +2,22 @@ from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints
+from types import UnionType
+from typing import Any, ClassVar, Self, get_type_hints, Type, Union
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
 # noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
 # noinspection PyProtectedMember
-from pydantic._internal._model_construction import ModelMetaclass
+from pydantic._internal._model_construction import ModelMetaclass, _T
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
 from musify.exception import MusifyValueError, MusifyAttributeError
-from musify.utils import get_base_types
+from musify.utils import get_base_types, classproperty
 
 
 def abstract_property() -> property:
@@ -63,8 +64,40 @@ def writeable_computed_field(name: str) -> property:
     return property(fget, fset, fdel)
 
 
-class MusifyModel(BaseModel):
+class MusifyModelMetaclass(ModelMetaclass):
+    """Metaclass for attribute models to handle tag attribute generation and configuration."""
+    __model_registry__: ClassVar[set[Type[MusifyResource]]] = set()
+    __final__: ClassVar[bool] = False
+
+    def __new__(
+        mcs,
+        cls_name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
+        __pydantic_reset_parent_namespace__: bool = True,
+        _create_model_module: str | None = None,
+        **kwargs: Any,
+    ) -> type:
+        cls: Self = super().__new__(
+            mcs,
+            cls_name,
+            bases,
+            namespace,
+            __pydantic_generic_metadata__,
+            __pydantic_reset_parent_namespace__,
+            **kwargs
+        )
+        if cls.__final__:
+            cls.__model_registry__.add(cls)
+
+        return cls
+
+
+class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
     """Generic base class for any Musify models."""
+    __final__: ClassVar[bool] = False
+
     model_config = ConfigDict(
         validate_default=True,
         validate_assignment=True,
@@ -117,7 +150,9 @@ class MusifyModel(BaseModel):
         return {al for al in aliases if al}
 
 
-class MusifyRootModel[T](RootModel[T]):
+class MusifyRootModel[T](RootModel[T], MusifyModel):
+    __final__: ClassVar[bool] = False
+
     model_config = ConfigDict(
         validate_default=True,
         validate_assignment=True,
@@ -131,6 +166,21 @@ class MusifyResource(MusifyModel):
     __unique_attributes__: ClassVar[frozenset[str]] = frozenset()
 
     type: ClassVar[str] = Field(description="The type of resource this is.")
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def registered_submodels(cls) -> set[Type]:
+        """Get the registered classes for all subclasses of this model."""
+        if cls.__final__:
+            return set()
+        return {kls for kls in cls.__model_registry__ if issubclass(kls, cls)}
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def annotation(cls) -> Type:
+        """Get the annotation for all subclasses of this model"""
+        classes = cls.registered_submodels
+        return Union[*classes] if classes else Union
 
     @cached_property
     def _unique_attribute_keys(self) -> set[str]:
@@ -167,7 +217,7 @@ class MusifyResource(MusifyModel):
             del self.unique_keys  # clear the cached property
 
 
-class AttributeModelMetaclass(ModelMetaclass):
+class AttributeModelMetaclass(MusifyModelMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
     __tag_attributes__: ClassVar[frozenset[str] | tuple[str, ...] | None] = None
     __include_fields__: ClassVar[bool] = False
@@ -183,8 +233,7 @@ class AttributeModelMetaclass(ModelMetaclass):
         _create_model_module: str | None = None,
         **kwargs: Any,
     ) -> type:
-        # noinspection PyTypeChecker
-        cls: AttributeModel = super().__new__(
+        cls: Self = super().__new__(
             mcs,
             cls_name,
             bases,

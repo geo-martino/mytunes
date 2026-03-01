@@ -15,15 +15,14 @@ from musify.local.collection.album import LocalAlbumCollection
 from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
-from musify.local.collection.playlist import LocalPlaylist, LocalPlaylistType
-from musify.local.item.track import LocalTrack, LocalTrackType
+from musify.local.collection.playlist import LocalPlaylist
+from musify.local.item.track import LocalTrack
 from musify.logger import STAT, HEADER_PREFIX
 from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
-from musify.utils import get_discriminator_values
 
 type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mapping[str, Any]]
 
@@ -73,7 +72,7 @@ class LocalLibrary(
         if not self.library_folders:
             return
 
-        extensions = get_discriminator_values(LocalTrackType)
+        extensions = LocalTrack.supported_extensions
         for folder in self.library_folders:
             for path in folder.rglob(f"[!.]*"):
                 if path.suffix.lstrip(".").casefold() not in extensions:
@@ -96,7 +95,7 @@ class LocalLibrary(
             }
             folders = {folder for folder in folders if folder.is_dir()}
 
-        extensions = get_discriminator_values(LocalPlaylistType)
+        extensions = LocalPlaylist.supported_extensions
 
         total = 0
         filtered = 0
@@ -160,7 +159,7 @@ class LocalLibrary(
         try:
             self.logger.debug(f"Loading track: {path}")
             file = await LocalTrack.load_file(path)
-            track: LocalTrack = TypeAdapter(LocalTrackType).validate_python(file)
+            track: LocalTrack = TypeAdapter(LocalTrack.annotation).validate_python(file)
             return track
         except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
             self.logger.debug(f"Load error for track: {path} - {ex}")
@@ -218,7 +217,7 @@ class LocalLibrary(
         """
         try:
             self.logger.debug(f"Loading playlist: {path}")
-            playlist: LocalPlaylist = TypeAdapter(LocalPlaylistType).validate_python(path)
+            playlist: LocalPlaylist = TypeAdapter(LocalPlaylist.annotation).validate_python(path)
             playlist.path_mapper = self.path_mapper
             return await playlist.load(self.tracks)
         except (MusifyError, ValueError, FileNotFoundError) as ex:

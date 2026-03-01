@@ -8,7 +8,7 @@ from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
 from copy import deepcopy
 from pathlib import Path
 from random import choice
-from typing import Any, Self, Literal, Annotated, ClassVar, get_origin
+from typing import Any, Self, Literal, Annotated, ClassVar, get_origin, final
 
 from pydantic import Field, field_validator, model_validator, ConfigDict, BeforeValidator, model_serializer, \
     field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices
@@ -109,9 +109,11 @@ class SyncResultXAutoPF(Result):
         )
 
 
+@final
 class XAutoPF(LocalPlaylist[AutoMatcher]):
     """For reading and writing data from MusicBee's auto-playlist format."""
     __supported_extensions__ = frozenset({"xautopf"})
+    __final__ = True
 
     _xml: _XMLRoot | None = PrivateAttr(default=None)
     _original: MusifyMutableSequence = PrivateAttr(default_factory=MusifyMutableSequence)

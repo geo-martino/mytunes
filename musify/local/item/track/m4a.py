@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Iterable
-from typing import Any, ClassVar
+from typing import Any, ClassVar, final
 
 import mutagen.id3
 import mutagen.mp4
@@ -19,8 +19,10 @@ from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
+@final
 class M4A(LocalTrack[mutagen.mp4.MP4]):
     __supported_extensions__ = frozenset({"m4a"})
+    __final__ = True
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp4.MP4, mutagen.mp4.MP4Cover]):
         alias: ClassVar[str] = "covr"

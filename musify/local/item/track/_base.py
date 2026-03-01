@@ -185,6 +185,12 @@ class LocalTrack[T: FileType](
 
         return tag_id
 
+    @staticmethod
+    def get_ext_from_input(value: Any) -> str:
+        if isinstance(value, mutagen.FileType):
+            value = Path(value.filename)
+        return super().get_ext_from_input(value)
+
     ###########################################################################
     ## Validators/Serializers
     ###########################################################################

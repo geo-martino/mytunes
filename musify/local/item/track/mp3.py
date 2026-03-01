@@ -1,6 +1,6 @@
 from collections.abc import MutableSequence, MutableMapping, Iterable, Sequence
 from copy import copy
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, Self, final
 
 import mutagen.id3
 import mutagen.mp3
@@ -21,8 +21,10 @@ from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
+@final
 class MP3(LocalTrack[mutagen.mp3.MP3]):
     __supported_extensions__ = frozenset({"mp3"})
+    __final__ = True
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp3.MP3, mutagen.id3.APIC]):
         alias: ClassVar[str] = "APIC"

@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Iterable
-from typing import Any, Self
+from typing import Any, Self, final
 
 import mutagen.flac
 import mutagen.id3
@@ -18,8 +18,10 @@ from musify.models.properties.order import Position
 from musify.utils import get_base_types
 
 
+@final
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
     __supported_extensions__ = frozenset({"flac"})
+    __final__ = True
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.FLAC, mutagen.flac.Picture]):
         @classmethod

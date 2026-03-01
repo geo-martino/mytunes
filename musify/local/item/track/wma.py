@@ -1,6 +1,6 @@
 import struct
 from collections.abc import MutableMapping, Sequence, Iterable
-from typing import ClassVar, Any
+from typing import ClassVar, Any, final
 
 import mutagen.asf
 import mutagen.id3
@@ -12,6 +12,8 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.models import MusifyResource
+from musify.models.item.track import Track
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
@@ -19,8 +21,10 @@ from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 
 
+@final
 class WMA(LocalTrack[mutagen.asf.ASF]):
     __supported_extensions__ = frozenset({"wma"})
+    __final__ = True
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.asf.ASF, mutagen.asf.ASFByteArrayAttribute]):
         alias: ClassVar[str] = "WM/Picture"
