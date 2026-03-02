@@ -1,9 +1,11 @@
 from ._base import LocalPlaylistFile, LocalPlaylist
-from .m3u import M3U
-from .xautopf import XAutoPF
 
 
 __all__ = [
-    "LocalPlaylist",
-    "LocalPlaylistFile",
+    LocalPlaylist.__name__,
+    LocalPlaylistFile.__name__,
 ]
+
+# we must import all the supported formats here so that they are registered in the registry
+from .m3u import M3U
+from .xautopf import XAutoPF
