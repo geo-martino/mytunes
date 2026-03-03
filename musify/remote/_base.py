@@ -1,6 +1,5 @@
-from musify.models import MusifyResource
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import URI, HasURI
 
 
-class RemoteResource(MusifyResource):
+class RemoteResource[T: URI](HasURI[T]):
     pass

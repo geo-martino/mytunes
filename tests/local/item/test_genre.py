@@ -10,5 +10,5 @@ from tests.utils import GENRES
 
 class TestLocalGenre(UniqueKeyTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> LocalGenre:
+    def model(self) -> LocalGenre:
         return LocalGenre(name=choice(GENRES))
