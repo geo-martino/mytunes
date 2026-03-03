@@ -68,11 +68,11 @@ class TestURI(MusifyModelTester):
         assert model == model.id
         assert model != SimpleURI(":".join((model.source, model.type, "different_id"))).id
 
-        assert model == model.url
-        assert model != SimpleURI(":".join((model.source, "different_type", model.id))).url
+        assert model == model.public_url
+        assert model != SimpleURI(":".join((model.source, "different_type", model.id))).public_url
 
-        assert model == model.href
-        assert model != SimpleURI(":".join((model.source, "different_type", model.id))).href
+        assert model == model.api_url
+        assert model != SimpleURI(":".join((model.source, "different_type", model.id))).api_url
 
 
 class TestHasURI(UniqueKeyTester):
@@ -105,8 +105,8 @@ class TestHasURI(UniqueKeyTester):
         # doesn't match on string values
         assert model != str(uri)
         assert model != uri.id
-        assert model != uri.href
-        assert model != uri.url
+        assert model != uri.api_url
+        assert model != uri.public_url
 
 
 class TestHasMutableURI(UniqueKeyTester):

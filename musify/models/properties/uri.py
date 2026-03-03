@@ -59,11 +59,12 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_id[T](cls, value: T, kind: str) -> T | Self:
+        """Construct a URI from an ID value and resource type."""
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def href(self) -> URL:
+    def api_url(self) -> URL:
         """The URL of the API endpoint for this remote resource."""
         raise NotImplementedError
 
@@ -71,12 +72,13 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     @field_validator("root", mode="wrap", check_fields=True)
     @classmethod
     @abstractmethod
-    def from_href(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
+    def from_api_url(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
+        """Construct a URI from an API endpoint URL."""
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def url(self) -> URL:
+    def public_url(self) -> URL:
         """The public URL for this remote resource."""
         raise NotImplementedError
 
@@ -84,7 +86,8 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
     @field_validator("root", mode="wrap", check_fields=True)
     @classmethod
     @abstractmethod
-    def from_url(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
+    def from_public_url(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
+        """Construct a URI from a public URL."""
         raise NotImplementedError
 
     @property
@@ -105,7 +108,7 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
             return self.root == other.root
 
         if isinstance(other, URL):
-            if self.href == other or self.url == other:
+            if self.api_url == other or self.public_url == other:
                 return True
             other = str(other)
 
