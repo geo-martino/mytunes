@@ -2,14 +2,13 @@ import pytest
 from faker import Faker
 
 from musify.models.item.artist import Artist, HasArtists
-from musify.models.properties.uri import URI
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
 class TestArtist(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> Artist:
+    def model(self, faker: Faker) -> Artist:
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=Artist.type, source=faker.word()
         )

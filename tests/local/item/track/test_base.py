@@ -16,14 +16,14 @@ from musify.local.item.track import LocalTrack, TagDumpContext
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength
-from musify.models.properties.uri import URI, HasMutableURI
+from musify.models.properties.uri import HasMutableURI
 from tests.models.testers import UniqueKeyTester
 from tests.utils import assert_validator_skips, SimpleURI
 
 
 class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
-    def model(self, tags: dict[str, Any], uri: URI, faker: Faker) -> LocalTrack:
+    def model(self, tags: dict[str, Any], faker: Faker) -> LocalTrack:
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type, source=faker.word()
         )

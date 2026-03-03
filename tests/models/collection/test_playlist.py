@@ -4,7 +4,6 @@ import pytest
 from faker import Faker
 
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist
-from musify.models.properties.uri import URI
 from tests.models.testers import MusifyModelTester, UniqueKeyTester
 from tests.utils import split_list, SimpleURI
 

@@ -6,14 +6,13 @@ from faker import Faker
 from musify.local.item.album import LocalAlbum
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.order import Position
-from musify.models.properties.uri import URI
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
 class TestTrack(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> Track:
+    def model(self, faker: Faker) -> Track:
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=Track.type, source=faker.word()
         )

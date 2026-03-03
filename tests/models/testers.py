@@ -4,7 +4,7 @@ from collections.abc import Hashable
 import pytest
 from pydantic import TypeAdapter
 
-from musify.models import MusifyModel, MusifyRootModel, MusifyResource
+from musify.models import MusifyModel, MusifyResource
 
 
 class MusifyModelTester(metaclass=ABCMeta):

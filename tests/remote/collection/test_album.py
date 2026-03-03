@@ -1,7 +1,6 @@
 import pytest
 from faker import Faker
 
-from musify.models.properties.uri import URI
 from musify.remote.collection.album import RemoteAlbumCollection
 from tests.models.testers import UniqueKeyTester
 from tests.utils import SimpleURI

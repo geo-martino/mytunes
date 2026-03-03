@@ -5,9 +5,7 @@ from faker import Faker
 
 from musify.models.collection.genre import GenreCollection
 from musify.models.item.track import Track
-from musify.models.properties.uri import URI
 from tests.models.testers import UniqueKeyTester
-from tests.utils import SimpleURI
 
 
 class TestGenreCollection(UniqueKeyTester):
