@@ -6,7 +6,7 @@ from musify.models.properties.uri import URI
 from tests.models.testers import UniqueKeyTester
 
 
-class TestArtist(UniqueKeyTester):
+class TestLocalArtist(UniqueKeyTester):
     @pytest.fixture
     def model(self, uri: URI, faker: Faker) -> LocalArtist:
         return LocalArtist(name=faker.word(), uri=uri)
