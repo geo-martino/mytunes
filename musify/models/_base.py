@@ -105,7 +105,7 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
         validate_by_alias=True,
         alias_generator=AliasGenerator(
             validation_alias=lambda name: name.replace("_", "").rstrip("s")
-        )
+        ),
     )
 
     # TODO: figure this out
@@ -151,14 +151,7 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
 
 
 class MusifyRootModel[T](RootModel[T], MusifyModel):
-    __final__: ClassVar[bool] = False
-
-    model_config = ConfigDict(
-        validate_default=True,
-        validate_assignment=True,
-        validate_by_name=True,
-        validate_by_alias=True,
-    )
+    pass
 
 
 class MusifyResource(MusifyModel):

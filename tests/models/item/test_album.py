@@ -4,11 +4,15 @@ from faker import Faker
 from musify.models.item.album import Album, HasAlbums
 from musify.models.properties.uri import URI
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester
+from tests.utils import SimpleURI
 
 
 class TestAlbum(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> Album:
+    def model(self, faker: Faker) -> Album:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=Album.type, source=faker.word()
+        )
         return Album(name=faker.word(), uri=uri)
 
 

@@ -7,13 +7,14 @@ from musify.models.collection.genre import GenreCollection
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI
 from tests.models.testers import UniqueKeyTester
+from tests.utils import SimpleURI
 
 
 class TestGenreCollection(UniqueKeyTester):
 
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> GenreCollection:
-        return GenreCollection(name=faker.word(), uri=uri)
+    def model(self, faker: Faker) -> GenreCollection:
+        return GenreCollection(name=faker.word())
 
     def test_genre_name_cannot_be_empty(self, tracks: list[Track], faker: Faker):
         with pytest.raises(ValueError, match="no genres found in tracks"):

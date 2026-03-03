@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Iterable, Collection
 from typing import ClassVar, Self, Any
 
 from pydantic import PrivateAttr, model_validator, computed_field, field_validator, Field
@@ -126,6 +126,22 @@ class HasURI[T: URI](AttributeResource):
     def uri(self) -> T | None:
         return self._uri
 
+    def __init__(self, **kwargs):
+        uri = kwargs.get("uri")
+        if uri is not None:
+            self._validate_uri_matches_type(uri)
+
+        super().__init__(**kwargs)
+        self._uri = uri
+
+    @classmethod
+    def _validate_uri_matches_type(cls, uri: URI) -> None:
+        if uri is None or not isinstance(cls.type, str):
+            return
+
+        if not uri.type == cls.type:
+            raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
+
     def __eq__(self, other: HasURI):
         if not isinstance(other, HasURI) or (self.uri is None and other.uri is None):
             return super().__eq__(other)
@@ -146,12 +162,13 @@ class HasMutableURI(HasURI):
     uris: list[URI] = Field(
         description="A list of URIs that represent this resource.",
         default_factory=list,
+        validation_alias="uri",
     )
 
     # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @staticmethod
-    def _uris_must_be_from_unique_sources(uris: Iterable[URI]) -> list[URI]:
+    def _uris_must_be_from_unique_sources(uris: Collection[URI]) -> Collection[URI]:
         sources: set[str] = set()
         duplicates: set[str] = set()
 
@@ -162,6 +179,14 @@ class HasMutableURI(HasURI):
 
         if duplicates:
             raise MusifyValueError(f"Duplicate URIs found from sources: {', '.join(duplicates)}")
+        return uris
+
+    # noinspection PyNestedDecorators
+    @field_validator("uris", mode="after", check_fields=True)
+    @classmethod
+    def _uris_must_match_type(cls, uris: Collection[URI]) -> Collection[URI]:
+        for uri in uris:
+            cls._validate_uri_matches_type(uri)
         return uris
 
     @property

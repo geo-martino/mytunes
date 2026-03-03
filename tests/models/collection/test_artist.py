@@ -7,11 +7,15 @@ from musify.models.collection.artist import ArtistCollection
 from musify.models.item.album import Album
 from musify.models.properties.uri import URI
 from tests.models.testers import UniqueKeyTester
+from tests.utils import SimpleURI
 
 
 class TestArtistCollection(UniqueKeyTester):
     @pytest.fixture
-    def model(self, albums: list[Album], uri: URI, faker: Faker) -> ArtistCollection:
+    def model(self, albums: list[Album], faker: Faker) -> ArtistCollection:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=ArtistCollection.type, source=faker.word()
+        )
         return ArtistCollection(name=faker.word(), albums=albums, uri=uri)
 
     def test_artist_name_cannot_be_empty(self, albums: list[Album], faker: Faker):

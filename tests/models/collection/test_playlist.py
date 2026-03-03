@@ -6,18 +6,24 @@ from faker import Faker
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist
 from musify.models.properties.uri import URI
 from tests.models.testers import MusifyModelTester, UniqueKeyTester
-from tests.utils import split_list
+from tests.utils import split_list, SimpleURI
 
 
 class TestPlaylist(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> Playlist:
+    def model(self, faker: Faker) -> Playlist:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=Playlist.type, source=faker.word()
+        )
         return Playlist(name=faker.sentence(), uri=uri)
 
 
 class TestMutablePlaylist(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uri: URI, faker: Faker) -> MutablePlaylist:
+    def model(self, faker: Faker) -> MutablePlaylist:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=MutablePlaylist.type, source=faker.word()
+        )
         return MutablePlaylist(name=faker.sentence(), uri=uri)
 
 

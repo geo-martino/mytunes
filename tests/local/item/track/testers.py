@@ -19,6 +19,7 @@ from musify.local.item.track import LocalTrack, TagDumpContext
 from musify.models.properties.image import ImageFile
 from musify.models.properties.name import HasName
 from tests.models.testers import MusifyModelTester, UniqueKeyTester
+from tests.utils import SimpleURI
 
 
 class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
@@ -120,6 +121,12 @@ class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
 
 
 class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
+    @pytest.fixture
+    def uri(self, faker: Faker) -> SimpleURI:
+        return SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type, source=faker.word()
+        )
+
     @pytest.fixture
     def file(self, faker: Faker, tmp_path: Path) -> mutagen.FileType:
         path = tmp_path.joinpath(faker.file_name(category="audio"))

@@ -1,6 +1,7 @@
 from random import choice
 
 import pytest
+from faker import Faker
 
 from musify.exception import MusifyValueError
 from musify.models.properties.uri import URI, HasURI, HasMutableURI
@@ -51,6 +52,17 @@ class TestHasURI(UniqueKeyTester):
             # noinspection PyPropertyAccess
             model.uri = uri
 
+    def test_validate_uri_matches_type(self, model: HasURI, faker: Faker):
+        class MockHasURI(HasURI):
+            type = "track"
+
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind="different_type", source=faker.word()
+        )
+
+        with pytest.raises(MusifyValueError):
+            MockHasURI(uri=uri)
+
     def test_equality(self, model: HasURI, uri: URI):
         assert model == model
         assert model == HasURI(uri=uri)
@@ -75,6 +87,20 @@ class TestHasMutableURI(UniqueKeyTester):
         HasMutableURI(uris=uris)
         with pytest.raises(ValueError):
             HasMutableURI(uris=[*uris, new_uri])
+
+    def test_validate_uri_matches_type(self, model: HasURI, faker: Faker):
+        class MockHasMutableURI(HasMutableURI):
+            type = "track"
+
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind="different_type", source=faker.word()
+        )
+
+        with pytest.raises(ValueError):
+            MockHasMutableURI(uri=uri)
+
+        with pytest.raises(ValueError):
+            MockHasMutableURI(uris=[uri])
 
     def test_get_uri(self, model: HasMutableURI, uris: list[URI]):
         assert model.uris == uris
