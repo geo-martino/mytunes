@@ -7,5 +7,4 @@ from musify.remote.item.genre import RemoteGenre
 
 
 class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](RemoteResource[UT], Album[RT, GT]):
-    track_total = readable_computed_field("track_total")
-    disc_total = readable_computed_field("disc_total")
+    pass
