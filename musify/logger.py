@@ -1,3 +1,5 @@
+## DEPRECATED?
+
 """
 All classes and operations relating to the logger objects used throughout the entire package.
 """

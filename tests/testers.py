@@ -1,3 +1,5 @@
+## DEPRECATED
+
 import json
 import re
 from abc import ABCMeta, abstractmethod

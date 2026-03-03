@@ -1,3 +1,5 @@
+## DEPRECATED
+
 import pytest
 from musify.models.album import Album
 from musify.models.artist import Artist

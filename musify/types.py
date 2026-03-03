@@ -1,3 +1,5 @@
+## DEPRECATED
+
 """
 All core type hints to use throughout the entire package.
 """

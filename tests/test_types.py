@@ -1,3 +1,5 @@
+## DEPRECATED
+
 from musify.types import MusifyEnum
 
 

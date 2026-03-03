@@ -1,3 +1,5 @@
+## DEPRECATED
+
 """
 The fundamental core printer classes for the entire package.
 """

@@ -1,3 +1,5 @@
+## DEPRECATED
+
 """
 All core :py:class:`Field` implementations relating to
 core :py:class:`MusifyItem` and :py:class`MusifyCollection` implementations.
