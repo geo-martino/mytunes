@@ -5,7 +5,6 @@ from faker import Faker
 
 from musify.remote.collection.library import RemoteLibrary
 from tests.models.testers import MusifyModelTester
-from tests.utils import SimpleURI
 
 
 class TestLibrary(MusifyModelTester):

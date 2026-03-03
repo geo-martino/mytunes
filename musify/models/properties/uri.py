@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Collection
+from collections.abc import Collection
 from typing import ClassVar, Self, Any
 
 from pydantic import PrivateAttr, model_validator, computed_field, field_validator, Field

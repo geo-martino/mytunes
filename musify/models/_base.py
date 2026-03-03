@@ -2,7 +2,6 @@ from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from types import UnionType
 from typing import Any, ClassVar, Self, get_type_hints, Type, Union
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
@@ -10,7 +9,7 @@ from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, Alias
 # noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
 # noinspection PyProtectedMember
-from pydantic._internal._model_construction import ModelMetaclass, _T
+from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
