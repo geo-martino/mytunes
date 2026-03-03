@@ -1,5 +1,10 @@
+from musify.models import AttributeModel
 from musify.models.properties.uri import URI, HasURI
 
 
-class RemoteResource[T: URI](HasURI[T]):
+class RemoteModel(AttributeModel):
+    pass
+
+
+class RemoteResource[T: URI](RemoteModel, HasURI[T]):
     pass

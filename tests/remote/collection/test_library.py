@@ -4,11 +4,11 @@ import pytest
 from faker import Faker
 
 from musify.remote.collection.library import RemoteLibrary
-from tests.models.testers import UniqueKeyTester
+from tests.models.testers import MusifyModelTester
 from tests.utils import SimpleURI
 
 
-class TestLibrary(UniqueKeyTester):
+class TestLibrary(MusifyModelTester):
     @pytest.fixture
     @patch.multiple(
         RemoteLibrary,
@@ -20,7 +20,4 @@ class TestLibrary(UniqueKeyTester):
         log_playlists=Mock(),
     )
     def model(self, faker: Faker) -> RemoteLibrary:
-        uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteLibrary.type, source=faker.word()
-        )
-        return RemoteLibrary(name=faker.word(), uri=uri)
+        return RemoteLibrary(name=faker.word())

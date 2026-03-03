@@ -1,6 +1,5 @@
-from musify.models.properties.uri import URI
-from musify.remote._base import RemoteResource
+from musify.remote._base import RemoteModel
 
 
-class RemoteCollection[UT: URI](RemoteResource[UT]):
+class RemoteCollection(RemoteModel):
     pass
