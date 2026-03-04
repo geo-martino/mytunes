@@ -6,5 +6,6 @@ class RemoteModel(AttributeModel):
     pass
 
 
-class RemoteResource[T: URI](RemoteModel, HasURI[T]):
-    pass
+class RemoteResource[UT: URI](RemoteModel, HasURI[UT]):
+    def __hash__(self):
+        return hash(self.uri)

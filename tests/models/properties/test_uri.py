@@ -14,16 +14,23 @@ from tests.models.testers import MusifyModelTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
-@pytest.fixture
-def uri(faker: Faker) -> SimpleURI:
-    types = [
+class MockHasURI(HasURI[SimpleURI]):
+    type = choice((
         Track.type,
         Album.type,
         Artist.type,
         Playlist.type,
-    ]
+    ))
+
+
+class MockHasMutableURI(HasMutableURI[SimpleURI]):
+    type = MockHasURI.type
+
+
+@pytest.fixture
+def uri(faker: Faker) -> SimpleURI:
     return SimpleURI.from_id(
-        faker.random_int(int(10e9), int(10e10)), kind=choice(types), source=faker.word()
+        faker.random_int(int(10e9), int(10e10)), kind=MockHasURI.type, source=faker.word()
     )
 
 
@@ -32,16 +39,15 @@ def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
     seen = set()
     uris = []
 
-    for model in models:
+    for model in range(faker.random_int(5, 10)):
         source = None
         while source is None or source in seen:
             source = faker.word()
 
-        uris.append(SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=model.type, source=source))
+        uris.append(SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=MockHasURI.type, source=source))
         seen.add(source)
 
     return uris
-
 
 
 class TestURI(MusifyModelTester):
@@ -76,31 +82,28 @@ class TestURI(MusifyModelTester):
 
 
 class TestHasURI(UniqueKeyTester):
+
     @pytest.fixture
     def model(self, uri: URI) -> HasURI:
-        return HasURI(uri=uri)
+        return MockHasURI(uri=uri)
 
     def test_uri_field_is_read_only(self, model: HasURI, uri: URI):
         assert model.uri is uri
 
-        with pytest.raises(AttributeError):
-            # noinspection PyPropertyAccess
+        with pytest.raises(ValueError):
             model.uri = uri
 
     def test_validate_uri_matches_type(self, model: HasURI, faker: Faker):
-        class MockHasURI(HasURI):
-            type = "track"
-
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind="different_type", source=faker.word()
         )
 
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(ValueError):
             MockHasURI(uri=uri)
 
     def test_equality(self, model: HasURI, uri: URI):
         assert model == model
-        assert model == HasURI(uri=uri)
+        assert model == MockHasURI(uri=uri)
 
         # doesn't match on string values
         assert model != str(uri)
@@ -112,21 +115,18 @@ class TestHasURI(UniqueKeyTester):
 class TestHasMutableURI(UniqueKeyTester):
     @pytest.fixture
     def model(self, uris: list[URI]) -> HasMutableURI:
-        return HasMutableURI(source=choice(uris).source, uris=uris)
+        return MockHasMutableURI(source=choice(uris).source, uris=uris)
 
     def test_validates_uris_are_from_unique_sources(self, uris: list[URI]):
         uri = choice(uris)
         different_uri = next(u for u in uris if u.source != uri.source)
         new_uri = SimpleURI.from_id(different_uri.id, different_uri.type, uri.source)
 
-        HasMutableURI(uris=uris)
+        MockHasMutableURI(uris=uris)
         with pytest.raises(ValueError):
-            HasMutableURI(uris=[*uris, new_uri])
+            MockHasMutableURI(uris=[*uris, new_uri])
 
-    def test_validate_uri_matches_type(self, model: HasURI, faker: Faker):
-        class MockHasMutableURI(HasMutableURI):
-            type = "track"
-
+    def test_validate_uri_matches_type(self, model: HasMutableURI, faker: Faker):
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind="different_type", source=faker.word()
         )
@@ -136,6 +136,17 @@ class TestHasMutableURI(UniqueKeyTester):
 
         with pytest.raises(ValueError):
             MockHasMutableURI(uris=[uri])
+
+    def test_uri_on_init(self, uri: URI):
+        model = MockHasMutableURI(uri=uri)
+        assert model.source == uri.source
+        assert model.uri is uri
+        assert model.uris == [uri]
+
+        model = MockHasMutableURI(uris=[uri])
+        assert model.source == uri.source
+        assert model.uri is uri
+        assert model.uris == [uri]
 
     def test_get_uri(self, model: HasMutableURI, uris: list[URI]):
         assert model.uris == uris
@@ -195,12 +206,12 @@ class TestHasMutableURI(UniqueKeyTester):
 
     def test_equality(self, model: HasMutableURI, uris: list[URI]):
         assert model == model
-        assert model == HasMutableURI(source=model.source, uris=uris)
+        assert model == MockHasMutableURI(source=model.source, uris=uris)
 
         # URIs do not match
         missing_uri = next(uri for uri in uris if uri.source != model.source)
-        assert model != HasMutableURI(source=missing_uri.source, uris=uris)
+        assert model != MockHasMutableURI(source=missing_uri.source, uris=uris)
 
         # 2nd models doesn't have a URI set due to no URIs matching the given source
         missing_uri = next(uri for uri in uris if uri.source != model.source)
-        assert model != HasMutableURI(source=missing_uri.source, uris=[uri for uri in uris if uri is not missing_uri])
+        assert model != MockHasMutableURI(source=missing_uri.source, uris=[uri for uri in uris if uri is not missing_uri])

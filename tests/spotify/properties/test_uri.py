@@ -26,7 +26,7 @@ class SpotifyURITester(MusifyModelTester):
 
     @pytest.fixture
     def id_value(self, faker: Faker) -> str:
-        return "".join(faker.random_letters(22))
+        return faker.pystr(22, 22)
 
 
 class TestSpotifyURIBase(SpotifyURITester):
@@ -73,32 +73,18 @@ class TestSpotifyURIBase(SpotifyURITester):
         assert uri.id == id_value
 
 
-class TestSpotifyResourceURI(MusifyModelTester):
+class TestSpotifyResourceURI(SpotifyURITester):
     @pytest.fixture
     def model(self, kind: str, id_value: str) -> SpotifyResourceURI:
         uri_value = f"spotify:{kind}:{id_value}"
         return SpotifyResourceURI(uri_value)
 
-    @pytest.fixture
-    def kind(self) -> str:
-        types = (
-            Track.type,
-            Album.type,
-            Artist.type,
-            Playlist.type,
-        )
-        return choice(types)
-
-    @pytest.fixture
-    def id_value(self, faker: Faker) -> str:
-        return "".join(faker.random_letters(22))
-
     def test_validate_id_length(self, kind: str, faker: Faker):
         with pytest.raises(ValueError, match="Invalid Spotify URI format. ID must be"):  # too short
-            SpotifyResourceURI(f"spotify:{kind}:{"".join(faker.random_letters(30))}")
+            SpotifyResourceURI(f"spotify:{kind}:{faker.pystr(23, 100)}")
 
         with pytest.raises(ValueError, match="Invalid Spotify URI format. ID must be"):  # too long
-            SpotifyResourceURI(f"spotify:{kind}:{"".join(faker.random_letters(10))}")
+            SpotifyResourceURI(f"spotify:{kind}:{faker.pystr(1, 21)}")
 
     def test_validate_type_is_not_user(self, id_value: str, faker: Faker):
         with pytest.raises(ValueError, match="Spotify user URIs are not allowed"):
@@ -113,8 +99,7 @@ class TestSpotifyUserURI(SpotifyURITester):
 
     @pytest.fixture
     def id_value(self, faker: Faker) -> str:
-        length = faker.random_int(10, 50)
-        return "".join(faker.random_letters(length))
+        return faker.pystr()
 
     def test_validate_type_is_user(self, id_value: str, kind:str, faker: Faker):
         with pytest.raises(ValueError, match="Only Spotify user URIs are allowed"):

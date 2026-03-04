@@ -44,6 +44,9 @@ class _SpotifyURIBase(URI):
 
     @classmethod
     def from_api_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
+        if not isinstance(value, str | URL):
+            return handler(value)
+
         if isinstance(value, str):
             if not re.match(r"^https?://api.spotify.com", value):
                 return handler(value)
@@ -66,6 +69,9 @@ class _SpotifyURIBase(URI):
 
     @classmethod
     def from_public_url[T](cls, value: T | str | URL, handler: ValidatorFunctionWrapHandler) -> T | Self:
+        if not isinstance(value, str | URL):
+            return handler(value)
+
         if isinstance(value, str):
             if not re.match(r"^https?://open.spotify.com", value):
                 return handler(value)

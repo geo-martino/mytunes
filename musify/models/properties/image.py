@@ -212,7 +212,7 @@ class ImageURL(ImageSource):
 
 class HasImages(AttributeResource):
     """Represents a resource that has associated images."""
-    images: MutableMapping[str, ImageFile | ImageURL | ImageSource] = Field(
+    images: MutableMapping[str, ImageFile | ImageURL] = Field(
         description="Images associated with this resource mapped to their type.",
         default_factory=dict,
     )

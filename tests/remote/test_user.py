@@ -12,4 +12,4 @@ class TestRemoteUser(UniqueKeyTester):
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=RemoteUser.type, source=faker.word()
         )
-        return RemoteUser(name=faker.word(), uri=uri)
+        return RemoteUser(name=faker.word(), email=faker.email(), uri=uri)

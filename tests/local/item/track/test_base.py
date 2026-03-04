@@ -280,7 +280,6 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in IsLocalFile.model_fields)
         assert all(key not in tags for key in HasLength.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_fields)
-        assert all(key not in tags for key in HasMutableURI.model_computed_fields)
 
         # ignores properties even when explicitly given to include
         tags = model.to_tags(include={"path", "length"})

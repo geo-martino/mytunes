@@ -205,7 +205,6 @@ class MusifyResource(MusifyModel):
         """Set the value of a given attribute key"""
         super().__setattr__(key, value)
         if key in self._unique_attribute_keys and hasattr(self, "unique_keys"):
-            # noinspection PyPropertyAccess
             del self.unique_keys  # clear the cached property
 
 

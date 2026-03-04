@@ -63,7 +63,7 @@ class LocalTrack[T: FileType](
     HasAddedDate,
     HasPlayedDate,
 ):
-    __tag_fields__ = frozenset(set(Track.model_fields.keys()) | {"compilation"})
+    __tag_fields__ = frozenset(set(Track.model_fields.keys()) - {"uri"} | {"compilation"})
 
     class EmbeddedImage[FT: FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
         alias: ClassVar[str | AliasChoices] = "images"
