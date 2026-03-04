@@ -1,7 +1,7 @@
 import re
 from typing import Self, ClassVar, Any
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
@@ -9,7 +9,7 @@ from musify.exception import MusifyValueError
 from musify.models.properties.uri import URI
 
 
-class SpotifyURI(URI):
+class _SpotifyURIBase(URI):
     _source = "spotify"
     _version: ClassVar[str] = "v1"
 
@@ -30,14 +30,6 @@ class SpotifyURI(URI):
     def _validate_uri_length(cls, uri: str) -> str:
         if len(uri.split(":")) != 3:
             raise MusifyValueError("Invalid Spotify URI format. Expected format: {spotify}:{type}:{id}")
-        return uri
-
-    @field_validator("root", mode="after")
-    @classmethod
-    def _validate_id_length(cls, uri: str) -> str:
-        id_value = uri.split(":")[-1]
-        if len(id_value) != 22:
-            raise MusifyValueError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
         return uri
 
     @classmethod
@@ -88,3 +80,27 @@ class SpotifyURI(URI):
 
         kind, id_value, *_ = path_parts
         return handler(":".join((cls._source, kind, str(id_value))))
+
+
+class SpotifyResourceURI(_SpotifyURIBase):
+    @field_validator("root", mode="after")
+    @classmethod
+    def _validate_id_length(cls, uri: str) -> str:
+        id_value = uri.split(":")[-1]
+        if len(id_value) != 22:
+            raise MusifyValueError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
+        return uri
+
+    @model_validator(mode="after")
+    def _type_is_not_user(self) -> Self:
+        if self.type == "user":
+            raise MusifyValueError("Spotify user URIs are not allowed for this model.")
+        return self
+
+
+class SpotifyUserURI(_SpotifyURIBase):
+    @model_validator(mode="after")
+    def _type_is_user(self) -> Self:
+        if self.type != "user":
+            raise MusifyValueError("Only Spotify user URIs are allowed for this model.")
+        return self
