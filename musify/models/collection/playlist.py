@@ -13,7 +13,7 @@ from musify.models.mapping import MusifyMapping, MusifyMutableMapping
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import HasURI, URI
 
 
 class Playlist[TK, TV: Track](HasTracks[TK, TV], HasName, HasURI, HasLength, HasImages):

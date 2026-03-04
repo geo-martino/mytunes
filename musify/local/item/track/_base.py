@@ -30,7 +30,7 @@ from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLoc
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
-from musify.models.properties.uri import HasMutableURI
+from musify.models.properties.uri import HasMutableURI, URI
 
 
 class TagDumpContext[T](MusifyModel):

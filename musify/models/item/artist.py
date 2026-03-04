@@ -7,7 +7,7 @@ from musify.models.item.genre import HasGenres, Genre
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import URI, HasURI
 
 
 class Artist[GT: Genre](HasGenres[GT], HasName, HasURI, HasRating):

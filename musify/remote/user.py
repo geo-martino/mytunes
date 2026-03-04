@@ -17,7 +17,3 @@ class RemoteUser[UT: URI](RemoteResource[UT], HasName, HasImages):
     email: EmailStr = Field(
         description="The email associated with the user",
     )
-    followers: PositiveInt | None = Field(
-        description="The number of followers of the user",
-        default=None,
-    )

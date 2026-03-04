@@ -14,7 +14,7 @@ from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import URI, HasURI
 from musify.models.sequence import MusifyMutableSequence, MusifySequence
 
 

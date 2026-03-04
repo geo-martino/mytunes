@@ -11,6 +11,7 @@ from musify.models.collection.playlist import Playlist
 from musify.models.item.track import HasMutableTracks
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.properties.logger import HasLogger
+from musify.models.properties.uri import URI
 from musify.models.sequence import MusifyMutableSequence
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, MatchFilter

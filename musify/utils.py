@@ -188,8 +188,8 @@ def limit_value(value: Number, floor: Number = 1, ceil: Number = 50) -> Number:
 ###########################################################################
 ## Collection
 ###########################################################################
-UT = TypeVar("UT")
-CollT = UT | list[UT] | tuple[UT] | set[UT]
+UnitT = TypeVar("UnitT")
+CollT = UnitT | list[UnitT] | tuple[UnitT] | set[UnitT]
 
 
 def to_collection[T: Any](data: T | CollT, cls: type[CollT] = tuple) -> T | CollT | None:

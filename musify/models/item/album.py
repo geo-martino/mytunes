@@ -13,7 +13,7 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import HasURI, URI
 
 
 class Album[RT: Artist, GT: Genre](

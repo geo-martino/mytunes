@@ -245,7 +245,6 @@ class TestWMA(LocalTrackTester):
         context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
         result = model.to_tags(context=context)
 
-        print(WMA.__tag_fields__)
         assert {k: v for k, v in result.items() if k != "WM/Picture"} == expected
         result_image_types = {
             WMA.EmbeddedImage.get_id3_type_from_tag(pic) for k, v in result.items()

@@ -12,6 +12,6 @@ class RemotePlaylist[TK, TV: RemoteTrack, UT: URI](
 
 
 class RemoteMutablePlaylist[TK, TV: RemoteTrack, UT: URI](
-    RemotePlaylist[UT, TK, TV], MutablePlaylist[TK, TV]
+    RemotePlaylist[TK, TV, UT], MutablePlaylist[TK, TV]
 ):
     pass

@@ -5,6 +5,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models import writeable_computed_field
 from musify.models.item.album import Album
+from musify.models.properties.uri import URI
 
 
 @final
