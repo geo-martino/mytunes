@@ -11,9 +11,7 @@ from tests.utils import GENRES
 
 class SpotifyPayloadGenerator:
     """Utility class for generating random Spotify API responses for testing purposes."""
-    limit_lower = 10
-    limit_upper = 20
-    limit_max = 50
+    limit_max = 50  # maximum limit for Spotify API pagination
 
     def __init__(self, faker: Faker):
         self.faker = faker
@@ -315,6 +313,8 @@ class SpotifyPayloadGenerator:
 
             added_by = self.faker.random_element((deepcopy(owner), self.generate_owner()))
             added_by.pop("display_name", None)
+            if self.faker.boolean():
+                added_by = None  # some very old playlists may return null in this field
 
             item |= {
                 "added_by": added_by,
@@ -461,9 +461,12 @@ class SpotifyPayloadGenerator:
         item_copy = deepcopy(item)
         item.clear()
 
-        added_at = self.faker.past_datetime(date(2008, 10, 7))
+        added_at = self.faker.past_datetime(date(2008, 10, 7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if self.faker.boolean():
+            added_at = None  # some very old playlists may return null in this field
+
         item |= {
-            "added_at": added_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "added_at": added_at,
             kind: item_copy
         }
 
