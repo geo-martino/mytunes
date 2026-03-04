@@ -61,6 +61,7 @@ Issues = "https://github.com/geo-martino/musify/issues"
 dev = [
     "flake8",
     "grip",
+    "rich>=14.3.3",
 ]
 test = [
     "musify[all]",

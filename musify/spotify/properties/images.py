@@ -1,7 +1,8 @@
+from typing import Any
+
 from pydantic import field_validator
 
 from musify.models.properties.image import HasImages
-from musify.remote import RemoteModel
 
 
 class HasSpotifyImages(HasImages):

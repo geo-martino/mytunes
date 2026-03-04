@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from typing import ClassVar, Self, Any, Annotated
 
+import pydantic
 from pydantic import PrivateAttr, model_validator, field_validator, Field, BeforeValidator, InstanceOf
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
@@ -130,15 +131,16 @@ class HasURI[T: URI](AttributeResource):
     @field_validator("uri", mode="wrap", check_fields=True)
     @classmethod
     def _ignore_uri_value[T](cls, uri: T | URI, handler: ValidatorFunctionWrapHandler) -> T | URI:
-        if isinstance(uri, URI):
+        # TODO: This is a hack workaround. Pydantic keeps trying to validate on the abstract URI class and failing
+        print(uri, cls, cls.__final__)
+        if isinstance(uri, URI) or not cls.__final__:
             return uri
-        print(uri)
         return handler(uri)
 
     @field_validator("uri", mode="after", check_fields=True)
     @classmethod
     def _validate_uri_matches_type(cls, uri: T | None) -> T | None:
-        if uri is None:
+        if uri is None or not isinstance(uri, URI):
             return uri
 
         if not uri.type == cls.type:

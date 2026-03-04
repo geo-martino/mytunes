@@ -1,31 +1,56 @@
-from pydantic import AliasPath, Field
+from typing import final, Any
 
+from pydantic import AliasPath, Field, model_validator
+
+from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import MusifySequence, MusifyMutableSequence
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.spotify.collection._base import SpotifyCollection
 from musify.spotify.item.track import SpotifyTrack
+from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+@final
+class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
+    __final__ = True
+
+    @model_validator(mode="before")
+    def _extract_item_payload(cls, data: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(data, dict) or "item" not in data:
+            return data
+
+        data = {"added_at": data["added_at"]} | data["item"]
+        return data
+
+
+@final
 class SpotifyPlaylist(
-    RemotePlaylist[str, SpotifyTrack, SpotifyResourceURI],
+    RemotePlaylist[str, SpotifyPlaylistTrack, SpotifyResourceURI],
     SpotifyCollection,
     HasSpotifyImages,
+    HasFollowers,
 ):
-    tracks: MusifySequence[str, SpotifyTrack] = Field(
+    __final__ = True
+
+    tracks: MusifySequence[str, SpotifyPlaylistTrack] = Field(
         description="The tracks in this playlist.",
-        default_factory=MusifySequence[str, SpotifyTrack],
+        default_factory=MusifySequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")
     )
+    uri: SpotifyResourceURI  # TODO: This shouldn't be needed...
 
 
+@final
 class SpotifyMutablePlaylist(
-    RemoteMutablePlaylist[str, SpotifyTrack, SpotifyResourceURI],
+    RemoteMutablePlaylist[str, SpotifyPlaylistTrack, SpotifyResourceURI],
     SpotifyPlaylist,
 ):
-    tracks: MusifyMutableSequence[str, SpotifyTrack] = Field(
+    __final__ = True
+
+    tracks: MusifyMutableSequence[str, SpotifyPlaylistTrack] = Field(
         description="The tracks in this playlist.",
-        default_factory=MusifyMutableSequence[str, SpotifyTrack],
+        default_factory=MusifyMutableSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")
     )

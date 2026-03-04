@@ -5,7 +5,7 @@ from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
 from io import BytesIO
 from pathlib import Path
-from typing import Self, ClassVar
+from typing import Self, ClassVar, Any
 
 import aiofiles
 import aiohttp
@@ -216,6 +216,16 @@ class HasImages(AttributeResource):
         description="Images associated with this resource mapped to their type.",
         default_factory=dict,
     )
+
+    @field_validator("images", mode="before", check_fields=True)
+    @classmethod
+    def _restructure_image_sequence[T](cls, images: T | list[dict]) -> T | dict[str, Any]:
+        if not isinstance(images, list):
+            return images
+
+        images.sort(key=lambda i: i["height"], reverse=False)
+        default_type = ImageBase.model_fields["type"].default
+        return {image.get("type", default_type): image for image in images}
 
     async def load_images(self, update_attributes: bool = True, **kwargs) -> dict[str, PILImageFile.ImageFile]:
         """Return the stored images, loading any images from the URLs if available."""

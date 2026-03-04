@@ -1,3 +1,4 @@
+import re
 from random import choice
 from typing import Any
 
@@ -56,7 +57,7 @@ class TestMusifyMapping:
 
     # noinspection PyTypeChecker
     @pytest.mark.skipif(
-        tuple(map(int, pydantic.__version__.split("."))) < (2, 13, 0),
+        tuple(map(int, (re.split(r"\D+", part)[0] for part in pydantic.__version__.split(".")))) < (2, 13, 0),
         reason="Pydantic 2.13.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )
@@ -111,7 +112,7 @@ class TestMusifyMapping:
 class TestMusifyMutableMapping:
     # noinspection PyTypeChecker
     @pytest.mark.skipif(
-        tuple(map(int, pydantic.__version__.split("."))) < (2, 13, 0),
+        tuple(map(int, (re.split(r"\D+", part)[0] for part in pydantic.__version__.split(".")))) < (2, 13, 0),
         reason="Pydantic 2.13.0+ required as lower versions do not support generics validation as expected"
         # https://github.com/pydantic/pydantic/issues/7796
     )

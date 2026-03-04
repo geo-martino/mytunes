@@ -1,3 +1,5 @@
+from typing import final
+
 from pydantic import Field, AliasChoices, AliasPath, field_validator
 
 from musify.models.properties.length import Length
@@ -12,12 +14,15 @@ from musify.spotify.properties.popularity import HasPopularity
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+@final
 class SpotifyTrack(
     RemoteTrack[SpotifyResourceURI, SpotifyArtist, SpotifyAlbum, SpotifyGenre],
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
-    HasPopularity
+    HasPopularity,
 ):
+    __final__ = True
+
     disc: Position | None = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
@@ -40,7 +45,6 @@ class SpotifyTrack(
     @field_validator("length", mode="before", check_fields=True)
     @classmethod
     def _convert_length_to_seconds[T](cls, duration_ms: T | int) -> T | float:
-        print(duration_ms)
         if not isinstance(duration_ms, int | float):
             return duration_ms
         return int(duration_ms) / 1000

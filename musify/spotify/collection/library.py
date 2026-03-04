@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, final
 
 from musify.remote.collection.library import RemoteLibrary
 from musify.spotify.collection._base import SpotifyCollection
@@ -7,11 +7,14 @@ from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.followers import HasFollowers
 
 
+@final
 class SpotifyLibrary(
     RemoteLibrary[str, SpotifyTrack, str, SpotifyMutablePlaylist],
     SpotifyCollection,
     HasFollowers,
 ):
+    __final__ = True
+
     async def load(self):
         pass
 

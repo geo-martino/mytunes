@@ -1,5 +1,8 @@
+from typing import final
+
 from musify.remote.item.genre import RemoteGenre
 
 
+@final
 class SpotifyGenre(RemoteGenre[None]):
-    pass
+    __final__ = True

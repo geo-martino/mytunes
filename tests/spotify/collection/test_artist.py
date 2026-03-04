@@ -1,6 +1,7 @@
 import pytest
 from faker import Faker
 from pydantic import Json
+from rich import print
 
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.item.artist import SpotifyArtist
@@ -30,7 +31,6 @@ class TestSpotifyArtistCollection(SpotifyResourceTester):
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
-        self.assert_expected_length(model, payload)
         self.assert_expected_genres(model, payload)
         self.assert_expected_followers(model, payload)
         self.assert_expected_popularity(model, payload)

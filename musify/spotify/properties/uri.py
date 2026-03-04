@@ -1,5 +1,5 @@
 import re
-from typing import Self, ClassVar, Any
+from typing import Self, ClassVar, Any, final
 
 from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -88,7 +88,10 @@ class _SpotifyURIBase(URI):
         return handler(":".join((cls._source, kind, str(id_value))))
 
 
+@final
 class SpotifyResourceURI(_SpotifyURIBase):
+    __final__ = True
+
     @field_validator("root", mode="after")
     @classmethod
     def _validate_id_length(cls, uri: str) -> str:
@@ -104,7 +107,10 @@ class SpotifyResourceURI(_SpotifyURIBase):
         return self
 
 
+@final
 class SpotifyUserURI(_SpotifyURIBase):
+    __final__ = True
+
     @model_validator(mode="after")
     def _type_is_user(self) -> Self:
         if self.type != "user":

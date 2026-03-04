@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI
 from musify.remote._base import RemoteResource
@@ -10,4 +12,7 @@ class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
         Track[RT, AT, GT],
         RemoteResource[UT],
 ):
-    pass
+    artists: list[RT] = Field(
+        description="The artists associated with this resource.",
+        default_factory=list,
+    )

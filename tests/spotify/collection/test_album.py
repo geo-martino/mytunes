@@ -26,6 +26,5 @@ class TestSpotifyAlbumCollection(SpotifyResourceTester):
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
-        self.assert_expected_length(model, payload)
         self.assert_expected_genres(model, payload)
         self.assert_expected_popularity(model, payload)

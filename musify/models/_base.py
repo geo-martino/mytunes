@@ -148,17 +148,6 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
 
         return {al for al in aliases if al}
 
-
-class MusifyRootModel[T](RootModel[T], MusifyModel):
-    pass
-
-
-class MusifyResource(MusifyModel):
-    """Generic class for storing attributes relating to some resource."""
-    __unique_attributes__: ClassVar[frozenset[str]] = frozenset()
-
-    type: ClassVar[str] = Field(description="The type of resource this is.")
-
     # noinspection PyMethodParameters
     @classproperty
     def registered_submodels(cls) -> set[Type]:
@@ -173,6 +162,17 @@ class MusifyResource(MusifyModel):
         """Get the annotation for all subclasses of this model"""
         classes = cls.registered_submodels
         return Union[*classes] if classes else Union
+
+
+class MusifyRootModel[T](RootModel[T], MusifyModel):
+    pass
+
+
+class MusifyResource(MusifyModel):
+    """Generic class for storing attributes relating to some resource."""
+    __unique_attributes__: ClassVar[frozenset[str]] = frozenset()
+
+    type: ClassVar[str] = Field(description="The type of resource this is.")
 
     @cached_property
     def _unique_attribute_keys(self) -> set[str]:

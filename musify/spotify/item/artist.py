@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, final
 
 from pydantic import Field, PositiveInt, AliasPath, field_validator, Json
 
@@ -11,6 +11,7 @@ from musify.spotify.properties.popularity import HasPopularity
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+@final
 class SpotifyArtist(
     RemoteArtist[SpotifyResourceURI, SpotifyGenre],
     SpotifyResource[SpotifyResourceURI],
@@ -18,4 +19,6 @@ class SpotifyArtist(
     HasFollowers,
     HasPopularity
 ):
+    __final__ = True
+
     uri: SpotifyResourceURI  # TODO: This shouldn't be needed...

@@ -1,3 +1,5 @@
+from typing import final
+
 from pydantic import Field, AliasPath
 
 from musify.remote.collection.artist import RemoteArtistCollection
@@ -9,11 +11,14 @@ from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+@final
 class SpotifyArtistCollection[AT: SpotifyAlbum, GT: SpotifyGenre](
     RemoteArtistCollection[str, SpotifyTrack, SpotifyResourceURI, AT, GT],
     SpotifyCollection,
     SpotifyArtist,
 ):
+    __final__ = True
+
     albums: list[AT] = Field(
         description="The albums associated with this artist.",
         default_factory=list,
