@@ -119,27 +119,18 @@ class URI(MusifyRootModel[str], metaclass=ABCMeta):
         return super().__eq__(other)
 
 
-class HasURI[T: URI](AttributeResource):
+class HasURI[UT: URI](AttributeResource):
     __unique_attributes__ = frozenset({"uri"})
 
-    uri: T | None = Field(
+    uri: UT | None = Field(
         description="The URI for this resource on the remote repository",
         frozen=True,
         default=None,
     )
 
-    @field_validator("uri", mode="wrap", check_fields=True)
-    @classmethod
-    def _ignore_uri_value[T](cls, uri: T | URI, handler: ValidatorFunctionWrapHandler) -> T | URI:
-        # TODO: This is a hack workaround. Pydantic keeps trying to validate on the abstract URI class and failing
-        print(uri, cls, cls.__final__)
-        if isinstance(uri, URI) or not cls.__final__:
-            return uri
-        return handler(uri)
-
     @field_validator("uri", mode="after", check_fields=True)
     @classmethod
-    def _validate_uri_matches_type(cls, uri: T | None) -> T | None:
+    def _validate_uri_matches_type(cls, uri: UT | None) -> UT | None:
         if uri is None or not isinstance(uri, URI):
             return uri
 
@@ -155,7 +146,7 @@ class HasURI[T: URI](AttributeResource):
         return self.uri is not None and other.uri is not None and self.uri == other.uri
 
 
-class HasMutableURI[T: URI](HasURI[T]):
+class HasMutableURI[UT: URI](HasURI[UT]):
     source: str | None = Field(
         description=(
             "The type of remote repository this resource is associated with. "
@@ -164,7 +155,7 @@ class HasMutableURI[T: URI](HasURI[T]):
         ),
         default=None,
     )
-    uris: Annotated[list[T], BeforeValidator(to_list)] = Field(
+    uris: Annotated[list[UT], BeforeValidator(to_list)] = Field(
         description="A list of URIs that represent this resource.",
         default_factory=list,
         validation_alias="uri",
@@ -179,7 +170,7 @@ class HasMutableURI[T: URI](HasURI[T]):
     # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @staticmethod
-    def _uris_must_be_from_unique_sources(uris: Collection[T]) -> Collection[T]:
+    def _uris_must_be_from_unique_sources[T: Collection](uris: T) -> T:
         sources: set[str] = set()
         duplicates: set[str] = set()
 
@@ -195,7 +186,7 @@ class HasMutableURI[T: URI](HasURI[T]):
     # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @classmethod
-    def _uris_must_match_type(cls, uris: Collection[T]) -> Collection[T]:
+    def _uris_must_match_type[T: Collection](cls, uris: T) -> T:
         for uri in uris:
             cls._validate_uri_matches_type(uri)
         return uris

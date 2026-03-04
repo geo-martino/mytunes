@@ -10,7 +10,7 @@ from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI, HasURI
 
 
-class Artist[GT: Genre](HasGenres[GT], HasName, HasURI, HasRating):
+class Artist[GT: Genre, UT: URI](HasGenres[GT], HasName, HasURI[UT], HasRating):
     """Represents an artist resource and its properties."""
     type: ClassVar[str] = "artist"
 

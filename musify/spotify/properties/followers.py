@@ -4,7 +4,8 @@ from musify.models import AttributeModel
 
 
 class HasFollowers(AttributeModel):
-    followers: PositiveInt = Field(
+    followers: PositiveInt | None = Field(
         description="The number of followers for this item",
+        default=None,
         validation_alias=AliasPath("followers", "total"),
     )

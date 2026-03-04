@@ -15,8 +15,6 @@ class TestSpotifyTrack(SpotifyResourceTester):
     def model(self, generator: SpotifyPayloadGenerator, faker: Faker) -> SpotifyTrack:
         return SpotifyTrack(
             name=faker.name(),
-            followers=faker.random_int(),
-            popularity=faker.random_int(0, 100),
             uri=generator.generate_uri("track"),
         )
 

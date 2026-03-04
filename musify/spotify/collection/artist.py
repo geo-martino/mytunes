@@ -13,9 +13,9 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 @final
 class SpotifyArtistCollection[AT: SpotifyAlbum, GT: SpotifyGenre](
-    RemoteArtistCollection[str, SpotifyTrack, SpotifyResourceURI, AT, GT],
-    SpotifyCollection,
+    RemoteArtistCollection[str, SpotifyTrack, AT, GT, SpotifyResourceURI],
     SpotifyArtist,
+    SpotifyCollection,
 ):
     __final__ = True
 

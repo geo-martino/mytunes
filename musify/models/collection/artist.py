@@ -8,9 +8,10 @@ from musify.models.item.album import HasAlbums, Album
 from musify.models.item.artist import Artist
 from musify.models.item.genre import Genre
 from musify.models.item.track import HasTracks, Track
+from musify.models.properties.uri import URI
 
 
-class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre](Artist[GT], HasTracks[TK, TV], HasAlbums[AT]):
+class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasTracks[TK, TV], HasAlbums[AT]):
     """Represents a collection of artists and their properties."""
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")

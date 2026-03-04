@@ -16,8 +16,8 @@ from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import HasURI, URI
 
 
-class Album[RT: Artist, GT: Genre](
-    ABC, HasArtists[RT], HasGenres[GT], HasName, HasURI, HasLength, HasRating, HasReleaseDate, HasImages
+class Album[RT: Artist, GT: Genre, UT: URI](
+    ABC, HasArtists[RT], HasGenres[GT], HasName, HasURI[UT], HasLength, HasRating, HasReleaseDate, HasImages
 ):
     type: ClassVar[str] = "album"
 

@@ -14,11 +14,9 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 @final
 class SpotifyAlbum(
-    RemoteAlbum[SpotifyResourceURI, SpotifyArtist, SpotifyGenre],
+    RemoteAlbum[SpotifyArtist, SpotifyGenre, SpotifyResourceURI],
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasPopularity,
 ):
     __final__ = True
-
-    uri: SpotifyResourceURI  # TODO: This shouldn't be needed...

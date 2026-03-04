@@ -6,10 +6,11 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.artist import ArtistCollection
+from musify.models.properties.uri import URI
 
 
 @final
 class LocalArtistCollection[TK, TV: LocalTrack, AT: LocalAlbum, GT: LocalGenre](
-    LocalCollection, LocalArtist[GT], ArtistCollection[TK, TV, AT, GT]
+    LocalCollection, LocalArtist[GT], ArtistCollection[TK, TV, AT, GT, URI]
 ):
     __final__ = True

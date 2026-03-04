@@ -8,8 +8,8 @@ from musify.remote.item.artist import RemoteArtist
 from musify.remote.item.genre import RemoteGenre
 
 
-class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
-        Track[RT, AT, GT],
+class RemoteTrack[RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
+        Track[RT, AT, GT, UT],
         RemoteResource[UT],
 ):
     artists: list[RT] = Field(

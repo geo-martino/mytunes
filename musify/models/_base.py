@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints, Type, Union
+from typing import Any, ClassVar, Self, get_type_hints, Type, Union, TYPE_CHECKING
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -297,11 +297,12 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
 
         return attribute_names
 
-    def __getattr__(cls, key: str) -> Any:
+    def get_nested_field_info(cls, key: str) -> FieldInfo:
+        """Get field info for a given key, supporting nested keys using dot notation."""
         if len(key_split := key.split(".")) == 1:
             if key in cls.model_fields:
                 return cls.model_fields[key]
-            return super().__getattr__(key)
+            return getattr(cls, key)
 
         key_iter = iter(key_split[:-1])
         field = reduce(
@@ -310,14 +311,14 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
             cls._get_tag_field_from_field_info(cls, next(key_iter))
         )
 
-        return getattr(field, key_split[-1])
+        return AttributeModelMetaclass.get_nested_field_info(field, key_split[-1])
 
     @staticmethod
     def _get_tag_field_from_field_info(cls, key: str) -> type:
-        if not isinstance(field := getattr(cls, key), FieldInfo):
-            return field
+        if key not in cls.model_fields:
+            return getattr(cls, key)
 
-        annotation = field.annotation
+        annotation = cls.model_fields[key].annotation
         return next(
             (
                 arg for arg in get_base_types(annotation, ignore_none=True, resolve_generics=True)

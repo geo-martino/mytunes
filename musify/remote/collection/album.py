@@ -8,7 +8,7 @@ from musify.remote.item.genre import RemoteGenre
 from musify.remote.item.track import RemoteTrack
 
 
-class RemoteAlbumCollection[TK, TV: RemoteTrack, UT: URI, RT: RemoteArtist, GT: RemoteGenre](
-    AlbumCollection[TK, TV, RT, GT], RemoteResource[UT], RemoteCollection, RemoteAlbum[UT, RT, GT]
+class RemoteAlbumCollection[TK, TV: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, UT: URI](
+    AlbumCollection[TK, TV, RT, GT, UT], RemoteAlbum[UT, RT, GT], RemoteResource[UT], RemoteCollection
 ):
     pass

@@ -10,5 +10,4 @@ class TestSpotifyLibrary(MusifyModelTester):
     def model(self, faker: Faker) -> SpotifyLibrary:
         return SpotifyLibrary(
             name=faker.name(),
-            followers=faker.random_int(),
         )

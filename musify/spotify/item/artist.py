@@ -13,12 +13,10 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 @final
 class SpotifyArtist(
-    RemoteArtist[SpotifyResourceURI, SpotifyGenre],
+    RemoteArtist[SpotifyGenre, SpotifyResourceURI],
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasFollowers,
     HasPopularity
 ):
     __final__ = True
-
-    uri: SpotifyResourceURI  # TODO: This shouldn't be needed...

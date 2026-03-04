@@ -1,7 +1,6 @@
-from typing import final
+from typing import final, ClassVar
 
 from pydantic import Field
-
 from musify.remote.user import RemoteUser
 from musify.spotify._base import SpotifyResource
 from musify.spotify.properties.images import HasSpotifyImages
@@ -17,4 +16,3 @@ class SpotifyUser(RemoteUser[SpotifyUserURI], SpotifyResource[SpotifyUserURI], H
         description="The display name of the user",
         validation_alias="display_name",
     )
-    uri: SpotifyUserURI  # TODO: This shouldn't be needed...

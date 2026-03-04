@@ -39,7 +39,6 @@ class SpotifyPlaylist(
         default_factory=MusifySequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")
     )
-    uri: SpotifyResourceURI  # TODO: This shouldn't be needed...
 
 
 @final

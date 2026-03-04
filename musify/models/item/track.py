@@ -18,7 +18,7 @@ from musify.models.properties.uri import URI, HasURI
 from musify.models.sequence import MusifyMutableSequence, MusifySequence
 
 
-class Track[RT: Artist, AT: Album, GT: Genre](
+class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
     HasArtists[RT],
     HasAlbum[AT],
     HasGenres[GT],
@@ -28,7 +28,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
     HasRating,
     HasReleaseDate,
     HasImages,
-    HasURI,
+    HasURI[UT],
     HasLength
 ):
     """Represents a track resource and its properties."""

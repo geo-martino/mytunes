@@ -16,7 +16,7 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 @final
 class SpotifyTrack(
-    RemoteTrack[SpotifyResourceURI, SpotifyArtist, SpotifyAlbum, SpotifyGenre],
+    RemoteTrack[SpotifyArtist, SpotifyAlbum, SpotifyGenre, SpotifyResourceURI],
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasPopularity,
@@ -40,7 +40,6 @@ class SpotifyTrack(
             AliasPath("duration_ms", "totalMilliseconds"), "duration_ms"
         ),
     )
-    uri: SpotifyResourceURI  # TODO: This shouldn't be needed...
 
     @field_validator("length", mode="before", check_fields=True)
     @classmethod

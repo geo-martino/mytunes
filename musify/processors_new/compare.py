@@ -95,7 +95,7 @@ class Comparer(DynamicProcessor):
     def _field_type(self) -> type:
         if self.field is None:
             field_type = NoneType
-        elif isinstance(field := getattr(_COMPARISON_FIELDS_MAP[self.field], self.field), FieldInfo):
+        elif isinstance(field := _COMPARISON_FIELDS_MAP[self.field].get_nested_field_info(self.field), FieldInfo):
             field_type = field.annotation
         elif isinstance(field, property):
             field_type = typing.get_type_hints(field.fget, include_extras=True)["return"]

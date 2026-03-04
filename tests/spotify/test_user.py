@@ -14,7 +14,6 @@ class TestSpotifyUser(SpotifyModelTester):
         return SpotifyUser(
             name=faker.name(),
             email=faker.email(),
-            followers=faker.random_int(),
             uri=SpotifyUserURI.from_id(resource_id, kind="user"),
         )
 

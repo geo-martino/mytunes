@@ -57,9 +57,9 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile, 
 
 class LocalTrack[T: FileType](
     LocalResource,
-    Track[LocalArtist, LocalAlbum, LocalGenre],
+    Track[LocalArtist, LocalAlbum, LocalGenre, URI],
     LocalAudioFile,
-    HasMutableURI,
+    HasMutableURI[URI],
     HasAddedDate,
     HasPlayedDate,
 ):
