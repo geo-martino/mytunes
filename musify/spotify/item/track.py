@@ -13,8 +13,8 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 class SpotifyTrack(
-    SpotifyResource[SpotifyResourceURI],
     RemoteTrack[SpotifyResourceURI, SpotifyArtist, SpotifyAlbum, SpotifyGenre],
+    SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasPopularity
 ):

@@ -7,6 +7,6 @@ from musify.remote.item.track import RemoteTrack
 
 
 class RemoteGenreCollection[UT: URI, TK, TV: RemoteTrack](
-    RemoteResource[UT], RemoteCollection, RemoteGenre[UT], GenreCollection[TK, TV]
+    GenreCollection[TK, TV], RemoteResource[UT], RemoteCollection, RemoteGenre[UT]
 ):
     pass

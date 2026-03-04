@@ -7,6 +7,6 @@ from musify.remote.item.track import RemoteTrack
 
 
 class RemoteLibrary[TK, TV: RemoteTrack, KP, VP: RemotePlaylist](
-    RemoteCollection, Library[TK, TV, KP, VP], metaclass=ABCMeta
+    Library[TK, TV, KP, VP], RemoteCollection, metaclass=ABCMeta
 ):
     pass

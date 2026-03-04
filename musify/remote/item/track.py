@@ -7,7 +7,7 @@ from musify.remote.item.genre import RemoteGenre
 
 
 class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
+        Track[RT, AT, GT],
         RemoteResource[UT],
-        Track[RT, AT, GT]
 ):
     pass

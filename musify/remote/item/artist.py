@@ -5,5 +5,5 @@ from musify.remote._base import RemoteResource
 from musify.remote.item.genre import RemoteGenre
 
 
-class RemoteArtist[UT: URI, GT: RemoteGenre](RemoteResource[UT], Artist[GT]):
+class RemoteArtist[UT: URI, GT: RemoteGenre](Artist[GT], RemoteResource[UT]):
     pass

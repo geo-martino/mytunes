@@ -21,10 +21,11 @@ class TestSpotifyArtist(SpotifyResourceTester):
 
     def test_response(self, generator: SpotifyPayloadGenerator):
         payload = generator.generate_artist(properties=True)
+        generator.add_artist_extended_properties(payload)
+
         model = SpotifyArtist.model_validate(payload)
 
-        assert model.name == payload["name"]
-
+        self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_genres(model, payload)

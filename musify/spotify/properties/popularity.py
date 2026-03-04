@@ -1,11 +1,12 @@
-from pydantic import Field, PositiveInt
+from pydantic import Field
 
-from musify.remote import RemoteModel
+from musify.models import AttributeModel
 
 
-class HasPopularity(RemoteModel):
-    popularity: int = Field(
+class HasPopularity(AttributeModel):
+    popularity: int | None = Field(
         description="The popularity of the item, between 0 and 100",
+        default=None,
         ge=0,
         le=100,
     )

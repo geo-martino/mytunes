@@ -6,5 +6,5 @@ class SpotifyModel(RemoteModel):
     pass
 
 
-class SpotifyResource[UT: _SpotifyURIBase](SpotifyModel, RemoteResource[UT]):
+class SpotifyResource[UT: _SpotifyURIBase](RemoteResource[UT], SpotifyModel):
     pass

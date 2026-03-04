@@ -9,10 +9,9 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 class SpotifyAlbum(
-    SpotifyResource[SpotifyResourceURI],
     RemoteAlbum[SpotifyResourceURI, SpotifyArtist, SpotifyGenre],
+    SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
-    HasFollowers,
-    HasPopularity
+    HasPopularity,
 ):
     uri: SpotifyResourceURI  # TODO: This shouldn't be needed...

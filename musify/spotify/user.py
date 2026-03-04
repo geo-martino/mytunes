@@ -7,7 +7,7 @@ from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.uri import SpotifyUserURI
 
 
-class SpotifyUser(SpotifyResource[SpotifyUserURI], RemoteUser[SpotifyUserURI], HasSpotifyImages, HasFollowers):
+class SpotifyUser(RemoteUser[SpotifyUserURI], SpotifyResource[SpotifyUserURI], HasSpotifyImages, HasFollowers):
     name: str = Field(
         description="The display name of the user",
         validation_alias="display_name",

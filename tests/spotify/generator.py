@@ -14,7 +14,7 @@ class SpotifyPayloadGenerator:
     limit_lower = 10
     limit_upper = 20
     limit_max = 50
-    
+
     def __init__(self, faker: Faker):
         self.faker = faker
 
@@ -56,11 +56,8 @@ class SpotifyPayloadGenerator:
     ################################################################################
     ## Tracks
     ################################################################################
-    def generate_track(self, extend: bool = False) -> dict[str, Any]:
-        """
-        Return a randomly generated Spotify API response for a track.
-        Optionally include extended album and artist information.
-        """
+    def generate_track(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a track."""
         track_id = self.generate_resource_id()
         kind = "track"
 
@@ -83,14 +80,18 @@ class SpotifyPayloadGenerator:
             "is_local": self.faker.boolean(),
         }
 
-        if extend:
-            album = self.generate_album()
-            payload |= {
-                "album": album,
-                "artists": album["artists"],
-            }
-
         return payload
+
+    def add_track_extended_properties(self, payload: dict[str, Any]) -> None:
+        """Add extended properties to a track payload in-place."""
+        album = self.generate_album()
+        artists = [self.generate_artist() for _ in range(self.faker.random_int(1, 5))]
+        self.add_album_artists(payload, artists)
+
+        payload |= {
+            "album": album,
+            "artists": artists,
+        }
 
     def generate_tracks(
             self, album: dict[str, Any] = None, artists: list[dict[str, Any]] = None, count: int = 0
@@ -99,7 +100,7 @@ class SpotifyPayloadGenerator:
         if count == 0:
             count = self.faker.random_int(1, 30)
 
-        tracks = [self.generate_track(extend=False) for _ in range(count)]
+        tracks = [self.generate_track() for _ in range(count)]
 
         for position, track in enumerate(tracks, 1):
             if artists:
@@ -142,7 +143,7 @@ class SpotifyPayloadGenerator:
 
     def generate_audio_analysis(self) -> dict[str, Any]:
         """Return a randomly generated Spotify API response for a Track's audio analysis."""
-        duration_ms = self.faker.random_int(int(10e4), int(6*10e5))  # 1 second to 10 minutes range
+        duration_ms = self.faker.random_int(int(10e4), int(6 * 10e5))  # 1 second to 10 minutes range
         return {"track": {"duration": duration_ms / 1000}}
 
     ################################################################################
@@ -165,29 +166,44 @@ class SpotifyPayloadGenerator:
             "uri": self.generate_uri(kind, artist_id),
         }
 
-        if properties:
-            payload |= {
-                "followers": self.generate_followers(),
-                "genres": self.generate_genres(),
-                "images": self.generate_images(),
-                "popularity": self.faker.random_int(0, 100),
-            }
-
         return payload
+
+    def add_artist_extended_properties(self, payload: dict[str, Any]) -> None:
+        """Add extended properties to an artist payload in-place."""
+        payload |= {
+            "followers": self.generate_followers(),
+            "genres": self.generate_genres(),
+            "images": self.generate_images(),
+            "popularity": self.faker.random_int(0, 100),
+        }
+
+    def add_artist_albums(self, payload: dict[str, Any], albums: list[dict[str, Any]] = None, count: int = 0) -> None:
+        """Add albums to an artist payload in-place."""
+        if not albums:
+            albums = []
+            if count == 0:
+                count = self.faker.random_int(1, 10)
+
+        for _ in range(count):
+            album = self.generate_album()
+            self.add_album_artists(album, artists=[payload], count=self.faker.random_int(0, 3))
+            albums.append(album)
+
+        artist_href = payload["href"]
+        albums_href = URL(artist_href).joinpath("albums")
+        payload["albums"] = self.format_items_block(
+            url=albums_href, items=albums, limit=len(albums), total=len(albums)
+        )
 
     ################################################################################
     ## Album generators
     ################################################################################
-    def generate_album(self, tracks: bool = False, properties: bool = False) -> dict[str, Any]:
-        """
-        Return a randomly generated Spotify API response for an album.
-        Optionally include track payloads or additional properties.
-        """
+    def generate_album(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for an album."""
         album_id = self.generate_resource_id()
         kind = "album"
         album_href = self.generate_href("album", album_id)
         track_count = self.faker.random_int(1, 30)
-        artists = [self.generate_artist() for _ in range(self.faker.random_int(1, 5))]
 
         payload = {
             "album_type": self.faker.random_element(("album", "single", "compilation")),
@@ -202,29 +218,45 @@ class SpotifyPayloadGenerator:
             "release_date_precision": self.faker.random_element(("year", "month", "day")),
             "type": kind,
             "uri": self.generate_uri(kind, album_id),
-            "artists": artists,
         }
-
-        if tracks:
-            tracks = self.generate_tracks(artists=artists, count=track_count)
-            tracks_href = URL(album_href).joinpath("tracks")
-            payload["tracks"] = self.format_items_block(
-                url=tracks_href, items=tracks, limit=len(tracks), total=track_count
-            )
-
-        if properties:
-            payload |= {
-                "copyrights": self.generate_copyrights(),
-                "external_ids": self.generate_external_ids(),
-                "genres": [],  # always empty
-                "label": "/".join((self.faker.company() for _ in range(self.faker.random_int(1, 3)))),
-                "popularity": self.faker.random_int()
-            }
 
         if self.faker.boolean():
             payload["restrictions"] = self.faker.random_element(("market", "product", "explicit"))
 
         return payload
+
+    def add_album_artists(self, payload: dict[str, Any], artists: list[dict[str, Any]] = None, count: int = 0) -> None:
+        """Add artists to an album payload in-place."""
+        if not artists:
+            artists = []
+            if count == 0:
+                count = self.faker.random_int(1, 5)
+
+        artists.extend(self.generate_artist() for _ in range(count))
+
+        payload["artists"] = artists
+
+    def add_album_extended_properties(self, payload: dict[str, Any]) -> None:
+        """Add extended properties to an album payload in-place."""
+        payload |= {
+            "copyrights": self.generate_copyrights(),
+            "external_ids": self.generate_external_ids(),
+            "genres": [],  # always empty
+            "label": "/".join((self.faker.company() for _ in range(self.faker.random_int(1, 3)))),
+            "popularity": self.faker.random_int(1, 100)
+        }
+
+    def add_album_tracks(self, payload: dict[str, Any]) -> None:
+        """Add tracks to an album payload in-place."""
+        artists = payload["artists"]
+        track_count = payload["total_tracks"]
+        album_href = payload["href"]
+
+        tracks = self.generate_tracks(artists=artists, count=track_count)
+        tracks_href = URL(album_href).joinpath("tracks")
+        payload["tracks"] = self.format_items_block(
+            url=tracks_href, items=tracks, limit=len(tracks), total=track_count
+        )
 
     def generate_genres(self) -> Sequence[str]:
         """Return a list of randomly generated genres."""
@@ -259,13 +291,18 @@ class SpotifyPayloadGenerator:
             "uri": self.generate_uri(kind, playlist_id),
         }
 
-        items = self.generate_playlist_items(owner, count=item_count)
-        items_href = URL(playlist_href).joinpath("items")
-        payload["items"] = self.format_items_block(url=items_href, items=items, limit=len(items), total=item_count)
-
         return payload
 
-    def generate_playlist_items(
+    def add_playlist_items(self, payload: dict[str, Any], count: int = 0) -> None:
+        """Add items to a playlist payload in-place."""
+        owner = payload["owner"]
+        playlist_href = payload["href"]
+
+        items = self._generate_playlist_items(owner, count=count)
+        items_href = URL(playlist_href).joinpath("items")
+        payload["items"] = self.format_items_block(url=items_href, items=items, limit=len(items), total=count)
+
+    def _generate_playlist_items(
             self, owner: dict[str, Any], count: int = 0
     ) -> list[dict[str, Any]]:
         """Return a list of randomly generated Spotify API responses for playlist items with a given owner."""
@@ -281,7 +318,7 @@ class SpotifyPayloadGenerator:
 
             item |= {
                 "added_by": added_by,
-                "is_local": item["track"]["is_local"],
+                "is_local": item["item"]["is_local"],
                 "primary_color": None,
                 "video_thumbnail": {"url": None},
             }

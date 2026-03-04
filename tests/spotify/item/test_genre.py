@@ -12,7 +12,6 @@ class TestSpotifyGenre(SpotifyResourceTester):
     def model(self, faker: Faker) -> SpotifyGenre:
         return SpotifyGenre(
             name=faker.random_element(GENRES),
-            followers=faker.random_int(0, 100)
         )
 
     def test_response(self, faker: Faker):

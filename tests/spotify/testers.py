@@ -7,17 +7,19 @@ from pydantic import Json
 from yarl import URL
 
 from musify.models.item.genre import HasGenres
+from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
+from musify.models.properties.name import HasName
+from musify.models.properties.uri import HasURI
 from musify.spotify import SpotifyResource
 from musify.spotify.properties.followers import HasFollowers
-from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.popularity import HasPopularity
 from musify.spotify.properties.uri import SpotifyUserURI
-from tests.models.testers import UniqueKeyTester
+from tests.models.testers import UniqueKeyTester, MusifyModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator
 
 
-class SpotifyModelTester(UniqueKeyTester, metaclass=ABCMeta):
+class SpotifyModelTester(MusifyModelTester, metaclass=ABCMeta):
 
     @pytest.fixture(scope="class")
     def generator(self, faker: Faker) -> SpotifyPayloadGenerator:
@@ -27,14 +29,18 @@ class SpotifyModelTester(UniqueKeyTester, metaclass=ABCMeta):
     ## Response assertions
     ################################################################################
     @staticmethod
-    def assert_expected_identifiers(model: SpotifyResource, payload: Json):
+    def assert_expected_name(model: HasName, payload: Json):
+        assert model.name == payload["name"]
+
+    @staticmethod
+    def assert_expected_identifiers(model: HasURI, payload: Json):
         assert model.uri == payload["uri"]
         assert model.uri.id == payload["id"]
         assert str(model.uri.public_url) == payload["external_urls"]["spotify"]
         assert str(model.uri.api_url) == payload["href"]
 
     @staticmethod
-    def assert_expected_images(model: HasSpotifyImages, payload: Json):
+    def assert_expected_images(model: HasImages, payload: Json):
         assert len(model.images) == 1
 
         max_height = max(img["height"] for img in payload["images"])
@@ -66,7 +72,7 @@ class SpotifyModelTester(UniqueKeyTester, metaclass=ABCMeta):
         assert model.popularity == payload["popularity"]
 
 
-class SpotifyResourceTester(SpotifyModelTester, metaclass=ABCMeta):
+class SpotifyResourceTester(UniqueKeyTester, SpotifyModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_spotify_user_uri_not_allowed(model: SpotifyResource, faker: Faker):
         additional_fields = model.model_dump(exclude={"uri"})

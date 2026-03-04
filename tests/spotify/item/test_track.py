@@ -22,13 +22,15 @@ class TestSpotifyTrack(SpotifyResourceTester):
 
     def test_response(self, generator: SpotifyPayloadGenerator):
         payload = generator.generate_track()
+        generator.add_track_extended_properties(payload)
+
         model = SpotifyTrack.model_validate(payload)
 
-        assert model.name == payload["name"]
-        assert model.disc.number == payload["disc_number"]
-        assert model.track.number == payload["track_number"]
-
+        self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_length(model, payload)
         self.assert_expected_popularity(model, payload)
+
+        assert model.disc.number == payload["disc_number"]
+        assert model.track.number == payload["track_number"]

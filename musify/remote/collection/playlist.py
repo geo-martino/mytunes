@@ -6,12 +6,12 @@ from musify.remote.item.track import RemoteTrack
 
 
 class RemotePlaylist[TK, TV: RemoteTrack, UT: URI](
-    RemoteResource[UT], RemoteCollection, Playlist[TK, TV]
+    Playlist[TK, TV], RemoteResource[UT], RemoteCollection
 ):
     pass
 
 
 class RemoteMutablePlaylist[TK, TV: RemoteTrack, UT: URI](
-    RemotePlaylist[TK, TV, UT], MutablePlaylist[TK, TV]
+    MutablePlaylist[TK, TV], RemotePlaylist[TK, TV, UT]
 ):
     pass

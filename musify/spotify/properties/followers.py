@@ -1,9 +1,9 @@
 from pydantic import Field, AliasPath, PositiveInt
 
-from musify.remote import RemoteModel
+from musify.models import AttributeModel
 
 
-class HasFollowers(RemoteModel):
+class HasFollowers(AttributeModel):
     followers: PositiveInt = Field(
         description="The number of followers for this item",
         validation_alias=AliasPath("followers", "total"),

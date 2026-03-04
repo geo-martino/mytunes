@@ -12,8 +12,8 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 class SpotifyArtist(
-    SpotifyResource[SpotifyResourceURI],
     RemoteArtist[SpotifyResourceURI, SpotifyGenre],
+    SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasFollowers,
     HasPopularity
