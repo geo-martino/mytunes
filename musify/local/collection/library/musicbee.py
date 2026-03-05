@@ -15,7 +15,7 @@ from aiorequestful.types import Number
 from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, ModelWrapValidatorHandler, BeforeValidator
 
 from musify._types import to_set
-from musify.local.collection.library._base import LocalLibrary
+from musify.local.collection.library._base import LocalLibrary, LocalLibraryFileMetaclass
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.exception import MusicBeeIDError, XMLReaderError, FileDoesNotExistError
 from musify.local.item.track import LocalTrack
@@ -38,8 +38,9 @@ except ImportError:
 REQUIRED_MODULES = [xmltodict, etree]
 
 
+# noinspection PyFinal
 @final
-class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
+class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metaclass=LocalLibraryFileMetaclass):
     """
     Represents a local MusicBee library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.
@@ -504,7 +505,7 @@ class XMLLibraryParser(MusifyModel):
     ## Unparse
     ###########################################################################
     def _unparse_dict(self, element: Element, data: Mapping[str, Any]):
-        sub_element: etree._Element = etree.SubElement(element, "dict")
+        sub_element: Element = etree.SubElement(element, "dict")
         for key, value in data.items():
             etree.SubElement(sub_element, "key").text = str(key)
 
@@ -538,7 +539,9 @@ class XMLLibraryParser(MusifyModel):
 
         parsed: dict[str, Any] = xmltodict.parse(etree.tostring(et.getroot(), encoding='utf-8', method='xml'))
 
+        # noinspection PyAbstractClass
         root: etree.Element = etree.Element(et.docinfo.root_name)
+        # noinspection PyUnresolvedReferences
         root.set("version", parsed[et.docinfo.root_name]["@version"])
 
         self._unparse_dict(element=root, data=data)

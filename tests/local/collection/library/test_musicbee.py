@@ -231,7 +231,7 @@ class TestXMLLibraryParser(MusifyModelTester):
     @pytest.fixture
     def xml(self) -> str:
         """Returns a sample MusicBee XML library as a string."""
-        # noinspection PyPep8
+        # noinspection PyPep8,HttpUrlsUsage
         return """
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

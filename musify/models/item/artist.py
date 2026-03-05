@@ -20,8 +20,8 @@ class Artist[GT: Genre, UT: URI](HasGenres[GT], HasName, HasURI[UT], HasRating):
     )
 
 
-class HasArtists[T: Artist](HasSeparableTags):
-    artists: list[T] = Field(
+class HasArtists[RT: Artist](HasSeparableTags):
+    artists: list[RT] = Field(
         description="The artists associated with this resource.",
         default_factory=list,
     )
@@ -29,7 +29,7 @@ class HasArtists[T: Artist](HasSeparableTags):
     # noinspection PyNestedDecorators
     @field_validator("artists", mode="before", check_fields=True)
     @classmethod
-    def _from_string(cls, value: str) -> list[str]:
+    def _from_string[T: str](cls, value: T) -> T | list[str]:
         if not isinstance(value, str):
             return value
         return cls._separate_tags(value)

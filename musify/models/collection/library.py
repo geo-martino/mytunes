@@ -2,12 +2,14 @@
 The core abstract implementations of :py:class:`MusifyItem` and :py:class:`MusifyCollection` classes.
 """
 import itertools
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Iterator
 from typing import ClassVar, Any
 
 from pydantic import Field
 
+from musify.exception import MusifyTypeError
+from musify.models._base import AttributeModelMetaclass
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.logger import HasLogger
@@ -22,8 +24,20 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], 
         return list(itertools.chain.from_iterable(map(_playlist_tracks_in_tracks, self.playlists.values())))
 
 
+class LibraryMetaclass(AttributeModelMetaclass):
+    """Metaclass for :py:class:`Library` and :py:class:`MutableLibrary`."""
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+        if cls.__final__ and not isinstance(cls.source, str):
+            raise MusifyTypeError("Library models must have a 'source' class attribute.")
+
+        return cls
+
+
+# noinspection PyAbstractClass
 class Library[TK, TV: Track, KP, VP: Playlist](
-    HasTracksAndPlaylists[TK, TV, KP, VP], HasLogger, metaclass=ABCMeta
+    HasTracksAndPlaylists[TK, TV, KP, VP], HasLogger, metaclass=LibraryMetaclass
 ):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"
@@ -61,7 +75,8 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         raise NotImplementedError
 
 
+# noinspection PyAbstractClass
 class MutableLibrary[TK, TV: Track, KP, VP: Playlist](
-    HasMutableTracks[TK, TV], HasMutablePlaylists[KP, VP], Library[TK, TV, KP, VP], metaclass=ABCMeta
+    HasMutableTracks[TK, TV], HasMutablePlaylists[KP, VP], Library[TK, TV, KP, VP], metaclass=LibraryMetaclass
 ):
     """A mutable library of tracks and playlists and other object types."""

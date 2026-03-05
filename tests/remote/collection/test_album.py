@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.remote.collection._base import ItemsCursor
+from musify.remote.collection import ItemsCursor
 from musify.remote.collection.album import RemoteAlbumCollection
 from tests.remote.collection.testers import RemoteCollectionTester
 from tests.utils import SimpleURI

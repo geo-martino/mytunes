@@ -149,8 +149,8 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
     def test_extract_tags_from_mutagen_called_on_validate(model: LocalTrack, file: mutagen.FileType):
         with patch.object(
                 model.__class__,
-                "extract_tags_from_mutagen",
-                side_effect=model.__class__.extract_tags_from_mutagen
+                "_extract_tags_from_mutagen",
+                side_effect=model.__class__._extract_tags_from_mutagen
         ) as mock_extract_tags:
             model.__class__.model_validate(file)
             mock_extract_tags.assert_called_once_with(file)

@@ -9,6 +9,7 @@ from musify.models.collection.album import AlbumCollection
 from musify.models.properties.uri import URI
 
 
+# noinspection PyFinal
 @final
 class LocalAlbumCollection[TK, TV: LocalTrack, RT: LocalArtist, GT: LocalGenre](
     AlbumCollection[TK, TV, RT, GT, URI], LocalAlbum[RT, GT], LocalCollection

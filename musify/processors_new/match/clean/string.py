@@ -1,5 +1,4 @@
 import re
-from abc import ABCMeta
 from collections.abc import Sequence
 from typing import Any
 
@@ -13,7 +12,7 @@ from musify.models.properties.name import HasName
 from musify.processors_new.match.clean._base import TagCleaner
 
 
-class StringCleaner[I: AttributeModel](TagCleaner[I, str], metaclass=ABCMeta):
+class StringCleaner[I: AttributeModel](TagCleaner[I, str]):
     split_on: set[str] = Field(
         description=(
             "A set of phrases for which the cleaner will slice the tag value on and remove anything that comes after. "

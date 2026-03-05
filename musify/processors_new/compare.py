@@ -132,7 +132,7 @@ class Comparer(DynamicProcessor):
     @model_validator(mode="wrap")
     @classmethod
     def _convert_expected_to_null(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model: Self = handler(value)
+        model: Comparer = handler(value)
         if model.expected is None:
             return model
 
@@ -332,7 +332,7 @@ class Comparer(DynamicProcessor):
 
     @dynamicprocessormethod
     def _matches_reg_ex_ignore_case(self, actual: str | None, expected: re.Pattern | None) -> bool:
-        if actual is None or expected is None or expected[0] is None:
+        if actual is None or expected is None:
             return False
         return bool(re.search(expected, actual, flags=re.I))
 

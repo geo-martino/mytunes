@@ -1,4 +1,3 @@
-from abc import ABCMeta
 from typing import Any
 
 import mutagen
@@ -8,7 +7,8 @@ from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
 
 
-class IsAudioFile(HasLength, IsFile, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class IsAudioFile(HasLength, IsFile):
     """Attributes and operations for an audio on a filesystem."""
 
     channels: PositiveInt | None = Field(

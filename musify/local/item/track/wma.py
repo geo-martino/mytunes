@@ -1,5 +1,5 @@
 import struct
-from collections.abc import MutableMapping, Sequence, Iterable
+from collections.abc import MutableMapping, Iterable
 from typing import ClassVar, Any, final
 
 import mutagen.asf
@@ -159,9 +159,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         mode="before"
     )
     @classmethod
-    def _deserialize_unicode_attribute(
-        cls, value: mutagen.asf.ASFUnicodeAttribute | Sequence[mutagen.asf.ASFUnicodeAttribute]
-    ) -> str:
+    def _deserialize_unicode_attribute[T](cls, value: T) -> T | str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_single_sequence(value)
@@ -176,7 +174,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         mode="before"
     )
     @classmethod
-    def _deserialize_unicode_attributes(cls, value: Iterable[mutagen.asf.ASFUnicodeAttribute]) -> list[str]:
+    def _deserialize_unicode_attributes[T](cls, value: T) -> T | list[str]:
         if not isinstance(value, tuple | list):
             return value
         return list(map(cls._deserialize_unicode_attribute, value))
@@ -202,9 +200,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         "name", "disc", "bpm", "key", "released_at", "uri",
         mode="plain", when_used="unless-none",
     )
-    def _serialize_unicode_attribute(
-        self, value: str | HasName, info: SerializationInfo
-    ) -> InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
+    def _serialize_unicode_attribute[T: str | HasName](
+        self, value: T, info: SerializationInfo
+    ) -> T | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if not info.by_alias or info.mode == "json":
             return value
         if not isinstance(value, tuple | list):
@@ -215,7 +213,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
 
     # noinspection PyNestedDecorators
     @field_serializer("comments", mode="plain", when_used="unless-none")
-    def _serialize_unicode_attributes[T](self, value: T, info: SerializationInfo) -> T | str:
+    def _serialize_unicode_attributes[T](self, value: T, info: FieldSerializationInfo) -> T | str:
         if not isinstance(value, tuple | list):
             value = [value]
 
@@ -230,7 +228,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
         data = handler(self)
-        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
+        if not info.by_alias or not isinstance(data, dict):  # not serializing to tag IDs
             return data
 
         self._flatten_dump(data)

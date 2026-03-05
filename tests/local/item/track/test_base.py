@@ -98,7 +98,7 @@ class TestLocalTrack(UniqueKeyTester):
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType, tags: dict[str, Any]):
         assert file.filename
 
-        result = LocalTrack.extract_tags_from_mutagen(file)
+        result = LocalTrack._extract_tags_from_mutagen(file)
         assert result == tags | dict(
             path=file.filename,
             length=file.info.length,
@@ -109,6 +109,7 @@ class TestLocalTrack(UniqueKeyTester):
         )
 
     def test_extract_first_value_from_sequence(self):
+        # noinspection PyTypeChecker
         assert LocalTrack._extract_first_value_from_sequence(None) is None
         assert LocalTrack._extract_first_value_from_sequence("Track name") == "Track name"
         assert LocalTrack._extract_first_value_from_sequence(["Track name"]) == "Track name"
@@ -122,6 +123,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert_validator_skips(LocalTrack._extract_first_value_from_sequence, faker.pyint())
 
     def test_extract_first_value_from_single_sequence(self):
+        # noinspection PyTypeChecker
         assert LocalTrack._extract_first_value_from_single_sequence(None) is None
         assert LocalTrack._extract_first_value_from_single_sequence("Track name") == "Track name"
         assert LocalTrack._extract_first_value_from_single_sequence(["Track name"]) == "Track name"
@@ -211,7 +213,7 @@ class TestLocalTrack(UniqueKeyTester):
         self,
         model: LocalTrack,
         adapter: TypeAdapter[LocalTrack],
-        file: mutagen.File,
+        file: mutagen.FileType,
         tags: dict[str, Any]
     ):
         expected = adapter.validate_python(tags | dict(path=file.filename))
@@ -226,28 +228,28 @@ class TestLocalTrack(UniqueKeyTester):
             assert model.album.name == expected.album.name
             assert model.genre == expected.genre
 
-    async def test_save(self, model: LocalTrack, file: mutagen.File, faker: Faker):
+    async def test_save(self, model: LocalTrack, file: mutagen.FileType, faker: Faker):
         with patch.object(file.__class__, "save") as mock_save:
             await model.save(file)
             mock_save.assert_called_once()
 
-    def test_clear_all_tags(self, file: mutagen.File, faker: Faker):
+    def test_clear_all_tags(self, file: mutagen.FileType, faker: Faker):
         expected = set(file.tags.keys())
         result = LocalTrack.clear(file)
         assert set(result) == expected & LocalTrack.__tag_fields__
 
-    def test_clear_selected_tags(self, file: mutagen.File, faker: Faker):
+    def test_clear_selected_tags(self, file: mutagen.FileType, faker: Faker):
         include = sample(list(set(file.tags) & set(LocalTrack.__tag_fields__)), k=4)
         result = LocalTrack.clear(file, include=include)
         assert set(result) == set(include)
 
-    def test_clear_selected_tags_with_exclude(self, file: mutagen.File, faker: Faker):
+    def test_clear_selected_tags_with_exclude(self, file: mutagen.FileType, faker: Faker):
         include = sample(list(set(file.tags) & set(LocalTrack.__tag_fields__)), k=4)
         exclude = sample(list(set(file.tags) & set(LocalTrack.__tag_fields__)), k=4)
         result = LocalTrack.clear(file, include=include, exclude=exclude)
         assert set(result) == set(t for t in include if t not in exclude)
 
-    def test_clear_tag(self, file: mutagen.File, tags: dict[str, Any]):
+    def test_clear_tag(self, file: mutagen.FileType, tags: dict[str, Any]):
         tag_id = choice(list(tags))
         assert LocalTrack._clear_tag(file, tag_id=tag_id) == {tag_id}
         assert tag_id not in file.tags
@@ -286,7 +288,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in IsLocalFile.model_fields)
         assert all(key not in tags for key in HasLength.model_fields)
 
-    def test_update_and_replace(self, model: LocalTrack, file: mutagen.File, tags: dict[str, Any]):
+    def test_update_and_replace(self, model: LocalTrack, file: mutagen.FileType, tags: dict[str, Any]):
         include = sample(list(set(tags) & set(LocalTrack.__tag_fields__)), k=4)
         exclude = sample(list(set(tags) & set(LocalTrack.__tag_fields__)), k=4)
         context = TagDumpContext()
@@ -300,7 +302,7 @@ class TestLocalTrack(UniqueKeyTester):
             mock_to_tags.assert_called_once_with(include=include, exclude=exclude, context=context)
             mock_update.assert_called_once_with(mock_to_tags.return_value)
 
-    def test_update_no_replace(self, adapter: TypeAdapter[LocalTrack], file: mutagen.File, tags: dict[str, Any]):
+    def test_update_no_replace(self, adapter: TypeAdapter[LocalTrack], file: mutagen.FileType, tags: dict[str, Any]):
         file.tags = dict(sample(list(tags.items()), k=4))
         expected = {k: v for k, v in tags.items() if k not in file.tags}
         model = adapter.validate_python(tags | dict(path=file.filename))

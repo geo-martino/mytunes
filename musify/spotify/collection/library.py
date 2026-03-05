@@ -1,4 +1,4 @@
-from typing import Any, final
+from typing import Any, final, ClassVar
 
 from musify.remote.collection.library import RemoteMutableLibrary
 from musify.spotify import SpotifyResource
@@ -14,6 +14,8 @@ class SpotifyLibrary(
     HasFollowers,
 ):
     __final__ = True
+
+    source: ClassVar[str] = "spotify"
 
     async def load(self):
         pass

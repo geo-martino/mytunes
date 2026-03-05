@@ -278,6 +278,7 @@ def test_get_base_types_basic():
 
 
 def test_get_base_types_union():
+    # noinspection PyTypeHints
     type annotation = str | int | float | bool | None
     expected = (str, int, float, bool, type(None))
 

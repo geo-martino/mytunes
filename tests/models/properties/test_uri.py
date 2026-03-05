@@ -214,4 +214,5 @@ class TestHasMutableURI(UniqueKeyTester):
 
         # 2nd models doesn't have a URI set due to no URIs matching the given source
         missing_uri = next(uri for uri in uris if uri.source != model.source)
-        assert model != MockHasMutableURI(source=missing_uri.source, uris=[uri for uri in uris if uri is not missing_uri])
+        uris = [uri for uri in uris if uri is not missing_uri]
+        assert model != MockHasMutableURI(source=missing_uri.source, uris=uris)

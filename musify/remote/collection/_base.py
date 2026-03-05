@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Collection
 
 from pydantic import Field, InstanceOf, PositiveInt, NonNegativeInt
@@ -29,7 +29,8 @@ class ItemsCursor(MusifyModel):
     )
 
 
-class RemoteCollection(RemoteModel, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class RemoteCollection(RemoteModel):
     total: NonNegativeInt = Field(
         description="The total number of items in this collection."
     )

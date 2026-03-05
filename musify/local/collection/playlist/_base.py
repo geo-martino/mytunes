@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Collection, MutableMapping
 from pathlib import Path
 from typing import Self, Any
@@ -98,7 +98,8 @@ class LocalPlaylistFile[TF: Filter](
         self.path = self.path.rename(path)
 
 
-class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteableFile, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteableFile):
     @abstractmethod
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """

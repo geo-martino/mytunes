@@ -105,7 +105,7 @@ class TestFLAC(LocalTrackTester):
         assert file.filename
         assert file.pictures
 
-        result = FLAC.extract_tags_from_mutagen(file)
+        result = FLAC._extract_tags_from_mutagen(file)
         assert result == tags | dict(
             path=file.filename,
             length=file.info.length,

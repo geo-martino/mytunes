@@ -6,6 +6,7 @@ from musify.local.item.track import LocalTrack
 from musify.models.collection.genre import GenreCollection
 
 
+# noinspection PyFinal
 @final
 class LocalGenreCollection[TK, TV: LocalTrack](
     GenreCollection[TK, TV], LocalGenre, LocalCollection

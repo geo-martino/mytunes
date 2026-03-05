@@ -150,7 +150,7 @@ class SpotifyPayloadGenerator:
     ################################################################################
     ## Artists
     ################################################################################
-    def generate_artist(self, properties: bool = False) -> dict[str, Any]:
+    def generate_artist(self) -> dict[str, Any]:
         """
         Return a randomly generated Spotify API response for an artist.
         Optionally include additional properties.
@@ -272,7 +272,6 @@ class SpotifyPayloadGenerator:
         playlist_href = self.generate_href(kind, playlist_id)
         owner = self.generate_owner()
         public = self.faker.boolean()
-        item_count = self.faker.random_int(0, 200)
 
         payload = {
             "collaborative": False if public else self.faker.boolean(),
@@ -336,6 +335,7 @@ class SpotifyPayloadGenerator:
         show_id = self.generate_resource_id()
         episode_count = self.faker.random_int(1, 30)
 
+        # noinspection PyTypeChecker
         payload = {
             "available_markets": self.generate_countries(),
             "copyrights": self.generate_copyrights(),
@@ -444,12 +444,7 @@ class SpotifyPayloadGenerator:
     ## Audiobooks + Chapters
     ###########################################################################
     def generate_audiobook(self) -> dict[str, Any]:
-        """
-        Return a randomly generated Spotify API response for an Audiobook.
-
-        :param chapter_count: The total number of chapters this audiobook should have.
-        :param chapters: Add randomly generated chapter information to the response as per documentation.
-        """
+        """Return a randomly generated Spotify API response for an Audiobook."""
         kind = "audiobook"
         audiobook_id = self.generate_resource_id()
         chapter_count = self.faker.random_int(1, 20)

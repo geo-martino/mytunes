@@ -78,7 +78,7 @@ class TimeMapper(DynamicProcessor):
     # noinspection PyNestedDecorators
     @field_validator("add", mode="before", check_fields=True)
     @staticmethod
-    def _extract_sign_from_key(value: str) -> bool:
+    def _extract_sign_from_key[T: str](value: T) -> T | bool:
         if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
             return value
         return value.startswith("+")

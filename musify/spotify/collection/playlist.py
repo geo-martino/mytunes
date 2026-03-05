@@ -12,6 +12,7 @@ from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+# noinspection PyFinal
 @final
 class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
     __final__ = True
@@ -54,6 +55,7 @@ class SpotifyPlaylist(
     )
 
 
+# noinspection PyFinal
 @final
 class SpotifyMutablePlaylist(
     RemoteMutablePlaylist[str, SpotifyPlaylistTrack, SpotifyResourceURI],

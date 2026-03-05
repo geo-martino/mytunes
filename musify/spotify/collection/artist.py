@@ -11,6 +11,7 @@ from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+# noinspection PyFinal
 @final
 class SpotifyArtistCollection[AT: SpotifyAlbum](
     RemoteArtistCollection[str, SpotifyTrack, AT, SpotifyGenre, SpotifyResourceURI],

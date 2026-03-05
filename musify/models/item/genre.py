@@ -19,8 +19,8 @@ class Genre(HasName):
     )
 
 
-class HasGenres[T: Genre](HasSeparableTags):
-    genres: list[T] = Field(
+class HasGenres[GT: Genre](HasSeparableTags):
+    genres: list[GT] = Field(
         description="The genres associated with this resource.",
         default_factory=list,
     )
@@ -28,7 +28,7 @@ class HasGenres[T: Genre](HasSeparableTags):
     # noinspection PyNestedDecorators
     @field_validator("genres", mode="before", check_fields=True)
     @classmethod
-    def _from_string(cls, value: str) -> list[str]:
+    def _from_string[T: str](cls, value: T) -> T | list[str]:
         if not isinstance(value, str):
             return value
         return cls._separate_tags(value)

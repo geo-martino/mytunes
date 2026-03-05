@@ -33,7 +33,7 @@ class KeySignature(MusifyModel):
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @classmethod
-    def _extract_root_index_from_key(cls, value: str) -> int:
+    def _extract_root_index_from_key[T: str](cls, value: T) -> T | int:
         if not isinstance(value, str):
             return value
 
@@ -48,7 +48,7 @@ class KeySignature(MusifyModel):
     # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
     @staticmethod
-    def _extract_mode_index_from_key(value: str) -> int:
+    def _extract_mode_index_from_key[T: str](value: T) -> T | int:
         if not isinstance(value, str):
             return value
         return int(value.endswith("m"))

@@ -1,6 +1,5 @@
-from abc import ABCMeta, abstractmethod
-from types import UnionType
-from typing import MutableSequence, Any, Self, Annotated
+from abc import abstractmethod
+from typing import MutableSequence, Any, Annotated
 
 from pydantic import Field
 
@@ -9,10 +8,10 @@ from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
 from musify.processors_new import Processor
 from musify.processors_new.match.clean import TagCleaner
-from musify.utils import classproperty
 
 
-class Scorer[C: TagCleaner](Processor, HasLogger, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class Scorer[C: TagCleaner](Processor, HasLogger):
     """Scores the similarity between two items based on a specific tag."""
 
     type: str = Field(
@@ -33,16 +32,6 @@ class Scorer[C: TagCleaner](Processor, HasLogger, metaclass=ABCMeta):
         ),
         default=False,
     )
-
-    # noinspection PyMethodParameters
-    @classproperty
-    def annotation(cls) -> type[Self]:
-        if not cls.registered_submodels:
-            return UnionType
-        return Annotated[
-            super().annotation,
-            Field(discriminator="type"),
-        ]
 
     def can_score(self, item: Any) -> bool:
         """Check whether the item is scorable by this scorer."""

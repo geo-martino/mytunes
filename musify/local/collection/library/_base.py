@@ -18,13 +18,18 @@ from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.logger import STAT, HEADER_PREFIX
-from musify.models.collection.library import MutableLibrary
-from musify.models.properties.file import PathMapper
+from musify.models.collection.library import MutableLibrary, LibraryMetaclass
+from musify.models.properties.file import PathMapper, IsLocalFileMetaclass
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
 
 type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mapping[str, Any]]
+
+
+class LocalLibraryFileMetaclass(LibraryMetaclass, IsLocalFileMetaclass):
+    """Metaclass for :py:class:`MusicBee`."""
+    pass
 
 
 @final
@@ -63,7 +68,7 @@ class LocalLibrary(
 
     @field_validator("playlist_filter", mode="before", check_fields=True)
     @staticmethod
-    def _convert_playlist_names_to_filter(names: str | Iterable[str]) -> ValuesFilter[str]:
+    def _convert_playlist_names_to_filter[T: str | Iterable[str]](names: T) -> T | ValuesFilter[str]:
         if not names or isinstance(names, Filter):
             return names
 
@@ -161,7 +166,6 @@ class LocalLibrary(
         try:
             self.logger.debug(f"Loading track: {path}")
             file = await LocalTrack.load_file(path)
-            print(LocalTrack.annotation)
             track = TypeAdapter[LocalTrack](LocalTrack.annotation).validate_python(file)
             return track
         except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
@@ -220,10 +224,7 @@ class LocalLibrary(
         """
         try:
             self.logger.debug(f"Loading playlist: {path}")
-            print(LocalPlaylist.registered_submodels)
-            print(LocalPlaylist.annotation, type(LocalPlaylist.annotation))
             playlist = TypeAdapter[LocalPlaylist](LocalPlaylist.annotation).validate_python(path)
-            print(playlist, type(playlist))
             playlist.path_mapper = self.path_mapper
             return await playlist.load(self.tracks)
         except (MusifyError, ValueError, FileNotFoundError) as ex:

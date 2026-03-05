@@ -122,7 +122,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     # noinspection PyNestedDecorators
     @field_validator("key", mode="before")
     @classmethod
-    def _deserialize_free_form_field(cls, value: mutagen.mp4.MP4FreeForm) -> str:
+    def _deserialize_free_form_field[T](cls, value: T) -> T | str:
         # parent class validators always execute after child class validators
         # need to manually call required upstream parent validators here
         value = cls._extract_first_value_from_sequence(value)
@@ -134,7 +134,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     # noinspection PyNestedDecorators
     @field_validator("genres", mode="before")
     @classmethod
-    def _deserialize_free_form_fields(cls, value: Iterable[mutagen.mp4.MP4FreeForm]) -> list[str]:
+    def _deserialize_free_form_fields[T:  Iterable](cls, value: T) -> T | list[str]:
         if not isinstance(value, tuple | list):
             return value
         return list(map(cls._deserialize_free_form_field, value))
@@ -142,7 +142,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
         data = handler(self)
-        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
+        if not info.by_alias or not isinstance(data, dict):  # not serializing to tag IDs
             return data
 
         self._convert_values_to_list(data)
@@ -173,7 +173,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return str(value)
 
     @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
-    def _serialize_strings(self, value: Iterable[str], info: FieldSerializationInfo) -> list[str]:
+    def _serialize_strings[T: Iterable[str]](self, value: T, info: FieldSerializationInfo) -> T | list[str]:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             return value
 
@@ -182,7 +182,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return list(map(str, values))
 
     @field_serializer("bpm", mode="plain", when_used="unless-none")
-    def _serialize_bpm(self, value: int | float, info: FieldSerializationInfo) -> list[int] | None:
+    def _serialize_bpm[T: int | float](self, value: T, info: FieldSerializationInfo) -> T | list[int] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, int | float):
@@ -190,7 +190,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return [int(value)]
 
     @field_serializer("track", "disc", mode="plain", when_used="unless-none")
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> list[tuple] | None:
+    def _serialize_position_tags[T: Position](self, value: T, info: FieldSerializationInfo) -> T | list[tuple] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, Position):

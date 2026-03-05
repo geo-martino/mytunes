@@ -327,7 +327,7 @@ class TestMatcherFilter(FilterTester):
         return tracks_exclude
 
     @staticmethod
-    def get_path(track: LocalTrack) -> str:
+    def get_path(track: LocalTrack) -> Path:
         """The key to sort on when making assertions in tests"""
         return track.path
 

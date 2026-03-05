@@ -12,7 +12,7 @@ from pydantic.alias_generators import to_pascal
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
-    _XMLRoot, _XMLDisplayFields, SyncResultXAutoPF
+    _XMLRoot, _XMLDisplayFields, SyncResultXAutoPF, AutoMatcher
 from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
@@ -51,7 +51,7 @@ class TestSyncResultXAutoPF(MusifyModelTester):
         initial_xml = _XMLRoot.model_validate(xml_playlist_recent)
         final_xml = deepcopy(initial_xml)
 
-        initial_matcher = MatchFilter(
+        initial_matcher = AutoMatcher(
             compare=ComparerFilter(
                 comparers=Comparer(field="path", condition="IsIn", expected={tr.path for tr in tracks[:20]})
             ),

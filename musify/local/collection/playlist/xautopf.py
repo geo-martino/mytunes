@@ -802,7 +802,7 @@ class _XMLSource(_XMLBaseModel):
 
     @field_validator("exceptions", "exceptions_include", mode="before", check_fields=True)
     @staticmethod
-    def _split_exceptions(value: str) -> set[str]:
+    def _split_exceptions[T: str](value: T) -> T | set[str]:
         if not isinstance(value, str):
             return value
         return set(value.split("|"))

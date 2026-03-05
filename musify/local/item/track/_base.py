@@ -1,5 +1,5 @@
 import itertools
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
 from copy import copy
 from io import BytesIO
@@ -47,10 +47,11 @@ class TagDumpContext[T](MusifyModel):
     )
 
 
-class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
     @classmethod
-    def extract_tags_from_mutagen(cls, file: mutagen.FileType):
-        data = IsLocalFile.extract_tags_from_mutagen(file)
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType):
+        data = IsLocalFile._extract_tags_from_mutagen(file)
         data |= IsAudioFile.extract_tags_from_mutagen(file)
         return data
 
@@ -65,7 +66,8 @@ class LocalTrack[FT: FileType](
 ):
     __tag_fields__ = frozenset(set(Track.model_fields.keys()) - {"uri"} | {"compilation"})
 
-    class EmbeddedImage[TT](FileEmbeddedImage, metaclass=ABCMeta):
+    # noinspection PyAbstractClass
+    class EmbeddedImage[TT](FileEmbeddedImage):
         alias: ClassVar[str | AliasChoices] = "images"
 
         # noinspection PyNestedDecorators
@@ -186,7 +188,7 @@ class LocalTrack[FT: FileType](
         return tag_id
 
     @staticmethod
-    def get_ext_from_input(value: Any) -> str:
+    def _get_ext_from_input(value: Any) -> str:
         if isinstance(value, mutagen.FileType):
             value = Path(value.filename)
         return super().get_ext_from_input(value)
@@ -195,9 +197,9 @@ class LocalTrack[FT: FileType](
     ## Validators/Serializers
     ###########################################################################
     @classmethod
-    def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         """Extract tags from a mutagen file object."""
-        data = dict(file.tags) | super().extract_tags_from_mutagen(file)
+        data = dict(file.tags) | super()._extract_tags_from_mutagen(file)
         return data
 
     # noinspection PyNestedDecorators
@@ -243,7 +245,7 @@ class LocalTrack[FT: FileType](
         mode="before", check_fields=True
     )
     @classmethod
-    def _split_joined_tags(cls, value: str) -> list[str]:
+    def _split_joined_tags[T: str](cls, value: T) -> T | list[str]:
         if not isinstance(value, tuple | list) or not all(isinstance(v, str) for v in value):
             return value
         return list(itertools.chain.from_iterable(map(cls._separate_tags, value)))
@@ -259,14 +261,16 @@ class LocalTrack[FT: FileType](
             return value
         return value.name if value is not None else None
 
-    def _extract_names(self, values: Iterable[str | HasName]) -> list[str]:
+    def _extract_names[T: Iterable[str | HasName]](self, values: T) -> T | list[str]:
         if not isinstance(values, Iterable):
             return values
 
         values = list(map(self._extract_name, values))
         return values
 
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
+    def _serialize_position_tags[T: Position](
+            self, value: T, info: FieldSerializationInfo
+    ) -> T | str | dict[str, str] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, Position):
@@ -378,6 +382,7 @@ class LocalTrack[FT: FileType](
     def _clear_tag(file: FT, tag_id: str) -> set[str]:
         removed = set()
         if tag_id in file.tags:
+            # noinspection PyTypeHints
             del file.tags[tag_id]
             removed.add(tag_id)
         return removed

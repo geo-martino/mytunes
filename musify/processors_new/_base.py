@@ -3,7 +3,7 @@ Base classes for all processors in this module. Also contains decorators for use
 """
 import os
 import textwrap
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Mapping
 from functools import partial, update_wrapper
 from typing import Any, Optional, Literal, Self
@@ -54,8 +54,8 @@ class dynamicprocessormethod:
         return self.func(self.instance_, *args, **kwargs) if self.instance_ else self.func(*args, **kwargs)
 
 
-# noinspection SpellCheckingInspection
-class DynamicProcessor(Processor, metaclass=ABCMeta):
+# noinspection SpellCheckingInspection,PyAbstractClass
+class DynamicProcessor(Processor):
     """
     Base class for implementations with :py:func:`dynamicprocessormethod` methods.
 
@@ -98,7 +98,7 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
         raise NotImplementedError
 
     @property
-    def _processor_method(self) -> Callable:
+    def _processor_method(self) -> dynamicprocessormethod:
         """The processor method to be used when calling this processor"""
         processor_name = self._clean_processor_name(self._processor_name)
         method_name = self.__processor_method_map__[processor_name]
@@ -112,7 +112,12 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
                 return self
             raise MusifyValueError(f"No processor given.")
 
-        TypeAdapter(Literal[*list(self.__processor_method_map__)]).validate_python(processor_name)
+        if processor_name not in self.__processor_method_map__:
+            raise MusifyValueError(
+                f"Invalid processor name {self._processor_name!r}. "
+                f"Must be one of: {', '.join(self.__processor_method_map__)}"
+            )
+
         return self
 
     def __call__(self, *args, **kwargs) -> Any:
@@ -120,7 +125,7 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
         return self._processor_method(*args, **kwargs)
 
 
-class InputProcessor(Processor, HasLogger, metaclass=ABCMeta):
+class InputProcessor(Processor, HasLogger):
     """
     Processor that gets user input as part of it processing.
 

@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify.spotify.collection._base import SpotifyItemsCursor
+from musify.spotify.collection import SpotifyItemsCursor
 from musify.spotify.collection.album import SpotifyAlbumCollection
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester

@@ -43,8 +43,8 @@ class Album[RT: Artist, GT: Genre, UT: URI](
     )
 
 
-class HasAlbum[T: Album](AttributeResource):
-    album: T | None = Field(
+class HasAlbum[AT: Album](AttributeResource):
+    album: AT | None = Field(
         description="The album associated with this resource.",
         default=None,
     )
@@ -55,8 +55,8 @@ class HasAlbum[T: Album](AttributeResource):
         return self.album.compilation if self.album is not None else None
 
 
-class HasAlbums[T: Album](HasSeparableTags):
-    albums: list[T] = Field(
+class HasAlbums[AT: Album](HasSeparableTags):
+    albums: list[AT] = Field(
         description="The albums associated with this resource.",
         default_factory=list,
     )
@@ -64,7 +64,7 @@ class HasAlbums[T: Album](HasSeparableTags):
     # noinspection PyNestedDecorators
     @field_validator("albums", mode="before", check_fields=True)
     @classmethod
-    def _from_string(cls, value: str) -> list[str]:
+    def _from_string[T: str](cls, value: T) -> T | list[str]:
         if not isinstance(value, str):
             return value
         return cls._separate_tags(value)

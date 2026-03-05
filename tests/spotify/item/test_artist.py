@@ -15,7 +15,7 @@ class TestSpotifyArtist(SpotifyResourceTester):
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
-        payload = generator.generate_artist(properties=True)
+        payload = generator.generate_artist()
         generator.add_artist_extended_properties(payload)
 
         model = SpotifyArtist.model_validate(payload)

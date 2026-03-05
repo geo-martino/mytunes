@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Collection
 from typing import ClassVar, Self, Any, Annotated
 
@@ -13,7 +13,8 @@ from musify.exception import MusifyValueError
 from musify.models._base import MusifyRootModel, AttributeResource
 
 
-class URI(MusifyRootModel[str], metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class URI(MusifyRootModel[str]):
     """Stores a URI for a resource from a specific remote repository."""
     _source: ClassVar[str] = PrivateAttr(
         # description=(

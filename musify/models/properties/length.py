@@ -16,7 +16,7 @@ class Length(MusifyRootModel[NonNegativeInt | NonNegativeFloat]):
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @staticmethod
-    def _convert_numeric_representation_to_number(value: str) -> int | float:
+    def _convert_numeric_representation_to_number[T: str](value: T) -> T | int | float:
         if not isinstance(value, str):
             return value
         if re.match(r"^\d+(\.\d+)?$", value):  # already a number

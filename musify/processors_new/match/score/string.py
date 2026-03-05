@@ -1,4 +1,3 @@
-from abc import ABCMeta
 from typing import Literal, Any, final
 
 from pydantic import Field
@@ -11,11 +10,13 @@ from musify.processors_new.match.clean.string import StringCleaner, NameCleaner,
 from musify.processors_new.match.score._base import Scorer
 
 
-class StringScorer[C: StringCleaner](Scorer[C], metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class StringScorer[C: StringCleaner](Scorer[C]):
     pass
 
 
-class StringScoreReducer[C: StringCleaner](StringScorer[C], metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class StringScoreReducer[C: StringCleaner](StringScorer[C]):
     reduce_on_phrases: set[LowerStrippedString] = Field(
         description=(
             "A set of phrases which, if found in the name of the item but not the other, "

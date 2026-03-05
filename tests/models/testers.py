@@ -21,7 +21,7 @@ class MusifyModelTester(metaclass=ABCMeta):
 
     @staticmethod
     def test_model_registry(model: MusifyResource):
-        if model.__final__:
+        if model.__class__.__final__:
             assert model.__class__ in MusifyModel.registered_submodels
         else:
             assert model.__class__ not in MusifyModel.registered_submodels
@@ -54,7 +54,6 @@ class UniqueKeyTester(MusifyModelTester, metaclass=ABCMeta):
         assert len(model.unique_keys) > 1, "Unique keys not found"
 
         for key in model.__unique_attributes__:
-            print(key)
             if (value := getattr(model, key, None)) is None:
                 assert None not in model.unique_keys, "Unique keys should not contain None"
                 continue

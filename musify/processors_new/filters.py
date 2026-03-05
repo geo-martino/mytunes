@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Collection, Iterator, Mapping, Sequence, Iterable
 from pathlib import Path
 from typing import Any, Annotated, Self
@@ -13,7 +13,8 @@ from musify.processors_new._base import Processor, Result
 from musify.processors_new.compare import Comparer
 
 
-class Filter[T](Processor, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class Filter[T](Processor):
     """Base class for all filters."""
 
     @property
@@ -47,7 +48,7 @@ class Filter[T](Processor, metaclass=ABCMeta):
         return list(filter(_filter, items))
 
 
-class CompositeFilter[T](Filter[T], Collection[Filter[T]], metaclass=ABCMeta):
+class CompositeFilter[T](Filter[T], Collection[Filter[T]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 
     @property

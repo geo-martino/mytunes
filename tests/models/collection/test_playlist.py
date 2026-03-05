@@ -2,8 +2,10 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
 
-from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist
+from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
+    MergePlaylistsTypeAnnotated
 from tests.models.testers import MusifyModelTester, UniqueKeyTester
 from tests.utils import split_list, SimpleURI
 
@@ -38,13 +40,14 @@ class TestHasMutablePlaylists(MusifyModelTester):
         return HasMutablePlaylists(playlists=playlists)
 
     def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists):
-        assert model._get_playlists_map_from_merge_input(None) is None
+        adapter = TypeAdapter(MergePlaylistsTypeAnnotated)
+        assert adapter.validate_python(None) is None
         playlists = model.playlists
-        assert model._get_playlists_map_from_merge_input(playlists) is playlists
-        assert model._get_playlists_map_from_merge_input(model) is playlists
+        assert adapter.validate_python(playlists) is playlists
+        assert adapter.validate_python(model) is playlists
 
-        assert model._get_playlists_map_from_merge_input(dict(playlists)) is not playlists
-        assert model._get_playlists_map_from_merge_input(dict(playlists)) == playlists
+        assert adapter.validate_python(dict(playlists)) is not playlists
+        assert adapter.validate_python(dict(playlists)) == playlists
 
     def test_merge_playlists(self, model: HasMutablePlaylists, playlists: list[Playlist]):
         initial, other, overlap = split_list(playlists, 2, 6)

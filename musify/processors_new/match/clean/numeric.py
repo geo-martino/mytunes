@@ -1,4 +1,3 @@
-from abc import ABCMeta
 from typing import Any
 
 from pydantic import Field, NonNegativeInt
@@ -10,7 +9,7 @@ from musify.models.properties.length import HasLength, Length
 from musify.processors_new.match.clean._base import TagCleaner
 
 
-class NumericCleaner[I: AttributeModel](TagCleaner[I, int | float], metaclass=ABCMeta):
+class NumericCleaner[I: AttributeModel](TagCleaner[I, int | float]):
     round_to_nearest: NonNegativeInt = Field(
         description="Round the value to nearest integer.",
         default=0,

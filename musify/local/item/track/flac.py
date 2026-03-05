@@ -94,9 +94,9 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     )
 
     @classmethod
-    def extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
+    def _extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
         # noinspection PyCallingNonCallable
-        data = super().extract_tags_from_mutagen(file)
+        data = super()._extract_tags_from_mutagen(file)
         data |= dict(images=file.pictures)
         data.pop("source", None)  # clashes with HasMutableURI field
         return data
@@ -135,7 +135,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
         data = handler(self)
-        if not info.by_alias or not isinstance(data, MutableMapping):  # not serializing to tag IDs
+        if not info.by_alias or not isinstance(data, dict):  # not serializing to tag IDs
             return data
 
         self._flatten_dump(data)
@@ -164,7 +164,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return str(value)
 
     @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
-    def _serialize_strings(self, value: Iterable[str], info: FieldSerializationInfo) -> list[str]:
+    def _serialize_strings[T: Iterable[str]](self, value: T, info: FieldSerializationInfo) -> T | list[str]:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             return value
 

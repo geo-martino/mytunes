@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from random import choice
 
 import pytest
@@ -13,7 +14,7 @@ from musify.spotify.properties.uri import _SpotifyURIBase, SpotifyResourceURI, S
 from tests.models.testers import MusifyModelTester
 
 
-class SpotifyURITester(MusifyModelTester):
+class SpotifyURITester(MusifyModelTester, metaclass=ABCMeta):
     @pytest.fixture
     def kind(self) -> str:
         types = (
@@ -101,6 +102,6 @@ class TestSpotifyUserURI(SpotifyURITester):
     def id_value(self, faker: Faker) -> str:
         return faker.pystr()
 
-    def test_validate_type_is_user(self, id_value: str, kind:str, faker: Faker):
+    def test_validate_type_is_user(self, id_value: str, kind: str, faker: Faker):
         with pytest.raises(ValueError, match="Only Spotify user URIs are allowed"):
             SpotifyUserURI(f"spotify:{kind}:{id_value}")

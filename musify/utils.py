@@ -15,18 +15,6 @@ from musify.exception import MusifyTypeError, MusifyImportError
 
 
 ###########################################################################
-## Properties
-###########################################################################
-# noinspection PyPep8Naming
-class classproperty(property):
-    """Set an immutable class property with this decorator"""
-    def __get__(self, instance, owner):
-        if owner is None:
-            owner = type(instance)
-        return self.fget(owner)
-
-
-###########################################################################
 ## Extended primitives
 ###########################################################################
 class SafeDict(dict):
@@ -310,6 +298,7 @@ def get_base_types(
             ano = annotation.__value__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case _ if hasattr(annotation, "__metadata__"):  # Annotated types
+            # noinspection PyUnresolvedReferences
             ano = annotation.__origin__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case _:

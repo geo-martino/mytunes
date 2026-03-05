@@ -1,39 +1,47 @@
 import os
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from types import UnionType
-from typing import Any, Iterable, ClassVar, Annotated, Self, Union
+from typing import Any, Iterable, Annotated, Self, Union
 
 import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyValueError, MusifyTypeError
-from musify.models._base import AttributeResource, MusifyModel
-from musify.utils import classproperty
+from musify.models._base import AttributeResource, MusifyModel, AttributeModelMetaclass
 
 
-class IsFile(AttributeResource, metaclass=ABCMeta):
-    """Attributes and operations for a file on some system."""
-    __supported_extensions__: ClassVar[frozenset[str]] = frozenset()
+class IsFileMetaclass(AttributeModelMetaclass):
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    # noinspection PyMethodParameters
-    @classproperty
-    def annotation(cls) -> type[Self]:
-        classes = cls.registered_submodels
+        cls.__supported_extensions__ = frozenset({
+            *getattr(cls, "__supported_extensions__", []),
+            *(attr for base in bases for attr in getattr(base, "__supported_extensions__", []))
+        })
+
+        return cls
+
+    @property
+    def annotation[T: IsFile](cls: type[T]) -> type[T]:
+        # noinspection PyTypeChecker
+        classes: set[type[T]] = cls.registered_submodels
         types = (Annotated[kls, Tag(ext)] for kls in classes for ext in kls.__supported_extensions__)
         return Union[*types] if classes else Union
 
-    # noinspection PyMethodParameters
-    @classproperty
-    def supported_extensions(cls) -> set[str]:
+    @property
+    def supported_extensions(cls: IsFile) -> set[str]:
         """The file extensions supported by this file type."""
         if cls.__final__:
             return set(cls.__supported_extensions__)
         return {ext for kls in cls.registered_submodels for ext in kls.__supported_extensions__}
 
+
+# noinspection PyAbstractClass
+class IsFile(AttributeResource, metaclass=IsFileMetaclass):
+    """Attributes and operations for a file on some system."""
     @property
     @abstractmethod
     def folder(self) -> str:
@@ -71,21 +79,35 @@ class IsFile(AttributeResource, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class IsReadableFile(IsFile, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class IsReadableFile(IsFile):
     @abstractmethod
     async def load(self, *args, **kwargs) -> Any:
         """Load the file to this object"""
         raise NotImplementedError
 
 
-class IsWriteableFile(IsFile, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class IsWriteableFile(IsFile):
     @abstractmethod
     async def save(self, *args, **kwargs) -> Any:
         """Save this object to file."""
         raise NotImplementedError
 
 
-class IsLocalFile(IsFile):
+class IsLocalFileMetaclass(IsFileMetaclass):
+
+    @property
+    def annotation[T: IsLocalFile](cls: type[T]) -> type[T]:
+        if not cls.registered_submodels:
+            return IsLocalFile
+        return Annotated[
+            super().annotation,
+            Field(discriminator=Discriminator(cls._get_ext_from_input)),
+        ]
+
+
+class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
     """Attributes and operations for a file on a local filesystem."""
     path: Path = Field(
         description="The path to the file on the local filesystem."
@@ -103,31 +125,21 @@ class IsLocalFile(IsFile):
 
     @model_validator(mode="wrap")
     @classmethod
-    def _extract_tags_from_mutagen(cls, file: mutagen.FileType, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _from_mutagen(cls, file: mutagen.FileType, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(file, mutagen.FileType):
             return handler(file)
 
-        tags = cls.extract_tags_from_mutagen(file)
+        tags = cls._extract_tags_from_mutagen(file)
         return handler(tags)
 
-    # noinspection PyMethodParameters
-    @classproperty
-    def annotation(cls) -> type[Self]:
-        if not cls.registered_submodels:
-            return UnionType
-        return Annotated[
-            super().annotation,
-            Field(discriminator=Discriminator(cls.get_ext_from_input)),
-        ]
-
     @classmethod
-    def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         """Extract the tags from a mutagen file object."""
         data = dict(path=file.filename)
         return data
 
     @staticmethod
-    def get_ext_from_input(value: Any) -> str:
+    def _get_ext_from_input(value: Any) -> str:
         """Get the file extension from the input value."""
         match value:
             case str():

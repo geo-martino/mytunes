@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar
+from typing import ClassVar, Annotated
 
-from pydantic import Field, validate_call
+from pydantic import Field, validate_call, BeforeValidator
 
 from musify._types import StrippedString
 from musify.models._base import CollectionModel
@@ -39,6 +39,27 @@ class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist
 type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 
 
+def _get_playlists_map_from_merge_input[TK, TV](
+        playlists: MergePlaylistsType[TK, TV] | None
+) -> MusifyMutableMapping[TK, TV] | None:
+    match playlists:
+        case None:
+            return
+        case MusifyMutableMapping():
+            return playlists
+        case HasMutablePlaylists():
+            return playlists.playlists
+        case HasPlaylists():
+            return MusifyMutableMapping(playlists.playlists)
+        case _:
+            return MusifyMutableMapping(playlists)
+
+
+type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
+    MusifyMutableMapping[TK, TV] | None, BeforeValidator(_get_playlists_map_from_merge_input)
+]
+
+
 class HasPlaylists[TK, TV: Playlist](CollectionModel):
     """A mixin class to add a `playlists` property to a MusifyCollection."""
     playlists: MusifyMapping[TK, TV] = Field(
@@ -55,23 +76,9 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
         frozen=True,
     )
 
-    @staticmethod
-    def _get_playlists_map_from_merge_input(
-            playlists: MergePlaylistsType[TK, TV] | None
-    ) -> MusifyMutableMapping[TK, TV] | None:
-        match playlists:
-            case None:
-                return
-            case MusifyMutableMapping():
-                return playlists
-            case HasPlaylists():
-                return playlists.playlists
-            case _:
-                return MusifyMutableMapping(playlists)
-
     @validate_call
     def merge_playlists(
-            self, other: MergePlaylistsType[TK, TV], reference: MergePlaylistsType[TK, TV] = None
+            self, other: MergePlaylistsTypeAnnotated[TK, TV], reference: MergePlaylistsTypeAnnotated[TK, TV] = None
     ) -> None:
         """
         Merge playlists from given list/map/library to this library.
@@ -84,9 +91,6 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
         :param other: The playlists to merge into the current playlists.
         :param reference: The reference playlists to refer to when merging.
         """
-        other = self._get_playlists_map_from_merge_input(other)
-        reference = self._get_playlists_map_from_merge_input(reference)
-
         for name, playlist in other.items():
             if playlist not in self.playlists:
                 self.playlists.add(deepcopy(playlist))

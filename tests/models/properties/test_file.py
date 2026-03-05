@@ -39,16 +39,16 @@ class TestIsLocalFile(MusifyResourceTester):
 
     def test_get_ext_from_input_fails(self):
         with pytest.raises(MusifyTypeError):
-            IsLocalFile.get_ext_from_input(123)
+            IsLocalFile._get_ext_from_input(123)
 
     def test_get_ext_from_input(self, faker: Faker):
         path = Path(faker.file_path())
         expected = path.suffix.lstrip(".").casefold()
 
-        assert IsLocalFile.get_ext_from_input(str(path)) == expected
-        assert IsLocalFile.get_ext_from_input(path) == expected
-        assert IsLocalFile.get_ext_from_input(dict(path=path)) == expected
-        assert IsLocalFile.get_ext_from_input(IsLocalFile(path=path)) == expected
+        assert IsLocalFile._get_ext_from_input(str(path)) == expected
+        assert IsLocalFile._get_ext_from_input(path) == expected
+        assert IsLocalFile._get_ext_from_input(dict(path=path)) == expected
+        assert IsLocalFile._get_ext_from_input(IsLocalFile(path=path)) == expected
 
     def test_map_path(self, faker: Faker):
         path = Path(faker.file_path())
@@ -60,7 +60,7 @@ class TestIsLocalFile(MusifyResourceTester):
         file = mutagen.FileType()
         file.filename = str(model.path)
 
-        data = IsLocalFile.extract_tags_from_mutagen(file)
+        data = IsLocalFile._extract_tags_from_mutagen(file)
         assert data == dict(path=str(model.path))
 
 

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints, Type, Union, cast
+from typing import Any, ClassVar, Self, get_type_hints, Union, cast, Annotated
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -14,12 +14,11 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
 from musify.exception import MusifyValueError, MusifyAttributeError, MusifyTypeError
-from musify.utils import get_base_types, classproperty
+from musify.utils import get_base_types
 
 
 def abstract_property() -> property:
     """Create a new abstract property for an attribute."""
-
     # noinspection PyUnusedLocal
     def fget(self) -> Any:
         raise NotImplementedError
@@ -81,6 +80,19 @@ class MusifyModelMetaclass(ModelMetaclass):
 
         return cls
 
+    @property
+    def registered_submodels[T: MusifyModel](cls: type[T]) -> set[type[T]]:
+        """Get the registered classes for all subclasses of this model."""
+        if cls.__final__:
+            return set()
+        return {kls for kls in cls.__model_registry__ if issubclass(kls, cls)}
+
+    @property
+    def annotation[T: MusifyModel](cls: type[T]) -> type[T]:
+        """Get the annotation for all subclasses of this model"""
+        classes = cls.registered_submodels
+        return Union[*classes] if classes else Union
+
 
 class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
     """Generic base class for any Musify models."""
@@ -130,21 +142,6 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
 
         return {al for al in aliases if al}
 
-    # noinspection PyMethodParameters
-    @classproperty
-    def registered_submodels(cls) -> set[Type]:
-        """Get the registered classes for all subclasses of this model."""
-        if cls.__final__:
-            return set()
-        return {kls for kls in cls.__model_registry__ if issubclass(kls, cls)}
-
-    # noinspection PyMethodParameters
-    @classproperty
-    def annotation(cls) -> type[Self]:
-        """Get the annotation for all subclasses of this model"""
-        classes = cls.registered_submodels
-        return Union[*classes] if classes else Union
-
 
 class MusifyRootModel[T](RootModel[T], MusifyModel):
     pass
@@ -165,6 +162,15 @@ class MusifyResourceMetaclass(MusifyModelMetaclass):
             raise MusifyTypeError("Resource models must have a 'type' class attribute.")
 
         return cls
+
+    @property
+    def annotation[T: MusifyResource](cls: type[T]) -> type[T]:
+        if not cls.registered_submodels:
+            return MusifyResource
+        return Annotated[
+            super().annotation,
+            Field(discriminator="type"),
+        ]
 
 
 class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
@@ -202,7 +208,7 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
 
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
-        cls = cast('type[AttributeModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+        cls = cast('type[AttributeResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
 
         cls.__include_fields__ = any((
             getattr(cls, "__include_fields__", False),
@@ -227,7 +233,7 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
 
         return cls
 
-    def _get_tag_attributes(cls, attributes: Iterable[str]) -> tuple[str]:
+    def _get_tag_attributes(cls: AttributeModel, attributes: Iterable[str]) -> tuple[str]:
         attribute_names = []
         for attr in attributes:
             names = cls._get_nested_tag_attributes(attr) + cls._get_parent_tag_attributes()
@@ -235,12 +241,11 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
 
         return tuple(attribute_names)
 
-    def _get_nested_tag_attributes(cls, name: str) -> list[str]:
+    def _get_nested_tag_attributes(cls: AttributeModel, name: str) -> list[str]:
         annotation = cls._get_attribute_annotation(name)
 
         attribute_names = [name]
         for kls in get_base_types(annotation, ignore_none=True, resolve_generics=True):
-            print("KLS", kls)
             if not issubclass(kls, AttributeModel):
                 continue
 
@@ -248,11 +253,10 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
                 attr_name for attr in kls.__tag_attributes__
                 if (attr_name := f"{name}.{attr}") not in attribute_names
             )
-            print("KLS", attribute_names)
 
         return attribute_names
 
-    def _get_attribute_annotation(cls, name: str) -> type:
+    def _get_attribute_annotation(cls: AttributeModel, name: str) -> type:
         field: FieldInfo | None = cls.model_fields.get(name)
         if field is not None:
             annotation = field.annotation
@@ -268,7 +272,7 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
 
         return annotation
 
-    def _get_parent_tag_attributes(cls) -> list[str]:
+    def _get_parent_tag_attributes(cls: AttributeModel) -> list[str]:
         attribute_names = []
         for kls in cls.mro():
             if kls is not cls and kls not in (AttributeModel, AttributeModel) and issubclass(kls, AttributeModel):
@@ -276,7 +280,7 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
 
         return attribute_names
 
-    def get_nested_field_info(cls, key: str) -> FieldInfo:
+    def get_nested_field_info(cls: AttributeModel, key: str) -> FieldInfo:
         """Get field info for a given key, supporting nested keys using dot notation."""
         if len(key_split := key.split(".")) == 1:
             if key in cls.model_fields:
@@ -287,13 +291,13 @@ class AttributeModelMetaclass(MusifyResourceMetaclass):
         field = reduce(
             AttributeModelMetaclass._get_tag_field_from_field_info,
             key_iter,
-            cls._get_tag_field_from_field_info(cls, next(key_iter))
+            AttributeModelMetaclass._get_tag_field_from_field_info(cls, next(key_iter))
         )
 
         return AttributeModelMetaclass.get_nested_field_info(field, key_split[-1])
 
     @staticmethod
-    def _get_tag_field_from_field_info(cls, key: str) -> type:
+    def _get_tag_field_from_field_info(cls: AttributeModel, key: str) -> type:
         if key not in cls.model_fields:
             return getattr(cls, key)
 
@@ -316,6 +320,7 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
 
     def __getattr__(self, key: str) -> Any:
         if len(key_split := key.split(".")) == 1:
+            # noinspection PyUnresolvedReferences
             return super().__getattr__(key)
 
         key_iter = iter(key_split)

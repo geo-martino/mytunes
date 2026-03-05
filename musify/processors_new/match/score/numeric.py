@@ -1,4 +1,3 @@
-from abc import ABCMeta
 from typing import Literal, final
 
 from pydantic import Field, PositiveInt, PositiveFloat
@@ -7,11 +6,13 @@ from musify.processors_new.match.clean.numeric import NumericCleaner, LengthClea
 from musify.processors_new.match.score._base import Scorer
 
 
-class NumericScorer[C: NumericCleaner](Scorer[C], metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class NumericScorer[C: NumericCleaner](Scorer[C]):
     pass
 
 
-class RangeScorer[C: NumericCleaner](NumericScorer[C], metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class RangeScorer[C: NumericCleaner](NumericScorer[C]):
     range: PositiveInt | PositiveFloat = Field(
         description=(
             "The range within which the score will be calculated. "

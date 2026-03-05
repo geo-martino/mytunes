@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Any
 
 from musify.exception import MusifyValueError
@@ -6,7 +6,8 @@ from musify.models import AttributeModel
 from musify.processors_new import Processor
 
 
-class TagCleaner[I: AttributeModel, T: Any](Processor, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class TagCleaner[I: AttributeModel, T: Any](Processor):
     @classmethod
     @abstractmethod
     def can_clean(cls, item: Any) -> bool:

@@ -3,7 +3,7 @@ from abc import ABCMeta
 import pytest
 from yarl import URL
 
-from musify.remote.collection._base import ItemsCursor
+from musify.remote.collection import ItemsCursor
 from tests.models.testers import UniqueKeyTester
 
 

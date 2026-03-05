@@ -188,6 +188,7 @@ class TestHasImages(MusifyModelTester):
             for cls in classes
         )
 
+        # noinspection PyAbstractClass
         with ExitStack() as stack:
             mock_load = [stack.enter_context(m) for m in mock_load]
             mock_update = [stack.enter_context(m) for m in mock_update]

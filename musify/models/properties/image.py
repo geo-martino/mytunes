@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
 from io import BytesIO
@@ -125,7 +125,8 @@ class ImageBase(MusifyModel):
         return isinstance(other, ImageBase) and self.height >= other.height and self.width >= other.width
 
 
-class ImageSource(ImageBase, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class ImageSource(ImageBase):
     @abstractmethod
     async def load(self, **kwargs) -> PILImageFile.ImageFile:
         """Load the image."""
@@ -155,7 +156,8 @@ class ImageFile(ImageSource):
         return img
 
 
-class FileEmbeddedImage(ImageSource, metaclass=ABCMeta):
+# noinspection PyAbstractClass
+class FileEmbeddedImage(ImageSource):
     """Represents an embedded image of a file."""
     path: Path | None = Field(
         description="The path to the file containing the embedded image.",
@@ -179,7 +181,7 @@ class ImageURL(ImageSource):
     # noinspection PyNestedDecorators
     @field_validator("url", mode="before", check_fields=True)
     @staticmethod
-    def _cast_to_url(value: str) -> URL:
+    def _cast_to_url[T: str](value: T) -> T | URL:
         if not isinstance(value, str):
             return value
         return URL(value)
