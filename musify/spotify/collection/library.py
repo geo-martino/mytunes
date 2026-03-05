@@ -1,5 +1,7 @@
 from typing import Any, final
 
+from pydantic import Field
+
 from musify.remote.collection.library import RemoteLibrary
 from musify.spotify.collection._base import SpotifyCollection
 from musify.spotify.collection.playlist import SpotifyMutablePlaylist
@@ -14,6 +16,11 @@ class SpotifyLibrary(
     HasFollowers,
 ):
     __final__ = True
+
+    total: int | None = Field(
+        description="The total number of tracks and playlists saved by this user.",
+        default=None,
+    )
 
     async def load(self):
         pass

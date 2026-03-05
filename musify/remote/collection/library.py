@@ -9,4 +9,6 @@ from musify.remote.item.track import RemoteTrack
 class RemoteLibrary[TK, TV: RemoteTrack, KP, VP: RemotePlaylist](
     Library[TK, TV, KP, VP], RemoteCollection, metaclass=ABCMeta
 ):
-    pass
+    @property
+    def _items(self) -> list:
+        return list(self.tracks) + list(self.playlists.values())

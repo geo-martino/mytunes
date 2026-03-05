@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from collections.abc import Collection
 from datetime import date
 
 import pytest
@@ -11,6 +12,7 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
+from musify.remote.collection import RemoteCollection
 from musify.spotify import SpotifyResource
 from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.popularity import HasPopularity
@@ -70,6 +72,13 @@ class SpotifyModelTester(MusifyModelTester, metaclass=ABCMeta):
     @staticmethod
     def assert_expected_popularity(model: HasPopularity, payload: Json):
         assert model.popularity == payload["popularity"]
+
+    @staticmethod
+    def assert_has_all_items(model: RemoteCollection, items: Collection, total: int):
+        if len(items) == total:
+            assert model.has_all_items
+        else:
+            assert not model.has_all_items
 
 
 class SpotifyResourceTester(UniqueKeyTester, SpotifyModelTester, metaclass=ABCMeta):

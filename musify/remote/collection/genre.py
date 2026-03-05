@@ -1,5 +1,6 @@
 from musify.models.collection.genre import GenreCollection
 from musify.models.properties.uri import URI
+from musify.models.sequence import MusifySequence
 from musify.remote._base import RemoteResource
 from musify.remote.collection._base import RemoteCollection
 from musify.remote.item.genre import RemoteGenre
@@ -9,4 +10,6 @@ from musify.remote.item.track import RemoteTrack
 class RemoteGenreCollection[UT: URI, TK, TV: RemoteTrack](
     GenreCollection[TK, TV], RemoteGenre[UT], RemoteResource[UT], RemoteCollection
 ):
-    pass
+    @property
+    def _items(self) -> MusifySequence:
+        return self.tracks

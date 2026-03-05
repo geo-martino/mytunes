@@ -17,6 +17,7 @@ class TestSpotifyArtistCollection(SpotifyResourceTester):
         return SpotifyArtistCollection(
             name=faker.name(),
             uri=generator.generate_uri("artist"),
+            total=faker.random_int(0, 50),
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
@@ -32,3 +33,5 @@ class TestSpotifyArtistCollection(SpotifyResourceTester):
         self.assert_expected_genres(model, payload)
         self.assert_expected_followers(model, payload)
         self.assert_expected_popularity(model, payload)
+
+        self.assert_has_all_items(model, payload["albums"]["items"], payload["albums"]["total"])

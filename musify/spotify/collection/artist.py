@@ -12,8 +12,8 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 @final
-class SpotifyArtistCollection[AT: SpotifyAlbum, GT: SpotifyGenre](
-    RemoteArtistCollection[str, SpotifyTrack, AT, GT, SpotifyResourceURI],
+class SpotifyArtistCollection[AT: SpotifyAlbum](
+    RemoteArtistCollection[str, SpotifyTrack, AT, SpotifyGenre, SpotifyResourceURI],
     SpotifyArtist,
     SpotifyCollection,
 ):
@@ -23,4 +23,8 @@ class SpotifyArtistCollection[AT: SpotifyAlbum, GT: SpotifyGenre](
         description="The albums associated with this artist.",
         default_factory=list,
         validation_alias=AliasPath("albums", "items")
+    )
+    total: int = Field(
+        description="The total number of albums by this artist.",
+        validation_alias=AliasPath("albums", "total")
     )

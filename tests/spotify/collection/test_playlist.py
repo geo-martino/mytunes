@@ -12,6 +12,7 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
         return SpotifyPlaylist(
             name=faker.name(),
             uri=generator.generate_uri("playlist"),
+            total=faker.random_int(0, 200),
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
@@ -24,3 +25,5 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_followers(model, payload)
+
+        self.assert_has_all_items(model, payload["items"]["items"], payload["items"]["total"])

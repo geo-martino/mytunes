@@ -39,6 +39,10 @@ class SpotifyPlaylist(
         default_factory=MusifySequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")
     )
+    total: int = Field(
+        description="The total number of tracks in this playlist.",
+        validation_alias=AliasPath("items", "total")
+    )
 
 
 @final
