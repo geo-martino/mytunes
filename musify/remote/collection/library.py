@@ -1,14 +1,11 @@
 from abc import ABCMeta
 
 from musify.models.collection.library import Library
-from musify.remote.collection._base import RemoteCollection
 from musify.remote.collection.playlist import RemotePlaylist
 from musify.remote.item.track import RemoteTrack
 
 
 class RemoteLibrary[TK, TV: RemoteTrack, KP, VP: RemotePlaylist](
-    Library[TK, TV, KP, VP], RemoteCollection, metaclass=ABCMeta
+    Library[TK, TV, KP, VP], metaclass=ABCMeta
 ):
-    @property
-    def _items(self) -> list:
-        return list(self.tracks) + list(self.playlists.values())
+    pass

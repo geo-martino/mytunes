@@ -1,9 +1,9 @@
 from typing import final, Self
 
-from pydantic import Field, AliasPath, model_validator
+from pydantic import Field, AliasPath, model_validator, PositiveInt
 
 from musify.remote.collection.album import RemoteAlbumCollection
-from musify.spotify.collection._base import SpotifyCollection
+from musify.spotify.collection._base import SpotifyCollection, SpotifyItemsCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
@@ -24,7 +24,15 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
         default_factory=list,
         validation_alias=AliasPath("tracks", "items")
     )
-    total: int = Field(
+
+    total: PositiveInt = Field(
         description="The total number of tracks on this album.",
         validation_alias=AliasPath("tracks", "total")
+    )
+    cursor: SpotifyItemsCursor = Field(
+        description=(
+            "The cursor for the current page of tracks. "
+            "This is used for pagination and should be passed to the next page request to extend the collection."
+        ),
+        validation_alias="tracks",
     )

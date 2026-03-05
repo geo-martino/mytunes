@@ -2,7 +2,9 @@ import pytest
 from faker import Faker
 from pydantic import Json
 from rich import print
+from yarl import URL
 
+from musify.spotify.collection._base import SpotifyItemsCursor
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI
@@ -14,10 +16,18 @@ from tests.utils import GENRES
 class TestSpotifyArtistCollection(SpotifyResourceTester):
     @pytest.fixture
     def model(self, generator: SpotifyPayloadGenerator, faker: Faker) -> SpotifyArtistCollection:
+        kind = "artist"
+        artist_id = generator.generate_resource_id()
+
         return SpotifyArtistCollection(
             name=faker.name(),
-            uri=generator.generate_uri("artist"),
-            total=faker.random_int(0, 50),
+            uri=generator.generate_uri("artist", artist_id),
+            total=faker.random_int(1, 50),
+            cursor=SpotifyItemsCursor(
+                current=URL(generator.generate_href(kind, artist_id)).joinpath("albums"),
+                limit=20,
+                offset=0,
+            )
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):

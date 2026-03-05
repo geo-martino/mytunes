@@ -1,6 +1,8 @@
 import pytest
 from faker import Faker
+from yarl import URL
 
+from musify.spotify.collection._base import SpotifyItemsCursor
 from musify.spotify.collection.playlist import SpotifyPlaylist
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
@@ -9,10 +11,18 @@ from tests.spotify.testers import SpotifyResourceTester
 class TestSpotifyPlaylist(SpotifyResourceTester):
     @pytest.fixture
     def model(self, generator: SpotifyPayloadGenerator, faker: Faker) -> SpotifyPlaylist:
+        kind = "playlist"
+        playlist_id = generator.generate_resource_id()
+
         return SpotifyPlaylist(
             name=faker.name(),
-            uri=generator.generate_uri("playlist"),
+            uri=generator.generate_uri("playlist", playlist_id),
             total=faker.random_int(0, 200),
+            cursor=SpotifyItemsCursor(
+                current=URL(generator.generate_href(kind, playlist_id)).joinpath("items"),
+                limit=20,
+                offset=0,
+            )
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
