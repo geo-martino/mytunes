@@ -96,18 +96,21 @@ class SpotifyPayloadGenerator:
     ) -> list[dict[str, Any]]:
         """Randomly generate tracks for a given album and set of artists."""
         if count == 0:
-            count = self.faker.random_int(1, 30)
+            if album:
+                count = album["total_tracks"]
+            else:
+                count = self.faker.random_int(1, 30)
 
         tracks = [self.generate_track() for _ in range(count)]
 
         for position, track in enumerate(tracks, 1):
+            track["track_number"] = position
+            track.pop("popularity", None)
+
             if artists:
                 track["artists"] = deepcopy(artists)
             if album:
                 track["album"] = deepcopy(album)
-            track["track_number"] = position
-
-            track.pop("popularity", None)
 
         return tracks
 
@@ -212,14 +215,13 @@ class SpotifyPayloadGenerator:
             "id": album_id,
             "images": self.generate_images(),
             "name": self.faker.name(),
-            "release_date": self.faker.past_date(date(1990, 1, 1)).isoformat(),
-            "release_date_precision": self.faker.random_element(("year", "month", "day")),
+            **self.generate_release_date(),
             "type": kind,
             "uri": self.generate_uri(kind, album_id),
         }
 
         if self.faker.boolean():
-            payload["restrictions"] = self.faker.random_element(("market", "product", "explicit"))
+            payload["restrictions"] = self.generate_restrictions()
 
         return payload
 
@@ -325,6 +327,236 @@ class SpotifyPayloadGenerator:
 
         return items
 
+    ###########################################################################
+    ## Shows + Episodes
+    ###########################################################################
+    def generate_show(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a Show."""
+        kind = "show"
+        show_id = self.generate_resource_id()
+        episode_count = self.faker.random_int(1, 30)
+
+        payload = {
+            "available_markets": self.generate_countries(),
+            "copyrights": self.generate_copyrights(),
+            "description": self.faker.sentence(),
+            "html_description": self.faker.sentence(),
+            "explicit": self.faker.random_element((self.faker.boolean(), None)),
+            "external_urls": self.generate_external_urls(kind, show_id),
+            "href": self.generate_href(kind, show_id),
+            "id": show_id,
+            "images": self.generate_images(),
+            "is_externally_hosted": self.faker.random_element((self.faker.boolean(), None)),
+            "languages": map(str.lower, self.generate_countries()),
+            "media_type": self.faker.choice(("audio", "video", "mixed")),
+            "name": self.faker.name(),
+            "publisher": self.faker.company(),
+            "type": kind,
+            "uri": self.generate_uri(kind, show_id),
+            "total_episodes": episode_count,
+        }
+
+        if self.faker.boolean():
+            payload["restrictions"] = self.generate_restrictions()
+
+        return payload
+
+    def add_show_episodes(self, payload: dict[str, Any]) -> None:
+        """Add episodes to a show payload in-place."""
+        episode_count = payload["total_episodes"]
+        show_href = payload["href"]
+
+        episodes = self.generate_episodes(show=payload)
+        episodes_href = URL(show_href).joinpath("episodes")
+        payload["episodes"] = self.format_items_block(
+            url=episodes_href, items=episodes, limit=len(episodes), total=episode_count
+        )
+
+    def generate_episode(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for an Episode."""
+        kind = "episode"
+        episode_id = self.generate_resource_id()
+        duration_ms = self.faker.random_int(int(10e4), int(3.6*10e6))  # 1 second to 1 hour range
+        languages = self.generate_countries() 
+
+        payload = {
+            "audio_preview_url": self.faker.random_element((self.generate_audio_preview_url(episode_id), None)),
+            "description": self.faker.sentence(),
+            "html_description": self.faker.sentence(),
+            "duration_ms": duration_ms,
+            "explicit": self.faker.random_element((self.faker.boolean(), None)),
+            "external_urls": self.generate_external_urls(kind, episode_id),
+            "href": self.generate_href(kind, episode_id),
+            "id": episode_id,
+            "images": self.generate_images(),
+            "is_externally_hosted": self.faker.boolean(),
+            "is_playable": self.faker.boolean(),
+            "language": self.faker.random_element(languages),
+            "languages": languages,
+            "name": self.faker.name(),
+            **self.generate_release_date(),
+            "resume_point": self.generate_resume_point(duration_ms),
+            "type": kind,
+            "uri": self.generate_uri(kind, episode_id),
+        }
+
+        if self.faker.boolean():
+            payload["restrictions"] = self.generate_restrictions()
+
+        return payload
+
+    def generate_episodes(self, show: dict[str, Any], count: int = 0) -> list[dict[str, Any]]:
+        """Randomly generate tracks for a given album and set of artists."""
+        if count == 0:
+            if show:
+                count = show["total_episodes"]
+            else:
+                count = self.faker.random_int(1, 30)
+
+        episodes = [self.generate_episode() for _ in range(count)]
+
+        for episode in episodes:
+            if show:
+                episode["languages"] = show["languages"]
+
+        return episodes
+
+    def add_episode_show(self, episode: dict[str, Any], show: dict[str, Any] = None) -> dict[str, Any]:
+        """Add show information to an episode payload in-place."""
+        if not show:
+            show = self.generate_show()
+
+        episode["show"] = deepcopy(show)
+
+        return episode
+
+    def add_episodes_show(self, episodes: list[dict[str, Any]], show: dict[str, Any] = None) -> list[dict[str, Any]]:
+        """Add show information to a list of episode payloads in-place."""
+        if not show:
+            show = self.generate_show()
+
+        for episode in episodes:
+            self.add_episode_show(episode, show)
+
+        return episodes
+
+    ###########################################################################
+    ## Audiobooks + Chapters
+    ###########################################################################
+    def generate_audiobook(self) -> dict[str, Any]:
+        """
+        Return a randomly generated Spotify API response for an Audiobook.
+
+        :param chapter_count: The total number of chapters this audiobook should have.
+        :param chapters: Add randomly generated chapter information to the response as per documentation.
+        """
+        kind = "audiobook"
+        audiobook_id = self.generate_resource_id()
+        chapter_count = self.faker.random_int(1, 20)
+
+        response = {
+            "authors": [{"name": self.faker.name()} for _ in range(self.faker.random_int(1, 5))],
+            "available_markets": self.generate_countries(),
+            "copyrights": self.generate_copyrights(),
+            "description": self.faker.sentence(),
+            "html_description": self.faker.sentence(),
+            "edition": self.faker.word(),
+            "explicit": self.faker.random_element((self.faker.boolean(), None)),
+            "external_urls": self.generate_external_urls(kind, audiobook_id),
+            "href": self.generate_href(kind, audiobook_id),
+            "id": audiobook_id,
+            "images": self.generate_images(),
+            "languages": self.generate_countries(),
+            "media_type": "audio",
+            "name": self.faker.company(),
+            "narrators": [{"name": self.faker.name()} for _ in range(self.faker.random_int(1, 10))],
+            "publisher": self.faker.company(),
+            "type": kind,
+            "uri": self.generate_uri(kind, audiobook_id),
+            "total_chapters": chapter_count,
+        }
+
+        return response
+
+    def add_audiobook_chapters(self, payload: dict[str, Any]) -> None:
+        """Add chapters to an audiobook payload in-place."""
+        chapter_count = payload["total_chapters"]
+        audiobook_href = payload["href"]
+
+        chapters = self.generate_chapters(audiobook=payload)
+        chapters_href = URL(audiobook_href).joinpath("chapters")
+        payload["chapters"] = self.format_items_block(
+            url=chapters_href, items=chapters, limit=len(chapters), total=chapter_count
+        )
+
+    def generate_chapter(self, chapter_number: int = None) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a Chapter."""
+        kind = "chapter"
+        chapter_id = self.generate_resource_id()
+        duration_ms = self.faker.random_int(int(10e4), int(6*10e5))  # 1 second to 10 minutes range
+
+        response = {
+            "audio_preview_url": self.faker.random_element((self.generate_audio_preview_url(chapter_id), None)),
+            "available_markets": self.generate_countries(),
+            "chapter_number": chapter_number or self.faker.random_int(0, 20),
+            "description": self.faker.sentence(),
+            "html_description": self.faker.sentence(),
+            "duration_ms": duration_ms,
+            "explicit": self.faker.random_element((self.faker.boolean(), None)),
+            "external_urls": self.generate_external_urls(kind, chapter_id),
+            "href": self.generate_href(kind, chapter_id),
+            "id": chapter_id,
+            "images": self.generate_images(),
+            "is_playable": self.faker.boolean(),
+            "languages": self.generate_countries(),
+            "name": self.faker.name(),
+            **self.generate_release_date(),
+            "resume_point": self.generate_resume_point(duration_ms),
+            "type": kind,
+            "uri": self.generate_uri(kind, chapter_id),
+        }
+
+        return response
+
+    def generate_chapters(self, audiobook: dict[str, Any], count: int = 0) -> list[dict[str, Any]]:
+        """Randomly generate tracks for a given album and set of artists."""
+        if count == 0:
+            if audiobook:
+                count = audiobook["total_chapters"]
+            else:
+                count = self.faker.random_int(1, 30)
+
+        chapters = [self.generate_chapter() for _ in range(count)]
+
+        for position, chapter in enumerate(chapters, 1):
+            chapter["chapter_number"] = position
+
+            if audiobook:
+                chapter["languages"] = audiobook["languages"]
+
+        return chapters
+
+    def add_chapter_audiobook(self, chapter: dict[str, Any], audiobook: dict[str, Any] = None) -> dict[str, Any]:
+        """Add audiobook information to a chapter payload in-place."""
+        if not audiobook:
+            audiobook = self.generate_show()
+
+        chapter["audiobook"] = deepcopy(audiobook)
+
+        return chapter
+
+    def add_chapters_audiobook(
+            self, chapters: list[dict[str, Any]], audiobook: dict[str, Any] = None
+    ) -> list[dict[str, Any]]:
+        """Add audiobook information to a list of chapter payloads in-place."""
+        if not audiobook:
+            audiobook = self.generate_audiobook()
+
+        for chapter in chapters:
+            self.add_episode_show(chapter, audiobook)
+
+        return chapters
+
     ################################################################################
     ## Sub-parts
     ################################################################################
@@ -401,6 +633,13 @@ class SpotifyPayloadGenerator:
             return {"totalMilliseconds": duration_ms}
         return duration_ms
 
+    def generate_release_date(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a release date, with random precision."""
+        return {
+            "release_date": self.faker.past_date(date(1990, 1, 1)).isoformat(),
+            "release_date_precision": self.faker.random_element(("year", "month", "day")),
+        }
+
     def generate_countries(self) -> list[str]:
         """Return a list of randomly generated country codes."""
         return [self.faker.country_code("alpha-2") for _ in range(self.faker.random_int(1, 5))]
@@ -418,6 +657,25 @@ class SpotifyPayloadGenerator:
             {"text": self.faker.pystr(50, 100), "type": i}
             for i in ["C", "P"][:self.faker.random_int(1, 2)]
         ]
+
+    def generate_restrictions(self) -> str:
+        """Return a randomly generated Spotify API restriction reason."""
+        return self.faker.random_element(("market", "product", "explicit"))
+
+    def generate_audio_preview_url(self, resource_id: str) -> str:
+        """Return a randomly generated Spotify API response for an audio preview URL."""
+        return str(URL.build(
+            scheme="https",
+            host="podz-content.spotifycdn.com",
+            path=f"/audio/clips/{resource_id}/{self.faker.uuid4()}.mp3"
+        ))
+
+    def generate_resume_point(self, duration_ms: int) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a resume point."""
+        return {
+            "fully_played": self.faker.boolean(),
+            "resume_position_ms": self.faker.random_int(0, duration_ms),
+        }
 
     ################################################################################
     ## Utilities
@@ -450,7 +708,7 @@ class SpotifyPayloadGenerator:
             "offset": offset,
             "previous": prev_url,
             "total": total,
-            "items": items
+            "items": items[:limit]
         }
 
     def format_user_item(self, kind: str, item: dict[str, Any]) -> dict[str, Any]:
