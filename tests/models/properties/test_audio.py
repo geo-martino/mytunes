@@ -39,7 +39,7 @@ class TestIsAudioFile(MusifyResourceTester):
         return file
 
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType):
-        result = IsAudioFile.extract_tags_from_mutagen(file)
+        result = IsAudioFile._extract_tags_from_mutagen(file)
         assert result == dict(
             length=file.info.length,
             channels=file.info.channels,

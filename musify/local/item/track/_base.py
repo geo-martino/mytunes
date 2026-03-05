@@ -52,7 +52,7 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType):
         data = IsLocalFile._extract_tags_from_mutagen(file)
-        data |= IsAudioFile.extract_tags_from_mutagen(file)
+        data |= IsAudioFile._extract_tags_from_mutagen(file)
         return data
 
 
