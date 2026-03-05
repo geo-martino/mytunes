@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Literal
+from typing import Literal, final
 
 from pydantic import Field, PositiveInt, PositiveFloat
 
@@ -26,8 +26,11 @@ class RangeScorer[C: NumericCleaner](NumericScorer[C], metaclass=ABCMeta):
         return max((self.range - abs(other - value)), 0) / self.range
 
 
+@final
 class LengthScorer(NumericScorer[LengthCleaner]):
     """Score items by comparing lengths. Score=0 when either value is None."""
+    __final__ = True
+
     type: Literal["length"] = "length"
     cleaner: LengthCleaner = LengthCleaner()
 
@@ -37,8 +40,11 @@ class LengthScorer(NumericScorer[LengthCleaner]):
         return max((other - abs(other - value)), 0) / other
 
 
+@final
 class ReleaseYearScorer(RangeScorer[ReleaseYearCleaner]):
     """Score items by comparing release years. Score=0 when either value is None."""
+    __final__ = True
+
     type: Literal["release_year"] = "release_year"
     cleaner: ReleaseYearCleaner = ReleaseYearCleaner()
     range: PositiveInt = 10

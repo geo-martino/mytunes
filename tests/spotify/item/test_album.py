@@ -1,15 +1,9 @@
-from datetime import date
-
 import pytest
 from faker import Faker
-from pydantic import Json
-from yarl import URL
 
 from musify.spotify.item.album import SpotifyAlbum
-from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
-from tests.utils import GENRES
 
 
 class TestSpotifyAlbum(SpotifyResourceTester):

@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-from pydantic import Json
 
 from musify.spotify.item.genre import SpotifyGenre
 from tests.spotify.testers import SpotifyResourceTester

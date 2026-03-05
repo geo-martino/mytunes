@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-from pydantic import Json
 
 from musify.spotify.properties.uri import SpotifyUserURI, SpotifyResourceURI
 from musify.spotify.user import SpotifyUser

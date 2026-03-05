@@ -8,6 +8,6 @@ from musify.models.collection.genre import GenreCollection
 
 @final
 class LocalGenreCollection[TK, TV: LocalTrack](
-    LocalCollection, LocalGenre, GenreCollection[TK, TV]
+    GenreCollection[TK, TV], LocalGenre, LocalCollection
 ):
     __final__ = True

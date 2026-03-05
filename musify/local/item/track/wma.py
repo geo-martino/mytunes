@@ -24,7 +24,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     __supported_extensions__ = frozenset({"wma"})
     __final__ = True
 
-    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.asf.ASF, mutagen.asf.ASFByteArrayAttribute]):
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.asf.ASFByteArrayAttribute]):
         alias: ClassVar[str] = "WM/Picture"
 
         @classmethod

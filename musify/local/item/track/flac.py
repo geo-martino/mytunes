@@ -23,7 +23,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     __supported_extensions__ = frozenset({"flac"})
     __final__ = True
 
-    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.FLAC, mutagen.flac.Picture]):
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.Picture]):
         @classmethod
         def _get_bytes(cls, value: Any) -> Any:
             return value.data if isinstance(value, mutagen.flac.Picture) else value

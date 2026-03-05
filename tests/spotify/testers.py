@@ -1,11 +1,9 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections.abc import Collection
-from datetime import date
 
 import pytest
 from faker import Faker
 from pydantic import Json
-from yarl import URL
 
 from musify.models.item.genre import HasGenres
 from musify.models.properties.image import HasImages

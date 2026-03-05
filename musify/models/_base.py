@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints, Type, Union, TYPE_CHECKING
+from typing import Any, ClassVar, Self, get_type_hints, Type, Union
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -65,7 +65,7 @@ def writeable_computed_field(name: str) -> property:
 
 class MusifyModelMetaclass(ModelMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
-    __model_registry__: ClassVar[set[Type[MusifyResource]]] = set()
+    __model_registry__: ClassVar[set[Type[MusifyModel]]] = set()
     __final__: ClassVar[bool] = False
 
     def __new__(
@@ -95,6 +95,7 @@ class MusifyModelMetaclass(ModelMetaclass):
 
 class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
     """Generic base class for any Musify models."""
+    __model_registry__: ClassVar[set[Type[MusifyModel]]] = set()
     __final__: ClassVar[bool] = False
 
     model_config = ConfigDict(
@@ -158,7 +159,7 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
 
     # noinspection PyMethodParameters
     @classproperty
-    def annotation(cls) -> Type:
+    def annotation(cls) -> type[Self]:
         """Get the annotation for all subclasses of this model"""
         classes = cls.registered_submodels
         return Union[*classes] if classes else Union

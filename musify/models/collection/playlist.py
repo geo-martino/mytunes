@@ -26,7 +26,7 @@ class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], H
     )
 
 
-class MutablePlaylist[TK, TV: Track, UT: URI](Playlist[TK, TV, UT], HasMutableTracks[TK, TV]):
+class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist[TK, TV, UT]):
     def merge(self, other: HasTracks[TK, TV], reference: HasTracks[TK, TV] | None = None) -> None:
         """
         Merge two playlists together.

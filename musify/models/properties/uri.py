@@ -4,8 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
 from typing import ClassVar, Self, Any, Annotated
 
-import pydantic
-from pydantic import PrivateAttr, model_validator, field_validator, Field, BeforeValidator, InstanceOf
+from pydantic import PrivateAttr, model_validator, field_validator, Field, BeforeValidator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
@@ -209,7 +208,7 @@ class HasMutableURI[UT: URI](HasURI[UT]):
         if hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 
-    def _set_uri(self, uri: T):
+    def _set_uri(self, uri: UT):
         if not isinstance(uri, URI):
             raise MusifyValueError("URI must be a URI instance")
 

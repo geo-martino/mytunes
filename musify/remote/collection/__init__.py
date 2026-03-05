@@ -1,1 +1,1 @@
-from ._base import RemoteCollection
+from ._base import RemoteCollection, ItemsCursor

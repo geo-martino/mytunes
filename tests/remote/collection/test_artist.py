@@ -2,7 +2,6 @@ import pytest
 from faker import Faker
 
 from musify.remote.collection.artist import RemoteArtistCollection
-from tests.models.testers import UniqueKeyTester
 from tests.remote.collection.testers import RemoteCollectionTester
 from tests.utils import SimpleURI
 

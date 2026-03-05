@@ -1,6 +1,6 @@
 from typing import final, Any
 
-from pydantic import AliasPath, Field, model_validator, PositiveInt, NonNegativeInt
+from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import MusifySequence, MusifyMutableSequence
@@ -17,6 +17,7 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
     __final__ = True
 
     @model_validator(mode="before")
+    @classmethod
     def _extract_item_payload(cls, data: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(data, dict) or "item" not in data:
             return data

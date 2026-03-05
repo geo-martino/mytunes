@@ -1,6 +1,5 @@
 from musify.models.collection.artist import ArtistCollection
 from musify.models.properties.uri import URI
-from musify.models.sequence import MusifySequence
 from musify.remote._base import RemoteResource
 from musify.remote.collection._base import RemoteCollection
 from musify.remote.item.album import RemoteAlbum

@@ -29,7 +29,7 @@ type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mappi
 
 @final
 class LocalLibrary(
-    LocalCollection, MutableLibrary[str, LocalTrack, str, LocalPlaylist]
+    MutableLibrary[str, LocalTrack, str, LocalPlaylist], LocalCollection
 ):
     """
     Represents a local library, providing various methods for manipulating
@@ -161,7 +161,7 @@ class LocalLibrary(
         try:
             self.logger.debug(f"Loading track: {path}")
             file = await LocalTrack.load_file(path)
-            track: LocalTrack = TypeAdapter(LocalTrack.annotation).validate_python(file)
+            track = TypeAdapter[LocalTrack](LocalTrack.annotation).validate_python(file)
             return track
         except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
             self.logger.debug(f"Load error for track: {path} - {ex}")
@@ -219,7 +219,7 @@ class LocalLibrary(
         """
         try:
             self.logger.debug(f"Loading playlist: {path}")
-            playlist: LocalPlaylist = TypeAdapter(LocalPlaylist.annotation).validate_python(path)
+            playlist = TypeAdapter[LocalPlaylist](LocalPlaylist.annotation).validate_python(path)
             playlist.path_mapper = self.path_mapper
             return await playlist.load(self.tracks)
         except (MusifyError, ValueError, FileNotFoundError) as ex:

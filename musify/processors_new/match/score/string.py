@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Literal, Any
+from typing import Literal, Any, final
 
 from pydantic import Field
 
@@ -42,8 +42,11 @@ class StringScoreReducer[C: StringCleaner](StringScorer[C], metaclass=ABCMeta):
         return score
 
 
+@final
 class KaraokeScorer(StringScorer):
     """Score an item by checking whether its metadata indicates it is a karaoke track."""
+    __final__ = True
+
     type: Literal["karaoke"] = "karaoke"
 
     cleaner: None = None
@@ -109,8 +112,11 @@ class KaraokeScorer(StringScorer):
         return self._calculate_score_and_log(item, value=value)
 
 
+@final
 class NameScorer(StringScoreReducer[NameCleaner]):
     """Score items by comparing names. Score=0 when either value is None."""
+    __final__ = True
+
     type: Literal["name", "title"] = "name"
     cleaner: NameCleaner = NameCleaner()
 
@@ -124,8 +130,11 @@ class NameScorer(StringScoreReducer[NameCleaner]):
         return score
 
 
+@final
 class ArtistScorer(StringScorer[ArtistCleaner]):
     """Score items by comparing artists. Score=0 when either value is None."""
+    __final__ = True
+
     type: Literal["artist"] = "artist"
     cleaner: ArtistCleaner = ArtistCleaner()
 
@@ -155,8 +164,11 @@ class ArtistScorer(StringScorer[ArtistCleaner]):
         return score / len(value)
 
 
+@final
 class AlbumScorer(StringScoreReducer[AlbumCleaner]):
     """Score items by comparing album names. Score=0 when either value is None."""
+    __final__ = True
+
     type: Literal["album"] = "album"
     cleaner: AlbumCleaner = AlbumCleaner()
 

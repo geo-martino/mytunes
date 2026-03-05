@@ -26,7 +26,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     __supported_extensions__ = frozenset({"mp3"})
     __final__ = True
 
-    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp3.MP3, mutagen.id3.APIC]):
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.id3.APIC]):
         alias: ClassVar[str] = "APIC"
 
         @classmethod

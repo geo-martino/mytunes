@@ -1,6 +1,6 @@
 from typing import Any, final
 
-from musify.remote.collection.library import RemoteLibrary
+from musify.remote.collection.library import RemoteMutableLibrary
 from musify.spotify import SpotifyResource
 from musify.spotify.collection.playlist import SpotifyMutablePlaylist
 from musify.spotify.item.track import SpotifyTrack
@@ -9,7 +9,7 @@ from musify.spotify.properties.followers import HasFollowers
 
 @final
 class SpotifyLibrary(
-    RemoteLibrary[str, SpotifyTrack, str, SpotifyMutablePlaylist],
+    RemoteMutableLibrary[str, SpotifyTrack, str, SpotifyMutablePlaylist],
     SpotifyResource,
     HasFollowers,
 ):

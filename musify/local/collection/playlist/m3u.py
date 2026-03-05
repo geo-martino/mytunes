@@ -2,7 +2,7 @@ import asyncio
 from collections import Counter
 from collections.abc import Sequence, Collection
 from pathlib import Path
-from typing import Self, final
+from typing import Self, final as final_decorator
 
 from pydantic import Field, TypeAdapter
 
@@ -52,7 +52,7 @@ class SyncResultM3U(Result):
         )
 
 
-@final
+@final_decorator
 class M3U(LocalPlaylist[PathsFilter]):
     """For reading and writing data from M3U playlist format."""
     __supported_extensions__ = frozenset({"m3u"})

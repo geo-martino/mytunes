@@ -182,7 +182,7 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
         ))
 
 
-class ComparerFilter[T: str | MusifyResource](Filter[T]):
+class ComparerFilter[CT: str | MusifyResource](Filter[CT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     comparers: Mapping[Comparer, tuple[bool, Self]] = Field(
         description=(
@@ -218,7 +218,7 @@ class ComparerFilter[T: str | MusifyResource](Filter[T]):
     def ready(self) -> bool:
         return len(self.comparers) > 0
 
-    def check(self, item: T, reference: T | None = None, *_, **__) -> bool:
+    def check(self, item: CT, reference: CT | None = None, *_, **__) -> bool:
         # initial state determined by ready and match_all states
         matched = self.ready and self.match_all
 

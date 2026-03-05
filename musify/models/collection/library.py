@@ -3,7 +3,7 @@ The core abstract implementations of :py:class:`MusifyItem` and :py:class:`Musif
 """
 import itertools
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, Iterator
+from collections.abc import Iterator
 from typing import ClassVar, Any
 
 from pydantic import Field
@@ -11,8 +11,6 @@ from pydantic import Field
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.logger import HasLogger
-
-type LibraryMergeType[T] = Library[T] | Collection[Playlist[T]] | Mapping[str, Playlist[T]]
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):

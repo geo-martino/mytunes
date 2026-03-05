@@ -3,12 +3,11 @@ from faker import Faker
 
 from musify.remote.collection._base import ItemsCursor
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
-from tests.models.testers import UniqueKeyTester
 from tests.remote.collection.testers import RemoteCollectionTester
 from tests.utils import SimpleURI
 
 
-class TestPlaylist(RemoteCollectionTester):
+class TestRemotePlaylist(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemotePlaylist:
         uri = SimpleURI.from_id(
@@ -22,7 +21,7 @@ class TestPlaylist(RemoteCollectionTester):
         )
 
 
-class TestMutablePlaylist(RemoteCollectionTester):
+class TestRemoteMutablePlaylist(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteMutablePlaylist:
         uri = SimpleURI.from_id(

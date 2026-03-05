@@ -1,10 +1,11 @@
-from typing import final, ClassVar
+from typing import final
 
 from pydantic import Field
+
 from musify.remote.user import RemoteUser
 from musify.spotify._base import SpotifyResource
-from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.followers import HasFollowers
+from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.uri import SpotifyUserURI
 
 

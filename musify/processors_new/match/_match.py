@@ -9,7 +9,7 @@ from musify.models.item.track import HasTracks, Track
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.processors_new import Processor
-from musify.processors_new.match.score import Scorer, ScorerType
+from musify.processors_new.match.score import Scorer
 
 
 class Matcher(Processor, HasLogger):
@@ -17,7 +17,7 @@ class Matcher(Processor, HasLogger):
     Matches items based on their attributes and the scorers provided.
     Scores will always be between 0 and 1, where 0 means no similarity and 1 means identical.
     """
-    scorers: conlist(ScorerType, min_length=1) = Field(
+    scorers: conlist(Scorer.annotation, min_length=1) = Field(
         description="The scorers to use for scoring the similarity between items.",
     )
     min_score: float = Field(
@@ -66,7 +66,9 @@ class Matcher(Processor, HasLogger):
                 break
 
         if best_score < self.min_score:
-            self.logger.debug(f"No match found for item {item.name} with score above the minimum score threshold. Returning None.")
+            self.logger.debug(
+                f"No match found for item {item.name} with score above the minimum score threshold. Returning None."
+            )
             return None
 
         self.logger.debug(f"Matching item {item.name} with score {best_score}.")

@@ -21,7 +21,7 @@ class IsFile(AttributeResource, metaclass=ABCMeta):
 
     # noinspection PyMethodParameters
     @classproperty
-    def annotation(cls) -> type:
+    def annotation(cls) -> type[Self]:
         classes = cls.registered_submodels
         types = (Annotated[kls, Tag(ext)] for kls in classes for ext in kls.__supported_extensions__)
         return Union[*types] if classes else Union
@@ -112,7 +112,7 @@ class IsLocalFile(IsFile):
 
     # noinspection PyMethodParameters
     @classproperty
-    def annotation(cls) -> type:
+    def annotation(cls) -> type[Self]:
         if not cls.registered_submodels:
             return UnionType
         return Annotated[

@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from pydantic import Field, PositiveInt, EmailStr
+from pydantic import Field, EmailStr
 
 from musify.models.properties.image import HasImages
 from musify.models.properties.name import HasName

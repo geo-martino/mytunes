@@ -5,5 +5,5 @@ from musify.models.item.genre import Genre
 
 
 @final
-class LocalGenre(LocalResource, Genre):
+class LocalGenre(Genre, LocalResource):
     __final__ = True

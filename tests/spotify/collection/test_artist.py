@@ -1,16 +1,11 @@
 import pytest
 from faker import Faker
-from pydantic import Json
-from rich import print
 from yarl import URL
 
 from musify.spotify.collection._base import SpotifyItemsCursor
 from musify.spotify.collection.artist import SpotifyArtistCollection
-from musify.spotify.item.artist import SpotifyArtist
-from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
-from tests.utils import GENRES
 
 
 class TestSpotifyArtistCollection(SpotifyResourceTester):

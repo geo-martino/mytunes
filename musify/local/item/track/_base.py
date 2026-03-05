@@ -55,7 +55,7 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile, 
         return data
 
 
-class LocalTrack[T: FileType](
+class LocalTrack[FT: FileType](
     LocalResource,
     Track[LocalArtist, LocalAlbum, LocalGenre, URI],
     LocalAudioFile,
@@ -65,7 +65,7 @@ class LocalTrack[T: FileType](
 ):
     __tag_fields__ = frozenset(set(Track.model_fields.keys()) - {"uri"} | {"compilation"})
 
-    class EmbeddedImage[FT: FileType, TT](FileEmbeddedImage, metaclass=ABCMeta):
+    class EmbeddedImage[TT](FileEmbeddedImage, metaclass=ABCMeta):
         alias: ClassVar[str | AliasChoices] = "images"
 
         # noinspection PyNestedDecorators
@@ -162,7 +162,7 @@ class LocalTrack[T: FileType](
 
     @classmethod
     @validate_call
-    async def load_file(cls, path: str | Path) -> T:
+    async def load_file(cls, path: str | Path) -> FT:
         # TODO: improve async performance?
         async with aiofiles.open(path, mode='rb') as file:
             file = mutagen.File(await file.read())
@@ -343,25 +343,25 @@ class LocalTrack[T: FileType](
         if extra_fields := (set(include) | set(exclude)) - set(cls.__tag_fields__):
             raise TagError(f"Unrecognised tag fields: {', '.join(extra_fields)}")
 
-    async def _check_and_load_file(self, file: T = None) -> T:
+    async def _check_and_load_file(self, file: FT = None) -> FT:
         if file is None:
             file = await self.load_file(self.path)
         return file
 
-    async def load(self, file: T = None) -> T:
+    async def load(self, file: FT = None) -> FT:
         file = await self._check_and_load_file(file=file)
         model = self.model_validate(file)
         self.__dict__ = model.__dict__
         return file
 
-    async def save(self, file: T) -> T:
+    async def save(self, file: FT) -> FT:
         file.save()
         return file
 
     @classmethod
     def clear(
             cls,
-            file: T,
+            file: FT,
             include: Collection[str] = (),
             exclude: Collection[str] = (),
     ) -> dict[str, set[str]]:
@@ -375,7 +375,7 @@ class LocalTrack[T: FileType](
         return {k: v for k, v in removed.items() if v}
 
     @staticmethod
-    def _clear_tag(file: T, tag_id: str) -> set[str]:
+    def _clear_tag(file: FT, tag_id: str) -> set[str]:
         removed = set()
         if tag_id in file.tags:
             del file.tags[tag_id]
@@ -384,7 +384,7 @@ class LocalTrack[T: FileType](
 
     def update(
             self,
-            file: T,
+            file: FT,
             include: Collection[str] = (),
             exclude: Collection[str] = (),
             context: TagDumpContext = None,
@@ -403,7 +403,7 @@ class LocalTrack[T: FileType](
             self,
             include: Collection[str] = (),
             exclude: Collection[str] = (),
-            context: TagDumpContext[T] = None
+            context: TagDumpContext[FT] = None
     ) -> dict[str, Any]:
         include = set(include or self.__tag_fields__) & set(self.__tag_fields__)
         exclude = set(exclude) & set(self.__tag_fields__)

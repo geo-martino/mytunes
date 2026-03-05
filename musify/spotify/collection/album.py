@@ -1,6 +1,6 @@
-from typing import final, Self
+from typing import final
 
-from pydantic import Field, AliasPath, model_validator, PositiveInt
+from pydantic import Field, AliasPath, PositiveInt
 
 from musify.remote.collection.album import RemoteAlbumCollection
 from musify.spotify.collection._base import SpotifyCollection, SpotifyItemsCursor
