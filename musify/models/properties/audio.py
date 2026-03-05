@@ -29,7 +29,7 @@ class IsAudioFile(HasLength, IsFile):
     )
 
     @classmethod
-    def extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         """Extract the tags from a mutagen file object."""
         try:
             bit_depth = file.info.bits_per_sample

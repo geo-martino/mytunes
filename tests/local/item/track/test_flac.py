@@ -282,6 +282,7 @@ class TestFLAC(LocalTrackTester):
         assert model.images == {kind: FLAC.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
 
     def test_to_tags(self, model: FLAC, uri: URI, pictures: dict[str, mutagen.flac.Picture], faker: Faker):
+        model.
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
