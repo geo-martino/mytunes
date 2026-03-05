@@ -20,21 +20,15 @@ class MusifyModelTester(metaclass=ABCMeta):
         return TypeAdapter(model.__class__)
 
     @staticmethod
-    def test_model_registry(model: MusifyModel):
+    def test_model_registry(model: MusifyResource):
         if model.__final__:
-            assert model.__class__ in MusifyModel.__model_registry__
+            assert model.__class__ in MusifyModel.registered_submodels
         else:
-            assert model.__class__ not in MusifyModel.__model_registry__
+            assert model.__class__ not in MusifyModel.registered_submodels
 
 
 class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
     """Generic base class for testing :py:class:`.MusifyResource` implementations"""
-    @staticmethod
-    def test_model_registry(model: MusifyResource):
-        if model.__final__:
-            assert model.__class__ in MusifyResource.registered_submodels
-        else:
-            assert model.__class__ not in MusifyResource.registered_submodels
 
     def test_check_unique_key_tester_enabled(self, model: MusifyResource):
         """Test that the unique key tester is enabled"""
@@ -60,6 +54,7 @@ class UniqueKeyTester(MusifyModelTester, metaclass=ABCMeta):
         assert len(model.unique_keys) > 1, "Unique keys not found"
 
         for key in model.__unique_attributes__:
+            print(key)
             if (value := getattr(model, key, None)) is None:
                 assert None not in model.unique_keys, "Unique keys should not contain None"
                 continue

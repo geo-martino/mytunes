@@ -2,12 +2,10 @@ from abc import abstractmethod
 from collections.abc import Hashable, Iterable
 from enum import IntEnum
 from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints, Type, Union
+from typing import Any, ClassVar, Self, get_type_hints, Type, Union, cast
 
 from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
     GetCoreSchemaHandler, GetJsonSchemaHandler
-# noinspection PyProtectedMember
-from pydantic._internal._generics import PydanticGenericMetadata
 # noinspection PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.alias_generators import to_snake
@@ -15,7 +13,7 @@ from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
-from musify.exception import MusifyValueError, MusifyAttributeError
+from musify.exception import MusifyValueError, MusifyAttributeError, MusifyTypeError
 from musify.utils import get_base_types, classproperty
 
 
@@ -65,28 +63,19 @@ def writeable_computed_field(name: str) -> property:
 
 class MusifyModelMetaclass(ModelMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
-    __model_registry__: ClassVar[set[Type[MusifyModel]]] = set()
-    __final__: ClassVar[bool] = False
 
-    def __new__(
-        mcs,
-        cls_name: str,
-        bases: tuple[type[Any], ...],
-        namespace: dict[str, Any],
-        __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
-        __pydantic_reset_parent_namespace__: bool = True,
-        _create_model_module: str | None = None,
-        **kwargs: Any,
-    ) -> type:
-        cls: Self = super().__new__(
-            mcs,
-            cls_name,
-            bases,
-            namespace,
-            __pydantic_generic_metadata__,
-            __pydantic_reset_parent_namespace__,
-            **kwargs
-        )
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = cast('type[MusifyModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+
+        if not hasattr(cls, "__model_registry__"):
+            cls.__model_registry__ = set()
+
+        cls.__model_registry__.update(kls for base in bases for kls in getattr(base, "__model_registry__", []))
+        cls.__final__ = any((
+            getattr(cls, "__final__", False),
+            *(getattr(base, "__final__", False) for base in bases)
+        ))
+
         if cls.__final__:
             cls.__model_registry__.add(cls)
 
@@ -95,8 +84,6 @@ class MusifyModelMetaclass(ModelMetaclass):
 
 class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
     """Generic base class for any Musify models."""
-    __model_registry__: ClassVar[set[Type[MusifyModel]]] = set()
-    __final__: ClassVar[bool] = False
 
     model_config = ConfigDict(
         validate_default=True,
@@ -107,12 +94,6 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
             validation_alias=lambda name: name.replace("_", "").rstrip("s")
         ),
     )
-
-    # TODO: figure this out
-    # _clean_tags: dict[TagField, Any] = PrivateAttr(
-    #     # description="A map of tags that have been cleaned to use when matching/searching",
-    #     default_factory=dict,
-    # )
 
     def __init__(self, **kwargs):
         # Allow setting writeable computed fields on init
@@ -169,24 +150,32 @@ class MusifyRootModel[T](RootModel[T], MusifyModel):
     pass
 
 
-class MusifyResource(MusifyModel):
+class MusifyResourceMetaclass(MusifyModelMetaclass):
+    """Metaclass for resource models to handle unique attribute generation and configuration."""
+
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = cast('type[MusifyResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+
+        cls.__unique_attributes__ = frozenset({
+            *getattr(cls, "__unique_attributes__", []),
+            *(attr for base in bases for attr in getattr(base, "__unique_attributes__", []))
+        })
+
+        if cls.__final__ and not isinstance(cls.type, str):
+            raise MusifyTypeError("Resource models must have a 'type' class attribute.")
+
+        return cls
+
+
+class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
     """Generic class for storing attributes relating to some resource."""
-    __unique_attributes__: ClassVar[frozenset[str]] = frozenset()
 
     type: ClassVar[str] = Field(description="The type of resource this is.")
 
     @cached_property
-    def _unique_attribute_keys(self) -> set[str]:
-        return {
-            key
-            for cls in self.__class__.mro() if issubclass(cls, AttributeResource)
-            for key in cls.__unique_attributes__
-        }
-
-    @cached_property
     def unique_keys(self) -> set[Hashable]:
         """Get the keys to match on from the matchable attributes of this models"""
-        values = {getattr(self, key) for key in self._unique_attribute_keys}
+        values = {getattr(self, key) for key in self.__unique_attributes__}
         if None in values:
             values.remove(None)
 
@@ -205,40 +194,26 @@ class MusifyResource(MusifyModel):
     def __setattr__(self, key: str, value: Any) -> None:
         """Set the value of a given attribute key"""
         super().__setattr__(key, value)
-        if key in self._unique_attribute_keys and hasattr(self, "unique_keys"):
+        if key in self.__unique_attributes__ and hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 
 
-class AttributeModelMetaclass(MusifyModelMetaclass):
+class AttributeModelMetaclass(MusifyResourceMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
-    __tag_attributes__: ClassVar[frozenset[str] | tuple[str, ...] | None] = None
-    __include_fields__: ClassVar[bool] = False
-    __include_properties__: ClassVar[bool] = False
 
-    def __new__(
-        mcs,
-        cls_name: str,
-        bases: tuple[type[Any], ...],
-        namespace: dict[str, Any],
-        __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
-        __pydantic_reset_parent_namespace__: bool = True,
-        _create_model_module: str | None = None,
-        **kwargs: Any,
-    ) -> type:
-        cls: Self = super().__new__(
-            mcs,
-            cls_name,
-            bases,
-            namespace,
-            __pydantic_generic_metadata__,
-            __pydantic_reset_parent_namespace__,
-            **kwargs
-        )
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = cast('type[AttributeModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
 
-        if "__tag_attributes__" not in namespace:  # no tag attributes explicitly defined
-            cls.__tag_attributes__ = None
+        cls.__include_fields__ = any((
+            getattr(cls, "__include_fields__", False),
+            *(getattr(base, "__include_fields__", False) for base in bases)
+        ))
+        cls.__include_properties__ = any((
+            getattr(cls, "__include_properties__", False),
+            *(getattr(base, "__include_properties__", False) for base in bases)
+        ))
 
-        if cls.__tag_attributes__ is None:
+        if "__tag_attributes__" not in namespace:
             attribute_names = []
             if cls.__include_fields__:
                 keys = cls.__annotations__.keys() - cls.__class_vars__  # exclude class vars
@@ -249,6 +224,7 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
             cls.__tag_attributes__ = tuple(attribute_names)
 
         cls.__tag_attributes__ = tuple(cls._get_tag_attributes(cls.__tag_attributes__))
+
         return cls
 
     def _get_tag_attributes(cls, attributes: Iterable[str]) -> tuple[str]:
@@ -264,6 +240,7 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
 
         attribute_names = [name]
         for kls in get_base_types(annotation, ignore_none=True, resolve_generics=True):
+            print("KLS", kls)
             if not issubclass(kls, AttributeModel):
                 continue
 
@@ -271,6 +248,7 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
                 attr_name for attr in kls.__tag_attributes__
                 if (attr_name := f"{name}.{attr}") not in attribute_names
             )
+            print("KLS", attribute_names)
 
         return attribute_names
 
@@ -278,7 +256,7 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
         field: FieldInfo | None = cls.model_fields.get(name)
         if field is not None:
             annotation = field.annotation
-        elif isinstance(field := getattr(cls, name), FieldInfo):
+        elif isinstance(field := cls.get_nested_field_info(name), FieldInfo):
             annotation = field.annotation
         elif isinstance(field, property):
             try:
@@ -335,9 +313,6 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
 
     Adds support for getting and setting nested attributes using dot notation.
     """
-    __tag_attributes__: ClassVar[frozenset[str] | tuple[str, ...] | None] = None
-    __include_fields__: ClassVar[bool] = False
-    __include_properties__: ClassVar[bool] = False
 
     def __getattr__(self, key: str) -> Any:
         if len(key_split := key.split(".")) == 1:

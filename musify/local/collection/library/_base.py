@@ -161,6 +161,7 @@ class LocalLibrary(
         try:
             self.logger.debug(f"Loading track: {path}")
             file = await LocalTrack.load_file(path)
+            print(LocalTrack.annotation)
             track = TypeAdapter[LocalTrack](LocalTrack.annotation).validate_python(file)
             return track
         except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
@@ -219,7 +220,10 @@ class LocalLibrary(
         """
         try:
             self.logger.debug(f"Loading playlist: {path}")
+            print(LocalPlaylist.registered_submodels)
+            print(LocalPlaylist.annotation, type(LocalPlaylist.annotation))
             playlist = TypeAdapter[LocalPlaylist](LocalPlaylist.annotation).validate_python(path)
+            print(playlist, type(playlist))
             playlist.path_mapper = self.path_mapper
             return await playlist.load(self.tracks)
         except (MusifyError, ValueError, FileNotFoundError) as ex:

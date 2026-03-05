@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from pydantic import PositiveFloat, Field
+from pydantic import NonNegativeFloat, Field
 
 from musify.models._base import MusifyRootModel, AttributeResource
 
 
-class Rating(MusifyRootModel[PositiveFloat]):
+class Rating(MusifyRootModel[NonNegativeFloat]):
     def __hash__(self) -> int:
         return hash(self.root)
 
