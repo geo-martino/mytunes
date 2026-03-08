@@ -8,8 +8,6 @@ from typing import ClassVar, Any
 
 from pydantic import Field
 
-from musify.exception import MusifyTypeError
-from musify.models._base import AttributeModelMetaclass
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.logger import HasLogger

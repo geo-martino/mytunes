@@ -1,5 +1,4 @@
 from musify.models.collection.album import AlbumCollection
-from musify.models.item.track import HasMutableTracks
 from musify.models.properties.uri import URI
 from musify.models.sequence import MusifySequence
 from musify.remote._base import RemoteResource

@@ -13,7 +13,7 @@ from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
-from musify.exception import MusifyValueError, MusifyAttributeError, MusifyTypeError
+from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.utils import get_base_types
 
 

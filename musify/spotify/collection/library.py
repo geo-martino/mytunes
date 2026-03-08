@@ -1,4 +1,4 @@
-from typing import Any, final, ClassVar
+from typing import Any, final
 
 from musify.remote.collection.library import RemoteMutableLibrary
 from musify.spotify import SpotifyModel

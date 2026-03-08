@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from pydantic import HttpUrl, BeforeValidator, GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
 from yarl import URL as YarlURL

@@ -19,7 +19,7 @@ from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.logger import STAT, HEADER_PREFIX
 from musify.models.collection.library import MutableLibrary
-from musify.models.properties.file import PathMapper, IsLocalFileMetaclass
+from musify.models.properties.file import PathMapper
 from musify.models.properties.uri import URI
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter

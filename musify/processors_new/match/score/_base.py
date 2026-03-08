@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import MutableSequence, Any, Annotated
+from typing import MutableSequence, Any
 
 from pydantic import Field
 

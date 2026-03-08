@@ -6,9 +6,9 @@ import textwrap
 from abc import abstractmethod
 from collections.abc import Callable, Mapping
 from functools import partial, update_wrapper
-from typing import Any, Optional, Literal, Self
+from typing import Any, Optional, Self
 
-from pydantic import ConfigDict, model_validator, TypeAdapter, PrivateAttr
+from pydantic import ConfigDict, model_validator, PrivateAttr
 from tabulate import tabulate
 from termcolor import colored
 

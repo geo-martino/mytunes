@@ -10,7 +10,7 @@ import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyValueError, MusifyTypeError
-from musify.models._base import AttributeResource, MusifyModel, AttributeModelMetaclass, AttributeResourceMetaclass
+from musify.models._base import AttributeResource, MusifyModel, AttributeResourceMetaclass
 
 
 class IsFileMetaclass(AttributeResourceMetaclass):

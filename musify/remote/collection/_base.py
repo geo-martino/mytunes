@@ -1,14 +1,12 @@
 import contextlib
 from abc import abstractmethod
-from abc import abstractmethod
-from collections.abc import Collection, Mapping, MutableSequence, Iterable
+from collections.abc import Collection, MutableSequence, Iterable
 from typing import Any, Self
 
 from pydantic import Field, PositiveInt, NonNegativeInt, model_validator, TypeAdapter, ModelWrapValidatorHandler, \
     ValidationError
-from yarl import URL
 
-from musify.models.sequence import MusifySequence, MusifyMutableSequence
+from musify.models.sequence import MusifySequence
 from musify.models.url import HttpURL
 from musify.remote._base import RemoteModel, RemoteResource
 
