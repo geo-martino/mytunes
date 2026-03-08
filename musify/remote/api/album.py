@@ -3,7 +3,7 @@ from aiorequestful.auth import Authoriser
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
 from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteSavedEndpoints, RemoteCollectionEndpoints
+    RemoteGetSavedEndpoints, RemoteCollectionEndpoints
 from musify.remote.collection.album import RemoteAlbumCollection
 from musify.remote.item.album import RemoteAlbum
 
@@ -24,8 +24,8 @@ class AlbumGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](
     pass
 
 
-class AlbumSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](
-    AlbumEndpoints[AT, UT, RT], RemoteSavedEndpoints[AT, UT, RT]
+class AlbumGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[AT, UT, RT], RemoteGetSavedEndpoints[AT, UT, RT]
 ):
     pass
 

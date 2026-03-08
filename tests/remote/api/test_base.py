@@ -1,6 +1,5 @@
-import itertools
 import math
-from collections.abc import Iterable
+from collections.abc import Callable
 from copy import deepcopy
 from typing import Any, Generator, final
 from unittest.mock import patch, Mock
@@ -14,12 +13,13 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError
 from musify.models.properties.uri import URI
-from musify.remote.api import RemoteEndpoints, RemoteGetManyEndpoints, RemoteSavedEndpoints
+from musify.remote.api import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, RemoteGetSavedEndpoints
+from musify.remote.api._base import RemoteMutableCollectionEndpoints, RemoteMutableSavedEndpoints
 from musify.remote.collection import ItemsCursor
 from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.artist import RemoteArtist
 from musify.remote.item.track import RemoteTrack
-from tests.remote.api.testers import RemoteEndpointsTester
+from tests.remote.api.testers import RemoteEndpointsTester, URI_TYPE_CONVERTERS
 from tests.remote.api.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
@@ -174,6 +174,27 @@ class TestRemoteEndpoints(RemoteEndpointsTester):
             assert items == expected
             assert mock_create.call_count == len(items)
 
+    def test_batch_items(self, uris: list[URI]):
+        batches = list(RemoteEndpoints._batch_items(uris, limit=10))
+        for batch in batches[:-1]:
+            assert len(batch) == 10
+        assert len(batches[-1]) == len(uris) % 10 if len(uris) % 10 != 0 else 10
+
+    def test_generate_many_url(self, uris: list[URI]):
+        url = URL("https://api.example.com/resources")
+        uris = list(map(str, uris[:10]))
+
+        url = RemoteEndpoints._generate_batch_url(url, uris)
+        assert url.query["ids"] == ",".join(uris)
+
+
+class TestGetSingleEndpoints(RemoteEndpointsTester):
+    @pytest.fixture
+    def model(self, handler: RequestHandler) -> RemoteEndpoints:
+        return RemoteGetSingleEndpoints[Authoriser, SimpleURI, MockRemoteResource](
+            handler=handler,
+        )
+
     @pytest.fixture
     def response(self, uri: URI) -> dict[str, Any]:
         return {"id": uri.id, "uri": str(uri)}
@@ -190,26 +211,14 @@ class TestRemoteEndpoints(RemoteEndpointsTester):
             yield mock_create
             mock_create.assert_called_once_with(response)
 
-    async def test_get_on_uri(self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock):
-        await model.get(uri)
-
-    async def test_get_on_uri_str(self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock):
-        await model.get(str(uri))
-
-    async def test_get_on_url(self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock):
-        await model.get(uri.api_url)
-
-    async def test_get_on_url_str(self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock):
-        await model.get(str(uri.api_url))
-
-    async def test_get_on_id(self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock):
-        await model.get(uri.id)
-
-    async def test_get_on_model(self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock):
-        await model.get(MockRemoteResource(uri=uri))
+    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
+    async def test_get_on_uri(
+            self, model: RemoteEndpoints, uri: URI, mock_get: Mock, mock_create: Mock, converter: Callable[[URI], Any]
+    ):
+        await model.get(converter(uri))
 
 
-class TestRemoteManyEndpoints(RemoteEndpointsTester):
+class TestGetManyEndpoints(RemoteEndpointsTester):
     class MockGetManyEndpoints(RemoteGetManyEndpoints[Authoriser, SimpleURI, MockRemoteResource]):
         _many_url = URL(f"https://api.example.com/{MockRemoteResource.type}s")
         _many_path = "items"
@@ -218,51 +227,6 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
     @pytest.fixture
     def model(self, handler: RequestHandler) -> RemoteGetManyEndpoints:
         return self.MockGetManyEndpoints(handler=handler)
-
-    @pytest.fixture
-    def uris(self, faker: Faker) -> list[URI]:
-        return [SimpleURI.from_id(i, kind=MockRemoteResource.type) for i in range(faker.random_int(50, 100))]
-
-    @pytest.fixture
-    def limit(self, faker: Faker) -> int:
-        return faker.random_int(1, 20)
-
-    @pytest.fixture
-    def batches(self, uris: list[URI], limit: int) -> list[tuple[str, ...]]:
-        return list(itertools.batched((uri.id for uri in uris), limit))
-
-    def test_batch_items(self, uris: list[URI]):
-        batches = list(self.MockGetManyEndpoints._batch_items(uris, limit=10))
-        for batch in batches[:-1]:
-            assert len(batch) == 10
-        assert len(batches[-1]) == len(uris) % 10 if len(uris) % 10 != 0 else 10
-
-    def test_generate_many_url(self, uris: list[URI]):
-        uris = list(map(str, uris[:10]))
-        url = self.MockGetManyEndpoints._generate_many_url(uris)
-        assert url.query["ids"] == ",".join(uris)
-
-    @pytest.fixture
-    def responses(self, uris: list[URI]) -> list[dict[str, Any]]:
-        return [{"id": uri.id, "uri": str(uri)} for uri in uris]
-
-    @pytest.fixture
-    def mock_get(self, uris: list[URI], responses: list[dict[str, Any]], limit: int) -> Generator[Mock, None, None]:
-        responses = itertools.batched(responses, limit)
-        expected = math.ceil(len(uris) / limit)
-
-        def _get_next_response(*_, **__) -> dict[str, tuple[dict[str, Any], ...]]:
-            return {self.MockGetManyEndpoints._many_path: next(responses)}
-
-        with patch.object(RequestHandler, "get", side_effect=_get_next_response) as mock_get:
-            yield mock_get
-            assert mock_get.call_count == expected
-
-    @pytest.fixture
-    def mock_batch_items(self, uris: list[URI], batches: list[Iterable[str]], limit: int) -> Generator[Mock, None, None]:
-        with patch.object(RemoteGetManyEndpoints, "_batch_items", return_value=batches) as mock_batch_items:
-            yield mock_batch_items
-            mock_batch_items.assert_called_once_with(uris, limit)
 
     @pytest.fixture
     def mock_extend_items_from_response(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
@@ -274,111 +238,121 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
             yield mock_extend_items_from_response
             assert mock_extend_items_from_response.call_count == expected
 
-    async def test_get_on_uris(
+    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
+    async def test_get_many(
             self,
             model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,
             mock_batch_items: Mock,
-            mock_extend_items_from_response: Mock
+            mock_extend_items_from_response: Mock,
+            converter: Callable[[URI], Any],
     ):
-        await model.get_many(uris, limit=limit)
-
-    async def test_get_on_uris_str(
-            self,
-            model: RemoteGetManyEndpoints,
-            uris: list[URI],
-            limit: int,
-            mock_get: Mock,
-            mock_batch_items: Mock,
-            mock_extend_items_from_response: Mock
-    ):
-        await model.get_many(list(map(str, uris)), limit=limit)
-
-    async def test_get_on_urls(
-            self,
-            model: RemoteGetManyEndpoints,
-            uris: list[URI],
-            limit: int,
-            mock_get: Mock,
-            mock_batch_items: Mock,
-            mock_extend_items_from_response: Mock
-    ):
-        urls = [uri.api_url for uri in uris]
-        await model.get_many(urls, limit=limit)
-
-    async def test_get_on_urls_str(
-            self,
-            model: RemoteGetManyEndpoints,
-            uris: list[URI],
-            limit: int,
-            mock_get: Mock,
-            mock_batch_items: Mock,
-            mock_extend_items_from_response: Mock
-    ):
-        urls = [uri.api_url for uri in uris]
-        await model.get_many(list(map(str, urls)), limit=limit)
-
-    async def test_get_on_ids(
-            self,
-            model: RemoteGetManyEndpoints,
-            uris: list[URI],
-            limit: int,
-            mock_get: Mock,
-            mock_batch_items: Mock,
-            mock_extend_items_from_response: Mock
-    ):
-        ids = [uri.id for uri in uris]
-        await model.get_many(ids, limit=limit)
-
-    async def test_get_on_models(
-            self,
-            model: RemoteGetManyEndpoints,
-            uris: list[URI],
-            limit: int,
-            mock_get: Mock,
-            mock_batch_items: Mock,
-            mock_extend_items_from_response: Mock
-    ):
-        resources = [MockRemoteResource(uri=uri) for uri in uris]
-        await model.get_many(resources, limit=limit)
+        await model.get_many(list(map(converter, uris)), limit=limit)
 
 
-class TestRemoteSavedEndpoints(RemoteEndpointsTester):
-    class MockSavedEndpoints(RemoteSavedEndpoints[Authoriser, SimpleURI, MockRemoteResource]):
+class TestGetSavedEndpoints(RemoteEndpointsTester):
+    class MockGetSavedEndpoints(RemoteGetSavedEndpoints[Authoriser, SimpleURI, MockRemoteResource]):
+        _saved_url = URL("https://api.example.com/me")
+        _saved_path = "items"
+
         source = MockRemoteResource.source
         type = MockRemoteResource.type
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> RemoteSavedEndpoints:
-        return self.MockSavedEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> RemoteGetSavedEndpoints:
+        return self.MockGetSavedEndpoints(handler=handler)
 
     async def test_get_saved(self, handler: RequestHandler, uri: URI, faker: Faker):
-        @final
-        class MockSavedEndpoints(self.MockSavedEndpoints):
-            __final__ = True
-            _saved_url = URL("https://api.example.com/me")
-            _saved_path = "items"
-
-        model = MockSavedEndpoints(handler=handler)
+        model = self.MockGetSavedEndpoints(handler=handler)
         limit = faker.random_int(1, 100)
         offset = faker.random_int(1, 100)
 
         with (
             patch.object(
-                RemoteSavedEndpoints, "_create_saved_items_cursor", return_value=ItemsCursor(current=uri.api_url)
+                RemoteGetSavedEndpoints, "_create_saved_items_cursor", return_value=ItemsCursor(current=uri.api_url)
             ) as mock_create_cursor,
-            patch.object(RemoteSavedEndpoints, "_extend_items_from_cursor") as mock_extend_items,
+            patch.object(RemoteGetSavedEndpoints, "_extend_items_from_cursor") as mock_extend_items,
         ):
             await model.get_saved(limit=limit, offset=offset)
 
             mock_create_cursor.assert_called_once_with(
-                MockSavedEndpoints._saved_url, limit=limit, offset=offset
+                self.MockGetSavedEndpoints._saved_url, limit=limit, offset=offset
             )
             mock_extend_items.assert_called_once_with(
                 items=[],
                 cursor=mock_create_cursor.return_value,
-                path=MockSavedEndpoints._saved_path,
-                kind=MockSavedEndpoints.type,
+                path=self.MockGetSavedEndpoints._saved_path,
+                kind=self.MockGetSavedEndpoints.type,
             )
+
+
+class TestMutableSavedEndpoints(RemoteEndpointsTester):
+    class MockMutableSavedEndpoints(RemoteMutableSavedEndpoints[Authoriser, SimpleURI, MockRemoteResource]):
+        _saved_url = URL("https://api.example.com/me")
+        _saved_path = "items"
+
+    @pytest.fixture
+    def model(self, handler: RequestHandler) -> RemoteMutableSavedEndpoints:
+        return self.MockMutableSavedEndpoints(handler=handler)
+
+    async def test_add_saved(
+            self,
+            model: RemoteMutableSavedEndpoints,
+            uris: list[URI],
+            limit: int,
+            mock_batch_items: Mock,
+            mock_put: Mock,
+            faker: Faker,
+    ):
+        await model.add_saved(list(map(self._convert_uri_to_random_input_type, uris)), limit=limit)
+
+    async def test_remove_saved(
+            self,
+            model: RemoteMutableSavedEndpoints,
+            uris: list[URI],
+            limit: int,
+            mock_batch_items: Mock,
+            mock_delete: Mock,
+            faker: Faker,
+    ):
+        await model.remove_saved(list(map(self._convert_uri_to_random_input_type, uris)), limit=limit)
+
+
+class TestMutableCollectionEndpoints(RemoteEndpointsTester):
+    @pytest.fixture
+    def model(self, handler: RequestHandler) -> RemoteMutableCollectionEndpoints:
+        return RemoteMutableCollectionEndpoints[Authoriser, SimpleURI, MockRemoteResource](
+            handler=handler
+        )
+
+    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
+    async def test_extend(
+            self,
+            model: RemoteMutableCollectionEndpoints,
+            uri: URI,
+            uris: list[URI],
+            limit: int,
+            mock_batch_items: Mock,
+            mock_post: Mock,
+            faker: Faker,
+            converter: Callable[[URI], Any],
+    ):
+        url = converter(uri)
+        await model.extend(url, list(map(self._convert_uri_to_random_input_type, uris)), limit=limit)
+
+    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
+    async def test_remove(
+            self,
+            model: RemoteMutableCollectionEndpoints,
+            uri: URI,
+            uris: list[URI],
+            limit: int,
+            mock_batch_items: Mock,
+            mock_delete: Mock,
+            faker: Faker,
+            converter: Callable[[URI], Any],
+    ):
+        url = converter(uri)
+        await model.remove(url, list(map(self._convert_uri_to_random_input_type, uris)), limit=limit)

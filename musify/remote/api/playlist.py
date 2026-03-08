@@ -1,10 +1,15 @@
+from typing import Annotated
+
 from aiorequestful.auth import Authoriser
+from pydantic import validate_call
+from yarl import URL
 
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
 from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteSavedEndpoints
-from musify.remote.collection.playlist import RemotePlaylist
+    RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints
+from musify.remote.api._types import ApiURLSchema
+from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 
 
 class PlaylistEndpoints[AT: Authoriser, UT: URI, RT: RemotePlaylist](RemoteEndpoints[AT, UT, RT]):
@@ -29,10 +34,26 @@ class PlaylistGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemotePlaylist](
     pass
 
 
-class PlaylistSavedEndpoints[AT: Authoriser, UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[AT, UT, RT], RemoteSavedEndpoints[AT, UT, RT]
+class PlaylistGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemotePlaylist](
+    PlaylistEndpoints[AT, UT, RT], RemoteGetSavedEndpoints[AT, UT, RT]
 ):
     pass
+
+
+class PlaylistMutableEndpoints[AT: Authoriser, UT: URI, RT: RemotePlaylist](
+    PlaylistGetSavedEndpoints[AT, UT, RT],
+    RemoteMutableCollectionEndpoints[AT, UT, RT],
+    RemoteMutablePlaylist[AT, UT, RT],
+):
+    @validate_call
+    async def create(self, **kwargs) -> None:
+        """Create a playlist in the current user's library."""
+        await self.handler.post(self._saved_url, json=kwargs)
+
+    @ApiURLSchema.validate_call
+    async def delete(self, playlist: Annotated[URL, ApiURLSchema[UT, RT]]) -> None:
+        """Delete the playlist from the current user's library."""
+        await self.handler.delete(playlist)
 
 
 class HasPlaylistEndpoints[ET: PlaylistEndpoints](RemoteModel):

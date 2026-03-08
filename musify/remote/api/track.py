@@ -3,7 +3,7 @@ from aiorequestful.auth import Authoriser
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
 from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteSavedEndpoints
+    RemoteGetSavedEndpoints
 from musify.remote.item.track import RemoteTrack
 
 
@@ -23,8 +23,8 @@ class TrackGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteTrack](
     pass
 
 
-class TrackSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteTrack](
-    TrackEndpoints[AT, UT, RT], RemoteSavedEndpoints[AT, UT, RT]
+class TrackGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteTrack](
+    TrackEndpoints[AT, UT, RT], RemoteGetSavedEndpoints[AT, UT, RT]
 ):
     pass
 

@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import inspect
 from collections.abc import Sequence
@@ -16,10 +17,11 @@ from musify.remote import RemoteModel
 
 class _ApiSchemaBase[UT: URI, MT: HasURI]:
     @staticmethod
-    def _check_signature_for_param(func: Callable, param_key: str) -> None:
+    def _get_param_position(func: Callable, param_key: str) -> int:
         if param_key not in (params := inspect.signature(func).parameters):
             param_keys = ", ".join(params)
             raise MusifyTypeError(f"Function must have a {param_key!r} parameter. Found: {param_keys}")
+        return list(params).index(param_key)
 
     @classmethod
     def _create_type_from_model_generics(cls, model: RemoteModel) -> type[Self]:
@@ -36,11 +38,16 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
         return cls[uri_t, model_t]
 
     @staticmethod
-    def _get_value_from_args_or_kwargs(args: list, kwargs: dict, param_key: str) -> Any:
-        if args:
-            return args.pop(0)
-        elif param_key in kwargs:
-            return kwargs.pop(param_key)
+    def _pop_value_from_args_or_kwargs[T](
+            args: list[T], kwargs: dict, param_idx: int, param_key: str
+    ) -> tuple[list[T], Any, list[T]]:
+        if param_key in kwargs:
+            value = kwargs.pop(param_key)
+            return args[:param_idx], value, args[param_idx:]
+        with contextlib.suppress(IndexError):
+            value = args.pop(param_idx)
+            return args[:param_idx], value, args[param_idx:]
+
         raise MusifyValueError(f"{param_key!r} value is required.")
 
 
@@ -54,10 +61,18 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         uri_t: UT = args[0]
         model_t: type[MT] = args[1]
 
-        url_schema = handler.generate_schema(HttpURL)
-
         def _from_uri(uri: URI) -> URL:
             return uri.api_url
+
+        url_schema = handler.generate_schema(HttpURL)
+
+        from_url_schema = core_schema.chain_schema(
+            [
+                url_schema,
+                handler.generate_schema(uri_t),
+                core_schema.no_info_plain_validator_function(_from_uri),
+            ]
+        )
 
         from_uri_schema = core_schema.chain_schema(
             [
@@ -90,8 +105,7 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
         python_schema = core_schema.union_schema(
             [
-                core_schema.is_instance_schema(URL),
-                url_schema,
+                from_url_schema,
                 from_uri_schema,
                 from_model_schema,
                 from_id_schema
@@ -124,7 +138,7 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         https://github.com/pydantic/pydantic/issues/7796
         """
         param_key = "url"
-        cls._check_signature_for_param(func, param_key)
+        param_idx = cls._get_param_position(func, param_key)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -134,10 +148,10 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
             cls_t = cls._create_type_from_model_generics(self)
             adapter = TypeAdapter(cls_t)
 
-            value = cls._get_value_from_args_or_kwargs(args, kwargs, param_key)
+            args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
             url = adapter.validate_python(value)
 
-            return func(self, url, *args, **kwargs)
+            return func(self, *args_prev, url, *args_next, **kwargs)
         return wrapper
 
 
@@ -215,7 +229,7 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         https://github.com/pydantic/pydantic/issues/7796
         """
         param_key = "uris"
-        cls._check_signature_for_param(func, param_key)
+        param_idx = cls._get_param_position(func, param_key)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -225,8 +239,9 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
             cls_t = cls._create_type_from_model_generics(self)
             adapter = TypeAdapter(Sequence[cls_t])
 
-            value = cls._get_value_from_args_or_kwargs(args, kwargs, param_key)
-            url = adapter.validate_python(value)
+            args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
 
-            return func(self, url, *args, **kwargs)
+            uris = adapter.validate_python(value)
+
+            return func(self, *args_prev, uris, *args_next, **kwargs)
         return wrapper

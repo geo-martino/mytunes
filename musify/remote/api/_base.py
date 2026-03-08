@@ -98,12 +98,22 @@ class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
 
         items.extend((cls.create(it, kind=kind) for it in sub_items))
 
+    @staticmethod
+    def _batch_items(uris: Collection[URI], limit: int) -> batched[str]:
+        """Batch the given URIs into sublists of the given size."""
+        return itertools.batched(map(str, uris), limit)
+
+    @classmethod
+    def _generate_batch_url(cls, base_url: URL, values: Iterable[str]) -> URL:
+        """Generate a URL for the API endpoint for batched requests."""
+        return base_url.update_query(ids=",".join(values))
+
 
 class RemoteGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def get(self, url: Annotated[URL, ApiURLSchema[UT, RT]], **kwargs) -> RT:
+    async def get(self, url: Annotated[URL, ApiURLSchema[UT, RT]]) -> RT:
         """
         Get a resource from the API using the given ID, URL, URI, or resource.
 
@@ -121,15 +131,19 @@ class RemoteGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](Remote
     _many_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get multiple resources of this type in one call.",
     )
-    _many_limit: ClassVar[str | AliasPath] = PrivateAttr(
+    _many_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request.",
     )
     _many_path: ClassVar[str | AliasPath] = PrivateAttr(
         # description="The path to the list of items in the API response.",
     )
 
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
     @ApiURISchema.validate_call
-    async def get_many(self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: int = _many_limit) -> list[RT]:
+    async def get_many(
+            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = _many_limit
+    ) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
 
@@ -144,24 +158,14 @@ class RemoteGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](Remote
         """
         items = []
         for batch in self._batch_items(uris, limit):
-            url = self._generate_many_url(batch)
+            url = self._generate_batch_url(self._many_url, batch)
             response = await self.handler.get(url)
             self._extend_items_from_response(items=items, response=response, path=self._many_path)
 
         return items
 
-    @staticmethod
-    def _batch_items(uris: Collection[URI], limit: int) -> batched[str]:
-        """Batch the given URIs into sublists of the given size."""
-        return itertools.batched(map(str, uris), limit)
 
-    @classmethod
-    def _generate_many_url(cls, values: Iterable[str]) -> URL:
-        """Generate a URL for the API endpoint to get multiple resources."""
-        return cls._many_url.update_query(ids=",".join(values))
-
-
-class RemoteSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
+class RemoteGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
     _saved_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user's saved items.",
     )
@@ -178,7 +182,81 @@ class RemoteSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEn
         return items
 
 
+class RemoteMutableSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteGetSavedEndpoints[AT, UT, RT]):
+    _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request to add items to the resource.",
+    )
+
+    @staticmethod
+    def _generate_batch_body(values: Iterable[str]) -> JSON:
+        """Generate a request body for the API endpoint for batched requests."""
+        return {"ids": list(map(str, values))}
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @ApiURISchema.validate_call
+    async def add_saved(
+            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = _batch_limit
+    ) -> None:
+        """Add items to the current user's saved items for this endpoint resource type."""
+        for batch in self._batch_items(uris, limit):
+            body = self._generate_batch_body(batch)
+            await self.handler.put(self._saved_url, json=body)
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @ApiURISchema.validate_call
+    async def remove_saved(
+            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = _batch_limit
+    ) -> None:
+        """Remote items from the current user's saved items for this endpoint resource type."""
+        for batch in self._batch_items(uris, limit):
+            body = self._generate_batch_body(batch)
+            await self.handler.delete(self._saved_url, json=body)
+
+
 class RemoteCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteCollection](RemoteEndpoints[AT, UT, RT]):
     _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
         # description="The path to the list of items in the API response.",
     )
+
+
+class RemoteMutableCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
+    _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request to add items to the resource.",
+    )
+
+    @staticmethod
+    def _generate_batch_body(values: Iterable[str]) -> JSON:
+        """Generate a request body for the API endpoint for batched requests."""
+        return {"ids": list(map(str, values))}
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @ApiURLSchema.validate_call
+    @ApiURISchema.validate_call
+    async def extend(
+            self,
+            url: Annotated[URL, ApiURISchema[UT, RT]],
+            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
+            limit: PositiveInt = _batch_limit
+    ) -> None:
+        """Add items to the current user's saved items for this endpoint resource type."""
+        for batch in self._batch_items(uris, limit):
+            body = self._generate_batch_body(batch)
+            await self.handler.post(url, json=body)
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @ApiURLSchema.validate_call
+    @ApiURISchema.validate_call
+    async def remove(
+            self,
+            url: Annotated[URL, ApiURISchema[UT, RT]],
+            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
+            limit: PositiveInt = _batch_limit
+    ) -> None:
+        """Remove items from the current user's saved items for this endpoint resource type."""
+        for batch in self._batch_items(uris, limit):
+            body = self._generate_batch_body(batch)
+            await self.handler.delete(url, json=body)
