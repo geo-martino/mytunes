@@ -1,4 +1,5 @@
 from musify.models.collection.album import AlbumCollection
+from musify.models.item.track import HasMutableTracks
 from musify.models.properties.uri import URI
 from musify.models.sequence import MusifySequence
 from musify.remote._base import RemoteResource
@@ -9,8 +10,11 @@ from musify.remote.item.genre import RemoteGenre
 from musify.remote.item.track import RemoteTrack
 
 
-class RemoteAlbumCollection[TK, TV: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, UT: URI](
-    AlbumCollection[TK, TV, RT, GT, UT], RemoteAlbum[UT, RT, GT], RemoteResource[UT], RemoteCollection
+class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, UT: URI](
+    AlbumCollection[UT, TT, RT, GT, UT],
+    RemoteAlbum[UT, RT, GT],
+    RemoteResource[UT],
+    RemoteCollection,
 ):
     @property
     def _items(self) -> MusifySequence:

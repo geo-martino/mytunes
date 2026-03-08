@@ -1,0 +1,110 @@
+import functools
+from typing import Any, get_args, Callable
+
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import core_schema
+from yarl import URL
+
+from musify.exception import MusifyTypeError, MusifyValueError
+from musify.models.properties.uri import URI, HasURI
+from musify.models.url import HttpURL
+
+
+class ApiURLSchema[UT: URI, MT: HasURI]:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        args = get_args(source)
+        if not args:
+            raise MusifyTypeError(f"Must define generic types for {type(source)}")
+
+        uri_t: UT = args[0]
+        model_t: type[MT] = args[1]
+
+        url_schema = handler.generate_schema(HttpURL)
+
+        def _from_uri(uri: URI) -> URL:
+            return uri.api_url
+
+        from_uri_schema = core_schema.chain_schema(
+            [
+                handler.generate_schema(uri_t),
+                core_schema.no_info_plain_validator_function(_from_uri),
+            ]
+        )
+
+        def _from_model(model: HasURI) -> URL:
+            uri = model.uri
+            return _from_uri(uri)
+
+        from_model_schema = core_schema.chain_schema(
+            [
+                handler.generate_schema(model_t),
+                core_schema.no_info_plain_validator_function(_from_model),
+            ]
+        )
+
+        def _from_id(value: str) -> URL:
+            uri = uri_t.from_id(value, kind=model_t.type)
+            return _from_uri(uri)
+
+        from_id_schema = core_schema.chain_schema(
+            [
+                core_schema.str_schema(),
+                core_schema.no_info_plain_validator_function(_from_id),
+            ]
+        )
+
+        python_schema = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(URL),
+                url_schema,
+                from_uri_schema,
+                from_model_schema,
+                from_id_schema
+            ],
+            mode="left_to_right",
+        )
+
+        return core_schema.json_or_python_schema(
+            json_schema=url_schema,
+            python_schema=python_schema,
+            serialization=core_schema.simple_ser_schema("str")
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+            cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.url_schema())
+
+    @classmethod
+    def validate_call[T: Callable](cls, func: T) -> T:
+        """
+        Decorator to validate and convert a URL argument for API endpoint methods.
+
+        WORKAROUND: Since Pydantic does not yet support generic types in validate_call,
+        this decorator extracts the generic types from the decorated method's class and uses a TypeAdapter
+        to validate and convert the URL argument to a URL using ApiURL's core schema.
+
+        This should be removed once the validate_call issue is resolved:
+        https://github.com/pydantic/pydantic/issues/7796
+        """
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            key = "url"
+            args = list(args)
+            self = args.pop(0)
+
+            value = args.pop(0) if args else kwargs.pop(key)
+            if value is None:
+                raise MusifyValueError("URL value is required.")
+
+            generics = self.__pydantic_generic_metadata__["args"]
+            uri_t = next(arg for arg in generics if issubclass(arg, URI))
+            model_t = next(arg for arg in generics if issubclass(arg, HasURI))
+            adapter = TypeAdapter(cls[uri_t, model_t])
+
+            url = adapter.validate_python(value)
+            return func(self, url, *args, **kwargs)
+        return wrapper

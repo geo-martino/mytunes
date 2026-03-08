@@ -15,7 +15,7 @@ from aiorequestful.types import Number
 from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, ModelWrapValidatorHandler, BeforeValidator
 
 from musify._types import to_set
-from musify.local.collection.library._base import LocalLibrary, LocalLibraryFileMetaclass
+from musify.local.collection.library._base import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.exception import MusicBeeIDError, XMLReaderError, FileDoesNotExistError
 from musify.local.item.track import LocalTrack
@@ -40,7 +40,7 @@ REQUIRED_MODULES = [xmltodict, etree]
 
 # noinspection PyFinal
 @final
-class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metaclass=LocalLibraryFileMetaclass):
+class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
     """
     Represents a local MusicBee library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.

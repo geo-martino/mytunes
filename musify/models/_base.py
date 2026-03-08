@@ -78,7 +78,16 @@ class MusifyModelMetaclass(ModelMetaclass):
         if cls.__final__:
             cls.__model_registry__.add(cls)
 
+        if cls.__final__:
+            cls._validate_all_class_vars_set()
+
         return cls
+
+    def _validate_all_class_vars_set(cls: MusifyModel) -> None:
+        """Validate that all class variables defined on this model and its subclasses are set."""
+        for name in cls.__class_vars__:
+            if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
+                raise MusifyAttributeError(f"{cls.__name__} must have a {name!r} class attribute defined.")
 
     @property
     def registered_submodels[T: MusifyModel](cls: type[T]) -> set[type[T]]:
@@ -91,7 +100,7 @@ class MusifyModelMetaclass(ModelMetaclass):
     def annotation[T: MusifyModel](cls: type[T]) -> type[T]:
         """Get the annotation for all subclasses of this model"""
         classes = cls.registered_submodels
-        return Union[*classes] if classes else Union
+        return Union[*classes] if classes else cls
 
 
 class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
@@ -158,15 +167,12 @@ class MusifyResourceMetaclass(MusifyModelMetaclass):
             *(attr for base in bases for attr in getattr(base, "__unique_attributes__", []))
         })
 
-        if cls.__final__ and not isinstance(cls.type, str):
-            raise MusifyTypeError("Resource models must have a 'type' class attribute.")
-
         return cls
 
     @property
     def annotation[T: MusifyResource](cls: type[T]) -> type[T]:
         if not cls.registered_submodels:
-            return MusifyResource
+            return cls
         return Annotated[
             super().annotation,
             Field(discriminator="type"),
@@ -204,7 +210,7 @@ class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
             del self.unique_keys  # clear the cached property
 
 
-class AttributeModelMetaclass(MusifyResourceMetaclass):
+class AttributeModelMetaclass(MusifyModelMetaclass):
     """Metaclass for attribute models to handle tag attribute generation and configuration."""
 
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
@@ -341,7 +347,11 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
         setattr(item, key_split[-1], value)
 
 
-class AttributeResource(AttributeModel, MusifyResource):
+class AttributeResourceMetaclass(MusifyResourceMetaclass, AttributeModelMetaclass):
+    pass
+
+
+class AttributeResource(AttributeModel, MusifyResource, metaclass=AttributeResourceMetaclass):
     """Defines a common base model for resources made of common attributes."""
     __include_fields__ = True
     __include_properties__ = True
@@ -360,7 +370,7 @@ class MusifyEnum(IntEnum):
 
     # noinspection PyUnusedLocal
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls._validate,
             core_schema.union_schema(

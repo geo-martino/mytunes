@@ -11,13 +11,13 @@ import aiofiles
 import aiohttp
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import InstanceOf, Field, PositiveInt, field_validator, model_validator
+from pydantic import Field, PositiveInt, field_validator, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
-from yarl import URL
 
 from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
 from musify.models._base import MusifyModel, AttributeResource
+from musify.models.url import HttpURL
 
 
 class ImageBase(MusifyModel):
@@ -174,17 +174,9 @@ class FileEmbeddedImage(ImageSource):
 
 class ImageURL(ImageSource):
     """Represents an image link."""
-    url: InstanceOf[URL] = Field(
+    url: HttpURL = Field(
         description="The URL of the image.",
     )
-
-    # noinspection PyNestedDecorators
-    @field_validator("url", mode="before", check_fields=True)
-    @staticmethod
-    def _cast_to_url[T: str](value: T) -> T | URL:
-        if not isinstance(value, str):
-            return value
-        return URL(value)
 
     def __str__(self) -> str:
         return str(self.url)

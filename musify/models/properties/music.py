@@ -68,7 +68,7 @@ class KeySignature(MusifyModel):
         self.mode = value
 
     def __str__(self) -> str:
-        return self.key
+        return str(self.key)
 
     def __hash__(self) -> int:
         return hash((self.root, self.mode))

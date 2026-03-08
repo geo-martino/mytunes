@@ -1,7 +1,7 @@
 from typing import Any, final, ClassVar
 
 from musify.remote.collection.library import RemoteMutableLibrary
-from musify.spotify import SpotifyResource
+from musify.spotify import SpotifyModel
 from musify.spotify.collection.playlist import SpotifyMutablePlaylist
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.followers import HasFollowers
@@ -9,13 +9,11 @@ from musify.spotify.properties.followers import HasFollowers
 
 @final
 class SpotifyLibrary(
+    SpotifyModel,
     RemoteMutableLibrary[str, SpotifyTrack, str, SpotifyMutablePlaylist],
-    SpotifyResource,
     HasFollowers,
 ):
     __final__ = True
-
-    source: ClassVar[str] = "spotify"
 
     async def load(self):
         pass

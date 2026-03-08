@@ -154,7 +154,7 @@ def split_list[T](lst: Collection[T], n: int, overlap: int = 0) -> Iterator[list
 
 
 class SimpleURI(URI):
-    _source = None  # disable validation
+    _source = "remote"
 
     @property
     def source(self) -> str:
@@ -169,8 +169,8 @@ class SimpleURI(URI):
         return self.root.split(":")[2]
 
     @classmethod
-    def from_id[T](cls, value: T, kind: str, source: str = None) -> T | Self:
-        uri = ":".join((source or cls._source, kind, str(value)))
+    def from_id[T](cls, value: T, kind: str) -> T | Self:
+        uri = ":".join((cls._source, kind, str(value)))
         return cls(uri)
 
     @property

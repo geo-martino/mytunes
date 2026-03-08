@@ -6,16 +6,16 @@ from musify.remote.collection._base import RemoteCollection
 from musify.remote.item.track import RemoteTrack
 
 
-class RemotePlaylist[TK, TV: RemoteTrack, UT: URI](
-    Playlist[TK, TV, UT], RemoteResource[UT], RemoteCollection
+class RemotePlaylist[TT: RemoteTrack, UT: URI](
+    Playlist[UT, TT, UT], RemoteResource[UT], RemoteCollection
 ):
     @property
     def _items(self) -> MusifySequence:
         return self.tracks
 
 
-class RemoteMutablePlaylist[TK, TV: RemoteTrack, UT: URI](
-    MutablePlaylist[TK, TV, UT], RemotePlaylist[TK, TV, UT]
+class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI](
+    MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT]
 ):
     @property
     def _items(self) -> MusifyMutableSequence:

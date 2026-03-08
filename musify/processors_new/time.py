@@ -96,7 +96,7 @@ class TimeMapper(DynamicProcessor):
         self.add = value
 
     def __str__(self) -> str:
-        return self.key
+        return str(self.key)
 
     def __hash__(self) -> int:
         return hash(self.key)

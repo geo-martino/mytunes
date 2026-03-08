@@ -19,7 +19,7 @@ from musify.processors_new.sort import ItemSorter
 
 
 class LocalPlaylistFile[TF: Filter](
-    LocalCollection, MutablePlaylist[str, LocalTrack, URI], IsLocalFile, HasLogger
+    LocalCollection, MutablePlaylist[URI, LocalTrack, URI], IsLocalFile, HasLogger
 ):
     __unique_attributes__ = frozenset({"path"})
 

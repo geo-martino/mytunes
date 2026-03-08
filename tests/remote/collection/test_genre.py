@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from faker import Faker
 
@@ -11,9 +13,9 @@ class TestRemoteGenreCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteGenreCollection:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteGenreCollection.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteGenreCollection.type
         )
-        return RemoteGenreCollection(
+        return RemoteGenreCollection[SimpleURI, Any](
             name=faker.word(),
             uri=uri,
             total=faker.random_int(1, 20),

@@ -11,6 +11,7 @@ from yarl import URL
 from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
 from musify.models._base import MusifyRootModel, AttributeResource
+from musify.models.url import HttpURL
 
 
 # noinspection PyAbstractClass
@@ -33,7 +34,10 @@ class URI(MusifyRootModel[str]):
     # noinspection PyNestedDecorators
     @model_validator(mode="after")
     def _validate_source(self) -> Self:
-        if self._source and self.source != self._source:
+        if not isinstance(self.root, str):
+            raise MusifyValueError(f"URI root must be a string, got {type(self.root)}")
+
+        if self.source != self._source:
             raise MusifyValueError(
                 f"Given URI does not belong to this {self._source!r} repository type. Found: {self.source!r}"
             )
@@ -65,7 +69,7 @@ class URI(MusifyRootModel[str]):
 
     @property
     @abstractmethod
-    def api_url(self) -> URL:
+    def api_url(self) -> HttpURL:
         """The URL of the API endpoint for this remote resource."""
         raise NotImplementedError
 
@@ -79,7 +83,7 @@ class URI(MusifyRootModel[str]):
 
     @property
     @abstractmethod
-    def public_url(self) -> URL:
+    def public_url(self) -> HttpURL:
         """The public URL for this remote resource."""
         raise NotImplementedError
 
@@ -97,7 +101,7 @@ class URI(MusifyRootModel[str]):
         return self.id != self._unavailable_id
 
     def __str__(self) -> str:
-        return self.root
+        return str(self.root)
 
     def __hash__(self):
         return hash(self.root)

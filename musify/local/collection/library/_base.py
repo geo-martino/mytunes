@@ -18,8 +18,9 @@ from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.logger import STAT, HEADER_PREFIX
-from musify.models.collection.library import MutableLibrary, LibraryMetaclass
+from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper, IsLocalFileMetaclass
+from musify.models.properties.uri import URI
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
@@ -27,14 +28,9 @@ from musify.processors_new.sort import ItemSorter
 type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mapping[str, Any]]
 
 
-class LocalLibraryFileMetaclass(LibraryMetaclass, IsLocalFileMetaclass):
-    """Metaclass for :py:class:`MusicBee`."""
-    pass
-
-
 @final
 class LocalLibrary(
-    MutableLibrary[str, LocalTrack, str, LocalPlaylist], LocalCollection
+    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist], LocalCollection
 ):
     """
     Represents a local library, providing various methods for manipulating

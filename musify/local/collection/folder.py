@@ -10,10 +10,11 @@ from musify.local.item.track import LocalTrack
 from musify.models.item.track import HasTracks
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
+from musify.models.properties.uri import URI
 
 
 @final
-class Folder[TK, TV: LocalTrack](LocalCollection, HasTracks[TK, TV], HasName, HasLength):
+class Folder[TT: LocalTrack](LocalCollection, HasTracks[URI, TT], HasName, HasLength):
     """Represents a folder collection and its properties."""
     __final__ = True
 

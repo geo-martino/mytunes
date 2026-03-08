@@ -29,7 +29,7 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
 
 @final
 class SpotifyPlaylist(
-    RemotePlaylist[str, SpotifyPlaylistTrack, SpotifyResourceURI],
+    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI],
     SpotifyCollection,
     HasSpotifyImages,
     HasFollowers,
@@ -58,7 +58,7 @@ class SpotifyPlaylist(
 # noinspection PyFinal
 @final
 class SpotifyMutablePlaylist(
-    RemoteMutablePlaylist[str, SpotifyPlaylistTrack, SpotifyResourceURI],
+    RemoteMutablePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI],
     SpotifyPlaylist,
 ):
     __final__ = True

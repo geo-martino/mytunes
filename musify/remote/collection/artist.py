@@ -9,7 +9,10 @@ from musify.remote.item.track import RemoteTrack
 
 
 class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
-    ArtistCollection[TK, TV, AT, GT, UT], RemoteArtist[UT, GT], RemoteResource[UT], RemoteCollection,
+    ArtistCollection[TK, TV, AT, GT, UT],
+    RemoteArtist[UT, GT],
+    RemoteResource[UT],
+    RemoteCollection,
 ):
     @property
     def _items(self) -> list:

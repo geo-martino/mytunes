@@ -12,6 +12,6 @@ class TestRemoteGenre(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteGenre:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteGenre.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteGenre.type
         )
-        return RemoteGenre(name=choice(GENRES), uri=uri)
+        return RemoteGenre[SimpleURI](name=choice(GENRES), uri=uri)

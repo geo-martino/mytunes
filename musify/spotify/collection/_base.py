@@ -1,10 +1,14 @@
+from typing import final
+
 from musify.remote.collection import RemoteCollection, ItemsCursor
+from musify.spotify import SpotifyModel
 
 
 # noinspection PyAbstractClass
-class SpotifyCollection(RemoteCollection):
+class SpotifyCollection(RemoteCollection, SpotifyModel):
     pass
 
 
-class SpotifyItemsCursor(ItemsCursor):
-    pass
+@final
+class SpotifyItemsCursor(ItemsCursor, SpotifyModel):
+    __final__ = True

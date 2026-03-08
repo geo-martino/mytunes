@@ -11,7 +11,7 @@ class TestRemotePlaylist(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemotePlaylist:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemotePlaylist.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemotePlaylist.type
         )
         return RemotePlaylist(
             name=faker.word(),
@@ -25,7 +25,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteMutablePlaylist:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteMutablePlaylist.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteMutablePlaylist.type
         )
         return RemoteMutablePlaylist(
             name=faker.word(),

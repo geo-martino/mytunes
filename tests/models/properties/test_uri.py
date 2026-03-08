@@ -1,4 +1,5 @@
 from random import choice
+from typing import ClassVar
 
 import pytest
 from faker import Faker
@@ -15,7 +16,7 @@ from tests.utils import SimpleURI
 
 
 class MockHasURI(HasURI[SimpleURI]):
-    type = choice((
+    type: ClassVar[str] = choice((
         Track.type,
         Album.type,
         Artist.type,
@@ -30,7 +31,7 @@ class MockHasMutableURI(HasMutableURI[SimpleURI]):
 @pytest.fixture
 def uri(faker: Faker) -> SimpleURI:
     return SimpleURI.from_id(
-        faker.random_int(int(10e9), int(10e10)), kind=MockHasURI.type, source=faker.word()
+        faker.random_int(int(10e9), int(10e10)), kind=MockHasURI.type
     )
 
 
@@ -44,7 +45,10 @@ def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
         while source is None or source in seen:
             source = faker.word()
 
-        uris.append(SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=MockHasURI.type, source=source))
+        class AnotherSimpleURI(SimpleURI):
+            _source = source
+
+        uris.append(AnotherSimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=MockHasURI.type))
         seen.add(source)
 
     return uris
@@ -95,7 +99,7 @@ class TestHasURI(UniqueKeyTester):
 
     def test_validate_uri_matches_type(self, model: HasURI, faker: Faker):
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind="different_type", source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind="different_type"
         )
 
         with pytest.raises(ValueError):
@@ -120,7 +124,7 @@ class TestHasMutableURI(UniqueKeyTester):
     def test_validates_uris_are_from_unique_sources(self, uris: list[URI]):
         uri = choice(uris)
         different_uri = next(u for u in uris if u.source != uri.source)
-        new_uri = SimpleURI.from_id(different_uri.id, different_uri.type, uri.source)
+        new_uri = uri.from_id(different_uri.id, different_uri.type)
 
         MockHasMutableURI(uris=uris)
         with pytest.raises(ValueError):
@@ -128,7 +132,7 @@ class TestHasMutableURI(UniqueKeyTester):
 
     def test_validate_uri_matches_type(self, model: HasMutableURI, faker: Faker):
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind="different_type", source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind="different_type"
         )
 
         with pytest.raises(ValueError):
@@ -161,7 +165,7 @@ class TestHasMutableURI(UniqueKeyTester):
 
         old_uri = model.uri
         different_uri = next(uri for uri in uris if uri.source != model.source)
-        new_uri = SimpleURI.from_id(different_uri.id, different_uri.type, model.uri.source)
+        new_uri = model.uri.from_id(different_uri.id, different_uri.type)
         assert new_uri not in model.unique_keys
 
         model.uri = new_uri
@@ -195,7 +199,7 @@ class TestHasMutableURI(UniqueKeyTester):
         assert model.uri.exists
         assert model.has_uri is True
 
-        uri = SimpleURI.from_id(model.uri._unavailable_id, model.uri.type, model.source)
+        uri = model.uri.from_id(model.uri._unavailable_id, model.uri.type)
         model.uri = uri
         assert model.uri is None
         assert model.has_uri is False

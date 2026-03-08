@@ -14,7 +14,7 @@ class TestPlaylist(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Playlist:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=Playlist.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=Playlist.type
         )
         return Playlist(name=faker.sentence(), uri=uri)
 
@@ -23,7 +23,7 @@ class TestMutablePlaylist(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> MutablePlaylist:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=MutablePlaylist.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=MutablePlaylist.type
         )
         return MutablePlaylist(name=faker.sentence(), uri=uri)
 

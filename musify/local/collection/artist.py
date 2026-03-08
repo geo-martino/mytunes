@@ -11,7 +11,7 @@ from musify.models.properties.uri import URI
 
 # noinspection PyFinal
 @final
-class LocalArtistCollection[TK, TV: LocalTrack, AT: LocalAlbum, GT: LocalGenre](
-    ArtistCollection[TK, TV, AT, GT, URI], LocalArtist[GT], LocalCollection
+class LocalArtistCollection[TT: LocalTrack, AT: LocalAlbum, GT: LocalGenre](
+    ArtistCollection[URI, TT, AT, GT, URI], LocalArtist[GT], LocalCollection
 ):
     __final__ = True

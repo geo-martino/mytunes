@@ -11,7 +11,7 @@ class TestRemoteAlbumCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteAlbumCollection:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteAlbumCollection.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteAlbumCollection.type
         )
         return RemoteAlbumCollection(
             name=faker.word(),

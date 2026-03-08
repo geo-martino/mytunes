@@ -10,6 +10,6 @@ class TestRemoteArtist(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteArtist:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteArtist.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteArtist.type
         )
         return RemoteArtist(name=faker.word(), uri=uri)

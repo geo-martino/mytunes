@@ -14,7 +14,7 @@ class TestAlbumCollection(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> AlbumCollection:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=AlbumCollection.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=AlbumCollection.type
         )
         return AlbumCollection(name=faker.word(), uri=uri)
 

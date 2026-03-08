@@ -10,10 +10,10 @@ import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyValueError, MusifyTypeError
-from musify.models._base import AttributeResource, MusifyModel, AttributeModelMetaclass
+from musify.models._base import AttributeResource, MusifyModel, AttributeModelMetaclass, AttributeResourceMetaclass
 
 
-class IsFileMetaclass(AttributeModelMetaclass):
+class IsFileMetaclass(AttributeResourceMetaclass):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
@@ -29,7 +29,7 @@ class IsFileMetaclass(AttributeModelMetaclass):
         # noinspection PyTypeChecker
         classes: set[type[T]] = cls.registered_submodels
         types = (Annotated[kls, Tag(ext)] for kls in classes for ext in kls.__supported_extensions__)
-        return Union[*types] if classes else Union
+        return Union[*types] if classes else cls
 
     @property
     def supported_extensions(cls: IsFile) -> set[str]:
@@ -100,7 +100,7 @@ class IsLocalFileMetaclass(IsFileMetaclass):
     @property
     def annotation[T: IsLocalFile](cls: type[T]) -> type[T]:
         if not cls.registered_submodels:
-            return IsLocalFile
+            return cls
         return Annotated[
             super().annotation,
             Field(discriminator=Discriminator(cls._get_ext_from_input)),

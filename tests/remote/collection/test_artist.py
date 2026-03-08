@@ -11,7 +11,7 @@ class TestRemoteArtistCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteArtistCollection:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteArtistCollection.type, source=faker.word()
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteArtistCollection.type
         )
         return RemoteArtistCollection(
             name=faker.word(),
