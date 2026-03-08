@@ -1,15 +1,16 @@
 import contextlib
 from abc import abstractmethod
 from abc import abstractmethod
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, MutableSequence, Iterable
 from typing import Any, Self
 
 from pydantic import Field, PositiveInt, NonNegativeInt, model_validator, TypeAdapter, ModelWrapValidatorHandler, \
     ValidationError
 from yarl import URL
 
+from musify.models.sequence import MusifySequence, MusifyMutableSequence
 from musify.models.url import HttpURL
-from musify.remote._base import RemoteModel
+from musify.remote._base import RemoteModel, RemoteResource
 
 
 class ItemsCursor(RemoteModel):
@@ -63,7 +64,7 @@ class ItemsCursor(RemoteModel):
 
 
 # noinspection PyAbstractClass
-class RemoteCollection(RemoteModel):
+class RemoteCollection[IT: RemoteResource](RemoteModel):
     total: NonNegativeInt = Field(
         description="The total number of items in this collection."
     )
@@ -81,7 +82,20 @@ class RemoteCollection(RemoteModel):
 
     @property
     @abstractmethod
-    def _items(self) -> Collection:
+    def _items(self) -> Collection[IT]:
         """The items in this collection."""
         raise NotImplementedError
 
+    def _extend_items(self, other: Iterable[IT]) -> None:
+        """Extend the items in this collection with the given items."""
+        match self._items:
+            case MutableSequence() as items:
+                items.extend(other)
+            case MusifySequence() as items:
+                other = list(other)
+                # noinspection PyProtectedMember
+                items._items.extend(other)
+                # noinspection PyProtectedMember
+                items._items_mapped.update(other)
+            case items:
+                raise TypeError(f"Cannot extend items of type {type(items).__name__!r}.")

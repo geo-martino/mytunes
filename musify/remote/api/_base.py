@@ -72,11 +72,13 @@ class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
             cursor: ItemsCursor,
             path: str | AliasPath,
             kind: str = None,
-    ) -> None:
+    ) -> MutableSequence[RT]:
         while cursor.next is not None:
             response = await self.handler.get(cursor.next)
             self._extend_items_from_response(items=items, response=response, path=path, kind=kind)
             cursor = cursor.model_validate(response)
+
+        return items
 
     @classmethod
     def _extend_items_from_response(

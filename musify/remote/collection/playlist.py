@@ -10,7 +10,7 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI](
     Playlist[UT, TT, UT], RemoteResource[UT], RemoteCollection
 ):
     @property
-    def _items(self) -> MusifySequence:
+    def _items(self) -> MusifySequence[UT, TT]:
         return self.tracks
 
 
@@ -18,5 +18,5 @@ class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI](
     MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT]
 ):
     @property
-    def _items(self) -> MusifyMutableSequence:
+    def _items(self) -> MusifyMutableSequence[UT, TT]:
         return self.tracks

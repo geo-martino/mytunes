@@ -18,9 +18,11 @@ class AlbumSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](RemoteEndpoi
 class AlbumCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbumCollection](AlbumEndpoints[AT, UT, RT]):
     async def extend_tracks(self, album: RT) -> None:
         """Extend the tracks in this album collection."""
-        await self._extend_items_from_cursor(
-            items=album.tracks, cursor=album.cursor, path=self._extend_path, kind="track"
+        items = await self._extend_items_from_cursor(
+            items=[], cursor=album.cursor, path=self._extend_path, kind="track"
         )
+        # noinspection PyProtectedMember
+        album._extend_items(items)
 
 
 class HasAlbumEndpoints[ET: AlbumEndpoints](RemoteModel):

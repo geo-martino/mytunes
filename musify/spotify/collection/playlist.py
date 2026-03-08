@@ -30,7 +30,7 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
 @final
 class SpotifyPlaylist(
     RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI],
-    SpotifyCollection,
+    SpotifyCollection[SpotifyPlaylistTrack],
     HasSpotifyImages,
     HasFollowers,
 ):

@@ -18,9 +18,11 @@ class GenreSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](RemoteEndpoi
 class GenreCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenreCollection](GenreEndpoints[AT, UT, RT]):
     async def extend_tracks(self, genre: RT) -> None:
         """Extend the tracks in this genre collection."""
-        await self._extend_items_from_cursor(
-            items=genre.tracks, cursor=genre.cursor, path=self._extend_path, kind="genre"
+        items = await self._extend_items_from_cursor(
+            items=[], cursor=genre.cursor, path=self._extend_path, kind="track"
         )
+        # noinspection PyProtectedMember
+        genre._extend_items(items)
 
 
 class HasGenreEndpoints[ET: GenreEndpoints](RemoteModel):

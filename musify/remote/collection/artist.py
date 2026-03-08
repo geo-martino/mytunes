@@ -12,8 +12,8 @@ class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGen
     ArtistCollection[TK, TV, AT, GT, UT],
     RemoteArtist[UT, GT],
     RemoteResource[UT],
-    RemoteCollection,
+    RemoteCollection[AT],
 ):
     @property
-    def _items(self) -> list:
+    def _items(self) -> list[AT]:
         return self.albums
