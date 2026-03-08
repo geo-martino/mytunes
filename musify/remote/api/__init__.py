@@ -1,1 +1,1 @@
-from ._base import RemoteEndpoints, RemoteSavedEndpoints, RemoteCollectionEndpoints
+from ._base import RemoteEndpoints, RemoteManyEndpoints, RemoteSavedEndpoints, RemoteCollectionEndpoints

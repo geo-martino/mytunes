@@ -1,4 +1,6 @@
-from collections.abc import MutableSequence
+import itertools
+from collections.abc import MutableSequence, Collection, Iterable, Sequence
+from itertools import batched
 from typing import Any, ClassVar, Annotated
 
 from aiorequestful.auth import Authoriser
@@ -13,7 +15,7 @@ from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.url import HttpURL
 from musify.remote import RemoteResource, RemoteModel
-from musify.remote.api._types import ApiURLSchema
+from musify.remote.api._types import ApiURLSchema, ApiURISchema
 from musify.remote.collection import ItemsCursor, RemoteCollection
 
 
@@ -103,7 +105,7 @@ class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
         """
         Get a resource from the API using the given ID, URL, URI, or resource.
 
-        The value given must relate to the resource type handled by this API model, and can be one of the following:
+        The URL given must relate to the resource type handled by this API model, and can be one of the following:
             * A URL (as a string or yarl.URL) pointing to the resource's API
             * A URI (as a string or URI object) for the resource
             * A resource object with a URI property for the resource
@@ -111,6 +113,50 @@ class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
         """
         response = await self.handler.get(url)
         return self.__class__.create(response)
+
+
+class RemoteManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
+    _many_url: ClassVar[URL] = PrivateAttr(
+        # description="The API endpoint to get multiple resources of this type in one call.",
+    )
+    _many_limit: ClassVar[str | AliasPath] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request.",
+    )
+    _many_path: ClassVar[str | AliasPath] = PrivateAttr(
+        # description="The path to the list of items in the API response.",
+    )
+
+    @ApiURISchema.validate_call
+    async def get_many(self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: int = _many_limit) -> list[RT]:
+        """
+        Get multiple resources from the API using the given URIs.
+
+        The URIs must relate to the resource type handled by this API model, and can be one of the following:
+            * URLs (as strings or URL objects) pointing to the resource's API
+            * URIs (as strings or URI objects)
+            * Resource objects with a URI property for the resources
+            * IDs (as strings) for the resources
+
+        :param uris: A list of URIs. See above for accepted formats.
+        :param limit: The number of URIs to send in each request to the API.
+        """
+        items = []
+        for batch in self._batch_items(uris, limit):
+            url = self._generate_many_url(batch)
+            response = await self.handler.get(url)
+            self._extend_items_from_response(items=items, response=response, path=self._many_path)
+
+        return items
+
+    @staticmethod
+    def _batch_items(uris: Collection[URI], limit: int) -> batched[str]:
+        """Batch the given URIs into sublists of the given size."""
+        return itertools.batched(map(str, uris), limit)
+
+    @classmethod
+    def _generate_many_url(cls, values: Iterable[str]) -> URL:
+        """Generate a URL for the API endpoint to get multiple resources."""
+        return cls._many_url.update_query(ids=",".join(values))
 
 
 class RemoteSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):

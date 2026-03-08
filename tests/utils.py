@@ -175,7 +175,7 @@ class SimpleURI(URI):
 
     @property
     def api_url(self) -> URL:
-        return URL.build(scheme="https", host="example.com", path=f"/api/{self.type}/{self.id}")
+        return URL.build(scheme="https", host="api.example.com", path=f"/{self.type}/{self.id}")
 
     @classmethod
     def from_api_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
@@ -187,12 +187,12 @@ class SimpleURI(URI):
 
     @classmethod
     def from_public_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
-        if isinstance(value, str) and re.match(r"^https://example.com", value):
+        if isinstance(value, str) and re.match(r"^https://(api.)?example\.com", value):
             value = URL(value)
         if not isinstance(value, URL):
             return value
 
-        uri = ":".join((cls._source, *value.path.split("/")[:-2]))
+        uri = ":".join((cls._source, *value.path.lstrip("/").split("/")[-2:]))
         return handler(uri)
 
 
