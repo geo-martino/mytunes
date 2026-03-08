@@ -2,7 +2,8 @@ from aiorequestful.auth import Authoriser
 
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
-from musify.remote.api._base import RemoteEndpoints
+from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
+    RemoteSavedEndpoints, RemoteCollectionEndpoints
 from musify.remote.collection.genre import RemoteGenreCollection
 from musify.remote.item.genre import RemoteGenre
 
@@ -11,11 +12,27 @@ class GenreEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](RemoteEndpoints[A
     pass
 
 
-class GenreSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](RemoteEndpoints[AT, UT, RT]):
+class GenreGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](
+    GenreEndpoints[AT, UT, RT], RemoteGetSingleEndpoints[AT, UT, RT]
+):
     pass
 
 
-class GenreCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenreCollection](GenreEndpoints[AT, UT, RT]):
+class GenreGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](
+    GenreEndpoints[AT, UT, RT], RemoteGetManyEndpoints[AT, UT, RT]
+):
+    pass
+
+
+class GenreSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](
+    GenreEndpoints[AT, UT, RT], RemoteSavedEndpoints[AT, UT, RT]
+):
+    pass
+
+
+class GenreCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenreCollection](
+    GenreEndpoints[AT, UT, RT], RemoteCollectionEndpoints[AT, UT, RT]
+):
     async def extend_tracks(self, genre: RT) -> None:
         """Extend the tracks in this genre collection."""
         items = await self._extend_items_from_cursor(

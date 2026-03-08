@@ -2,7 +2,8 @@ from aiorequestful.auth import Authoriser
 
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
-from musify.remote.api._base import RemoteEndpoints
+from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
+    RemoteSavedEndpoints, RemoteCollectionEndpoints
 from musify.remote.collection.album import RemoteAlbumCollection
 from musify.remote.item.album import RemoteAlbum
 
@@ -11,11 +12,27 @@ class AlbumEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](RemoteEndpoints[A
     pass
 
 
-class AlbumSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](RemoteEndpoints[AT, UT, RT]):
+class AlbumGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[AT, UT, RT], RemoteGetSingleEndpoints[AT, UT, RT]
+):
     pass
 
 
-class AlbumCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbumCollection](AlbumEndpoints[AT, UT, RT]):
+class AlbumGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[AT, UT, RT], RemoteGetManyEndpoints[AT, UT, RT]
+):
+    pass
+
+
+class AlbumSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[AT, UT, RT], RemoteSavedEndpoints[AT, UT, RT]
+):
+    pass
+
+
+class AlbumCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteAlbumCollection](
+    AlbumEndpoints[AT, UT, RT], RemoteCollectionEndpoints[AT, UT, RT]
+):
     async def extend_tracks(self, album: RT) -> None:
         """Extend the tracks in this album collection."""
         items = await self._extend_items_from_cursor(

@@ -10,5 +10,11 @@ class UserEndpoints[AT: Authoriser, UT: URI, RT: RemoteUser](RemoteEndpoints[AT,
     pass
 
 
+class UserGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteUser](
+    UserEndpoints[AT, UT, RT], RemoteEndpoints[AT, UT, RT]
+):
+    pass
+
+
 class HasUserEndpoints[ET: UserEndpoints](RemoteModel):
     users: ET

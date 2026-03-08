@@ -14,7 +14,7 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError
 from musify.models.properties.uri import URI
-from musify.remote.api import RemoteEndpoints, RemoteManyEndpoints, RemoteSavedEndpoints
+from musify.remote.api import RemoteEndpoints, RemoteGetManyEndpoints, RemoteSavedEndpoints
 from musify.remote.collection import ItemsCursor
 from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.artist import RemoteArtist
@@ -210,14 +210,14 @@ class TestRemoteEndpoints(RemoteEndpointsTester):
 
 
 class TestRemoteManyEndpoints(RemoteEndpointsTester):
-    class MockManyEndpoints(RemoteManyEndpoints[Authoriser, SimpleURI, MockRemoteResource]):
+    class MockGetManyEndpoints(RemoteGetManyEndpoints[Authoriser, SimpleURI, MockRemoteResource]):
         _many_url = URL(f"https://api.example.com/{MockRemoteResource.type}s")
         _many_path = "items"
         _many_limit = 10
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> RemoteManyEndpoints:
-        return self.MockManyEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> RemoteGetManyEndpoints:
+        return self.MockGetManyEndpoints(handler=handler)
 
     @pytest.fixture
     def uris(self, faker: Faker) -> list[URI]:
@@ -232,14 +232,14 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
         return list(itertools.batched((uri.id for uri in uris), limit))
 
     def test_batch_items(self, uris: list[URI]):
-        batches = list(self.MockManyEndpoints._batch_items(uris, limit=10))
+        batches = list(self.MockGetManyEndpoints._batch_items(uris, limit=10))
         for batch in batches[:-1]:
             assert len(batch) == 10
         assert len(batches[-1]) == len(uris) % 10 if len(uris) % 10 != 0 else 10
 
     def test_generate_many_url(self, uris: list[URI]):
         uris = list(map(str, uris[:10]))
-        url = self.MockManyEndpoints._generate_many_url(uris)
+        url = self.MockGetManyEndpoints._generate_many_url(uris)
         assert url.query["ids"] == ",".join(uris)
 
     @pytest.fixture
@@ -252,7 +252,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
         expected = math.ceil(len(uris) / limit)
 
         def _get_next_response(*_, **__) -> dict[str, tuple[dict[str, Any], ...]]:
-            return {self.MockManyEndpoints._many_path: next(responses)}
+            return {self.MockGetManyEndpoints._many_path: next(responses)}
 
         with patch.object(RequestHandler, "get", side_effect=_get_next_response) as mock_get:
             yield mock_get
@@ -260,7 +260,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
 
     @pytest.fixture
     def mock_batch_items(self, uris: list[URI], batches: list[Iterable[str]], limit: int) -> Generator[Mock, None, None]:
-        with patch.object(RemoteManyEndpoints, "_batch_items", return_value=batches) as mock_batch_items:
+        with patch.object(RemoteGetManyEndpoints, "_batch_items", return_value=batches) as mock_batch_items:
             yield mock_batch_items
             mock_batch_items.assert_called_once_with(uris, limit)
 
@@ -269,14 +269,14 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(
-                RemoteManyEndpoints, "_extend_items_from_response"
+                RemoteGetManyEndpoints, "_extend_items_from_response"
         ) as mock_extend_items_from_response:
             yield mock_extend_items_from_response
             assert mock_extend_items_from_response.call_count == expected
 
     async def test_get_on_uris(
             self,
-            model: RemoteManyEndpoints,
+            model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,
@@ -287,7 +287,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
 
     async def test_get_on_uris_str(
             self,
-            model: RemoteManyEndpoints,
+            model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,
@@ -298,7 +298,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
 
     async def test_get_on_urls(
             self,
-            model: RemoteManyEndpoints,
+            model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,
@@ -310,7 +310,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
 
     async def test_get_on_urls_str(
             self,
-            model: RemoteManyEndpoints,
+            model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,
@@ -322,7 +322,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
 
     async def test_get_on_ids(
             self,
-            model: RemoteManyEndpoints,
+            model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,
@@ -334,7 +334,7 @@ class TestRemoteManyEndpoints(RemoteEndpointsTester):
 
     async def test_get_on_models(
             self,
-            model: RemoteManyEndpoints,
+            model: RemoteGetManyEndpoints,
             uris: list[URI],
             limit: int,
             mock_get: Mock,

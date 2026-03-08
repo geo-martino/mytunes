@@ -98,6 +98,8 @@ class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
 
         items.extend((cls.create(it, kind=kind) for it in sub_items))
 
+
+class RemoteGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
@@ -115,7 +117,7 @@ class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
         return self.__class__.create(response)
 
 
-class RemoteManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
+class RemoteGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
     _many_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get multiple resources of this type in one call.",
     )
