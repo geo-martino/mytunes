@@ -16,6 +16,7 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
 
         return SpotifyPlaylist(
             name=faker.name(),
+            owner=generator.generate_owner(),
             uri=generator.generate_uri("playlist", playlist_id),
             total=faker.random_int(0, 200),
             cursor=SpotifyItemsCursor(
@@ -30,6 +31,8 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
         generator.add_playlist_items(payload)
 
         model = SpotifyPlaylist.model_validate(payload)
+
+        assert model.owner.uri == payload["owner"]["uri"]
 
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)

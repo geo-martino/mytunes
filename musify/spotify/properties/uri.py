@@ -7,11 +7,11 @@ from yarl import URL
 
 from musify.exception import MusifyValueError
 from musify.models.properties.uri import URI
+from musify.spotify._url import API_URL, PUBLIC_URL
 
 
 class _SpotifyURIBase(URI):
     _source = "spotify"
-    _version: ClassVar[str] = "v1"
 
     @property
     def source(self) -> str:
@@ -39,8 +39,8 @@ class _SpotifyURIBase(URI):
 
     @property
     def api_url(self) -> URL:
-        path = "/" + "/".join((self._version, self.type + "s", self.id))
-        return URL.build(scheme="https", host="api.spotify.com", path=path)
+        path = "/".join((self.type + "s", self.id))
+        return API_URL.joinpath(path)
 
     @classmethod
     def from_api_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
@@ -48,11 +48,11 @@ class _SpotifyURIBase(URI):
             return handler(value)
 
         if isinstance(value, str):
-            if not re.match(r"^https?://api.spotify.com", value):
+            if not value.startswith(str(API_URL)):
                 return handler(value)
             value = URL(value)
 
-        if value.host != "api.spotify.com":
+        if value.host != API_URL.host:
             return handler(value)
 
         path_parts = value.path.strip("/").split("/")
@@ -65,7 +65,7 @@ class _SpotifyURIBase(URI):
     @property
     def public_url(self) -> URL:
         path = "/" + "/".join((self.type, self.id))
-        return URL.build(scheme="https", host="open.spotify.com", path=path)
+        return URL.build(scheme=API_URL.scheme, host="open.spotify.com", path=path)
 
     @classmethod
     def from_public_url[T](cls, value: T | str | URL, handler: ValidatorFunctionWrapHandler) -> T | Self:
@@ -73,11 +73,11 @@ class _SpotifyURIBase(URI):
             return handler(value)
 
         if isinstance(value, str):
-            if not re.match(r"^https?://open.spotify.com", value):
+            if not value.startswith(str(PUBLIC_URL)):
                 return handler(value)
             value = URL(value)
 
-        if value.host != "open.spotify.com":
+        if value.host != PUBLIC_URL.host:
             return handler(value)
 
         path_parts = value.path.strip("/").split("/")

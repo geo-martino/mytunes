@@ -7,6 +7,7 @@ from PIL import ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
 from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
 
+from musify._types import StrippedString
 from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
@@ -54,7 +55,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
 
             return mutagen.mp4.MP4Cover(data, imageformat=image_format)
 
-    name: str | None = Field(
+    name: StrippedString | None = Field(
         description="A title of this track.",
         default=None,
         alias="©nam"

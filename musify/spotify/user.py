@@ -2,6 +2,7 @@ from typing import final
 
 from pydantic import Field
 
+from musify._types import StrippedString
 from musify.remote.user import RemoteUser
 from musify.spotify._base import SpotifyResource
 from musify.spotify.properties.followers import HasFollowers
@@ -13,7 +14,7 @@ from musify.spotify.properties.uri import SpotifyUserURI
 class SpotifyUser(RemoteUser[SpotifyUserURI], SpotifyResource[SpotifyUserURI], HasSpotifyImages, HasFollowers):
     __final__ = True
 
-    name: str = Field(
+    name: StrippedString | None = Field(
         description="The display name of the user",
         validation_alias="display_name",
     )

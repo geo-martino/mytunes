@@ -15,7 +15,7 @@ class TestRemoteGenreCollection(RemoteCollectionTester):
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=RemoteGenreCollection.type
         )
-        return RemoteGenreCollection[SimpleURI, Any](
+        return RemoteGenreCollection[SimpleURI, Any, ItemsCursor](
             name=faker.word(),
             uri=uri,
             total=faker.random_int(1, 20),

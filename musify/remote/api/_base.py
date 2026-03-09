@@ -1,262 +1,120 @@
-import itertools
-from collections.abc import MutableSequence, Collection, Iterable, Sequence
-from itertools import batched
-from typing import Any, ClassVar, Annotated
+import contextlib
+from abc import abstractmethod
+from collections.abc import Mapping
+from typing import Self, Any
 
 from aiorequestful.auth import Authoriser
+from aiorequestful.cache.backend import ResponseCache
+from aiorequestful.cache.exception import CacheError
+from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
-from aiorequestful.types import JSON
-from pydantic import Field, InstanceOf, AliasPath, NonNegativeInt, PositiveInt, validate_call, TypeAdapter, PrivateAttr
-from yarl import URL
+from aiorequestful.response.payload import JSONPayloadHandler
+from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Field, ValidationError, ConfigDict
+from typing_inspection.typing_objects import is_typevar
 
-from musify.exception import MusifyTypeError
-from musify.models._base import AttributeModelMetaclass
-from musify.models.properties.logger import HasLogger
-from musify.models.properties.uri import URI
-from musify.models.url import HttpURL
-from musify.remote import RemoteResource, RemoteModel
-from musify.remote.api._types import ApiURLSchema, ApiURISchema
-from musify.remote.collection import ItemsCursor, RemoteCollection
+from musify.exception import MusifyTypeError, MusifyValueError
+from musify.remote import RemoteModel
+from musify.remote.api._endpoints import HasEndpoints
+from musify.remote.api.exception import APIError
 
 
-class RemoteEndpointsMetaclass(AttributeModelMetaclass):
-    def create[T: RemoteResource](cls: RemoteEndpoints[T], value: Any, kind: str = None) -> T:
-        """Create an instance of the resource type handled by this API model from the given value."""
-        if not cls.__final__:
-            raise MusifyTypeError("Can only create resources from final API models.")
+# noinspection PyAbstractClass
+class RemoteAuthoriser[AT: Authoriser](RemoteModel):
+    model_config = ConfigDict(extra="forbid")
 
-        if kind is None:
-            kind = cls.type
-
-        source_classes = [kls for kls in RemoteResource.registered_submodels if kls.source == cls.source]
-        if not source_classes:
-            raise MusifyTypeError(f"No registered resource models found for source {cls.source!r}.")
-
-        for kls in source_classes:
-            if kls.type == kind:
-                return kls.model_validate(value)
-
-        raise MusifyTypeError(f"Could not find a registered {cls.source!r} model for type {kind!r}.")
-
-
-class RemoteEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](
-    RemoteModel, HasLogger, metaclass=RemoteEndpointsMetaclass
-):
-    type: ClassVar[str] = Field(
-        description="The type of resources the endpoints of this API model handle.",
+    cache: InstanceOf[ResponseCache] | None = Field(
+        description="A cache for storing responses. If not provided, the authoriser will not use caching.",
+        default=None,
     )
 
-    handler: InstanceOf[RequestHandler[AT, JSON]] = Field(
-        description="The handler for the API endpoint.",
-    )
+    @abstractmethod
+    def create_authoriser(self) -> AT:
+        """Create an authoriser for the API using the configured credentials."""
+        raise NotImplementedError
 
-    @staticmethod
-    @validate_call
-    def _create_saved_items_cursor(
-            url: HttpURL, limit: PositiveInt | None = None, offset: NonNegativeInt | None = None
-    ) -> ItemsCursor:
-        cursor_adapter = TypeAdapter(ItemsCursor.annotation)
-        cursor = cursor_adapter.validate_python(url)
 
-        # only set if given as the source's cursor may have default values set
-        if limit is not None:
-            cursor.limit = limit
-        if offset is not None:
-            cursor.offset = offset
+class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
+    @model_validator(mode="wrap")
+    @classmethod
+    def _from_handler[T](cls, value: T | RequestHandler, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        key = "handler"
+        if isinstance(value, Mapping) and set(value.keys()) == {key}:
+            value = value[key]
+        if not isinstance(value, RequestHandler):
+            return handler(value)
 
-        cursor.next = cursor.current
-        return cursor
+        data = {name: {key: value} for name in cls.model_fields.keys()}
+        return handler(data)
 
-    @validate_call
-    async def _extend_items_from_cursor(
-            self,
-            items: MutableSequence[RT],
-            cursor: ItemsCursor,
-            path: str | AliasPath,
-            kind: str = None,
-    ) -> MutableSequence[RT]:
-        while cursor.next is not None:
-            response = await self.handler.get(cursor.next)
-            self._extend_items_from_response(items=items, response=response, path=path, kind=kind)
-            cursor = cursor.model_validate(response)
+    @model_validator(mode="wrap")
+    @classmethod
+    def _from_authoriser[T](cls, value: T | RemoteAuthoriser, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        key = "authoriser"
+        if isinstance(value, Mapping) and set(value.keys()) == {key}:
+            value = value[key]
+        if not isinstance(value, RemoteAuthoriser):
+            return handler(value)
 
-        return items
+        request_handler = RequestHandler.create(
+            authoriser=value.create_authoriser(), cache=value.cache, payload_handler=JSONPayloadHandler()
+        )
+        return handler(request_handler)
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _from_credentials[T](cls, value: T | RemoteAuthoriser, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(value, Mapping):
+            return handler(value)
+
+        with contextlib.suppress(ValidationError):
+            value = cls._create_authoriser_from_credentials(value)
+        return handler(value)
 
     @classmethod
-    def _extend_items_from_response(
-            cls,
-            items: MutableSequence[RT],
-            response: JSON,
-            path: str | AliasPath,
-            kind: str = None,
-    ) -> None:
-        match path:
-            case str() as p:
-                sub_items = response[p]
-            case AliasPath() as p:
-                sub_items = p.search_dict_for_path(response)
+    def _create_authoriser_from_credentials(cls, credentials: Mapping[str, Any]) -> AT:
+        base = next(
+            (base for base in cls.__pydantic_parent_namespace__["bases"] if issubclass(base, RemoteAPI)), None
+        )
+        if base is None:
+            base = cls
 
-        items.extend((cls.create(it, kind=kind) for it in sub_items))
+        generics = base.__pydantic_generic_metadata__["args"]
+        if all(is_typevar(arg) for arg in generics):
+            generics = cls.__pydantic_generic_metadata__["args"]
 
-    @staticmethod
-    def _batch_items(uris: Collection[URI], limit: int) -> batched[str]:
-        """Batch the given URIs into sublists of the given size."""
-        return itertools.batched(map(str, uris), limit)
+        auth_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, RemoteAuthoriser))
+        return auth_t.model_validate(credentials)
 
-    @classmethod
-    def _generate_batch_url(cls, base_url: URL, values: Iterable[str]) -> URL:
-        """Generate a URL for the API endpoint for batched requests."""
-        return base_url.update_query(ids=",".join(values))
+    @model_validator(mode="after")
+    def _all_handlers_are_the_same(self) -> Self:
+        handlers = {id(getattr(self, field_name)._handler) for field_name in self.__class__.model_fields.keys()}
+        if len(handlers) != 1:
+            raise MusifyValueError("All endpoint models must use the same request handler for API to function correctly.")
 
+        return self
 
-class RemoteGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
-    async def get(self, url: Annotated[URL, ApiURLSchema[UT, RT]]) -> RT:
-        """
-        Get a resource from the API using the given ID, URL, URI, or resource.
+    async def __aenter__(self) -> Self:
+        handler: RequestHandler = next(
+            getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys()
+        )
+        await handler.__aenter__()
 
-        The URL given must relate to the resource type handled by this API model, and can be one of the following:
-            * A URL (as a string or yarl.URL) pointing to the resource's API
-            * A URI (as a string or URI object) for the resource
-            * A resource object with a URI property for the resource
-            * An ID (as a string) for the resource
-        """
-        response = await self.handler.get(url)
-        return self.__class__.create(response)
+        # try:
+        #     await self._setup_cache()
+        # except CacheError:
+        #     pass
+        #
+        # session = handler.session
+        # if isinstance(session, CachedSession):
+        #     for repository in session.cache.values():
+        #         # all repositories must use the same payload handler as the request handler
+        #         # for it to function correctly
+        #         repository.settings.payload_handler = self.handler.payload_handler
 
+        return self
 
-class RemoteGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
-    _many_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to get multiple resources of this type in one call.",
-    )
-    _many_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request.",
-    )
-    _many_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response.",
-    )
-
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURISchema.validate_call
-    async def get_many(
-            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = _many_limit
-    ) -> list[RT]:
-        """
-        Get multiple resources from the API using the given URIs.
-
-        The URIs must relate to the resource type handled by this API model, and can be one of the following:
-            * URLs (as strings or URL objects) pointing to the resource's API
-            * URIs (as strings or URI objects)
-            * Resource objects with a URI property for the resources
-            * IDs (as strings) for the resources
-
-        :param uris: A list of URIs. See above for accepted formats.
-        :param limit: The number of URIs to send in each request to the API.
-        """
-        items = []
-        for batch in self._batch_items(uris, limit):
-            url = self._generate_batch_url(self._many_url, batch)
-            response = await self.handler.get(url)
-            self._extend_items_from_response(items=items, response=response, path=self._many_path)
-
-        return items
-
-
-class RemoteGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
-    _saved_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to get the current user's saved items.",
-    )
-    _saved_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of saved items in the API response.",
-    )
-
-    @validate_call
-    async def get_saved(self, limit: PositiveInt = None, offset: NonNegativeInt = None) -> list[RT]:
-        """Get the current user's saved items for this endpoint resource type."""
-        items: list[RT] = []
-        cursor = self._create_saved_items_cursor(self._saved_url, limit=limit, offset=offset)
-        await self._extend_items_from_cursor(items=items, cursor=cursor, path=self._saved_path, kind=self.type)
-        return items
-
-
-class RemoteMutableSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteGetSavedEndpoints[AT, UT, RT]):
-    _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request to add items to the resource.",
-    )
-
-    @staticmethod
-    def _generate_batch_body(values: Iterable[str]) -> JSON:
-        """Generate a request body for the API endpoint for batched requests."""
-        return {"ids": list(map(str, values))}
-
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURISchema.validate_call
-    async def add_saved(
-            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = _batch_limit
-    ) -> None:
-        """Add items to the current user's saved items for this endpoint resource type."""
-        for batch in self._batch_items(uris, limit):
-            body = self._generate_batch_body(batch)
-            await self.handler.put(self._saved_url, json=body)
-
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURISchema.validate_call
-    async def remove_saved(
-            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = _batch_limit
-    ) -> None:
-        """Remote items from the current user's saved items for this endpoint resource type."""
-        for batch in self._batch_items(uris, limit):
-            body = self._generate_batch_body(batch)
-            await self.handler.delete(self._saved_url, json=body)
-
-
-class RemoteCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteCollection](RemoteEndpoints[AT, UT, RT]):
-    _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response.",
-    )
-
-
-class RemoteMutableCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteResource](RemoteEndpoints[AT, UT, RT]):
-    _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request to add items to the resource.",
-    )
-
-    @staticmethod
-    def _generate_batch_body(values: Iterable[str]) -> JSON:
-        """Generate a request body for the API endpoint for batched requests."""
-        return {"ids": list(map(str, values))}
-
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
-    @ApiURISchema.validate_call
-    async def extend(
-            self,
-            url: Annotated[URL, ApiURISchema[UT, RT]],
-            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
-            limit: PositiveInt = _batch_limit
-    ) -> None:
-        """Add items to the current user's saved items for this endpoint resource type."""
-        for batch in self._batch_items(uris, limit):
-            body = self._generate_batch_body(batch)
-            await self.handler.post(url, json=body)
-
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
-    @ApiURISchema.validate_call
-    async def remove(
-            self,
-            url: Annotated[URL, ApiURISchema[UT, RT]],
-            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
-            limit: PositiveInt = _batch_limit
-    ) -> None:
-        """Remove items from the current user's saved items for this endpoint resource type."""
-        for batch in self._batch_items(uris, limit):
-            body = self._generate_batch_body(batch)
-            await self.handler.delete(url, json=body)
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        for field_name in self.__class__.model_fields.keys():
+            handler: RequestHandler = getattr(self, field_name)._handler
+            if not handler.closed:
+                await handler.__aexit__(exc_type, exc_val, exc_tb)

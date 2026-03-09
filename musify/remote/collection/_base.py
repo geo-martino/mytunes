@@ -1,12 +1,10 @@
 import contextlib
 from abc import abstractmethod
-from collections.abc import Collection, MutableSequence, Iterable
+from collections.abc import Collection
 from typing import Any, Self
 
-from pydantic import Field, PositiveInt, NonNegativeInt, model_validator, TypeAdapter, ModelWrapValidatorHandler, \
-    ValidationError
+from pydantic import Field, NonNegativeInt, model_validator, TypeAdapter, ValidationError
 
-from musify.models.sequence import MusifySequence
 from musify.models.url import HttpURL
 from musify.remote._base import RemoteModel, RemoteResource
 
@@ -24,7 +22,7 @@ class ItemsCursor(RemoteModel):
         description="The URL to the next page of items, or null if there are no more items.",
         default=None,
     )
-    limit: PositiveInt | None = Field(
+    limit: NonNegativeInt | None = Field(
         description="The maximum number of items returned per page.",
         default=None,
     )
@@ -33,25 +31,39 @@ class ItemsCursor(RemoteModel):
         default=None,
     )
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_url(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _from_url[T](cls, value: T) -> T | dict[str, Any]:
         with contextlib.suppress(ValidationError):
             url = TypeAdapter(HttpURL).validate_python(value)
-            return handler(dict(current=url))
+            value = dict(current=url)
 
-        return handler(value)
+        return value
 
     @model_validator(mode="after")
     def _set_limit_to_current_url(self) -> Self:
-        if self.limit is not None and self.current.query.get("limit") != str(self.limit):
-            self.current = self.current.update_query(limit=self.limit)
+        param_key = "limit"
+
+        match self.limit:
+            case None:
+                pass
+            case 0 if param_key in self.current.query:
+                self.current = self.current.without_query_params(param_key)
+            case param if param > 0 and self.current.query.get(param_key) != str(param):
+                self.current = self.current.update_query({param_key: param})
+
         return self
 
     @model_validator(mode="after")
     def _set_offset_to_current_url(self) -> Self:
-        if self.offset is not None and self.current.query.get("offset") != str(self.offset):
-            self.current = self.current.update_query(offset=self.offset)
+        param_key = "offset"
+
+        match self.offset:
+            case None:
+                pass
+            case param if self.current.query.get(param_key) != str(param):
+                self.current = self.current.update_query({param_key: param})
+
         return self
 
     def reset(self) -> None:
@@ -62,11 +74,11 @@ class ItemsCursor(RemoteModel):
 
 
 # noinspection PyAbstractClass
-class RemoteCollection[IT: RemoteResource](RemoteModel):
+class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel):
     total: NonNegativeInt = Field(
         description="The total number of items in this collection."
     )
-    cursor: ItemsCursor = Field(
+    cursor: CT = Field(
         description=(
             "The cursor for the current page of items. "
             "This is used for pagination and should be passed to the next page request to extend the collection."
@@ -83,17 +95,3 @@ class RemoteCollection[IT: RemoteResource](RemoteModel):
     def _items(self) -> Collection[IT]:
         """The items in this collection."""
         raise NotImplementedError
-
-    def _extend_items(self, other: Iterable[IT]) -> None:
-        """Extend the items in this collection with the given items."""
-        match self._items:
-            case MutableSequence() as items:
-                items.extend(other)
-            case MusifySequence() as items:
-                other = list(other)
-                # noinspection PyProtectedMember
-                items._items.extend(other)
-                # noinspection PyProtectedMember
-                items._items_mapped.update(other)
-            case items:
-                raise TypeError(f"Cannot extend items of type {type(items).__name__!r}.")

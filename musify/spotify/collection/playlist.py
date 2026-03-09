@@ -1,15 +1,18 @@
-from typing import final, Any
+from collections.abc import MutableMapping
+from typing import final, Any, ClassVar
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import MusifySequence, MusifyMutableSequence
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.spotify import SpotifyResource
 from musify.spotify.collection._base import SpotifyCollection, SpotifyItemsCursor
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.uri import SpotifyResourceURI
+from musify.spotify.user import SpotifyUser
 
 
 # noinspection PyFinal
@@ -29,17 +32,25 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
 
 @final
 class SpotifyPlaylist(
-    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI],
+    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyItemsCursor],
+    SpotifyResource[SpotifyResourceURI],
     SpotifyCollection[SpotifyPlaylistTrack],
     HasSpotifyImages,
     HasFollowers,
 ):
     __final__ = True
 
+    source: ClassVar[str] = "spotify"
+
+    description: str | None = Field(
+        description="The description of the playlist.",
+        default=None,
+    )
     tracks: MusifySequence[str, SpotifyPlaylistTrack] = Field(
         description="The tracks in this playlist.",
         default_factory=MusifySequence[str, SpotifyPlaylistTrack],
-        validation_alias=AliasPath("items", "items")
+        validation_alias=AliasPath("items", "items"),
+        frozen=True,
     )
 
     total: NonNegativeInt = Field(
@@ -54,12 +65,21 @@ class SpotifyPlaylist(
         validation_alias="items",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_tracks[T](cls, data: T) -> T:
+        if not isinstance(data, MutableMapping) or "items" not in data:
+            return data
+
+        data.pop("tracks", None)
+        return data
+
 
 # noinspection PyFinal
 @final
 class SpotifyMutablePlaylist(
-    RemoteMutablePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI],
     SpotifyPlaylist,
+    RemoteMutablePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyItemsCursor],
 ):
     __final__ = True
 

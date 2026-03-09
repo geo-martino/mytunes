@@ -1,8 +1,9 @@
 import itertools
 import math
 from abc import ABCMeta
+from collections.abc import Generator, Iterable
 from random import choice
-from typing import Any, Generator, Iterable
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest

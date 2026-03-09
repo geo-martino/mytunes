@@ -202,12 +202,12 @@ class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
         if not isinstance(other, MusifyResource):
             return super().__eq__(other)
         return self.unique_keys == other.unique_keys
-
-    def __setattr__(self, key: str, value: Any) -> None:
-        """Set the value of a given attribute key"""
-        super().__setattr__(key, value)
-        if key in self.__unique_attributes__ and hasattr(self, "unique_keys"):
-            del self.unique_keys  # clear the cached property
+    #
+    # def __setattr__(self, key: str, value: Any) -> None:
+    #     """Set the value of a given attribute key"""
+    #     super().__setattr__(key, value)
+    #     if key in self.__unique_attributes__ and hasattr(self, "unique_keys"):
+    #         del self.unique_keys  # clear the cached property
 
 
 class AttributeModelMetaclass(MusifyModelMetaclass):

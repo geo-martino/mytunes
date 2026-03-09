@@ -6,7 +6,8 @@ from typing import Any, get_args, Callable, Self
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema
+from pydantic_core import core_schema, ValidationError
+from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
@@ -25,16 +26,17 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
 
     @classmethod
     def _create_type_from_model_generics(cls, model: RemoteModel) -> type[Self]:
-        generics = model.__pydantic_generic_metadata__["args"]
-        if not generics:
-            from musify.remote.api import RemoteEndpoints
-            base = next(
-                base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, RemoteEndpoints)
-            )
-            generics = base.__pydantic_generic_metadata__["args"]
+        from musify.remote.api import RemoteEndpoints
+        base = next(
+            base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, RemoteEndpoints)
+        )
+        generics = base.__pydantic_generic_metadata__["args"]
 
-        uri_t = next(arg for arg in generics if issubclass(arg, URI))
-        model_t = next(arg for arg in generics if issubclass(arg, HasURI))
+        if all(is_typevar(arg) for arg in generics):
+            generics = model.__pydantic_generic_metadata__["args"]
+
+        uri_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, URI))
+        model_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, HasURI))
         return cls[uri_t, model_t]
 
     @staticmethod
@@ -61,12 +63,25 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         uri_t: UT = args[0]
         model_t: type[MT] = args[1]
 
+        url_schema = handler.generate_schema(HttpURL)
+
+        def _from_api_uri(url: URL) -> URL:
+            uri = TypeAdapter(uri_t).validate_python(url)
+            if not str(url).startswith(str(uri.api_url)):
+                raise ValueError("URL does not match the expected API URL format.")
+            return url
+
+        from_api_url_schema = core_schema.chain_schema(
+            [
+                url_schema,
+                core_schema.no_info_plain_validator_function(_from_api_uri),
+            ]
+        )
+
         def _from_uri(uri: URI) -> URL:
             return uri.api_url
 
-        url_schema = handler.generate_schema(HttpURL)
-
-        from_url_schema = core_schema.chain_schema(
+        from_public_url_schema = core_schema.chain_schema(
             [
                 url_schema,
                 handler.generate_schema(uri_t),
@@ -105,7 +120,8 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
         python_schema = core_schema.union_schema(
             [
-                from_url_schema,
+                from_api_url_schema,
+                from_public_url_schema,
                 from_uri_schema,
                 from_model_schema,
                 from_id_schema

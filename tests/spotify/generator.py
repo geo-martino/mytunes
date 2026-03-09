@@ -260,7 +260,7 @@ class SpotifyPayloadGenerator:
 
     def generate_genres(self) -> Sequence[str]:
         """Return a list of randomly generated genres."""
-        return self.faker.random_elements(GENRES)
+        return self.faker.random_elements(GENRES, unique=True)
 
     ################################################################################
     ## Playlists
@@ -275,7 +275,7 @@ class SpotifyPayloadGenerator:
 
         payload = {
             "collaborative": False if public else self.faker.boolean(),
-            "description": self.faker.sentence(),
+            "description": self.faker.random_element((self.faker.sentence(), None)),
             "external_urls": self.generate_external_urls(kind, playlist_id),
             "followers": self.generate_followers(),
             "href": playlist_href,
@@ -288,18 +288,23 @@ class SpotifyPayloadGenerator:
             "snapshot_id": self.faker.pystr(32, 32),
             "type": kind,
             "uri": self.generate_uri(kind, playlist_id),
+            "items": {
+                "href": URL(playlist_href).joinpath("items"),
+                "total": self.faker.random_int(0, 200),
+            },
         }
 
         return payload
 
-    def add_playlist_items(self, payload: dict[str, Any], count: int = 0) -> None:
+    def add_playlist_items(self, payload: dict[str, Any]) -> None:
         """Add items to a playlist payload in-place."""
         owner = payload["owner"]
         playlist_href = payload["href"]
+        items_count = payload["items"]["total"]
 
-        items = self._generate_playlist_items(owner, count=count)
+        items = self._generate_playlist_items(owner, count=items_count)
         items_href = URL(playlist_href).joinpath("items")
-        payload["items"] = self.format_items_block(url=items_href, items=items, limit=len(items), total=count)
+        payload["items"] = self.format_items_block(url=items_href, items=items, limit=len(items), total=items_count)
 
     def _generate_playlist_items(
             self, owner: dict[str, Any], count: int = 0
@@ -615,7 +620,7 @@ class SpotifyPayloadGenerator:
             url = URL.build(scheme="http", host="i.scdn.co", path=f"/image/{image_id}")
             return {"url": str(url), "height": size, "width": size}
 
-        images = [generate_image(size) for size in self.faker.random_elements(image_sizes)]
+        images = [generate_image(size) for size in self.faker.random_elements(image_sizes, unique=True)]
         images.sort(key=lambda x: x["height"], reverse=True)
         return images
 

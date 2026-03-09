@@ -1,46 +1,52 @@
+from typing import ClassVar, Type
+
 from aiorequestful.auth import Authoriser
+from pydantic import Field
 
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
-from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteCollectionEndpoints
+from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
+    RemoteGetSavedEndpoints, RemoteCollectionEndpoints, RemoteMutableSavedEndpoints, HasEndpoints
 from musify.remote.collection.artist import RemoteArtistCollection
 from musify.remote.item.artist import RemoteArtist
 
 
-class ArtistEndpoints[AT: Authoriser, UT: URI, RT: RemoteArtist](RemoteEndpoints[AT, UT, RT]):
-    pass
+class ArtistEndpoints[UT: URI, RT: RemoteArtist](RemoteEndpoints[UT, RT]):
+    type: ClassVar[Type] = RemoteArtist
 
 
-class ArtistGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[AT, UT, RT], RemoteGetSingleEndpoints[AT, UT, RT]
+class ArtistGetSingleEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], RemoteGetSingleEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[AT, UT, RT], RemoteGetManyEndpoints[AT, UT, RT]
+class ArtistGetManyEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], RemoteGetManyEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[AT, UT, RT], RemoteGetSavedEndpoints[AT, UT, RT]
+class ArtistCollectionEndpoints[UT: URI, RT: RemoteArtistCollection](
+    ArtistEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT]
+):
+    type: ClassVar[Type] = RemoteArtistCollection
+    _extend_type: ClassVar[str] = "album"
+
+
+class ArtistGetSavedEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], RemoteGetSavedEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteArtistCollection](
-    ArtistEndpoints[AT, UT, RT], RemoteCollectionEndpoints[AT, UT, RT]
+class ArtistMutableSavedEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], RemoteMutableSavedEndpoints[UT, RT]
 ):
-    async def extend_albums(self, artist: RT) -> None:
-        """Extend the albums in this artist collection."""
-        items = await self._extend_items_from_cursor(
-            items=[], cursor=artist.cursor, path=self._extend_path, kind="album"
-        )
-        # noinspection PyProtectedMember
-        artist._extend_items(items)
+    pass
 
 
-class HasArtistEndpoints[ET: ArtistEndpoints](RemoteModel):
-    artists: ET
+class HasArtistEndpoints[ET: ArtistEndpoints](HasEndpoints):
+    artists: ET = Field(
+        description="Access artist endpoints for the API."
+    )

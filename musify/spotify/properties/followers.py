@@ -1,10 +1,10 @@
-from pydantic import Field, AliasPath, PositiveInt
+from pydantic import Field, AliasPath, PositiveInt, NonNegativeInt
 
 from musify.models import AttributeModel
 
 
 class HasFollowers(AttributeModel):
-    followers: PositiveInt | None = Field(
+    followers: NonNegativeInt | None = Field(
         description="The number of followers for this item",
         default=None,
         validation_alias=AliasPath("followers", "total"),

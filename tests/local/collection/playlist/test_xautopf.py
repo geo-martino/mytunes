@@ -168,6 +168,7 @@ def xml_playlist_complex() -> str:
     """.strip()
 
 
+# TODO: find a way to add back empty Description, Exceptions, ExceptionsInclude fields
 @pytest.fixture
 def xml_playlist_recent() -> str:
     """A recently added tracks XAutoPF playlist XML structure for testing purposes."""
@@ -208,7 +209,6 @@ def xml_playlist_recent() -> str:
     """.strip()
 
 
-# TODO: add back empty Description, Exceptions, ExceptionsInclude fields - Pydantic 2.12.0+ required
 # noinspection PyUnresolvedReferences
 @pytest.fixture(params=[
     pytest.lazy_fixture("xml_playlist_basic"),

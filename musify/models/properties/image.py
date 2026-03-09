@@ -213,6 +213,11 @@ class HasImages(AttributeResource):
 
     @field_validator("images", mode="before", check_fields=True)
     @classmethod
+    def _from_none[T](cls, images: T | None) -> T | dict[str, Any]:
+        return images if images is not None else {}
+
+    @field_validator("images", mode="before", check_fields=True)
+    @classmethod
     def _restructure_image_sequence[T](cls, images: T | list[dict]) -> T | dict[str, Any]:
         if not isinstance(images, list):
             return images

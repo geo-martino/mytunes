@@ -1,46 +1,45 @@
+from typing import ClassVar, Type
+
 from aiorequestful.auth import Authoriser
+from pydantic import Field
 
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
-from musify.remote.api._base import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteCollectionEndpoints
+from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
+    RemoteGetSavedEndpoints, RemoteCollectionEndpoints, HasEndpoints
 from musify.remote.collection.genre import RemoteGenreCollection
 from musify.remote.item.genre import RemoteGenre
 
 
-class GenreEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](RemoteEndpoints[AT, UT, RT]):
-    pass
+class GenreEndpoints[UT: URI, RT: RemoteGenre](RemoteEndpoints[UT, RT]):
+    type: ClassVar[Type] = RemoteGenre
 
 
-class GenreGetSingleEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](
-    GenreEndpoints[AT, UT, RT], RemoteGetSingleEndpoints[AT, UT, RT]
+class GenreGetSingleEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], RemoteGetSingleEndpoints[UT, RT]
 ):
     pass
 
 
-class GenreGetManyEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](
-    GenreEndpoints[AT, UT, RT], RemoteGetManyEndpoints[AT, UT, RT]
+class GenreGetManyEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], RemoteGetManyEndpoints[UT, RT]
 ):
     pass
 
 
-class GenreGetSavedEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenre](
-    GenreEndpoints[AT, UT, RT], RemoteGetSavedEndpoints[AT, UT, RT]
+class GenreCollectionEndpoints[UT: URI, RT: RemoteGenreCollection](
+    GenreEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT]
+):
+    type: ClassVar[Type] = RemoteGenreCollection
+
+
+class GenreGetSavedEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], RemoteGetSavedEndpoints[UT, RT]
 ):
     pass
 
 
-class GenreCollectionEndpoints[AT: Authoriser, UT: URI, RT: RemoteGenreCollection](
-    GenreEndpoints[AT, UT, RT], RemoteCollectionEndpoints[AT, UT, RT]
-):
-    async def extend_tracks(self, genre: RT) -> None:
-        """Extend the tracks in this genre collection."""
-        items = await self._extend_items_from_cursor(
-            items=[], cursor=genre.cursor, path=self._extend_path, kind="track"
-        )
-        # noinspection PyProtectedMember
-        genre._extend_items(items)
-
-
-class HasGenreEndpoints[ET: GenreEndpoints](RemoteModel):
-    genres: ET
+class HasGenreEndpoints[ET: GenreEndpoints](HasEndpoints):
+    genres: ET = Field(
+        description="Access genre endpoints for the API."
+    )

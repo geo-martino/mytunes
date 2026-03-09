@@ -174,6 +174,10 @@ class TestHasImages(MusifyModelTester):
     def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> HasImages:
         return HasImages(images={img.type: img for img in image_files + image_urls})
 
+    def test_from_none(self):
+        model = HasImages.model_validate({"images": None})
+        assert model.images == {}
+
     async def test_load_images(self, model: HasImages, image_object: PILImageFile, faker: Faker):
         update_attributes = faker.boolean()
         kwargs = faker.pydict()

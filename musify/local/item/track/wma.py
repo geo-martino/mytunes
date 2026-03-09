@@ -8,6 +8,7 @@ from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, InstanceOf
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
+from musify._types import StrippedString
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
@@ -87,7 +88,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
             data = b"\x00\x00".join((header + mime, description, data))
             return mutagen.asf.ASFByteArrayAttribute(data)
 
-    name: str | None = Field(
+    name: StrippedString | None = Field(
         description="A title of this track.",
         default=None,
         alias="Title"

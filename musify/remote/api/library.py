@@ -1,14 +1,19 @@
+from typing import ClassVar
+
 from aiorequestful.auth import Authoriser
+from pydantic import Field
 
 from musify.models.properties.uri import URI
 from musify.remote import RemoteModel
-from musify.remote.api._base import RemoteEndpoints
+from musify.remote.api._endpoints import RemoteEndpoints, HasEndpoints
 from musify.remote.collection.playlist import RemotePlaylist
 
 
-class LibraryEndpoints[AT: Authoriser, UT: URI, RT: RemotePlaylist](RemoteEndpoints[AT, UT, RT]):
-    pass
+class LibraryEndpoints[UT: URI, RT: RemotePlaylist](RemoteEndpoints[UT, RT]):
+    type: ClassVar[str] = "library"
 
 
-class HasLibraryEndpoints[ET: LibraryEndpoints](RemoteModel):
-    library: ET
+class HasLibraryEndpoints[ET: LibraryEndpoints](HasEndpoints):
+    library: ET = Field(
+        description="Access library endpoints for the API."
+    )

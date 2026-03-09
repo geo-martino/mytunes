@@ -9,6 +9,7 @@ from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_valid
     field_validator, field_serializer, ModelWrapValidatorHandler
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
+from musify._types import StrippedString
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
@@ -51,7 +52,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
                 data=data,
             )
 
-    name: str | None = Field(
+    name: StrippedString | None = Field(
         description="A title of this track.",
         default=None,
         alias="TIT2",
