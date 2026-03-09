@@ -70,6 +70,11 @@ class PlaylistMutableSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Remo
         return self.__class__.create_model(response)
 
     @ApiURLSchema.validate_call
+    async def modify(self, url: Annotated[URL, ApiURLSchema[UT, RT]], **kwargs) -> None:
+        """Modify details about a playlist in the current user's library."""
+        await self._handler.put(url, json=kwargs)
+
+    @ApiURLSchema.validate_call
     async def delete(self, url: Annotated[URL, ApiURLSchema[UT, RT]]) -> None:
         """Delete the playlist from the current user's library."""
         await self._handler.delete(url)

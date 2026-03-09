@@ -27,11 +27,14 @@ class _SpotifySavedPlaylistEndpoints(
     _saved_limit: ClassVar[int] = 50
     _saved_path: ClassVar[str] = "items"
 
+    @staticmethod
     @validate_call
-    async def create(
-            self, name: str, public: bool = None, collaborative: bool = None, description: str = None
-    ) -> SpotifyPlaylist:
-        body: JSON = {"name": name}
+    def _format_playlist_body(
+            name: str = None, public: bool = None, collaborative: bool = None, description: str = None
+    ) -> JSON:
+        body: JSON = {}
+        if name is not None:
+            body["name"] = name
         if public is not None:
             body["public"] = public
         if collaborative is not None:
@@ -39,6 +42,16 @@ class _SpotifySavedPlaylistEndpoints(
         if description is not None:
             body["description"] = description
 
+        return body
+
+    @validate_call
+    async def create(self, name: str, **kwargs) -> SpotifyPlaylist:
+        body = self._format_playlist_body(name=name, **kwargs)
+        return await super().create(**body)
+
+    @ApiURLSchema.validate_call
+    async def modify(self, url: Annotated[URL, ApiURLSchema[SpotifyResourceURI, SpotifyPlaylist]], **kwargs) -> None:
+        body = self._format_playlist_body(**kwargs)
         return await super().create(**body)
 
 

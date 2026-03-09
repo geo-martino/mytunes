@@ -22,16 +22,20 @@ class SpotifyPayloadGenerator:
     def generate_user(self) -> dict[str, Any]:
         """Return a randomly generated Spotify API response for a User."""
         payload = self.generate_owner() | {
-            "country": self.faker.country_code(representation="alpha-2"),
-            "email": self.faker.email(),
-            "explicit_content": {
-                "filter_enabled": self.faker.boolean(),
-                "filter_locked": self.faker.boolean()
-            },
             "followers": self.generate_followers(),
             "images": self.generate_images(),
-            "product": self.faker.random_element(("premium", "free", "open")),
         }
+
+        if self.faker.boolean():  # needs scope: user-read-email
+            payload["email"] = self.faker.email()
+
+        if self.faker.boolean():  # needs scope: user-read-private
+            payload["country"] = self.faker.country_code(representation="alpha-2")
+            payload["explicit_content"] = {
+                "filter_enabled": self.faker.boolean(),
+                "filter_locked": self.faker.boolean()
+            }
+            payload["product"] = self.faker.random_element(("premium", "free", "open"))
 
         return payload
 
