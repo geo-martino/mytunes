@@ -8,8 +8,8 @@ from typing import Any, ClassVar, Annotated, Self, Type
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
-from pydantic import Field, InstanceOf, AliasPath, NonNegativeInt, PositiveInt, validate_call, TypeAdapter, PrivateAttr, \
-    model_validator, ModelWrapValidatorHandler, ValidationError
+from pydantic import Field, InstanceOf, AliasPath, NonNegativeInt, PositiveInt, validate_call, TypeAdapter, \
+    PrivateAttr, model_validator, ModelWrapValidatorHandler, ValidationError
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
@@ -19,12 +19,12 @@ from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.url import HttpURL
 from musify.remote import RemoteResource, RemoteModel
-from musify.remote.api._types import ApiURLSchema, ApiURISchema
+from musify.remote.api.types import ApiURLSchema, ApiURISchema
 from musify.remote.collection import ItemsCursor, RemoteCollection
 
 
 class RemoteEndpointsMetaclass(AttributeModelMetaclass):
-    def create_model[T: RemoteResource](cls: RemoteEndpoints[T], value: Any, kind: str | type = None) -> T:
+    def create_model(cls: RemoteEndpoints, value: Any, kind: str | type = None) -> RemoteResource:
         """Create an instance of the resource type handled by this API model from the given value."""
         if not cls.__final__:
             raise MusifyTypeError("Can only create resources from final API models.")
@@ -32,6 +32,7 @@ class RemoteEndpointsMetaclass(AttributeModelMetaclass):
         if kind is None:
             kind = cls.type
 
+        # noinspection PyTypeChecker
         source_classes = [kls for kls in RemoteResource.registered_submodels if kls.source == cls.source]
         if not source_classes:
             raise MusifyTypeError(f"No registered resource models found for source {cls.source!r}.")
@@ -225,7 +226,7 @@ class RemoteGetManyEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT
         for batch in self._batch_items(uris, limit):
             url = self._generate_batch_url(self._many_url, batch)
             response = await self._handler.get(url)
-            self._get_items_from_response(items=items, response=response, path=self._many_path)
+            items.extend(self._get_items_from_response(response=response, path=self._many_path))
 
         return items
 
@@ -252,6 +253,7 @@ class RemoteCollectionEndpoints[UT: URI, RT: RemoteCollection](RemoteEndpoints[U
             case _:
                 raise MusifyTypeError("Expected a collection or items cursor.")
 
+        # noinspection PyArgumentList
         items, cursor = await self._get_all_items_from_cursor(
             cursor=cursor, path=self._extend_path, kind=self._extend_type
         )
@@ -304,7 +306,9 @@ class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
             limit: PositiveInt = None
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
+        # noinspection PyArgumentList
         collection = await self.get(url)
+        # noinspection PyArgumentList
         items = await self.get_all(collection)
 
         uris_unique = []
@@ -313,6 +317,7 @@ class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
             if uri not in uris_unique and uri not in uris_current:
                 uris_unique.append(uri)
 
+        # noinspection PyArgumentList
         return await self.append(url, uris_unique, limit=limit)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
@@ -359,6 +364,7 @@ class RemoteGetSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, R
             limit = self._saved_limit
 
         cursor = self._create_saved_items_cursor(self._saved_url, limit=limit, offset=offset)
+        # noinspection PyArgumentList
         items, cursor = await self._get_all_items_from_cursor(cursor=cursor, path=self._saved_path, kind=self.type)
         return list(items)
 

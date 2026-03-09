@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
-from yarl import URL as YarlURL
+from yarl import URL as YARL_URL
 
 
 class _URLSchema:
@@ -14,12 +14,12 @@ class _URLSchema:
         cast_str_schema = core_schema.chain_schema(
             [
                 url_schema,
-                core_schema.no_info_plain_validator_function(lambda x: YarlURL(str(x))),
+                core_schema.no_info_plain_validator_function(lambda x: YARL_URL(str(x))),
             ]
         )
         python_schema = core_schema.union_schema(
             [
-                core_schema.is_instance_schema(YarlURL),
+                core_schema.is_instance_schema(YARL_URL),
                 cast_str_schema,
             ]
         )
@@ -38,5 +38,5 @@ class _URLSchema:
 
 
 HttpURL = Annotated[
-    YarlURL, _URLSchema
+    YARL_URL, _URLSchema
 ]

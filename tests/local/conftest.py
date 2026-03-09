@@ -21,6 +21,7 @@ def models(
     return [*tracks, *artists, *albums]
 
 
+# noinspection PyTypeChecker
 @pytest.fixture
 def track(faker: Faker, tmp_path: Path) -> LocalTrack:
     classes: tuple[type[LocalTrack], ...] = tuple(LocalTrack.registered_submodels)
@@ -34,6 +35,7 @@ def track(faker: Faker, tmp_path: Path) -> LocalTrack:
     return track
 
 
+# noinspection PyTypeChecker
 @pytest.fixture
 def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     classes: tuple[type[LocalTrack], ...] = tuple(LocalTrack.registered_submodels)
@@ -77,7 +79,7 @@ def albums(faker: Faker) -> list[LocalAlbum]:
 
 
 @pytest.fixture
-def genre() -> list[LocalGenre]:
+def genre() -> LocalGenre:
     return LocalGenre(name=choice(GENRES))
 
 

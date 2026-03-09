@@ -5,8 +5,7 @@ from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from pydantic import ValidationError
 
-from musify.remote.api import RemoteAPI, RemoteEndpoints
-from musify.remote.api._base import RemoteAuthoriser
+from musify.remote.api import RemoteAPI, RemoteAuthoriser, RemoteEndpoints
 from tests.models.testers import MusifyModelTester
 
 
@@ -20,6 +19,7 @@ class TestRemoteAPI(MusifyModelTester):
             authorise=Mock(),
         )
         def create_authoriser(self) -> Authoriser:
+            # noinspection PyAbstractClass
             return Authoriser()
 
     class MockRemoteAPI(RemoteAPI[MockRemoteAuthoriser]):

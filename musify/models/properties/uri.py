@@ -168,6 +168,7 @@ class HasMutableURI[UT: URI](HasURI[UT]):
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
         if self.source is None and len(set(uri.source for uri in self.uris)) == 1:
+            # noinspection PyTypeChecker
             self.source = self.uris[0].source
         return self
 

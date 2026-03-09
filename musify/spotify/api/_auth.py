@@ -9,7 +9,7 @@ from aiorequestful.auth.utils import AuthRequest
 from pydantic import SecretStr, Field, field_validator, PrivateAttr
 from yarl import URL
 
-from musify.remote.api._base import RemoteAuthoriser
+from musify.remote.api import RemoteAuthoriser
 from musify.remote.api.exception import APIError
 from musify.spotify import SpotifyModel, API_URL
 
@@ -81,7 +81,7 @@ class SpotifyAuthoriser(RemoteAuthoriser[AuthorisationCodeFlow], SpotifyModel):
         try:
             r = await response.json()
             return "href" in r and "display_name" in r
-        except ClientResponseError as exc:
+        except ClientResponseError:
             if "premium subscription" in await response.text():
                 raise APIError(
                     "The access token is valid but the Spotify API cannot be accessed with a free account. "

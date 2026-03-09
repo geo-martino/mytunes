@@ -7,7 +7,7 @@ from yarl import URL
 from musify.models.properties.uri import URI
 from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
     RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, HasEndpoints
-from musify.remote.api._types import ApiURLSchema
+from musify.remote.api.types import ApiURLSchema
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.remote.user import RemoteUser
 
@@ -82,6 +82,7 @@ class PlaylistMutableSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Remo
     @validate_call
     async def get_or_create(self, name: str, **kwargs) -> RT:
         """Get the playlist if it exists in the current user's library or create a new one."""
+        # noinspection PyArgumentList
         playlist = await self.get_by_name(name=name)
         if playlist is None:
             playlist = await self.create(name=name, **kwargs)

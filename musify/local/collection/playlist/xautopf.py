@@ -236,6 +236,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         reference = self._get_reference_for_last_played_track(tracks)
         compared = {track.path for track in tracks if self.matcher.compare.check(track, reference=reference)}
 
+        # noinspection PyTypeChecker
         included = compared | self.matcher.exclude.paths
         if self.matcher.include.path_mapper is not None:
             included = self.matcher.include.path_mapper.unmap_many(included, check_existence=False)

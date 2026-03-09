@@ -7,6 +7,7 @@ from faker import Faker
 from musify.local.item.track import LocalTrack
 
 
+# noinspection PyTypeChecker
 @pytest.fixture
 def local_tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     """

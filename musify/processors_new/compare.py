@@ -93,6 +93,7 @@ class Comparer(DynamicProcessor):
 
     @property
     def _field_type(self) -> type:
+        # noinspection PyArgumentList
         if self.field is None:
             field_type = NoneType
         elif isinstance(field := _COMPARISON_FIELDS_MAP[self.field].get_nested_field_info(self.field), FieldInfo):
@@ -146,6 +147,7 @@ class Comparer(DynamicProcessor):
     @classmethod
     def _convert_expected_to_type(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(value)
+        # noinspection PyTypeChecker
         model._convert_expected_value(model._expected_type)
         return model
 
@@ -154,6 +156,7 @@ class Comparer(DynamicProcessor):
     def _convert_expected_to_exact_field_type(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(value)
         if is_typevar(model._actual_type) and is_typevar(model._expected_type):  # expected is same type as actual
+            # noinspection PyTypeChecker
             model._convert_expected_value(model._field_type)
 
         return model
@@ -165,6 +168,7 @@ class Comparer(DynamicProcessor):
     ) -> Self:
         model: Self = handler(value)
         if is_typevar(model._expected_type) and model._field_type is str:
+            # noinspection PyTypeChecker
             model._convert_expected_value(model._field_type)
         elif (
                 is_typevar(model._expected_type)

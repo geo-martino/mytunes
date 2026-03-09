@@ -111,11 +111,13 @@ class MusifyMutableMapping[TK, TV: MusifyResource](MusifyMapping[TK, TV], Mutabl
     """Stores :py:class:`MusifyResource` items mapped according to their unique keys."""
     @validate_call
     def __setitem__(self, __key: TK, __value: TV):
+        # noinspection PyArgumentList
         self.add(__value)  # ignore the given key
 
     @validate_call
     def __delitem__(self, __key: TK):
         item = self[__key]
+        # noinspection PyArgumentList
         self.remove(item)
 
     @validate_call
@@ -131,6 +133,7 @@ class MusifyMutableMapping[TK, TV: MusifyResource](MusifyMapping[TK, TV], Mutabl
         if extract_keys:
             if isinstance(__m, Mapping):
                 __m = __m.values()
+            # noinspection PyTypeChecker
             __m = dict((key, item) for item in __m for key in item.unique_keys)
 
         self._items.update(__m)

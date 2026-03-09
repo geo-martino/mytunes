@@ -6,7 +6,7 @@ from pydantic import TypeAdapter
 from yarl import URL
 
 from musify.models.properties.uri import URI
-from musify.remote.api._types import ApiURLSchema, ApiURISchema
+from musify.remote.api.types import ApiURLSchema, ApiURISchema
 from tests.remote.api.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
@@ -28,23 +28,28 @@ class ApiSchemaTester[T](metaclass=ABCMeta):
     def test_requires_generics_definition(self):
         raise NotImplementedError
 
-    def test_from_api_url(self, adapter: TypeAdapter, uri: URI, expected: T):
+    @staticmethod
+    def test_from_api_url(adapter: TypeAdapter, uri: URI, expected: T):
         assert adapter.validate_python(str(uri.api_url)) == expected
         assert adapter.validate_python(uri.api_url) == expected
 
-    def test_from_public_url(self, adapter: TypeAdapter, uri: URI, expected: T):
+    @staticmethod
+    def test_from_public_url(adapter: TypeAdapter, uri: URI, expected: T):
         assert adapter.validate_python(str(uri.api_url)) == expected
         assert adapter.validate_python(uri.api_url) == expected
 
-    def test_from_uri(self, adapter: TypeAdapter, uri: URI, expected: T):
+    @staticmethod
+    def test_from_uri(adapter: TypeAdapter, uri: URI, expected: T):
         assert adapter.validate_python(str(uri)) == expected
         assert adapter.validate_python(uri) == expected
 
-    def test_from_resource(self, adapter: TypeAdapter, uri: URI, expected: T):
+    @staticmethod
+    def test_from_resource(adapter: TypeAdapter, uri: URI, expected: T):
         resource = MockRemoteResource(uri=uri)
         assert adapter.validate_python(resource) == expected
 
-    def test_from_id(self, adapter: TypeAdapter, uri: URI, expected: T):
+    @staticmethod
+    def test_from_id(adapter: TypeAdapter, uri: URI, expected: T):
         assert adapter.validate_python(uri.id) == expected
 
 

@@ -248,6 +248,7 @@ class ItemSorter(Processor):
         for key, items in groups.items():  # sort each group and recurse through each field for each group
             self.sort_by_field(items=items, field=field, reverse=reverse, ignore_words=self.ignore_words)
             items_grouped = self.group_by_field(items, field=field, ignore_words=self.ignore_words)
+            # noinspection PyTypeChecker
             groups[key] = self._sort_by_fields(items_grouped, fields=copy(fields))
 
         if set(groups) == {None}:

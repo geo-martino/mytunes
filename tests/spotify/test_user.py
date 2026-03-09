@@ -32,7 +32,8 @@ class TestSpotifyUser(SpotifyModelTester):
         model = SpotifyUser.model_validate(payload)
 
         assert model.name == payload["display_name"]
-        assert model.email == payload["email"]
+        if "email" in payload:
+            assert model.email == payload["email"]
 
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)

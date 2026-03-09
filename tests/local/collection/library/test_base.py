@@ -83,6 +83,7 @@ class TestLocalLibrary(MusifyResourceTester):
     ) -> list[LocalPlaylist]:
         """The tracks available in all library folders"""
         playlists = []
+        # noinspection PyTypeChecker
         extensions = tuple(LocalPlaylist.supported_extensions)
 
         for _ in range(faker.random_int(10, 20)):

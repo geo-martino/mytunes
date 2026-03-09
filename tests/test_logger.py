@@ -2,6 +2,7 @@
 
 import logging
 import sys
+from collections.abc import Generator
 from copy import copy, deepcopy
 
 import pytest
@@ -18,7 +19,7 @@ except ImportError:
 ## MusifyLogger tests
 ###########################################################################
 @pytest.fixture
-def logger() -> MusifyLogger:
+def logger() -> Generator[MusifyLogger, None, None]:
     """Yields a :py:class:`MusifyLogger` with all handlers removed for testing"""
     logger = MusifyLogger(__name__)
     logger.compact = False

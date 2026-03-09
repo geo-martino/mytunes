@@ -207,7 +207,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         mode="before"
     )
     @classmethod
-    def _deserialize_text_frames(cls, value: Iterable[mutagen.id3.TextFrame]) -> list[str]:
+    def _deserialize_text_frames[T](cls, value: T | Iterable[mutagen.id3.TextFrame]) -> T | list[str]:
         if value is None:
             return value
         if not isinstance(value, tuple | list):
@@ -232,6 +232,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     ) -> T | str | InstanceOf[mutagen.id3.TextFrame]:
         if info.mode == "json":
             return self._extract_name(value)
+        # noinspection PyArgumentList
         return self._serialize_text_frame(value, info=info)
 
     @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
@@ -240,6 +241,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     ) -> T | list[str] | InstanceOf[mutagen.id3.TextFrame]:
         if info.mode == "json":
             return self._extract_names(value)
+        # noinspection PyArgumentList
         return self._serialize_text_frame(value, info=info)
 
     # noinspection PyNestedDecorators
@@ -247,8 +249,8 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         "name", "track", "disc", "bpm", "key", "released_at",
         mode="plain", when_used="unless-none"
     )
-    def _serialize_text_frame[T: str | HasName](
-            self, value: T, info: FieldSerializationInfo
+    def _serialize_text_frame[T](
+            self, value: T | str | HasName, info: FieldSerializationInfo
     ) -> T | InstanceOf[mutagen.id3.TextFrame]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return value
@@ -260,8 +262,8 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="plain", when_used="unless-none")
-    def _serialize_text_frames[T: Iterable[str | HasName]](
-            self, values: T, info: FieldSerializationInfo
+    def _serialize_text_frames[T](
+            self, values: T | Iterable[str | HasName], info: FieldSerializationInfo
     ) -> T | list[InstanceOf[mutagen.id3.TextFrame]]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return values

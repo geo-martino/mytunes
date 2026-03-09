@@ -2,6 +2,7 @@ from random import choice
 from typing import ClassVar
 
 from musify.remote import RemoteResource
+from musify.remote.collection import RemoteCollection
 from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.artist import RemoteArtist
 from musify.remote.item.track import RemoteTrack
@@ -15,3 +16,8 @@ class MockRemoteResource(RemoteResource[SimpleURI]):
         RemoteAlbum.type,
         RemoteArtist.type,
     ))
+
+
+class MockRemoteCollection(MockRemoteResource, RemoteCollection):
+    def _items(self) -> list:
+        return []

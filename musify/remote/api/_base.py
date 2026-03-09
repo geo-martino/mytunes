@@ -84,13 +84,17 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
 
     @model_validator(mode="after")
     def _all_handlers_are_the_same(self) -> Self:
+        # noinspection PyProtectedMember
         handlers = {id(getattr(self, field_name)._handler) for field_name in self.__class__.model_fields.keys()}
         if len(handlers) != 1:
-            raise MusifyValueError("All endpoint models must use the same request handler for API to function correctly.")
+            raise MusifyValueError(
+                "All endpoint models must use the same request handler for API to function correctly."
+            )
 
         return self
 
     async def __aenter__(self) -> Self:
+        # noinspection PyProtectedMember
         handler: RequestHandler = next(
             getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys()
         )
@@ -112,6 +116,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         for field_name in self.__class__.model_fields.keys():
+            # noinspection PyProtectedMember
             handler: RequestHandler = getattr(self, field_name)._handler
             if not handler.closed:
                 await handler.__aexit__(exc_type, exc_val, exc_tb)

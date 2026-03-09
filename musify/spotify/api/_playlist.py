@@ -5,7 +5,7 @@ from aiorequestful.types import JSON
 from pydantic import validate_call, PositiveInt, Field
 from yarl import URL
 
-from musify.remote.api._types import ApiURISchema, ApiURLSchema
+from musify.remote.api.types import ApiURISchema, ApiURLSchema
 from musify.remote.api.playlist import PlaylistMutableEndpoints, \
     PlaylistMutableSavedEndpoints
 from musify.spotify import API_URL

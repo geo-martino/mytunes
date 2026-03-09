@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Set, Iterator
+from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterator
 from typing import Any, Self, overload, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
@@ -122,7 +122,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
         return self.__class__(self._items.copy())
 
     @validate_call
-    def intersection(self, other: Sequence[TV] | Set[TV]) -> tuple[TV, ...]:
+    def intersection(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
         """
         Return the intersection between the items in this collection and an ``other`` collection as a new list.
 
@@ -131,7 +131,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
         return tuple(item for item in self._items if item in other)
 
     @validate_call
-    def difference(self, other: Sequence[TV] | Set[TV]) -> tuple[TV, ...]:
+    def difference(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
         """
         Return the difference between the items in this collection and an ``other`` collection as a new list.
 
@@ -140,7 +140,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
         return tuple(item for item in self._items if item not in other)
 
     @validate_call
-    def outer_difference(self, other: Sequence[TV] | Set[TV]) -> tuple[TV, ...]:
+    def outer_difference(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
         """
         Return the outer difference between the items in this collection and an ``other`` collection as a new list.
 
@@ -177,10 +177,12 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
         if isinstance(item := self[index], MusifyResource):  # index is an int
+            # noinspection PyArgumentList
             self.remove(item)
             return
 
         for it in item:  # index is a slice
+            # noinspection PyArgumentList
             self.remove(it)
 
     @validate_call
@@ -191,6 +193,7 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
 
     @validate_call
     def __iadd__(self, other: Iterable[TV]):
+        # noinspection PyArgumentList
         self.extend(other)
         return self
 
@@ -204,16 +207,19 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
     @validate_call
     def __isub__(self, other: Iterable[TV]):
         for item in other:
+            # noinspection PyArgumentList
             self.remove(item)
         return self
 
     @validate_call
     def __or__(self, other: Sequence[TV]) -> Self:
         items = self.copy()
+        # noinspection PyArgumentList
         return items.merge(other)
 
     @validate_call
     def __ior__(self, other: Sequence[TV]) -> Self:
+        # noinspection PyArgumentList
         self.merge(other)
         return self
 
@@ -261,15 +267,17 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
         :param reference: The reference sequence to compare this sequence and the ``other`` sequence to.
         """
         if reference is None:
+            # noinspection PyArgumentList
             self.extend(other, allow_duplicates=False)
             return
 
         for item in reference:
             if item not in other and item in self:
+                # noinspection PyArgumentList
                 self.remove(item)
 
-        # noinspection PyTypeChecker
-        self.extend(MusifySequence.outer_difference(reference, other), allow_duplicates=False)
+        # noinspection PyTypeChecker,PyArgumentList
+        self.extend(self.__class__.outer_difference(reference, other), allow_duplicates=False)
 
     @validate_call
     def remove(self, __value: TV | Sequence[TV]) -> None:

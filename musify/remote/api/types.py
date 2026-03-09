@@ -253,6 +253,7 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
             self = args.pop(0)
             cls_t = cls._create_type_from_model_generics(self)
+            # noinspection PyTypeHints
             adapter = TypeAdapter(Sequence[cls_t])
 
             args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)

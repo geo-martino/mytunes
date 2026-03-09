@@ -12,15 +12,14 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError
 from musify.models.properties.uri import URI
-from musify.remote.api import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, RemoteGetSavedEndpoints
-from musify.remote.api._endpoints import RemoteMutableCollectionEndpoints, RemoteMutableSavedEndpoints, \
-    RemoteCollectionEndpoints
+from musify.remote.api import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
+    RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, RemoteMutableSavedEndpoints, RemoteCollectionEndpoints
 from musify.remote.collection import ItemsCursor, RemoteCollection
 from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.artist import RemoteArtist
 from musify.remote.item.track import RemoteTrack
 from tests.remote.api.testers import RemoteEndpointsTester, URI_TYPE_CONVERTERS
-from tests.remote.api.utils import MockRemoteResource
+from tests.remote.api.utils import MockRemoteResource, MockRemoteCollection
 from tests.utils import SimpleURI
 
 
@@ -161,8 +160,9 @@ class TestRemoteEndpoints(RemoteEndpointsTester):
             urls = [call.args[0] for call in mock_get_next_cursor.call_args_list]
             assert urls == [cursor_initial.next] + [cursor.next for cursor in cursors if cursor.next is not None]
 
+    @staticmethod
     def assert_get_items_from_response(
-            self, model: RemoteEndpoints, response: dict[str, Any], path: str | AliasPath, expected: list[Any]
+            model: RemoteEndpoints, response: dict[str, Any], path: str | AliasPath, expected: list[Any]
     ):
         def _return_response[T](item: T, *_, **__) -> T:
             return item
@@ -291,7 +291,7 @@ class TestGetManyEndpoints(RemoteEndpointsTester):
 
 
 class TestCollectionEndpoints(RemoteEndpointsTester):
-    class MockCollectionEndpoints(RemoteCollectionEndpoints[SimpleURI, MockRemoteResource]):
+    class MockCollectionEndpoints(RemoteCollectionEndpoints[SimpleURI, MockRemoteCollection]):
         _batch_limit = 26
         _extend_path = "items"
         _extend_type = "type"
@@ -378,6 +378,7 @@ class TestMutableCollectionEndpoints(RemoteEndpointsTester):
             total=faker.random_int(),
         )
 
+    # noinspection PyMethodOverriding
     @pytest.fixture
     def mock_get(
             self, model: RemoteMutableCollectionEndpoints, uri: URI, collection: RemoteCollection
@@ -403,7 +404,7 @@ class TestMutableCollectionEndpoints(RemoteEndpointsTester):
         result = await model.append(url, uris, limit=limit)
         assert result == len(uris)
 
-    async def test_append_uses_default_limit(self, model: RemoteMutableCollectionEndpoints, uri: URI,uris: list[URI]):
+    async def test_append_uses_default_limit(self, model: RemoteMutableCollectionEndpoints, uri: URI, uris: list[URI]):
         with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
             await model.append(uri.api_url, uris)
             mock_batch_items.assert_called_once_with(uris, model._batch_limit)
@@ -555,4 +556,3 @@ class TestMutableSavedEndpoints(RemoteEndpointsTester):
         with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
             await model.remove_many(uris)
             mock_batch_items.assert_called_once_with(uris, model._batch_limit)
-

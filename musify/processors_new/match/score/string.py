@@ -100,13 +100,13 @@ class KaraokeScorer(StringScorer):
         value = item.name
         return self._calculate_score_and_log(item, value=value)
 
-    def _calculate_score_for_artist(self, item: HasName) -> bool:
+    def _calculate_score_for_artist(self, item: HasName | HasArtists) -> bool:
         if not isinstance(item, HasArtists):
             return False
         value = item.artist
         return self._calculate_score_and_log(item, value=value)
 
-    def _calculate_score_for_album(self, item: HasName) -> bool:
+    def _calculate_score_for_album(self, item: HasName | HasAlbum) -> bool:
         if not isinstance(item, HasAlbum) or item.album is None:
             return False
         value = item.album.name

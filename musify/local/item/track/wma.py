@@ -186,6 +186,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     ) -> str | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if info.mode == "json":
             return self._extract_name(value)
+        # noinspection PyArgumentList
         return self._serialize_unicode_attribute(value, info=info)
 
     @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
@@ -194,6 +195,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     ) -> list[str] | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if info.mode == "json":
             return self._extract_names(value)
+        # noinspection PyArgumentList
         return self._serialize_unicode_attributes(value, info=info)
 
     # noinspection PyNestedDecorators
@@ -220,6 +222,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
 
         values = self._extract_names(value)
         self._extend_with_uris(values, info=info)
+        # noinspection PyArgumentList
         return [self._serialize_unicode_attribute(val, info=info) for val in values]
 
     @field_serializer("track", mode="plain", when_used="unless-none")
