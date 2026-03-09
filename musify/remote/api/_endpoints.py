@@ -247,7 +247,7 @@ class RemoteCollectionEndpoints[UT: URI, RT: RemoteCollection](RemoteEndpoints[U
             case RemoteCollection() as collection:
                 cursor = collection.cursor
                 if not collection.has_all_items and cursor.next is None:
-                    cursor.offset = len(collection._items)
+                    cursor.offset = collection.loaded_count  # sets the offset on the current URL
                     cursor.next = cursor.current
             case _:
                 raise MusifyTypeError("Expected a collection or items cursor.")

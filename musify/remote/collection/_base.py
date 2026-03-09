@@ -88,7 +88,12 @@ class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel):
     @property
     def has_all_items(self) -> bool:
         """Whether this collection has all items loaded."""
-        return len(self._items) == self.total
+        return self.loaded_count == self.total
+
+    @property
+    def loaded_count(self) -> int:
+        """The number of items currently loaded in this collection."""
+        return len(self._items)
 
     @property
     @abstractmethod
