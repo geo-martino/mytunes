@@ -6,7 +6,7 @@ from typing import Any, get_args, Callable, Self
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema, ValidationError
+from pydantic_core import core_schema
 from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 

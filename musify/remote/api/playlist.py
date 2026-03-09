@@ -6,9 +6,8 @@ from yarl import URL
 
 from musify.models.properties.uri import URI
 from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, RemoteCollectionEndpoints, HasEndpoints, \
-    RemoteMutableSavedEndpoints
-from musify.remote.api._types import ApiURLSchema, ApiURISchema
+    RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, HasEndpoints
+from musify.remote.api._types import ApiURLSchema
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.remote.user import RemoteUser
 

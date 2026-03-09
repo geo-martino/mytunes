@@ -1,15 +1,14 @@
 from typing import ClassVar, final
 
-from aiorequestful.auth import Authoriser
-from yarl import URL
 from pydantic import AliasPath, Field
+from yarl import URL
 
 from musify.remote.api.track import TrackGetSingleEndpoints, TrackGetManyEndpoints, \
     TrackGetSavedEndpoints, TrackMutableSavedEndpoints
 from musify.spotify import API_URL
+from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
-from musify.spotify.api._base import SpotifyEndpoints
 
 
 @final

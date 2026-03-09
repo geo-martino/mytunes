@@ -1,19 +1,18 @@
 from collections.abc import Iterable, Sequence
 from typing import ClassVar, final, Annotated
 
-from aiorequestful.auth import Authoriser
 from aiorequestful.types import JSON
-from yarl import URL
 from pydantic import validate_call, PositiveInt, Field
+from yarl import URL
 
 from musify.remote.api._types import ApiURISchema, ApiURLSchema
-from musify.remote.api.playlist import PlaylistGetSingleEndpoints, PlaylistGetSavedEndpoints, PlaylistMutableEndpoints, \
+from musify.remote.api.playlist import PlaylistMutableEndpoints, \
     PlaylistMutableSavedEndpoints
 from musify.spotify import API_URL
+from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
-from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.user import SpotifyUser
 
 

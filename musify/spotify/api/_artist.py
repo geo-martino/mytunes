@@ -1,16 +1,15 @@
 from typing import ClassVar, final
 
-from aiorequestful.auth import Authoriser
-from yarl import URL
 from pydantic import AliasPath, Field
+from yarl import URL
 
 from musify.remote.api.artist import ArtistGetSingleEndpoints, ArtistGetManyEndpoints, \
     ArtistGetSavedEndpoints, ArtistCollectionEndpoints, ArtistMutableSavedEndpoints
 from musify.spotify import API_URL
+from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI
-from musify.spotify.api._base import SpotifyEndpoints
 
 
 @final

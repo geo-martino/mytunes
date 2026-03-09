@@ -1,5 +1,3 @@
-import functools
-
 from musify.remote.api import RemoteAPI
 from musify.remote.api.album import HasAlbumEndpoints
 from musify.remote.api.artist import HasArtistEndpoints

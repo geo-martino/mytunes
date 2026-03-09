@@ -1,13 +1,10 @@
 from unittest.mock import patch, Mock
 
 import pytest
-from aiohttp import ClientSession
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
-from faker import Faker
 from pydantic import ValidationError
 
-from musify.exception import MusifyValueError
 from musify.remote.api import RemoteAPI, RemoteEndpoints
 from musify.remote.api._base import RemoteAuthoriser
 from tests.models.testers import MusifyModelTester

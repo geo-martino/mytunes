@@ -1,11 +1,9 @@
 from typing import ClassVar
 
-from aiorequestful.auth import Authoriser
-from yarl import URL
 from pydantic import Field, PrivateAttr
+from yarl import URL
 
 from musify.models.properties.uri import URI
-from musify.remote import RemoteModel
 from musify.remote.api._endpoints import RemoteEndpoints, HasEndpoints
 from musify.remote.user import RemoteUser
 

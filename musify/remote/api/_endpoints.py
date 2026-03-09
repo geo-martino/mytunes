@@ -1,6 +1,6 @@
 import contextlib
 import itertools
-from collections.abc import MutableSequence, Collection, Iterable, Sequence, Mapping, Iterator
+from collections.abc import Collection, Iterable, Sequence, Mapping, Iterator
 from copy import copy
 from itertools import batched
 from typing import Any, ClassVar, Annotated, Self, Type
@@ -9,7 +9,7 @@ from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
 from pydantic import Field, InstanceOf, AliasPath, NonNegativeInt, PositiveInt, validate_call, TypeAdapter, PrivateAttr, \
-    model_validator, ModelWrapValidatorHandler, PydanticUndefinedAnnotation, ValidationError
+    model_validator, ModelWrapValidatorHandler, ValidationError
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
@@ -21,7 +21,6 @@ from musify.models.url import HttpURL
 from musify.remote import RemoteResource, RemoteModel
 from musify.remote.api._types import ApiURLSchema, ApiURISchema
 from musify.remote.collection import ItemsCursor, RemoteCollection
-from musify.remote.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 
 
 class RemoteEndpointsMetaclass(AttributeModelMetaclass):

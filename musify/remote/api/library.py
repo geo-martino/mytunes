@@ -1,10 +1,8 @@
 from typing import ClassVar
 
-from aiorequestful.auth import Authoriser
 from pydantic import Field
 
 from musify.models.properties.uri import URI
-from musify.remote import RemoteModel
 from musify.remote.api._endpoints import RemoteEndpoints, HasEndpoints
 from musify.remote.collection.playlist import RemotePlaylist
 

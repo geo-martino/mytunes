@@ -1,15 +1,13 @@
 from collections.abc import Sequence
 from http import HTTPMethod
-from json import JSONDecodeError
 from pathlib import Path
 from typing import ClassVar
 
-from aiohttp import ClientResponse, ContentTypeError, ClientResponseError
+from aiohttp import ClientResponse, ClientResponseError
 from aiorequestful.auth.oauth2 import AuthorisationCodeFlow
 from aiorequestful.auth.utils import AuthRequest
-from aiorequestful.cache.backend import ResponseCache
+from pydantic import SecretStr, Field, field_validator, PrivateAttr
 from yarl import URL
-from pydantic import SecretStr, Field, field_validator, PrivateAttr, InstanceOf
 
 from musify.remote.api._base import RemoteAuthoriser
 from musify.remote.api.exception import APIError

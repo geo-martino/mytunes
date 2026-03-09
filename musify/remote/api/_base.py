@@ -5,17 +5,14 @@ from typing import Self, Any
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
-from aiorequestful.cache.exception import CacheError
-from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Field, ValidationError, ConfigDict
 from typing_inspection.typing_objects import is_typevar
 
-from musify.exception import MusifyTypeError, MusifyValueError
+from musify.exception import MusifyValueError
 from musify.remote import RemoteModel
 from musify.remote.api._endpoints import HasEndpoints
-from musify.remote.api.exception import APIError
 
 
 # noinspection PyAbstractClass

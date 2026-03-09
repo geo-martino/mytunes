@@ -1,4 +1,4 @@
-from pydantic import Field, AliasPath, PositiveInt, NonNegativeInt
+from pydantic import Field, AliasPath, NonNegativeInt
 
 from musify.models import AttributeModel
 
