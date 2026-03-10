@@ -15,6 +15,10 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
     owner: OT = Field(
         description="The owner of this playlist.",
     )
+    public: bool | None = Field(
+        description="Whether this playlist is publicly available.",
+        default=None,
+    )
 
     @property
     def _items(self) -> MusifySequence[UT, TT]:

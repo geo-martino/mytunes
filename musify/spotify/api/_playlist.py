@@ -5,7 +5,7 @@ from aiorequestful.types import JSON
 from pydantic import validate_call, PositiveInt, Field
 from yarl import URL
 
-from musify.remote.api.playlist import PlaylistMutableEndpoints, PlaylistMutableSavedEndpoints
+from musify.remote.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.remote.api.types import ApiURISchema, ApiURLSchema
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
@@ -19,7 +19,7 @@ from musify.spotify.user import SpotifyUser
 @final
 class _SpotifySavedPlaylistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyPlaylist],
-    PlaylistMutableSavedEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist, SpotifyUser],
+    PlaylistReadWriteSavedEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist, SpotifyUser],
 ):
     __final__ = True
 
@@ -72,7 +72,7 @@ class _SpotifySavedPlaylistEndpoints(
 @final
 class SpotifyPlaylistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
-    PlaylistMutableEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
+    PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
 ):
     __final__ = True
 

@@ -12,7 +12,7 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 
 from musify.models.properties.uri import URI
-from musify.remote.api import RemoteEndpoints
+from musify.remote.api import Endpoints
 from tests.models.testers import MusifyModelTester
 from tests.remote.api.utils import MockRemoteResource
 from tests.utils import SimpleURI
@@ -29,7 +29,7 @@ URI_TYPE_CONVERTERS = {
 }
 
 
-class RemoteEndpointsTester(MusifyModelTester, metaclass=ABCMeta):
+class EndpointsTester(MusifyModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def _convert_uri_to_random_input_type(value: URI) -> Any:
@@ -91,7 +91,7 @@ class RemoteEndpointsTester(MusifyModelTester, metaclass=ABCMeta):
 
     @pytest.fixture
     def mock_batch_items(
-            self, model: RemoteEndpoints, uris: list[URI], batches: list[Iterable[str]], limit: int
+            self, model: Endpoints, uris: list[URI], batches: list[Iterable[str]], limit: int
     ) -> Generator[Mock, None, None]:
         with patch.object(model.__class__, "_batch_items", return_value=batches) as mock_batch_items:
             yield mock_batch_items

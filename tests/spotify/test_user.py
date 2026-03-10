@@ -31,10 +31,10 @@ class TestSpotifyUser(SpotifyModelTester):
         payload = generator.generate_user()
         model = SpotifyUser.model_validate(payload)
 
-        assert model.name == payload["display_name"]
-        if "email" in payload:
-            assert model.email == payload["email"]
-
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_followers(model, payload)
+
+        assert model.name == payload["display_name"]
+        if "email" in payload:
+            assert model.email == payload["email"]

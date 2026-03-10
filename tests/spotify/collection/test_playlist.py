@@ -17,6 +17,7 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
         return SpotifyPlaylist(
             name=faker.name(),
             owner=generator.generate_owner(),
+            collaborative=faker.boolean(),
             uri=generator.generate_uri("playlist", playlist_id),
             total=faker.random_int(0, 200),
             cursor=SpotifyItemsCursor(
@@ -32,11 +33,13 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
 
         model = SpotifyPlaylist.model_validate(payload)
 
-        assert model.owner.uri == payload["owner"]["uri"]
-
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_followers(model, payload)
 
         self.assert_has_all_items(model, payload["items"]["items"], payload["items"]["total"])
+
+        assert model.owner.uri == payload["owner"]["uri"]
+        assert model.public is payload["public"]
+        assert model.collaborative == payload["collaborative"]

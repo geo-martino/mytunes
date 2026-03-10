@@ -7,11 +7,11 @@ from yarl import URL
 from musify.models import MusifyResource
 from musify.models.properties.uri import URI
 from musify.remote import RemoteResource
-from musify.remote.api._endpoints import RemoteEndpoints, HasEndpoints
+from musify.remote.api._endpoints import Endpoints, HasEndpoints
 
 
 # noinspection PyAbstractClass
-class SearchEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
+class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     type: ClassVar[str] = "search"
 
     _query_url: ClassVar[URL] = PrivateAttr(

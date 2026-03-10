@@ -3,35 +3,35 @@ from typing import ClassVar
 from pydantic import Field
 
 from musify.models.properties.uri import URI
-from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteMutableSavedEndpoints, HasEndpoints
+from musify.remote.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
+    ReadSavedEndpoints, WriteSavedEndpoints, HasEndpoints
 from musify.remote.item.track import RemoteTrack
 
 
-class TrackEndpoints[UT: URI, RT: RemoteTrack](RemoteEndpoints[UT, RT]):
+class TrackEndpoints[UT: URI, RT: RemoteTrack](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemoteTrack
 
 
-class TrackGetSingleEndpoints[UT: URI, RT: RemoteTrack](
-    TrackEndpoints[UT, RT], RemoteGetSingleEndpoints[UT, RT]
+class TrackReadItemEndpoints[UT: URI, RT: RemoteTrack](
+    TrackEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
 ):
     pass
 
 
-class TrackGetManyEndpoints[UT: URI, RT: RemoteTrack](
-    TrackEndpoints[UT, RT], RemoteGetManyEndpoints[UT, RT]
+class TrackReadItemsEndpoints[UT: URI, RT: RemoteTrack](
+    TrackEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
 ):
     pass
 
 
-class TrackGetSavedEndpoints[UT: URI, RT: RemoteTrack](
-    TrackEndpoints[UT, RT], RemoteGetSavedEndpoints[UT, RT]
+class TrackReadSavedEndpoints[UT: URI, RT: RemoteTrack](
+    TrackEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
 ):
     pass
 
 
-class TrackMutableSavedEndpoints[UT: URI, RT: RemoteTrack](
-    TrackEndpoints[UT, RT], RemoteMutableSavedEndpoints[UT, RT]
+class TrackWriteSavedEndpoints[UT: URI, RT: RemoteTrack](
+    TrackEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
 ):
     pass
 

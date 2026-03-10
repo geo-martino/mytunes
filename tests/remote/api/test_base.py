@@ -5,7 +5,7 @@ from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from pydantic import ValidationError
 
-from musify.remote.api import RemoteAPI, RemoteAuthoriser, RemoteEndpoints
+from musify.remote.api import RemoteAPI, RemoteAuthoriser, Endpoints
 from tests.models.testers import MusifyModelTester
 
 
@@ -23,9 +23,9 @@ class TestRemoteAPI(MusifyModelTester):
             return Authoriser()
 
     class MockRemoteAPI(RemoteAPI[MockRemoteAuthoriser]):
-        tracks: RemoteEndpoints
-        artists: RemoteEndpoints
-        albums: RemoteEndpoints
+        tracks: Endpoints
+        artists: Endpoints
+        albums: Endpoints
 
     @pytest.fixture
     def model(self) -> RemoteAPI:

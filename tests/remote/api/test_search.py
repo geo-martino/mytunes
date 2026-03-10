@@ -9,12 +9,12 @@ from musify.models.item.track import Track
 from musify.remote.api.search import SearchEndpoints
 from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.track import RemoteTrack
-from tests.remote.api.testers import RemoteEndpointsTester
+from tests.remote.api.testers import EndpointsTester
 from tests.remote.api.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
 
-class TestSearchEndpoints(RemoteEndpointsTester):
+class TestSearchEndpoints(EndpointsTester):
     class MockSearchEndpoints(SearchEndpoints[SimpleURI, MockRemoteResource]):
         _query_url = URL("https://api.example.com/search")
         _query_path = "items"

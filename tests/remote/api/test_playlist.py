@@ -5,11 +5,11 @@ import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
-from musify.remote.api.playlist import PlaylistGetSavedEndpoints, PlaylistMutableSavedEndpoints
+from musify.remote.api.playlist import PlaylistReadSavedEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.remote.collection import ItemsCursor
 from musify.remote.collection.playlist import RemotePlaylist
 from musify.remote.user import RemoteUser
-from tests.remote.api.testers import RemoteEndpointsTester
+from tests.remote.api.testers import EndpointsTester
 from tests.utils import SimpleURI
 
 
@@ -32,18 +32,18 @@ def playlists(faker: Faker) -> list[RemotePlaylist]:
 
 @pytest.fixture
 def mock_get_all(playlists: list[RemotePlaylist], faker: Faker) -> Generator[Mock, None, None]:
-    with patch.object(PlaylistGetSavedEndpoints, "get_all", return_value=playlists) as mock_get_all:
+    with patch.object(PlaylistReadSavedEndpoints, "get_all", return_value=playlists) as mock_get_all:
         yield mock_get_all
 
 
-class TestPlaylistGetSavedEndpoints(RemoteEndpointsTester):
+class TestPlaylistReadSavedEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> PlaylistGetSavedEndpoints:
-        return PlaylistGetSavedEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> PlaylistReadSavedEndpoints:
+        return PlaylistReadSavedEndpoints(handler=handler)
 
     async def test_get_by_user(
             self,
-            model: PlaylistGetSavedEndpoints,
+            model: PlaylistReadSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -57,7 +57,7 @@ class TestPlaylistGetSavedEndpoints(RemoteEndpointsTester):
 
     async def test_get_by_name(
             self,
-            model: PlaylistGetSavedEndpoints,
+            model: PlaylistReadSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -67,7 +67,7 @@ class TestPlaylistGetSavedEndpoints(RemoteEndpointsTester):
 
     async def test_get_by_names(
             self,
-            model: PlaylistGetSavedEndpoints,
+            model: PlaylistReadSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -76,14 +76,14 @@ class TestPlaylistGetSavedEndpoints(RemoteEndpointsTester):
         assert await model.get_by_names(names=[pl.name for pl in expected]) == expected
 
 
-class TestPlaylistMutableSavedEndpoints(RemoteEndpointsTester):
+class TestPlaylistWriteSavedEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> PlaylistMutableSavedEndpoints:
-        return PlaylistMutableSavedEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> PlaylistReadWriteSavedEndpoints:
+        return PlaylistReadWriteSavedEndpoints(handler=handler)
 
     async def test_get_or_create_gets_existing(
             self,
-            model: PlaylistMutableSavedEndpoints,
+            model: PlaylistReadWriteSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -98,7 +98,7 @@ class TestPlaylistMutableSavedEndpoints(RemoteEndpointsTester):
 
     async def test_get_or_create_creates_new(
             self,
-            model: PlaylistMutableSavedEndpoints,
+            model: PlaylistReadWriteSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker

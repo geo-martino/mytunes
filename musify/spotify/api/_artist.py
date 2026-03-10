@@ -3,8 +3,8 @@ from typing import ClassVar, final, Literal
 from pydantic import AliasPath, Field, validate_call
 from yarl import URL
 
-from musify.remote.api.artist import ArtistGetSingleEndpoints, ArtistGetManyEndpoints, \
-    ArtistGetSavedEndpoints, ArtistCollectionEndpoints, ArtistMutableSavedEndpoints
+from musify.remote.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
+    ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints
 from musify.remote.collection import ItemsCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
@@ -16,8 +16,8 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 @final
 class _SpotifySavedArtistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistGetSavedEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistMutableSavedEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistReadSavedEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistWriteSavedEndpoints[SpotifyResourceURI, SpotifyArtist],
 ):
     __final__ = True
 
@@ -31,9 +31,9 @@ class _SpotifySavedArtistEndpoints(
 @final
 class SpotifyArtistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistGetSingleEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistGetManyEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistCollectionEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    ArtistReadItemEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistReadItemsEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistReadCollectionEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
 ):
     __final__ = True
 

@@ -26,9 +26,9 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
 
     @classmethod
     def _create_type_from_model_generics(cls, model: RemoteModel) -> type[Self]:
-        from musify.remote.api import RemoteEndpoints
+        from musify.remote.api import Endpoints
         base = next(
-            base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, RemoteEndpoints)
+            base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, Endpoints)
         )
         generics = base.__pydantic_generic_metadata__["args"]
 

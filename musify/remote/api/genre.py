@@ -3,36 +3,42 @@ from typing import ClassVar, Type
 from pydantic import Field
 
 from musify.models.properties.uri import URI
-from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteCollectionEndpoints, HasEndpoints
+from musify.remote.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
+    ReadSavedEndpoints, ReadCollectionEndpoints, HasEndpoints, WriteSavedEndpoints
 from musify.remote.collection.genre import RemoteGenreCollection
 from musify.remote.item.genre import RemoteGenre
 
 
-class GenreEndpoints[UT: URI, RT: RemoteGenre](RemoteEndpoints[UT, RT]):
+class GenreEndpoints[UT: URI, RT: RemoteGenre](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemoteGenre
 
 
-class GenreGetSingleEndpoints[UT: URI, RT: RemoteGenre](
-    GenreEndpoints[UT, RT], RemoteGetSingleEndpoints[UT, RT]
+class GenreReadItemEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
 ):
     pass
 
 
-class GenreGetManyEndpoints[UT: URI, RT: RemoteGenre](
-    GenreEndpoints[UT, RT], RemoteGetManyEndpoints[UT, RT]
+class GenreReadItemsEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
 ):
     pass
 
 
-class GenreCollectionEndpoints[UT: URI, RT: RemoteGenreCollection](
-    GenreEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT]
+class GenreReadCollectionEndpoints[UT: URI, RT: RemoteGenreCollection](
+    GenreEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT]
 ):
     type: ClassVar[Type] = RemoteGenreCollection
 
 
-class GenreGetSavedEndpoints[UT: URI, RT: RemoteGenre](
-    GenreEndpoints[UT, RT], RemoteGetSavedEndpoints[UT, RT]
+class GenreReadSavedEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
+):
+    pass
+
+
+class GenreWriteSavedEndpoints[UT: URI, RT: RemoteGenre](
+    GenreEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
 ):
     pass
 

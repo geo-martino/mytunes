@@ -4,39 +4,39 @@ from typing import ClassVar, Type
 from pydantic import validate_call, Field, PositiveInt
 
 from musify.models.properties.uri import URI
-from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, HasEndpoints
+from musify.remote.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
+    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints
 from musify.remote.api.types import ApiURL, ApiURLSchema
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.remote.item.track import RemoteTrack
 from musify.remote.user import RemoteUser
 
 
-class PlaylistEndpoints[UT: URI, RT: RemotePlaylist](RemoteEndpoints[UT, RT]):
+class PlaylistEndpoints[UT: URI, RT: RemotePlaylist](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemotePlaylist
 
 
-class PlaylistGetSingleEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], RemoteGetSingleEndpoints[UT, RT]
+class PlaylistReadItemEndpoints[UT: URI, RT: RemotePlaylist](
+    PlaylistEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
 ):
     pass
 
 
-class PlaylistGetManyEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], RemoteGetManyEndpoints[UT, RT]
+class PlaylistReadItemsEndpoints[UT: URI, RT: RemotePlaylist](
+    PlaylistEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
 ):
     pass
 
 
-class PlaylistMutableEndpoints[UT: URI, RT: RemoteMutablePlaylist](
-    PlaylistGetSingleEndpoints[UT, RT], RemoteMutableCollectionEndpoints[UT, RT],
+class PlaylistReadWriteEndpoints[UT: URI, RT: RemoteMutablePlaylist](
+    PlaylistReadItemEndpoints[UT, RT], WriteCollectionEndpoints[UT, RT],
 ):
     type: ClassVar[Type] = RemoteMutablePlaylist
     _extend_type: ClassVar[Type] = RemoteTrack
 
 
-class PlaylistGetSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
-    PlaylistEndpoints[UT, RT], RemoteGetSavedEndpoints[UT, RT]
+class PlaylistReadSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
+    PlaylistEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
 ):
     @validate_call
     async def get_by_user(self, user: OT, limit: PositiveInt | None = None) -> list[RT]:
@@ -58,8 +58,8 @@ class PlaylistGetSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
         return [playlists_mapped[name] for name in names if name in playlists_mapped]
 
 
-class PlaylistMutableSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: RemoteUser](
-    PlaylistGetSavedEndpoints[UT, RT, OT],
+class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: RemoteUser](
+    PlaylistReadSavedEndpoints[UT, RT, OT],
 ):
     type: ClassVar[Type] = RemoteMutablePlaylist
 

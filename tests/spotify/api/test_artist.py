@@ -4,7 +4,7 @@ import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker
 
-from musify.remote.api import RemoteCollectionEndpoints
+from musify.remote.api import ReadCollectionEndpoints
 # noinspection PyProtectedMember
 from musify.spotify.api._artist import SpotifyArtistEndpoints
 from musify.spotify.collection import SpotifyItemsCursor
@@ -25,7 +25,7 @@ class TestSpotifyArtistEndpoints(MusifyModelTester):
 
         types = set(faker.random_elements(("album", "single", "compilation", "appears_on"), unique=True))
 
-        with patch.object(RemoteCollectionEndpoints, "get_all"):
+        with patch.object(ReadCollectionEndpoints, "get_all"):
             await model.get_all(cursor, types=types)
 
             url = cursor.current if cursor.next is None else cursor.next

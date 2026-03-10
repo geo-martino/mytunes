@@ -27,8 +27,8 @@ from musify.remote.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISe
 from musify.remote.collection import ItemsCursor, RemoteCollection
 
 
-class RemoteEndpointsMetaclass(AttributeModelMetaclass):
-    def create_model(cls: RemoteEndpoints, value: Any, kind: str | type = None) -> RemoteResource:
+class EndpointsMetaclass(AttributeModelMetaclass):
+    def create_model(cls: Endpoints, value: Any, kind: str | type = None) -> RemoteResource:
         """Create an instance of the resource type handled by this API model from the given value."""
         if not cls.__final__:
             raise MusifyTypeError("Can only create resources from final API models.")
@@ -66,9 +66,7 @@ class RemoteEndpointsMetaclass(AttributeModelMetaclass):
         )
 
 
-class RemoteEndpoints[UT: URI, RT: RemoteResource](
-    RemoteModel, HasLogger, metaclass=RemoteEndpointsMetaclass
-):
+class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=EndpointsMetaclass):
     type: ClassVar[str | Type[RemoteResource]] = Field(
         description="The type of resources the endpoints of this API model handle.",
     )
@@ -182,7 +180,7 @@ class RemoteEndpoints[UT: URI, RT: RemoteResource](
         return base_url.update_query(ids=",".join(map(str, values)))
 
 
-class RemoteGetSingleEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
+class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
@@ -200,7 +198,7 @@ class RemoteGetSingleEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, 
         return self.__class__.create_model(response)
 
 
-class RemoteGetManyEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
+class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _many_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get multiple resources of this type in one call.",
     )
@@ -239,7 +237,7 @@ class RemoteGetManyEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT
         return items
 
 
-class RemoteCollectionEndpoints[UT: URI, RT: RemoteCollection](RemoteEndpoints[UT, RT]):
+class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
     _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
         # description="The path to the list of items in the API response. Use "*" for wildcard matching.",
     )
@@ -271,8 +269,8 @@ class RemoteCollectionEndpoints[UT: URI, RT: RemoteCollection](RemoteEndpoints[U
         return list(items)
 
 
-class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
-    RemoteGetSingleEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT],
+class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
+    ReadItemEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT],
 ):
     _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request to add items to the resource.",
@@ -341,7 +339,7 @@ class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
         return {"uris": list(map(str, values))}
 
 
-class RemoteGetSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
+class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _saved_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user's saved items.",
     )
@@ -364,7 +362,7 @@ class RemoteGetSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, R
         return list(items)
 
 
-class RemoteMutableSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
+class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _saved_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user's saved items.",
     )

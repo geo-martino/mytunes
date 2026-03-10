@@ -1,9 +1,9 @@
 from collections.abc import MutableMapping
 from typing import final, Any, ClassVar
 
-from pydantic import AliasPath, Field, model_validator, NonNegativeInt
+from pydantic import AliasPath, Field, model_validator, NonNegativeInt, computed_field
 
-from musify.models.properties.date import HasAddedDate
+from musify.models.properties.date import HasAddedDate, SparseDate
 from musify.models.sequence import MusifySequence, MusifyMutableSequence
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.spotify import SpotifyResource
@@ -37,6 +37,7 @@ class SpotifyPlaylist(
     SpotifyCollection[SpotifyPlaylistTrack],
     HasSpotifyImages,
     HasFollowers,
+    HasAddedDate,
 ):
     __final__ = True
 
@@ -46,6 +47,10 @@ class SpotifyPlaylist(
         description="The description of the playlist.",
         default=None,
     )
+    collaborative: bool = Field(
+        description="Whether the owner allows other users to modify the playlist.",
+    )
+
     tracks: MusifySequence[str, SpotifyPlaylistTrack] = Field(
         description="The tracks in this playlist.",
         default_factory=MusifySequence[str, SpotifyPlaylistTrack],

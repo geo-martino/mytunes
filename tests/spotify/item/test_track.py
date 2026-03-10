@@ -59,6 +59,7 @@ class TestSpotifyAudioFeatures(SpotifyResourceTester):
 
     def test_response(self, generator: SpotifyPayloadGenerator):
         payload = generator.generate_audio_features()
+
         model = SpotifyAudioFeatures.model_validate(payload)
 
         assert model.analysis_url == payload["analysis_url"]

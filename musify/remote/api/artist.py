@@ -3,44 +3,44 @@ from typing import ClassVar, Type
 from pydantic import Field
 
 from musify.models.properties.uri import URI
-from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
-    RemoteGetSavedEndpoints, RemoteCollectionEndpoints, RemoteMutableSavedEndpoints, HasEndpoints
+from musify.remote.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
+    ReadSavedEndpoints, ReadCollectionEndpoints, WriteSavedEndpoints, HasEndpoints
 from musify.remote.collection.artist import RemoteArtistCollection
 from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.artist import RemoteArtist
 
 
-class ArtistEndpoints[UT: URI, RT: RemoteArtist](RemoteEndpoints[UT, RT]):
+class ArtistEndpoints[UT: URI, RT: RemoteArtist](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemoteArtist
 
 
-class ArtistGetSingleEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], RemoteGetSingleEndpoints[UT, RT]
+class ArtistReadItemEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistGetManyEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], RemoteGetManyEndpoints[UT, RT]
+class ArtistReadItemsEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistCollectionEndpoints[UT: URI, RT: RemoteArtistCollection](
-    ArtistEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT]
+class ArtistReadCollectionEndpoints[UT: URI, RT: RemoteArtistCollection](
+    ArtistEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT]
 ):
     type: ClassVar[Type] = RemoteArtistCollection
     _extend_type: ClassVar[Type] = RemoteAlbum
 
 
-class ArtistGetSavedEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], RemoteGetSavedEndpoints[UT, RT]
+class ArtistReadSavedEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistMutableSavedEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], RemoteMutableSavedEndpoints[UT, RT]
+class ArtistWriteSavedEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
 ):
     pass
 

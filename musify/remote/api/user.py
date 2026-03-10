@@ -4,11 +4,11 @@ from pydantic import Field, PrivateAttr
 from yarl import URL
 
 from musify.models.properties.uri import URI
-from musify.remote.api._endpoints import RemoteEndpoints, HasEndpoints
+from musify.remote.api._endpoints import Endpoints, HasEndpoints
 from musify.remote.user import RemoteUser
 
 
-class UserEndpoints[UT: URI, RT: RemoteUser](RemoteEndpoints[UT, RT]):
+class UserEndpoints[UT: URI, RT: RemoteUser](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemoteUser
 
     _me_url: ClassVar[URL] = PrivateAttr(
@@ -19,12 +19,6 @@ class UserEndpoints[UT: URI, RT: RemoteUser](RemoteEndpoints[UT, RT]):
         """Get the current user."""
         response = await self._handler.get(self._me_url)
         return self.__class__.create_model(response)
-
-
-class UserGetSingleEndpoints[UT: URI, RT: RemoteUser](
-    UserEndpoints[UT, RT], RemoteEndpoints[UT, RT]
-):
-    pass
 
 
 class HasUserEndpoints[ET: UserEndpoints](HasEndpoints):
