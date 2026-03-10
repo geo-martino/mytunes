@@ -25,9 +25,9 @@ class Position(AttributeModel):
         description="The total number of resources in the parent resource.",
         default=None,
     )
-    zero_fill: NonNegativeInt = Field(
+    zero_fill: bool | NonNegativeInt = Field(
         description="Number of digits to zero-fill each number when rendering the position as a string.",
-        default=0,
+        default=False,
     )
 
     # noinspection PyNestedDecorators
@@ -81,7 +81,10 @@ class Position(AttributeModel):
         return self.number, self.total
 
     def __str__(self) -> str:
-        return self.sep.join(str(val).zfill(self.zero_fill) for val in self.numbers)
+        zero_fill = self.zero_fill
+        if isinstance(zero_fill, bool):
+            zero_fill = len(str(self.total)) if zero_fill and self.total is not None else 0
+        return self.sep.join(str(val).zfill(zero_fill) for val in self.numbers)
 
     def __int__(self):
         return self.number

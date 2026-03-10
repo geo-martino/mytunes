@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Sequence
 from functools import total_ordering
 from typing import ClassVar, Iterable, Any, Self
 
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, ValidationError
 
 from musify._types import String
 from musify.models._base import AttributeResource, MusifyRootModel
@@ -22,21 +23,37 @@ class NumberModel[T: int | float](MusifyRootModel[T]):
         return hash(self.root)
 
     def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            try:
+                other = self.model_validate(other)
+            except ValidationError:
+                return False
+
         return other is not None and self.root == float(other)
 
     def __lt__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            try:
+                other = self.model_validate(other)
+            except ValidationError:
+                return False
+
         return other is not None and self.root < float(other)
 
     def __add__(self, other: Any) -> Self:
+        other = self.model_validate(other)
         return self.model_validate(self.root + float(other))
 
     def __sub__(self, other: Any) -> Self:
+        other = self.model_validate(other)
         return self.model_validate(self.root - float(other))
 
     def __mul__(self, other: Any) -> Self:
+        other = self.model_validate(other)
         return self.model_validate(self.root * float(other))
 
     def __truediv__(self, other: Any) -> Self:
+        other = self.model_validate(other)
         return self.model_validate(self.root / float(other))
 
 

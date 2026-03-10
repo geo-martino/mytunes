@@ -7,6 +7,7 @@ from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoin
     RemoteGetSavedEndpoints, RemoteMutableSavedEndpoints, RemoteCollectionEndpoints, HasEndpoints
 from musify.remote.collection.album import RemoteAlbumCollection
 from musify.remote.item.album import RemoteAlbum
+from musify.remote.item.track import RemoteTrack
 
 
 class AlbumEndpoints[UT: URI, RT: RemoteAlbum](RemoteEndpoints[UT, RT]):
@@ -29,7 +30,7 @@ class AlbumCollectionEndpoints[UT: URI, RT: RemoteAlbumCollection](
     AlbumEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT]
 ):
     type: ClassVar[Type] = RemoteAlbumCollection
-    _extend_type: ClassVar[str] = "track"
+    _extend_type: ClassVar[Type] = RemoteTrack
 
 
 class AlbumGetSavedEndpoints[UT: URI, RT: RemoteAlbum](

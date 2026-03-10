@@ -8,6 +8,7 @@ from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoin
     RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, HasEndpoints
 from musify.remote.api.types import ApiURL, ApiURLSchema
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.remote.item.track import RemoteTrack
 from musify.remote.user import RemoteUser
 
 
@@ -31,7 +32,7 @@ class PlaylistMutableEndpoints[UT: URI, RT: RemoteMutablePlaylist](
     PlaylistGetSingleEndpoints[UT, RT], RemoteMutableCollectionEndpoints[UT, RT],
 ):
     type: ClassVar[Type] = RemoteMutablePlaylist
-    _extend_type: ClassVar[str] = "track"
+    _extend_type: ClassVar[Type] = RemoteTrack
 
 
 class PlaylistGetSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](

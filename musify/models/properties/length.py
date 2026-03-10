@@ -49,7 +49,7 @@ class Length(NumberModel[NonNegativeInt | NonNegativeFloat]):
 
         length = f"{minutes:02d}:{seconds:02d}"
         if hours:
-            length = f"{hours}:{length}"
+            length = f"{hours:02d}:{length}"
         if milliseconds:
             length += f".{milliseconds:03d}"
         return length

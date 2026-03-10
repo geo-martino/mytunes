@@ -3,8 +3,9 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator
 from copy import copy
 from itertools import batched
-from typing import Any, ClassVar, Self, Type
+from typing import Any, ClassVar, Self, Type, Literal
 
+from tabulate import tabulate
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
@@ -15,8 +16,11 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.models._base import AttributeModelMetaclass
+from musify.models.properties.length import HasLength
 from musify.models.properties.logger import HasLogger
-from musify.models.properties.uri import URI
+from musify.models.properties.name import HasName
+from musify.models.properties.order import Position
+from musify.models.properties.uri import URI, HasURI
 from musify.models.url import HttpURL
 from musify.remote import RemoteResource, RemoteModel
 from musify.remote.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
@@ -239,8 +243,8 @@ class RemoteCollectionEndpoints[UT: URI, RT: RemoteCollection](RemoteEndpoints[U
     _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
         # description="The path to the list of items in the API response. Use "*" for wildcard matching.",
     )
-    _extend_type: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response.",
+    _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
+        # description="The type of the items in the collection."
     )
 
     @validate_call

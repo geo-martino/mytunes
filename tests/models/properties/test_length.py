@@ -42,5 +42,10 @@ class TestLength(MusifyModelTester):
         assert str(Length(359)) == "05:59"
         assert str(Length(360)) == "06:00"
         assert str(Length(360.12)) == "06:00.120"
-        assert str(Length(3671)) == "1:01:11"
+        assert str(Length(3671)) == "01:01:11"
         assert str(Length(123456)) == "34:17:36"
+
+    def test_ordering(self, model: Length):
+        assert model == str(model)
+        assert model < str(Length.model_validate(model.root + 2))
+        assert model > str(Length.model_validate(model.root - 2))

@@ -75,6 +75,10 @@ class TestPosition(MusifyModelTester):
         model.zero_fill = 4
         assert str(model) == "0010/0020"
 
+        model.total = 200
+        model.zero_fill = True  # zero fill to the length of the total
+        assert str(model) == "010/200"
+
         model.number = None
         assert str(model) == ""
 

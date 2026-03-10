@@ -6,6 +6,7 @@ from musify.models.properties.uri import URI
 from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
     RemoteGetSavedEndpoints, RemoteCollectionEndpoints, RemoteMutableSavedEndpoints, HasEndpoints
 from musify.remote.collection.artist import RemoteArtistCollection
+from musify.remote.item.album import RemoteAlbum
 from musify.remote.item.artist import RemoteArtist
 
 
@@ -29,7 +30,7 @@ class ArtistCollectionEndpoints[UT: URI, RT: RemoteArtistCollection](
     ArtistEndpoints[UT, RT], RemoteCollectionEndpoints[UT, RT]
 ):
     type: ClassVar[Type] = RemoteArtistCollection
-    _extend_type: ClassVar[str] = "album"
+    _extend_type: ClassVar[Type] = RemoteAlbum
 
 
 class ArtistGetSavedEndpoints[UT: URI, RT: RemoteArtist](
