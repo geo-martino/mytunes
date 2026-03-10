@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker

@@ -2,7 +2,7 @@ import contextlib
 import functools
 import inspect
 from collections.abc import Sequence
-from typing import Any, get_args, Callable, Self
+from typing import Any, get_args, Callable, Self, Annotated
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
@@ -171,6 +171,9 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return wrapper
 
 
+type ApiURL[UT: URI, MT: HasURI] = Annotated[URL, ApiURLSchema[UT, MT]]
+
+
 class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -271,3 +274,7 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
             return func(self, *args_prev, uris, *args_next, **kwargs)
         return wrapper
+
+
+type ApiURI[UT: URI, MT: HasURI] = Annotated[UT, ApiURISchema[UT, MT]]
+type ApiURISequence[UT: URI, MT: HasURI] = Sequence[ApiURI[UT, MT]]

@@ -3,7 +3,7 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator
 from copy import copy
 from itertools import batched
-from typing import Any, ClassVar, Annotated, Self, Type
+from typing import Any, ClassVar, Self, Type
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
@@ -19,7 +19,7 @@ from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.url import HttpURL
 from musify.remote import RemoteResource, RemoteModel
-from musify.remote.api.types import ApiURLSchema, ApiURISchema
+from musify.remote.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
 from musify.remote.collection import ItemsCursor, RemoteCollection
 
 
@@ -182,7 +182,7 @@ class RemoteGetSingleEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def get(self, url: Annotated[URL, ApiURLSchema[UT, RT]]) -> RT:
+    async def get(self, url: ApiURL[UT, RT]) -> RT:
         """
         Get a resource from the API using the given ID, URL, URI, or resource.
 
@@ -210,9 +210,7 @@ class RemoteGetManyEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURISchema.validate_call
-    async def get_many(
-            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = None
-    ) -> list[RT]:
+    async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
 
@@ -280,12 +278,7 @@ class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
     @ApiURISchema.validate_call
-    async def append(
-            self,
-            url: Annotated[URL, ApiURLSchema[UT, RT]],
-            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
-            limit: PositiveInt = None
-    ) -> int:
+    async def append(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._batch_limit
@@ -306,10 +299,7 @@ class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
     @ApiURLSchema.validate_call
     @ApiURISchema.validate_call
     async def append_and_skip_duplicates(
-            self,
-            url: Annotated[URL, ApiURLSchema[UT, RT]],
-            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
-            limit: PositiveInt = None
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
         # noinspection PyArgumentList
@@ -330,12 +320,7 @@ class RemoteMutableCollectionEndpoints[UT: URI, RT: RemoteResource](
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
     @ApiURISchema.validate_call
-    async def remove(
-            self,
-            url: Annotated[URL, ApiURLSchema[UT, RT]],
-            uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]],
-            limit: PositiveInt = None
-    ) -> int:
+    async def remove(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Remove items from the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._batch_limit
@@ -386,9 +371,7 @@ class RemoteMutableSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[U
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURISchema.validate_call
-    async def add_many(
-            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = None
-    ) -> None:
+    async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> None:
         """Add items to the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._batch_limit
@@ -405,9 +388,7 @@ class RemoteMutableSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[U
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURISchema.validate_call
-    async def remove_many(
-            self, uris: Sequence[Annotated[URI, ApiURISchema[UT, RT]]], limit: PositiveInt = None
-    ) -> None:
+    async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> None:
         """Remote items from the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._batch_limit

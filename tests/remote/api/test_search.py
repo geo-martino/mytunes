@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
@@ -46,7 +45,7 @@ class TestSearchEndpoints(RemoteEndpointsTester):
         ):
             result = await model.query(query=query, types=types, limit=limit)
 
-            assert set(result.keys()) == types
+            assert set(result.keys()) == {RemoteTrack.type, RemoteAlbum.type}
             mock_format_query.assert_called_once_with(query=query, types=types, limit=limit)
             mock_get.assert_called_once_with(model._query_url, params=params)
 

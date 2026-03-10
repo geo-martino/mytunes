@@ -1,15 +1,15 @@
-from collections.abc import Iterable, Sequence
-from typing import ClassVar, final, Annotated
+from collections.abc import Iterable
+from typing import ClassVar, final
 
 from aiorequestful.types import JSON
 from pydantic import validate_call, PositiveInt, Field
 from yarl import URL
 
-from musify.remote.api.playlist import PlaylistMutableEndpoints, \
-    PlaylistMutableSavedEndpoints
+from musify.remote.api.playlist import PlaylistMutableEndpoints, PlaylistMutableSavedEndpoints
 from musify.remote.api.types import ApiURISchema, ApiURLSchema
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
+from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence
 from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
@@ -52,20 +52,20 @@ class _SpotifySavedPlaylistEndpoints(
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def follow(self, url: Annotated[URL, ApiURLSchema[SpotifyResourceURI, SpotifyPlaylist]], **kwargs) -> None:
+    async def follow(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         return await super().follow(url.joinpath("followers"))
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def modify(self, url: Annotated[URL, ApiURLSchema[SpotifyResourceURI, SpotifyPlaylist]], **kwargs) -> None:
+    async def modify(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         body = self._format_playlist_body(**kwargs)
         return await super().create(**body)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def delete(self, url: Annotated[URL, ApiURLSchema[SpotifyResourceURI, SpotifyPlaylist]], **kwargs) -> None:
+    async def delete(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         return await super().delete(url.joinpath("followers"))
 
 
@@ -89,8 +89,8 @@ class SpotifyPlaylistEndpoints(
     @ApiURISchema.validate_call
     async def append(
             self,
-            url: Annotated[URL, ApiURLSchema[SpotifyResourceURI, SpotifyMutablePlaylist]],
-            uris: Sequence[Annotated[SpotifyResourceURI, ApiURISchema[SpotifyResourceURI, SpotifyTrack]]],
+            url: SpotifyApiURL[SpotifyMutablePlaylist],
+            uris: SpotifyApiURISequence[SpotifyTrack],
             limit: PositiveInt = None
     ) -> int:
         return await super().append(url.joinpath("items"), uris=uris, limit=limit)
@@ -101,8 +101,8 @@ class SpotifyPlaylistEndpoints(
     @ApiURISchema.validate_call
     async def remove(
             self,
-            url: Annotated[URL, ApiURLSchema[SpotifyResourceURI, SpotifyMutablePlaylist]],
-            uris: Sequence[Annotated[SpotifyResourceURI, ApiURISchema[SpotifyResourceURI, SpotifyTrack]]],
+            url: SpotifyApiURL[SpotifyMutablePlaylist],
+            uris: SpotifyApiURISequence[SpotifyTrack],
             limit: PositiveInt = None
     ) -> int:
         return await super().remove(url.joinpath("items"), uris=uris, limit=limit)

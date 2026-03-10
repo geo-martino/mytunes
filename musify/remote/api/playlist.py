@@ -1,13 +1,12 @@
 from collections.abc import Sequence
-from typing import Annotated, ClassVar, Type
+from typing import ClassVar, Type
 
 from pydantic import validate_call, Field, PositiveInt
-from yarl import URL
 
 from musify.models.properties.uri import URI
 from musify.remote.api._endpoints import RemoteEndpoints, RemoteGetSingleEndpoints, RemoteGetManyEndpoints, \
     RemoteGetSavedEndpoints, RemoteMutableCollectionEndpoints, HasEndpoints
-from musify.remote.api.types import ApiURLSchema
+from musify.remote.api.types import ApiURL, ApiURLSchema
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.remote.user import RemoteUser
 
@@ -72,21 +71,21 @@ class PlaylistMutableSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Remo
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def follow(self, url: Annotated[URL, ApiURLSchema[UT, RT]], **kwargs) -> None:
+    async def follow(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Add an existing playlist to the current user's library."""
         await self._handler.put(url)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def modify(self, url: Annotated[URL, ApiURLSchema[UT, RT]], **kwargs) -> None:
+    async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Modify details about a playlist in the current user's library."""
         await self._handler.put(url, json=kwargs)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
-    async def delete(self, url: Annotated[URL, ApiURLSchema[UT, RT]]) -> None:
+    async def delete(self, url: ApiURL[UT, RT]) -> None:
         """Delete the playlist from the current user's library."""
         await self._handler.delete(url)
 
