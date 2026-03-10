@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Collection
-from typing import ClassVar, Any
+from typing import ClassVar, Any, Type
 
 from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
@@ -19,24 +19,26 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
         # description="The API endpoint to query for resources.",
     )
     _query_path: ClassVar[None | str | AliasPath] = PrivateAttr(
-        # description="The path to the results in the API response.",
+        # description=(
+        #   "The path to the results in the API response. Use "*" for wildcard matching."
+        #   "Use "{type}" to format the resource type"
+        # )
     )
     _query_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request.",
     )
 
-    @property
-    def _query_path_parts(self) -> list[str]:
+    def _get_query_path(self, kind: Type[RT]) -> str | AliasPath:
         match self._query_path:
             case None:
-                return []
+                return kind.type
             case str() as path:
-                return [path]
+                return path.format(type=kind.type)
             case AliasPath() as path:
-                return path.path
+                return AliasPath(*(str(part).format(type=kind.type) for part in path.path))
 
     @validate_call
-    async def query(self, query: str, types: set[str], limit: PositiveInt | None = None, **kwargs) -> dict[str, list[RT]]:
+    async def query(self, query: str, types: set[Type[RT]], limit: PositiveInt | None = None, **kwargs) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
         if limit is None:
             limit = self._query_limit
@@ -45,17 +47,16 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
         response = await self._handler.get(self._query_url, params=params)
 
         results: dict[str, list[RT]] = {}
-        for type in types:
-            path = AliasPath(*self._query_path_parts, type)
-            print(path, response)
-            results[type] = list(self._get_items_from_response(response, path=path, kind=type.rstrip("s")))
+        for kind in types:
+            path = self._get_query_path(kind=kind)
+            results[kind.type] = list(self._get_items_from_response(response, path=path, kind=kind))
 
         return results
 
     @staticmethod
     @abstractmethod
     def _format_query_params(
-            query: str, types: set[str], limit: PositiveInt | None = None, **kwargs
+            query: str, types: set[Type[RT]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -63,7 +64,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):
     async def query_item(self, item: MusifyResource, **kwargs) -> list[RT]:
         """Query for items that match the given item."""
         kwargs = self._format_query_from_item(item, **kwargs)
-        return (await self.query(**kwargs))[item.type + "s"]
+        return next(iter((await self.query(**kwargs)).values()))
 
     @staticmethod
     @abstractmethod

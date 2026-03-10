@@ -29,6 +29,10 @@ class RemoteEndpointsMetaclass(AttributeModelMetaclass):
         if not cls.__final__:
             raise MusifyTypeError("Can only create resources from final API models.")
 
+        if isinstance(kind, type) and issubclass(kind, RemoteResource) and kind.__final__:
+            # just try to create the resource directly if a final resource type is given
+            return kind.model_validate(value)
+
         if kind is None:
             kind = cls.type
 
@@ -200,7 +204,7 @@ class RemoteGetManyEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT
         # description="The maximum number of items that can be sent in each request.",
     )
     _many_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response.",
+        # description="The path to the list of items in the API response. Use "*" for wildcard matching.",
     )
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
@@ -235,7 +239,7 @@ class RemoteGetManyEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT
 
 class RemoteCollectionEndpoints[UT: URI, RT: RemoteCollection](RemoteEndpoints[UT, RT]):
     _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response.",
+        # description="The path to the list of items in the API response. Use "*" for wildcard matching.",
     )
     _extend_type: ClassVar[str | AliasPath] = PrivateAttr(
         # description="The path to the list of items in the API response.",
@@ -356,7 +360,7 @@ class RemoteGetSavedEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, R
         # description="The maximum number of items that can be sent in each request for saved items.",
     )
     _saved_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of saved items in the API response.",
+        # description="The path to the list of saved items in the API response. Use "*" for wildcard matching.",
     )
 
     @validate_call

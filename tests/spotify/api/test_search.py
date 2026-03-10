@@ -1,13 +1,18 @@
+from typing import Any
+
 import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker
 
+from musify.models import MusifyResource
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 # noinspection PyProtectedMember
 from musify.spotify.api._search import SpotifySearchEndpoints
+from musify.spotify.item.artist import SpotifyArtist
+from musify.spotify.item.track import SpotifyTrack
 from tests.models.testers import MusifyModelTester
 
 
@@ -18,11 +23,11 @@ class TestSpotifySearchEndpoints(MusifyModelTester):
 
     async def test_format_query_params(self, model: SpotifySearchEndpoints, faker: Faker):
         query = "track:track name artist:artist name"
-        types = {"track", "artist"}
+        types = {SpotifyTrack, SpotifyArtist}
 
         result = model._format_query_params(query=query, types=types)
         assert result["q"] == query
-        assert set(result["type"].split(",")) == types
+        assert set(result["type"].split(",")) == {it.type for it in types}
         assert "limit" not in result
         assert "offset" not in result
 
@@ -32,38 +37,49 @@ class TestSpotifySearchEndpoints(MusifyModelTester):
         assert result["limit"] == limit
         assert result["offset"] == offset
 
+    @staticmethod
+    def assert_format_query_from_item(
+            model: SpotifySearchEndpoints, item: MusifyResource, expected_query: str, faker: Faker
+    ):
+        additional = {"limit": faker.random_int(), "offset": faker.random_int()}
+
+        result = model._format_query_from_item(item=item, **additional)
+        assert result.pop("query") == expected_query
+        assert result.pop("types") == {type(item)}
+        assert result == additional
+
     async def test_format_query_from_track(self, model: SpotifySearchEndpoints, faker: Faker):
         item = Track(name=faker.word(), artists=[faker.word() for _ in range(3)])
-        kwargs = {"limit": faker.random_int(), "offset": faker.random_int()}
+        expected_query = f"track:{item.name} artist:{item.artists[0].name}"
 
-        result = model._format_query_from_item(item=item, **kwargs)
-        assert result.pop("query") == f"track:{item.name} artist:{item.artists[0].name}"
-        assert result.pop("types") == {"tracks"}
-        assert result == kwargs
+        self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)
+
+    async def test_format_query_from_track_with_no_artists(self, model: SpotifySearchEndpoints, faker: Faker):
+        item = Track(name=faker.word())
+        expected_query = item.name
+
+        self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)
 
     async def test_format_query_from_album(self, model: SpotifySearchEndpoints, faker: Faker):
         item = Album(name=faker.word(), artists=[faker.word() for _ in range(3)])
-        kwargs = {"limit": faker.random_int(), "offset": faker.random_int()}
+        expected_query = f"album:{item.name} artist:{item.artists[0].name}"
 
-        result = model._format_query_from_item(item=item, **kwargs)
-        assert result.pop("query") == f"album:{item.name} artist:{item.artists[0].name}"
-        assert result.pop("types") == {"albums"}
-        assert result == kwargs
+        self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)
+
+    async def test_format_query_from_album_with_no_artists(self, model: SpotifySearchEndpoints, faker: Faker):
+        item = Album(name=faker.word())
+        expected_query = item.name
+
+        self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)
 
     async def test_format_query_from_artist(self, model: SpotifySearchEndpoints, faker: Faker):
         item = Artist(name=faker.word(), album=faker.word())
-        kwargs = {"limit": faker.random_int(), "offset": faker.random_int()}
+        expected_query = item.name
 
-        result = model._format_query_from_item(item=item, **kwargs)
-        assert result.pop("query") == item.name
-        assert result.pop("types") == {"artists"}
-        assert result == kwargs
+        self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)
 
     async def test_format_query_from_playlist(self, model: SpotifySearchEndpoints, faker: Faker):
         item = Playlist(name=faker.word())
-        kwargs = {"limit": faker.random_int(), "offset": faker.random_int()}
+        expected_query = item.name
 
-        result = model._format_query_from_item(item=item, **kwargs)
-        assert result.pop("query") == item.name
-        assert result.pop("types") == {"playlists"}
-        assert result == kwargs
+        self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)

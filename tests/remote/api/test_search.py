@@ -8,6 +8,8 @@ from yarl import URL
 
 from musify.models.item.track import Track
 from musify.remote.api.search import SearchEndpoints
+from musify.remote.item.album import RemoteAlbum
+from musify.remote.item.track import RemoteTrack
 from tests.remote.api.testers import RemoteEndpointsTester
 from tests.remote.api.utils import MockRemoteResource
 from tests.utils import SimpleURI
@@ -31,10 +33,10 @@ class TestSearchEndpoints(RemoteEndpointsTester):
 
     async def test_query(self, model: SearchEndpoints, faker: Faker):
         query = faker.sentence()
-        types = {"tracks", "albums"}
+        types = {RemoteTrack, RemoteAlbum}
         limit = faker.random_int(1, 50)
 
-        params = {"query": query, "types": {"track", "album"}, "limit": limit}
+        params = {"query": query, "types": {RemoteTrack.type, RemoteAlbum.type}, "limit": limit}
         response = {model._query_path: {"tracks": [{"name": faker.name()}], "albums": [{"name": faker.name()}]}}
 
         with (
@@ -50,7 +52,7 @@ class TestSearchEndpoints(RemoteEndpointsTester):
 
     async def test_query_uses_default_limit(self, model: SearchEndpoints, faker: Faker):
         query = faker.sentence()
-        types = {"tracks", "albums"}
+        types = {RemoteTrack, RemoteAlbum}
         response = {model._query_path: {"tracks": [], "albums": []}}
 
         with (
