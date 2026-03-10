@@ -20,3 +20,7 @@ class TestLibrary(MusifyResourceTester):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
         assert all(track not in library.tracks for track in library.tracks_in_playlists)
         assert library.tracks_in_playlists == [track for pl in playlists for track in pl.tracks]
+
+    def test_items_count(self, tracks: list[Track], playlists: list[Playlist]):
+        library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
+        assert library.items_count == len(tracks)

@@ -40,3 +40,11 @@ class TestGenreCollection(UniqueKeyTester):
 
         genre = GenreCollection(name=name, tracks=tracks)
         assert sorted(genre.tracks) == sorted(expected)
+
+    def test_items_count(self, tracks: list[Track]):
+        name = "Test Genre"
+        for track in tracks:
+            track.genre = name
+
+        model = GenreCollection(name=name, tracks=tracks)
+        assert model.items_count == len(tracks)

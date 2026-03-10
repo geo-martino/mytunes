@@ -11,7 +11,7 @@ from musify.models.item.track import Track, HasTracks
 from musify.models.properties.uri import URI
 
 
-class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](Album[RT, GT, UT], HasTracks[TK, TV]):
+class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](HasTracks[TK, TV], Album[RT, GT, UT]):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod

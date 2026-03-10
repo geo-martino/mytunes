@@ -5,6 +5,7 @@ from typing import Any, Self
 
 from pydantic import Field, NonNegativeInt, model_validator, TypeAdapter, ValidationError
 
+from musify.models._base import CollectionResource, CollectionModel
 from musify.models.url import HttpURL
 from musify.remote._base import RemoteModel, RemoteResource
 
@@ -74,7 +75,7 @@ class ItemsCursor(RemoteModel):
 
 
 # noinspection PyAbstractClass
-class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel):
+class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel, CollectionModel[IT]):
     total: NonNegativeInt = Field(
         description="The total number of items in this collection."
     )
@@ -88,15 +89,4 @@ class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel):
     @property
     def has_all_items(self) -> bool:
         """Whether this collection has all items loaded."""
-        return self.loaded_count == self.total
-
-    @property
-    def loaded_count(self) -> int:
-        """The number of items currently loaded in this collection."""
-        return len(self._items)
-
-    @property
-    @abstractmethod
-    def _items(self) -> Collection[IT]:
-        """The items in this collection."""
-        raise NotImplementedError
+        return self.items_count == self.total

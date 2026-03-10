@@ -43,3 +43,11 @@ class TestArtistCollection(UniqueKeyTester):
 
         artist = ArtistCollection(name=name, albums=albums)
         assert sorted(artist.albums) == sorted(expected)
+
+    def test_items_count(self, albums: list[Album]):
+        name = "Test Album"
+        for album in albums:
+            album.artist = name
+
+        model = ArtistCollection(name=name, albums=albums)
+        assert model.items_count == len(albums)

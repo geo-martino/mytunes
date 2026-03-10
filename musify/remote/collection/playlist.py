@@ -20,14 +20,8 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
         default=None,
     )
 
-    @property
-    def _items(self) -> MusifySequence[UT, TT]:
-        return self.tracks
-
 
 class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
     MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT, OT, CT]
 ):
-    @property
-    def _items(self) -> MusifyMutableSequence[UT, TT]:
-        return self.tracks
+    pass

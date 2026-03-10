@@ -3,6 +3,7 @@ from typing import ClassVar
 from pydantic import Field, field_validator
 
 from musify._types import StrippedString
+from musify.models._base import CollectionResource
 from musify.models.item.genre import HasGenres, Genre
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
@@ -20,11 +21,15 @@ class Artist[GT: Genre, UT: URI](HasGenres[GT], HasName, HasURI[UT], HasRating):
     )
 
 
-class HasArtists[RT: Artist](HasSeparableTags):
+class HasArtists[RT: Artist](HasSeparableTags, CollectionResource[Artist]):
     artists: list[RT] = Field(
         description="The artists associated with this resource.",
         default_factory=list,
     )
+
+    @property
+    def _items(self) -> list[RT]:
+        return self.artists
 
     # noinspection PyNestedDecorators
     @field_validator("artists", mode="before", check_fields=True)

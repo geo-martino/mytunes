@@ -1,5 +1,7 @@
 from musify.local._base import LocalResource
+from musify.models._base import CollectionResource
 
 
-class LocalCollection(LocalResource):
+# noinspection PyAbstractClass
+class LocalCollection[IT: LocalResource](CollectionResource[IT], LocalResource):
     pass

@@ -15,6 +15,4 @@ class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, 
     RemoteResource[UT],
     RemoteCollection[TT, CT],
 ):
-    @property
-    def _items(self) -> MusifySequence[UT, TT]:
-        return self.tracks
+    pass

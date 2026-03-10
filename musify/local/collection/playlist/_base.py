@@ -1,8 +1,10 @@
 from abc import abstractmethod
+from argparse import FileType
 from collections.abc import Collection, MutableMapping
 from pathlib import Path
 from typing import Self, Any
 
+import mutagen
 from pydantic import Field, model_validator, PrivateAttr, ModelWrapValidatorHandler
 
 from musify.local.collection._base import LocalCollection
@@ -19,7 +21,7 @@ from musify.processors_new.sort import ItemSorter
 
 
 class LocalPlaylistFile[TF: Filter](
-    LocalCollection, MutablePlaylist[URI, LocalTrack, URI], IsLocalFile, HasLogger
+    MutablePlaylist[URI, LocalTrack[mutagen.FileType], URI], LocalCollection[LocalTrack], IsLocalFile, HasLogger
 ):
     __unique_attributes__ = frozenset({"path"})
 

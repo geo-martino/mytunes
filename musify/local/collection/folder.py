@@ -14,7 +14,7 @@ from musify.models.properties.uri import URI
 
 
 @final
-class Folder[TT: LocalTrack](LocalCollection, HasTracks[URI, TT], HasName, HasLength):
+class Folder[TT: LocalTrack](LocalCollection[TT], HasTracks[URI, TT], HasName, HasLength):
     """Represents a folder collection and its properties."""
     __final__ = True
 

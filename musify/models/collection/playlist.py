@@ -60,13 +60,17 @@ type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
 ]
 
 
-class HasPlaylists[TK, TV: Playlist](CollectionModel):
+class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
     """A mixin class to add a `playlists` property to a MusifyCollection."""
     playlists: MusifyMapping[TK, TV] = Field(
         description="The playlists in this collection",
         default_factory=MusifyMapping[TK, TV],
         frozen=True,
     )
+
+    @property
+    def _items(self) -> tuple[TV, ...]:
+        return tuple(self.playlists.values())
 
 
 class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):

@@ -14,6 +14,4 @@ class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGen
     RemoteResource[UT],
     RemoteCollection[AT, CT],
 ):
-    @property
-    def _items(self) -> list[AT]:
-        return self.albums
+    pass

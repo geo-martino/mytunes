@@ -1,10 +1,9 @@
-from abc import ABC
 from typing import ClassVar
 
 from pydantic import Field, field_validator, computed_field, PositiveInt
 
 from musify._types import StrippedString
-from musify.models._base import AttributeResource
+from musify.models._base import AttributeResource, CollectionResource
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.item.genre import HasGenres, Genre
 from musify.models.properties import HasSeparableTags
@@ -17,7 +16,7 @@ from musify.models.properties.uri import HasURI, URI
 
 
 class Album[RT: Artist, GT: Genre, UT: URI](
-    ABC, HasArtists[RT], HasGenres[GT], HasName, HasURI[UT], HasLength, HasRating, HasReleaseDate, HasImages
+    HasArtists[RT], HasGenres[GT], HasName, HasURI[UT], HasLength, HasRating, HasReleaseDate, HasImages
 ):
     type: ClassVar[str] = "album"
 
@@ -55,11 +54,15 @@ class HasAlbum[AT: Album](AttributeResource):
         return self.album.compilation if self.album is not None else None
 
 
-class HasAlbums[AT: Album](HasSeparableTags):
+class HasAlbums[AT: Album](HasSeparableTags, CollectionResource[AT]):
     albums: list[AT] = Field(
         description="The albums associated with this resource.",
         default_factory=list,
     )
+
+    @property
+    def _items(self) -> list[AT]:
+        return self.albums
 
     # noinspection PyNestedDecorators
     @field_validator("albums", mode="before", check_fields=True)

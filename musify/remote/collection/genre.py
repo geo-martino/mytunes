@@ -13,6 +13,4 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: ItemsCursor](
     RemoteResource[UT],
     RemoteCollection[TT, CT],
 ):
-    @property
-    def _items(self) -> MusifySequence[UT, TT]:
-        return self.tracks
+    pass

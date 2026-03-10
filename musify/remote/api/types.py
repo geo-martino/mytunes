@@ -98,6 +98,8 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
         def _from_model(model: HasURI) -> URL:
             uri = model.uri
+            if uri is None:
+                raise MusifyValueError("Model does not have a URI.")
             return _from_uri(uri)
 
         from_model_schema = core_schema.chain_schema(
@@ -194,6 +196,8 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         )
 
         def _from_model(model: HasURI) -> URI:
+            if model.uri is None:
+                raise MusifyValueError("Model does not have a URI.")
             return model.uri
 
         from_model_schema = core_schema.chain_schema(

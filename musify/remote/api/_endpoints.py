@@ -254,7 +254,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
             case RemoteCollection() as collection:
                 cursor = collection.cursor
                 if not collection.has_all_items and cursor.next is None:
-                    cursor.offset = collection.loaded_count  # sets the offset on the current URL
+                    cursor.offset = collection.items_count  # sets the offset on the current URL
                     cursor.next = cursor.current
             case _:
                 raise MusifyTypeError("Expected a collection or items cursor.")
@@ -264,6 +264,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
             cursor=cursor, path=self._extend_path, kind=self._extend_type
         )
         if isinstance(collection, RemoteCollection):
+            items = itertools.chain.from_iterable((collection.items_iter, items))
             collection.cursor = cursor
 
         return list(items)

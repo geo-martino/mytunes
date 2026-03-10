@@ -1,5 +1,6 @@
 import contextlib
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
+from copy import copy
 from typing import Literal, ClassVar, Self, Annotated
 
 from pydantic import conset, Field, conlist, PrivateAttr, model_validator, PositiveInt, BeforeValidator, validate_call, \
@@ -9,10 +10,10 @@ from termcolor import colored
 
 from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
-from musify.models import MusifyModel, MusifyResource
+from musify.models import MusifyModel, MusifyResource, CollectionModel
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
+from musify.models.properties.order import Position, HasTrackPosition
 from musify.models.properties.uri import HasURI
 
 FIELDS = Literal[
@@ -29,7 +30,7 @@ COLOUR_ATTRIBUTES = Literal[
 ]
 
 
-class ModelFormatter[MT: MusifyResource](MusifyModel):
+class ModelFormatter[RT: MusifyResource](MusifyModel):
     """A formatter for a MusifyModel. This is used to format the model's data for output."""
 
     fields: Sequence[FIELDS] = Field(
@@ -132,12 +133,12 @@ class ModelFormatter[MT: MusifyResource](MusifyModel):
                 f"{len(value)} {name} != {len(self.fields)} fields."
             )
 
-    def format(self, item: MT | Sequence[MT], indices: bool | Sequence = False) -> str:
+    def format(self, item: RT | Iterable[RT], indices: bool | Sequence = False) -> str:
         """Format the given item."""
         match item:
             case MusifyResource():
                 rows = [self._format_row(item)]
-            case Sequence():
+            case Iterable():
                 rows = [self._format_row(i) for i in item]
             case _:
                 raise MusifyValueError("Item must be a MusifyResource or a sequence of MusifyResources.")
@@ -152,7 +153,7 @@ class ModelFormatter[MT: MusifyResource](MusifyModel):
             showindex=indices if isinstance(indices, bool) else list(map(str, indices)),
         )
 
-    def _format_row(self, item: MT) -> tuple:
+    def _format_row(self, item: RT) -> tuple:
         row = []
         for position, field in enumerate(self.fields):
             getter = getattr(self, f"_get_{field.lower().replace(" ", "_")}")
@@ -210,3 +211,25 @@ class ModelFormatter[MT: MusifyResource](MusifyModel):
     @validate_call
     def _get_public_url(item: HasURI) -> str | None:
         return str(item.uri.public_url) if item.uri is not None else None
+
+
+class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
+    def format(self, collection: CT, indices: bool | Sequence = False) -> str:
+        match indices:
+            case True if all(isinstance(item, HasTrackPosition) for item in collection.items_iter):
+                total = collection.items_count
+                indices = [
+                    Position(
+                        number=item.track.number if item.track and item.track.number else i,
+                        total=total,
+                        zero_fill=True
+                    )
+                    for i, item in enumerate(collection.items_iter, 1)
+                ]
+            case True:
+                total = collection.items_count
+                indices = [Position(number=i, total=total, zero_fill=True) for i in range(1, total + 1)]
+            case _:
+                indices = False
+
+        return super().format(collection.items_iter, indices=indices)

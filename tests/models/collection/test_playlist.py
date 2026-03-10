@@ -33,6 +33,10 @@ class TestHasPlaylists(MusifyModelTester):
     def model(self, playlists: list[Playlist]) -> HasPlaylists:
         return HasPlaylists(playlists=playlists)
 
+    def test_items_count(self, playlists: list[Playlist]):
+        model = HasPlaylists(playlists=playlists)
+        assert model.items_count == len(playlists)
+
 
 class TestHasMutablePlaylists(MusifyModelTester):
     @pytest.fixture

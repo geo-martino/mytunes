@@ -3,6 +3,7 @@ from typing import ClassVar
 from pydantic import Field, field_validator
 
 from musify._types import StrippedString
+from musify.models._base import CollectionResource
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
 
@@ -19,11 +20,15 @@ class Genre(HasName):
     )
 
 
-class HasGenres[GT: Genre](HasSeparableTags):
+class HasGenres[GT: Genre](HasSeparableTags, CollectionResource[GT]):
     genres: list[GT] = Field(
         description="The genres associated with this resource.",
         default_factory=list,
     )
+
+    @property
+    def _items(self) -> list[GT]:
+        return self.genres
 
     # noinspection PyNestedDecorators
     @field_validator("genres", mode="before", check_fields=True)

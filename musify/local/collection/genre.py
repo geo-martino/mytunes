@@ -10,6 +10,6 @@ from musify.models.properties.uri import URI
 # noinspection PyFinal
 @final
 class LocalGenreCollection[TT: LocalTrack](
-    GenreCollection[URI, TT], LocalGenre, LocalCollection
+    GenreCollection[URI, TT], LocalGenre, LocalCollection[TT]
 ):
     __final__ = True

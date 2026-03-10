@@ -4,6 +4,7 @@ import pytest
 from faker import Faker
 
 from musify.local.item.album import LocalAlbum
+from musify.local.collection.album import LocalAlbumCollection
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.order import Position
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester
@@ -34,6 +35,10 @@ class TestTrack(UniqueKeyTester):
         assert track.track.number == 5
         assert track.track.total == album.track_total
 
+        album = LocalAlbumCollection(name=faker.sentence())
+        track = Track(name=faker.sentence(), album=album)
+        assert track.track is None  # does not attempt to set track.total when not available
+
     # noinspection PyUnresolvedReferences
     def test_set_disc_total_from_album(self, faker: Faker):
         track = Track(name=faker.sentence(), album=LocalAlbum(name=faker.sentence()))
@@ -49,6 +54,10 @@ class TestTrack(UniqueKeyTester):
         track = Track(name=faker.sentence(), album=album, disc=5)
         assert track.disc.number == 5
         assert track.disc.total == album.disc_total
+
+        album = LocalAlbumCollection(name=faker.sentence())
+        track = Track(name=faker.sentence(), album=album)
+        assert track.disc is None  # does not attempt to set disc.total when not available
 
     def test_equality(self, faker: Faker):
         track = Track(name=faker.sentence(), artist=faker.name(), album=faker.name())

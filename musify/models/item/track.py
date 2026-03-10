@@ -50,7 +50,7 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
 
     @model_validator(mode="after")
     def _set_track_total_from_album(self) -> Self:
-        if self.album is None or (total := self.album.track_total) is None:
+        if self.album is None or not (total := self.album.track_total):
             return self
 
         if self.track is not None:
@@ -62,7 +62,7 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
 
     @model_validator(mode="after")
     def _set_disc_total_from_album(self) -> Self:
-        if self.album is None or (total := self.album.disc_total) is None:
+        if self.album is None or not (total := self.album.disc_total):
             return self
 
         if self.disc is not None:
@@ -92,13 +92,17 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
 
 
-class HasTracks[TK, TV: Track](AttributeResource, CollectionResource):
+class HasTracks[TK, TV: Track](AttributeResource, CollectionResource[TV]):
     """A mixin class to add a `tracks` property to a MusifyCollection."""
     tracks: MusifySequence[TK, TV] = Field(
         description="The tracks in this collection",
         default_factory=MusifySequence[TK, TV],
         frozen=True,
     )
+
+    @property
+    def _items(self) -> MusifySequence[TK, TV]:
+        return self.tracks
 
     @computed_field(description="The total number of tracks in this sequence")
     @property
@@ -123,3 +127,7 @@ class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
         default_factory=MusifyMutableSequence[TK, TV],
         frozen=True,
     )
+
+    @property
+    def _items(self) -> MusifyMutableSequence[TK, TV]:
+        return self.tracks

@@ -332,22 +332,23 @@ class TestReadCollectionEndpoints(EndpointsTester):
             self, model: ReadCollectionEndpoints, uri: URI, cursor: ItemsCursor, collection: RemoteCollection
     ):
         collection.cursor = cursor
-        expected = [1, 2, 3]
+        expected_collection = [1, 2, 3]
+        expected_get = [4, 5, 6]
         expected_cursor = deepcopy(cursor)
 
         assert cursor.next is None
 
         with (
-            patch.object(collection.__class__, "_items", return_value=[], new_callable=PropertyMock),
+            patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock),
             patch.object(
                 model.__class__,
                 "_get_all_items_from_cursor",
-                return_value=(expected, expected_cursor),
+                return_value=(expected_get, expected_cursor),
                 new_callable=AsyncMock
             ) as mock_get_all_items
         ):
             result = await model.get_all(collection)
-            assert result == expected
+            assert result == expected_collection + expected_get
 
             mock_get_all_items.assert_called_once_with(cursor=cursor, path=model._extend_path, kind=model._extend_type)
             assert cursor.next == cursor.current  # sets next cursor to current when collection is empty

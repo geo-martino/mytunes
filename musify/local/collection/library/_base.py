@@ -30,7 +30,7 @@ type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mappi
 
 @final
 class LocalLibrary(
-    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist], LocalCollection
+    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist], LocalCollection[LocalTrack]
 ):
     """
     Represents a local library, providing various methods for manipulating

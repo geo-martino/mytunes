@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from collections.abc import Hashable, Iterable
+from collections.abc import Hashable, Iterable, Collection
 from enum import IntEnum
 from functools import cached_property, reduce
 from typing import Any, ClassVar, Self, get_type_hints, Union, cast, Annotated
@@ -357,11 +357,27 @@ class AttributeResource(AttributeModel, MusifyResource, metaclass=AttributeResou
     __include_properties__ = True
 
 
-class CollectionModel(MusifyModel):
+class CollectionModel[IT: MusifyResource](MusifyModel):
     """Defines a common base models for attributes made of common collection properties."""
+    @property
+    @abstractmethod
+    def _items(self) -> Collection:
+        """The items in this collection."""
+        raise NotImplementedError
+
+    @property
+    def items_count(self) -> int:
+        """The number of items currently loaded in this collection."""
+        return len(self._items)
+
+    @property
+    def items_iter(self) -> Iterable[IT]:
+        """The number of items currently loaded in this collection."""
+        return iter(self._items)
 
 
-class CollectionResource(CollectionModel, MusifyResource):
+# noinspection PyAbstractClass
+class CollectionResource[IT: MusifyResource](CollectionModel[IT], MusifyResource):
     """Defines a common base model for resources made of common collection properties."""
 
 
