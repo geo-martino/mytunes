@@ -9,7 +9,7 @@ from musify.remote.item.track import RemoteTrack
 
 
 class TrackEndpoints[UT: URI, RT: RemoteTrack](RemoteEndpoints[UT, RT]):
-    type: ClassVar[str] = "track"
+    type: ClassVar[Type] = RemoteTrack
 
 
 class TrackGetSingleEndpoints[UT: URI, RT: RemoteTrack](

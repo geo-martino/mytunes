@@ -134,7 +134,9 @@ class RemoteEndpoints[UT: URI, RT: RemoteResource](
         return (cls.create_model(it, kind=kind) for it in sub_items)
 
     @classmethod
-    def _get_items_from_response_nested(cls, response: JSON, path: AliasPath) -> list[JSON]:
+    def _get_items_from_response_nested(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
+        path = path if isinstance(path, AliasPath) else AliasPath(path)
+
         keys = iter(path.path)
         for key in keys:
             if key == "*":

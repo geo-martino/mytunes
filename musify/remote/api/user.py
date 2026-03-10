@@ -9,7 +9,7 @@ from musify.remote.user import RemoteUser
 
 
 class UserEndpoints[UT: URI, RT: RemoteUser](RemoteEndpoints[UT, RT]):
-    type: ClassVar[str] = "user"
+    type: ClassVar[Type] = RemoteUser
 
     _me_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user.",
