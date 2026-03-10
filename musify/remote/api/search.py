@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from collections.abc import Collection
 from typing import ClassVar, Any, Type
 
 from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt

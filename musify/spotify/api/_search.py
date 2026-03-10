@@ -1,4 +1,4 @@
-from typing import ClassVar, final, Any, Literal
+from typing import ClassVar, final, Any
 
 from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
