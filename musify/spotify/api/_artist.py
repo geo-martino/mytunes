@@ -1,10 +1,11 @@
-from typing import ClassVar, final
+from typing import ClassVar, final, Literal
 
-from pydantic import AliasPath, Field
+from pydantic import AliasPath, Field, validate_call
 from yarl import URL
 
 from musify.remote.api.artist import ArtistGetSingleEndpoints, ArtistGetManyEndpoints, \
     ArtistGetSavedEndpoints, ArtistCollectionEndpoints, ArtistMutableSavedEndpoints
+from musify.remote.collection import ItemsCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
@@ -45,3 +46,23 @@ class SpotifyArtistEndpoints(
     following: _SpotifySavedArtistEndpoints = Field(
         description="Access endpoints for the current user's followed artist.",
     )
+
+    @validate_call
+    async def get_all(
+            self,
+            collection: SpotifyArtistCollection | ItemsCursor,
+            types: set[Literal["album", "single", "compilation", "appears_on"]] | None = None
+    ) -> list[SpotifyArtist]:
+        query = {"include_groups": ",".join(types)} if types else {}
+        match collection:
+            case ItemsCursor() as cursor:
+                pass
+            case SpotifyArtistCollection() as artist:
+                cursor = artist.cursor
+
+        if cursor.next is not None:
+            cursor.next = cursor.next.update_query(query)
+        else:
+            cursor.current = cursor.current.update_query(query)
+
+        return await super().get_all(collection)

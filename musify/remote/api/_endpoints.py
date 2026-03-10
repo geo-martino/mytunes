@@ -1,6 +1,6 @@
 import contextlib
 import itertools
-from collections.abc import Collection, Iterable, Sequence, Mapping, Iterator
+from collections.abc import Iterable, Sequence, Mapping, Iterator
 from copy import copy
 from itertools import batched
 from typing import Any, ClassVar, Annotated, Self, Type
@@ -162,14 +162,14 @@ class RemoteEndpoints[UT: URI, RT: RemoteResource](
         raise MusifyValueError("Could not find cursor in response at the given path.")
 
     @staticmethod
-    def _batch_items(uris: Collection[URI], limit: int) -> batched[str]:
+    def _batch_items(uris: Iterable, limit: int) -> batched[str]:
         """Batch the given URIs into sublists of the given size."""
         return itertools.batched(map(str, uris), limit)
 
     @classmethod
-    def _generate_batch_url(cls, base_url: URL, values: Iterable[str]) -> URL:
+    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
         """Generate a URL for the API endpoint for batched requests."""
-        return base_url.update_query(ids=",".join(values))
+        return base_url.update_query(ids=",".join(map(str, values)))
 
 
 class RemoteGetSingleEndpoints[UT: URI, RT: RemoteResource](RemoteEndpoints[UT, RT]):

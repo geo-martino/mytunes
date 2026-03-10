@@ -1,12 +1,43 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import ClassVar, Iterable, Any
+from functools import total_ordering
+from typing import ClassVar, Iterable, Any, Self
 
 from pydantic import PrivateAttr
 
 from musify._types import String
-from musify.models._base import AttributeResource
+from musify.models._base import AttributeResource, MusifyRootModel
+
+
+@total_ordering
+class NumberModel[T: int | float](MusifyRootModel[T]):
+    def __int__(self):
+        return int(self.root)
+
+    def __float__(self):
+        return float(self.root)
+
+    def __hash__(self) -> int:
+        return hash(self.root)
+
+    def __eq__(self, other: Any) -> bool:
+        return other is not None and self.root == float(other)
+
+    def __lt__(self, other: Any) -> bool:
+        return other is not None and self.root < float(other)
+
+    def __add__(self, other: Any) -> Self:
+        return self.model_validate(self.root + float(other))
+
+    def __sub__(self, other: Any) -> Self:
+        return self.model_validate(self.root - float(other))
+
+    def __mul__(self, other: Any) -> Self:
+        return self.model_validate(self.root * float(other))
+
+    def __truediv__(self, other: Any) -> Self:
+        return self.model_validate(self.root / float(other))
 
 
 class HasSeparableTags(AttributeResource):

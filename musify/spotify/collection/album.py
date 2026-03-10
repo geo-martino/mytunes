@@ -28,7 +28,7 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
 
     total: PositiveInt = Field(
         description="The total number of tracks on this album.",
-        validation_alias=AliasPath("tracks", "total")
+        validation_alias="total_tracks",
     )
     cursor: SpotifyItemsCursor = Field(
         description=(

@@ -25,3 +25,5 @@ class TestSpotifyAlbum(SpotifyResourceTester):
         self.assert_expected_images(model, payload)
         self.assert_expected_genres(model, payload)
         self.assert_expected_popularity(model, payload)
+
+        assert model.compilation is (payload["album_type"] == "compilation")

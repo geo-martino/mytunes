@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import mutagen
@@ -5,9 +6,19 @@ import mutagen.wave
 import pytest
 from faker import Faker
 
-from musify.models.properties.audio import IsAudioFile
+from musify.models.properties.audio import IsAudioFile, Decibels
 from musify.models.properties.file import IsLocalFile
-from tests.models.testers import MusifyResourceTester
+from tests.models.testers import MusifyResourceTester, MusifyModelTester
+
+
+class TestDecibels(MusifyModelTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> Decibels:
+        return Decibels(faker.random_int(-60000, 0) / 1000)
+
+    def test_to_str(self, model: Decibels):
+        assert re.match(r"-\d{1,2}\.\d{0,3}", str(model))
+
 
 
 class LocalAudioFile(IsLocalFile, IsAudioFile):

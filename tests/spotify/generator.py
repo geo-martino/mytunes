@@ -148,8 +148,89 @@ class SpotifyPayloadGenerator:
 
     def generate_audio_analysis(self) -> dict[str, Any]:
         """Return a randomly generated Spotify API response for a Track's audio analysis."""
-        duration_ms = self.faker.random_int(int(10e4), int(6 * 10e5))  # 1 second to 10 minutes range
-        return {"track": {"duration": duration_ms / 1000}}
+        return dict(
+            meta=dict(
+                analyzer_version=".".join(tuple(str(self.faker.random_int(100, 999)))),
+                platform=self.faker.random_element((
+                    self.faker.windows_platform_token(),
+                    self.faker.mac_platform_token(),
+                    self.faker.linux_platform_token(),
+                    self.faker.ios_platform_token(),
+                    self.faker.android_platform_token(),
+                )),
+                detailed_status=self.faker.word(),
+                status_code=self.faker.random_int(0, 1),
+                timestamp=self.faker.past_datetime().timestamp(),
+                analysis_time=self.faker.random_int(0, 10000) / 1000,
+                input_process=self.faker.sentence(),
+            ),
+            track=dict(
+                num_samples=self.faker.random_int(0, 1000000),
+                duration=self.faker.random_int(1, int(6 * 10e4)) / 1000,  # 1 second to 10 minutes range
+                sample_md5=self.faker.md5(),
+                offset_seconds=self.faker.random_int(0, 10000) / 1000,
+                window_seconds=self.faker.random_int(0, 10000) / 1000,
+                analysis_sample_rate=self.faker.random_int(22050, 96000),
+                analysis_channels=self.faker.random_int(1, 2),
+                end_of_fade_in=self.faker.random_int(0, 10000) / 1000,
+                start_of_fade_out=self.faker.random_int(0, 10000) / 1000,
+                loudness=self.faker.random_int(-60000, 0) / 1000,
+                tempo=self.faker.random_int(0, 300000) / 1000,
+                tempo_confidence=self.faker.random_int(0, 1000) / 1000,
+                time_signature=self.faker.random_int(3, 7),
+                time_signature_confidence=self.faker.random_int(0, 1000) / 1000,
+                key=self.faker.random_int(0, 11),
+                key_confidence=self.faker.random_int(0, 1000) / 1000,
+                mode=self.faker.random_int(0, 1),
+                mode_confidence=self.faker.random_int(0, 1000) / 1000,
+                codestring=self.faker.md5(),
+                code_version=self.faker.random_int(1, 1000) / 100,
+                echoprintstring=self.faker.md5(),
+                echoprint_version=self.faker.random_int(1, 1000) / 100,
+                synchstring=self.faker.md5(),
+                synch_version=self.faker.random_int(1, 1000) / 100,
+                rhythmstring=self.faker.md5(),
+                rhythm_version=self.faker.random_int(1, 1000) / 100,
+            ),
+            bars=[self.generate_audio_analysis_interval() for _ in range(self.faker.random_int(1, 100))],
+            beats=[self.generate_audio_analysis_interval() for _ in range(self.faker.random_int(1, 200))],
+            sections=[self.generate_audio_analysis_section() for _ in range(self.faker.random_int(1, 32))],
+            segments=[self.generate_audio_analysis_segment() for _ in range(self.faker.random_int(1, 8))],
+            tatums=[self.generate_audio_analysis_interval() for _ in range(self.faker.random_int(1, 300))],
+        )
+
+    def generate_audio_analysis_interval(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for an interval in a Track's audio analysis."""
+        return {
+            "start": self.faker.random_int(1, 1000) / 100,
+            "duration": self.faker.random_int(1, 1000) / 100,
+            "confidence": self.faker.random_int(0, 100) / 100,
+        }
+
+    def generate_audio_analysis_section(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a section in a Track's audio analysis."""
+        return self.generate_audio_analysis_interval() | {
+            "loudness": self.faker.random_int(-60000, 0) / 1000,
+            "tempo": self.faker.random_int(0, 120) + 60,
+            "tempo_confidence": self.faker.random_int(0, 100) / 100,
+            "key": self.faker.random_int(-1, 11),
+            "key_confidence": self.faker.random_int(0, 100) / 100,
+            "mode": self.faker.random_int(0, 1),
+            "mode_confidence": self.faker.random_int(0, 100) / 100,
+            "time_signature": self.faker.random_int(3, 7),
+            "time_signature_confidence": self.faker.random_int(0, 100) / 100,
+        }
+
+    def generate_audio_analysis_segment(self) -> dict[str, Any]:
+        """Return a randomly generated Spotify API response for a segment in a Track's audio analysis."""
+        return self.generate_audio_analysis_interval() | {
+            "loudness_start": self.faker.random_int(-60000, 0) / 1000,
+            "loudness_max": self.faker.random_int(-60000, 0) / 1000,
+            "loudness_max_time": self.faker.random_int(1, 1000) / 100,
+            "loudness_end": self.faker.random_int(-60000, 0) / 1000,
+            "pitches": [self.faker.random_int(0, 100) / 100 for _ in range(12)],
+            "timbre": [self.faker.random_int(-100000, 100000) / 100 for _ in range(12)],
+        }
 
     ################################################################################
     ## Artists
@@ -385,8 +466,8 @@ class SpotifyPayloadGenerator:
         """Return a randomly generated Spotify API response for an Episode."""
         kind = "episode"
         episode_id = self.generate_resource_id()
-        duration_ms = self.faker.random_int(int(10e4), int(3.6*10e6))  # 1 second to 1 hour range
-        languages = self.generate_countries() 
+        duration_ms = self.faker.random_int(int(10e4), int(3.6 * 10e6))  # 1 second to 1 hour range
+        languages = self.generate_countries()
 
         payload = {
             "audio_preview_url": self.faker.random_element((self.generate_audio_preview_url(episode_id), None)),
@@ -497,7 +578,7 @@ class SpotifyPayloadGenerator:
         """Return a randomly generated Spotify API response for a Chapter."""
         kind = "chapter"
         chapter_id = self.generate_resource_id()
-        duration_ms = self.faker.random_int(int(10e4), int(6*10e5))  # 1 second to 10 minutes range
+        duration_ms = self.faker.random_int(int(10e4), int(6 * 10e5))  # 1 second to 10 minutes range
 
         response = {
             "audio_preview_url": self.faker.random_element((self.generate_audio_preview_url(chapter_id), None)),

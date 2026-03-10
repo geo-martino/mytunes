@@ -3,8 +3,26 @@ from random import choice
 import pytest
 from faker import Faker
 
-from musify.models.properties import HasSeparableTags
-from tests.models.testers import MusifyResourceTester
+from musify.models.properties import NumberModel, HasSeparableTags
+from tests.models.testers import MusifyResourceTester, MusifyModelTester
+
+
+class TestNumberModel(MusifyModelTester):
+    @pytest.fixture
+    def model(self) -> NumberModel:
+        return NumberModel(123.45)
+
+    def test_to_number(self, model: NumberModel):
+        model.root = 123.45
+        assert int(model) == 123
+
+        model.root = 123
+        assert float(model) == 123.0
+
+    def test_ordering(self, model: NumberModel):
+        assert model == model.root
+        assert model < model.root + 2
+        assert model > model.root - 2
 
 
 class TestHasSeparableTags(MusifyResourceTester):

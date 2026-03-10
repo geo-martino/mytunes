@@ -44,15 +44,3 @@ class TestLength(MusifyModelTester):
         assert str(Length(360.12)) == "06:00.120"
         assert str(Length(3671)) == "1:01:11"
         assert str(Length(123456)) == "34:17:36"
-
-    def test_to_number(self, model: Length):
-        model.root = 123.45
-        assert int(model) == 123
-
-        model.root = 123
-        assert float(model) == 123.0
-
-    def test_ordering(self, model: Length):
-        assert model == model.root
-        assert model < model.root + 2
-        assert model > model.root - 2

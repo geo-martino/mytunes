@@ -244,8 +244,14 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         This should be removed once the validate_call issue is resolved:
         https://github.com/pydantic/pydantic/issues/7796
         """
-        param_key = "uris"
-        param_idx = cls._get_param_position(func, param_key)
+        try:
+            param_key = "uri"
+            param_idx = cls._get_param_position(func, param_key)
+            is_sequence = False
+        except MusifyTypeError:
+            param_key = "uris"
+            param_idx = cls._get_param_position(func, param_key)
+            is_sequence = True
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -254,7 +260,10 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
             self = args.pop(0)
             cls_t = cls._create_type_from_model_generics(self)
             # noinspection PyTypeHints
-            adapter = TypeAdapter(Sequence[cls_t])
+            if not is_sequence:
+                adapter = TypeAdapter(cls_t)
+            else:
+                adapter = TypeAdapter(Sequence[cls_t])
 
             args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
 

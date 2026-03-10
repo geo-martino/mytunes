@@ -1,6 +1,6 @@
 from typing import ClassVar, Self
 
-from pydantic import Field, model_validator, PositiveInt, computed_field
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
 
 from musify._types import StrippedString
 from musify.models._base import AttributeResource, CollectionResource
@@ -10,7 +10,7 @@ from musify.models.item.genre import HasGenres, Genre
 from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
-from musify.models.properties.music import KeySignature
+from musify.models.properties.music import HasKeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
@@ -29,7 +29,8 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
     HasReleaseDate,
     HasImages,
     HasURI[UT],
-    HasLength
+    HasLength,
+    HasKeySignature,
 ):
     """Represents a track resource and its properties."""
     type: ClassVar[str] = "track"
@@ -38,12 +39,8 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
         description="The title of this track.",
         alias="title",
     )
-    bpm: float | None = Field(
+    bpm: PositiveFloat | None = Field(
         description="The tempo of this track.",
-        default=None,
-    )
-    key: KeySignature | None = Field(
-        description="The key of this track.",
         default=None,
     )
     comments: list[str] = Field(

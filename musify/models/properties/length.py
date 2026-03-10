@@ -4,15 +4,15 @@ import re
 from datetime import timedelta
 from functools import reduce, total_ordering
 from operator import mul
-from typing import Any
 
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
 
-from musify.models._base import MusifyRootModel, AttributeResource
+from musify.models._base import AttributeResource
+from musify.models.properties._core import NumberModel
 
 
 @total_ordering
-class Length(MusifyRootModel[NonNegativeInt | NonNegativeFloat]):
+class Length(NumberModel[NonNegativeInt | NonNegativeFloat]):
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @staticmethod
@@ -53,33 +53,6 @@ class Length(MusifyRootModel[NonNegativeInt | NonNegativeFloat]):
         if milliseconds:
             length += f".{milliseconds:03d}"
         return length
-
-    def __int__(self):
-        return int(self.root)
-
-    def __float__(self):
-        return float(self.root)
-
-    def __hash__(self) -> int:
-        return hash(self.root)
-
-    def __eq__(self, other: Any) -> bool:
-        return other is not None and self.root == float(other)
-
-    def __lt__(self, other: Any) -> bool:
-        return other is not None and self.root < float(other)
-
-    def __add__(self, other: Any) -> Length:
-        return self.model_validate(self.root + float(other))
-
-    def __sub__(self, other: Any) -> Length:
-        return self.model_validate(self.root - float(other))
-
-    def __mul__(self, other: Any) -> Length:
-        return self.model_validate(self.root * float(other))
-
-    def __truediv__(self, other: Any) -> Length:
-        return self.model_validate(self.root / float(other))
 
 
 class HasLength(AttributeResource):

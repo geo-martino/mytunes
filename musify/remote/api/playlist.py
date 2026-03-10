@@ -69,11 +69,22 @@ class PlaylistMutableSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Remo
         response = await self._handler.post(self._saved_url, json=kwargs)
         return self.__class__.create_model(response)
 
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @ApiURLSchema.validate_call
+    async def follow(self, url: Annotated[URL, ApiURLSchema[UT, RT]], **kwargs) -> None:
+        """Add an existing playlist to the current user's library."""
+        await self._handler.put(url)
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
     async def modify(self, url: Annotated[URL, ApiURLSchema[UT, RT]], **kwargs) -> None:
         """Modify details about a playlist in the current user's library."""
         await self._handler.put(url, json=kwargs)
 
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
     @ApiURLSchema.validate_call
     async def delete(self, url: Annotated[URL, ApiURLSchema[UT, RT]]) -> None:
         """Delete the playlist from the current user's library."""

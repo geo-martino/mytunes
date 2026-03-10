@@ -1,10 +1,20 @@
-from typing import Any
+from functools import total_ordering
+from typing import Any, Annotated
 
 import mutagen
 from pydantic import Field, PositiveInt, PositiveFloat
 
+from musify.models.properties._core import NumberModel
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
+
+
+@total_ordering
+class Decibels(NumberModel[Annotated[float, Field(ge=-60.0, le=0.0)]]):
+    """Represents a decibel value for an audio file."""
+
+    def __str__(self):
+        return f"{round(self.root, 2)} dB"
 
 
 # noinspection PyAbstractClass
