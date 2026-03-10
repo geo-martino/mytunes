@@ -3,9 +3,8 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator
 from copy import copy
 from itertools import batched
-from typing import Any, ClassVar, Self, Type, Literal
+from typing import Any, ClassVar, Self, Type
 
-from tabulate import tabulate
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
@@ -16,11 +15,8 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.models._base import AttributeModelMetaclass
-from musify.models.properties.length import HasLength
 from musify.models.properties.logger import HasLogger
-from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
-from musify.models.properties.uri import URI, HasURI
+from musify.models.properties.uri import URI
 from musify.models.url import HttpURL
 from musify.remote import RemoteResource, RemoteModel
 from musify.remote.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
@@ -341,7 +337,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
 
 
 class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _saved_url: ClassVar[URL] = PrivateAttr(
+    _saved_read_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user's saved items.",
     )
     _saved_limit: ClassVar[PositiveInt] = PrivateAttr(
@@ -357,15 +353,15 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         if limit is None:
             limit = self._saved_limit
 
-        cursor = self._create_saved_items_cursor(self._saved_url, limit=limit, offset=offset)
+        cursor = self._create_saved_items_cursor(self._saved_read_url, limit=limit, offset=offset)
         # noinspection PyArgumentList
         items, cursor = await self._get_all_items_from_cursor(cursor=cursor, path=self._saved_path, kind=self.type)
         return list(items)
 
 
 class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _saved_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to get the current user's saved items.",
+    _saved_write_url: ClassVar[URL] = PrivateAttr(
+        # description="The API endpoint to modify the current user's saved items.",
     )
     _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request to add items to the resource.",
@@ -381,7 +377,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         for batch in self._batch_items(uris, limit):
             body = self._generate_add_batch_body(batch)
-            await self._handler.put(self._saved_url, json=body)
+            await self._handler.put(self._saved_write_url, json=body)
 
     @staticmethod
     def _generate_add_batch_body(values: Iterable[str]) -> JSON:
@@ -398,7 +394,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         for batch in self._batch_items(uris, limit):
             body = self._generate_remove_batch_body(batch)
-            await self._handler.delete(self._saved_url, json=body)
+            await self._handler.delete(self._saved_write_url, json=body)
 
     @staticmethod
     def _generate_remove_batch_body(values: Iterable[str]) -> JSON:
@@ -408,3 +404,9 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
 class HasEndpoints(RemoteModel):
     pass
+
+
+class HasSavedEndpoints[ET: ReadSavedEndpoints | WriteSavedEndpoints](HasEndpoints):
+    saved: ET = Field(
+        description="Access endpoints for the current user's saved items.",
+    )

@@ -49,10 +49,6 @@ class LocalLibrary(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=None,
     )
-    playlist_filter: ValuesFilter[str] | None = Field(
-        description="The filter to apply when loading playlists. Filters playlist by name.",
-        default=None
-    )
     path_mapper: PathMapper = Field(
         description="Mapper to use when mapping paths stored in the playlist files.",
         default_factory=PathMapper,
@@ -191,8 +187,9 @@ class LocalLibrary(
         self.logger.debug(f"Load {self.source} tracks: DONE\n")
 
     def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
+        header = textwrap.shorten(f"{self.source.upper()} URIS", 20, placeholder="...")
         row = (
-            colored(textwrap.shorten("LIBRARY URIS", 20, placeholder="..."), "cyan", attrs=["bold"]),
+            colored(header, "cyan", attrs=["bold"]),
             colored(f"{sum(track.has_uri is True for track in self.tracks)} available", "green"),
             colored(f"{sum(track.has_uri is None for track in self.tracks)} missing", "red"),
             colored(f"{sum(track.has_uri is False for track in self.tracks)} unavailable", "yellow"),
@@ -269,8 +266,8 @@ class LocalLibrary(
             return rows
 
         if not skip_log:
-            header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"]) + ":\n"
-            log = header + tabulate(
+            header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"])
+            log = header + ":\n" + tabulate(
                 rows,
                 tablefmt="orgtbl",
                 colalign=("left", "right", "right", "right", "right"),

@@ -1,11 +1,9 @@
 import contextlib
-from abc import abstractmethod
-from collections.abc import Collection
 from typing import Any, Self
 
 from pydantic import Field, NonNegativeInt, model_validator, TypeAdapter, ValidationError
 
-from musify.models._base import CollectionResource, CollectionModel
+from musify.models._base import CollectionModel
 from musify.models.url import HttpURL
 from musify.remote._base import RemoteModel, RemoteResource
 

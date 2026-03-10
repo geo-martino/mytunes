@@ -1,4 +1,3 @@
-import os
 import random
 from collections.abc import Generator
 from typing import get_args
@@ -8,13 +7,11 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify.models import CollectionModel
 from musify.models.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from musify.models.item.artist import Artist, HasArtists
 from musify.models.item.track import Track, HasTracks
 from musify.models.properties.order import Position
 from tests.models.testers import MusifyModelTester
-from tests.utils import SimpleURI
 
 
 class TestModelFormatter(MusifyModelTester):

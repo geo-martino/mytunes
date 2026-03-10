@@ -1,14 +1,14 @@
 import contextlib
+import textwrap
 from collections.abc import Sequence, Iterable
-from copy import copy
-from typing import Literal, ClassVar, Self, Annotated
+from typing import Literal, Self, Annotated
 
-from pydantic import conset, Field, conlist, PrivateAttr, model_validator, PositiveInt, BeforeValidator, validate_call, \
+from pydantic import Field, model_validator, PositiveInt, BeforeValidator, validate_call, \
     ValidationError
 from tabulate import tabulate
 from termcolor import colored
 
-from musify._types import StrippedString, to_list
+from musify._types import to_list
 from musify.exception import MusifyValueError
 from musify.models import MusifyModel, MusifyResource, CollectionModel
 from musify.models.properties.length import HasLength
@@ -178,8 +178,8 @@ class ModelFormatter[RT: MusifyResource](MusifyModel):
         width = self.widths[position]
         should_truncate = self.truncate[position]
 
-        if should_truncate and len(str(value)) > width:
-            value = str(value)[:width - 3] + "..."
+        if should_truncate:
+            value = textwrap.shorten(str(value), width, placeholder="...")
         return value
 
     def _colour_value_if_needed[T](self, value: T, position: int) -> T | str:

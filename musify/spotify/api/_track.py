@@ -1,8 +1,9 @@
 from typing import ClassVar, final
 
-from pydantic import AliasPath, Field, PositiveInt
+from pydantic import AliasPath, PositiveInt
 from yarl import URL
 
+from musify.remote.api._endpoints import HasSavedEndpoints
 from musify.remote.api.track import TrackReadItemEndpoints, TrackReadItemsEndpoints, \
     TrackReadSavedEndpoints, TrackWriteSavedEndpoints
 from musify.remote.api.types import ApiURISchema
@@ -21,7 +22,8 @@ class _SpotifySavedTrackEndpoints(
 ):
     __final__ = True
 
-    _saved_url: ClassVar[URL] = API_URL.joinpath("me/tracks")
+    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/tracks")
+    _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/library")
     _saved_limit: ClassVar[int] = 50
     _saved_path: ClassVar[AliasPath] = AliasPath("items", "*", "track")
 
@@ -31,6 +33,7 @@ class _SpotifySavedTrackEndpoints(
 @final
 class SpotifyTrackEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack],
+    HasSavedEndpoints[_SpotifySavedTrackEndpoints],
     TrackReadItemEndpoints[SpotifyResourceURI, SpotifyTrack],
     TrackReadItemsEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
@@ -39,10 +42,6 @@ class SpotifyTrackEndpoints(
     _many_url: ClassVar[URL] = API_URL.joinpath("tracks")
     _many_limit: ClassVar[int] = 50
     _many_path: ClassVar[str] = "tracks"
-
-    saved: _SpotifySavedTrackEndpoints = Field(
-        description="Access endpoints for the current user's saved tracks.",
-    )
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796

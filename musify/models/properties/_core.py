@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 from collections.abc import Sequence
 from functools import total_ordering
 from typing import ClassVar, Iterable, Any, Self

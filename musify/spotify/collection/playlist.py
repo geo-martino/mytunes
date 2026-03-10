@@ -1,9 +1,9 @@
 from collections.abc import MutableMapping
 from typing import final, Any, ClassVar
 
-from pydantic import AliasPath, Field, model_validator, NonNegativeInt, computed_field
+from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
-from musify.models.properties.date import HasAddedDate, SparseDate
+from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import MusifySequence, MusifyMutableSequence
 from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.spotify import SpotifyResource

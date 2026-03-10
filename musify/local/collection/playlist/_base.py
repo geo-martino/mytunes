@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from argparse import FileType
 from collections.abc import Collection, MutableMapping
 from pathlib import Path
 from typing import Self, Any

@@ -66,7 +66,7 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Re
     @validate_call
     async def create(self, **kwargs) -> RT:
         """Create a playlist in the current user's library."""
-        response = await self._handler.post(self._saved_url, json=kwargs)
+        response = await self._handler.post(self._saved_read_url, json=kwargs)
         return self.__class__.create_model(response)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:

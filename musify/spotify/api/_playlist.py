@@ -2,9 +2,10 @@ from collections.abc import Iterable
 from typing import ClassVar, final
 
 from aiorequestful.types import JSON
-from pydantic import validate_call, PositiveInt, Field
+from pydantic import validate_call, PositiveInt
 from yarl import URL
 
+from musify.remote.api._endpoints import HasSavedEndpoints
 from musify.remote.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.remote.api.types import ApiURISchema, ApiURLSchema
 from musify.spotify import API_URL
@@ -23,7 +24,7 @@ class _SpotifySavedPlaylistEndpoints(
 ):
     __final__ = True
 
-    _saved_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
+    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
     _saved_limit: ClassVar[int] = 50
     _saved_path: ClassVar[str] = "items"
 
@@ -72,16 +73,13 @@ class _SpotifySavedPlaylistEndpoints(
 @final
 class SpotifyPlaylistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
+    HasSavedEndpoints[_SpotifySavedPlaylistEndpoints],
     PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
 ):
     __final__ = True
 
     _batch_limit: ClassVar[int] = 100
     _extend_path: ClassVar[str] = "items"
-
-    saved: _SpotifySavedPlaylistEndpoints = Field(
-        description="Access endpoints for the current user's saved playlists.",
-    )
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796

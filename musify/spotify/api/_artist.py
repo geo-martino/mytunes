@@ -1,8 +1,9 @@
 from typing import ClassVar, final, Literal
 
-from pydantic import AliasPath, Field, validate_call
+from pydantic import AliasPath, validate_call
 from yarl import URL
 
+from musify.remote.api._endpoints import HasSavedEndpoints
 from musify.remote.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
     ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints
 from musify.remote.collection import ItemsCursor
@@ -21,7 +22,8 @@ class _SpotifySavedArtistEndpoints(
 ):
     __final__ = True
 
-    _saved_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
+    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
+    _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
     _saved_limit: ClassVar[int] = 50
     _saved_path: ClassVar[AliasPath] = AliasPath("artists", "items")
 
@@ -31,6 +33,7 @@ class _SpotifySavedArtistEndpoints(
 @final
 class SpotifyArtistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyArtist],
+    HasSavedEndpoints[_SpotifySavedArtistEndpoints],
     ArtistReadItemEndpoints[SpotifyResourceURI, SpotifyArtist],
     ArtistReadItemsEndpoints[SpotifyResourceURI, SpotifyArtist],
     ArtistReadCollectionEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
@@ -42,10 +45,6 @@ class SpotifyArtistEndpoints(
     _many_path: ClassVar[str] = "artists"
 
     _extend_path: ClassVar[str] = "items"
-
-    following: _SpotifySavedArtistEndpoints = Field(
-        description="Access endpoints for the current user's followed artist.",
-    )
 
     @validate_call
     async def get_all(

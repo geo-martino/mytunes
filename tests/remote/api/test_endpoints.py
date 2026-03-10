@@ -466,7 +466,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
 
 class TestReadSavedEndpoints(EndpointsTester):
     class MockReadSavedEndpoints(ReadSavedEndpoints[SimpleURI, MockRemoteResource]):
-        _saved_url = URL("https://api.example.com/me")
+        _saved_read_url = URL("https://api.example.com/me")
         _saved_path = "items"
         _saved_limit = 15
 
@@ -491,7 +491,7 @@ class TestReadSavedEndpoints(EndpointsTester):
             await model.get_all(limit=limit, offset=offset)
 
             mock_create_saved_items_cursor.assert_called_once_with(
-                self.MockReadSavedEndpoints._saved_url, limit=limit, offset=offset
+                self.MockReadSavedEndpoints._saved_read_url, limit=limit, offset=offset
             )
             mock_get_all_items.assert_called_once_with(
                 cursor=mock_create_saved_items_cursor.return_value,
@@ -508,13 +508,13 @@ class TestReadSavedEndpoints(EndpointsTester):
         ):
             await model.get_all()
             mock_create_model_cursor.assert_called_once_with(
-                self.MockReadSavedEndpoints._saved_url, limit=model._saved_limit, offset=None
+                self.MockReadSavedEndpoints._saved_read_url, limit=model._saved_limit, offset=None
             )
 
 
 class TestWriteSavedEndpoints(EndpointsTester):
     class MockWriteSavedEndpoints(WriteSavedEndpoints[SimpleURI, MockRemoteResource]):
-        _saved_url = URL("https://api.example.com/me")
+        _saved_write_url = URL("https://api.example.com/me")
         _saved_path = "items"
         _saved_limit = 12
 

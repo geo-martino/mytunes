@@ -3,8 +3,8 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.local.item.album import LocalAlbum
 from musify.local.collection.album import LocalAlbumCollection
+from musify.local.item.album import LocalAlbum
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.order import Position
 from tests.models.testers import MusifyResourceTester, UniqueKeyTester

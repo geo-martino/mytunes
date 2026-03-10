@@ -1,8 +1,9 @@
 from typing import ClassVar, final
 
-from pydantic import AliasPath, Field
+from pydantic import AliasPath
 from yarl import URL
 
+from musify.remote.api._endpoints import HasSavedEndpoints
 from musify.remote.api.album import AlbumReadItemEndpoints, AlbumReadItemsEndpoints, \
     AlbumReadSavedEndpoints, AlbumWriteSavedEndpoints, AlbumReadCollectionEndpoints
 from musify.spotify import API_URL
@@ -20,7 +21,8 @@ class _SpotifySavedAlbumEndpoints(
 ):
     __final__ = True
 
-    _saved_url: ClassVar[URL] = API_URL.joinpath("me/albums")
+    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/albums")
+    _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/library")
     _saved_limit: ClassVar[int] = 50
     _saved_path: ClassVar[AliasPath] = AliasPath("items", "*", "album")
 
@@ -30,6 +32,7 @@ class _SpotifySavedAlbumEndpoints(
 @final
 class SpotifyAlbumEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyAlbum],
+    HasSavedEndpoints[_SpotifySavedAlbumEndpoints],
     AlbumReadItemEndpoints[SpotifyResourceURI, SpotifyAlbum],
     AlbumReadItemsEndpoints[SpotifyResourceURI, SpotifyAlbum],
     AlbumReadCollectionEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
@@ -42,6 +45,3 @@ class SpotifyAlbumEndpoints(
 
     _extend_path: ClassVar[str] = "items"
 
-    saved: _SpotifySavedAlbumEndpoints = Field(
-        description="Access endpoints for the current user's saved albums.",
-    )
