@@ -99,7 +99,7 @@ class ModelMetaclass(PydanticModelMetaclass):
 
         return cls
 
-    def _validate_all_class_vars_set(cls: BaseModel) -> None:
+    def _validate_all_class_vars_set(cls: type[BaseModel]) -> None:
         """Validate that all class variables defined on this model and its subclasses are set."""
         for name in cls.__class_vars__:
             if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
@@ -280,7 +280,7 @@ class AttributeModelMetaclass(ModelMetaclass):
 
         return cls
 
-    def _get_tag_attributes(cls: AttributeModel, attributes: Iterable[str]) -> tuple[str]:
+    def _get_tag_attributes(cls: type[AttributeModel], attributes: Iterable[str]) -> tuple[str]:
         attribute_names = []
         for attr in attributes:
             names = cls._get_nested_tag_attributes(attr) + cls._get_parent_tag_attributes()
@@ -288,7 +288,7 @@ class AttributeModelMetaclass(ModelMetaclass):
 
         return tuple(attribute_names)
 
-    def _get_nested_tag_attributes(cls: AttributeModel, name: str) -> list[str]:
+    def _get_nested_tag_attributes(cls: type[AttributeModel], name: str) -> list[str]:
         annotation = cls._get_attribute_annotation(name)
 
         attribute_names = [name]
@@ -303,7 +303,7 @@ class AttributeModelMetaclass(ModelMetaclass):
 
         return attribute_names
 
-    def _get_attribute_annotation(cls: AttributeModel, name: str) -> type:
+    def _get_attribute_annotation(cls: type[AttributeModel], name: str) -> type:
         field: FieldInfo | None = cls.model_fields.get(name)
         if field is not None:
             annotation = field.annotation
@@ -319,7 +319,7 @@ class AttributeModelMetaclass(ModelMetaclass):
 
         return annotation
 
-    def _get_parent_tag_attributes(cls: AttributeModel) -> list[str]:
+    def _get_parent_tag_attributes(cls: type[AttributeModel]) -> list[str]:
         attribute_names = []
         for kls in cls.mro():
             if kls is not cls and kls not in (AttributeModel, AttributeModel) and issubclass(kls, AttributeModel):
@@ -415,7 +415,7 @@ class IntEnumModel(IntEnum):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(
-            cls._validate,
+            cls._construct,
             core_schema.union_schema(
                 [core_schema.str_schema(), core_schema.int_schema()]
             ),
@@ -428,7 +428,7 @@ class IntEnumModel(IntEnum):
         return {'enum': [m.name for m in cls], 'type': 'string'}
 
     @classmethod
-    def _validate(cls, value: Any) -> Self:
+    def _construct(cls, value: Any) -> Self:
         match value:
             case str():
                 return cls[to_snake(value).upper()]

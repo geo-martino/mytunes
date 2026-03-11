@@ -164,12 +164,12 @@ class LocalLibrary(
             self.logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
 
-    async def load_tracks(self) -> None:
+    async def load_tracks(self) -> bool:
         self.logger.debug(f"Find {self.source} track paths: START")
         paths = set(self._iter_track_paths())
         self.logger.debug(f"Find {self.source} track paths: DONE")
         if not paths:
-            return
+            return False
 
         self.logger.debug(f"Load {self.source} tracks: START")
         self.logger.info(
@@ -185,6 +185,7 @@ class LocalLibrary(
 
         self._log_errors("Could not load the following tracks")
         self.logger.debug(f"Load {self.source} tracks: DONE\n")
+        return True
 
     def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
         header = textwrap.shorten(f"{self.source.upper()} URIS", 20, placeholder="...")
@@ -224,12 +225,12 @@ class LocalLibrary(
             self.logger.debug(f"Load error for playlist: {path} - {ex}")
             self.errors.append(path)
 
-    async def load_playlists(self) -> None:
+    async def load_playlists(self) -> bool:
         self.logger.debug(f"Find {self.source} playlist paths: START")
         paths = set(self._iter_playlist_paths())
         self.logger.debug(f"Find {self.source} playlist paths: DONE")
         if not paths:
-            return
+            return False
 
         self.logger.debug(f"Load {self.source} playlists: START")
         self.logger.info(
@@ -249,6 +250,7 @@ class LocalLibrary(
 
         self._log_errors("Could not load the following playlists")
         self.logger.debug(f"Load {self.source} playlists: DONE\n")
+        return True
 
     def log_playlists(self, skip_log: bool = False) -> list[tuple[str, ...]]:
         rows = []

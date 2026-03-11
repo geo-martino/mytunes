@@ -99,8 +99,9 @@ class ItemsCursor(RemoteModel):
 
 # noinspection PyAbstractClass
 class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel, CollectionModel[IT]):
-    total: NonNegativeInt = Field(
-        description="The total number of items in this collection."
+    total: NonNegativeInt | None = Field(
+        description="The total number of items in this collection.",
+        default=None,
     )
     cursor: CT = Field(
         description=(
@@ -110,6 +111,8 @@ class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel, Collect
     )
 
     @property
-    def has_all_items(self) -> bool:
+    def has_all_items(self) -> bool | None:
         """Whether this collection has all items loaded."""
+        if self.total is None:
+            return None
         return self.items_count == self.total

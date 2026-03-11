@@ -1,6 +1,7 @@
 import re
 from random import choice
 from typing import Any
+from unittest.mock import patch
 
 import pydantic
 import pytest
@@ -108,6 +109,25 @@ class TestUniqueMapping:
         with pytest.raises(KeyError):
             assert mapping["unknown"]
 
+    def test_update(self, models: list[BaseResource]):
+        initial = models[2:]
+        mapping = UniqueMapping(initial)
+        assert not all(key in mapping._items for model in models for key in model.unique_keys)
+        assert len(mapping) < len(models)
+
+        mapping._update(models)
+        assert all(key in mapping._items for model in models for key in model.unique_keys)
+        assert len(mapping) == len(models)
+
+    def test_replace(self, models: list[BaseResource], faker: Faker):
+        initial = faker.random_elements(models)
+        mapping = UniqueMapping(initial)
+        assert all(key in mapping._items for model in initial for key in model.unique_keys)
+
+        new = faker.random_elements(models)
+        mapping._replace(new)
+        assert all(key in mapping._items for model in new for key in model.unique_keys)
+
 
 class TestMutableUniqueMapping:
     # noinspection PyTypeChecker
@@ -194,14 +214,10 @@ class TestMutableUniqueMapping:
             mapping.add("invalid value")
 
     def test_update(self, models: list[BaseResource]):
-        initial = models[2:]
-        mapping = MutableUniqueMapping(initial)
-        assert not all(key in mapping._items for model in models for key in model.unique_keys)
-        assert len(mapping) < len(models)
-
-        mapping.update(models)
-        assert all(key in mapping._items for model in models for key in model.unique_keys)
-        assert len(mapping) == len(models)
+        with patch.object(UniqueMapping, "_update") as mock_update:
+            mapping = MutableUniqueMapping(models)
+            mapping.update(models)
+            mock_update.assert_called_once()
 
     def test_remove(self, models: list[BaseResource]):
         initial = models[2:]
@@ -227,3 +243,9 @@ class TestMutableUniqueMapping:
 
         mapping.clear()
         assert not mapping._items
+
+    def test_replace(self, models: list[BaseResource]):
+        with patch.object(UniqueMapping, "_replace") as mock_update:
+            mapping = MutableUniqueMapping(models)
+            mapping.replace(models)
+            mock_update.assert_called_once()

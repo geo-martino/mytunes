@@ -1,4 +1,4 @@
-from typing import ClassVar, final
+from typing import ClassVar, final, Type
 
 from pydantic import AliasPath
 from yarl import URL
@@ -20,6 +20,8 @@ class _SpotifySavedAlbumEndpoints(
     AlbumWriteSavedEndpoints[SpotifyResourceURI, SpotifyAlbum],
 ):
     __final__ = True
+
+    type: ClassVar[Type] = SpotifyAlbumCollection  # override to force creation of collections from responses
 
     _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/albums")
     _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/library")
@@ -44,4 +46,3 @@ class SpotifyAlbumEndpoints(
     _many_path: ClassVar[str] = "albums"
 
     _extend_path: ClassVar[str] = "items"
-

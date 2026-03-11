@@ -3,7 +3,7 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator
 from copy import copy
 from itertools import batched
-from typing import Any, ClassVar, Self, Type
+from typing import Any, ClassVar, Self, Type, Union
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
@@ -24,7 +24,7 @@ from musify.models.collection import ItemsCursor, RemoteCollection
 
 
 class EndpointsMetaclass(AttributeModelMetaclass):
-    def create_model(cls: Endpoints, value: Any, kind: str | type = None) -> RemoteResource:
+    def create_model(cls: type[Endpoints], value: Any, kind: str | type = None) -> RemoteResource:
         """Create an instance of the resource type handled by this API model from the given value."""
         if not cls.__final__:
             raise MusifyTypeError("Can only create resources from final API models.")
@@ -49,17 +49,7 @@ class EndpointsMetaclass(AttributeModelMetaclass):
         if not type_classes:
             raise MusifyTypeError(f"Could not find a registered {cls.source!r} model for type {kind!r}.")
 
-        errors = []
-        for kls in type_classes:
-            try:
-                return kls.model_validate(value)
-            except ValidationError as exc:
-                errors.append(exc)
-
-        raise MusifyValueError(
-            f"Could not create a {cls.source!r} resource of type {kind!r} from the given value. "
-            f"Errors: \n{"\n".join(map(str, errors))}"
-        )
+        return TypeAdapter(Union[*type_classes]).validate_python(value)
 
 
 class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=EndpointsMetaclass):
@@ -112,19 +102,17 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         items: Iterator[RT] = iter(())
         while cursor.next is not None:
             response = await self._handler.get(cursor.next)
-            response_items = self._get_items_from_response(response=response, path=path, kind=kind)
-            items = itertools.chain(items, response_items)
+
+            response_items = self._get_items_from_response(response=response, path=path)
+            response_models = (self.__class__.create_model(it, kind=kind) for it in response_items)
+            items = itertools.chain(items, response_models)
+
             cursor = self._get_cursor_from_response(response=response, path=path, cursor=cursor)
 
         return items, cursor
 
     @classmethod
-    def _get_items_from_response(
-            cls,
-            response: JSON,
-            path: str | AliasPath,
-            kind: str | Type = None,
-    ) -> Iterator[RT]:
+    def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
         match path:
             case str() as p:
                 sub_items = response[p]
@@ -133,7 +121,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 if sub_items is PydanticUndefined:
                     sub_items = cls._get_items_from_response_nested(response, p)
 
-        return (cls.create_model(it, kind=kind) for it in sub_items)
+        return sub_items
 
     @classmethod
     def _get_items_from_response_nested(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
@@ -228,7 +216,8 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         for batch in self._batch_items(uris, limit):
             url = self._generate_batch_url(self._many_url, batch)
             response = await self._handler.get(url)
-            items.extend(self._get_items_from_response(response=response, path=self._many_path))
+            response_items = self._get_items_from_response(response=response, path=self._many_path)
+            items.extend(map(self.__class__.create_model, response_items))
 
         return items
 
@@ -355,7 +344,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         cursor = self._create_saved_items_cursor(self._saved_read_url, limit=limit, offset=offset)
         # noinspection PyArgumentList
-        items, cursor = await self._get_all_items_from_cursor(cursor=cursor, path=self._saved_path, kind=self.type)
+        items, *_ = await self._get_all_items_from_cursor(cursor=cursor, path=self._saved_path, kind=self.type)
         return list(items)
 
 

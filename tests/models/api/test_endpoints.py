@@ -151,11 +151,24 @@ class TestEndpoints(EndpointsTester):
             cursor_initial: ItemsCursor,
             cursors: list[ItemsCursor],
             mock_get_next_cursor: Mock,
+            faker: Faker,
     ):
-        with patch.object(model.__class__, "_get_items_from_response") as mock_get_items_from_response:
-            await model._get_all_items_from_cursor(cursor_initial, path="items")
+        expected = [{"name": faker.word()} for _ in range(faker.random_int(1, 10))]
+
+        def _return_response[T](item: T, *_, **__) -> T:
+            return item
+
+        with (
+            patch.object(
+                model.__class__, "_get_items_from_response", return_value=expected
+            ) as mock_get_items_from_response,
+            patch.object(model.__class__, "create_model", side_effect=_return_response) as mock_create_model,
+        ):
+            items, cursor = await model._get_all_items_from_cursor(cursor_initial, path="items")
+            assert len(list(items)) == len(expected) * len(cursors)
 
             assert mock_get_items_from_response.call_count == len(cursors)
+            assert mock_create_model.call_count == len(expected) * len(cursors)
 
             urls = [call.args[0] for call in mock_get_next_cursor.call_args_list]
             assert urls == [cursor_initial.next] + [cursor.next for cursor in cursors if cursor.next is not None]
@@ -164,13 +177,9 @@ class TestEndpoints(EndpointsTester):
     def assert_get_items_from_response(
             model: Endpoints, response: dict[str, Any], path: str | AliasPath, expected: list[Any]
     ):
-        def _return_response[T](item: T, *_, **__) -> T:
-            return item
 
-        with patch.object(model.__class__, "create_model", side_effect=_return_response) as mock_create_model:
-            items = list(model._get_items_from_response(response=response, path=path))
-            assert items == expected
-            assert mock_create_model.call_count == len(items)
+        items = list(model._get_items_from_response(response=response, path=path))
+        assert items == expected
 
     def test_get_items_from_response_on_key(self, model: Endpoints, faker: Faker):
         path = "items"

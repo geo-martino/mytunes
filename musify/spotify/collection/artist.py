@@ -1,6 +1,6 @@
 from typing import final
 
-from pydantic import Field, AliasPath, PositiveInt
+from pydantic import Field, AliasPath, PositiveInt, model_validator
 
 from musify.models.collection.artist import RemoteArtistCollection
 from musify.spotify.collection._base import SpotifyCollection, SpotifyItemsCursor
@@ -23,12 +23,13 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
     albums: list[AT] = Field(
         description="The albums associated with this artist.",
         default_factory=list,
-        validation_alias=AliasPath("albums", "items")
+        validation_alias=AliasPath("albums", "items"),
     )
 
-    total: PositiveInt = Field(
+    total: PositiveInt | None = Field(
         description="The total number of albums by this artist.",
-        validation_alias=AliasPath("albums", "total")
+        default=None,
+        validation_alias=AliasPath("albums", "total"),
     )
     cursor: SpotifyItemsCursor = Field(
         description=(
@@ -37,3 +38,12 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
         ),
         validation_alias="albums",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reformat_albums_from_response(cls, data: dict) -> dict:
+        # the validation alias and name for these are the same
+        # we need to reformat the data to fit the model better if only the cursor is present in the response
+        if "albums" in data and isinstance(data["albums"], dict):
+            data["cursor"] = data.pop("albums")
+        return data

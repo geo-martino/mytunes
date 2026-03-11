@@ -36,13 +36,13 @@ class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
 
         # noinspection PyProtectedMember
         return core_schema.no_info_after_validator_function(
-            function=cls._validate,
+            function=cls._construct,
             schema=handler(schema),
             serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x._items)
         )
 
     @classmethod
-    def _validate(cls, value: str | dict[str, Any]) -> Self:
+    def _construct(cls, value: Any) -> Self:
         if isinstance(value, cls):
             return value
         if isinstance(value, BaseResource):
@@ -148,6 +148,29 @@ class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
         """
         return tuple(item for item in other if item not in self)
 
+    def _extend(self, __iterable: Iterable[TV], allow_duplicates: bool = True) -> None:
+        """
+        Add many items to the end of this sequence.
+        This allows for privately extending the sequence with a new set of items,
+        without exposing the full extending interface to users.
+        """
+        if not allow_duplicates:
+            __iterable = (item for item in __iterable if item not in self._items_mapped)
+
+        items = list(__iterable)
+        self._items.extend(items)
+        self._items_mapped.update(items)
+
+    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
+        """
+        Replace all items in this sequence.
+        This allows for privately replacing the sequence with a new set of items,
+        without exposing the full sequence interface to users.
+        """
+        self._items.clear()
+        self._items_mapped.clear()
+        self._extend(__m)
+
 
 class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], MutableSequence[TV]):
     """
@@ -235,12 +258,7 @@ class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], Mutabl
     @validate_call
     def extend(self, __iterable: Iterable[TV], allow_duplicates: bool = True) -> None:
         """Add many items to the end of this sequence"""
-        if not allow_duplicates:
-            __iterable = (item for item in __iterable if item not in self._items_mapped)
-
-        items = list(__iterable)
-        self._items.extend(items)
-        self._items_mapped.update(items)
+        self._extend(__iterable, allow_duplicates)
 
     @validate_call
     def insert(self, __index: int, __object: TV, allow_duplicates: bool = True) -> None:
@@ -293,6 +311,11 @@ class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], Mutabl
         """Remove all items from this sequence"""
         self._items.clear()
         self._items_mapped.clear()
+
+    # @validate_call  # doesn't work with Iterables
+    def replace(self, __iterable: Iterable[TV], allow_duplicates: bool = True) -> None:
+        """Replace all items in this sequence"""
+        self._replace(__iterable, allow_duplicates)
 
     def sort(self, key=None, reverse: bool = False) -> None:
         """Sort the items in this sequence in place"""
