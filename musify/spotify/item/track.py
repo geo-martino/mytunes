@@ -5,12 +5,12 @@ from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFl
 from pydantic_core.core_schema import FieldValidationInfo
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyModel
+from musify.models import BaseModel
 from musify.models.properties.audio import Decibels
 from musify.models.properties.length import Length, HasLength
 from musify.models.properties.order import Position
 from musify.models.url import HttpURL
-from musify.remote.item.track import RemoteTrack
+from musify.models.item.track import RemoteTrack
 from musify.spotify._base import SpotifyResource, SpotifyModel
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
@@ -171,7 +171,7 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
         return uri
 
 
-class _SpotifyAudioAnalysisMeta(MusifyModel):
+class _SpotifyAudioAnalysisMeta(BaseModel):
     analyzer_version: str = Field(
         description="The version of the Analyzer used to analyze this track.",
     )
@@ -313,7 +313,7 @@ class _SpotifyAudioAnalysisTrack(HasLength, HasSpotifyKeySignature):
     )
 
 
-class _SpotifyAudioAnalysisInterval(MusifyModel):
+class _SpotifyAudioAnalysisInterval(BaseModel):
     start: Length = Field(
         description="The starting point (in seconds) of the time interval.",
     )

@@ -10,10 +10,10 @@ from musify.spotify import API_URL
 from musify.spotify.api._track import SpotifyTrackEndpoints
 from musify.spotify.item.track import SpotifyAudioFeatures, SpotifyAudioAnalysis
 from musify.spotify.properties.uri import SpotifyResourceURI
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSpotifyTrackEndpoints(MusifyModelTester):
+class TestSpotifyTrackEndpoints(BaseModelTester):
     @pytest.fixture
     def model(self, handler: RequestHandler) -> SpotifyTrackEndpoints:
         return SpotifyTrackEndpoints.model_validate(handler)

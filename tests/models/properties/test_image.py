@@ -12,10 +12,10 @@ from faker import Faker
 
 from musify.exception import MusifyValueError
 from musify.models.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestImageBase(MusifyModelTester):
+class TestImageBase(BaseModelTester):
     @pytest.fixture
     def model(self, image_types: set[str], faker: Faker) -> ImageBase:
         return ImageBase(
@@ -78,7 +78,7 @@ class TestImageBase(MusifyModelTester):
         assert result.width == img_obj.width
 
 
-class TestImageFile(MusifyModelTester):
+class TestImageFile(BaseModelTester):
     @pytest.fixture
     def model(self, image_type: str, faker: Faker, tmp_path: Path) -> ImageFile:
         return ImageFile(
@@ -122,7 +122,7 @@ class TestImageFile(MusifyModelTester):
         assert await model.load() == img_obj
 
 
-class TestImageURL(MusifyModelTester):
+class TestImageURL(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> ImageURL:
         return ImageURL(
@@ -169,7 +169,7 @@ class TestImageURL(MusifyModelTester):
         assert await model.load() == img_obj
 
 
-class TestHasImages(MusifyModelTester):
+class TestHasImages(BaseModelTester):
     @pytest.fixture
     def model(self, image_files: list[ImageFile], image_urls: list[ImageURL]) -> HasImages:
         return HasImages(images={img.type: img for img in image_files + image_urls})

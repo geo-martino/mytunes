@@ -4,8 +4,8 @@ from typing import final, Any, ClassVar
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
 from musify.models.properties.date import HasAddedDate
-from musify.models.sequence import MusifySequence, MusifyMutableSequence
-from musify.remote.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.models.sequence import UniqueSequence, MutableUniqueSequence
+from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.spotify import SpotifyResource
 from musify.spotify.collection._base import SpotifyCollection, SpotifyItemsCursor
 from musify.spotify.item.track import SpotifyTrack
@@ -51,9 +51,9 @@ class SpotifyPlaylist(
         description="Whether the owner allows other users to modify the playlist.",
     )
 
-    tracks: MusifySequence[str, SpotifyPlaylistTrack] = Field(
+    tracks: UniqueSequence[str, SpotifyPlaylistTrack] = Field(
         description="The tracks in this playlist.",
-        default_factory=MusifySequence[str, SpotifyPlaylistTrack],
+        default_factory=UniqueSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items"),
         frozen=True,
     )
@@ -88,8 +88,8 @@ class SpotifyMutablePlaylist(
 ):
     __final__ = True
 
-    tracks: MusifyMutableSequence[str, SpotifyPlaylistTrack] = Field(
+    tracks: MutableUniqueSequence[str, SpotifyPlaylistTrack] = Field(
         description="The tracks in this playlist.",
-        default_factory=MusifyMutableSequence[str, SpotifyPlaylistTrack],
+        default_factory=MutableUniqueSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")
     )

@@ -7,13 +7,15 @@ from typing import ClassVar, Annotated
 from pydantic import Field, validate_call, BeforeValidator
 
 from musify._types import StrippedString
-from musify.models._base import CollectionModel
-from musify.models.item.track import Track, HasTracks, HasMutableTracks
-from musify.models.mapping import MusifyMapping, MusifyMutableMapping
+from musify.models.remote import RemoteResource
+from musify.models.collection._base import CollectionModel, ItemsCursor, RemoteCollection
+from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
+from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI
+from musify.models.user import RemoteUser
 
 
 class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], HasLength, HasImages):
@@ -31,7 +33,7 @@ class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist
         """
         Merge two playlists together.
 
-        See :py:meth:`.MusifyMutableSequence.merge` for more information.
+        See :py:meth:`.MutableUniqueSequence.merge` for more information.
         """
         self.tracks.merge(other.tracks, reference=reference.tracks if reference else None)
 
@@ -41,30 +43,30 @@ type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 
 def _get_playlists_map_from_merge_input[TK, TV](
         playlists: MergePlaylistsType[TK, TV] | None
-) -> MusifyMutableMapping[TK, TV] | None:
+) -> MutableUniqueMapping[TK, TV] | None:
     match playlists:
         case None:
             return
-        case MusifyMutableMapping():
+        case MutableUniqueMapping():
             return playlists
         case HasMutablePlaylists():
             return playlists.playlists
         case HasPlaylists():
-            return MusifyMutableMapping(playlists.playlists)
+            return MutableUniqueMapping(playlists.playlists)
         case _:
-            return MusifyMutableMapping(playlists)
+            return MutableUniqueMapping(playlists)
 
 
 type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
-    MusifyMutableMapping[TK, TV] | None, BeforeValidator(_get_playlists_map_from_merge_input)
+    MutableUniqueMapping[TK, TV] | None, BeforeValidator(_get_playlists_map_from_merge_input)
 ]
 
 
 class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
-    """A mixin class to add a `playlists` property to a MusifyCollection."""
-    playlists: MusifyMapping[TK, TV] = Field(
+    """A mixin class to add a `playlists` field to a model."""
+    playlists: UniqueMapping[TK, TV] = Field(
         description="The playlists in this collection",
-        default_factory=MusifyMapping[TK, TV],
+        default_factory=UniqueMapping[TK, TV],
         frozen=True,
     )
 
@@ -74,9 +76,10 @@ class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
 
 
 class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
-    playlists: MusifyMutableMapping[TK, TV] = Field(
+    """A mixin class to add a mutable `playlists` field to a model."""
+    playlists: MutableUniqueMapping[TK, TV] = Field(
         description="The playlists in this collection",
-        default_factory=MusifyMutableMapping[TK, TV],
+        default_factory=MutableUniqueMapping[TK, TV],
         frozen=True,
     )
 
@@ -101,3 +104,21 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
                 continue
 
             self.playlists[playlist].merge(playlist, reference=reference[playlist] if reference else None)
+
+
+class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
+    Playlist[UT, TT, UT], RemoteResource[UT], RemoteCollection[TT, CT]
+):
+    owner: OT = Field(
+        description="The owner of this playlist.",
+    )
+    public: bool | None = Field(
+        description="Whether this playlist is publicly available.",
+        default=None,
+    )
+
+
+class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
+    MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT, OT, CT]
+):
+    pass

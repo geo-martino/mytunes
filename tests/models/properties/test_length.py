@@ -4,10 +4,10 @@ import pytest
 from faker import Faker
 
 from musify.models.properties.length import Length
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestLength(MusifyModelTester):
+class TestLength(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Length:
         return Length(faker.random_int())

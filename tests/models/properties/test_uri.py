@@ -5,13 +5,13 @@ import pytest
 from faker import Faker
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyResource
+from musify.models import BaseResource
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI, HasURI, HasMutableURI
-from tests.models.testers import MusifyModelTester, UniqueKeyTester
+from tests.models.testers import BaseModelTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
@@ -36,7 +36,7 @@ def uri(faker: Faker) -> SimpleURI:
 
 
 @pytest.fixture
-def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
+def uris(models: list[BaseResource], faker: Faker) -> list[SimpleURI]:
     seen = set()
     uris = []
 
@@ -54,7 +54,7 @@ def uris(models: list[MusifyResource], faker: Faker) -> list[SimpleURI]:
     return uris
 
 
-class TestURI(MusifyModelTester):
+class TestURI(BaseModelTester):
     @pytest.fixture
     def model(self, uri: SimpleURI) -> URI:
         return uri

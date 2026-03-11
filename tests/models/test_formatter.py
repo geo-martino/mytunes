@@ -11,10 +11,10 @@ from musify.models.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTR
 from musify.models.item.artist import Artist, HasArtists
 from musify.models.item.track import Track, HasTracks
 from musify.models.properties.order import Position
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestModelFormatter(MusifyModelTester):
+class TestModelFormatter(BaseModelTester):
     @pytest.fixture
     def model(self) -> ModelFormatter:
         return ModelFormatter(
@@ -216,7 +216,7 @@ class TestModelFormatter(MusifyModelTester):
         assert len(result.splitlines()) > len(tracks)  # should have header row
 
 
-class TestCollectionFormatter(MusifyModelTester):
+class TestCollectionFormatter(BaseModelTester):
     @pytest.fixture
     def model(self) -> CollectionFormatter:
         return CollectionFormatter(

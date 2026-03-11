@@ -3,10 +3,10 @@ from typing import ClassVar, final
 from pydantic import AliasPath, PositiveInt
 from yarl import URL
 
-from musify.remote.api._endpoints import HasSavedEndpoints
-from musify.remote.api.track import TrackReadItemEndpoints, TrackReadItemsEndpoints, \
+from musify.models.api import HasSavedEndpoints
+from musify.models.api.track import TrackReadItemEndpoints, TrackReadItemsEndpoints, \
     TrackReadSavedEndpoints, TrackWriteSavedEndpoints
-from musify.remote.api.types import ApiURISchema
+from musify.models.api.types import _ApiURISchema
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.api._types import SpotifyApiURI, SpotifyApiURISequence
@@ -45,7 +45,7 @@ class SpotifyTrackEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURISchema.validate_call
+    @_ApiURISchema.validate_call
     async def get_audio_features(self, uri: SpotifyApiURI[SpotifyTrack]) -> SpotifyAudioFeatures:
         """Get the audio features for a given track"""
         url = API_URL.joinpath("audio-features", uri.id)
@@ -54,7 +54,7 @@ class SpotifyTrackEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURISchema.validate_call
+    @_ApiURISchema.validate_call
     async def get_many_audio_features(
             self, uris: SpotifyApiURISequence[SpotifyTrack], limit: PositiveInt = 100
     ) -> list[SpotifyAudioFeatures]:
@@ -72,7 +72,7 @@ class SpotifyTrackEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURISchema.validate_call
+    @_ApiURISchema.validate_call
     async def get_audio_analysis(self, uri: SpotifyApiURI[SpotifyTrack]) -> SpotifyAudioAnalysis:
         """Get the audio analysis for a given track"""
         url = API_URL.joinpath("audio-analysis", uri.id)

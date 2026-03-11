@@ -1,4 +1,4 @@
-from musify.remote.api.types import ApiURL, ApiURI, ApiURISequence
+from musify.models.api.types import ApiURL, ApiURI, ApiURISequence
 from musify.spotify import SpotifyResource
 from musify.spotify.properties.uri import SpotifyResourceURI
 

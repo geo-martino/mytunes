@@ -6,17 +6,17 @@ from faker import Faker
 from pydantic import InstanceOf
 
 from musify.processors_new.match.score.numeric import NumericScorer, RangeScorer, LengthScorer, ReleaseYearScorer
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class NumericScorerTester(MusifyModelTester, metaclass=ABCMeta):
+class NumericScorerTester(BaseModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_calculate_score_returns_on_missing_values(model: NumericScorer):
         assert model._calculate_score(0, 123) == 0
         assert model._calculate_score(123, 0) == 0
 
 
-class TestStringScoreReducer(MusifyModelTester):
+class TestStringScoreReducer(BaseModelTester):
     @pytest.fixture
     @patch.multiple(
         RangeScorer,

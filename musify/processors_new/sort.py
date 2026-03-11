@@ -11,7 +11,7 @@ from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyResource, MusifyEnum
+from musify.models import BaseResource, IntEnumModel
 from musify.models.item.artist import HasArtists
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
@@ -38,7 +38,7 @@ SORT_FIELDS = frozenset(_SORT_FIELDS_MAP)
 _SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 
 
-class ShuffleMode(MusifyEnum):
+class ShuffleMode(IntEnumModel):
     """Represents the possible shuffle modes to use when shuffling items using :py:class:`ItemSorter`."""
     NONE = 0
     RANDOM = 1
@@ -108,7 +108,7 @@ class ItemSorter(Processor):
     @classmethod
     def sort_by_field(
             cls,
-            items: MutableSequence[MusifyResource],
+            items: MutableSequence[BaseResource],
             field: _SORT_FIELDS_TYPE | None = None,
             reverse: bool = False,
             ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
@@ -131,7 +131,7 @@ class ItemSorter(Processor):
 
     @staticmethod
     def _get_sort_key_by_type(
-            items: Collection[MusifyResource], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
+            items: Collection[BaseResource], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
     ) -> Any:
         try:  # attempt to find an example value to determine the value type for this sort
             value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
@@ -140,25 +140,25 @@ class ItemSorter(Processor):
 
         match value:  # get sort key based on value type
             case str() | HasName():  # key gets name and strips ignore words from string
-                def _sort_key(item: MusifyResource) -> tuple[bool, str]:
+                def _sort_key(item: BaseResource) -> tuple[bool, str]:
                     if (val := getattr(item, field)) is not None and isinstance(val, HasName):
                         val = val.name
 
                     not_special_start, _, val = strip_ignore_words(val, words=ignore_words)
                     return not_special_start, val.casefold()
             case datetime():  # key converts datetime to floats
-                def _sort_key(item: MusifyResource) -> float:
+                def _sort_key(item: BaseResource) -> float:
                     field_value = getattr(item, field)
                     return field_value.timestamp() if field_value is not None else 0.0
             case _:
-                def _sort_key(item: MusifyResource) -> Any:
+                def _sort_key(item: BaseResource) -> Any:
                     val = getattr(item, field, None)
                     return val if val else 0
 
         return _sort_key
 
     @classmethod
-    def group_by_field[T: MusifyResource](
+    def group_by_field[T: BaseResource](
             cls,
             items: Collection[T],
             field: _SORT_FIELDS_TYPE,
@@ -207,7 +207,7 @@ class ItemSorter(Processor):
     def __call__(self, *args, **kwargs) -> None:
         return self.sort(*args, **kwargs)
 
-    def sort[T: MusifyResource](self, items: MutableSequence[T]) -> None:
+    def sort[T: BaseResource](self, items: MutableSequence[T]) -> None:
         """Sorts a sequence of ``items`` in-place."""
         if len(items) == 0:
             return
@@ -225,7 +225,7 @@ class ItemSorter(Processor):
             case ShuffleMode.DIFFERENT_ARTIST:
                 self._shuffle_on_artist(items)
 
-    def _sort_by_fields[T: MusifyResource](
+    def _sort_by_fields[T: BaseResource](
             self,
             groups: MutableSequence[T] | MutableMapping[Any, T],
             fields: Iterator[tuple[_SORT_FIELDS_TYPE, bool]],

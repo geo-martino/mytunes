@@ -22,10 +22,10 @@ from musify.processors_new.limit import LimitType, ItemLimiter
 from musify.processors_new.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from musify.utils import required_modules_installed
 from tests.local.collection.playlist.testers import LocalPlaylistTester
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSyncResultXAutoPF(MusifyModelTester):
+class TestSyncResultXAutoPF(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SyncResultXAutoPF:
         return SyncResultXAutoPF(
@@ -419,7 +419,7 @@ class TestXAutoPF(LocalPlaylistTester):
         await self.assert_save_to_new_file(model_with_tracks, path)
 
 
-class TestXMLCondition(MusifyModelTester):
+class TestXMLCondition(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> _XMLCondition:
@@ -519,7 +519,7 @@ class TestXMLCondition(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLConditions(MusifyModelTester):
+class TestXMLConditions(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> _XMLConditions:
@@ -586,7 +586,7 @@ class TestXMLConditions(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLLimit(MusifyModelTester):
+class TestXMLLimit(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLLimit:
         return _XMLLimit()
@@ -653,7 +653,7 @@ class TestXMLLimit(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLDisplayField(MusifyModelTester):
+class TestXMLDisplayField(BaseModelTester):
     @staticmethod
     def get_valid_code() -> int:
         """Returns a random valid field code."""
@@ -679,7 +679,7 @@ class TestXMLDisplayField(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLDisplayGroup(MusifyModelTester):
+class TestXMLDisplayGroup(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLDisplayGroup:
         return _XMLDisplayGroup(id="TrackDetail", field=[
@@ -702,7 +702,7 @@ class TestXMLDisplayGroup(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLDisplayFields(MusifyModelTester):
+class TestXMLDisplayFields(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLDisplayFields:
         return _XMLDisplayFields(
@@ -743,7 +743,7 @@ class TestXMLDisplayFields(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLSortBy(MusifyModelTester):
+class TestXMLSortBy(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLSortBy:
         return _XMLSortBy()
@@ -784,7 +784,7 @@ class TestXMLSortBy(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestDefinedSort(MusifyModelTester):
+class TestDefinedSort(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLDefinedSort:
         return _XMLDefinedSort(id=choice(tuple(_XMLDefinedSort.fields_map)))
@@ -826,7 +826,7 @@ class TestDefinedSort(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLSource(MusifyModelTester):
+class TestXMLSource(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLSource:
         return _XMLSource()
@@ -942,7 +942,7 @@ class TestXMLSource(MusifyModelTester):
         assert adapter.validate_python(xml).model_dump_xml() == xml
 
 
-class TestXMLSmartPlaylist(MusifyModelTester):
+class TestXMLSmartPlaylist(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLSmartPlaylist:
         return _XMLSmartPlaylist()
@@ -1036,7 +1036,7 @@ class TestXMLSmartPlaylist(MusifyModelTester):
         assert result == xml
 
 
-class TestXMLRoot(MusifyModelTester):
+class TestXMLRoot(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLRoot:
         return _XMLRoot()

@@ -3,8 +3,9 @@ from typing import ClassVar
 from pydantic import Field, field_validator
 
 from musify._types import StrippedString
-from musify.models._base import CollectionResource
-from musify.models.item.genre import HasGenres, Genre
+from musify.models.remote import RemoteResource
+from musify.models.collection import CollectionModel
+from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
@@ -21,7 +22,7 @@ class Artist[GT: Genre, UT: URI](HasGenres[GT], HasName, HasURI[UT], HasRating):
     )
 
 
-class HasArtists[RT: Artist](HasSeparableTags, CollectionResource[Artist]):
+class HasArtists[RT: Artist](HasSeparableTags, CollectionModel[Artist]):
     artists: list[RT] = Field(
         description="The artists associated with this resource.",
         default_factory=list,
@@ -53,3 +54,7 @@ class HasArtists[RT: Artist](HasSeparableTags, CollectionResource[Artist]):
         if isinstance(value, str):
             value = self._separate_tags(value)
         self.artists = value
+
+
+class RemoteArtist[GT: RemoteGenre, UT: URI](Artist[GT, UT], RemoteResource[UT]):
+    pass

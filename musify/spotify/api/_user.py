@@ -2,7 +2,7 @@ from typing import ClassVar, final
 
 from yarl import URL
 
-from musify.remote.api.user import UserEndpoints
+from musify.models.api.user import UserEndpoints
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.properties.uri import SpotifyUserURI

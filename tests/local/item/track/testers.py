@@ -18,11 +18,11 @@ from musify.local.exception import FileError
 from musify.local.item.track import LocalTrack, TagDumpContext
 from musify.models.properties.image import ImageFile
 from musify.models.properties.name import HasName
-from tests.models.testers import MusifyModelTester, UniqueKeyTester
+from tests.models.testers import BaseModelTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
-class LocalTrackEmbeddedImageTester(MusifyModelTester, metaclass=ABCMeta):
+class LocalTrackEmbeddedImageTester(BaseModelTester, metaclass=ABCMeta):
 
     @abstractmethod
     def test_get_bytes(self, pictures: dict[str, Any]):

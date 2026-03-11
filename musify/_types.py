@@ -5,7 +5,7 @@ from annotated_types import MinLen
 from pydantic import StringConstraints, BeforeValidator
 from pydantic.alias_generators import to_snake
 
-from musify.models import MusifyModel
+from musify.models import BaseModel
 
 type Character = Annotated[str, StringConstraints(min_length=1, max_length=1)]
 type StrippedCharacter = Annotated[str, StringConstraints(min_length=1, max_length=1, strip_whitespace=True)]
@@ -31,7 +31,7 @@ def to_set(value: Any) -> set[Any] | None:
     match value:
         case None:
             return
-        case str() | Mapping() | MusifyModel():
+        case str() | Mapping() | BaseModel():
             return {value}
         case Iterable():
             return set(value)
@@ -44,7 +44,7 @@ def to_tuple(value: Any) -> tuple[Any] | None:
     match value:
         case None:
             return
-        case str() | Mapping() | MusifyModel():
+        case str() | Mapping() | BaseModel():
             return (value,)
         case Iterable():
             return tuple(value)
@@ -57,7 +57,7 @@ def to_list(value: Any) -> list[Any] | None:
     match value:
         case None:
             return
-        case str() | Mapping() | MusifyModel():
+        case str() | Mapping() | BaseModel():
             return [value]
         case Iterable():
             return list(value)

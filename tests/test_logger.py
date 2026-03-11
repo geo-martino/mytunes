@@ -7,7 +7,7 @@ from copy import copy, deepcopy
 
 import pytest
 
-from musify.logger import MusifyLogger, INFO_EXTRA, REPORT, STAT
+from musify.logger import Logger, INFO_EXTRA, REPORT, STAT
 
 try:
     from tqdm.auto import tqdm
@@ -16,12 +16,12 @@ except ImportError:
 
 
 ###########################################################################
-## MusifyLogger tests
+## Logger tests
 ###########################################################################
 @pytest.fixture
-def logger() -> Generator[MusifyLogger, None, None]:
-    """Yields a :py:class:`MusifyLogger` with all handlers removed for testing"""
-    logger = MusifyLogger(__name__)
+def logger() -> Generator[Logger, None, None]:
+    """Yields a :py:class:`Logger` with all handlers removed for testing"""
+    logger = Logger(__name__)
     logger.compact = False
 
     for handler in logger.handlers:
@@ -32,7 +32,7 @@ def logger() -> Generator[MusifyLogger, None, None]:
     logger.disable_bars = True
 
 
-def test_print_line(logger: MusifyLogger, capfd: pytest.CaptureFixture):
+def test_print_line(logger: Logger, capfd: pytest.CaptureFixture):
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.WARNING)
     logger.addHandler(handler)
@@ -70,14 +70,14 @@ def test_print_line(logger: MusifyLogger, capfd: pytest.CaptureFixture):
     assert capfd.readouterr().out == ""
 
 
-def test_file_paths(logger: MusifyLogger):
+def test_file_paths(logger: Logger):
     logger.addHandler(logging.FileHandler(filename="test1.log", delay=True))
     logger.addHandler(logging.FileHandler(filename="test2.log", delay=True))
     assert [path.name for path in logger.file_paths] == ["test1.log", "test2.log"]
 
 
 @pytest.mark.skipif(tqdm is None, reason="required modules not installed")
-def test_tqdm_param_position(logger: MusifyLogger):
+def test_tqdm_param_position(logger: Logger):
     assert not logger._bars
     assert logger._get_tqdm_param_position(2) == 2
     assert logger._get_tqdm_param_position(9) == 9
@@ -97,14 +97,14 @@ def test_tqdm_param_position(logger: MusifyLogger):
 
 
 @pytest.mark.skipif(tqdm is None, reason="required modules not installed")
-def test_tqdm_param_leave(logger: MusifyLogger):
+def test_tqdm_param_leave(logger: Logger):
     assert logger._get_tqdm_param_leave(position=0)
     assert not logger._get_tqdm_param_leave(position=2)
     assert not logger._get_tqdm_param_leave(position=5)
 
 
 @pytest.mark.skipif(tqdm is None, reason="required modules not installed")
-def test_tqdm_kwargs(logger: MusifyLogger):
+def test_tqdm_kwargs(logger: Logger):
     kwargs = dict(iterable=range(0, 50), initial=10, disable=True, file=sys.stderr)
     kwargs_processed = logger._get_tqdm_kwargs(**kwargs)
     assert kwargs_processed["initial"] == 10
@@ -130,7 +130,7 @@ def test_tqdm_kwargs(logger: MusifyLogger):
 
 
 @pytest.mark.skipif(tqdm is None, reason="required modules not installed")
-def test_tqdm_iterator_synchronous(logger: MusifyLogger):
+def test_tqdm_iterator_synchronous(logger: Logger):
     logger._bars.clear()
 
     bar: tqdm = logger.get_synchronous_iterator(
@@ -165,7 +165,7 @@ def test_tqdm_iterator_synchronous(logger: MusifyLogger):
 
 
 @pytest.mark.skipif(tqdm is None, reason="required modules not installed")
-async def test_tqdm_iterator_asynchronous(logger: MusifyLogger):
+async def test_tqdm_iterator_asynchronous(logger: Logger):
     async def _task(i: int) -> int:
         return i
 
@@ -177,7 +177,7 @@ async def test_tqdm_iterator_asynchronous(logger: MusifyLogger):
     assert sorted(results) == [i for i in range(len(tasks))]
 
 
-def test_copy(logger: MusifyLogger):
+def test_copy(logger: Logger):
     assert id(copy(logger)) == id(logger)
     assert id(deepcopy(logger)) == id(logger)
 
@@ -187,5 +187,5 @@ def test_logger_set():
     assert logging.getLevelName("REPORT") == REPORT
     assert logging.getLevelName("STAT") == STAT
 
-    assert logging.getLoggerClass() == MusifyLogger
-    assert isinstance(logging.getLogger(__name__), MusifyLogger)
+    assert logging.getLoggerClass() == Logger
+    assert isinstance(logging.getLogger(__name__), Logger)

@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from enum import IntEnum
 from typing import Self, Any
 
-from musify.exception import MusifyEnumError
+from musify.exception import EnumError
 
 
 class MusifyEnum(IntEnum):
@@ -50,9 +50,9 @@ class MusifyEnum(IntEnum):
         enums = cls._unique_list(e for enum in cls if enum.name in names_upper for e in cls.map(enum))
 
         if len(enums) == 0:
-            raise MusifyEnumError(names)
+            raise EnumError(names)
         elif len(enums) > 1 and fail_on_many:
-            raise MusifyEnumError(value=enums, message="Too many enums found")
+            raise EnumError(value=enums, message="Too many enums found")
 
         return enums
 
@@ -66,7 +66,7 @@ class MusifyEnum(IntEnum):
         """
         enums = cls._unique_list(e for enum in cls if enum.value in values for e in cls.map(enum))
         if len(enums) == 0:
-            raise MusifyEnumError(values)
+            raise EnumError(values)
         elif len(enums) > 1 and fail_on_many:
-            raise MusifyEnumError(value=enums, message="Too many enums found")
+            raise EnumError(value=enums, message="Too many enums found")
         return enums

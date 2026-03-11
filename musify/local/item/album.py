@@ -1,6 +1,6 @@
 from typing import final
 
-from musify.local._base import LocalResource
+from musify.local._base import LocalModel
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models import writeable_computed_field
@@ -9,7 +9,7 @@ from musify.models.properties.uri import URI
 
 
 @final
-class LocalAlbum[RT: LocalArtist, GT: LocalGenre](Album[RT, GT, URI], LocalResource):
+class LocalAlbum[RT: LocalArtist, GT: LocalGenre](Album[RT, GT, URI], LocalModel):
     __final__ = True
 
     track_total = writeable_computed_field("track_total")

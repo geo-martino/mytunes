@@ -4,9 +4,12 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
+from musify.models.collection import ItemsCursor
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
-    MergePlaylistsTypeAnnotated
-from tests.models.testers import MusifyModelTester, UniqueKeyTester
+    MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
+from musify.models.user import RemoteUser
+from tests.models.collection.testers import RemoteCollectionTester
+from tests.models.testers import BaseModelTester, UniqueKeyTester
 from tests.utils import split_list, SimpleURI
 
 
@@ -28,7 +31,7 @@ class TestMutablePlaylist(UniqueKeyTester):
         return MutablePlaylist(name=faker.sentence(), uri=uri)
 
 
-class TestHasPlaylists(MusifyModelTester):
+class TestHasPlaylists(BaseModelTester):
     @pytest.fixture
     def model(self, playlists: list[Playlist]) -> HasPlaylists:
         return HasPlaylists(playlists=playlists)
@@ -38,7 +41,7 @@ class TestHasPlaylists(MusifyModelTester):
         assert model.items_count == len(playlists)
 
 
-class TestHasMutablePlaylists(MusifyModelTester):
+class TestHasMutablePlaylists(BaseModelTester):
     @pytest.fixture
     def model(self, playlists: list[Playlist]) -> HasMutablePlaylists:
         return HasMutablePlaylists(playlists=playlists)
@@ -61,3 +64,39 @@ class TestHasMutablePlaylists(MusifyModelTester):
             model.merge_playlists(playlists)
             assert len(mock_merge.mock_calls) == len(initial)
             assert len(model.playlists) == len(playlists)
+
+
+class TestRemotePlaylist(RemoteCollectionTester):
+    @pytest.fixture
+    def model(self, cursor: ItemsCursor, faker: Faker) -> RemotePlaylist:
+        playlist_uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemotePlaylist.type
+        )
+        owner_uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteUser.type
+        )
+        return RemotePlaylist(
+            name=faker.word(),
+            owner=RemoteUser(name=faker.user_name(), uri=owner_uri),
+            uri=playlist_uri,
+            total=faker.random_int(1, 20),
+            cursor=cursor
+        )
+
+
+class TestRemoteMutablePlaylist(RemoteCollectionTester):
+    @pytest.fixture
+    def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteMutablePlaylist:
+        playlist_uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemotePlaylist.type
+        )
+        owner_uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteUser.type
+        )
+        return RemoteMutablePlaylist(
+            name=faker.word(),
+            owner=RemoteUser(name=faker.user_name(), uri=owner_uri),
+            uri=playlist_uri,
+            total=faker.random_int(1, 20),
+            cursor=cursor
+        )

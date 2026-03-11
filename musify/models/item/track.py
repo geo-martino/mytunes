@@ -3,10 +3,12 @@ from typing import ClassVar, Self
 from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
 
 from musify._types import StrippedString
-from musify.models._base import AttributeResource, CollectionResource
-from musify.models.item.album import HasAlbum, Album
-from musify.models.item.artist import HasArtists, Artist
-from musify.models.item.genre import HasGenres, Genre
+from musify.models.remote import RemoteResource
+from musify.models._base import AttributeResource
+from musify.models.collection._base import CollectionModel
+from musify.models.item.album import HasAlbum, Album, RemoteAlbum
+from musify.models.item.artist import HasArtists, Artist, RemoteArtist
+from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
@@ -15,7 +17,7 @@ from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI, HasURI
-from musify.models.sequence import MusifyMutableSequence, MusifySequence
+from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 
 
 class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
@@ -92,16 +94,16 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
 
 
-class HasTracks[TK, TV: Track](AttributeResource, CollectionResource[TV]):
-    """A mixin class to add a `tracks` property to a MusifyCollection."""
-    tracks: MusifySequence[TK, TV] = Field(
+class HasTracks[TK, TV: Track](AttributeResource, CollectionModel[TV]):
+    """A mixin class to add a `tracks` field to a model."""
+    tracks: UniqueSequence[TK, TV] = Field(
         description="The tracks in this collection",
-        default_factory=MusifySequence[TK, TV],
+        default_factory=UniqueSequence[TK, TV],
         frozen=True,
     )
 
     @property
-    def _items(self) -> MusifySequence[TK, TV]:
+    def _items(self) -> UniqueSequence[TK, TV]:
         return self.tracks
 
     @computed_field(description="The total number of tracks in this sequence")
@@ -121,13 +123,23 @@ class HasTracks[TK, TV: Track](AttributeResource, CollectionResource[TV]):
 
 
 class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
-    """A mixin class to add a `tracks` property to a MusifyCollection."""
-    tracks: MusifyMutableSequence[TK, TV] = Field(
+    """A mixin class to add a mutable `tracks` field to a model."""
+    tracks: MutableUniqueSequence[TK, TV] = Field(
         description="The tracks in this collection",
-        default_factory=MusifyMutableSequence[TK, TV],
+        default_factory=MutableUniqueSequence[TK, TV],
         frozen=True,
     )
 
     @property
-    def _items(self) -> MusifyMutableSequence[TK, TV]:
+    def _items(self) -> MutableUniqueSequence[TK, TV]:
         return self.tracks
+
+
+class RemoteTrack[RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
+        Track[RT, AT, GT, UT],
+        RemoteResource[UT],
+):
+    artists: list[RT] = Field(
+        description="The artists associated with this resource.",
+        default_factory=list,
+    )

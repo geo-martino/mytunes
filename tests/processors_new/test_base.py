@@ -3,7 +3,7 @@ from random import choice
 import pytest
 
 from musify.processors_new import DynamicProcessor, dynamicprocessormethod
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
 def test_dynamic_processor_method_decorator():
@@ -47,7 +47,7 @@ class MockDynamicProcessor(DynamicProcessor):
         return 3
 
 
-class TestDynamicProcessor(MusifyModelTester):
+class TestDynamicProcessor(BaseModelTester):
     @pytest.fixture
     def model(self):
         return MockDynamicProcessor()

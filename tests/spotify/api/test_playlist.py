@@ -4,10 +4,10 @@ from faker import Faker
 
 # noinspection PyProtectedMember
 from musify.spotify.api._playlist import _SpotifySavedPlaylistEndpoints
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSpotifySavedPlaylistEndpoints(MusifyModelTester):
+class TestSpotifySavedPlaylistEndpoints(BaseModelTester):
     @pytest.fixture
     def model(self, handler: RequestHandler) -> _SpotifySavedPlaylistEndpoints:
         return _SpotifySavedPlaylistEndpoints.model_validate(handler)

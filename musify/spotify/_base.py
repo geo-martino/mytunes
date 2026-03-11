@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from musify.remote import RemoteModel, RemoteResource
+from musify.models.remote import RemoteModel, RemoteResource
 # noinspection PyProtectedMember
 from musify.spotify.properties.uri import _SpotifyURIBase
 

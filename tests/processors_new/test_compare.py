@@ -15,10 +15,10 @@ from musify.models.properties.order import Position
 from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
 from musify.processors_new.exception import ComparerError
 from musify.processors_new.time import TimeMapper
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestComparer(MusifyModelTester):
+class TestComparer(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> Comparer:

@@ -1,14 +1,14 @@
 import logging
 from functools import cached_property
 
-from musify.logger import MusifyLogger
-from musify.models._base import MusifyModel
+from musify.logger import Logger
+from musify.models._base import BaseModel
 
 
-class HasLogger(MusifyModel):
+class HasLogger(BaseModel):
     """Represents a resource that has a logger."""
 
     @cached_property
-    def logger(self) -> MusifyLogger:
+    def logger(self) -> Logger:
         # noinspection PyTypeChecker
         return logging.getLogger(__name__)

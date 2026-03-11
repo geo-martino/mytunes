@@ -8,33 +8,33 @@ from faker import Faker
 from pydantic import TypeAdapter
 
 from musify.exception import MusifyKeyError
-from musify.models import MusifyResource
+from musify.models import BaseResource
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
-from musify.models.mapping import MusifyMapping, MusifyMutableMapping
+from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 
 
-class TestMusifyMapping:
+class TestUniqueMapping:
     @pytest.fixture
-    def mapping(self, models: list[MusifyResource]) -> MusifyMapping:
-        mapping = MusifyMapping({key: model for model in models for key in model.unique_keys})
+    def mapping(self, models: list[BaseResource]) -> UniqueMapping:
+        mapping = UniqueMapping({key: model for model in models for key in model.unique_keys})
         assert mapping._items
         return mapping
 
     @pytest.fixture
     def adapter(self) -> TypeAdapter:
-        return TypeAdapter(MusifyMapping)
+        return TypeAdapter(UniqueMapping)
 
     def test_validate_pydantic_schema(
             self,
-            mapping: MusifyMapping,
-            adapter: TypeAdapter[MusifyMapping],
-            models: list[MusifyResource],
+            mapping: UniqueMapping,
+            adapter: TypeAdapter[UniqueMapping],
+            models: list[BaseResource],
             faker: Faker
     ):
         assert adapter.validate_python(mapping) is mapping, "Failed to validate existing models"
 
-        mapping_single = MusifyMapping({key: models[0] for key in models[0].unique_keys})
+        mapping_single = UniqueMapping({key: models[0] for key in models[0].unique_keys})
         assert adapter.validate_python(models[0]) == mapping_single, "Failed to validate single models"
         assert adapter.validate_python(models) == mapping, "Failed to validate list of models"
         assert adapter.validate_python(tuple(models)) == mapping, "Failed to validate tuple of models"
@@ -42,18 +42,18 @@ class TestMusifyMapping:
             "Failed to ignore keys in mapping"
 
     def test_validate_pydantic_schema_on_generics(self, tracks: list[Track], artists: list[Artist]):
-        adapter = TypeAdapter(MusifyMapping[Any, Track])
-        assert adapter.validate_python(tracks) == MusifyMapping(tracks), "Failed to validate list of tracks"
+        adapter = TypeAdapter(UniqueMapping[Any, Track])
+        assert adapter.validate_python(tracks) == UniqueMapping(tracks), "Failed to validate list of tracks"
 
         with pytest.raises(ValueError):
             adapter.validate_python(artists)
 
-    def test_init(self, mapping: MusifyMapping, models: list[MusifyResource], faker: Faker):
-        assert MusifyMapping(mapping) is not mapping
-        assert MusifyMapping(mapping) == mapping
+    def test_init(self, mapping: UniqueMapping, models: list[BaseResource], faker: Faker):
+        assert UniqueMapping(mapping) is not mapping
+        assert UniqueMapping(mapping) == mapping
 
-        assert MusifyMapping(models) == mapping, "Failed to construct from list of models"
-        assert MusifyMapping(iter(models)) == mapping, "Failed to construct from iterable of models"
+        assert UniqueMapping(models) == mapping, "Failed to construct from list of models"
+        assert UniqueMapping(iter(models)) == mapping, "Failed to construct from iterable of models"
 
     # noinspection PyTypeChecker
     @pytest.mark.skipif(
@@ -62,46 +62,46 @@ class TestMusifyMapping:
         # https://github.com/pydantic/pydantic/issues/7796
     )
     def test_validates_generic_types_when_accessing(self, tracks: list[Track], artist: Artist):
-        mapping = MusifyMapping[int, Track](tracks)
+        mapping = UniqueMapping[int, Track](tracks)
 
         with pytest.raises(ValueError):
             assert artist in mapping
         with pytest.raises(ValueError):
             assert mapping[artist]
 
-    def test_container_methods(self, mapping: MusifyMapping, model: MusifyResource):
+    def test_container_methods(self, mapping: UniqueMapping, model: BaseResource):
         assert model in mapping
         assert all(key in mapping for key in model.unique_keys)
 
         assert mapping.values() in mapping
         assert (key for model in mapping.values() for key in model.unique_keys) in mapping
 
-    def test_collection_methods(self, mapping: MusifyMapping, models: list[MusifyResource]):
+    def test_collection_methods(self, mapping: UniqueMapping, models: list[BaseResource]):
         assert len(mapping) == len(models)
         assert list(iter(mapping)) == list(mapping._items.keys())
 
-    def test_equality(self, mapping: MusifyMapping, models: list[MusifyResource]):
-        assert mapping is not MusifyMapping(models)
-        assert mapping == MusifyMapping(models)
+    def test_equality(self, mapping: UniqueMapping, models: list[BaseResource]):
+        assert mapping is not UniqueMapping(models)
+        assert mapping == UniqueMapping(models)
 
         initial = models[2:]
-        assert mapping != MusifyMapping(initial)
-        assert MusifyMapping(initial) != mapping
+        assert mapping != UniqueMapping(initial)
+        assert UniqueMapping(initial) != mapping
 
-    def test_copy(self, mapping: MusifyMapping):
+    def test_copy(self, mapping: UniqueMapping):
         mapping_copy = mapping.copy()
         assert isinstance(mapping_copy, mapping.__class__)
         assert mapping_copy is not mapping
         assert mapping_copy._items is not mapping._items
         assert mapping_copy._items == mapping._items
 
-    def test_getitem(self, mapping: MusifyMapping, model: MusifyResource):
+    def test_getitem(self, mapping: UniqueMapping, model: BaseResource):
         assert mapping[model] == model
         assert mapping[next(iter(model.unique_keys))] == model
 
-    def test_getitem_fails(self, mapping: MusifyMapping, models: list[MusifyResource]):
+    def test_getitem_fails(self, mapping: UniqueMapping, models: list[BaseResource]):
         initial = models[2:]
-        mapping = MusifyMapping(initial)
+        mapping = UniqueMapping(initial)
 
         with pytest.raises(MusifyKeyError):
             assert mapping[models[0]]
@@ -109,7 +109,7 @@ class TestMusifyMapping:
             assert mapping["unknown"]
 
 
-class TestMusifyMutableMapping:
+class TestMutableUniqueMapping:
     # noinspection PyTypeChecker
     @pytest.mark.skipif(
         tuple(map(int, (re.split(r"\D+", part)[0] for part in pydantic.__version__.split(".")))) < (2, 13, 0),
@@ -119,7 +119,7 @@ class TestMusifyMutableMapping:
     def test_validates_generic_types_when_mutating(
             self, track: Track, tracks: list[Track], artist: Artist, artists: list[Artist]
     ):
-        mapping = MusifyMutableMapping[int, Track](tracks)
+        mapping = MutableUniqueMapping[int, Track](tracks)
 
         with pytest.raises(ValueError):
             mapping["key"] = track
@@ -137,8 +137,8 @@ class TestMusifyMutableMapping:
         with pytest.raises(ValueError):
             mapping.remove(artist)
 
-    def test_setitem(self, model: MusifyResource):
-        mapping = MusifyMutableMapping()
+    def test_setitem(self, model: BaseResource):
+        mapping = MutableUniqueMapping()
         assert len(mapping) == 0
 
         mapping[choice(list(model.unique_keys))] = model
@@ -150,28 +150,28 @@ class TestMusifyMutableMapping:
         assert model in mapping
         assert len(mapping) == 1
 
-    def test_setitem_fails(self, model: MusifyResource):
-        mapping = MusifyMutableMapping()
+    def test_setitem_fails(self, model: BaseResource):
+        mapping = MutableUniqueMapping()
 
         with pytest.raises(ValueError):
             mapping[choice(list(model.unique_keys))] = "invalid value"
 
-    def test_delitem(self, model: MusifyResource, models: list[MusifyResource]):
-        mapping = MusifyMutableMapping(models)
+    def test_delitem(self, model: BaseResource, models: list[BaseResource]):
+        mapping = MutableUniqueMapping(models)
         assert model in mapping
 
         del mapping[choice(list(model.unique_keys))]
         assert model not in mapping
         assert all(key not in mapping._items for key in model.unique_keys)
 
-    def test_delitem_fails(self, model: MusifyResource):
-        mapping = MusifyMutableMapping()
+    def test_delitem_fails(self, model: BaseResource):
+        mapping = MutableUniqueMapping()
         with pytest.raises(KeyError):
             del mapping[model]
 
-    def test_add(self, models: list[MusifyResource]):
+    def test_add(self, models: list[BaseResource]):
         initial = models[2:]
-        mapping = MusifyMutableMapping(initial)
+        mapping = MutableUniqueMapping(initial)
         assert len(mapping) == len(initial)
 
         model = models[0]
@@ -186,16 +186,16 @@ class TestMusifyMutableMapping:
         mapping.add(choice(list(mapping.values())))
         assert len(mapping) == len(initial) + 1
 
-    def test_add_fails(self, models: list[MusifyResource]):
+    def test_add_fails(self, models: list[BaseResource]):
         initial = models[2:]
-        mapping = MusifyMutableMapping(initial)
+        mapping = MutableUniqueMapping(initial)
 
         with pytest.raises(ValueError):
             mapping.add("invalid value")
 
-    def test_update(self, models: list[MusifyResource]):
+    def test_update(self, models: list[BaseResource]):
         initial = models[2:]
-        mapping = MusifyMutableMapping(initial)
+        mapping = MutableUniqueMapping(initial)
         assert not all(key in mapping._items for model in models for key in model.unique_keys)
         assert len(mapping) < len(models)
 
@@ -203,9 +203,9 @@ class TestMusifyMutableMapping:
         assert all(key in mapping._items for model in models for key in model.unique_keys)
         assert len(mapping) == len(models)
 
-    def test_remove(self, models: list[MusifyResource]):
+    def test_remove(self, models: list[BaseResource]):
         initial = models[2:]
-        mapping = MusifyMutableMapping(initial)
+        mapping = MutableUniqueMapping(initial)
         assert len(mapping) == len(initial)
 
         model = choice(list(mapping.values()))
@@ -220,9 +220,9 @@ class TestMusifyMutableMapping:
         assert models[0] not in mapping
         mapping.remove(models[0])
 
-    def test_clear(self, models: list[MusifyResource]):
+    def test_clear(self, models: list[BaseResource]):
         initial = models[2:]
-        mapping = MusifyMutableMapping(initial)
+        mapping = MutableUniqueMapping(initial)
         assert mapping._items
 
         mapping.clear()

@@ -2,10 +2,10 @@ import pytest
 from faker import Faker
 
 from musify.models.properties.order import Position
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestPosition(MusifyModelTester):
+class TestPosition(BaseModelTester):
     @pytest.fixture
     def model(self) -> Position:
         return Position()

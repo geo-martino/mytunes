@@ -5,9 +5,9 @@ from aiorequestful.types import JSON
 from pydantic import validate_call, PositiveInt
 from yarl import URL
 
-from musify.remote.api._endpoints import HasSavedEndpoints
-from musify.remote.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
-from musify.remote.api.types import ApiURISchema, ApiURLSchema
+from musify.models.api import HasSavedEndpoints
+from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api.types import _ApiURISchema, _ApiURLSchema
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence
@@ -52,20 +52,20 @@ class _SpotifySavedPlaylistEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call
     async def follow(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         return await super().follow(url.joinpath("followers"))
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call
     async def modify(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         body = self._format_playlist_body(**kwargs)
         return await super().create(**body)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call
     async def delete(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         return await super().delete(url.joinpath("followers"))
 
@@ -83,8 +83,8 @@ class SpotifyPlaylistEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
-    @ApiURISchema.validate_call
+    @_ApiURLSchema.validate_call
+    @_ApiURISchema.validate_call
     async def append(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],
@@ -95,8 +95,8 @@ class SpotifyPlaylistEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @ApiURLSchema.validate_call
-    @ApiURISchema.validate_call
+    @_ApiURLSchema.validate_call
+    @_ApiURISchema.validate_call
     async def remove(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],

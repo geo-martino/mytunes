@@ -18,10 +18,10 @@ from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.processors_new.filters import ValuesFilter
-from tests.models.testers import MusifyResourceTester
+from tests.models.testers import BaseResourceTester
 
 
-class TestLocalLibrary(MusifyResourceTester):
+class TestLocalLibrary(BaseResourceTester):
     @pytest.fixture
     def library_folders(self, faker: Faker, tmp_path: Path) -> list[Path]:
         """The folders which contain library tracks and playlists."""

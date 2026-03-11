@@ -18,10 +18,10 @@ from musify.models.item.track import Track
 from musify.processors_new.download import ItemDownloadHelper
 from tests.conftest import LogCapturer
 from tests.libraries.remote.core.processors.utils import patch_input
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestItemDownloadHelper(MusifyModelTester):
+class TestItemDownloadHelper(BaseModelTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> ItemDownloadHelper:

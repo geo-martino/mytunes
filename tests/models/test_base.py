@@ -4,22 +4,22 @@ import pytest
 from pydantic import Field
 
 from musify.exception import MusifyAttributeError
-from musify.models import MusifyModel
+from musify.models import BaseModel
 
 
 @final
-class FinalModel(MusifyModel):
+class FinalModel(BaseModel):
     __final__ = True
 
 
-class TestMusifyModel:
+class TestBaseModel:
 
     def test_final_model_registration(self):
         """Test that final models are registered in the model registry"""
-        assert FinalModel in MusifyModel.__model_registry__
-        assert FinalModel in MusifyModel.registered_submodels
+        assert FinalModel in BaseModel.__model_registry__
+        assert FinalModel in BaseModel.registered_submodels
 
-    class ParentWithClassVars(MusifyModel):
+    class ParentWithClassVars(BaseModel):
         var1: ClassVar[str] = "value1"
         var2: ClassVar[str] = Field(description="Unset var2")
         var3: ClassVar[int]

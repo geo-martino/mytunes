@@ -4,33 +4,33 @@ from collections.abc import Hashable
 import pytest
 from pydantic import TypeAdapter
 
-from musify.models import MusifyModel, MusifyResource
+from musify.models import BaseModel, BaseResource
 
 
-class MusifyModelTester(metaclass=ABCMeta):
-    """Generic base class for testing :py:class:`.MusifyModel` implementations"""
+class BaseModelTester(metaclass=ABCMeta):
+    """Generic base class for testing :py:class:`.BaseModel` implementations"""
     @abstractmethod
-    def model(self, **kwargs) -> MusifyModel:
+    def model(self, **kwargs) -> BaseModel:
         """Fixture for the models to test"""
         raise NotImplementedError
 
     @pytest.fixture
-    def adapter(self, model: MusifyModel) -> TypeAdapter:
+    def adapter(self, model: BaseModel) -> TypeAdapter:
         """Fixture for the type adapter to use when validating python objects for this models"""
         return TypeAdapter(model.__class__)
 
     @staticmethod
-    def test_model_registry(model: MusifyResource):
+    def test_model_registry(model: BaseResource):
         if model.__class__.__final__:
-            assert model.__class__ in MusifyModel.registered_submodels
+            assert model.__class__ in BaseModel.registered_submodels
         else:
-            assert model.__class__ not in MusifyModel.registered_submodels
+            assert model.__class__ not in BaseModel.registered_submodels
 
 
-class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
-    """Generic base class for testing :py:class:`.MusifyResource` implementations"""
+class BaseResourceTester(BaseModelTester, metaclass=ABCMeta):
+    """Generic base class for testing :py:class:`.BaseResource` implementations"""
 
-    def test_check_unique_key_tester_enabled(self, model: MusifyResource):
+    def test_check_unique_key_tester_enabled(self, model: BaseResource):
         """Test that the unique key tester is enabled"""
         if model.__unique_attributes__:
             assert isinstance(self, UniqueKeyTester), "Unique keys are configured but UniqueKeyTester is not enabled"
@@ -39,16 +39,16 @@ class MusifyResourceTester(MusifyModelTester, metaclass=ABCMeta):
                 "Unique keys are not configured but UniqueKeyTester is enabled"
 
     @staticmethod
-    def test_check_unique_keys(model: MusifyResource):
+    def test_check_unique_keys(model: BaseResource):
         """Test that the unique keys are set correctly"""
         assert not model.__unique_attributes__, "Unique attributes are not set on the test models"
         assert model.unique_keys == {id(model)}, "ID not found in unique keys"
 
 
-class UniqueKeyTester(MusifyModelTester, metaclass=ABCMeta):
-    """Generic base class for testing :py:class:`.MusifyResource` implementations with unique keys set"""
+class UniqueKeyTester(BaseModelTester, metaclass=ABCMeta):
+    """Generic base class for testing :py:class:`.BaseResource` implementations with unique keys set"""
     @staticmethod
-    def test_check_unique_keys(model: MusifyResource):
+    def test_check_unique_keys(model: BaseResource):
         """Test that the unique keys are set correctly"""
         assert model.__unique_attributes__, "Unique attributes are not set on the test models"
         assert len(model.unique_keys) > 1, "Unique keys not found"

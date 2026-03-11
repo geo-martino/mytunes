@@ -3,8 +3,8 @@ from typing import ClassVar, final
 from pydantic import AliasPath
 from yarl import URL
 
-from musify.remote.api._endpoints import HasSavedEndpoints
-from musify.remote.api.album import AlbumReadItemEndpoints, AlbumReadItemsEndpoints, \
+from musify.models.api import HasSavedEndpoints
+from musify.models.api.album import AlbumReadItemEndpoints, AlbumReadItemsEndpoints, \
     AlbumReadSavedEndpoints, AlbumWriteSavedEndpoints, AlbumReadCollectionEndpoints
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints

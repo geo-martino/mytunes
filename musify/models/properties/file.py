@@ -10,7 +10,7 @@ import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyValueError, MusifyTypeError
-from musify.models._base import AttributeResource, MusifyModel, AttributeResourceMetaclass
+from musify.models._base import AttributeResource, BaseModel, AttributeResourceMetaclass, abstract_property
 
 
 class IsFileMetaclass(AttributeResourceMetaclass):
@@ -42,38 +42,32 @@ class IsFileMetaclass(AttributeResourceMetaclass):
 # noinspection PyAbstractClass
 class IsFile(AttributeResource, metaclass=IsFileMetaclass):
     """Attributes and operations for a file on some system."""
-    @property
-    @abstractmethod
+    @abstract_property
     def folder(self) -> str:
         """The name of the parent folder of the file."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def filename(self) -> str:
         """The filename without extension."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def ext(self) -> str:
         """The file extension in lowercase."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def size(self) -> int | None:
         """The size of the file in bytes."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def created_at(self) -> datetime | None:
         """The date that the file was created."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def modified_at(self) -> datetime | None:
         """The date that the file was last modified."""
         raise NotImplementedError
@@ -184,7 +178,7 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
 type PathInputType = str | Path | IsLocalFile | None
 
 
-class PathMapper(MusifyModel):
+class PathMapper(BaseModel):
     """
     Simple path mapper which extracts paths from :py:class:`File` objects.
     Can be extended by child classes for more complex mapping operations.

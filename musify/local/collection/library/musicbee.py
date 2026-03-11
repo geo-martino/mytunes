@@ -19,7 +19,7 @@ from musify.local.collection.library._base import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.exception import MusicBeeIDError, XMLReaderError, FileDoesNotExistError
 from musify.local.item.track import LocalTrack
-from musify.models import MusifyModel
+from musify.models import BaseModel
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
 from musify.utils import required_modules_installed
 
@@ -336,7 +336,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
 
 
 # noinspection PyProtectedMember
-class XMLLibraryParser(MusifyModel):
+class XMLLibraryParser(BaseModel):
     """Parses MusicBee XML files to and from iTunes style XML."""
 
     _iterparse: etree.iterparse | None = PrivateAttr(default=None)

@@ -2,10 +2,10 @@ import pytest
 from faker import Faker
 
 from musify.models.properties.music import KeySignature
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestKeySignature(MusifyModelTester):
+class TestKeySignature(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> KeySignature:
         # noinspection PyProtectedMember

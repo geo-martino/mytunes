@@ -7,11 +7,11 @@ from typing import ClassVar, Iterable, Any, Self
 from pydantic import PrivateAttr, ValidationError
 
 from musify._types import String
-from musify.models._base import AttributeResource, MusifyRootModel
+from musify.models._base import AttributeResource, RootModel
 
 
 @total_ordering
-class NumberModel[T: int | float](MusifyRootModel[T]):
+class NumberModel[T: int | float](RootModel[T]):
     def __int__(self):
         return int(self.root)
 

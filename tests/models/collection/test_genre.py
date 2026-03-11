@@ -1,11 +1,15 @@
 from random import sample
+from typing import Any
 
 import pytest
 from faker import Faker
 
-from musify.models.collection.genre import GenreCollection
+from musify.models.collection import ItemsCursor
+from musify.models.collection.genre import GenreCollection, RemoteGenreCollection
 from musify.models.item.track import Track
+from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.testers import UniqueKeyTester
+from tests.utils import SimpleURI
 
 
 class TestGenreCollection(UniqueKeyTester):
@@ -48,3 +52,17 @@ class TestGenreCollection(UniqueKeyTester):
 
         model = GenreCollection(name=name, tracks=tracks)
         assert model.items_count == len(tracks)
+
+
+class TestRemoteGenreCollection(RemoteCollectionTester):
+    @pytest.fixture
+    def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteGenreCollection:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteGenreCollection.type
+        )
+        return RemoteGenreCollection[SimpleURI, Any, ItemsCursor](
+            name=faker.word(),
+            uri=uri,
+            total=faker.random_int(1, 20),
+            cursor=cursor
+        )

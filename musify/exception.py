@@ -34,9 +34,9 @@ class MusifyImportError(MusifyError, ImportError):
 ###########################################################################
 ## Enum errors
 ###########################################################################
-class MusifyEnumError(MusifyError):
+class EnumError(MusifyError):
     """
-    Exception raised for errors related to :py:class:`MusifyEnum` implementations.
+    Exception raised for errors related to :py:class:`IntEnumModel` implementations.
 
     :param value: The value that caused the error.
     :param message: Explanation of the error.
@@ -47,7 +47,7 @@ class MusifyEnumError(MusifyError):
         super().__init__(f"{self.message}: {value}")
 
 
-class FieldError(MusifyEnumError):
+class FieldError(EnumError):
     """
     Exception raised for errors related to :py:class:`Field` enums.
 

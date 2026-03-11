@@ -4,9 +4,12 @@ from typing import Any, Self
 from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
-from musify.models.item.genre import Genre
-from musify.models.item.track import Track, HasTracks
+from musify.models.remote import RemoteResource
+from musify.models.collection._base import ItemsCursor, RemoteCollection
+from musify.models.item.genre import Genre, RemoteGenre
+from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
+from musify.models.properties.uri import URI
 
 
 class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
@@ -64,3 +67,12 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
                 raise MusifyValueError(f"Track does not contain the genre {self.name!r}: {", ".join(map(str, names))}")
 
         return self
+
+
+class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: ItemsCursor](
+    GenreCollection[UT, TT],
+    RemoteGenre[UT],
+    RemoteResource[UT],
+    RemoteCollection[TT, CT],
+):
+    pass

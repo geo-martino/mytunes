@@ -4,10 +4,10 @@ import pytest
 from dateutil.relativedelta import relativedelta
 
 from musify.processors_new.time import TimeMapper
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestTimeMapper(MusifyModelTester):
+class TestTimeMapper(BaseModelTester):
     @pytest.fixture
     def model(self) -> TimeMapper:
         return TimeMapper(unit="days", amount=5, add=True)

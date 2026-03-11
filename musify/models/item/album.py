@@ -3,9 +3,11 @@ from typing import ClassVar
 from pydantic import Field, field_validator, computed_field, PositiveInt
 
 from musify._types import StrippedString
-from musify.models._base import AttributeResource, CollectionResource
-from musify.models.item.artist import HasArtists, Artist
-from musify.models.item.genre import HasGenres, Genre
+from musify.models.remote import RemoteResource
+from musify.models._base import AttributeResource
+from musify.models.collection import CollectionModel
+from musify.models.item.artist import HasArtists, Artist, RemoteArtist
+from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.image import HasImages
@@ -54,7 +56,7 @@ class HasAlbum[AT: Album](AttributeResource):
         return self.album.compilation if self.album is not None else None
 
 
-class HasAlbums[AT: Album](HasSeparableTags, CollectionResource[AT]):
+class HasAlbums[AT: Album](HasSeparableTags, CollectionModel[AT]):
     albums: list[AT] = Field(
         description="The albums associated with this resource.",
         default_factory=list,
@@ -71,3 +73,7 @@ class HasAlbums[AT: Album](HasSeparableTags, CollectionResource[AT]):
         if not isinstance(value, str):
             return value
         return cls._separate_tags(value)
+
+
+class RemoteAlbum[RT: RemoteArtist, GT: RemoteGenre, UT: URI](Album[RT, GT, UT], RemoteResource[UT]):
+    pass

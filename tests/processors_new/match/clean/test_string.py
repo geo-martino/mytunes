@@ -8,10 +8,10 @@ from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.properties.name import HasName
 from musify.processors_new.match.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class StringCleanerTester(MusifyModelTester, metaclass=ABCMeta):
+class StringCleanerTester(BaseModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_get_item_value_basic(model: StringCleaner):
         item = "Test Name"

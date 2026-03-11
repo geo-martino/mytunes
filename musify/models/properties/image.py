@@ -16,11 +16,11 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
-from musify.models._base import MusifyModel, AttributeResource
+from musify.models._base import BaseModel, AttributeResource
 from musify.models.url import HttpURL
 
 
-class ImageBase(MusifyModel):
+class ImageBase(BaseModel):
     """Represents an image."""
     # noinspection PyTypeChecker
     __type_map: ClassVar[Mapping[str, mutagen.id3.PictureType]] = {

@@ -20,8 +20,8 @@ from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
-from musify.models import MusifyModel
-from musify.models.sequence import MusifyMutableSequence
+from musify.models import BaseModel
+from musify.models.sequence import MutableUniqueSequence
 from musify.processors_new import Result
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter
@@ -116,7 +116,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     __final__ = True
 
     _xml: _XMLRoot | None = PrivateAttr(default=None)
-    _original: MusifyMutableSequence = PrivateAttr(default_factory=MusifyMutableSequence)
+    _original: MutableUniqueSequence = PrivateAttr(default_factory=MutableUniqueSequence)
 
     @property
     def limiter_deduplication(self) -> bool:
@@ -267,7 +267,7 @@ class _XMLAttributeField(_XMLField):
         return f"{self.attr_prefix}{key}"
 
 
-class _XMLBaseModel(MusifyModel):
+class _XMLBaseModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=lambda name: to_pascal(name.lstrip("@#")),
     )

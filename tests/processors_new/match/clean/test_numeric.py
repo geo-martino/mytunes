@@ -7,10 +7,10 @@ from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum, Album
 from musify.models.properties.length import HasLength
 from musify.processors_new.match.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class NumericCleanerTester(MusifyModelTester, metaclass=ABCMeta):
+class NumericCleanerTester(BaseModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_get_item_value_basic(model: NumericCleaner):
         item = 123
@@ -29,7 +29,7 @@ class NumericCleanerTester(MusifyModelTester, metaclass=ABCMeta):
             model._get_item_value("invalid item")
 
 
-class TestNumericCleaner(MusifyModelTester):
+class TestNumericCleaner(BaseModelTester):
     @pytest.fixture
     @patch.multiple(
         NumericCleaner,

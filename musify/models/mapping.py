@@ -5,11 +5,11 @@ from pydantic import GetCoreSchemaHandler, validate_call
 from pydantic_core import core_schema
 
 from musify.exception import MusifyKeyError, MusifyTypeError
-from musify.models import MusifyResource
+from musify.models import BaseResource
 
 
-class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
-    """Stores :py:class:`MusifyResource` items mapped according to their unique keys."""
+class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
+    """Stores :py:class:`BaseResource` items mapped according to their unique keys."""
     # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -19,7 +19,7 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
             values_schema = handler.generate_schema(args[1])
         else:
             keys_schema = core_schema.any_schema()
-            values_schema = core_schema.is_instance_schema(MusifyResource)
+            values_schema = core_schema.is_instance_schema(BaseResource)
 
         schema = core_schema.union_schema([
             core_schema.is_instance_schema(cls),
@@ -41,7 +41,7 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
     def _construct(cls, value: Self | Iterable[TV] | Mapping[Any, TV]) -> Self:
         if isinstance(value, cls):
             return value
-        if isinstance(value, MusifyResource):
+        if isinstance(value, BaseResource):
             return cls((value,))
         if isinstance(value, Mapping):
             return cls(value.values())
@@ -81,7 +81,7 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
 
     @validate_call
     def __contains__(self, __item: TK | TV | Iterable[TK | TV]) -> bool:
-        if isinstance(__item, MusifyResource):
+        if isinstance(__item, BaseResource):
             return any(key in self._items for key in __item.unique_keys)
         if isinstance(__item, Iterable):
             return all(item in self for item in __item)
@@ -92,7 +92,7 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
 
     @validate_call
     def __getitem__(self, __key: TK | TV) -> TV:
-        if not isinstance(__key, MusifyResource):
+        if not isinstance(__key, BaseResource):
             return self._items[__key]
 
         try:
@@ -107,8 +107,8 @@ class MusifyMapping[TK, TV: MusifyResource](Mapping[TK | TV, TV]):
         return self.__class__(self._items.copy())
 
 
-class MusifyMutableMapping[TK, TV: MusifyResource](MusifyMapping[TK, TV], MutableMapping[TK | TV, TV]):
-    """Stores :py:class:`MusifyResource` items mapped according to their unique keys."""
+class MutableUniqueMapping[TK, TV: BaseResource](UniqueMapping[TK, TV], MutableMapping[TK | TV, TV]):
+    """Stores :py:class:`BaseResource` items mapped according to their unique keys."""
     @validate_call
     def __setitem__(self, __key: TK, __value: TV):
         # noinspection PyArgumentList

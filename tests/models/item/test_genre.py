@@ -3,9 +3,9 @@ from random import choice, sample
 import pytest
 from faker import Faker
 
-from musify.models.item.genre import Genre, HasGenres
-from tests.models.testers import MusifyResourceTester, UniqueKeyTester
-from tests.utils import GENRES
+from musify.models.item.genre import Genre, HasGenres, RemoteGenre
+from tests.models.testers import BaseResourceTester, UniqueKeyTester
+from tests.utils import GENRES, SimpleURI
 
 
 class TestGenre(UniqueKeyTester):
@@ -14,7 +14,7 @@ class TestGenre(UniqueKeyTester):
         return Genre(name=choice(GENRES))
 
 
-class TestHasGenres(MusifyResourceTester):
+class TestHasGenres(BaseResourceTester):
     @pytest.fixture
     def model(self, genres: list[Genre]) -> HasGenres:
         return HasGenres(genres=genres)
@@ -36,3 +36,12 @@ class TestHasGenres(MusifyResourceTester):
 
         model.genre = genres[0]
         assert [genre.name for genre in model.genres] == [genres[0]]
+
+
+class TestRemoteGenre(UniqueKeyTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> RemoteGenre:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteGenre.type
+        )
+        return RemoteGenre[SimpleURI](name=choice(GENRES), uri=uri)

@@ -13,10 +13,10 @@ from musify.models.properties.file import IsLocalFile
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import Filter, ValuesFilter, PathsFilter, IncludeExcludeFilter, ComparerFilter, \
     MatchFilter
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class FilterTester(MusifyModelTester, metaclass=ABCMeta):
+class FilterTester(BaseModelTester, metaclass=ABCMeta):
     """Base class for testing filters"""
     @abstractmethod
     def test_equality(self, model: Filter, faker: Faker):

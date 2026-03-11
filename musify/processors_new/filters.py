@@ -7,7 +7,7 @@ from pydantic import Field, field_validator, BeforeValidator, field_serializer, 
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
-from musify.models import MusifyResource
+from musify.models import BaseResource, abstract_property
 from musify.models.properties.file import IsLocalFile, PathMapper, PathInputType
 from musify.processors_new._base import Processor, Result
 from musify.processors_new.compare import Comparer
@@ -17,8 +17,7 @@ from musify.processors_new.compare import Comparer
 class Filter[T](Processor):
     """Base class for all filters."""
 
-    @property
-    @abstractmethod
+    @abstract_property
     def ready(self) -> bool:
         """Indicates if the filter is set and ready to be used."""
         raise NotImplementedError
@@ -51,8 +50,7 @@ class Filter[T](Processor):
 class CompositeFilter[T](Filter[T], Collection[Filter[T]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 
-    @property
-    @abstractmethod
+    @abstract_property
     def filters(self) -> Collection[Filter]:
         """All filters configured."""
         raise NotImplementedError
@@ -183,7 +181,7 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
         ))
 
 
-class ComparerFilter[CT: str | MusifyResource](Filter[CT]):
+class ComparerFilter[CT: str | BaseResource](Filter[CT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     comparers: Mapping[Comparer, tuple[bool, Self]] = Field(
         description=(

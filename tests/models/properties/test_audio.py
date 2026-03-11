@@ -8,10 +8,10 @@ from faker import Faker
 
 from musify.models.properties.audio import IsAudioFile, Decibels
 from musify.models.properties.file import IsLocalFile
-from tests.models.testers import MusifyResourceTester, MusifyModelTester
+from tests.models.testers import BaseResourceTester, BaseModelTester
 
 
-class TestDecibels(MusifyModelTester):
+class TestDecibels(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Decibels:
         return Decibels(faker.random_int(-60000, 0) / 1000)
@@ -25,7 +25,7 @@ class LocalAudioFile(IsLocalFile, IsAudioFile):
     pass
 
 
-class TestIsAudioFile(MusifyResourceTester):
+class TestIsAudioFile(BaseResourceTester):
 
     @pytest.fixture
     def model(self, faker: Faker, tmp_path: Path) -> IsAudioFile:

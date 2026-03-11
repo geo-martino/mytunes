@@ -4,10 +4,10 @@ from typing import ClassVar, Annotated, Self
 
 from pydantic import Field, field_validator, model_validator, ModelWrapValidatorHandler
 
-from musify.models._base import MusifyModel, AttributeResource
+from musify.models._base import BaseModel, AttributeResource
 
 
-class KeySignature(MusifyModel):
+class KeySignature(BaseModel):
     """Represents a key signature."""
     _root_notes: ClassVar[tuple[str, ...]] = (
         "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"

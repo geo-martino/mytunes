@@ -2,7 +2,7 @@ from typing import final
 
 from pydantic import Field, field_validator
 
-from musify.remote.item.album import RemoteAlbum
+from musify.models.item.album import RemoteAlbum
 from musify.spotify._base import SpotifyResource
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre

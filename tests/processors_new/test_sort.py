@@ -11,10 +11,10 @@ from musify.local.item.track import LocalTrack
 from musify.models.properties.order import Position
 from musify.processors_new.sort import ItemSorter, ShuffleMode
 from musify.utils import strip_ignore_words
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestItemSorter(MusifyModelTester):
+class TestItemSorter(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> ItemSorter:

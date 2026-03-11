@@ -11,10 +11,10 @@ from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 # noinspection PyProtectedMember
 from musify.spotify.properties.uri import _SpotifyURIBase, SpotifyResourceURI, SpotifyUserURI
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class SpotifyURITester(MusifyModelTester, metaclass=ABCMeta):
+class SpotifyURITester(BaseModelTester, metaclass=ABCMeta):
     @pytest.fixture
     def kind(self) -> str:
         types = (

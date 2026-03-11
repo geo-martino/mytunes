@@ -10,12 +10,12 @@ from yarl import URL
 
 from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
-from musify.models._base import MusifyRootModel, AttributeResource
+from musify.models._base import RootModel, AttributeResource, abstract_property
 from musify.models.url import HttpURL
 
 
 # noinspection PyAbstractClass
-class URI(MusifyRootModel[str]):
+class URI(RootModel[str]):
     """Stores a URI for a resource from a specific remote repository."""
     _source: ClassVar[str] = PrivateAttr(
         # description=(
@@ -43,20 +43,17 @@ class URI(MusifyRootModel[str]):
             )
         return self
 
-    @property
-    @abstractmethod
+    @abstract_property
     def source(self) -> str:
         """The remote repository that this URI is from."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def type(self) -> str:
         """The type of resource this URI represents."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def id(self) -> str:
         """The unique identifier for this URI."""
         raise NotImplementedError
@@ -67,8 +64,7 @@ class URI(MusifyRootModel[str]):
         """Construct a URI from an ID value and resource type."""
         raise NotImplementedError
 
-    @property
-    @abstractmethod
+    @abstract_property
     def api_url(self) -> HttpURL:
         """The URL of the API endpoint for this remote resource."""
         raise NotImplementedError
@@ -81,8 +77,7 @@ class URI(MusifyRootModel[str]):
         """Construct a URI from an API endpoint URL."""
         pass
 
-    @property
-    @abstractmethod
+    @abstract_property
     def public_url(self) -> HttpURL:
         """The public URL for this remote resource."""
         raise NotImplementedError

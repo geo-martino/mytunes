@@ -12,7 +12,7 @@ from musify.models.collection.playlist import MutablePlaylist
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
-from musify.models.sequence import MusifyMutableSequence
+from musify.models.sequence import MutableUniqueSequence
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, MatchFilter
 from musify.processors_new.limit import ItemLimiter
@@ -24,7 +24,7 @@ class LocalPlaylistFile[TF: Filter](
 ):
     __unique_attributes__ = frozenset({"path"})
 
-    _original: MusifyMutableSequence[str, LocalTrack] = PrivateAttr(default_factory=MusifyMutableSequence)
+    _original: MutableUniqueSequence[str, LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)
 
     matcher: TF | None = Field(
         description="Filter object to use for matching tracks.",

@@ -6,11 +6,11 @@ from faker import Faker
 from musify.local.collection.folder import Folder
 from musify.local.item.album import LocalAlbum
 from musify.local.item.track import LocalTrack
-from tests.models.testers import MusifyResourceTester
+from tests.models.testers import BaseResourceTester
 from tests.utils import split_list
 
 
-class TestFolder(MusifyResourceTester):
+class TestFolder(BaseResourceTester):
     @pytest.fixture
     def model(self, track: LocalTrack, tracks: list[LocalTrack]) -> Folder:
         parent = track.path.parent

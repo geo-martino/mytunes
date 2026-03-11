@@ -4,10 +4,10 @@ import pytest
 from faker import Faker
 
 from musify.models.properties.date import SparseDate
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSparseDate(MusifyModelTester):
+class TestSparseDate(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SparseDate:
         return SparseDate(year=faker.year())

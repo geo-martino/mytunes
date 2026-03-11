@@ -2,7 +2,7 @@ from typing import final
 
 from pydantic import Field, AliasPath, PositiveInt
 
-from musify.remote.collection.artist import RemoteArtistCollection
+from musify.models.collection.artist import RemoteArtistCollection
 from musify.spotify.collection._base import SpotifyCollection, SpotifyItemsCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist

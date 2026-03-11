@@ -3,9 +3,11 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.models.collection.artist import ArtistCollection
+from musify.models.collection import ItemsCursor
+from musify.models.collection.artist import ArtistCollection, RemoteArtistCollection
 from musify.models.item.album import Album
 from tests.models.testers import UniqueKeyTester
+from tests.models.collection.testers import RemoteCollectionTester
 from tests.utils import SimpleURI
 
 
@@ -51,3 +53,17 @@ class TestArtistCollection(UniqueKeyTester):
 
         model = ArtistCollection(name=name, albums=albums)
         assert model.items_count == len(albums)
+
+
+class TestRemoteArtistCollection(RemoteCollectionTester):
+    @pytest.fixture
+    def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteArtistCollection:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteArtistCollection.type
+        )
+        return RemoteArtistCollection(
+            name=faker.word(),
+            uri=uri,
+            total=faker.random_int(1, 20),
+            cursor=cursor
+        )

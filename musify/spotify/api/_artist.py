@@ -3,10 +3,10 @@ from typing import ClassVar, final, Literal
 from pydantic import AliasPath, validate_call
 from yarl import URL
 
-from musify.remote.api._endpoints import HasSavedEndpoints
-from musify.remote.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
+from musify.models.api import HasSavedEndpoints
+from musify.models.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
     ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints
-from musify.remote.collection import ItemsCursor
+from musify.models.collection import ItemsCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection

@@ -9,8 +9,8 @@ from aiorequestful.auth.utils import AuthRequest
 from pydantic import SecretStr, Field, field_validator, PrivateAttr
 from yarl import URL
 
-from musify.remote.api import RemoteAuthoriser
-from musify.remote.api.exception import APIError
+from musify.models.api import RemoteAuthoriser
+from musify.models.api.exception import APIError
 from musify.spotify import SpotifyModel, API_URL
 
 

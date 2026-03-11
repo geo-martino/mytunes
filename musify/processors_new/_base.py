@@ -13,16 +13,16 @@ from tabulate import tabulate
 from termcolor import colored
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyModel
+from musify.models import BaseModel, abstract_property
 from musify.models.properties.logger import HasLogger
 
 
-class Result(MusifyModel):
+class Result(BaseModel):
     """Stores the results of an operation"""
     model_config = ConfigDict(frozen=True)
 
 
-class Processor(MusifyModel):
+class Processor(BaseModel):
     """Generic base class for processors"""
     pass
 
@@ -91,8 +91,7 @@ class DynamicProcessor(Processor):
 
         return super().__new__(cls)
 
-    @property
-    @abstractmethod
+    @abstract_property
     def _processor_name(self) -> str | None:
         """The processor method name to be used when calling this processor"""
         raise NotImplementedError

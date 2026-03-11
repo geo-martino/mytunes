@@ -16,11 +16,11 @@ from musify.local.collection.library.musicbee import XMLLibraryParser, REQUIRED_
 from musify.local.exception import FileDoesNotExistError
 from musify.local.item.track import LocalTrack
 from musify.utils import required_modules_installed
-from tests.models.testers import MusifyModelTester, MusifyResourceTester
+from tests.models.testers import BaseModelTester, BaseResourceTester
 
 
 @pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="required modules not installed.")
-class TestMusicBee(MusifyResourceTester):
+class TestMusicBee(BaseResourceTester):
 
     @pytest.fixture
     def model(self, musicbee_folder: Path, playlist_folder: Path) -> MusicBee:
@@ -222,7 +222,7 @@ class TestMusicBee(MusifyResourceTester):
 
 
 @pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="required modules not installed.")
-class TestXMLLibraryParser(MusifyModelTester):
+class TestXMLLibraryParser(BaseModelTester):
 
     @pytest.fixture
     def model(self, xml: str) -> XMLLibraryParser:

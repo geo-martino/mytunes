@@ -1,6 +1,6 @@
 from typing import final
 
-from musify.remote.item.genre import RemoteGenre
+from musify.models.item.genre import RemoteGenre
 from musify.spotify import SpotifyModel
 
 

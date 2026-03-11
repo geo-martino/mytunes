@@ -10,17 +10,17 @@ from musify.models.item.track import Track
 from musify.processors_new.match.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
     ArtistScorer, \
     AlbumScorer
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class StringScorerTester(MusifyModelTester, metaclass=ABCMeta):
+class StringScorerTester(BaseModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_calculate_score_returns_on_missing_values(model: StringScorer):
         assert model._calculate_score("", "other value") == 0
         assert model._calculate_score("test value", "") == 0
 
 
-class StringScoreReducerTester(MusifyModelTester, metaclass=ABCMeta):
+class StringScoreReducerTester(BaseModelTester, metaclass=ABCMeta):
     @staticmethod
     def test_reduce_score(model: StringScorer):
         with patch.object(StringScoreReducer, "_reduce_score") as mock_reduce_score:
@@ -28,7 +28,7 @@ class StringScoreReducerTester(MusifyModelTester, metaclass=ABCMeta):
             mock_reduce_score.assert_called_once()
 
 
-class TestStringScoreReducer(MusifyModelTester):
+class TestStringScoreReducer(BaseModelTester):
     @pytest.fixture
     @patch.multiple(
         StringScoreReducer,

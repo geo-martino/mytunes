@@ -16,10 +16,10 @@ from musify.processors_new.match import Matcher
 from musify.processors_new.match.score import Scorer
 from musify.processors_new.match.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer
 from musify.processors_new.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestMatcher(MusifyModelTester):
+class TestMatcher(BaseModelTester):
     @pytest.fixture
     def model(self, scorers: list[Scorer]) -> Matcher:
         return Matcher(scorers=scorers)

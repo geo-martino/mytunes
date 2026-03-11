@@ -5,10 +5,10 @@ from pydantic import InstanceOf
 
 from musify.models.properties.name import HasName
 from musify.processors_new.match.score import Scorer
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestScorer(MusifyModelTester):
+class TestScorer(BaseModelTester):
     @pytest.fixture
     @patch.multiple(
         Scorer,

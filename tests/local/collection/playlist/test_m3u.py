@@ -11,10 +11,10 @@ from musify.local.collection.playlist.m3u import M3U, SyncResultM3U
 from musify.local.item.track import LocalTrack
 from musify.models.properties.file import PathMapper
 from tests.local.collection.playlist.testers import LocalPlaylistTester
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSyncResultM3U(MusifyModelTester):
+class TestSyncResultM3U(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SyncResultM3U:
         return SyncResultM3U(

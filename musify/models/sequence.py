@@ -5,13 +5,13 @@ from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
 from pydantic_core import core_schema
 
 from musify.exception import MusifyValueError
-from musify.models import MusifyResource
-from musify.models.mapping import MusifyMutableMapping
+from musify.models import BaseResource
+from musify.models.mapping import MutableUniqueMapping
 
 
-class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
+class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
     """
-    Stores :py:class:`MusifyResource` items with optimisations
+    Stores :py:class:`BaseResource` items with optimisations
     to execute functionality on the sequence according to the item's unique keys.
     """
     # noinspection PyUnusedLocal
@@ -23,7 +23,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
             values_schema = handler.generate_schema(args[1])
         else:
             keys_schema = core_schema.any_schema()
-            values_schema = core_schema.is_instance_schema(MusifyResource)
+            values_schema = core_schema.is_instance_schema(BaseResource)
 
         schema = core_schema.union_schema([
             core_schema.is_instance_schema(cls),
@@ -45,7 +45,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
     def _validate(cls, value: str | dict[str, Any]) -> Self:
         if isinstance(value, cls):
             return value
-        if isinstance(value, MusifyResource):
+        if isinstance(value, BaseResource):
             return cls((value,))
         if isinstance(value, Iterable):
             return cls(value)
@@ -69,7 +69,7 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
             items = items.values()
 
         self._items: list[TV] = list(items)
-        self._items_mapped: MusifyMutableMapping[TK, TV] = MusifyMutableMapping(self._items)
+        self._items_mapped: MutableUniqueMapping[TK, TV] = MutableUniqueMapping(self._items)
 
     def __repr__(self):
         return repr(self._items)
@@ -149,9 +149,9 @@ class MusifySequence[TK, TV: MusifyResource](Sequence[TV]):
         return tuple(item for item in other if item not in self)
 
 
-class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], MutableSequence[TV]):
+class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], MutableSequence[TV]):
     """
-    Stores :py:class:`MusifyResource` items with optimisations
+    Stores :py:class:`BaseResource` items with optimisations
     to execute functionality on the sequence according to the item's unique keys.
     """
     @overload
@@ -169,14 +169,14 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
         else:
             self._items[index] = value
 
-        if isinstance(value, MusifyResource):
+        if isinstance(value, BaseResource):
             self._items_mapped.add(value)
         else:
             self._items_mapped.update(value)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
-        if isinstance(item := self[index], MusifyResource):  # index is an int
+        if isinstance(item := self[index], BaseResource):  # index is an int
             # noinspection PyArgumentList
             self.remove(item)
             return
@@ -282,7 +282,7 @@ class MusifyMutableSequence[TK, TV: MusifyResource](MusifySequence[TK, TV], Muta
     @validate_call
     def remove(self, __value: TV | Sequence[TV]) -> None:
         """Remove one item from this sequence"""
-        if isinstance(__value, MusifyResource):
+        if isinstance(__value, BaseResource):
             __value = (__value,)
 
         for item in __value:

@@ -17,12 +17,12 @@ from pydantic import field_validator, model_validator, validate_call, AliasChoic
 from pydantic.fields import Field, FieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo
 
-from musify.local._base import LocalResource
+from musify.local._base import LocalModel
 from musify.local.exception import FileError, TagError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
-from musify.models import MusifyModel
+from musify.models import BaseModel
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
@@ -33,7 +33,7 @@ from musify.models.properties.order import Position
 from musify.models.properties.uri import HasMutableURI, URI
 
 
-class TagDumpContext[T](MusifyModel):
+class TagDumpContext[T](BaseModel):
     map_uri_to_tag: Literal["comments"] = Field(
         description=(
             "The tag type to use for storing the URIs of the track. "
@@ -57,7 +57,7 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
 
 
 class LocalTrack[FT: FileType](
-    LocalResource,
+    LocalModel,
     Track[LocalArtist, LocalAlbum, LocalGenre, URI],
     LocalAudioFile,
     HasMutableURI[URI],

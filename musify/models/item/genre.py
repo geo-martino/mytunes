@@ -3,9 +3,11 @@ from typing import ClassVar
 from pydantic import Field, field_validator
 
 from musify._types import StrippedString
-from musify.models._base import CollectionResource
+from musify.models.remote import RemoteResource
+from musify.models.collection import CollectionModel
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
+from musify.models.properties.uri import URI
 
 
 class Genre(HasName):
@@ -20,7 +22,7 @@ class Genre(HasName):
     )
 
 
-class HasGenres[GT: Genre](HasSeparableTags, CollectionResource[GT]):
+class HasGenres[GT: Genre](HasSeparableTags, CollectionModel[GT]):
     genres: list[GT] = Field(
         description="The genres associated with this resource.",
         default_factory=list,
@@ -52,3 +54,7 @@ class HasGenres[GT: Genre](HasSeparableTags, CollectionResource[GT]):
         if isinstance(value, str):
             value = self._separate_tags(value)
         self.genres = value
+
+
+class RemoteGenre[UT: URI](Genre, RemoteResource[UT]):
+    pass

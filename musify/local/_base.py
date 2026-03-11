@@ -1,5 +1,5 @@
-from musify.models import MusifyResource
+from musify.models import BaseModel
 
 
-class LocalResource(MusifyResource):
+class LocalModel(BaseModel):
     pass

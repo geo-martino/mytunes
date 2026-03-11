@@ -2,7 +2,7 @@ import pytest
 
 from musify.exception import MusifyAttributeError
 from musify.models import AttributeModel
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
 class ModelCode(AttributeModel):
@@ -55,7 +55,7 @@ class ModelAttributes(AttributeModel):
     other: float = 1.0
 
 
-class TestAttributeModel(MusifyModelTester):
+class TestAttributeModel(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> ModelTrack:

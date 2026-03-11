@@ -4,15 +4,22 @@ from typing import Any, Self
 from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
-from musify.models.item.album import HasAlbums, Album
-from musify.models.item.artist import Artist
-from musify.models.item.genre import Genre
-from musify.models.item.track import HasTracks, Track
+from musify.models.remote import RemoteResource
+from musify.models.collection._base import ItemsCursor, RemoteCollection
+from musify.models.item.album import HasAlbums, Album, RemoteAlbum
+from musify.models.item.artist import Artist, RemoteArtist
+from musify.models.item.genre import Genre, RemoteGenre
+from musify.models.item.track import HasTracks, Track, RemoteTrack
 from musify.models.properties.uri import URI
 
 
-class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](HasAlbums[AT], Artist[GT, UT], HasTracks[TK, TV]):
+class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasAlbums[AT], HasTracks[TK, TV]):
     """Represents a collection of artists and their properties."""
+    @property
+    def _items(self) -> list[AT]:
+        # mro doesn't always use get albums, overriding to ensure albums are returned
+        return self.albums
+
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
@@ -66,3 +73,12 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](HasAlbums[A
                 raise MusifyValueError(f"Album does not contain the artist {self.name!r}: {", ".join(map(str, names))}")
 
         return self
+
+
+class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: ItemsCursor](
+    ArtistCollection[TK, TV, AT, GT, UT],
+    RemoteArtist[UT, GT],
+    RemoteResource[UT],
+    RemoteCollection[AT, CT],
+):
+    pass

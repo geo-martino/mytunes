@@ -4,10 +4,12 @@ from typing import Self, Any
 from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.genre import Genre
-from musify.models.item.track import Track, HasTracks
+from musify.models.remote import RemoteResource
+from musify.models.collection._base import ItemsCursor, RemoteCollection
+from musify.models.item.album import Album, RemoteAlbum
+from musify.models.item.artist import Artist, RemoteArtist
+from musify.models.item.genre import Genre, RemoteGenre
+from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.uri import URI
 
 
@@ -64,3 +66,12 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](HasTracks[T
             raise MusifyValueError(f"Tracks are from different albums: {", ".join(map(str, names))}")
 
         return self
+
+
+class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, UT: URI, CT: ItemsCursor](
+    AlbumCollection[UT, TT, RT, GT, UT],
+    RemoteAlbum[UT, RT, GT],
+    RemoteResource[UT],
+    RemoteCollection[TT, CT],
+):
+    pass

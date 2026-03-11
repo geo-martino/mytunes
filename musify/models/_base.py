@@ -1,13 +1,14 @@
+import functools
 from abc import abstractmethod
-from collections.abc import Hashable, Iterable, Collection
+from collections.abc import Hashable, Iterable, Callable
 from enum import IntEnum
 from functools import cached_property, reduce
 from typing import Any, ClassVar, Self, get_type_hints, Union, cast, Annotated
 
-from pydantic import BaseModel, RootModel, Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, \
-    GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
+    Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, GetCoreSchemaHandler, GetJsonSchemaHandler
 # noinspection PyProtectedMember
-from pydantic._internal._model_construction import ModelMetaclass
+from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
@@ -17,13 +18,23 @@ from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.utils import get_base_types
 
 
-def abstract_property() -> property:
-    """Create a new abstract property for an attribute."""
-    # noinspection PyUnusedLocal
-    def fget(self) -> Any:
-        raise NotImplementedError
+def abstract_property(func: Callable[[Any], Any]) -> property:
+    """
+    Create a new abstract property for an attribute.
 
-    return property(abstractmethod(fget))
+    This is just a convenience decorator for combining `property` and `abstractmethod` decorators i.e.
+
+    ```python
+        @property
+        @abstractmethod
+        def my_property(self):
+            ...
+    ```
+    """
+    @functools.wraps(func)
+    def wrapper(self):
+        return func(self)
+    return property(abstractmethod(wrapper))
 
 
 def readable_computed_field(name: str) -> property:
@@ -60,11 +71,16 @@ def writeable_computed_field(name: str) -> property:
     return property(fget, fset, fdel)
 
 
-class MusifyModelMetaclass(ModelMetaclass):
-    """Metaclass for attribute models to handle tag attribute generation and configuration."""
+class ModelMetaclass(PydanticModelMetaclass):
+    """
+    Metaclass for creating base models for this package.
 
+    Expands on Pydantic model metaclass to add support for:
+    - Keeping a registry of all final subclasses of a model for use in discriminated unions and annotations.
+    - Validating that all class variables defined on a final model and its subclasses are set.
+    """
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
-        cls = cast('type[MusifyModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+        cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
 
         if not hasattr(cls, "__model_registry__"):
             cls.__model_registry__ = set()
@@ -83,28 +99,35 @@ class MusifyModelMetaclass(ModelMetaclass):
 
         return cls
 
-    def _validate_all_class_vars_set(cls: MusifyModel) -> None:
+    def _validate_all_class_vars_set(cls: BaseModel) -> None:
         """Validate that all class variables defined on this model and its subclasses are set."""
         for name in cls.__class_vars__:
             if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
                 raise MusifyAttributeError(f"{cls.__name__} must have a {name!r} class attribute defined.")
 
     @property
-    def registered_submodels[T: MusifyModel](cls: type[T]) -> set[type[T]]:
+    def registered_submodels[T: BaseModel](cls: type[T]) -> set[type[T]]:
         """Get the registered classes for all subclasses of this model."""
         if cls.__final__:
             return set()
         return {kls for kls in cls.__model_registry__ if issubclass(kls, cls)}
 
     @property
-    def annotation[T: MusifyModel](cls: type[T]) -> type[T]:
+    def annotation[T: BaseModel](cls: type[T]) -> type[T]:
         """Get the annotation for all subclasses of this model"""
         classes = cls.registered_submodels
         return Union[*classes] if classes else cls
 
 
-class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
-    """Generic base class for any Musify models."""
+class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
+    """
+    A base class for creating models in this package.
+
+    Expands on Pydantic base model to add:
+    - Standard configuration for all models in the package.
+    - Support for setting writeable computed fields on initialization.
+    - Additional helper methods
+    """
 
     model_config = ConfigDict(
         validate_default=True,
@@ -152,15 +175,21 @@ class MusifyModel(BaseModel, metaclass=MusifyModelMetaclass):
         return {al for al in aliases if al}
 
 
-class MusifyRootModel[T](RootModel[T], MusifyModel):
-    pass
+class RootModel[T](PydanticRootModel[T], BaseModel):
+    __doc__ = BaseModel.__doc__
 
 
-class MusifyResourceMetaclass(MusifyModelMetaclass):
-    """Metaclass for resource models to handle unique attribute generation and configuration."""
+class ResourceMetaclass(ModelMetaclass):
+    """
+    Metaclass for creating resource models for this package.
+
+    Expands on base model metaclass to add support for:
+    - Updating the discriminated union annotation to use the `type` field as a discriminator for subclasses.
+    - Merging the configured unique attributes from all subclasses.
+    """
 
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
-        cls = cast('type[MusifyResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+        cls = cast('type[BaseResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
 
         cls.__unique_attributes__ = frozenset({
             *getattr(cls, "__unique_attributes__", []),
@@ -170,7 +199,7 @@ class MusifyResourceMetaclass(MusifyModelMetaclass):
         return cls
 
     @property
-    def annotation[T: MusifyResource](cls: type[T]) -> type[T]:
+    def annotation[T: BaseResource](cls: type[T]) -> type[T]:
         if not cls.registered_submodels:
             return cls
         return Annotated[
@@ -179,9 +208,15 @@ class MusifyResourceMetaclass(MusifyModelMetaclass):
         ]
 
 
-class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
-    """Generic class for storing attributes relating to some resource."""
+class BaseResource(BaseModel, metaclass=ResourceMetaclass):
+    """
+    A base class for creating resource models in this package.
 
+    Expands on the base model to add support for:
+    - The `type` field which can be used as a discriminator for subclasses in the discriminated union annotation.
+    - Returning field values which correspond to the unique keys of the resource.
+    - Equality comparison of models based on their unique keys.
+    """
     type: ClassVar[str] = Field(description="The type of resource this is.")
 
     @cached_property
@@ -199,7 +234,7 @@ class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
         return values
 
     def __eq__(self, other):
-        if not isinstance(other, MusifyResource):
+        if not isinstance(other, BaseResource):
             return super().__eq__(other)
         return self.unique_keys == other.unique_keys
     #
@@ -210,8 +245,14 @@ class MusifyResource(MusifyModel, metaclass=MusifyResourceMetaclass):
     #         del self.unique_keys  # clear the cached property
 
 
-class AttributeModelMetaclass(MusifyModelMetaclass):
-    """Metaclass for attribute models to handle tag attribute generation and configuration."""
+class AttributeModelMetaclass(ModelMetaclass):
+    """
+    Metaclass for creating attribute models for this package.
+
+    Expands on base model metaclass to add support for:
+    - Setting tag attributes which are configured from the defined fields and properties of a model
+    - Functionality for getting field info from a nested key using dot notation
+    """
 
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         cls = cast('type[AttributeResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
@@ -317,11 +358,12 @@ class AttributeModelMetaclass(MusifyModelMetaclass):
         )
 
 
-class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
+class AttributeModel(BaseModel, metaclass=AttributeModelMetaclass):
     """
-    Attribute model base class to define common attributes for resources.
+    A base class for creating attribute models in this package.
 
-    Adds support for getting and setting nested attributes using dot notation.
+    Expands on the base model to add support for:
+    - Getting and setting attributes from nested fields of models using dot notation
     """
 
     def __getattr__(self, key: str) -> Any:
@@ -347,42 +389,27 @@ class AttributeModel(MusifyModel, metaclass=AttributeModelMetaclass):
         setattr(item, key_split[-1], value)
 
 
-class AttributeResourceMetaclass(MusifyResourceMetaclass, AttributeModelMetaclass):
-    pass
+class AttributeResourceMetaclass(ResourceMetaclass, AttributeModelMetaclass):
+    """Mixin for attribute and resource metaclasses"""
 
 
-class AttributeResource(AttributeModel, MusifyResource, metaclass=AttributeResourceMetaclass):
-    """Defines a common base model for resources made of common attributes."""
+class AttributeResource(AttributeModel, BaseResource, metaclass=AttributeResourceMetaclass):
+    """
+    A base class for creating attribute resource models in this package.
+    
+    Mixin for attribute and resource models, combining the functionality of both.
+    """
     __include_fields__ = True
     __include_properties__ = True
 
 
-class CollectionModel[IT: MusifyResource](MusifyModel):
-    """Defines a common base models for attributes made of common collection properties."""
-    @property
-    @abstractmethod
-    def _items(self) -> Collection:
-        """The items in this collection."""
-        raise NotImplementedError
+class IntEnumModel(IntEnum):
+    """
+    Expands the IntEnum to allow usage as a Pydantic model
 
-    @property
-    def items_count(self) -> int:
-        """The number of items currently loaded in this collection."""
-        return len(self._items)
-
-    @property
-    def items_iter(self) -> Iterable[IT]:
-        """The number of items currently loaded in this collection."""
-        return iter(self._items)
-
-
-# noinspection PyAbstractClass
-class CollectionResource[IT: MusifyResource](CollectionModel[IT], MusifyResource):
-    """Defines a common base model for resources made of common collection properties."""
-
-
-class MusifyEnum(IntEnum):
-    """Generic class for :py:class:`IntEnum` implementations for the entire package."""
+    Adds support for:
+    - Validation from both integers and strings which represent the name of the enum member
+    """
 
     # noinspection PyUnusedLocal
     @classmethod

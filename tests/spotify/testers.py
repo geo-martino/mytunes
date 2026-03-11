@@ -10,16 +10,16 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
-from musify.remote.collection import RemoteCollection
+from musify.models.collection import RemoteCollection
 from musify.spotify import SpotifyResource
 from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.popularity import HasPopularity
 from musify.spotify.properties.uri import SpotifyUserURI
-from tests.models.testers import UniqueKeyTester, MusifyModelTester
+from tests.models.testers import UniqueKeyTester, BaseModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator
 
 
-class SpotifyModelTester(MusifyModelTester, metaclass=ABCMeta):
+class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):
 
     @pytest.fixture(scope="class")
     def generator(self, faker: Faker) -> SpotifyPayloadGenerator:

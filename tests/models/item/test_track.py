@@ -5,9 +5,9 @@ from faker import Faker
 
 from musify.local.collection.album import LocalAlbumCollection
 from musify.local.item.album import LocalAlbum
-from musify.models.item.track import Track, HasTracks, HasMutableTracks
+from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.properties.order import Position
-from tests.models.testers import MusifyResourceTester, UniqueKeyTester
+from tests.models.testers import BaseResourceTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
@@ -74,7 +74,7 @@ class TestTrack(UniqueKeyTester):
         assert track != track_different_album, "Tracks with different albums should not be equal"
 
 
-class TestHasTracks(MusifyResourceTester):
+class TestHasTracks(BaseResourceTester):
     @pytest.fixture
     def model(self, tracks: list[Track]) -> HasTracks:
         return HasTracks(tracks=tracks)
@@ -96,7 +96,16 @@ class TestHasTracks(MusifyResourceTester):
         assert model.disc_total is None
 
 
-class TestHasMutableTracks(MusifyResourceTester):
+class TestHasMutableTracks(BaseResourceTester):
     @pytest.fixture
     def model(self, tracks: list[Track]) -> HasMutableTracks:
         return HasMutableTracks(tracks=tracks)
+
+
+class TestRemoteTrack(UniqueKeyTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> RemoteTrack:
+        uri = SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=RemoteTrack.type
+        )
+        return RemoteTrack(name=faker.word(), uri=uri)

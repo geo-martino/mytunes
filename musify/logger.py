@@ -36,8 +36,8 @@ logging.addLevelName(STAT, "STAT")
 logging.STAT = STAT
 
 
-class MusifyLogger(logging.Logger):
-    """The logger for all logging operations in Musify."""
+class Logger(logging.Logger):
+    """The logger for all logging operations."""
 
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
@@ -185,6 +185,6 @@ class MusifyLogger(logging.Logger):
         return self
 
 
-logging.setLoggerClass(MusifyLogger)
+logging.setLoggerClass(Logger)
 
 HEADER_PREFIX = colored("  > ", "magenta", attrs=["bold"])

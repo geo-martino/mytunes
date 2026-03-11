@@ -4,15 +4,15 @@ import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker
 
-from musify.remote.api import ReadCollectionEndpoints
+from musify.models.api import ReadCollectionEndpoints
 # noinspection PyProtectedMember
 from musify.spotify.api._artist import SpotifyArtistEndpoints
 from musify.spotify.collection import SpotifyItemsCursor
 from musify.spotify.properties.uri import SpotifyResourceURI
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSpotifyArtistEndpoints(MusifyModelTester):
+class TestSpotifyArtistEndpoints(BaseModelTester):
     @pytest.fixture
     def model(self, handler: RequestHandler) -> SpotifyArtistEndpoints:
         return SpotifyArtistEndpoints.model_validate(handler)

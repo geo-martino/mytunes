@@ -7,11 +7,11 @@ from faker import Faker
 from musify.local.item.album import LocalAlbum
 from musify.local.item.track import LocalTrack
 from musify.processors_new.limit import ItemLimiter, LimitType
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 from tests.processors_new.utils import create_random_file
 
 
-class TestItemLimiter(MusifyModelTester):
+class TestItemLimiter(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> ItemLimiter:

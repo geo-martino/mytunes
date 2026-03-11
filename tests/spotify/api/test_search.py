@@ -2,7 +2,7 @@ import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker
 
-from musify.models import MusifyResource
+from musify.models import BaseResource
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
@@ -11,10 +11,10 @@ from musify.models.item.track import Track
 from musify.spotify.api._search import SpotifySearchEndpoints
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.track import SpotifyTrack
-from tests.models.testers import MusifyModelTester
+from tests.models.testers import BaseModelTester
 
 
-class TestSpotifySearchEndpoints(MusifyModelTester):
+class TestSpotifySearchEndpoints(BaseModelTester):
     @pytest.fixture
     def model(self, handler: RequestHandler) -> SpotifySearchEndpoints:
         return SpotifySearchEndpoints.model_validate(handler)
@@ -37,7 +37,7 @@ class TestSpotifySearchEndpoints(MusifyModelTester):
 
     @staticmethod
     def assert_format_query_from_item(
-            model: SpotifySearchEndpoints, item: MusifyResource, expected_query: str, faker: Faker
+            model: SpotifySearchEndpoints, item: BaseResource, expected_query: str, faker: Faker
     ):
         additional = {"limit": faker.random_int(), "offset": faker.random_int()}
 
