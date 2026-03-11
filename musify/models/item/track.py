@@ -1,11 +1,11 @@
-from typing import ClassVar, Self
+from typing import ClassVar, Self, TYPE_CHECKING
 
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
 
 from musify._types import StrippedString
 from musify.models.remote import RemoteResource
 from musify.models._base import AttributeResource
-from musify.models.collection._base import CollectionModel
+from musify.models.collection import CollectionModel
 from musify.models.item.album import HasAlbum, Album, RemoteAlbum
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
@@ -18,6 +18,9 @@ from musify.models.properties.order import Position, HasTrackPosition, HasDiscPo
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI, HasURI
 from musify.models.sequence import MutableUniqueSequence, UniqueSequence
+
+if TYPE_CHECKING:
+    from musify.models.api.track import HasTrackEndpoints, TrackReadItemEndpoints
 
 
 class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
@@ -143,3 +146,6 @@ class RemoteTrack[RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
         description="The artists associated with this resource.",
         default_factory=list,
     )
+
+    async def reload(self, api: HasTrackEndpoints[TrackReadItemEndpoints]) -> Self:
+        return await api.tracks.get(self.uri)

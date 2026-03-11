@@ -1,5 +1,5 @@
 from random import choice
-from typing import ClassVar
+from typing import ClassVar, Self
 from unittest.mock import patch, Mock
 
 from aiorequestful.auth import Authoriser
@@ -11,7 +11,8 @@ from musify.models.api.track import HasTrackEndpoints, TrackEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.remote import RemoteResource
-from musify.models.api import RemoteAPI, Endpoints, RemoteAuthoriser, ReadSavedEndpoints, HasSavedEndpoints
+from musify.models.api import RemoteAPI, Endpoints, RemoteAuthoriser, ReadSavedEndpoints, HasSavedEndpoints, \
+    HasEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -28,10 +29,16 @@ class MockRemoteResource(RemoteResource[SimpleURI]):
         RemoteArtist.type,
     ))
 
+    def reload(self, api: HasEndpoints) -> Self:
+        return self
+
 
 class MockRemoteCollection(MockRemoteResource, RemoteCollection):
     def _items(self) -> list:
         return []
+
+    def extend(self, api: HasEndpoints) -> None:
+        pass
 
 
 class MockRemoteAuthoriser(RemoteAuthoriser[Mock]):

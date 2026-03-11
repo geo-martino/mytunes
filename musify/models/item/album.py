@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, TYPE_CHECKING, Self
 
 from pydantic import Field, field_validator, computed_field, PositiveInt
 
@@ -15,6 +15,9 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import HasURI, URI
+
+if TYPE_CHECKING:
+    from musify.models.api.album import HasAlbumEndpoints, AlbumReadItemEndpoints
 
 
 class Album[RT: Artist, GT: Genre, UT: URI](
@@ -76,4 +79,5 @@ class HasAlbums[AT: Album](HasSeparableTags, CollectionModel[AT]):
 
 
 class RemoteAlbum[RT: RemoteArtist, GT: RemoteGenre, UT: URI](Album[RT, GT, UT], RemoteResource[UT]):
-    pass
+    async def reload(self, api: HasAlbumEndpoints[AlbumReadItemEndpoints]) -> Self:
+        return await api.albums.get(self.uri)

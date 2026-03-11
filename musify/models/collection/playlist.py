@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self
 
 from pydantic import Field, validate_call, BeforeValidator
 
@@ -16,6 +17,9 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI
 from musify.models.user import RemoteUser
+
+if TYPE_CHECKING:
+    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
 
 
 class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], HasLength, HasImages):
@@ -116,6 +120,12 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
         description="Whether this playlist is publicly available.",
         default=None,
     )
+
+    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadItemEndpoints]) -> Self:
+        return await api.playlists.get(self.uri)
+
+    async def extend(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> None:
+        await api.playlists.get_all(self.uri)
 
 
 class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](

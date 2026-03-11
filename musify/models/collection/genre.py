@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Sequence
-from typing import Any, Self
+from typing import Any, Self, TYPE_CHECKING
 
 from pydantic import model_validator, ModelWrapValidatorHandler
 
@@ -10,6 +10,9 @@ from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import URI
+
+if TYPE_CHECKING:
+    from musify.models.api.genre import HasGenreEndpoints, GenreReadCollectionEndpoints
 
 
 class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
@@ -75,4 +78,5 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: ItemsCursor](
     RemoteResource[UT],
     RemoteCollection[TT, CT],
 ):
-    pass
+    async def extend(self, api: HasGenreEndpoints[GenreReadCollectionEndpoints]) -> None:
+        await api.genres.get_all(self.uri)

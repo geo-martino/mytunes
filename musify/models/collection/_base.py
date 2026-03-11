@@ -1,12 +1,15 @@
 import contextlib
 from abc import abstractmethod
-from typing import Collection, Iterable, Any, Self
+from typing import Collection, Iterable, Any, Self, TYPE_CHECKING
 
 from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter
 
 from musify.models import BaseResource, BaseModel, abstract_property
 from musify.models.remote import RemoteModel, RemoteResource
 from musify.models.url import HttpURL
+
+if TYPE_CHECKING:
+    from musify.models.api import HasEndpoints
 
 
 # noinspection PyAbstractClass
@@ -26,11 +29,6 @@ class CollectionModel[IT: BaseResource](BaseModel):
     def items_iter(self) -> Iterable[IT]:
         """The number of items currently loaded in this collection."""
         return iter(self._items)
-
-
-# noinspection PyAbstractClass
-class CollectionResource[IT: BaseResource](CollectionModel[IT], BaseResource):
-    """Defines a common base model for resources made of common collection properties."""
 
 
 class ItemsCursor(RemoteModel):
@@ -116,3 +114,8 @@ class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel, Collect
         if self.total is None:
             return None
         return self.items_count == self.total
+
+    @abstractmethod
+    def extend(self, api: HasEndpoints) -> None:
+        """Extend this collection by loading all remaining pages of items using the provided API."""
+        raise NotImplementedError

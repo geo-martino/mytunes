@@ -1,5 +1,5 @@
 from collections.abc import Sequence, MutableMapping
-from typing import Self, Any
+from typing import Self, Any, TYPE_CHECKING
 
 from pydantic import model_validator, ModelWrapValidatorHandler
 
@@ -11,6 +11,9 @@ from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.uri import URI
+
+if TYPE_CHECKING:
+    from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints
 
 
 class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](HasTracks[TK, TV], Album[RT, GT, UT]):
@@ -74,4 +77,5 @@ class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, 
     RemoteResource[UT],
     RemoteCollection[TT, CT],
 ):
-    pass
+    async def extend(self, api: HasAlbumEndpoints[AlbumReadCollectionEndpoints]) -> None:
+        await api.albums.get_all(self.uri)

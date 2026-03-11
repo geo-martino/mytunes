@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, TYPE_CHECKING, Self
 
 from pydantic import Field, field_validator
 
@@ -8,6 +8,9 @@ from musify.models.collection import CollectionModel
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
+
+if TYPE_CHECKING:
+    from musify.models.api.genre import HasGenreEndpoints, GenreReadItemEndpoints
 
 
 class Genre(HasName):
@@ -57,4 +60,5 @@ class HasGenres[GT: Genre](HasSeparableTags, CollectionModel[GT]):
 
 
 class RemoteGenre[UT: URI](Genre, RemoteResource[UT]):
-    pass
+    async def reload(self, api: HasGenreEndpoints[GenreReadItemEndpoints]) -> Self:
+        return await api.genres.get(self.uri)
