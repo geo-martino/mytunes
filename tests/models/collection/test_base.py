@@ -6,144 +6,161 @@ from pydantic import TypeAdapter
 from yarl import URL
 
 from musify.exception import MusifyValueError
-from musify.models.collection import ItemsCursor
+from musify.models.collection import PageCursor
 from tests.models.testers import BaseModelTester
 
 
-class TestItemsCursor(BaseModelTester):
+class TestPageCursor(BaseModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> ItemsCursor:
-        return ItemsCursor(
-            current="https://api.musify.com/v1/albums?offset=0&limit=50",
+    def model(self, faker: Faker) -> PageCursor:
+        return PageCursor(
+            url="https://api.musify.com/v1/albums?offset=0&limit=50",
         )
 
-    def test_from_url(self, model: ItemsCursor):
-        assert model == TypeAdapter(ItemsCursor).validate_python(str(model.current))
+    def test_from_url(self, faker: Faker):
+        url = faker.url()
+        model = PageCursor.model_validate(faker.random_element((url, URL(url))))
+        assert model.url == URL(url)
 
-    def test_do_not_set_limit_to_current_url(self, model: ItemsCursor, faker: Faker):
-        model.limit = None
-        starting_limit = faker.random_int(1, 100)
-        model.current = model.current.with_query(limit=starting_limit)
-        assert model.current.query["limit"] == str(starting_limit)
+    def test_get_params_from_url(self, faker: Faker):
+        limit = faker.random_int()
+        offset = faker.random_int()
+        url = URL(faker.url()).update_query(limit=limit, offset=offset)
 
-        model.limit = None
-        assert model.current.query["limit"] == str(starting_limit)
+        model = PageCursor(url=url)
+        assert model.url == url
+        assert model.limit == limit
+        assert model.offset == offset
 
-    def test_set_limit_to_current_url(self, model: ItemsCursor, faker: Faker):
-        model.limit = None
-        starting_limit = faker.random_int(1, 100)
-        model.current = model.current.with_query(limit=starting_limit)
-        assert model.current.query["limit"] == str(starting_limit)
+    def test_keeps_params_if_provided(self, faker: Faker):
+        limit = faker.random_int()
+        offset = faker.random_int()
+        url = URL(faker.url()).update_query(offset=faker.random_int(), limit=faker.random_int())
 
-        model.limit = starting_limit + 50
-        assert model.current.query["limit"] == str(model.limit)
+        model = PageCursor(url=url, limit=limit, offset=offset)
+        assert model.url == url.update_query(limit=limit, offset=offset)
+        assert model.limit == limit != int(url.query["limit"])
+        assert model.offset == offset != int(url.query["offset"])
 
-    def test_drop_limit_from_current_url(self, model: ItemsCursor, faker: Faker):
-        model.current = model.current.with_query(limit=faker.random_int(1, 100))
-        assert "limit" in model.current.query
+        model.url = url  # force revalidation
+        assert model.url == url.update_query(limit=limit, offset=offset)
+        assert model.limit == limit != int(url.query["limit"])
+        assert model.offset == offset != int(url.query["offset"])
+
+    def test_set_params_to_current_url(self, faker: Faker):
+        limit = faker.random_int()
+        offset = faker.random_int()
+        url = URL(faker.url())
+
+        model = PageCursor(url=url, limit=limit, offset=offset)
+        assert model.url == url.update_query(limit=limit, offset=offset)
+        assert model.limit == limit
+        assert model.offset == offset
+
+        model.url = url  # force revalidation
+        assert model.url == url.update_query(limit=limit, offset=offset)
+        assert model.limit == limit
+        assert model.offset == offset
+
+        model.limit += faker.random_int()
+        model.offset += faker.random_int()
+        assert model.url == url.update_query(limit=model.limit, offset=model.offset)
+
+    def test_drop_limit_from_current_url(self, model: PageCursor, faker: Faker):
+        model.limit = faker.random_int()
+        assert "limit" in model.url.query
 
         model.limit = 0
-        assert "limit" not in model.current.query
+        assert "limit" not in model.url.query
 
-    def test_do_not_set_offset_to_current_url(self, model: ItemsCursor, faker: Faker):
+    def test_previous_fails(self, model: PageCursor, faker: Faker):
+        field_names = {"offset", "limit"}
         model.offset = None
-        starting_offset = faker.random_int(1, 100)
-        model.current = model.current.with_query(offset=starting_offset)
-        assert model.current.query["offset"] == str(starting_offset)
-
-        model.offset = None
-        assert model.current.query["offset"] == str(starting_offset)
-
-    def test_set_offset_to_current_url(self, model: ItemsCursor, faker: Faker):
-        model.offset = None
-        starting_offset = faker.random_int(1, 100)
-        model.current = model.current.with_query(offset=starting_offset)
-        assert model.current.query["offset"] == str(starting_offset)
-
-        model.offset = starting_offset + 50
-        assert model.current.query["offset"] == str(model.offset)
-
-    def test_current_from_next_fails(self, model: ItemsCursor, faker: Faker):
-        model.next = None
         model.limit = None
 
-        message = "Cannot generate URL without offset and next URL"
-        with pytest.raises(MusifyValueError, match=message):
-            assert model._current_from_next
+        while len(field_names) < 1:
+            field_name = field_names.pop()
+            setattr(model, field_name, faker.random_int())
 
-        model.next = URL(faker.url())
-        model.limit = None
-        with pytest.raises(MusifyValueError, match=message):
-            assert model._current_from_next
+            with pytest.raises(MusifyValueError, match="Cannot generate next URL without offset and limit"):
+                assert model.previous
 
-        model.next = None
+    def test_previous(self, model: PageCursor, faker: Faker):
         model.limit = faker.random_int()
-        with pytest.raises(MusifyValueError, match=message):
-            assert model._current_from_next
+        model.offset = model.limit + faker.random_int()
 
-    def test_current_from_next(self, model: ItemsCursor, faker: Faker):
-        model.next = URL(faker.url())
-        model.limit = faker.random_int(1, 100)
-        model.offset = faker.random_int(1, 100)
+        prev_cursor = model.previous
+        assert prev_cursor.url == model.url.update_query(offset=model.offset - model.limit)
+        assert prev_cursor.offset == model.offset - model.limit
+        assert prev_cursor.limit == model.limit
 
-        expected = model.next.update_query(limit=model.limit, offset=model.offset)
-        assert model._current_from_next == expected
+        model.offset = 0
+        assert model.previous is None
 
-    def test_next_from_current_fails(self, model: ItemsCursor, faker: Faker):
+    def test_next_fails(self, model: PageCursor, faker: Faker):
+        field_names = {"offset", "limit", "total"}
         model.offset = None
         model.limit = None
+        model.total = None
 
-        message = "Cannot generate URL without offset and limit"
-        with pytest.raises(MusifyValueError, match=message):
-            assert model._next_from_current
+        while len(field_names) < 1:
+            field_name = field_names.pop()
+            setattr(model, field_name, faker.random_int())
 
+            with pytest.raises(MusifyValueError, match="Cannot generate next URL without offset, limit and total"):
+                assert model.next
+
+    def test_next(self, model: PageCursor, faker: Faker):
         model.offset = faker.random_int()
-        model.limit = None
-        with pytest.raises(MusifyValueError, match=message):
-            assert model._next_from_current
-
-        model.offset = None
         model.limit = faker.random_int()
-        with pytest.raises(MusifyValueError, match=message):
-            assert model._next_from_current
+        model.total = model.offset + model.limit + faker.random_int()
 
-    def test_next_from_current(self, model: ItemsCursor, faker: Faker):
-        model.limit = faker.random_int(1, 100)
-        model.offset = faker.random_int()
+        next_cursor = model.next
+        assert next_cursor.url == model.url.update_query(offset=model.offset + model.limit)
+        assert next_cursor.offset == model.offset + model.limit
+        assert next_cursor.limit == model.limit
+        assert next_cursor.total == model.total
 
-        expected = model.current.update_query(limit=model.limit, offset=model.offset + model.limit)
-        assert model._next_from_current == expected
+        model.offset = model.total + 1
+        assert model.next is None
 
-    def test_iter_next(self, model: ItemsCursor, faker: Faker):
+    def test_next_from_source(self, faker: Faker):
+        offset = faker.random_int()
+        limit = faker.random_int()
+        url = URL(faker.url()).update_query(offset=offset, limit=limit)
+        next_url = url.update_query(offset=offset + limit, limit=limit)
+
+        model = PageCursor(url=url)
+        with pytest.raises(MusifyValueError, match="Cannot generate next URL without offset, limit and total"):
+            assert model.next.url == next_url  # should raise because total is not set
+
+        model = PageCursor(url=url, next=next_url)
+        assert model.next.url == next_url
+
+    def test_iter_next(self, model: PageCursor, faker: Faker):
         model.limit = faker.random_int(10, 100)
         model.offset = faker.random_int(100, 1000)
         model.total = model.offset + faker.random_int(100, 1000)
 
         pages = math.ceil((model.total - model.offset) / model.limit)
-        expected_urls = [model.current.update_query(offset=model.offset + (model.limit * i)) for i in range(1, pages)]
+        expected_urls = [model.url.update_query(offset=model.offset + (model.limit * i)) for i in range(1, pages)]
 
         result = list(model.iter_next)
         assert int(result[0].offset) == model.offset + model.limit
         assert int(result[-1].offset) <= model.total
 
-        for cursor, next_cursor in zip(result, result[1:] + [None]):
-            if next_cursor is not None:
-                assert cursor.next == next_cursor.current
-            else:
-                assert cursor.next is None
+        for cursor, next_cursor in zip(result, result[1:]):
+            assert cursor.next == next_cursor
+            assert cursor == next_cursor.previous
 
-        assert [cursor.current for cursor in result] == expected_urls
-        assert [cursor.next for cursor in result] == expected_urls[1:] + [None]
+        assert [cursor.url for cursor in result] == expected_urls
         assert [cursor.offset for cursor in result] == [model.offset + (model.limit * i) for i in range(1, pages)]
 
-    def test_reset(self, model: ItemsCursor, faker: Faker):
+    def test_reset(self, model: PageCursor, faker: Faker):
         model.limit = faker.random_int(1, 100)
         model.offset = faker.random_int(100, 1000)
-        model.next = model.current.with_query(offset=model.offset + model.limit)
-        model.previous = model.current.with_query(offset=model.offset - model.limit)
+        assert model.url.query["offset"] == str(model.offset)
 
         model.reset()
-        assert model.previous is None
-        assert model.next is None
         assert model.offset == 0
-        assert model.current.query["offset"] == str(model.offset)
+        assert model.url.query["offset"] == "0"

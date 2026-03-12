@@ -5,7 +5,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
 from musify.models.remote import RemoteResource
-from musify.models.collection._base import ItemsCursor, RemoteCollection
+from musify.models.collection._base import PageCursor, RemoteCollection
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
@@ -72,7 +72,7 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
         return self
 
 
-class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: ItemsCursor](
+class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
     GenreCollection[UT, TT],
     RemoteGenre[UT],
     RemoteResource[UT],

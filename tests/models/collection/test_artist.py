@@ -3,7 +3,7 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.models.collection import ItemsCursor
+from musify.models.collection import PageCursor
 from musify.models.collection.artist import ArtistCollection, RemoteArtistCollection
 from musify.models.item.album import Album
 from tests.models.testers import UniqueKeyTester
@@ -57,7 +57,7 @@ class TestArtistCollection(UniqueKeyTester):
 
 class TestRemoteArtistCollection(RemoteCollectionTester):
     @pytest.fixture
-    def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteArtistCollection:
+    def model(self, cursor: PageCursor, faker: Faker) -> RemoteArtistCollection:
         uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=RemoteArtistCollection.type
         )

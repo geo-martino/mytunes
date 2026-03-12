@@ -1,1 +1,1 @@
-from ._base import SpotifyItemsCursor
+from ._base import SpotifyPageCursor

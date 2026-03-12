@@ -5,7 +5,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
 from musify.models.remote import RemoteResource
-from musify.models.collection._base import ItemsCursor, RemoteCollection
+from musify.models.collection._base import PageCursor, RemoteCollection
 from musify.models.item.album import HasAlbums, Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
@@ -78,7 +78,7 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](Artist[GT, 
         return self
 
 
-class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: ItemsCursor](
+class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: PageCursor](
     ArtistCollection[TK, TV, AT, GT, UT],
     RemoteArtist[UT, GT],
     RemoteResource[UT],

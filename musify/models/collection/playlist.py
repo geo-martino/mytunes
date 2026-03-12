@@ -7,7 +7,7 @@ from typing import ClassVar, Annotated, TYPE_CHECKING, Self
 from pydantic import Field, validate_call, BeforeValidator
 
 from musify._types import StrippedString
-from musify.models.collection._base import CollectionModel, ItemsCursor, RemoteCollection
+from musify.models.collection._base import CollectionModel, PageCursor, RemoteCollection
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 from musify.models.properties.image import HasImages
@@ -109,7 +109,7 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
             self.playlists[playlist].merge(playlist, reference=reference[playlist] if reference else None)
 
 
-class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
+class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
     Playlist[UT, TT, UT], RemoteResource[UT], RemoteCollection[TT, CT]
 ):
     owner: OT = Field(
@@ -127,7 +127,7 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
         await api.playlists.get_all(self.uri)
 
 
-class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: ItemsCursor](
+class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
     MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT, OT, CT]
 ):
     pass

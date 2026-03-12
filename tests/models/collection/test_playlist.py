@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
-from musify.models.collection import ItemsCursor
+from musify.models.collection import PageCursor
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
 from musify.models.user import RemoteUser
@@ -68,7 +68,7 @@ class TestHasMutablePlaylists(BaseModelTester):
 
 class TestRemotePlaylist(RemoteCollectionTester):
     @pytest.fixture
-    def model(self, cursor: ItemsCursor, faker: Faker) -> RemotePlaylist:
+    def model(self, cursor: PageCursor, faker: Faker) -> RemotePlaylist:
         playlist_uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=RemotePlaylist.type
         )
@@ -86,7 +86,7 @@ class TestRemotePlaylist(RemoteCollectionTester):
 
 class TestRemoteMutablePlaylist(RemoteCollectionTester):
     @pytest.fixture
-    def model(self, cursor: ItemsCursor, faker: Faker) -> RemoteMutablePlaylist:
+    def model(self, cursor: PageCursor, faker: Faker) -> RemoteMutablePlaylist:
         playlist_uri = SimpleURI.from_id(
             faker.random_int(int(10e9), int(10e10)), kind=RemotePlaylist.type
         )

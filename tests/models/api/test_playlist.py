@@ -6,7 +6,7 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 
 from musify.models.api.playlist import PlaylistReadSavedEndpoints, PlaylistReadWriteSavedEndpoints
-from musify.models.collection import ItemsCursor
+from musify.models.collection import PageCursor
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.user import RemoteUser
 from tests.models.api.testers import EndpointsTester
@@ -24,7 +24,7 @@ def playlists(faker: Faker) -> list[RemotePlaylist]:
             ),
             uri=SimpleURI.from_id(faker.word(), kind=RemotePlaylist.type),
             total=faker.random_int(0, 100),
-            cursor=ItemsCursor(current=faker.url())
+            cursor=PageCursor(url=faker.url())
         )
         for _ in range(faker.random_int(10, 30))
     ]

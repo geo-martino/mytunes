@@ -7,7 +7,7 @@ from yarl import URL
 from musify.models.api import HasSavedEndpoints
 from musify.models.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
     ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints, ArtistEndpoints
-from musify.models.collection import ItemsCursor
+from musify.models.collection import PageCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
@@ -65,19 +65,15 @@ class SpotifyArtistEndpoints(
     @validate_call
     async def get_all(
             self,
-            collection: SpotifyArtistCollection | ItemsCursor,
+            collection: SpotifyArtistCollection | PageCursor,
             types: set[Literal["album", "single", "compilation", "appears_on"]] | None = None
     ) -> list[SpotifyArtist]:
         query = {"include_groups": ",".join(types)} if types else {}
         match collection:
-            case ItemsCursor() as cursor:
+            case PageCursor() as cursor:
                 pass
             case SpotifyArtistCollection() as artist:
                 cursor = artist.cursor
 
-        if cursor.next is not None:
-            cursor.next = cursor.next.update_query(query)
-        else:
-            cursor.current = cursor.current.update_query(query)
-
+        cursor.url = cursor.url.update_query(query)
         return await super().get_all(collection)

@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 
 from musify.models.api import RemoteAPI, ReadSavedEndpoints
-from musify.models.collection import ItemsCursor
+from musify.models.collection import PageCursor
 # noinspection PyProtectedMember
 from musify.models.collection.library import HasTracksAndPlaylists, RemoteLibrary, RemoteMutableLibrary
 from musify.models.collection.playlist import Playlist, RemotePlaylist
@@ -62,7 +62,7 @@ class TestRemoteLibrary(BaseModelTester):
     @pytest.fixture
     def playlists(self, playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list[RemotePlaylist]:
         return [
-            RemotePlaylist(**pl.model_dump(), owner=user, cursor=ItemsCursor(current=faker.url()))
+            RemotePlaylist(**pl.model_dump(), owner=user, cursor=PageCursor(url=faker.url()))
             for pl in playlists
         ]
 

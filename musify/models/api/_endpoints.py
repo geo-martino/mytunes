@@ -16,7 +16,7 @@ from yarl import URL
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.models._base import AttributeModelMetaclass
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
-from musify.models.collection import ItemsCursor, RemoteCollection
+from musify.models.collection import PageCursor, RemoteCollection
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel, RemoteResource
@@ -93,27 +93,20 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     @validate_call
     def _create_saved_items_cursor(
             url: HttpURL, limit: PositiveInt | None = None, offset: NonNegativeInt | None = None
-    ) -> ItemsCursor:
-        cursor_adapter = TypeAdapter(ItemsCursor.annotation)
-        cursor = cursor_adapter.validate_python(url)
-
-        # only set if given as the source's cursor may have default values set
-        if limit is not None:
-            cursor.limit = limit
-        if offset is not None:
-            cursor.offset = offset
-
-        cursor.next = cursor.current
-        return cursor
+    ) -> PageCursor:
+        # we set the total randomly just to force a next URL to be generated for the cursor
+        # calling a saved items endpoint should then always give either a next url or total, so this is not an issue
+        cursor_adapter = TypeAdapter(PageCursor.annotation)
+        return cursor_adapter.validate_python(dict(url=url, limit=limit, offset=offset, total=offset + limit))
 
     # noinspection PyArgumentList
     @validate_call
     async def _get_all_items(
             self,
-            cursor: ItemsCursor,
+            cursor: PageCursor,
             path: str | AliasPath,
             kind: str | Type = None,
-    ) -> tuple[tuple[RT, ...], ItemsCursor]:
+    ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
         if cursor.iterable:
             return await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
@@ -122,15 +115,15 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     @validate_call
     async def _get_all_items_by_pagination(
             self,
-            cursor: ItemsCursor,
+            cursor: PageCursor,
             path: str | AliasPath,
             kind: str | Type = None,
-    ) -> tuple[tuple[RT, ...], ItemsCursor]:
+    ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by paginating through the cursor, which must have a next URL for the first page of items.
 
         This is usually the slower approach, but is more widely supported as it does not require the API
-        to provide the total number of items, offset and limit in the cursor.
+        to provide the total number of items, offset and limit in the page cursor.
         """
         items: list[RT] = []
         while cursor.next:
@@ -146,10 +139,10 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     @validate_call
     async def _get_all_items_by_generation(
             self,
-            cursor: ItemsCursor,
+            cursor: PageCursor,
             path: str | AliasPath,
             kind: str | Type[RT] = None,
-    ) -> tuple[tuple[RT, ...], ItemsCursor]:
+    ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
         for them asynchronously.
@@ -169,12 +162,10 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         collection_type = _get_type_value(self.type)
         item_type = _get_type_value(kind)
         cursors = list(cursor.iter_next)
-        print(len(cursors))
 
-        async def _request(crsr: ItemsCursor) -> JSON:
-            print("GO", crsr)
-            log_message = f"{crsr.offset:>6}/{crsr.total:<6} {item_type.rstrip("s")}s"
-            return await self._handler.get(crsr.current, log_message=log_message)
+        async def _request(page: PageCursor) -> JSON:
+            log_message = f"{page.offset:>6}/{page.total:<6} {item_type.rstrip("s")}s"
+            return await self._handler.get(page.url, log_message=log_message)
 
         responses: list[JSON] = await self.logger.get_asynchronous_iterator(
             map(_request, cursors),
@@ -226,7 +217,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return response
 
     @classmethod
-    def _get_cursor_from_response[T: ItemsCursor](cls, response: JSON, path: AliasPath, cursor: T | Type[T]) -> T:
+    def _get_cursor_from_response[T: PageCursor](cls, response: JSON, path: AliasPath, cursor: T | Type[T]) -> T:
         match path:
             case str():
                 return cursor.model_validate(response)
@@ -306,18 +297,17 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
     )
 
     @validate_call
-    async def get_all(self, collection: RT | ItemsCursor) -> list[RT]:
+    async def get_all(self, collection: RT | PageCursor) -> list[RT]:
         """Get all items in the collection by paginating through its cursor. May also give a cursor directly."""
         match collection:
-            case ItemsCursor():
+            case PageCursor():
                 cursor = collection
             case RemoteCollection() as collection:
                 cursor = collection.cursor
                 if not collection.has_all_items and cursor.next is None:
                     cursor.offset = collection.count  # sets the offset on the current URL
-                    cursor.next = cursor.current
             case _:
-                raise MusifyTypeError("Expected a collection or items cursor.")
+                raise MusifyTypeError("Expected a collection or page cursor.")
 
         # noinspection PyArgumentList
         items, cursor = await self._get_all_items(cursor=cursor, path=self._extend_path, kind=self._extend_type)

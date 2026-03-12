@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify.spotify.collection import SpotifyItemsCursor
+from musify.spotify.collection import SpotifyPageCursor
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
@@ -18,8 +18,8 @@ class TestSpotifyArtistCollection(SpotifyResourceTester):
             name=faker.name(),
             uri=generator.generate_uri("artist", artist_id),
             total=faker.random_int(1, 50),
-            cursor=SpotifyItemsCursor(
-                current=URL(generator.generate_href(kind, artist_id)).joinpath("albums"),
+            cursor=SpotifyPageCursor(
+                url=URL(generator.generate_href(kind, artist_id)).joinpath("albums"),
                 limit=20,
                 offset=0,
             )
