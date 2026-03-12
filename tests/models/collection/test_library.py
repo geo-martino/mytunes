@@ -15,7 +15,7 @@ from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
-from tests.models.api.utils import MockRemoteAPI, MockRemoteAuthoriser
+from tests.models.api.utils import MockRemoteAPI
 from tests.models.testers import BaseResourceTester, BaseModelTester
 from tests.utils import SimpleURI
 
@@ -35,7 +35,7 @@ class TestLibrary(BaseResourceTester):
 
     def test_items_count(self, tracks: list[Track], playlists: list[Playlist]):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
-        assert library.items_count == len(tracks)
+        assert library.count == len(tracks)
 
 
 class MockRemoteLibrary(RemoteLibrary):

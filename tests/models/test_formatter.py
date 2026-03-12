@@ -240,10 +240,10 @@ class TestCollectionFormatter(BaseModelTester):
             mock_format.assert_called_once()
 
             kwargs = mock_format.call_args.kwargs
-            assert list(mock_format.call_args.args[0]) == list(collection.items_iter)
+            assert list(mock_format.call_args.args[0]) == list(collection.iter_items)
 
             # different order expected
-            assert kwargs["indices"] == [track.track for track in collection.items_iter]
+            assert kwargs["indices"] == [track.track for track in collection.iter_items]
             assert kwargs["indices"] != [track.track for track in tracks]
 
     def test_format_generates_positions(self, model: CollectionFormatter, artists: list[Artist], faker: Faker):
@@ -255,5 +255,5 @@ class TestCollectionFormatter(BaseModelTester):
             mock_format.assert_called_once()
 
             kwargs = mock_format.call_args.kwargs
-            assert list(mock_format.call_args.args[0]) == list(collection.items_iter)
+            assert list(mock_format.call_args.args[0]) == list(collection.iter_items)
             assert kwargs["indices"] == expected

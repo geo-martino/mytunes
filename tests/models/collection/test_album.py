@@ -53,7 +53,7 @@ class TestAlbumCollection(UniqueKeyTester):
             track.album = name
 
         model = AlbumCollection(name=name, tracks=tracks)
-        assert model.items_count == len(tracks)
+        assert model.count == len(tracks)
 
 
 class TestRemoteAlbumCollection(RemoteCollectionTester):

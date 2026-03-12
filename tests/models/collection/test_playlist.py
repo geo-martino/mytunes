@@ -38,7 +38,7 @@ class TestHasPlaylists(BaseModelTester):
 
     def test_items_count(self, playlists: list[Playlist]):
         model = HasPlaylists(playlists=playlists)
-        assert model.items_count == len(playlists)
+        assert model.count == len(playlists)
 
 
 class TestHasMutablePlaylists(BaseModelTester):

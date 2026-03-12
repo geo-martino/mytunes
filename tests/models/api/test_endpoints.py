@@ -1,5 +1,5 @@
 import math
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Sequence
 from copy import deepcopy
 from typing import Any, final
 from unittest.mock import patch, Mock, AsyncMock, PropertyMock
@@ -11,13 +11,13 @@ from pydantic import AliasPath
 from yarl import URL
 
 from musify.exception import MusifyTypeError
-from musify.models.properties.uri import URI
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import ItemsCursor, RemoteCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.uri import URI
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockRemoteResource, MockRemoteCollection
 from tests.utils import SimpleURI
@@ -103,23 +103,26 @@ class TestEndpoints(EndpointsTester):
 
     @pytest.fixture
     def cursors(self, cursor_initial: ItemsCursor, uri: URI, faker: Faker) -> list[ItemsCursor]:
-        cursor_initial.next = cursor_initial.current.update_query(offset=0)
+        cursor_initial.next = cursor_initial.current.update_query(offset=cursor_initial.limit)
+        cursor_initial.total = faker.random_int(1, 10) + cursor_initial.limit * faker.random_int(3, 10)
 
         cursors = []
-        cursor_current = deepcopy(cursor_initial)
-        for _ in range(faker.random_int(2, 10)):
-            cursor_current.offset += cursor_current.limit
-            offset_next = cursor_current.offset + cursor_current.limit
-            cursor_current.next = cursor_current.current.update_query(offset=offset_next)
+        cursor_next = deepcopy(cursor_initial)
+        while cursor_next.offset + cursor_next.limit < cursor_initial.total:
+            cursor_next.offset += cursor_next.limit
+            offset_next = cursor_next.offset + cursor_next.limit
+            cursor_next.next = cursor_next.current.update_query(offset=offset_next)
 
-            cursors.append(cursor_current)
-            cursor_current = deepcopy(cursor_current)
+            cursors.append(cursor_next)
+            cursor_next = deepcopy(cursor_next)
 
         cursors[-1].next = None  # set last cursor's next to None to end the pagination
 
         assert len(set(cursor.offset for cursor in cursors)) == len(cursors)
         assert len(set(cursor.next for cursor in cursors)) == len(cursors)
         assert len(set(cursor.current for cursor in cursors)) == len(cursors)
+        assert cursors[-1].offset + cursors[-1].limit > cursor_initial.total
+        assert cursors[-2].offset + cursors[-2].limit <= cursor_initial.total
 
         return cursors
 
@@ -144,7 +147,31 @@ class TestEndpoints(EndpointsTester):
         assert cursor.next == cursor.current
         assert cursor.previous is None
 
-    async def test_get_all_items_from_cursor(
+    async def test_get_all_items_picks_pagination(self, model: Endpoints, cursor_initial: ItemsCursor, faker: Faker):
+        cursor_initial.total = None
+
+        with (
+            patch.object(model.__class__, "_get_all_items_by_pagination") as mock_pagination,
+            patch.object(model.__class__, "_get_all_items_by_generation") as mock_generation,
+        ):
+            await model._get_all_items(cursor_initial, path="items")
+            mock_pagination.assert_called_once()
+            mock_generation.assert_not_called()
+
+    async def test_get_all_items_picks_generation(self, model: Endpoints, cursor_initial: ItemsCursor, faker: Faker):
+        cursor_initial.offset = faker.random_int(1, 100)
+        cursor_initial.limit = faker.random_int(1, 100)
+        cursor_initial.total = faker.random_int(1, 100)
+
+        with (
+            patch.object(model.__class__, "_get_all_items_by_pagination") as mock_pagination,
+            patch.object(model.__class__, "_get_all_items_by_generation") as mock_generation,
+        ):
+            await model._get_all_items(cursor_initial, path="items")
+            mock_pagination.assert_not_called()
+            mock_generation.assert_called_once()
+
+    async def test_get_all_items_by_pagination(
             self,
             model: Endpoints,
             uri: URI,
@@ -153,25 +180,84 @@ class TestEndpoints(EndpointsTester):
             mock_get_next_cursor: Mock,
             faker: Faker,
     ):
-        expected = [{"name": faker.word()} for _ in range(faker.random_int(1, 10))]
+        total = cursor_initial.total
+        available_items = [{"name": faker.word()} for _ in range(total)]
+        expected_items = available_items[:total - cursors[0].offset]
+        available_items = expected_items.copy()
+        expected_urls = [cursor.current for cursor in cursors]
+
+        def _get_items_from_response(*_, **__) -> Sequence[dict]:
+            return [available_items.pop() for _ in range(cursor_initial.limit) if available_items]
 
         def _return_response[T](item: T, *_, **__) -> T:
             return item
 
         with (
             patch.object(
-                model.__class__, "_get_items_from_response", return_value=expected
+                model.__class__, "_get_items_from_response", side_effect=_get_items_from_response
             ) as mock_get_items_from_response,
             patch.object(model.__class__, "create_model", side_effect=_return_response) as mock_create_model,
         ):
-            items, cursor = await model._get_all_items_from_cursor(cursor_initial, path="items")
-            assert len(list(items)) == len(expected) * len(cursors)
+            items, cursor = await model._get_all_items_by_pagination(cursor_initial, path="items")
+            assert len(items) == len(expected_items)
+            assert cursor == cursors[-1]
 
             assert mock_get_items_from_response.call_count == len(cursors)
-            assert mock_create_model.call_count == len(expected) * len(cursors)
+            assert mock_create_model.call_count == len(expected_items)
 
             urls = [call.args[0] for call in mock_get_next_cursor.call_args_list]
-            assert urls == [cursor_initial.next] + [cursor.next for cursor in cursors if cursor.next is not None]
+            assert urls == expected_urls
+
+    async def test_get_all_items_by_generation(
+            self,
+            model: Endpoints,
+            uri: URI,
+            cursor_initial: ItemsCursor,
+            cursors: list[ItemsCursor],
+            faker: Faker,
+    ):
+        total = cursor_initial.total
+        available_items = [{"name": faker.word()} for _ in range(total)]
+        expected_items = available_items[:total - cursors[0].offset]
+        expected_urls = [cursor.current for cursor in cursors]
+
+        def _get_response(url: URL, *_, **__) -> dict:
+            limit = int(url.query["limit"])
+            offset = int(url.query["offset"])
+            next_offset = offset + limit
+
+            response_items = available_items[offset:next_offset]
+            response_cursor = next(c for c in cursors if c.offset == offset)
+            return {"cursor": response_cursor, "items": response_items}
+
+        def _get_cursor_from_response(response: dict[str, Any], *_, **__) -> ItemsCursor:
+            return response["cursor"]
+
+        def _get_items_from_response(response: dict[str, Any], *_, **__) -> list[dict]:
+            return response["items"]
+
+        def _return_item[T](item: T, *_, **__) -> T:
+            return item
+
+        with (
+            patch.object(cursor_initial.__class__, "iter_next", return_value=cursors, new_callable=PropertyMock),
+            patch.object(RequestHandler, "get", side_effect=_get_response, new_callable=AsyncMock) as mock_get,
+            patch.object(
+                model.__class__, "_get_items_from_response", side_effect=_get_items_from_response
+            ) as mock_get_items_from_response,
+            patch.object(model.__class__, "_get_cursor_from_response", side_effect=_get_cursor_from_response),
+            patch.object(model.__class__, "create_model", side_effect=_return_item) as mock_create_model,
+        ):
+            items, cursor = await model._get_all_items_by_generation(cursor_initial, path="items")
+            assert len(items) == len(expected_items)
+            assert cursor == cursors[-1]
+
+            assert mock_get_items_from_response.call_count == len(cursors)
+            assert mock_create_model.call_count == len(expected_items)
+
+            urls = [call.args[0] for call in mock_get.call_args_list]
+            assert urls != expected_urls  # async so order is not guaranteed
+            assert sorted(urls) == sorted(expected_urls)
 
     @staticmethod
     def assert_get_items_from_response(
@@ -330,7 +416,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
         expected = [1, 2, 3]
 
         with patch.object(
-                model.__class__, "_get_all_items_from_cursor", return_value=(expected, cursor), new_callable=AsyncMock
+                model.__class__, "_get_all_items_by_pagination", return_value=(expected, cursor), new_callable=AsyncMock
         ) as mock_get_all_items:
             result = await model.get_all(cursor)
             assert result == expected
@@ -351,7 +437,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
             patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock),
             patch.object(
                 model.__class__,
-                "_get_all_items_from_cursor",
+                "_get_all_items_by_pagination",
                 return_value=(expected_get, expected_cursor),
                 new_callable=AsyncMock
             ) as mock_get_all_items
@@ -495,7 +581,9 @@ class TestReadSavedEndpoints(EndpointsTester):
             patch.object(
                 model.__class__, "_create_saved_items_cursor", return_value=ItemsCursor(current=uri.api_url)
             ) as mock_create_saved_items_cursor,
-            patch.object(model.__class__, "_get_all_items_from_cursor", return_value=([1], None)) as mock_get_all_items,
+            patch.object(
+                model.__class__, "_get_all_items_by_pagination", return_value=([1], None)
+            ) as mock_get_all_items,
         ):
             await model.get_all(limit=limit, offset=offset)
 
@@ -513,7 +601,7 @@ class TestReadSavedEndpoints(EndpointsTester):
             patch.object(
                 model.__class__, "_create_saved_items_cursor", return_value=ItemsCursor(current=uri.api_url)
             ) as mock_create_model_cursor,
-            patch.object(model.__class__, "_get_all_items_from_cursor", return_value=([1], None)),
+            patch.object(model.__class__, "_get_all_items_by_pagination", return_value=([1], None)),
         ):
             await model.get_all()
             mock_create_model_cursor.assert_called_once_with(

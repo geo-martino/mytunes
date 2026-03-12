@@ -20,7 +20,6 @@ class TestDecibels(BaseModelTester):
         assert re.match(r"-\d{1,2}\.\d{0,3}", str(model))
 
 
-
 class LocalAudioFile(IsLocalFile, IsAudioFile):
     pass
 

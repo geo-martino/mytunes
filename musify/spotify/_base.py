@@ -9,5 +9,6 @@ class SpotifyModel(RemoteModel):
     source: ClassVar[str] = "spotify"
 
 
+# noinspection PyAbstractClass
 class SpotifyResource[UT: _SpotifyURIBase](RemoteResource[UT], SpotifyModel):
     pass

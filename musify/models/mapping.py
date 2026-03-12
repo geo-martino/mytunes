@@ -106,7 +106,7 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
         """Return a shallow copy of this mapping"""
         return self.__class__(self._items.copy())
 
-    def _update(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
+    def _update(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True) -> None:
         """
         Merge this mapping with another mapping or iterable of items.
         This allows for privately updating the mapping with a new set of items,
@@ -118,16 +118,16 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
             # noinspection PyTypeChecker
             __m = dict((key, item) for item in __m for key in item.unique_keys)
 
-        self._items.update(__m)
+        self._items.update(dict(__m))
 
-    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
+    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True) -> None:
         """
         Replace all items in this mapping with another mapping or iterable of items.
         This allows for privately replacing the mapping with a new set of items,
         without exposing the full replace interface to users.
         """
         self._items.clear()
-        self._update(__m, extract_keys=extract_keys, **kwargs)
+        self._update(__m, extract_keys=extract_keys)
 
 
 class MutableUniqueMapping[TK, TV: BaseResource](UniqueMapping[TK, TV], MutableMapping[TK | TV, TV]):
@@ -150,10 +150,10 @@ class MutableUniqueMapping[TK, TV: BaseResource](UniqueMapping[TK, TV], MutableM
         for key in __item.unique_keys:
             self._items[key] = __item
 
-    @validate_call
+    # @validate_call  # TODO: always defaults to validating as Iterable which causes failures
     def update(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
         """Merge this mapping with another mapping or iterable of items"""
-        self._update(__m, extract_keys=extract_keys, **kwargs)
+        self._update(__m, extract_keys=extract_keys)
 
     @validate_call
     def remove(self, __item: TV) -> None:
@@ -163,7 +163,7 @@ class MutableUniqueMapping[TK, TV: BaseResource](UniqueMapping[TK, TV], MutableM
             if key in self._items:
                 del self._items[key]
 
-    @validate_call
-    def replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
+    # @validate_call  # TODO: always defaults to validating as Iterable which causes failures
+    def replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True) -> None:
         """Replace all items in this mapping with another mapping or iterable of items"""
-        self._replace(__m, extract_keys=extract_keys, **kwargs)
+        self._replace(__m, extract_keys=extract_keys)

@@ -34,10 +34,13 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             case str() as path:
                 return path.format(type=kind.type)
             case AliasPath() as path:
+                # noinspection PyTypeChecker
                 return AliasPath(*(str(part).format(type=kind.type) for part in path.path))
 
     @validate_call
-    async def query(self, query: str, types: set[Type[RT]], limit: PositiveInt | None = None, **kwargs) -> dict[str, list[RT]]:
+    async def query(
+            self, query: str, types: set[Type[RT]], limit: PositiveInt | None = None, **kwargs
+    ) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
         if limit is None:
             limit = self._query_limit

@@ -51,7 +51,7 @@ class TestGenreCollection(UniqueKeyTester):
             track.genre = name
 
         model = GenreCollection(name=name, tracks=tracks)
-        assert model.items_count == len(tracks)
+        assert model.count == len(tracks)
 
 
 class TestRemoteGenreCollection(RemoteCollectionTester):

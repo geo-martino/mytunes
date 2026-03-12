@@ -1,33 +1,31 @@
 import itertools
 import textwrap
 from abc import abstractmethod
-from collections.abc import Iterator, Callable, Mapping
-from typing import ClassVar, Self, Any
+from collections.abc import Iterator
+from typing import ClassVar, Self
 
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import Field, PrivateAttr
 from tabulate import tabulate
 from termcolor import colored
 
 from musify.logger import STAT
-from musify.models.remote import RemoteModel
+from musify.models.api import RemoteAPI, HasSavedEndpoints, ReadSavedEndpoints, ReadCollectionEndpoints
+from musify.models.api.album import HasAlbumEndpoints
+from musify.models.api.artist import HasArtistEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints
+from musify.models.api.track import HasTrackEndpoints
+from musify.models.api.user import HasUserEndpoints
 from musify.models.collection.album import RemoteAlbumCollection
 from musify.models.collection.artist import RemoteArtistCollection
-
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, RemotePlaylist
 from musify.models.item.album import RemoteAlbum, HasAlbums
 from musify.models.item.artist import RemoteArtist, HasArtists
 from musify.models.item.genre import RemoteGenre, HasGenres
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.properties.logger import HasLogger
+from musify.models.remote import RemoteModel
 from musify.models.user import RemoteUser
 from musify.processors_new.filters import ValuesFilter
-from musify.models.api import RemoteAPI, HasSavedEndpoints, ReadSavedEndpoints, ReadCollectionEndpoints
-from musify.models.api.album import HasAlbumEndpoints
-from musify.models.api.artist import HasArtistEndpoints
-from musify.models.api.exception import APIError
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints
-from musify.models.api.track import HasTrackEndpoints
-from musify.models.api.user import HasUserEndpoints, UserEndpoints
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):

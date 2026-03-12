@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from typing import ClassVar, final, Literal, Type
 
 from aiorequestful.types import JSON
@@ -11,7 +10,6 @@ from musify.models.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEnd
 from musify.models.collection import ItemsCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
-from musify.spotify.collection import SpotifyItemsCursor
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI

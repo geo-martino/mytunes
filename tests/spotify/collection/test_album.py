@@ -33,7 +33,6 @@ class TestSpotifyAlbumCollection(SpotifyResourceTester):
         generator.add_album_tracks(payload)
 
         model = SpotifyAlbumCollection.model_validate(payload)
-        model._items
 
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)

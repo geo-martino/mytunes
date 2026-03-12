@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self
@@ -8,7 +7,6 @@ from typing import ClassVar, Annotated, TYPE_CHECKING, Self
 from pydantic import Field, validate_call, BeforeValidator
 
 from musify._types import StrippedString
-from musify.models.remote import RemoteResource
 from musify.models.collection._base import CollectionModel, ItemsCursor, RemoteCollection
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
@@ -16,6 +14,7 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI
+from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 
 if TYPE_CHECKING:

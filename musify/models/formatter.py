@@ -216,21 +216,25 @@ class ModelFormatter[RT: BaseResource](BaseModel):
 
 class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
     def format(self, collection: CT, indices: bool | Sequence = False) -> str:
+        # noinspection PyTypeChecker
         match indices:
-            case True if all(isinstance(item, HasTrackPosition) for item in collection.items_iter):
-                total = collection.items_count
+            case True if all(isinstance(item, HasTrackPosition) for item in collection.iter_items):
+                total = collection.count
+                # noinspection PyTypeChecker
                 indices = [
                     Position(
                         number=item.track.number if item.track and item.track.number else i,
                         total=total,
                         zero_fill=True
                     )
-                    for i, item in enumerate(collection.items_iter, 1)
+                    for i, item in enumerate(collection.iter_items, 1)
                 ]
             case True:
-                total = collection.items_count
+                # noinspection PyTypeChecker
+                total: int = collection.count
                 indices = [Position(number=i, total=total, zero_fill=True) for i in range(1, total + 1)]
             case _:
                 indices = False
 
-        return super().format(collection.items_iter, indices=indices)
+        # noinspection PyTypeChecker
+        return super().format(collection.iter_items, indices=indices)

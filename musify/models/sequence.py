@@ -161,7 +161,7 @@ class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
         self._items.extend(items)
         self._items_mapped.update(items)
 
-    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True, **kwargs) -> None:
+    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], allow_duplicates: bool = True) -> None:
         """
         Replace all items in this sequence.
         This allows for privately replacing the sequence with a new set of items,
@@ -169,7 +169,7 @@ class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
         """
         self._items.clear()
         self._items_mapped.clear()
-        self._extend(__m)
+        self._extend(__m, allow_duplicates=allow_duplicates)
 
 
 class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], MutableSequence[TV]):

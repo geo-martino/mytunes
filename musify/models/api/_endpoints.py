@@ -1,6 +1,6 @@
 import contextlib
 import itertools
-from collections.abc import Iterable, Sequence, Mapping, Iterator
+from collections.abc import Iterable, Sequence, Mapping
 from copy import copy
 from itertools import batched
 from typing import Any, ClassVar, Self, Type, Union
@@ -15,12 +15,12 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.models._base import AttributeModelMetaclass
-from musify.models.remote import RemoteModel, RemoteResource
-from musify.models.properties.logger import HasLogger
-from musify.models.properties.uri import URI
-from musify.models.url import HttpURL
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import ItemsCursor, RemoteCollection
+from musify.models.properties.logger import HasLogger
+from musify.models.properties.uri import URI
+from musify.models.remote import RemoteModel, RemoteResource
+from musify.models.url import HttpURL
 
 
 class EndpointsMetaclass(AttributeModelMetaclass):
@@ -56,6 +56,10 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     type: ClassVar[str | Type[RemoteResource]] = Field(
         description="The type of resources the endpoints of this API model handle.",
     )
+    _bar_threshold: ClassVar[int] = PrivateAttr(
+        # description="The minimum number of pages required to show a progress bar when paginating through items.",
+        default=5,
+    )
 
     _handler: InstanceOf[RequestHandler[Authoriser, JSON]] = PrivateAttr(
         # description="The handler for the API endpoint.",
@@ -76,6 +80,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return self
 
     @staticmethod
+    def _batch_items(uris: Iterable, limit: int) -> batched[str]:
+        """Batch the given URIs into sublists of the given size."""
+        return itertools.batched(map(str, uris), limit)
+
+    @classmethod
+    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
+        """Generate a URL for the API endpoint for batched requests."""
+        return base_url.update_query(ids=",".join(map(str, values)))
+
+    @staticmethod
     @validate_call
     def _create_saved_items_cursor(
             url: HttpURL, limit: PositiveInt | None = None, offset: NonNegativeInt | None = None
@@ -92,24 +106,95 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         cursor.next = cursor.current
         return cursor
 
+    # noinspection PyArgumentList
     @validate_call
-    async def _get_all_items_from_cursor(
+    async def _get_all_items(
             self,
             cursor: ItemsCursor,
             path: str | AliasPath,
             kind: str | Type = None,
-    ) -> tuple[Iterator[RT], ItemsCursor]:
-        items: Iterator[RT] = iter(())
-        while cursor.next is not None:
+    ) -> tuple[tuple[RT, ...], ItemsCursor]:
+        """Get all items from a request with paginated responses using the fastest available method."""
+        if cursor.iterable:
+            return await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
+        return await self._get_all_items_by_pagination(cursor=cursor, path=path, kind=kind)
+
+    @validate_call
+    async def _get_all_items_by_pagination(
+            self,
+            cursor: ItemsCursor,
+            path: str | AliasPath,
+            kind: str | Type = None,
+    ) -> tuple[tuple[RT, ...], ItemsCursor]:
+        """
+        Get all items by paginating through the cursor, which must have a next URL for the first page of items.
+
+        This is usually the slower approach, but is more widely supported as it does not require the API
+        to provide the total number of items, offset and limit in the cursor.
+        """
+        items: list[RT] = []
+        while cursor.next:
             response = await self._handler.get(cursor.next)
 
             response_items = self._get_items_from_response(response=response, path=path)
-            response_models = (self.__class__.create_model(it, kind=kind) for it in response_items)
-            items = itertools.chain(items, response_models)
+            items.extend(self.__class__.create_model(it, kind=kind) for it in response_items)
 
             cursor = self._get_cursor_from_response(response=response, path=path, cursor=cursor)
 
-        return items, cursor
+        return tuple(items), cursor
+
+    @validate_call
+    async def _get_all_items_by_generation(
+            self,
+            cursor: ItemsCursor,
+            path: str | AliasPath,
+            kind: str | Type[RT] = None,
+    ) -> tuple[tuple[RT, ...], ItemsCursor]:
+        """
+        Get all items by generating the next cursors for the next pages of items and sending requests
+        for them asynchronously.
+
+        This is usually the faster approach, but is only possible when the API provides the total number of items,
+        offset and limit in the cursor.
+        """
+        def _get_type_value(t: Any) -> str:
+            match t:
+                case str():
+                    return t
+                case RemoteResource():
+                    return t.type
+                case _:
+                    return "item"
+
+        collection_type = _get_type_value(self.type)
+        item_type = _get_type_value(kind)
+        cursors = list(cursor.iter_next)
+        print(len(cursors))
+
+        async def _request(crsr: ItemsCursor) -> JSON:
+            print("GO", crsr)
+            log_message = f"{crsr.offset:>6}/{crsr.total:<6} {item_type.rstrip("s")}s"
+            return await self._handler.get(crsr.current, log_message=log_message)
+
+        responses: list[JSON] = await self.logger.get_asynchronous_iterator(
+            map(_request, cursors),
+            initial=0,
+            total=len(cursors),
+            desc=f"Extending {collection_type}",
+            unit="pages",
+            disable=len(cursors) < self._bar_threshold,
+        )
+
+        sorted(responses, key=lambda r: self._get_cursor_from_response(response=r, path=path, cursor=cursor).offset)
+
+        items: list[RT] = [
+            self.__class__.create_model(item, kind=kind)
+            for response in responses
+            for item in self._get_items_from_response(response=response, path=path)
+        ]
+        cursor = self._get_cursor_from_response(response=responses[-1], path=path, cursor=cursor)
+
+        return tuple(items), cursor
 
     @classmethod
     def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
@@ -141,7 +226,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return response
 
     @classmethod
-    def _get_cursor_from_response[T: ItemsCursor](cls, response: JSON, path: AliasPath, cursor: T) -> T:
+    def _get_cursor_from_response[T: ItemsCursor](cls, response: JSON, path: AliasPath, cursor: T | Type[T]) -> T:
         match path:
             case str():
                 return cursor.model_validate(response)
@@ -152,16 +237,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                     response = response[key]
 
         raise MusifyValueError("Could not find cursor in response at the given path.")
-
-    @staticmethod
-    def _batch_items(uris: Iterable, limit: int) -> batched[str]:
-        """Batch the given URIs into sublists of the given size."""
-        return itertools.batched(map(str, uris), limit)
-
-    @classmethod
-    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
-        """Generate a URL for the API endpoint for batched requests."""
-        return base_url.update_query(ids=",".join(map(str, values)))
 
 
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
@@ -239,17 +314,15 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
             case RemoteCollection() as collection:
                 cursor = collection.cursor
                 if not collection.has_all_items and cursor.next is None:
-                    cursor.offset = collection.items_count  # sets the offset on the current URL
+                    cursor.offset = collection.count  # sets the offset on the current URL
                     cursor.next = cursor.current
             case _:
                 raise MusifyTypeError("Expected a collection or items cursor.")
 
         # noinspection PyArgumentList
-        items, cursor = await self._get_all_items_from_cursor(
-            cursor=cursor, path=self._extend_path, kind=self._extend_type
-        )
+        items, cursor = await self._get_all_items(cursor=cursor, path=self._extend_path, kind=self._extend_type)
         if isinstance(collection, RemoteCollection):
-            items = itertools.chain.from_iterable((collection.items_iter, items))
+            items = itertools.chain.from_iterable((collection.iter_items, items))
             collection.cursor = cursor
 
         return list(items)
@@ -344,7 +417,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         cursor = self._create_saved_items_cursor(self._saved_read_url, limit=limit, offset=offset)
         # noinspection PyArgumentList
-        items, *_ = await self._get_all_items_from_cursor(cursor=cursor, path=self._saved_path, kind=self.type)
+        items, *_ = await self._get_all_items(cursor=cursor, path=self._saved_path, kind=self.type)
         return list(items)
 
 

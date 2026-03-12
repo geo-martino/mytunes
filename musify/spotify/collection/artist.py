@@ -43,7 +43,7 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
     @classmethod
     def _reformat_albums_from_response(cls, data: dict) -> dict:
         # the validation alias and name for these are the same
-        # we need to reformat the data to fit the model better if only the cursor is present in the response
-        if "albums" in data and isinstance(data["albums"], dict):
+        # we need to reformat the data to fit the model better if the cursor is present in the response without items
+        if "albums" in data and isinstance(data["albums"], dict) and "items" not in data["albums"]:
             data["cursor"] = data.pop("albums")
         return data

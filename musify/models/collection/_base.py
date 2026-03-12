@@ -1,9 +1,12 @@
 import contextlib
 from abc import abstractmethod
-from typing import Collection, Iterable, Any, Self, TYPE_CHECKING
+from copy import deepcopy
+from typing import Collection, Iterable, Any, Self, TYPE_CHECKING, Generator
 
 from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter
+from yarl import URL
 
+from musify.exception import MusifyValueError
 from musify.models import BaseResource, BaseModel, abstract_property
 from musify.models.remote import RemoteModel, RemoteResource
 from musify.models.url import HttpURL
@@ -21,13 +24,13 @@ class CollectionModel[IT: BaseResource](BaseModel):
         raise NotImplementedError
 
     @property
-    def items_count(self) -> int:
-        """The number of items currently loaded in this collection."""
+    def count(self) -> int:
+        """The number of items currently stored in this collection."""
         return len(self._items)
 
     @property
-    def items_iter(self) -> Iterable[IT]:
-        """The number of items currently loaded in this collection."""
+    def iter_items(self) -> Iterable[IT]:
+        """Iterator for the items currently stored in this collection."""
         return iter(self._items)
 
 
@@ -50,6 +53,10 @@ class ItemsCursor(RemoteModel):
     )
     offset: NonNegativeInt | None = Field(
         description="The starting offset of the current page of items.",
+        default=None,
+    )
+    total: NonNegativeInt | None = Field(
+        description="The total number of items in the collection.",
         default=None,
     )
 
@@ -88,6 +95,48 @@ class ItemsCursor(RemoteModel):
 
         return self
 
+    @property
+    def _current_from_next(self) -> URL:
+        """Generate the next URL for the current page of items, using the current limit."""
+        if self.offset is None or self.next is None:
+            raise MusifyValueError("Cannot generate URL without offset and next URL.")
+        return self.next.update_query(limit=self.limit, offset=self.offset)
+
+    @property
+    def _next_from_current(self) -> URL | None:
+        """Generate the current URL for the next page of items, using the current limit."""
+        if self.offset is None or self.limit is None:
+            raise MusifyValueError("Cannot generate URL without offset and limit.")
+        return self.current.update_query(limit=self.limit, offset=self.offset + self.limit)
+
+    @property
+    def iter_next(self) -> Generator[Self, None, None]:
+        """Iteratively generate the next cursors for the next pages of items, if any."""
+        if not self.iterable:
+            yield from ()
+            return
+
+        if self.offset >= self.total:
+            yield from ()
+            return
+
+        cursor = deepcopy(self)
+        if cursor.next is None:
+            cursor.next = cursor._next_from_current
+
+        while cursor.offset + cursor.limit < self.total:
+            cursor = deepcopy(cursor)
+            cursor.offset += self.limit
+            cursor.current = cursor.next
+            cursor.next = cursor._next_from_current if cursor.offset + cursor.limit <= self.total else None
+
+            yield cursor
+
+    @property
+    def iterable(self) -> bool:
+        """Whether this cursor can be iterated to produce all next cursors."""
+        return self.limit is not None and self.offset is not None and self.total is not None
+
     def reset(self) -> None:
         """Reset the current cursor to the first page of items."""
         self.previous = None
@@ -111,9 +160,10 @@ class RemoteCollection[IT: RemoteResource, CT: ItemsCursor](RemoteModel, Collect
     @property
     def has_all_items(self) -> bool | None:
         """Whether this collection has all items loaded."""
+        print(self.total, self.count)
         if self.total is None:
             return None
-        return self.items_count == self.total
+        return self.count == self.total
 
     @abstractmethod
     def extend(self, api: HasEndpoints) -> None:

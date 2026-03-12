@@ -47,6 +47,7 @@ class Filter[T](Processor):
         return list(filter(_filter, items))
 
 
+# noinspection PyAbstractClass
 class CompositeFilter[T](Filter[T], Collection[Filter[T]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 

@@ -1,9 +1,8 @@
 from typing import ClassVar, Self, TYPE_CHECKING
 
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
 
 from musify._types import StrippedString
-from musify.models.remote import RemoteResource
 from musify.models._base import AttributeResource
 from musify.models.collection import CollectionModel
 from musify.models.item.album import HasAlbum, Album, RemoteAlbum
@@ -17,6 +16,7 @@ from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition, HasDiscPosition
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI, HasURI
+from musify.models.remote import RemoteResource
 from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 
 if TYPE_CHECKING:

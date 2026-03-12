@@ -1,16 +1,16 @@
 from datetime import datetime
-from typing import final, ClassVar, Annotated
+from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self
 
 from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt
 from pydantic_core.core_schema import FieldValidationInfo
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel
+from musify.models.item.track import RemoteTrack
 from musify.models.properties.audio import Decibels
 from musify.models.properties.length import Length, HasLength
 from musify.models.properties.order import Position
 from musify.models.url import HttpURL
-from musify.models.item.track import RemoteTrack
 from musify.spotify._base import SpotifyResource, SpotifyModel
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
@@ -19,6 +19,11 @@ from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.music import HasSpotifyKeySignature
 from musify.spotify.properties.popularity import HasPopularity
 from musify.spotify.properties.uri import SpotifyResourceURI
+
+if TYPE_CHECKING:
+    from musify.models.api.track import HasTrackEndpoints
+    # noinspection PyProtectedMember
+    from musify.spotify.api._track import SpotifyTrackEndpoints
 
 
 @final
@@ -66,7 +71,9 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
     type: ClassVar[str] = "audio_features"
 
     analysis_url: HttpURL = Field(
-        description="A URL to access the full audio analysis of this track. An access token is required to access this data.",
+        description=(
+            "A URL to access the full audio analysis of this track. An access token is required to access this data."
+        ),
     )
 
     length: Length = Field(
@@ -153,7 +160,7 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
 
     @field_validator("length", mode="before")
     @classmethod
-    def _convert_duration[T](cls, length: T | int, info: FieldValidationInfo) -> float:
+    def _convert_duration[T](cls, length: T | int) -> float:
         if not isinstance(length, int):
             return length
 
@@ -169,6 +176,9 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
         if not uri.type == expected_type:
             raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {expected_type!r}")
         return uri
+
+    async def reload(self, api: HasTrackEndpoints[SpotifyTrackEndpoints]) -> Self:
+        return await api.tracks.get_audio_features(self.uri)
 
 
 class _SpotifyAudioAnalysisMeta(BaseModel):
@@ -423,7 +433,10 @@ class _SpotifyAudioAnalysisSegment(_SpotifyAudioAnalysisInterval):
     )
 
 
+@final
 class SpotifyAudioAnalysis(SpotifyModel):
+    __final__ = True
+
     meta: _SpotifyAudioAnalysisMeta = Field(
         description="Metadata about the audio analysis of this track.",
     )

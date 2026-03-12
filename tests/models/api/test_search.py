@@ -14,6 +14,7 @@ from tests.utils import SimpleURI
 
 
 class TestSearchEndpoints(EndpointsTester):
+    # noinspection PyAbstractClass
     class MockSearchEndpoints(SearchEndpoints[SimpleURI, MockRemoteResource]):
         _query_url = URL("https://api.example.com/search")
         _query_path = "items"
@@ -40,7 +41,7 @@ class TestSearchEndpoints(EndpointsTester):
         with (
             patch.object(model.__class__, "_format_query_params", return_value=params) as mock_format_query,
             patch.object(RequestHandler, "get", return_value=response, new_callable=AsyncMock) as mock_get,
-            patch.object(model.__class__, "create_model", return_value={"name": faker.name()}) as mock_create_model,
+            patch.object(model.__class__, "create_model", return_value={"name": faker.name()}),
         ):
             result = await model.query(query=query, types=types, limit=limit)
 

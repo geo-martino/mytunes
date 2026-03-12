@@ -1,7 +1,11 @@
+import math
+
 import pytest
 from faker import Faker
 from pydantic import TypeAdapter
+from yarl import URL
 
+from musify.exception import MusifyValueError
 from musify.models.collection import ItemsCursor
 from tests.models.testers import BaseModelTester
 
@@ -58,6 +62,79 @@ class TestItemsCursor(BaseModelTester):
 
         model.offset = starting_offset + 50
         assert model.current.query["offset"] == str(model.offset)
+
+    def test_current_from_next_fails(self, model: ItemsCursor, faker: Faker):
+        model.next = None
+        model.limit = None
+
+        message = "Cannot generate URL without offset and next URL"
+        with pytest.raises(MusifyValueError, match=message):
+            assert model._current_from_next
+
+        model.next = URL(faker.url())
+        model.limit = None
+        with pytest.raises(MusifyValueError, match=message):
+            assert model._current_from_next
+
+        model.next = None
+        model.limit = faker.random_int()
+        with pytest.raises(MusifyValueError, match=message):
+            assert model._current_from_next
+
+    def test_current_from_next(self, model: ItemsCursor, faker: Faker):
+        model.next = URL(faker.url())
+        model.limit = faker.random_int(1, 100)
+        model.offset = faker.random_int(1, 100)
+
+        expected = model.next.update_query(limit=model.limit, offset=model.offset)
+        assert model._current_from_next == expected
+
+    def test_next_from_current_fails(self, model: ItemsCursor, faker: Faker):
+        model.offset = None
+        model.limit = None
+
+        message = "Cannot generate URL without offset and limit"
+        with pytest.raises(MusifyValueError, match=message):
+            assert model._next_from_current
+
+        model.offset = faker.random_int()
+        model.limit = None
+        with pytest.raises(MusifyValueError, match=message):
+            assert model._next_from_current
+
+        model.offset = None
+        model.limit = faker.random_int()
+        with pytest.raises(MusifyValueError, match=message):
+            assert model._next_from_current
+
+    def test_next_from_current(self, model: ItemsCursor, faker: Faker):
+        model.limit = faker.random_int(1, 100)
+        model.offset = faker.random_int()
+
+        expected = model.current.update_query(limit=model.limit, offset=model.offset + model.limit)
+        assert model._next_from_current == expected
+
+    def test_iter_next(self, model: ItemsCursor, faker: Faker):
+        model.limit = faker.random_int(10, 100)
+        model.offset = faker.random_int(100, 1000)
+        model.total = model.offset + faker.random_int(100, 1000)
+
+        pages = math.ceil((model.total - model.offset) / model.limit)
+        expected_urls = [model.current.update_query(offset=model.offset + (model.limit * i)) for i in range(1, pages)]
+
+        result = list(model.iter_next)
+        assert int(result[0].offset) == model.offset + model.limit
+        assert int(result[-1].offset) <= model.total
+
+        for cursor, next_cursor in zip(result, result[1:] + [None]):
+            if next_cursor is not None:
+                assert cursor.next == next_cursor.current
+            else:
+                assert cursor.next is None
+
+        assert [cursor.current for cursor in result] == expected_urls
+        assert [cursor.next for cursor in result] == expected_urls[1:] + [None]
+        assert [cursor.offset for cursor in result] == [model.offset + (model.limit * i) for i in range(1, pages)]
 
     def test_reset(self, model: ItemsCursor, faker: Faker):
         model.limit = faker.random_int(1, 100)
