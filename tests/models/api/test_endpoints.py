@@ -240,8 +240,7 @@ class TestEndpoints(EndpointsTester):
             assert mock_create_model.call_count == len(expected_items)
 
             urls = [call.args[0] for call in mock_get.call_args_list]
-            assert urls != expected_urls  # async so order is not guaranteed
-            assert sorted(urls) == sorted(expected_urls)
+            assert sorted(urls) == sorted(expected_urls)  # async so order is not guaranteed
 
     async def test_get_all_items_by_pagination_switches_to_generation(
             self,
@@ -474,7 +473,8 @@ class TestReadCollectionEndpoints(EndpointsTester):
             assert result == expected_collection + expected_get
 
             mock_get_all_items.assert_called_once_with(cursor=cursor, path=model._extend_path, kind=model._extend_type)
-            assert cursor.offset == collection.count  # sets current cursor to current position when missing items
+            # sets current cursor to current position - limit when missing items
+            assert cursor.offset == max(0, collection.count - cursor.limit)
             assert collection.cursor is not cursor
             assert collection.cursor is expected_cursor
 

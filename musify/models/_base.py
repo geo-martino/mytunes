@@ -106,11 +106,11 @@ class ModelMetaclass(PydanticModelMetaclass):
                 raise MusifyAttributeError(f"{cls.__name__} must have a {name!r} class attribute defined.")
 
     @property
-    def registered_submodels[T: BaseModel](cls: type[T]) -> set[type[T]]:
+    def registered_submodels[T: BaseModel](cls: type[T]) -> list[type[T]]:
         """Get the registered classes for all subclasses of this model."""
         if cls.__final__:
-            return set()
-        return {kls for kls in cls.__model_registry__ if issubclass(kls, cls)}
+            return []
+        return [kls for kls in cls.__model_registry__ if issubclass(kls, cls)]
 
     @property
     def annotation[T: BaseModel](cls: type[T]) -> type[T]:

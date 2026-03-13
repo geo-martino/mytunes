@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated, TYPE_CHECKING, Self
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union, Literal
 
-from pydantic import Field, validate_call, BeforeValidator
+from pydantic import Field, validate_call, BeforeValidator, TypeAdapter
 
 from musify._types import StrippedString
+from musify.exception import MusifyValueError
+from musify.models.api import HasSavedEndpoints
 from musify.models.collection._base import CollectionModel, RemoteCollection
-from musify.models.cursors import PageCursor
+from musify.models.cursors import PageCursor, InitialCursor
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 from musify.models.properties.image import HasImages
@@ -17,9 +19,11 @@ from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI
 from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
+from musify.processors_new import Result
 
 if TYPE_CHECKING:
-    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
+    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints, \
+    PlaylistReadWriteSavedEndpoints
 
 
 class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], HasLength, HasImages):
@@ -40,6 +44,8 @@ class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist
         See :py:meth:`.MutableUniqueSequence.merge` for more information.
         """
         self.tracks.merge(other.tracks, reference=reference.tracks if reference else None)
+
+
 
 
 type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
@@ -128,7 +134,98 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
         await api.playlists.get_all(self.uri)
 
 
+class SyncResultRemotePlaylist(Result):
+    """Stores the results of a sync with a remote playlist."""
+    #: The total number of tracks in the playlist before the sync.
+    start: int
+    #: The number of tracks added to the playlist.
+    added: int
+    #: The number of tracks removed from the playlist.
+    removed: int
+    #: The number of tracks that were in the playlist before and after the sync.
+    unchanged: int
+    #: The difference between the total number tracks in the playlist from before and after the sync.
+    difference: int
+    #: The total number of tracks in the playlist after the sync.
+    final: int
+
+
 class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
     MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT, OT, CT]
 ):
-    pass
+    async def sync(
+            self,
+            api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],
+            kind: Literal["new", "refresh", "sync"] = "new",
+            dry_run: bool = False,
+    ) -> SyncResultRemotePlaylist:
+        """
+        Synchronise the current playlist's items with the remote service.
+
+        Sync options:
+            * 'new': Do not clear any items from the remote playlist and only add any tracks
+                from this playlist object not currently in the remote playlist.
+            * 'refresh': Clear all items from the remote playlist first, then add all items from this playlist object.
+            * 'sync': Clear all items not currently in this object's items list, then add all tracks
+                from this playlist object not currently in the remote playlist.
+
+        :param api: The API to use for synchronisation.
+        :param kind: Sync option for the remote playlist. See description.
+        :param dry_run: Run function, but do not modify the remote playlists at all.
+        :return: The results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
+        """
+        initial = [track.uri for track in self.tracks if track.uri]
+        remote = await self._get_remote_uris(api)
+
+        match kind:
+            case "new":
+                add, remove, unchanged = self._get_sync_items_for_add(initial, remote)
+            case "refresh":
+                add, remove, unchanged = self._get_sync_items_for_refresh(initial, remote)
+            case "sync":
+                add, remove, unchanged = self._get_sync_items_for_sync(initial, remote)
+            case _:
+                raise MusifyValueError(f"Invalid sync type: {kind}")
+
+        if dry_run:
+            removed = len(remove)
+            added = len(add)
+        else:
+            removed = await api.playlists.remove(self.uri.api_url, uris=remove) if remove else 0
+            added = await api.playlists.append(self.uri.api_url, uris=add) if add else 0
+
+        return SyncResultRemotePlaylist(
+            start=len(remote),
+            added=added,
+            removed=removed,
+            unchanged=len(unchanged),
+            difference=added - removed,
+            final=len(remote) + added - removed
+        )
+
+    async def _get_remote_uris(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> list[UT]:
+        # noinspection PyTypeChecker
+        cursor_classes = [kls for kls in InitialCursor.registered_submodels if kls.source == self.source]
+        cursor = TypeAdapter(Union[*cursor_classes]).validate_python(self.uri.api_url)
+        return [track.uri for track in await api.playlists.get_all(cursor)]
+
+    @staticmethod
+    def _get_sync_items_for_add(initial: list[UT], remote: list[UT]) -> tuple[list[UT], list[UT], list[UT]]:
+        add = [uri for uri in initial if uri not in remote]
+        remove = []
+        unchanged = remote
+        return add, remove, unchanged
+
+    @staticmethod
+    def _get_sync_items_for_refresh(initial: list[UT], remote: list[UT]) -> tuple[list[UT], list[UT], list[UT]]:
+        add = initial
+        remove = remote
+        unchanged = []
+        return add, remove, unchanged
+
+    @staticmethod
+    def _get_sync_items_for_sync(initial: list[UT], remote: list[UT]) -> tuple[list[UT], list[UT], list[UT]]:
+        add = [uri for uri in initial if uri not in remote]
+        remove = [uri for uri in remote if uri not in initial]
+        unchanged = [uri for uri in remote if uri in initial]
+        return add, remove, unchanged

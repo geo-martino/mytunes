@@ -8,11 +8,12 @@ from musify.models.api import RemoteAPI, RemoteAuthoriser, ReadSavedEndpoints, H
     HasEndpoints
 from musify.models.api.album import HasAlbumEndpoints, AlbumEndpoints
 from musify.models.api.artist import HasArtistEndpoints, ArtistEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistEndpoints, PlaylistReadSavedEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistEndpoints, PlaylistReadSavedEndpoints, \
+    PlaylistReadWriteEndpoints
 from musify.models.api.track import HasTrackEndpoints, TrackEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection import RemoteCollection
-from musify.models.collection.playlist import RemotePlaylist
+from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.cursors import IndexCursor, UrlCursor
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -50,6 +51,12 @@ class MockIndexCursor(IndexCursor):
 
 @final
 class MockUrlCursor(UrlCursor):
+    __final__ = True
+    source: ClassVar[str] = MockRemoteResource.source
+
+
+@final
+class MockInitialCursor(UrlCursor):
     __final__ = True
     source: ClassVar[str] = MockRemoteResource.source
 
@@ -95,7 +102,7 @@ class MockAlbumEndpoints(
 
 
 class MockPlaylistEndpoints(
-    PlaylistEndpoints[SimpleURI, RemotePlaylist],
+    PlaylistReadWriteEndpoints[SimpleURI, RemoteMutablePlaylist],
     HasSavedEndpoints[PlaylistReadSavedEndpoints[SimpleURI, RemotePlaylist, RemoteUser]],
 ):
     pass
