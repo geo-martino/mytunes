@@ -3,11 +3,11 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.models.collection import PageCursor
 from musify.models.collection.artist import ArtistCollection, RemoteArtistCollection
+from musify.models.cursors import PageCursor
 from musify.models.item.album import Album
-from tests.models.testers import UniqueKeyTester
 from tests.models.collection.testers import RemoteCollectionTester
+from tests.models.testers import UniqueKeyTester
 from tests.utils import SimpleURI
 
 

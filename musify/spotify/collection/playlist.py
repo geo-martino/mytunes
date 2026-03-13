@@ -3,11 +3,12 @@ from typing import final, Any, ClassVar
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
+from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import UniqueSequence, MutableUniqueSequence
-from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.spotify import SpotifyResource
-from musify.spotify.collection._base import SpotifyCollection, SpotifyPageCursor
+from musify.spotify.collection._base import SpotifyCollection
+from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.images import HasSpotifyImages
@@ -32,7 +33,7 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
 
 @final
 class SpotifyPlaylist(
-    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyPageCursor],
+    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyIndexCursor],
     SpotifyResource[SpotifyResourceURI],
     SpotifyCollection[SpotifyPlaylistTrack],
     HasSpotifyImages,
@@ -62,12 +63,15 @@ class SpotifyPlaylist(
         description="The total number of tracks in this playlist.",
         validation_alias=AliasPath("items", "total")
     )
-    cursor: SpotifyPageCursor = Field(
+    # getting current user's saved playlists return a 'starter' cursor of just the URL and total
+    # we therefore need to support an InitialCursor here to support this
+    cursor: SpotifyIndexCursor | SpotifyInitialCursor = Field(
         description=(
             "The cursor for the current page of tracks. "
             "This is used for pagination and should be passed to the next page request to extend the collection."
         ),
         validation_alias="items",
+        union_mode="left_to_right",
     )
 
     @model_validator(mode="before")
@@ -84,7 +88,7 @@ class SpotifyPlaylist(
 @final
 class SpotifyMutablePlaylist(
     SpotifyPlaylist,
-    RemoteMutablePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyPageCursor],
+    RemoteMutablePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyIndexCursor],
 ):
     __final__ = True
 

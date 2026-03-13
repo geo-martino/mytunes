@@ -1,1 +1,1 @@
-from ._base import CollectionModel, PageCursor, RemoteCollection
+from ._base import CollectionModel, RemoteCollection

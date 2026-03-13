@@ -4,11 +4,11 @@ from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
 
 from musify.models import BaseResource
+from musify.models.api.search import SearchEndpoints
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
-from musify.models.api.search import SearchEndpoints
 from musify.spotify import API_URL, SpotifyResource
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.playlist import SpotifyPlaylist

@@ -3,11 +3,11 @@ from typing import ClassVar, TYPE_CHECKING, Self
 from pydantic import Field, field_validator
 
 from musify._types import StrippedString
-from musify.models.remote import RemoteResource
 from musify.models.collection import CollectionModel
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
+from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
     from musify.models.api.genre import HasGenreEndpoints, GenreReadItemEndpoints

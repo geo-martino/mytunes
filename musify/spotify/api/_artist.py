@@ -7,10 +7,11 @@ from yarl import URL
 from musify.models.api import HasSavedEndpoints
 from musify.models.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
     ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints, ArtistEndpoints
-from musify.models.collection import PageCursor
+from musify.models.cursors import PageCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
+from musify.spotify.cursors import SpotifyInitialCursor
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI
 
@@ -24,8 +25,10 @@ class _SpotifyArtistEndpoints(
     @classmethod
     def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
         items = super()._get_items_from_response(response, path=path)
+
         for item in items:
-            item["albums"] = {"href": str(URL(item["href"]).joinpath("albums"))}
+            url = URL(item["href"]).joinpath("albums")
+            item["albums"] = SpotifyInitialCursor(url=url).model_dump()
 
         return items
 

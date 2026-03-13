@@ -3,7 +3,6 @@ from typing import ClassVar, TYPE_CHECKING, Self
 from pydantic import Field, field_validator, computed_field, PositiveInt
 
 from musify._types import StrippedString
-from musify.models.remote import RemoteResource
 from musify.models._base import AttributeResource
 from musify.models.collection import CollectionModel
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
@@ -15,6 +14,7 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import HasURI, URI
+from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
     from musify.models.api.album import HasAlbumEndpoints, AlbumReadItemEndpoints

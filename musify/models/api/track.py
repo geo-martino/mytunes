@@ -2,10 +2,10 @@ from typing import ClassVar, Type
 
 from pydantic import Field
 
-from musify.models.properties.uri import URI
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteSavedEndpoints, HasEndpoints
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.uri import URI
 
 
 class TrackEndpoints[UT: URI, RT: RemoteTrack](Endpoints[UT, RT]):

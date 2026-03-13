@@ -11,8 +11,8 @@ from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Fie
 from typing_inspection.typing_objects import is_typevar
 
 from musify.exception import MusifyValueError
-from musify.models.remote import RemoteModel
 from musify.models.api._endpoints import HasEndpoints
+from musify.models.remote import RemoteModel
 
 
 # noinspection PyAbstractClass

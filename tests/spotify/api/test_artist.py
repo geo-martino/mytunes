@@ -7,7 +7,7 @@ from faker import Faker
 from musify.models.api import ReadCollectionEndpoints
 # noinspection PyProtectedMember
 from musify.spotify.api._artist import SpotifyArtistEndpoints
-from musify.spotify.collection import SpotifyPageCursor
+from musify.spotify.cursors import SpotifyIndexCursor
 from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.models.testers import BaseModelTester
 
@@ -19,7 +19,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
 
     async def test_get_all_adds_params(self, model: SpotifyArtistEndpoints, faker: Faker):
         uri = SpotifyResourceURI.from_id(faker.pystr(22, 22), kind="artist")
-        cursor = SpotifyPageCursor(
+        cursor = SpotifyIndexCursor(
             url=uri.api_url, limit=faker.random_int(0, 20), offset=0, total=faker.random_int(0, 50)
         )
         if faker.boolean():

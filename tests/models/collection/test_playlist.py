@@ -4,9 +4,9 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
-from musify.models.collection import PageCursor
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
+from musify.models.cursors import PageCursor
 from musify.models.user import RemoteUser
 from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.testers import BaseModelTester, UniqueKeyTester

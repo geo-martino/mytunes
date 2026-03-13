@@ -6,13 +6,13 @@ from functools import cached_property, reduce
 from typing import Any, ClassVar, Self, get_type_hints, Union, cast, Annotated
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
-    Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, GetCoreSchemaHandler, GetJsonSchemaHandler
+    Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, GetCoreSchemaHandler, GetJsonSchemaHandler, AliasPath
 # noinspection PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema, CoreSchema
+from pydantic_core import core_schema, CoreSchema, PydanticUndefined
 
 from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.utils import get_base_types
@@ -173,6 +173,34 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             aliases |= set(al for al in field.validation_alias.choices if isinstance(al, str))
 
         return {al for al in aliases if al}
+
+    @classmethod
+    def _get_value_from_data(cls, data: dict[str, Any], field_name: str) -> Any:
+        field: FieldInfo = cls.model_fields[field_name]
+
+        if field.alias is not None and field.alias in data:
+            return data[field.alias]
+
+        elif field.validation_alias is not None:
+            validation_aliases: list[str | AliasPath] = (
+                field.validation_alias.choices
+                if isinstance(field.validation_alias, AliasChoices)
+                else [field.validation_alias]
+            )
+
+            for alias in validation_aliases:
+                if isinstance(alias, str) and alias in data:
+                    return data[alias]
+                elif isinstance(alias, AliasPath):
+                    value = alias.search_dict_for_path(data)
+                    if value is not PydanticUndefined:
+                        return value
+
+        if field_name in data:
+            return data[field_name]
+
+        if not field.is_required():
+            return field.get_default(call_default_factory=True, validated_data=data)
 
 
 class RootModel[T](PydanticRootModel[T], BaseModel):

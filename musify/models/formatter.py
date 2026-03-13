@@ -219,6 +219,7 @@ class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
         # noinspection PyTypeChecker
         match indices:
             case True if all(isinstance(item, HasTrackPosition) for item in collection.iter_items):
+                # noinspection PyTypeChecker
                 total = collection.count
                 # noinspection PyTypeChecker
                 indices = [

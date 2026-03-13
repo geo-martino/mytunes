@@ -5,9 +5,9 @@ from faker import Faker
 from pydantic import TypeAdapter
 from yarl import URL
 
-from musify.models.properties.uri import URI
 # noinspection PyProtectedMember
 from musify.models.api.types import _ApiURLSchema, _ApiURISchema
+from musify.models.properties.uri import URI
 from tests.models.api.utils import MockRemoteResource
 from tests.utils import SimpleURI
 

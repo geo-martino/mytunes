@@ -11,10 +11,10 @@ from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
-from musify.models.properties.uri import URI
 from musify.models.api import Endpoints
-from tests.models.testers import BaseModelTester
+from musify.models.properties.uri import URI
 from tests.models.api.utils import MockRemoteResource
+from tests.models.testers import BaseModelTester
 from tests.utils import SimpleURI
 
 URI_TYPE_CONVERTERS = {

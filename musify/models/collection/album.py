@@ -4,13 +4,14 @@ from typing import Self, Any, TYPE_CHECKING
 from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
-from musify.models.remote import RemoteResource
-from musify.models.collection._base import PageCursor, RemoteCollection
+from musify.models.collection._base import RemoteCollection
+from musify.models.cursors import PageCursor
 from musify.models.item.album import Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.uri import URI
+from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
     from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints

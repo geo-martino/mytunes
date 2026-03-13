@@ -27,7 +27,7 @@ class _URLSchema:
         return core_schema.json_or_python_schema(
             json_schema=url_schema,
             python_schema=python_schema,
-            serialization=core_schema.simple_ser_schema("str")
+            serialization=core_schema.to_string_ser_schema()
         )
 
     @classmethod

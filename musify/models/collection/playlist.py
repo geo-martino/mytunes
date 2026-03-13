@@ -7,7 +7,8 @@ from typing import ClassVar, Annotated, TYPE_CHECKING, Self
 from pydantic import Field, validate_call, BeforeValidator
 
 from musify._types import StrippedString
-from musify.models.collection._base import CollectionModel, PageCursor, RemoteCollection
+from musify.models.collection._base import CollectionModel, RemoteCollection
+from musify.models.cursors import PageCursor
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 from musify.models.properties.image import HasImages

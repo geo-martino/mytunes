@@ -3,8 +3,8 @@ from aiorequestful.request import RequestHandler
 from pydantic import ValidationError
 
 from musify.models.api import RemoteAPI, RemoteAuthoriser
-from tests.models.testers import BaseModelTester
 from tests.models.api.utils import MockRemoteAPI, MockRemoteAuthoriser
+from tests.models.testers import BaseModelTester
 
 
 class TestRemoteAPI(BaseModelTester):

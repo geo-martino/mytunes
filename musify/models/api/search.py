@@ -5,9 +5,9 @@ from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
 
 from musify.models import BaseResource
-from musify.models.remote import RemoteResource
-from musify.models.properties.uri import URI
 from musify.models.api._endpoints import Endpoints, HasEndpoints
+from musify.models.properties.uri import URI
+from musify.models.remote import RemoteResource
 
 
 # noinspection PyAbstractClass

@@ -12,8 +12,8 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.models.properties.uri import URI, HasURI
-from musify.models.url import HttpURL
 from musify.models.remote import RemoteModel
+from musify.models.url import HttpURL
 
 
 class _ApiSchemaBase[UT: URI, MT: HasURI]:
@@ -134,7 +134,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return core_schema.json_or_python_schema(
             json_schema=url_schema,
             python_schema=python_schema,
-            serialization=core_schema.simple_ser_schema("str")
+            serialization=core_schema.to_string_ser_schema()
         )
 
     @classmethod
@@ -230,7 +230,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return core_schema.json_or_python_schema(
             json_schema=uri_schema,
             python_schema=python_schema,
-            serialization=core_schema.simple_ser_schema("str")
+            serialization=core_schema.to_string_ser_schema()
         )
 
     @classmethod

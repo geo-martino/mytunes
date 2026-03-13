@@ -3,8 +3,8 @@ from typing import ClassVar, Type
 from pydantic import Field, PrivateAttr
 from yarl import URL
 
-from musify.models.properties.uri import URI
 from musify.models.api import Endpoints, HasEndpoints
+from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 
 

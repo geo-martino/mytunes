@@ -2,11 +2,11 @@ from typing import ClassVar, Type
 
 from pydantic import Field
 
-from musify.models.properties.uri import URI
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, ReadCollectionEndpoints, HasEndpoints, WriteSavedEndpoints
 from musify.models.collection.genre import RemoteGenreCollection
 from musify.models.item.genre import RemoteGenre
+from musify.models.properties.uri import URI
 
 
 class GenreEndpoints[UT: URI, RT: RemoteGenre](Endpoints[UT, RT]):

@@ -2,12 +2,12 @@ from typing import ClassVar, Type
 
 from pydantic import Field
 
-from musify.models.properties.uri import URI
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints, HasEndpoints
 from musify.models.collection.album import RemoteAlbumCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.uri import URI
 
 
 class AlbumEndpoints[UT: URI, RT: RemoteAlbum](Endpoints[UT, RT]):

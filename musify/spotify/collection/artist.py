@@ -3,7 +3,8 @@ from typing import final
 from pydantic import Field, AliasPath, PositiveInt, model_validator
 
 from musify.models.collection.artist import RemoteArtistCollection
-from musify.spotify.collection._base import SpotifyCollection, SpotifyPageCursor
+from musify.spotify.collection._base import SpotifyCollection
+from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
@@ -14,7 +15,9 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 # noinspection PyFinal
 @final
 class SpotifyArtistCollection[AT: SpotifyAlbum](
-    RemoteArtistCollection[str, SpotifyTrack, AT, SpotifyGenre, SpotifyResourceURI, SpotifyPageCursor],
+    RemoteArtistCollection[
+        str, SpotifyTrack, AT, SpotifyGenre, SpotifyResourceURI, SpotifyIndexCursor | SpotifyInitialCursor
+    ],
     SpotifyArtist,
     SpotifyCollection[AT],
 ):
@@ -31,12 +34,15 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
         default=None,
         validation_alias=AliasPath("albums", "total"),
     )
-    cursor: SpotifyPageCursor = Field(
+    # the implementation of SpotifyArtistEndpoints adds a 'starter' cursor to get albums for each artist
+    # in the response, therefore we need to support an InitialCursor here to support this
+    cursor: SpotifyIndexCursor | SpotifyInitialCursor = Field(
         description=(
             "The cursor for the current page of tracks. "
             "This is used for pagination and should be passed to the next page request to extend the collection."
         ),
         validation_alias="albums",
+        union_mode="left_to_right",
     )
 
     @model_validator(mode="before")

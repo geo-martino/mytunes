@@ -1,4 +1,3 @@
-import contextlib
 import itertools
 from collections.abc import Iterable, Sequence, Mapping
 from copy import copy
@@ -8,20 +7,20 @@ from typing import Any, ClassVar, Self, Type, Union
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
-from pydantic import Field, InstanceOf, AliasPath, NonNegativeInt, PositiveInt, validate_call, TypeAdapter, \
-    PrivateAttr, model_validator, ModelWrapValidatorHandler, ValidationError
+from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
+    PrivateAttr, model_validator, ModelWrapValidatorHandler
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
-from musify._types import String
-from musify.exception import MusifyTypeError, MusifyValueError
+from musify.exception import MusifyTypeError
 from musify.models._base import AttributeModelMetaclass
+from musify.models.api.exception import APIError
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
-from musify.models.collection import PageCursor, RemoteCollection
+from musify.models.collection import RemoteCollection
+from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel, RemoteResource
-from musify.models.url import HttpURL
 
 
 class EndpointsMetaclass(AttributeModelMetaclass):
@@ -90,31 +89,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         """Generate a URL for the API endpoint for batched requests."""
         return base_url.update_query(ids=",".join(map(str, values)))
 
-    @staticmethod
-    def _create_saved_items_cursor(
-            url: HttpURL,
-            limit: PositiveInt | None = None,
-            offset: NonNegativeInt | None = None,
-            after: String | UT | None = None,
-    ) -> PageCursor:
-        cursor_adapter = TypeAdapter(PageCursor.annotation)
-        if after is not None:
-            after = after.id if isinstance(after, URI) else str(after)
-
-        return cursor_adapter.validate_python(dict(
-            url=url, limit=limit, offset=offset, after=after, next_is_current=after is None,
-        ))
-
     # noinspection PyArgumentList
     @validate_call
     async def _get_all_items(
             self,
             cursor: PageCursor,
             path: str | AliasPath,
-            kind: str | Type = None,
+            kind: str | Type | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
-        if cursor.iterable:
+        if isinstance(cursor, IterablePageCursor):
             return await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
         return await self._get_all_items_by_pagination(cursor=cursor, path=path, kind=kind)
 
@@ -123,7 +107,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             self,
             cursor: PageCursor,
             path: str | AliasPath,
-            kind: str | Type = None,
+            kind: str | Type | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by paginating through the cursor, which must have a next URL for the first page of items.
@@ -132,23 +116,31 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         to provide the total number of items, offset and limit in the page cursor.
         """
         items: list[RT] = []
-        while cursor.next:
+        while cursor.next is not None:
+            # noinspection PyUnresolvedReferences
             response = await self._handler.get(cursor.next.url)
 
             response_items = self._get_items_from_response(response=response, path=path)
             items.extend(self.__class__.create_model(it, kind=kind) for it in response_items)
 
-            cursor = self._get_cursor_from_response(response=response, path=path, cursor=cursor)
+            cursor = cursor.get_cursor_from_response(response=response, path=path)
+
+            if cursor.next == cursor:
+                raise APIError("Cursor next URL is the same as the current page URL, cannot paginate further.")
+
+            if isinstance(cursor, IterablePageCursor):
+                # switch to faster generation mode for the remaining pages
+                # noinspection PyArgumentList
+                response_items, cursor = await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
+                items.extend(response_items)
+                break
 
         return tuple(items), cursor
 
     @validate_call
-    async def _get_all_items_by_generation(
-            self,
-            cursor: PageCursor,
-            path: str | AliasPath,
-            kind: str | Type[RT] = None,
-    ) -> tuple[tuple[RT, ...], PageCursor]:
+    async def _get_all_items_by_generation[T: IterablePageCursor](
+            self, cursor: T, path: str | AliasPath, kind: str | Type[RT] | None = None,
+    ) -> tuple[tuple[RT, ...], T]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
         for them asynchronously.
@@ -167,12 +159,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         collection_type = _get_type_value(self.type)
         item_type = _get_type_value(kind)
-        cursors = list(cursor.iter_next)
+        # noinspection PyTypeChecker
+        cursors = list(cursor.iter_pages)
         if not cursors:
             return (), cursor
 
-        async def _request(page: PageCursor) -> JSON:
-            log_message = f"{page.offset:>6}/{page.total:<6} {item_type.rstrip("s")}s"
+        async def _request(page: IterablePageCursor) -> JSON:  # thin wrapper for formatting a log message
+            log_message = None
+            if isinstance(page, IndexCursor):
+                log_message = f"{page.offset:>6}/{page.total:<6} {item_type.rstrip("s")}s"
+
             return await self._handler.get(page.url, log_message=log_message)
 
         responses: list[JSON] = await self.logger.get_asynchronous_iterator(
@@ -184,16 +180,14 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             disable=len(cursors) < self._bar_threshold,
         )
 
-        sorted(responses, key=lambda r: self._get_cursor_from_response(response=r, path=path, cursor=cursor).offset)
-
+        cursors = cursor.sort_responses(responses, path=path)
         items: list[RT] = [
             self.__class__.create_model(item, kind=kind)
             for response in responses
             for item in self._get_items_from_response(response=response, path=path)
         ]
-        cursor = self._get_cursor_from_response(response=responses[-1], path=path, cursor=cursor)
 
-        return tuple(items), cursor
+        return tuple(items), cursors[-1]
 
     @classmethod
     def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
@@ -223,19 +217,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         if isinstance(response, Sequence) and all(isinstance(it, list) for it in response):  # flatten
             response = list(itertools.chain.from_iterable(response))
         return response
-
-    @classmethod
-    def _get_cursor_from_response[T: PageCursor](cls, response: JSON, path: AliasPath, cursor: T | Type[T]) -> T:
-        match path:
-            case str():
-                return cursor.model_validate(response)
-            case AliasPath():  # attempt to find cursor in response at path if it is not at the top level
-                for key in path.path:
-                    with contextlib.suppress(ValidationError):
-                        return cursor.model_validate(response)
-                    response = response[key]
-
-        raise MusifyValueError("Could not find cursor in response at the given path.")
 
 
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
@@ -305,15 +286,18 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
     )
 
     @validate_call
-    async def get_all(self, collection: RT | PageCursor) -> list[RT]:
+    async def get_all(self, collection: PageCursor | HasPageCursor | RT) -> list[RT]:
         """Get all items in the collection by paginating through its cursor. May also give a cursor directly."""
         match collection:
             case PageCursor():
                 cursor = collection
             case RemoteCollection() as collection:
                 cursor = collection.cursor
-                if not collection.has_all_items and cursor.next is None:
-                    cursor.offset = collection.count  # sets the offset on the current URL
+                if not collection.has_all_items and isinstance(cursor, IndexCursor):
+                    # minus limit so that the 'next' page requested has the offset equal to the current count
+                    cursor.reset(offset=collection.count - cursor.limit)
+            case HasPageCursor() as collection:
+                cursor = collection.cursor
             case _:
                 raise MusifyTypeError("Expected a collection or page cursor.")
 
@@ -413,7 +397,11 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         if limit is None:
             limit = self._saved_limit
 
-        cursor = self._create_saved_items_cursor(self._saved_read_url, limit=limit)
+        # we don't know what type of pagination will be used for saved items
+        # just get a cursor which returns a url to begin pagination and figure it out later
+        adapter = TypeAdapter(InitialCursor.annotation)
+        cursor = adapter.validate_python(dict(url=self._saved_read_url, limit=limit))
+
         # noinspection PyArgumentList
         items, *_ = await self._get_all_items(cursor=cursor, path=self._saved_path, kind=self.type)
         return list(items)

@@ -3,12 +3,12 @@ from typing import ClassVar, Type
 
 from pydantic import validate_call, Field, PositiveInt
 
-from musify.models.properties.uri import URI
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 
 

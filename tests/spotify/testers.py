@@ -5,12 +5,12 @@ import pytest
 from faker import Faker
 from pydantic import Json
 
+from musify.models.collection import RemoteCollection
 from musify.models.item.genre import HasGenres
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
-from musify.models.collection import RemoteCollection
 from musify.spotify import SpotifyResource
 from musify.spotify.properties.followers import HasFollowers
 from musify.spotify.properties.popularity import HasPopularity
