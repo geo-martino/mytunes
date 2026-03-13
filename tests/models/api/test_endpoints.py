@@ -119,16 +119,25 @@ class TestEndpoints(EndpointsTester):
         assert Endpoints.model_validate(handler)._handler is handler
         assert Endpoints.model_validate(dict(handler=handler))._handler is handler
 
-    def test_create_saved_items_cursor(self, uri: URI, faker: Faker):
+    def test_create_saved_items_cursor_from_offset(self, uri: URI, faker: Faker):
         limit = faker.random_int(1, 100)
         offset = 0
 
         cursor = Endpoints._create_saved_items_cursor(uri.api_url, limit=limit, offset=offset)
         assert cursor.limit == limit
         assert cursor.offset == offset
-        assert cursor.url == uri.api_url.with_query(limit=limit, offset=offset)
+        assert cursor.url == uri.api_url.with_query(limit=limit)
         assert cursor.next is not None
         assert cursor.previous is None
+
+    def test_create_saved_items_cursor_from_after(self, uri: URI, faker: Faker):
+        limit = faker.random_int()
+
+        cursor = Endpoints._create_saved_items_cursor(uri.api_url, limit=limit, after=uri.id)
+        assert cursor.limit == limit
+        assert cursor.after == uri.id
+        assert cursor.url == uri.api_url.with_query(limit=limit)
+        assert cursor.next.url == uri.api_url.with_query(limit=limit, after=uri.id)
 
     async def test_get_all_items_picks_pagination(self, model: Endpoints, cursor_initial: PageCursor, faker: Faker):
         cursor_initial.total = None
@@ -166,6 +175,7 @@ class TestEndpoints(EndpointsTester):
         available_items = [{"name": faker.word()} for _ in range(total)]
         expected_items = available_items[:total - cursors[0].offset]
         available_items = expected_items.copy()
+        expected_urls = [cursor.url for cursor in cursors]
         iter_cursors = iter(cursors)
 
         def _get_items_from_response(*_, **__) -> Sequence[dict]:
@@ -188,7 +198,8 @@ class TestEndpoints(EndpointsTester):
             assert mock_get_items_from_response.call_count == len(cursors)
             assert mock_create_model.call_count == len(expected_items)
 
-            assert [call.args[0] for call in mock_get.call_args_list] == cursors
+            urls = [call.args[0] for call in mock_get.call_args_list]
+            assert urls == expected_urls
 
     async def test_get_all_items_by_generation(
             self,
@@ -562,7 +573,6 @@ class TestReadSavedEndpoints(EndpointsTester):
     async def test_get_all(self, handler: RequestHandler, uri: URI, faker: Faker):
         model = self.MockReadSavedEndpoints(handler=handler)
         limit = faker.random_int(1, 100)
-        offset = faker.random_int(1, 100)
 
         with (
             patch.object(
@@ -572,10 +582,10 @@ class TestReadSavedEndpoints(EndpointsTester):
                 model.__class__, "_get_all_items_by_pagination", return_value=([1], None)
             ) as mock_get_all_items,
         ):
-            await model.get_all(limit=limit, offset=offset)
+            await model.get_all(limit=limit)
 
             mock_create_saved_items_cursor.assert_called_once_with(
-                self.MockReadSavedEndpoints._saved_read_url, limit=limit, offset=offset
+                self.MockReadSavedEndpoints._saved_read_url, limit=limit
             )
             mock_get_all_items.assert_called_once_with(
                 cursor=mock_create_saved_items_cursor.return_value,
@@ -592,7 +602,7 @@ class TestReadSavedEndpoints(EndpointsTester):
         ):
             await model.get_all()
             mock_create_model_cursor.assert_called_once_with(
-                self.MockReadSavedEndpoints._saved_read_url, limit=model._saved_limit, offset=None
+                self.MockReadSavedEndpoints._saved_read_url, limit=model._saved_limit
             )
 
 

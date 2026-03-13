@@ -13,6 +13,7 @@ from pydantic import Field, InstanceOf, AliasPath, NonNegativeInt, PositiveInt, 
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
+from musify._types import String
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.models._base import AttributeModelMetaclass
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
@@ -90,14 +91,19 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return base_url.update_query(ids=",".join(map(str, values)))
 
     @staticmethod
-    @validate_call
     def _create_saved_items_cursor(
-            url: HttpURL, limit: PositiveInt | None = None, offset: NonNegativeInt | None = None
+            url: HttpURL,
+            limit: PositiveInt | None = None,
+            offset: NonNegativeInt | None = None,
+            after: String | UT | None = None,
     ) -> PageCursor:
-        # we set the total randomly just to force a next URL to be generated for the cursor
-        # calling a saved items endpoint should then always give either a next url or total, so this is not an issue
         cursor_adapter = TypeAdapter(PageCursor.annotation)
-        return cursor_adapter.validate_python(dict(url=url, limit=limit, offset=offset, total=offset + limit))
+        if after is not None:
+            after = after.id if isinstance(after, URI) else str(after)
+
+        return cursor_adapter.validate_python(dict(
+            url=url, limit=limit, offset=offset, after=after, next_is_current=after is None,
+        ))
 
     # noinspection PyArgumentList
     @validate_call
@@ -127,7 +133,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         """
         items: list[RT] = []
         while cursor.next:
-            response = await self._handler.get(cursor.next)
+            response = await self._handler.get(cursor.next.url)
 
             response_items = self._get_items_from_response(response=response, path=path)
             items.extend(self.__class__.create_model(it, kind=kind) for it in response_items)
@@ -162,6 +168,8 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         collection_type = _get_type_value(self.type)
         item_type = _get_type_value(kind)
         cursors = list(cursor.iter_next)
+        if not cursors:
+            return (), cursor
 
         async def _request(page: PageCursor) -> JSON:
             log_message = f"{page.offset:>6}/{page.total:<6} {item_type.rstrip("s")}s"
@@ -400,12 +408,12 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @validate_call
-    async def get_all(self, limit: PositiveInt | None = None, offset: NonNegativeInt | None = None) -> list[RT]:
+    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]:
         """Get the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._saved_limit
 
-        cursor = self._create_saved_items_cursor(self._saved_read_url, limit=limit, offset=offset)
+        cursor = self._create_saved_items_cursor(self._saved_read_url, limit=limit)
         # noinspection PyArgumentList
         items, *_ = await self._get_all_items(cursor=cursor, path=self._saved_path, kind=self.type)
         return list(items)
