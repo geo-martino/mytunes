@@ -32,30 +32,3 @@ def models(
 def user(faker: Faker) -> RemoteUser:
     owner_uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
     return RemoteUser(name=faker.name(), uri=owner_uri)
-
-
-@pytest.fixture
-def playlists(playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list[RemotePlaylist]:
-    return [
-        RemotePlaylist(
-            **pl.model_dump(),
-            owner=RemoteUser(name=faker.name(), uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)),
-            cursor=MockUrlCursor(url=faker.url())
-        )
-        for pl in playlists
-    ]
-
-
-@pytest.fixture
-def tracks(tracks: list[Track]) -> list[RemoteTrack]:
-    return [RemoteTrack(**track.model_dump()) for track in tracks]
-
-
-@pytest.fixture
-def artists(artists: list[Artist]) -> list[RemoteArtist]:
-    return [RemoteArtist(**artist.model_dump()) for artist in artists]
-
-
-@pytest.fixture
-def albums(albums: list[Album]) -> list[RemoteAlbum]:
-    return [RemoteAlbum(**album.model_dump()) for album in albums]

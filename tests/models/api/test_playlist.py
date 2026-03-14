@@ -6,11 +6,23 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 
 from musify.models.api.playlist import PlaylistReadSavedEndpoints, PlaylistReadWriteSavedEndpoints
-from musify.models.collection.playlist import RemotePlaylist
+from musify.models.collection.playlist import RemotePlaylist, Playlist
 from musify.models.user import RemoteUser
 from tests.models.api.testers import EndpointsTester
 from tests.models.api.utils import MockUrlCursor
 from tests.utils import SimpleURI
+
+
+@pytest.fixture
+def playlists(playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list[RemotePlaylist]:
+    return [
+        RemotePlaylist(
+            **pl.model_dump(),
+            owner=RemoteUser(name=faker.name(), uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)),
+            cursor=MockUrlCursor(url=faker.url())
+        )
+        for pl in playlists
+    ]
 
 
 @pytest.fixture

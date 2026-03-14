@@ -50,8 +50,11 @@ class TestHasPlaylists(BaseModelTester):
 class TestHasMutablePlaylists(BaseModelTester):
     @pytest.fixture
     def model(self, playlists: list[Playlist]) -> HasMutablePlaylists:
-        playlists = [MutablePlaylist(**pl.model_dump()) for pl in playlists]
         return HasMutablePlaylists(playlists=playlists)
+
+    @pytest.fixture
+    def playlists(self, playlists: list[Playlist]) -> list[MutablePlaylist]:
+        return [MutablePlaylist(**pl.model_dump()) for pl in playlists]
 
     def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists):
         adapter = TypeAdapter(MergePlaylistsTypeAnnotated)

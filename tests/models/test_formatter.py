@@ -33,7 +33,7 @@ class TestModelFormatter(BaseModelTester):
         formatter = ModelFormatter(fields=fields, widths=width)
         assert formatter.widths == [width] * len(fields), "Width should be applied to all fields"
 
-    def test_validate_widths_match_fields(self, faker: Faker) -> None:
+    def test_validate_widths_match_fields(self, faker: Faker):
         fields = get_args(FIELDS)
         log = "The number of widths must match the number of fields"
 
@@ -61,7 +61,7 @@ class TestModelFormatter(BaseModelTester):
         formatter = ModelFormatter(fields=fields, alignments=alignment)
         assert formatter.alignments == [alignment] * len(fields), "Alignment should be applied to all fields"
 
-    def test_validate_alignments_match_fields(self, faker: Faker) -> None:
+    def test_validate_alignments_match_fields(self, faker: Faker):
         fields = get_args(FIELDS)
         supported_alignments = ("left", "right", "center", "decimal")
         log = "The number of alignments must match the number of fields"

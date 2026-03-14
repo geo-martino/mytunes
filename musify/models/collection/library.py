@@ -431,12 +431,16 @@ class RemoteLibrary[
     ###########################################################################
     def generate_backup(self) -> JSON:
         """Generate a backup of all data in this library as a dictionary."""
+        names_seen = set()
         playlists = []
-        for pl in self.playlists:
+        for pl in self.playlists.values():
+            if pl.name in names_seen:
+                continue
+
             pl_backup = dict(
                 name=pl.name,
                 description=pl.description,
-                tracks=[track.uri for track in pl.tracks],
+                tracks=[str(track.uri) for track in pl.tracks],
             )
             playlists.append(pl_backup)
 
