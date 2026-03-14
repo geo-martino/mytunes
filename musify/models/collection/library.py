@@ -104,7 +104,7 @@ class RemoteLibrary[
 ](
     Library[TK, TV, KP, VP], RemoteModel, HasArtists[RT], HasAlbums[AT], HasGenres[GT]
 ):
-    _log_name_max_width: ClassVar[int] = PrivateAttr(default=30)
+    _log_name_max_width: ClassVar[int] = PrivateAttr(default=40)
 
     _user: UT = PrivateAttr(
         # description="The currently authenticated user for this library."
@@ -116,6 +116,25 @@ class RemoteLibrary[
     )
 
     @property
+    def user(self) -> UT | None:
+        """The currently authenticated user."""
+        return self._user
+
+    @property
+    def tracks_in_albums(self) -> list[Track]:
+        """All unique tracks from all albums in this collection"""
+        tracks: list[Track] = []
+        for album in self.albums:
+            if not isinstance(album, HasTracks):
+                continue
+
+            for track in album.tracks:
+                if track not in tracks:
+                    tracks.append(track)
+
+        return tracks
+
+    @property
     def _log_name(self) -> str:
         source = self.source.title()
         if self.user is None:
@@ -123,9 +142,15 @@ class RemoteLibrary[
         return f"{self.user.name}'s {source}"
 
     @property
-    def user(self) -> UT | None:
-        """The currently authenticated user."""
-        return self._user
+    def _log_column_widths(self) -> tuple[int, ...]:
+        total = len(self.tracks) + len(self.tracks_in_playlists) + len(self.tracks_in_albums)
+        return (
+            len(f"{self._log_name.upper()} PLAYLISTS"),
+            len(f"{total} artist tracks"),
+            len(f"{total} artist albums"),
+            len(f"{total} in saved albums"),
+            len(f"{total} total tracks"),
+        )
 
     async def __aenter__(self) -> Self:
         await self.api.__aenter__()
@@ -152,10 +177,10 @@ class RemoteLibrary[
         await self.load_saved_albums_tracks()
 
         await self.load_saved_artists()
-        await self.load_saved_artists_albums()
+        # await self.load_saved_artists_albums()
 
         self.logger.print_line(STAT)
-        self.log_playlists()
+        self.log_playlists(skip_log=True)
         self.log_tracks()
         self.log_albums()
         self.log_artists()
@@ -188,18 +213,20 @@ class RemoteLibrary[
         return True
 
     def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
+        in_tracks = len(self.tracks)
         in_playlists = len(self.tracks_in_playlists)
-        album_tracks = [
-            track for album in self.albums if isinstance(album, RemoteAlbumCollection) for track in album.tracks
-        ]
+        in_albums = len(self.tracks_in_albums)
+
+        total = in_tracks + in_playlists + in_albums
+        widths = iter(self._log_column_widths)
 
         header = textwrap.shorten(f"{self._log_name.upper()} TRACKS", self._log_name_max_width, placeholder="...")
         row = (
-            colored(header, "cyan", attrs=["bold"]),
-            colored(f"{len(self.tracks)} saved tracks", "green"),
-            colored(f"{in_playlists} in playlists", "green"),
-            colored(f"{sum(track in album_tracks for track in self.tracks)} in saved albums", "green"),
-            colored(f"{len(self.tracks) + in_playlists} total tracks", "blue", attrs=["bold"]),
+            colored(f"{header:<{next(widths)}}", "cyan", attrs=["bold"]),
+            colored(f"{in_tracks} saved tracks".rjust(next(widths)), "green"),
+            colored(f"{in_playlists} in playlists".rjust(next(widths)), "green"),
+            colored(f"{in_albums} in saved albums".rjust(next(widths)), "green"),
+            colored(f"{total} total tracks".rjust(next(widths)), "blue", attrs=["bold"]),
         )
 
         if not skip_log:
@@ -252,20 +279,33 @@ class RemoteLibrary[
             self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
             return False
 
-        for pl in self.playlists.values():
+        async def _load_playlist_tracks(pl: VP) -> None:
             items = await self.api.playlists.get_all(pl)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
+
+        await self.logger.get_asynchronous_iterator(
+            map(_load_playlist_tracks, self.playlists.values()),
+            total=len(self.playlists),
+            desc=f"Loading {self.source.title()} playlist tracks",
+            unit="playlists",
+        )
 
         self.logger.debug(f"Load {self._log_name} playlist's tracks: DONE")
         return True
 
     def log_playlists(self, skip_log: bool = False) -> list[tuple[str, ...]]:
+        widths = self._log_column_widths
+
         rows = []
         for name, playlist in self.playlists.items():
+            iter_widths = iter(widths)
+            next(iter_widths)  # don't need header width for this log
+
+            name = textwrap.shorten(name.rjust(next(iter_widths)), self._log_name_max_width, placeholder="...")
             row = (
-                colored(textwrap.shorten(name, self._log_name_max_width, placeholder="..."), "white"),
-                colored(f"{len(playlist.tracks)} total tracks", "green"),
+                colored(name, "white"),
+                colored(f"{len(playlist.tracks)} total tracks".rjust(next(iter_widths)), "green"),
             )
             rows.append(row)
 
@@ -335,12 +375,14 @@ class RemoteLibrary[
 
     def log_albums(self, skip_log: bool = False) -> tuple[str, ...]:
         """Log stats on currently loaded albums."""
+        widths = iter(self._log_column_widths)
+
         header = textwrap.shorten(f"{self._log_name.upper()} ALBUMS", self._log_name_max_width, placeholder="...")
         row = (
-            colored(header, "cyan", attrs=["bold"]),
-            colored(f"{sum(album.track_total or 0 for album in self.albums)} album tracks", "green"),
-            colored(f"{sum(len(album.artists) for album in self.albums)} album artists", "green"),
-            colored(f"{len(self.albums)} total albums", "blue", attrs=["bold"]),
+            colored(header.ljust(next(widths)), "cyan", attrs=["bold"]),
+            colored(f"{len(self.tracks_in_albums)} album tracks".rjust(next(widths)), "green"),
+            colored(f"{sum(len(album.artists) for album in self.albums)} album artists".rjust(next(widths)), "green"),
+            colored(f"{len(self.albums)} total albums".rjust(next(widths)), "blue", attrs=["bold"]),
         )
 
         if not skip_log:
@@ -404,16 +446,17 @@ class RemoteLibrary[
 
     def log_artists(self, skip_log: bool = False) -> tuple[str, ...]:
         """Log stats on currently loaded albums."""
+        widths = iter(self._log_column_widths)
         albums = [
             album for artist in self.artists if isinstance(artist, RemoteArtistCollection) for album in artist.albums
         ]
 
         header = textwrap.shorten(f"{self._log_name.upper()} ARTISTS", self._log_name_max_width, placeholder="...")
         row = (
-            colored(header, "cyan", attrs=["bold"]),
-            colored(f"{sum(album.track_total or 0 for album in albums)} artist tracks", "green"),
-            colored(f"{len(albums)} artist albums", "green"),
-            colored(f"{len(self.artists)} total artists", "blue", attrs=["bold"]),
+            colored(header.ljust(next(widths)), "cyan", attrs=["bold"]),
+            colored(f"{sum(album.track_total or 0 for album in albums)} artist tracks".rjust(next(widths)), "green"),
+            colored(f"{len(albums)} artist albums".rjust(next(widths)), "green"),
+            colored(f"{len(self.artists)} total artists".rjust(next(widths)), "blue", attrs=["bold"]),
         )
 
         if not skip_log:
@@ -468,7 +511,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Create/Sync
     ###########################################################################
-    async def create_playlist(self, name: str, **kwargs) -> RemotePlaylist | None:
+    async def create_playlist(self, name: str, **kwargs) -> VP | None:
         """Create a new playlist with the given name and return it."""
         self.logger.debug(f"Create a playlist on {self._log_name} library: START")
 
@@ -543,15 +586,16 @@ class RemoteMutableLibrary[
         )
         self.logger.info(message)
 
-        async def _sync_playlist(pl: RemoteMutablePlaylist) -> tuple[str, SyncResultRemotePlaylist]:
+        async def _sync_playlist(pl: VP) -> tuple[str, SyncResultRemotePlaylist]:
             playlist = await self.api.playlists.saved.get_or_create(pl.name)
             playlist.tracks[:] = pl.tracks
             return pl.name, await playlist.sync(items=pl, kind=kind, dry_run=dry_run)
 
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, self.playlists.values()),
+            total=len(self.playlists),
             desc=f"Synchronising {self.source.title()} playlists",
-            unit="playlists"
+            unit="playlists",
         )
         results = dict(await bar)
 
