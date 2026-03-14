@@ -12,12 +12,14 @@ from musify.logger import STAT
 from musify.models.api import RemoteAPI, HasSavedEndpoints, ReadSavedEndpoints, ReadCollectionEndpoints
 from musify.models.api.album import HasAlbumEndpoints
 from musify.models.api.artist import HasArtistEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints, \
+    PlaylistReadItemEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.models.api.track import HasTrackEndpoints
 from musify.models.api.user import HasUserEndpoints
 from musify.models.collection.album import RemoteAlbumCollection
 from musify.models.collection.artist import RemoteArtistCollection
-from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, RemotePlaylist
+from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, RemotePlaylist, \
+    PLAYLIST_SYNC_TYPE, SyncResultRemotePlaylist, RemoteMutablePlaylist
 from musify.models.item.album import RemoteAlbum, HasAlbums
 from musify.models.item.artist import RemoteArtist, HasArtists
 from musify.models.item.genre import RemoteGenre, HasGenres
@@ -134,7 +136,7 @@ class RemoteLibrary[
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     def _log_unsupported_api(self, kind: str, context: str) -> None:
-        self.logger.warning(f"Cannot load {self.source.title()} {kind}. API does not support {context}.")
+        print(f"Cannot load {self.source.title()} {kind}. API does not support {context}.")
 
     async def load(self):
         self.logger.debug(f"Load {self._log_name} library: START")
@@ -424,8 +426,104 @@ class RemoteLibrary[
 
 
 class RemoteMutableLibrary[
-    TK, TV: RemoteTrack, KP, VP: RemotePlaylist, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: RemoteUser
+    TK,
+    TV: RemoteTrack,
+    KP,
+    VP: RemoteMutablePlaylist,
+    RT: RemoteArtist,
+    AT: RemoteAlbum,
+    GT: RemoteGenre,
+    UT: RemoteUser
 ](
     MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, RT, AT, GT, UT]
 ):
-    pass
+    async def create_playlist(self, name: str, **kwargs) -> RemotePlaylist | None:
+        """Create a new playlist with the given name and return it."""
+        self.logger.debug(f"Create a playlist on {self._log_name} library: START")
+
+        if name in self.playlists:
+            self.logger.warning(f"Playlist with name {name!r} already exists in {self._log_name} library.")
+            return self.playlists[name]
+
+        log_kind = "saved playlists"
+        if not isinstance(self.api, HasPlaylistEndpoints):
+            self._log_unsupported_api(log_kind, "playlist endpoints")
+            return None
+        if not isinstance(self.api.playlists, PlaylistReadWriteEndpoints):
+            self._log_unsupported_api(log_kind, "writing data for playlists")
+            return None
+        if not isinstance(self.api.playlists, HasSavedEndpoints):
+            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
+            return None
+        if not isinstance(self.api.playlists.saved, PlaylistReadWriteSavedEndpoints):
+            self._log_unsupported_api(log_kind, f"writing data for {log_kind}")
+            return None
+
+        playlist = await self.api.playlists.saved.create(name=name, **kwargs)
+        # noinspection PyProtectedMember
+        self.playlists._update({playlist.name: playlist}, extract_keys=False)
+
+        self.logger.debug(f"Create a playlist on {self._log_name} library: DONE")
+        return playlist
+
+    async def sync_playlists(
+            self, kind: PLAYLIST_SYNC_TYPE = "new", dry_run: bool = True
+    ) -> dict[str, SyncResultRemotePlaylist]:
+        """
+        Synchronise the playlists in this library with the remote service.
+
+        Clear options:
+            * 'new': Do not clear any items from the remote playlist and only add any tracks
+                from this playlist object not currently in the remote playlist.
+            * 'refresh': Clear all items from the remote playlist first, then add all items from this playlist object.
+            * 'sync': Clear all items not currently in this object's items list, then add all tracks
+                from this playlist object not currently in the remote playlist.
+
+        :param kind: Sync option for the remote playlist. See description.
+        :param dry_run: Run function, but do not modify the remote playlists at all.
+        :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
+        """
+        self.logger.debug(f"Sync {self._log_name} playlists: START")
+
+        log_kind = "saved playlists"
+        if not isinstance(self.api, HasPlaylistEndpoints):
+            self._log_unsupported_api(log_kind, "playlist endpoints")
+            return {}
+        if not isinstance(self.api.playlists, PlaylistReadWriteEndpoints):
+            self._log_unsupported_api(log_kind, f"writing data for playlists")
+            return {}
+        if not isinstance(self.api.playlists, HasSavedEndpoints):
+            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
+            return {}
+        if not isinstance(self.api.playlists.saved, PlaylistReadWriteSavedEndpoints):
+            self._log_unsupported_api(log_kind, f"writing data for {log_kind}")
+            return {}
+
+        match kind:
+            case "new":
+                type_message = "adding new items only"
+            case "refresh":
+                type_message = f"clearing all items from each {self.source} playlist first"
+            case "sync":
+                type_message = f"clearing extra items from each {self.source} playlist first"
+
+        message = self.logger.generate_message(
+            f"Synchronising {len(self.playlists)} {self.source} playlists: {type_message}", header=1
+        )
+        self.logger.info(message)
+
+        async def _sync_playlist(pl: RemoteMutablePlaylist) -> tuple[str, SyncResultRemotePlaylist]:
+            playlist = await self.api.playlists.saved.get_or_create(pl.name)
+            playlist.tracks[:] = pl.tracks
+            return pl.name, await playlist.sync(items=pl, kind=kind, dry_run=dry_run)
+
+        bar = self.logger.get_asynchronous_iterator(
+            map(_sync_playlist, self.playlists.values()),
+            desc=f"Synchronising {self.source.title()} playlists",
+            unit="playlists"
+        )
+        results = dict(await bar)
+
+        self.logger.print_line()
+        self.logger.debug(f"Sync {self._log_name} playlists: DONE")
+        return results

@@ -9,7 +9,7 @@ from musify.models.api import RemoteAPI, RemoteAuthoriser, ReadSavedEndpoints, H
 from musify.models.api.album import HasAlbumEndpoints, AlbumEndpoints
 from musify.models.api.artist import HasArtistEndpoints, ArtistEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistEndpoints, PlaylistReadSavedEndpoints, \
-    PlaylistReadWriteEndpoints
+    PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.models.api.track import HasTrackEndpoints, TrackEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection import RemoteCollection
@@ -103,7 +103,7 @@ class MockAlbumEndpoints(
 
 class MockPlaylistEndpoints(
     PlaylistReadWriteEndpoints[SimpleURI, RemoteMutablePlaylist],
-    HasSavedEndpoints[PlaylistReadSavedEndpoints[SimpleURI, RemotePlaylist, RemoteUser]],
+    HasSavedEndpoints[PlaylistReadWriteSavedEndpoints[SimpleURI, RemotePlaylist, RemoteUser]],
 ):
     pass
 

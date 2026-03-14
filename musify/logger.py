@@ -11,8 +11,9 @@ import os
 import sys
 from collections.abc import Iterable, Awaitable
 from pathlib import Path
-from typing import Any
+from typing import Any, Annotated
 
+from pydantic import Field, validate_call
 from termcolor import colored
 
 try:
@@ -108,6 +109,30 @@ class Logger(logging.Logger):
 
         if not values or not self.stdout_handlers or all(h.level > logging.INFO for h in self.stdout_handlers):
             print(*values, sep=sep, end=end)
+
+    @staticmethod
+    @validate_call
+    def generate_message(
+            message: str,
+            header: Annotated[int, Field(ge=1, le=4)],
+            hidden: str = None
+    ) -> str:
+        match header:
+            case 1:
+                header = "->"
+            case 2:
+                header = " >"
+            case 3:
+                header = " -"
+            case 3:
+                header = " ·"
+
+        header = colored(header, "magenta", attrs=["bold"])
+        message = colored(message, "white", attrs=["bold"])
+        if hidden:
+            message = f"{message} {colored(hidden, "dark_grey", attrs=['dark'])}"
+
+        return f"{header} {message}"
 
     def get_synchronous_iterator[T: Any](
             self, iterable: Iterable[T] | None = None, total: T | int | None = None, **kwargs

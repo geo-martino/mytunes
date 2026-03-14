@@ -79,14 +79,15 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
     def __ne__(self, other: Self):
         return not self.__eq__(other)
 
-    @validate_call
+    # @validate_call  # not currently working with generics
     def __contains__(self, __item: TK | TV | Iterable[TK | TV]) -> bool:
         if isinstance(__item, BaseResource):
             return any(key in self._items for key in __item.unique_keys)
-        if isinstance(__item, Iterable):
-            return all(item in self for item in __item)
         if isinstance(__item, Hashable) and __item in self._items:
             return True
+        if isinstance(__item, Iterable) and not isinstance(__item, str):
+            print(__item)
+            return all(item in self for item in __item)
         # last resort: iteration is a slow comparison on large collections
         return any(__item == i for i in self._items.values())
 

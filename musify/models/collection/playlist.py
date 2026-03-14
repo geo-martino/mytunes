@@ -134,6 +134,9 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
         await api.playlists.get_all(self.uri)
 
 
+type PLAYLIST_SYNC_TYPE = Literal["new", "refresh", "sync"]
+
+
 class SyncResultRemotePlaylist(Result):
     """Stores the results of a sync with a remote playlist."""
     #: The total number of tracks in the playlist before the sync.
@@ -156,7 +159,7 @@ class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCu
     async def sync(
             self,
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],
-            kind: Literal["new", "refresh", "sync"] = "new",
+            kind: PLAYLIST_SYNC_TYPE = "new",
             dry_run: bool = False,
     ) -> SyncResultRemotePlaylist:
         """
