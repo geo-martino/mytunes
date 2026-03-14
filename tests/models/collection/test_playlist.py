@@ -50,6 +50,7 @@ class TestHasPlaylists(BaseModelTester):
 class TestHasMutablePlaylists(BaseModelTester):
     @pytest.fixture
     def model(self, playlists: list[Playlist]) -> HasMutablePlaylists:
+        playlists = [MutablePlaylist(**pl.model_dump()) for pl in playlists]
         return HasMutablePlaylists(playlists=playlists)
 
     def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists):
@@ -62,7 +63,7 @@ class TestHasMutablePlaylists(BaseModelTester):
         assert adapter.validate_python(dict(playlists)) is not playlists
         assert adapter.validate_python(dict(playlists)) == playlists
 
-    def test_merge_playlists(self, model: HasMutablePlaylists, playlists: list[Playlist]):
+    def test_merge_playlists(self, model: HasMutablePlaylists, playlists: list[MutablePlaylist]):
         initial, other, overlap = split_list(playlists, 2, 6)
         model = HasMutablePlaylists(playlists=initial)
 

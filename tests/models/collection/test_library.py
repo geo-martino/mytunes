@@ -11,20 +11,14 @@ from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints
 # noinspection PyProtectedMember
 from musify.models.collection.library import HasTracksAndPlaylists, RemoteLibrary, RemoteMutableLibrary
 from musify.models.collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
+from musify.models.item.album import Album, RemoteAlbum
+from musify.models.item.artist import Artist, RemoteArtist
+from musify.models.item.track import Track, RemoteTrack
 from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI, MockUrlCursor
 from tests.models.testers import BaseResourceTester, BaseModelTester
 from tests.utils import SimpleURI
-
-
-@pytest.fixture
-def user(faker: Faker) -> RemoteUser:
-    owner_uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
-    return RemoteUser(name=faker.name(), uri=owner_uri)
 
 
 class TestLibrary(BaseResourceTester):
@@ -62,13 +56,6 @@ class TestRemoteLibrary(BaseModelTester):
         return library
 
     @pytest.fixture
-    def playlists(self, playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list[RemotePlaylist]:
-        return [
-            RemotePlaylist(**pl.model_dump(), owner=user, cursor=MockUrlCursor(url=faker.url()))
-            for pl in playlists
-        ]
-
-    @pytest.fixture
     def mock_get_all(self) -> Generator[Mock, None, None]:
         with patch.object(ReadSavedEndpoints, "get_all") as mock_get_all:
             yield mock_get_all
@@ -85,20 +72,45 @@ class TestRemoteLibrary(BaseModelTester):
         assert await model.load_playlists()
         self.assert_items_loaded(model.playlists.values(), mock_get_all)
 
+        assert len(model.log_playlists(skip_log=True)) == len(playlists)
+
     async def test_load_saved_tracks(self, model: RemoteLibrary, tracks: list[Track], mock_get_all: Mock):
         mock_get_all.return_value = tracks
         assert await model.load_tracks()
         self.assert_items_loaded(model.tracks, mock_get_all)
+
+        assert model.log_tracks(skip_log=True)
 
     async def test_load_saved_artists(self, model: RemoteLibrary, artists: list[Artist], mock_get_all: Mock):
         mock_get_all.return_value = artists
         assert await model.load_saved_artists()
         self.assert_items_loaded(model.artists, mock_get_all)
 
+        assert model.log_artists(skip_log=True)
+
     async def test_load_saved_albums(self, model: RemoteLibrary, albums: list[Album], mock_get_all: Mock):
         mock_get_all.return_value = albums
         assert await model.load_saved_albums()
         self.assert_items_loaded(model.albums, mock_get_all)
+
+        assert model.log_albums(skip_log=True)
+
+    def test_generate_backup(
+            self,
+            model: RemoteLibrary,
+            api: RemoteAPI,
+            playlists: list[RemotePlaylist],
+            tracks: list[RemoteTrack],
+            albums: list[RemoteAlbum],
+            artists: list[RemoteArtist],
+    ) -> dict:
+        model = model.__class__(api=api, playlists=playlists, tracks=tracks, albums=albums, artists=artists)
+
+        backup = model.model_dump()
+        assert len(backup["playlists"]) == len(model.playlists)
+        assert len(backup["tracks"]) == len(model.tracks)
+        assert len(backup["albums"]) == len(model.albums)
+        assert len(backup["artists"]) == len(model.artists)
 
 
 class TestRemoteMutableLibrary(BaseModelTester):
@@ -115,10 +127,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
     @pytest.fixture
     def playlists(self, playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list[RemoteMutablePlaylist]:
-        return [
-            RemoteMutablePlaylist(**pl.model_dump(), owner=user, cursor=MockUrlCursor(url=faker.url()))
-            for pl in playlists
-        ]
+        return [RemoteMutablePlaylist(**pl.model_dump()) for pl in playlists]
 
     async def test_create_playlist(
             self, model: RemoteMutableLibrary, playlists: list[RemoteMutablePlaylist], faker: Faker
@@ -147,8 +156,10 @@ class TestRemoteMutableLibrary(BaseModelTester):
             patch.object(PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_return_playlist) as mock_get,
             patch.object(RemoteMutablePlaylist, "sync") as mock_sync,
         ):
-            result = await model.sync_playlists()
-            assert len(result) == len(playlists)
+            results = await model.sync_playlists()
+            assert len(results) == len(playlists)
 
             assert mock_get.call_count == len(playlists)
             assert mock_sync.call_count == len(playlists)
+
+            assert len(model.log_sync_playlists(results, skip_log=True)) == len(playlists)

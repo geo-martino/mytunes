@@ -14,23 +14,6 @@ from tests.utils import SimpleURI
 
 
 @pytest.fixture
-def playlists(faker: Faker) -> list[RemotePlaylist]:
-    return [
-        RemotePlaylist(
-            name=faker.name(),
-            owner=RemoteUser(
-                name=faker.user_name(),
-                uri=SimpleURI.from_id(faker.word(), kind=RemoteUser.type)
-            ),
-            uri=SimpleURI.from_id(faker.word(), kind=RemotePlaylist.type),
-            total=faker.random_int(0, 100),
-            cursor=MockUrlCursor(url=faker.url())
-        )
-        for _ in range(faker.random_int(10, 30))
-    ]
-
-
-@pytest.fixture
 def mock_get_all(playlists: list[RemotePlaylist], faker: Faker) -> Generator[Mock, None, None]:
     with patch.object(PlaylistReadSavedEndpoints, "get_all", return_value=playlists) as mock_get_all:
         yield mock_get_all

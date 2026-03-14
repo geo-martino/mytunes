@@ -79,4 +79,6 @@ class SpotifyArtistEndpoints(
                 cursor = artist.cursor
 
         cursor.url = cursor.url.update_query(query)
+        print(collection)
+        print(cursor)
         return await super().get_all(collection)

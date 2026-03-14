@@ -1,9 +1,10 @@
 import itertools
 import textwrap
 from abc import abstractmethod
-from collections.abc import Iterator
-from typing import ClassVar, Self
+from collections.abc import Iterator, Mapping
+from typing import ClassVar, Self, Any
 
+from aiorequestful.types import JSON
 from pydantic import Field, PrivateAttr
 from tabulate import tabulate
 from termcolor import colored
@@ -195,6 +196,7 @@ class RemoteLibrary[
         header = textwrap.shorten(f"{self._log_name.upper()} TRACKS", self._log_name_max_width, placeholder="...")
         row = (
             colored(header, "cyan", attrs=["bold"]),
+            colored(f"{len(self.tracks)} saved tracks", "green"),
             colored(f"{in_playlists} in playlists", "green"),
             colored(f"{sum(track in album_tracks for track in self.tracks)} in saved albums", "green"),
             colored(f"{len(self.tracks) + in_playlists} total tracks", "blue", attrs=["bold"]),
@@ -424,6 +426,28 @@ class RemoteLibrary[
 
         return row
 
+    ###########################################################################
+    ## Backup/Restore
+    ###########################################################################
+    def generate_backup(self) -> JSON:
+        """Generate a backup of all data in this library as a dictionary."""
+        playlists = []
+        for pl in self.playlists:
+            pl_backup = dict(
+                name=pl.name,
+                description=pl.description,
+                tracks=[track.uri for track in pl.tracks],
+            )
+            playlists.append(pl_backup)
+
+        return {
+            "tracks": [str(track.uri) for track in self.tracks],
+            "playlists": playlists,
+            "albums": [str(album.uri) for album in self.albums],
+            "artists": [str(artist.uri) for artist in self.artists],
+            "genres": [str(genre.uri) for genre in self.genres],
+        }
+
 
 class RemoteMutableLibrary[
     TK,
@@ -437,6 +461,9 @@ class RemoteMutableLibrary[
 ](
     MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, RT, AT, GT, UT]
 ):
+    ###########################################################################
+    ## Create/Sync
+    ###########################################################################
     async def create_playlist(self, name: str, **kwargs) -> RemotePlaylist | None:
         """Create a new playlist with the given name and return it."""
         self.logger.debug(f"Create a playlist on {self._log_name} library: START")
@@ -527,3 +554,38 @@ class RemoteMutableLibrary[
         self.logger.print_line()
         self.logger.debug(f"Sync {self._log_name} playlists: DONE")
         return results
+
+    def log_sync_playlists(
+            self, results: Mapping[str, SyncResultRemotePlaylist], skip_log: bool = False
+    ) -> list[tuple[str, ...]]:
+        """Log stats from the results of a ``sync_playlists`` operation"""
+        if not results:
+            return []
+
+        rows = []
+        for name, result in results.items():
+            row = (
+                colored(textwrap.shorten(name, self._log_name_max_width, placeholder="..."), "white"),
+                colored(f"{result.start} initial", "cyan"),
+                colored(f"{result.added} added", "green"),
+                colored(f"{result.removed} removed", "red"),
+                colored(f"{result.unchanged} unchanged", "yellow"),
+                colored(f"{result.difference} difference", "blue"),
+                colored(f"{result.final} final", "white", attrs=["bold"]),
+            )
+            rows.append(row)
+
+        if not rows:
+            return rows
+
+        if not skip_log:
+            header = colored(f"{self._log_name.upper()} SYNC PLAYLIST RESULTS", "cyan", attrs=["bold"])
+            log = header + ":\n" + tabulate(
+                rows,
+                tablefmt="orgtbl",
+                colalign=("left", "right", "right", "right", "right", "right", "right"),
+            )
+
+            self.logger.stat(log)
+
+        return rows
