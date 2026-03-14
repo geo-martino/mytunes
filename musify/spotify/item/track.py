@@ -16,7 +16,7 @@ from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
 from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.music import HasSpotifyKeySignature
-from musify.spotify.properties.popularity import HasPopularity
+from musify.spotify.properties.stats import HasPopularity
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 if TYPE_CHECKING:

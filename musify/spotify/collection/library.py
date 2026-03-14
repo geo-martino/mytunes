@@ -7,7 +7,7 @@ from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
 from musify.spotify.item.track import SpotifyTrack
-from musify.spotify.properties.followers import HasFollowers
+from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.user import SpotifyUser
 
 

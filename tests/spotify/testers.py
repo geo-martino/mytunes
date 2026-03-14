@@ -12,8 +12,7 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
 from musify.spotify import SpotifyResource
-from musify.spotify.properties.followers import HasFollowers
-from musify.spotify.properties.popularity import HasPopularity
+from musify.spotify.properties.stats import HasPopularity, HasFollowers
 from musify.spotify.properties.uri import SpotifyUserURI
 from tests.models.testers import UniqueKeyTester, BaseModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator
