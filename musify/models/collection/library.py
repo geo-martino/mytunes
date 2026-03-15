@@ -2,7 +2,7 @@ import itertools
 import textwrap
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping
-from typing import ClassVar, Self, Any
+from typing import ClassVar, Self
 
 from aiorequestful.types import JSON
 from pydantic import Field, PrivateAttr
@@ -10,12 +10,12 @@ from tabulate import tabulate
 from termcolor import colored
 
 from musify.logger import STAT
-from musify.models.api import RemoteAPI, HasSavedEndpoints, ReadSavedEndpoints, ReadCollectionEndpoints
-from musify.models.api.album import HasAlbumEndpoints
-from musify.models.api.artist import HasArtistEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints, \
-    PlaylistReadItemEndpoints, PlaylistReadWriteSavedEndpoints
-from musify.models.api.track import HasTrackEndpoints
+from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints, ReadSavedEndpoints
+from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints, AlbumReadSavedEndpoints
+from musify.models.api.artist import HasArtistEndpoints, ArtistReadCollectionEndpoints, ArtistReadSavedEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, \
+    PlaylistReadWriteSavedEndpoints, PlaylistReadWriteEndpoints
+from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints
 from musify.models.api.user import HasUserEndpoints
 from musify.models.collection.album import RemoteAlbumCollection
 from musify.models.collection.artist import RemoteArtistCollection
@@ -26,7 +26,6 @@ from musify.models.item.artist import RemoteArtist, HasArtists
 from musify.models.item.genre import RemoteGenre, HasGenres
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.properties.logger import HasLogger
-from musify.models.remote import RemoteModel
 from musify.models.user import RemoteUser
 from musify.processors_new.filters import ValuesFilter
 
@@ -97,22 +96,19 @@ class RemoteLibrary[
     TV: RemoteTrack,
     KP,
     VP: RemotePlaylist,
+    API: RemoteAPI,
     RT: RemoteArtist,
     AT: RemoteAlbum,
     GT: RemoteGenre,
     UT: RemoteUser,
 ](
-    Library[TK, TV, KP, VP], RemoteModel, HasArtists[RT], HasAlbums[AT], HasGenres[GT]
+    Library[TK, TV, KP, VP], HasAPI[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
     _log_name_max_width: ClassVar[int] = PrivateAttr(default=40)
 
     _user: UT = PrivateAttr(
         # description="The currently authenticated user for this library."
         default=None
-    )
-
-    api: RemoteAPI | HasUserEndpoints = Field(
-        description="The API client used to interact with the remote service for managing library data."
     )
 
     @property
@@ -161,9 +157,6 @@ class RemoteLibrary[
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
-    def _log_unsupported_api(self, kind: str, context: str) -> None:
-        print(f"Cannot load {self.source.title()} {kind}. API does not support {context}.")
-
     async def load(self):
         self.logger.debug(f"Load {self._log_name} library: START")
         self.logger.info(f"\33[1;95m ->\33[1;97m Loading {self._log_name} library \33[0m")
@@ -171,10 +164,10 @@ class RemoteLibrary[
         await self.load_tracks()
 
         await self.load_playlists()
-        await self.load_playlists_tracks()
+        await self.load_playlist_items()
 
         await self.load_saved_albums()
-        await self.load_saved_albums_tracks()
+        await self.load_saved_album_tracks()
 
         await self.load_saved_artists()
         # await self.load_saved_artists_albums()
@@ -191,21 +184,18 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - tracks
     ###########################################################################
+    @HasAPI._validate_api(
+        "track",
+        False,
+        (None, HasTrackEndpoints, "{type} endpoints"),
+        ("tracks", HasSavedEndpoints, "saved {type}s endpoints"),
+        ("tracks.saved", TrackReadSavedEndpoints, "reading data for saved {type}s"),
+    )
     async def load_tracks(self) -> bool:
         self.logger.debug(f"Load {self._log_name} saved tracks: START")
+        api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints]] = self.api
 
-        log_kind = "saved tracks"
-        if not isinstance(self.api, HasTrackEndpoints):
-            self._log_unsupported_api(log_kind, "track endpoints")
-            return False
-        if not isinstance(self.api.tracks, HasSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
-            return False
-        if not isinstance(self.api.tracks.saved, ReadSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
-
-        tracks = await self.api.tracks.saved.get_all()
+        tracks = await api.tracks.saved.get_all()
         # noinspection PyProtectedMember
         self.tracks._replace(tracks)
 
@@ -242,21 +232,18 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - playlists
     ###########################################################################
+    @HasAPI._validate_api(
+        "playlist",
+        False,
+        (None, HasPlaylistEndpoints, "{type} endpoints"),
+        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
+        ("playlists.saved", PlaylistReadSavedEndpoints, "reading data for saved {type}s"),
+    )
     async def load_playlists(self) -> bool:
         self.logger.debug(f"Load {self._log_name} playlists: START")
+        api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadSavedEndpoints]] = self.api
 
-        log_kind = "saved playlists"
-        if not isinstance(self.api, HasPlaylistEndpoints):
-            self._log_unsupported_api(log_kind, "playlist endpoints")
-            return False
-        if not isinstance(self.api.playlists, HasSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
-            return False
-        if not isinstance(self.api.playlists.saved, PlaylistReadSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
-
-        playlists = await self.api.playlists.saved.get_by_user(self.user)
+        playlists = await api.playlists.saved.get_by_user(self.user)
         if self.playlist_filter is not None:
             playlists: list[VP] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
 
@@ -267,20 +254,19 @@ class RemoteLibrary[
         self.logger.debug(f"Load {self._log_name} playlists: DONE")
         return True
 
-    async def load_playlists_tracks(self) -> bool:
-        """Load all playlist tracks for all currently loaded playlists."""
+    @HasAPI._validate_api(
+        "playlist",
+        False,
+        (None, HasPlaylistEndpoints, "{type} endpoints"),
+        ("albums", PlaylistReadWriteEndpoints, "reading data for {type} items"),
+    )
+    async def load_playlist_items(self) -> bool:
+        """Load all playlist items for all currently loaded playlists."""
         self.logger.debug(f"Load {self._log_name} playlist's tracks: START")
-
-        log_kind = "playlist tracks"
-        if not isinstance(self.api, HasPlaylistEndpoints):
-            self._log_unsupported_api(log_kind, "playlist endpoints")
-            return False
-        if not isinstance(self.api.playlists, PlaylistReadWriteEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
+        api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
 
         async def _load_playlist_tracks(pl: VP) -> None:
-            items = await self.api.playlists.get_all(pl)
+            items = await api.playlists.get_all(pl)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
@@ -327,22 +313,19 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - albums
     ###########################################################################
+    @HasAPI._validate_api(
+        "album",
+        False,
+        (None, HasAlbumEndpoints, "{type} endpoints"),
+        ("albums", HasSavedEndpoints, "saved {type}s endpoints"),
+        ("albums.saved", AlbumReadSavedEndpoints, "reading data for saved {type}s"),
+    )
     async def load_saved_albums(self) -> bool:
         """Load all albums available for this library. Replaces all currently loaded albums."""
         self.logger.debug(f"Load {self._log_name} saved albums: START")
+        api: HasAlbumEndpoints[HasSavedEndpoints[ReadSavedEndpoints]] = self.api
 
-        log_kind = "saved albums"
-        if not isinstance(self.api, HasAlbumEndpoints):
-            self._log_unsupported_api(log_kind, "track endpoints")
-            return False
-        if not isinstance(self.api.albums, HasSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
-            return False
-        if not isinstance(self.api.albums.saved, ReadSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
-
-        albums = await self.api.albums.saved.get_all()
+        albums = await api.albums.saved.get_all()
 
         self.albums.clear()
         self.albums.extend(albums)
@@ -350,23 +333,22 @@ class RemoteLibrary[
         self.logger.debug(f"Load {self._log_name} saved albums: DONE")
         return True
 
-    async def load_saved_albums_tracks(self) -> bool:
+    @HasAPI._validate_api(
+        "album",
+        False,
+        (None, HasAlbumEndpoints, "{type} endpoints"),
+        ("albums", AlbumReadCollectionEndpoints, "reading data for saved {type}'s tracks"),
+    )
+    async def load_saved_album_tracks(self) -> bool:
         """Load all album tracks for all currently loaded albums."""
         self.logger.debug(f"Load {self._log_name} saved album's tracks: START")
-
-        log_kind = "saved album's tracks"
-        if not isinstance(self.api, HasAlbumEndpoints):
-            self._log_unsupported_api(log_kind, "album endpoints")
-            return False
-        if not isinstance(self.api.albums, ReadCollectionEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
+        api: HasAlbumEndpoints[AlbumReadCollectionEndpoints] = self.api
 
         for album in self.albums:
             if not isinstance(album, RemoteAlbumCollection):
                 continue
 
-            tracks = await self.api.albums.get_all(album)
+            tracks = await api.albums.get_all(album)
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 
@@ -398,22 +380,19 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - artists
     ###########################################################################
+    @HasAPI._validate_api(
+        "artist",
+        False,
+        (None, HasArtistEndpoints, "{type} endpoints"),
+        ("artists", HasSavedEndpoints, "saved {type}s endpoints"),
+        ("artists.saved", ArtistReadSavedEndpoints, "reading data for saved {type}s"),
+    )
     async def load_saved_artists(self) -> bool:
         """Load all artists available for this library. Replaces all currently loaded artists."""
         self.logger.debug(f"Load {self._log_name} saved artists: START")
+        api: HasArtistEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints]] = self.api
 
-        log_kind = "saved artists"
-        if not isinstance(self.api, HasArtistEndpoints):
-            self._log_unsupported_api(log_kind, "artist endpoints")
-            return False
-        if not isinstance(self.api.artists, HasSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
-            return False
-        if not isinstance(self.api.artists.saved, ReadSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
-
-        artists = await self.api.artists.saved.get_all()
+        artists = await api.artists.saved.get_all()
 
         self.artists.clear()
         self.artists.extend(artists)
@@ -421,23 +400,22 @@ class RemoteLibrary[
         self.logger.debug(f"Load {self._log_name} saved artists: DONE")
         return True
 
-    async def load_saved_artists_albums(self) -> bool:
+    @HasAPI._validate_api(
+        "artist",
+        False,
+        (None, HasPlaylistEndpoints, "{type} endpoints"),
+        ("artists", ArtistReadCollectionEndpoints, "reading data for saved {type}'s albums"),
+    )
+    async def load_saved_artist_albums(self) -> bool:
         """Load all artists albums for all currently loaded albums."""
         self.logger.debug(f"Load {self._log_name} saved artist's albums: START")
-
-        log_kind = "saved artist's albums"
-        if not isinstance(self.api, HasArtistEndpoints):
-            self._log_unsupported_api(log_kind, "artist endpoints")
-            return False
-        if not isinstance(self.api.artists, ReadCollectionEndpoints):
-            self._log_unsupported_api(log_kind, f"reading data for {log_kind}")
-            return False
+        api: HasArtistEndpoints[ArtistReadCollectionEndpoints] = self.api
 
         for artist in self.artists:
             if not isinstance(artist, RemoteArtistCollection):
                 continue
 
-            albums = await self.api.artists.get_all(artist)
+            albums = await api.artists.get_all(artist)
             artist.albums.clear()
             artist.albums.extend(albums)
 
@@ -501,50 +479,53 @@ class RemoteMutableLibrary[
     TV: RemoteTrack,
     KP,
     VP: RemoteMutablePlaylist,
+    API: RemoteAPI,
     RT: RemoteArtist,
     AT: RemoteAlbum,
     GT: RemoteGenre,
     UT: RemoteUser
 ](
-    MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, RT, AT, GT, UT]
+    MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, API, RT, AT, GT, UT]
 ):
     ###########################################################################
     ## Create/Sync
     ###########################################################################
+    @HasAPI._validate_api(
+        "playlist",
+        None,
+        (None, HasPlaylistEndpoints, "{type} endpoints"),
+        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
+        ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
+    )
     async def create_playlist(self, name: str, **kwargs) -> VP | None:
         """Create a new playlist with the given name and return it."""
         self.logger.debug(f"Create a playlist on {self._log_name} library: START")
+        api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] = self.api
 
         if name in self.playlists:
             self.logger.warning(f"Playlist with name {name!r} already exists in {self._log_name} library.")
             return self.playlists[name]
 
-        log_kind = "saved playlists"
-        if not isinstance(self.api, HasPlaylistEndpoints):
-            self._log_unsupported_api(log_kind, "playlist endpoints")
-            return None
-        if not isinstance(self.api.playlists, PlaylistReadWriteEndpoints):
-            self._log_unsupported_api(log_kind, "writing data for playlists")
-            return None
-        if not isinstance(self.api.playlists, HasSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
-            return None
-        if not isinstance(self.api.playlists.saved, PlaylistReadWriteSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"writing data for {log_kind}")
-            return None
-
-        playlist = await self.api.playlists.saved.create(name=name, **kwargs)
+        playlist = await api.playlists.saved.create(name=name, **kwargs)
         # noinspection PyProtectedMember
         self.playlists._update({playlist.name: playlist}, extract_keys=False)
 
         self.logger.debug(f"Create a playlist on {self._log_name} library: DONE")
         return playlist
 
-    async def sync_playlists(
-            self, kind: PLAYLIST_SYNC_TYPE = "new", dry_run: bool = True
+    @HasAPI._validate_api(
+        "playlist",
+        dict,
+        (None, HasPlaylistEndpoints, "{type} endpoints"),
+        ("playlists", PlaylistReadWriteEndpoints, "writing data for {type}s"),
+        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
+        ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
+    )
+    async def sync_playlist_items(
+            self, kind: PLAYLIST_SYNC_TYPE = "new", dry_run: bool = False,
     ) -> dict[str, SyncResultRemotePlaylist]:
         """
-        Synchronise the playlists in this library with the remote service.
+        Synchronise the items of playlists in this library with the remote service.
 
         Clear options:
             * 'new': Do not clear any items from the remote playlist and only add any tracks
@@ -558,20 +539,9 @@ class RemoteMutableLibrary[
         :return: Map of playlist name to the results of the sync as a :py:class:`SyncResultRemotePlaylist` object.
         """
         self.logger.debug(f"Sync {self._log_name} playlists: START")
-
-        log_kind = "saved playlists"
-        if not isinstance(self.api, HasPlaylistEndpoints):
-            self._log_unsupported_api(log_kind, "playlist endpoints")
-            return {}
-        if not isinstance(self.api.playlists, PlaylistReadWriteEndpoints):
-            self._log_unsupported_api(log_kind, f"writing data for playlists")
-            return {}
-        if not isinstance(self.api.playlists, HasSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"{log_kind} endpoints")
-            return {}
-        if not isinstance(self.api.playlists.saved, PlaylistReadWriteSavedEndpoints):
-            self._log_unsupported_api(log_kind, f"writing data for {log_kind}")
-            return {}
+        api: HasPlaylistEndpoints[
+            PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]
+        ] = self.api
 
         match kind:
             case "new":
@@ -587,9 +557,9 @@ class RemoteMutableLibrary[
         self.logger.info(message)
 
         async def _sync_playlist(pl: VP) -> tuple[str, SyncResultRemotePlaylist]:
-            playlist = await self.api.playlists.saved.get_or_create(pl.name)
-            playlist.tracks[:] = pl.tracks
-            return pl.name, await playlist.sync(items=pl, kind=kind, dry_run=dry_run)
+            remote = await api.playlists.saved.get_or_create(pl.name)
+            remote.tracks[:] = pl.tracks
+            return pl.name, await remote.sync_items(api=api, kind=kind, dry_run=dry_run)
 
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, self.playlists.values()),
@@ -603,7 +573,7 @@ class RemoteMutableLibrary[
         self.logger.debug(f"Sync {self._log_name} playlists: DONE")
         return results
 
-    def log_sync_playlists(
+    def log_sync_playlist_items(
             self, results: Mapping[str, SyncResultRemotePlaylist], skip_log: bool = False
     ) -> list[tuple[str, ...]]:
         """Log stats from the results of a ``sync_playlists`` operation"""

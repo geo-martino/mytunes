@@ -10,8 +10,8 @@ from musify.spotify import SpotifyResource
 from musify.spotify.collection._base import SpotifyCollection
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.track import SpotifyTrack
-from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.properties.images import HasSpotifyImages
+from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.properties.uri import SpotifyResourceURI
 from musify.spotify.user import SpotifyUser
 

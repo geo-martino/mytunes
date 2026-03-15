@@ -3,7 +3,7 @@ from typing import ClassVar, Type
 from pydantic import Field
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteSavedEndpoints, HasEndpoints
+    ReadSavedEndpoints, WriteSavedEndpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
 
@@ -36,7 +36,7 @@ class TrackWriteSavedEndpoints[UT: URI, RT: RemoteTrack](
     pass
 
 
-class HasTrackEndpoints[ET: TrackEndpoints](HasEndpoints):
+class HasTrackEndpoints[ET: TrackEndpoints | HasSavedEndpoints](HasEndpoints):
     tracks: ET = Field(
         description="Access track endpoints for the API."
     )

@@ -1,6 +1,7 @@
 import contextlib
+import functools
 from abc import abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping, Callable
 from typing import Self, Any
 
 from aiorequestful.auth import Authoriser
@@ -11,7 +12,8 @@ from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Fie
 from typing_inspection.typing_objects import is_typevar
 
 from musify.exception import MusifyValueError
-from musify.models.api._endpoints import HasEndpoints
+from musify.models.api._endpoints import HasEndpoints, Endpoints
+from musify.models.properties.logger import HasLogger
 from musify.models.remote import RemoteModel
 
 
@@ -120,3 +122,49 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
             handler: RequestHandler = getattr(self, field_name)._handler
             if not handler.closed:
                 await handler.__aexit__(exc_type, exc_val, exc_tb)
+
+
+class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
+    api: API = Field(
+        description="The API client model used to interact with the remote service.."
+    )
+
+    @classmethod
+    def _validate_api(
+            cls,
+            kind: str,
+            invalid_return: Any,
+            *expected: tuple[str | None, type[Endpoints | HasEndpoints], str]
+    ) -> Callable:
+        def decorator(func: Callable) -> Callable:
+
+            @functools.wraps(func)
+            def wrapper(self: HasAPI, *args, **kwargs):
+                for key, expected_type, context in expected:
+                    api = cls._get_endpoints(self.api, key)
+
+                    if not isinstance(api, expected_type):
+                        context = context.format(type=kind)
+                        message = f"Cannot load {self.source.title()} {kind}. API does not support {context}."
+                        self.logger.print_message(message)
+
+                        if callable(invalid_return):
+                            return invalid_return()
+                        return invalid_return
+
+                return func(self, *args, **kwargs)
+
+            return wrapper
+        return decorator
+
+    @staticmethod
+    def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:
+        if not key:
+            return api
+
+        for key in key.split("."):
+            if not hasattr(api, key):
+                raise AttributeError(f"API does not have attribute '{key}'.")
+            api = getattr(api, key)
+
+        return api

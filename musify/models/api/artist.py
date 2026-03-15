@@ -3,7 +3,7 @@ from typing import ClassVar, Type
 from pydantic import Field
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, ReadCollectionEndpoints, WriteSavedEndpoints, HasEndpoints
+    ReadSavedEndpoints, ReadCollectionEndpoints, WriteSavedEndpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.collection.artist import RemoteArtistCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -45,7 +45,7 @@ class ArtistWriteSavedEndpoints[UT: URI, RT: RemoteArtist](
     pass
 
 
-class HasArtistEndpoints[ET: ArtistEndpoints](HasEndpoints):
+class HasArtistEndpoints[ET: ArtistEndpoints | HasSavedEndpoints](HasEndpoints):
     artists: ET = Field(
         description="Access artist endpoints for the API."
     )

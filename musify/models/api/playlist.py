@@ -4,7 +4,7 @@ from typing import ClassVar, Type
 from pydantic import validate_call, Field, PositiveInt
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints
+    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.item.track import RemoteTrack
@@ -100,7 +100,7 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Re
         return playlist
 
 
-class HasPlaylistEndpoints[ET: PlaylistEndpoints](HasEndpoints):
+class HasPlaylistEndpoints[ET: PlaylistEndpoints | HasSavedEndpoints](HasEndpoints):
     playlists: ET = Field(
         description="Access playlist endpoints for the API."
     )

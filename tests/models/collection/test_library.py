@@ -4,7 +4,6 @@ from unittest.mock import patch, Mock
 
 import pytest
 from faker import Faker
-from fontTools.misc.cython import returns
 
 from musify.models.api import RemoteAPI, ReadSavedEndpoints
 from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints
@@ -201,12 +200,12 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
         with (
             patch.object(PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_return_playlist) as mock_get,
-            patch.object(RemoteMutablePlaylist, "sync") as mock_sync,
+            patch.object(RemoteMutablePlaylist, "sync_items") as mock_sync,
         ):
-            results = await model.sync_playlists()
+            results = await model.sync_playlist_items()
             assert len(results) == len(playlists)
 
             assert mock_get.call_count == len(playlists)
             assert mock_sync.call_count == len(playlists)
 
-            assert len(model.log_sync_playlists(results, skip_log=True)) == len(playlists)
+            assert len(model.log_sync_playlist_items(results, skip_log=True)) == len(playlists)

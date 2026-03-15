@@ -3,7 +3,7 @@ from typing import ClassVar, Type
 from pydantic import Field
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, ReadCollectionEndpoints, HasEndpoints, WriteSavedEndpoints
+    ReadSavedEndpoints, ReadCollectionEndpoints, HasEndpoints, WriteSavedEndpoints, HasSavedEndpoints
 from musify.models.collection.genre import RemoteGenreCollection
 from musify.models.item.genre import RemoteGenre
 from musify.models.properties.uri import URI
@@ -43,7 +43,7 @@ class GenreWriteSavedEndpoints[UT: URI, RT: RemoteGenre](
     pass
 
 
-class HasGenreEndpoints[ET: GenreEndpoints](HasEndpoints):
+class HasGenreEndpoints[ET: GenreEndpoints | HasSavedEndpoints](HasEndpoints):
     genres: ET = Field(
         description="Access genre endpoints for the API."
     )

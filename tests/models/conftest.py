@@ -4,12 +4,11 @@ import pytest
 from faker import Faker
 
 from musify.models import BaseResource
-from musify.models.collection.playlist import Playlist, RemotePlaylist
-from musify.models.item.album import Album, RemoteAlbum
-from musify.models.item.artist import Artist, RemoteArtist
-from musify.models.item.track import Track, RemoteTrack
+from musify.models.collection.playlist import Playlist
+from musify.models.item.album import Album
+from musify.models.item.artist import Artist
+from musify.models.item.track import Track
 from musify.models.user import RemoteUser
-from tests.models.api.utils import MockUrlCursor
 from tests.utils import SimpleURI
 
 

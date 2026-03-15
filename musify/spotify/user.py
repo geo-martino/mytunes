@@ -5,8 +5,8 @@ from pydantic import Field
 from musify._types import StrippedString
 from musify.models.user import RemoteUser
 from musify.spotify._base import SpotifyResource
-from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.properties.images import HasSpotifyImages
+from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.properties.uri import SpotifyUserURI
 
 

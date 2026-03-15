@@ -8,7 +8,6 @@ from pydantic import Field, validate_call, BeforeValidator, TypeAdapter
 
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
-from musify.models.api import HasSavedEndpoints
 from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.cursors import PageCursor, InitialCursor
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
@@ -22,8 +21,7 @@ from musify.models.user import RemoteUser
 from musify.processors_new import Result
 
 if TYPE_CHECKING:
-    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints, \
-    PlaylistReadWriteSavedEndpoints
+    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
 
 
 class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], HasLength, HasImages):
@@ -156,7 +154,7 @@ class SyncResultRemotePlaylist(Result):
 class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
     MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT, OT, CT]
 ):
-    async def sync(
+    async def sync_items(
             self,
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],
             kind: PLAYLIST_SYNC_TYPE = "new",

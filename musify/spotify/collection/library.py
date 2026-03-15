@@ -2,6 +2,7 @@ from typing import final
 
 from musify.models.collection.library import RemoteMutableLibrary
 from musify.spotify import SpotifyModel
+from musify.spotify.api import SpotifyAPI
 from musify.spotify.collection.playlist import SpotifyMutablePlaylist
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
@@ -15,7 +16,15 @@ from musify.spotify.user import SpotifyUser
 class SpotifyLibrary(
     SpotifyModel,
     RemoteMutableLibrary[
-        str, SpotifyTrack, str, SpotifyMutablePlaylist, SpotifyArtist, SpotifyAlbum, SpotifyGenre, SpotifyUser
+        str,
+        SpotifyTrack,
+        str,
+        SpotifyMutablePlaylist,
+        SpotifyAPI,
+        SpotifyArtist,
+        SpotifyAlbum,
+        SpotifyGenre,
+        SpotifyUser
     ],
     HasFollowers,
 ):

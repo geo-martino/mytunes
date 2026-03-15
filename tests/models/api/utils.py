@@ -4,13 +4,12 @@ from unittest.mock import patch, Mock
 
 from aiorequestful.auth import Authoriser
 
-from musify.models.api import RemoteAPI, RemoteAuthoriser, ReadSavedEndpoints, HasSavedEndpoints, \
+from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints, \
     HasEndpoints
-from musify.models.api.album import HasAlbumEndpoints, AlbumEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistEndpoints, PlaylistReadSavedEndpoints, \
-    PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackEndpoints
+from musify.models.api.album import HasAlbumEndpoints, AlbumEndpoints, AlbumReadSavedEndpoints
+from musify.models.api.artist import HasArtistEndpoints, ArtistEndpoints, ArtistReadSavedEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api.track import HasTrackEndpoints, TrackEndpoints, TrackReadSavedEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
@@ -82,21 +81,21 @@ class MockUserEndpoints(
 
 class MockTrackEndpoints(
     TrackEndpoints[SimpleURI, RemoteTrack],
-    HasSavedEndpoints[ReadSavedEndpoints[SimpleURI, RemoteTrack]],
+    HasSavedEndpoints[TrackReadSavedEndpoints[SimpleURI, RemoteTrack]],
 ):
     pass
 
 
 class MockArtistEndpoints(
     ArtistEndpoints[SimpleURI, RemoteArtist],
-    HasSavedEndpoints[ReadSavedEndpoints[SimpleURI, RemoteArtist]],
+    HasSavedEndpoints[ArtistReadSavedEndpoints[SimpleURI, RemoteArtist]],
 ):
     pass
 
 
 class MockAlbumEndpoints(
     AlbumEndpoints[SimpleURI, RemoteAlbum],
-    HasSavedEndpoints[ReadSavedEndpoints[SimpleURI, RemoteAlbum]],
+    HasSavedEndpoints[AlbumReadSavedEndpoints[SimpleURI, RemoteAlbum]],
 ):
     pass
 
