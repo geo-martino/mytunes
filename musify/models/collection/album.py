@@ -1,7 +1,7 @@
 from collections.abc import Sequence, MutableMapping
 from typing import Self, Any, TYPE_CHECKING
 
-from pydantic import model_validator, ModelWrapValidatorHandler
+from pydantic import model_validator, ModelWrapValidatorHandler, validate_call
 
 from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
@@ -78,5 +78,6 @@ class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, 
     RemoteResource[UT],
     RemoteCollection[TT, CT],
 ):
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasAlbumEndpoints[AlbumReadCollectionEndpoints]) -> None:
         await api.albums.get_all(self.uri)

@@ -1,6 +1,6 @@
 from typing import ClassVar, TYPE_CHECKING, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, validate_call
 
 from musify._types import StrippedString
 from musify.models.collection import CollectionModel
@@ -60,5 +60,6 @@ class HasGenres[GT: Genre](HasSeparableTags, CollectionModel[GT]):
 
 
 class RemoteGenre[UT: URI](Genre, RemoteResource[UT]):
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasGenreEndpoints[GenreReadItemEndpoints]) -> Self:
         return await api.genres.get(self.uri)

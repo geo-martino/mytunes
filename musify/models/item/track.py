@@ -1,6 +1,6 @@
 from typing import ClassVar, Self, TYPE_CHECKING
 
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
 
 from musify._types import StrippedString
 from musify.models._base import AttributeResource
@@ -147,5 +147,6 @@ class RemoteTrack[RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
         default_factory=list,
     )
 
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasTrackEndpoints[TrackReadItemEndpoints]) -> Self:
         return await api.tracks.get(self.uri)

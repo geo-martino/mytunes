@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self
 
-from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt
+from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, validate_call
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel
@@ -176,6 +176,7 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
             raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {expected_type!r}")
         return uri
 
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasTrackEndpoints[SpotifyTrackEndpoints]) -> Self:
         return await api.tracks.get_audio_features(self.uri)
 
