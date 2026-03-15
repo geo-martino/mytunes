@@ -1,1 +1,1 @@
-from ._base import CollectionModel, RemoteCollection
+from ._base import CollectionModel, RemoteCollection, SyncResult

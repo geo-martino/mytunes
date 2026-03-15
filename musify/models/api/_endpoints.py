@@ -418,7 +418,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURISchema.validate_call
-    async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> None:
+    async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._batch_limit
@@ -426,6 +426,8 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         for batch in self._batch_items(uris, limit):
             body = self._generate_add_batch_body(batch)
             await self._handler.put(self._saved_write_url, json=body)
+
+        return len(uris)
 
     @staticmethod
     def _generate_add_batch_body(values: Iterable[str]) -> JSON:
@@ -435,7 +437,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURISchema.validate_call
-    async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> None:
+    async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Remote items from the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._batch_limit
@@ -443,6 +445,8 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         for batch in self._batch_items(uris, limit):
             body = self._generate_remove_batch_body(batch)
             await self._handler.delete(self._saved_write_url, json=body)
+
+        return len(uris)
 
     @staticmethod
     def _generate_remove_batch_body(values: Iterable[str]) -> JSON:

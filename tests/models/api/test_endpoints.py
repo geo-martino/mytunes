@@ -654,7 +654,8 @@ class TestWriteSavedEndpoints(EndpointsTester):
             faker: Faker,
     ):
         uris = list(map(self._convert_uri_to_random_input_type, uris))
-        await model.add_many(uris, limit=limit)
+        result = await model.add_many(uris, limit=limit)
+        assert result == len(uris)
 
     async def test_add_many_uses_default_limit(self, model: WriteSavedEndpoints, uris: list[URI]):
         with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
@@ -671,7 +672,8 @@ class TestWriteSavedEndpoints(EndpointsTester):
             faker: Faker,
     ):
         uris = list(map(self._convert_uri_to_random_input_type, uris))
-        await model.remove_many(uris, limit=limit)
+        result = await model.remove_many(uris, limit=limit)
+        assert result == len(uris)
 
     async def test_remove_many_uses_default_limit(self, model: WriteSavedEndpoints, uris: list[URI]):
         with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:

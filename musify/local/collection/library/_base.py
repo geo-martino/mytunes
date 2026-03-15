@@ -18,14 +18,12 @@ from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.logger import STAT, HEADER_PREFIX
-from musify.models.collection.library import MutableLibrary
+from musify.models.collection.library import MutableLibrary, RestoreType
 from musify.models.properties.file import PathMapper
 from musify.models.properties.uri import URI
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
-
-type RestoreTracksType = Iterable[Mapping[str, Any]] | Mapping[str | Path, Mapping[str, Any]]
 
 
 @final
@@ -348,12 +346,17 @@ class LocalLibrary(
     ###########################################################################
     @validate_call
     def restore_tracks(
-            self, backup: RestoreTracksType, tags: Annotated[set[str], BeforeValidator(to_set)] = ()
+            self, backup: RestoreType[str | Path], tags: Annotated[set[str], BeforeValidator(to_set)] = ()
     ) -> int:
         """
         Restore track tags from a backup to loaded track objects. This does not save the updated tags.
 
-        :param backup: Backup data in the form ``{<path>: {<Map of JSON formatted track data>}}``
+        Backup may be in the form of either:
+            * An iterable of dictionaries where dictionary is ``{<Dump of track data>}``
+            * A mapping of ``{<path>: {<Dump of track data>}}``
+            * A mapping of ``{"tracks": {<path>: {<Dump of track data>}}}``
+
+        :param backup: Backup data. See description for accepted formats.
         :param tags: Set of tags to restore.
         :return: The number of tracks restored.
         """
@@ -373,7 +376,10 @@ class LocalLibrary(
         return count
 
     @staticmethod
-    def _extract_tracks_from_backup(backup: RestoreTracksType) -> dict[Path, Mapping[str, Any]]:
+    def _extract_tracks_from_backup(backup: RestoreType[str | Path]) -> dict[Path, Mapping[str, Any]]:
+        if isinstance(backup, Mapping) and "tracks" in backup:
+            backup = backup["tracks"]
+
         if isinstance(backup, Mapping):
             backup = {Path(path): track_map for path, track_map in backup.items()}
         else:
