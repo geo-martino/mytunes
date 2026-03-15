@@ -250,7 +250,7 @@ class TestLocalLibrary(BaseResourceTester):
         model.tracks[:] = sorted(tracks, key=lambda t: t.ext)
         model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
 
-        dump = model.generate_backup()
+        dump = model.dump()
         assert len(dump["tracks"]) == len(tracks)
         assert len(dump["playlists"]) == len(model.playlists)
 
@@ -262,7 +262,7 @@ class TestLocalLibrary(BaseResourceTester):
             assert track.name != "brand new title"
             assert track.artist != new_artist
 
-        backup: list[dict[str, Any]] = model.generate_backup()["tracks"]
+        backup: list[dict[str, Any]] = model.dump()["tracks"]
         for track in backup:
             track["name"] = new_title
 

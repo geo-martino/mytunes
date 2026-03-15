@@ -344,15 +344,8 @@ class LocalLibrary(
             yield LocalGenreCollection(tracks=group, name=genre)
 
     ###########################################################################
-    ## Backup/restore
+    ## Restore
     ###########################################################################
-    def generate_backup(self) -> dict:
-        """Generate a backup dictionary of this library's state."""
-        dump = self.model_dump(
-            mode="json", exclude_none=True
-        )
-        return dump
-
     @validate_call
     def restore_tracks(
             self, backup: RestoreTracksType, tags: Annotated[set[str], BeforeValidator(to_set)] = ()

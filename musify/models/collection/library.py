@@ -2,7 +2,7 @@ import itertools
 import textwrap
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping
-from typing import ClassVar, Self
+from typing import ClassVar, Self, Any
 
 from aiorequestful.types import JSON
 from pydantic import Field, PrivateAttr
@@ -37,6 +37,10 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], 
         def _playlist_tracks_in_tracks(playlist: VP) -> Iterator[TV]:
             return (track for track in playlist.tracks if track not in self.tracks)
         return list(itertools.chain.from_iterable(map(_playlist_tracks_in_tracks, self.playlists.values())))
+
+    def dump(self) -> dict[str, Any]:
+        """Generate a dump of this library's state. This can be used for backup or debugging purposes."""
+        return self.model_dump(mode="json", exclude_none=True)
 
 
 # noinspection PyAbstractClass
@@ -450,8 +454,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Backup/Restore
     ###########################################################################
-    def generate_backup(self) -> JSON:
-        """Generate a backup of all data in this library as a dictionary."""
+    def dump(self) -> dict[str, Any]:
         names_seen = set()
         playlists = []
         for pl in self.playlists.values():

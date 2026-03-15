@@ -37,6 +37,27 @@ class TestLibrary(BaseResourceTester):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
         assert library.count == len(tracks)
 
+    def test_dump(self, model: HasTracksAndPlaylists, playlists: list[Playlist], tracks: list[Track]):
+        model = model.__class__(playlists=playlists, tracks=tracks)
+
+        backup = model.dump()
+        assert len(backup["playlists"]) == len(model.playlists)
+        for pl, (pl_id, pl_backup) in zip(playlists, backup["playlists"].items()):
+            assert isinstance(pl_backup, dict)
+            assert "name" in pl_backup and isinstance(pl_backup["name"], str)
+            assert "tracks" in pl_backup and len(pl_backup["tracks"]) == len(pl.tracks)
+            assert all(isinstance(track, str) for track in pl_backup["tracks"])
+
+            if pl.uri:
+                assert "uri" in pl_backup and isinstance(pl_backup["uri"], str)
+
+        for track, track_backup in zip(tracks, backup["tracks"]):
+            assert isinstance(track_backup, dict)
+            assert "name" in track_backup and isinstance(track_backup["name"], str)
+
+            if track.uri:
+                assert "uri" in track_backup and isinstance(track_backup["uri"], str)
+
 
 class MockRemoteLibrary(RemoteLibrary):
     source: ClassVar[str] = "test"
@@ -122,34 +143,6 @@ class TestRemoteLibrary(BaseModelTester):
         self.assert_items_loaded(model.albums, mock_get_all)
 
         assert model.log_albums(skip_log=True)
-
-    def test_generate_backup(
-            self,
-            model: RemoteLibrary,
-            api: RemoteAPI,
-            playlists: list[RemotePlaylist],
-            tracks: list[RemoteTrack],
-            albums: list[RemoteAlbum],
-            artists: list[RemoteArtist],
-    ):
-        model = model.__class__(api=api, playlists=playlists, tracks=tracks, albums=albums, artists=artists)
-
-        backup = model.generate_backup()
-        assert len(backup["playlists"]) == len(model.playlists)
-        for pl, pl_backup in zip(playlists, backup["playlists"]):
-            assert isinstance(pl_backup, dict)
-            assert "name" in pl_backup and isinstance(pl_backup["name"], str)
-            assert "tracks" in pl_backup and len(pl_backup["tracks"]) == len(pl.tracks)
-            assert all(isinstance(track, str) for track in pl_backup["tracks"])
-
-        assert len(backup["tracks"]) == len(model.tracks)
-        assert all(isinstance(track, str) for track in backup["tracks"])
-
-        assert len(backup["albums"]) == len(model.albums)
-        assert all(isinstance(album, str) for album in backup["albums"])
-
-        assert len(backup["artists"]) == len(model.artists)
-        assert all(isinstance(artist, str) for artist in backup["artists"])
 
 
 class TestRemoteMutableLibrary(BaseModelTester):
