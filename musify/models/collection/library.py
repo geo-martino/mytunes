@@ -192,7 +192,7 @@ class RemoteLibrary[
         await self.load_saved_album_tracks()
 
         await self.load_saved_artists()
-        await self.load_saved_artists_albums()
+        await self.load_saved_artist_albums()
 
         self.logger.print_line(STAT)
         self.log_playlists(skip_log=True)
@@ -232,7 +232,7 @@ class RemoteLibrary[
         "playlist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("albums", PlaylistReadWriteEndpoints, "reading data for {type} items"),
+        ("playlists", PlaylistReadWriteEndpoints, "reading data for {type} items"),
     )
     async def load_playlist_items(self) -> bool:
         """Load all playlist items for all currently loaded playlists."""
@@ -747,8 +747,8 @@ class RemoteMutableLibrary[
             removed = len(remove)
             added = len(add)
         else:
-            removed = await api.saved.remove_many(remove) if remove else 0
-            added = await api.saved.add_many(add) if add else 0
+            removed = await api.saved.remove_many(remove)
+            added = await api.saved.add_many(add)
 
         return SyncResult(
             start=len(remote),

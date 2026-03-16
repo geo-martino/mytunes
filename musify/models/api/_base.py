@@ -130,12 +130,17 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
     )
 
     @classmethod
-    def _validate_api(
+    def _validate_api[T](
             cls,
             kind: str,
-            invalid_return: Any,
+            invalid_return: T,
             *expected: tuple[str | None, type[Endpoints | HasEndpoints], str]
     ) -> Callable:
+        async def invalid_wrapper() -> T:
+            if callable(invalid_return):
+                return invalid_return()
+            return invalid_return
+
         def decorator(func: Callable) -> Callable:
 
             @functools.wraps(func)
@@ -146,11 +151,8 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
                     if not isinstance(api, expected_type):
                         context = context.format(type=kind)
                         message = f"Cannot load {self.source.title()} {kind}. API does not support {context}."
-                        self.logger.print_message(message)
-
-                        if callable(invalid_return):
-                            return invalid_return()
-                        return invalid_return
+                        self.logger.warning(message)
+                        return invalid_wrapper()
 
                 return func(self, *args, **kwargs)
 

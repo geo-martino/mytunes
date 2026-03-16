@@ -63,7 +63,7 @@ class SpotifyTrackEndpoints(
         ids = (uri.id for uri in uris)
 
         items = []
-        for batch in self._batch_items(ids, limit):
+        for batch in self._batch_values(ids, limit):
             params = {"ids": ",".join(batch)}
             response = await self._handler.get(url, params=params)
             items.extend(map(SpotifyAudioFeatures.model_validate, response["audio_features"]))

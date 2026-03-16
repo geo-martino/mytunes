@@ -1,3 +1,4 @@
+import logging
 from abc import abstractmethod
 from typing import ClassVar, Any, Type
 
@@ -47,6 +48,11 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         params = self._format_query_params(query=query, types=types, limit=limit, **kwargs)
         response = await self._handler.get(self._query_url, params=params)
+
+        if "error" in response:
+            message = [f"Query: {query}", f"Types: {",".join(types)}", response["error"]]
+            self._handler.log("SKIP", self._query_url, message=message, level=logging.ERROR)
+            return {}
 
         results: dict[str, list[RT]] = {}
         for kind in types:

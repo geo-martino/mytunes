@@ -61,7 +61,7 @@ class _SpotifySavedPlaylistEndpoints(
     @_ApiURLSchema.validate_call
     async def modify(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         body = self._format_playlist_body(**kwargs)
-        return await super().create(**body)
+        return await super().modify(**body)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
@@ -85,13 +85,13 @@ class SpotifyPlaylistEndpoints(
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
-    async def append(
+    async def add(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],
             uris: SpotifyApiURISequence[SpotifyTrack],
             limit: PositiveInt = None
     ) -> int:
-        return await super().append(url.joinpath("items"), uris=uris, limit=limit)
+        return await super().add(url.joinpath("items"), uris=uris, limit=limit)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796

@@ -124,8 +124,12 @@ class TestEndpoints(EndpointsTester):
         cursor = MockUrlCursor(url=initial_cursor.url, next=initial_cursor.next.url)
 
         with (
-            patch.object(model.__class__, "_get_all_items_by_pagination") as mock_pagination,
-            patch.object(model.__class__, "_get_all_items_by_generation") as mock_generation,
+            patch.object(
+                model.__class__, "_get_all_items_by_pagination", return_value=([], initial_cursor)
+            ) as mock_pagination,
+            patch.object(
+                model.__class__, "_get_all_items_by_generation", return_value=([], initial_cursor)
+            ) as mock_generation,
         ):
             await model._get_all_items(cursor, path="items")
             mock_pagination.assert_called_once()
@@ -137,8 +141,12 @@ class TestEndpoints(EndpointsTester):
         initial_cursor.total = faker.random_int(1, 100)
 
         with (
-            patch.object(model.__class__, "_get_all_items_by_pagination") as mock_pagination,
-            patch.object(model.__class__, "_get_all_items_by_generation") as mock_generation,
+            patch.object(
+                model.__class__, "_get_all_items_by_pagination", return_value=([], initial_cursor)
+            ) as mock_pagination,
+            patch.object(
+                model.__class__, "_get_all_items_by_generation", return_value=([], initial_cursor)
+            ) as mock_generation,
         ):
             await model._get_all_items(initial_cursor, path="items")
             mock_pagination.assert_not_called()
@@ -317,23 +325,16 @@ class TestEndpoints(EndpointsTester):
 
         self.assert_get_items_from_response(model, response, path, expected)
 
-    def test_batch_items(self, uris: list[URI]):
-        batches = list(Endpoints._batch_items(uris, limit=10))
+    def test_batch_values(self, uris: list[URI]):
+        batches = list(Endpoints._batch_values(uris, limit=10))
         for batch in batches[:-1]:
             assert len(batch) == 10
         assert len(batches[-1]) == len(uris) % 10 if len(uris) % 10 != 0 else 10
 
-    def test_generate_batch_url(self, uris: list[URI]):
-        url = URL("https://api.example.com/resources")
-        uris = list(map(str, uris[:10]))
-
-        url = Endpoints._generate_batch_url(url, uris)
-        assert url.query["ids"] == ",".join(uris)
-
 
 class TestReadItemEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> Endpoints:
+    def model(self, handler: RequestHandler) -> ReadItemEndpoints:
         return ReadItemEndpoints[SimpleURI, MockRemoteResource](
             handler=handler,
         )
@@ -349,7 +350,7 @@ class TestReadItemEndpoints(EndpointsTester):
             mock_get.assert_called_once_with(uri.api_url)
 
     @pytest.fixture
-    def mock_create_model(self, model: Endpoints, response: dict[str, Any]) -> Generator[Mock, None, None]:
+    def mock_create_model(self, model: ReadItemEndpoints, response: dict[str, Any]) -> Generator[Mock, None, None]:
         with patch.object(model.__class__, "create_model") as mock_create_model:
             yield mock_create_model
             mock_create_model.assert_called_once_with(response)
@@ -357,7 +358,7 @@ class TestReadItemEndpoints(EndpointsTester):
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_get_on_uri(
             self,
-            model: Endpoints,
+            model: ReadItemEndpoints,
             uri: URI,
             mock_get: Mock,
             mock_create_model: Mock,
@@ -395,16 +396,23 @@ class TestReadItemsEndpoints(EndpointsTester):
             uris: list[URI],
             limit: int,
             mock_get: Mock,
-            mock_batch_items: Mock,
+            mock_batch_values: Mock,
             mock_get_items_from_response: Mock,
             converter: Callable[[URI], Any],
     ):
         await model.get_many(list(map(converter, uris)), limit=limit)
 
     async def test_get_many_uses_default_limit(self, model: ReadItemsEndpoints, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
+        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
             await model.get_many(uris)
-            mock_batch_items.assert_called_once_with(uris, model._many_limit)
+            mock_batch_values.assert_called_once_with(uris, model._many_limit)
+
+    def test_generate_batch_url(self, uris: list[URI]):
+        url = URL("https://api.example.com/resources")
+        uris = list(map(str, uris[:10]))
+
+        url = ReadItemsEndpoints._generate_batch_url(url, uris)
+        assert url.query["ids"] == ",".join(uris)
 
 
 class TestReadCollectionEndpoints(EndpointsTester):
@@ -483,6 +491,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
     class MockWriteCollectionEndpoints(WriteCollectionEndpoints[SimpleURI, MockRemoteResource]):
         _batch_limit = 18
         _extend_path = "items"
+        _extend_type = "items"
         _remove_path = "items"
 
     @pytest.fixture
@@ -508,29 +517,29 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             mock_get.assert_called_once_with(uri.api_url)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
-    async def test_append(
+    async def test_add(
             self,
             model: WriteCollectionEndpoints,
             uri: URI,
             uris: list[URI],
             limit: int,
-            mock_batch_items: Mock,
+            mock_batch_values: Mock,
             mock_post: Mock,
             faker: Faker,
             converter: Callable[[URI], Any],
     ):
         url = converter(uri)
         uris = list(map(self._convert_uri_to_random_input_type, uris))
-        result = await model.append(url, uris, limit=limit)
+        result = await model.add(url, uris, limit=limit)
         assert result == len(uris)
 
-    async def test_append_uses_default_limit(self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
-            await model.append(uri.api_url, uris)
-            mock_batch_items.assert_called_once_with(uris, model._batch_limit)
+    async def test_add_uses_default_limit(self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI]):
+        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
+            await model.add(uri.api_url, uris)
+            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
-    async def test_append_and_skip_duplicates(
+    async def test_add_and_skip_duplicates(
             self,
             model: WriteCollectionEndpoints,
             uri: URI,
@@ -555,10 +564,10 @@ class TestWriteCollectionEndpoints(EndpointsTester):
 
         with (
             patch.object(model.__class__, "get_all", return_value=collection_items, new_callable=AsyncMock),
-            patch.object(model.__class__, "append", new_callable=AsyncMock) as mock_append
+            patch.object(model.__class__, "add", new_callable=AsyncMock) as mock_add
         ):
-            await model.append_and_skip_duplicates(url, uris_duplicated, limit=limit)
-            mock_append.assert_called_once_with(uri.api_url, uris, limit=limit)
+            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
+            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_remove(
@@ -567,7 +576,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             uri: URI,
             uris: list[URI],
             limit: int,
-            mock_batch_items: Mock,
+            mock_batch_values: Mock,
             mock_delete: Mock,
             faker: Faker,
             converter: Callable[[URI], Any],
@@ -578,9 +587,9 @@ class TestWriteCollectionEndpoints(EndpointsTester):
         assert result == len(uris)
 
     async def test_remove_uses_default_limit(self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
+        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
             await model.remove(uri.api_url, uris)
-            mock_batch_items.assert_called_once_with(uris, model._batch_limit)
+            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
 
 
 class TestReadSavedEndpoints(EndpointsTester):
@@ -599,13 +608,14 @@ class TestReadSavedEndpoints(EndpointsTester):
     async def test_get_all(self, handler: RequestHandler, uri: URI, faker: Faker):
         model = self.MockReadSavedEndpoints(handler=handler)
         limit = faker.random_int(1, 100)
+        cursor = MockUrlCursor(url=uri.api_url)
 
         with (
             patch.object(
-                TypeAdapter, "validate_python", return_value=MockUrlCursor(url=uri.api_url)
+                TypeAdapter, "validate_python", return_value=cursor
             ) as mock_validate,
             patch.object(
-                model.__class__, "_get_all_items_by_pagination", return_value=([1], None)
+                model.__class__, "_get_all_items_by_pagination", return_value=([1], cursor)
             ) as mock_get_all_items,
         ):
             await model.get_all(limit=limit)
@@ -620,11 +630,13 @@ class TestReadSavedEndpoints(EndpointsTester):
             )
 
     async def test_get_all_uses_default_limit(self, model: ReadSavedEndpoints, uri: URI):
+        cursor = MockUrlCursor(url=uri.api_url)
+
         with (
             patch.object(
-                TypeAdapter, "validate_python", return_value=MockUrlCursor(url=uri.api_url)
+                TypeAdapter, "validate_python", return_value=cursor
             ) as mock_validate,
-            patch.object(model.__class__, "_get_all_items_by_pagination", return_value=([1], None)),
+            patch.object(model.__class__, "_get_all_items_by_pagination", return_value=([1], cursor)),
         ):
             await model.get_all()
             mock_validate.assert_called_once_with(dict(
@@ -649,7 +661,7 @@ class TestWriteSavedEndpoints(EndpointsTester):
             model: WriteSavedEndpoints,
             uris: list[URI],
             limit: int,
-            mock_batch_items: Mock,
+            mock_batch_values: Mock,
             mock_put: Mock,
             faker: Faker,
     ):
@@ -658,16 +670,16 @@ class TestWriteSavedEndpoints(EndpointsTester):
         assert result == len(uris)
 
     async def test_add_many_uses_default_limit(self, model: WriteSavedEndpoints, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
+        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
             await model.add_many(uris)
-            mock_batch_items.assert_called_once_with(uris, model._batch_limit)
+            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
 
     async def test_remove_many(
             self,
             model: WriteSavedEndpoints,
             uris: list[URI],
             limit: int,
-            mock_batch_items: Mock,
+            mock_batch_values: Mock,
             mock_delete: Mock,
             faker: Faker,
     ):
@@ -676,6 +688,6 @@ class TestWriteSavedEndpoints(EndpointsTester):
         assert result == len(uris)
 
     async def test_remove_many_uses_default_limit(self, model: WriteSavedEndpoints, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_items", return_value=[]) as mock_batch_items:
+        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
             await model.remove_many(uris)
-            mock_batch_items.assert_called_once_with(uris, model._batch_limit)
+            mock_batch_values.assert_called_once_with(uris, model._batch_limit)

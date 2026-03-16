@@ -155,8 +155,8 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
                 return_value=(add, remove, unchanged)
             ) as mock_get_sync_items,
             patch.object(
-                WriteCollectionEndpoints, "append", return_value=len(add), new_callable=AsyncMock
-            ) as mock_append,
+                WriteCollectionEndpoints, "add", return_value=len(add), new_callable=AsyncMock
+            ) as mock_add,
             patch.object(
                 WriteCollectionEndpoints, "remove", return_value=len(remove), new_callable=AsyncMock
             ) as mock_remove,
@@ -168,15 +168,8 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             assert_sync_items_result(result, remote_uris, add, remove, unchanged)
 
             if dry_run:
-                mock_append.assert_not_called()
+                mock_add.assert_not_called()
                 mock_remove.assert_not_called()
             else:
-                if add:
-                    mock_append.assert_called_once_with(model.uri.api_url, uris=add)
-                else:
-                    mock_append.assert_not_called()
-
-                if remove:
-                    mock_remove.assert_called_once_with(model.uri.api_url, uris=remove)
-                else:
-                    mock_remove.assert_not_called()
+                mock_add.assert_called_once_with(model.uri.api_url, uris=add)
+                mock_remove.assert_called_once_with(model.uri.api_url, uris=remove)

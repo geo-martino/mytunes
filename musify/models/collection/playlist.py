@@ -168,8 +168,8 @@ class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCu
             removed = len(remove)
             added = len(add)
         else:
-            removed = await api.playlists.remove(self.uri.api_url, uris=remove) if remove else 0
-            added = await api.playlists.append(self.uri.api_url, uris=add) if add else 0
+            removed = await api.playlists.remove(self.uri.api_url, uris=remove)
+            added = await api.playlists.add(self.uri.api_url, uris=add)
 
         return SyncResult(
             start=len(remote),

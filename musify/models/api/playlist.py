@@ -64,10 +64,18 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Re
     type: ClassVar[Type] = RemoteMutablePlaylist
 
     @validate_call
-    async def create(self, **kwargs) -> RT:
+    async def create(self, **kwargs) -> RT | None:
         """Create a playlist in the current user's library."""
+        if not kwargs:
+            self._handler.log("SKIP", self._saved_read_url, message="No playlist data given to create")
+            return None
+
         response = await self._handler.post(self._saved_read_url, json=kwargs)
-        return self.__class__.create_model(response)
+        playlist = self.__class__.create_model(response)
+
+        message = f"Created playlist: {playlist.name!r} -> {playlist.uri.api_url}"
+        self._handler.log("DONE", self._saved_read_url, message=message)
+        return playlist
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
@@ -81,6 +89,9 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Re
     @_ApiURLSchema.validate_call
     async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Modify details about a playlist in the current user's library."""
+        if not kwargs:
+            self._handler.log("SKIP", url, message="No playlist data given to modify")
+            return
         await self._handler.put(url, json=kwargs)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:

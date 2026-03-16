@@ -284,15 +284,8 @@ class TestRemoteMutableLibrary(BaseModelTester):
                 mock_add.assert_not_called()
                 mock_remove.assert_not_called()
             else:
-                if add:
-                    mock_add.assert_called_once_with(add)
-                else:
-                    mock_add.assert_not_called()
-
-                if remove:
-                    mock_remove.assert_called_once_with(remove)
-                else:
-                    mock_remove.assert_not_called()
+                mock_add.assert_called_once_with(add)
+                mock_remove.assert_called_once_with(remove)
 
     @pytest.fixture
     def mock_sync_saved_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:

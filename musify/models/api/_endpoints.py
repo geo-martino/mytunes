@@ -1,5 +1,6 @@
+import functools
 import itertools
-from collections.abc import Iterable, Sequence, Mapping
+from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from copy import copy
 from itertools import batched
 from typing import Any, ClassVar, Self, Type, Union
@@ -80,14 +81,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return self
 
     @staticmethod
-    def _batch_items(uris: Iterable, limit: int) -> batched[str]:
-        """Batch the given URIs into sublists of the given size."""
-        return itertools.batched(map(str, uris), limit)
-
-    @classmethod
-    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
-        """Generate a URL for the API endpoint for batched requests."""
-        return base_url.update_query(ids=",".join(map(str, values)))
+    def _batch_values(values: Iterable, limit: int) -> batched[str]:
+        """Batch the given values into sublists of the given size."""
+        return itertools.batched(map(str, values), limit)
 
     # noinspection PyArgumentList
     @validate_call
@@ -98,9 +94,34 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             kind: str | Type | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
+        if cursor.next is None:
+            self._handler.log("SKIP", cursor.url, message="Cursor already fully extended")
+
+        collection_type = self._get_type_value(self.type)
+        item_type = self._get_type_value(kind)
+        amount = cursor.total or "all"
+
+        if item_type != collection_type:
+            message = f"Extending {collection_type} with {amount} {item_type}s"
+        else:
+            message = f"Getting {amount} {item_type}s"
+        self._handler.log("INFO", cursor.url, message=message)
+
         if isinstance(cursor, IterablePageCursor):
-            return await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
-        return await self._get_all_items_by_pagination(cursor=cursor, path=path, kind=kind)
+            items, cursor = await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
+        else:
+            items, cursor = await self._get_all_items_by_pagination(cursor=cursor, path=path, kind=kind)
+
+        amount = cursor.total or "all"
+        items_count = f"{len(items):>6}/{amount:<6} {item_type}s"
+
+        if item_type != collection_type:
+            message = f"Retrieved {items_count} for {collection_type}"
+        else:
+            message = f"Retrieved {items_count}"
+        self._handler.log("DONE", cursor.url, message=message)
+
+        return items, cursor
 
     @validate_call
     async def _get_all_items_by_pagination(
@@ -115,10 +136,12 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         This is usually the slower approach, but is more widely supported as it does not require the API
         to provide the total number of items, offset and limit in the page cursor.
         """
+        item_type = self._get_type_value(kind)
         items: list[RT] = []
+
         while cursor.next is not None:
-            # noinspection PyUnresolvedReferences
-            response = await self._handler.get(cursor.next.url)
+            cursor: PageCursor = cursor.next
+            response = await self._get_page(cursor, item_type=item_type)
 
             response_items = self._get_items_from_response(response=response, path=path)
             items.extend(self.__class__.create_model(it, kind=kind) for it in response_items)
@@ -148,31 +171,15 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         This is usually the faster approach, but is only possible when the API provides the total number of items,
         offset and limit in the cursor.
         """
-        def _get_type_value(t: Any) -> str:
-            match t:
-                case str():
-                    return t
-                case RemoteResource():
-                    return t.type
-                case _:
-                    return "item"
-
-        collection_type = _get_type_value(self.type)
-        item_type = _get_type_value(kind)
+        collection_type = self._get_type_value(self.type)
+        item_type = self._get_type_value(kind)
         # noinspection PyTypeChecker
         cursors = list(cursor.iter_pages)
         if not cursors:
             return (), cursor
 
-        async def _request(page: IterablePageCursor) -> JSON:  # thin wrapper for formatting a log message
-            log_message = None
-            if isinstance(page, IndexCursor):
-                log_message = f"{page.offset:>6}/{page.total:<6} {item_type.rstrip("s")}s"
-
-            return await self._handler.get(page.url, log_message=log_message)
-
         responses: list[JSON] = await self.logger.get_asynchronous_iterator(
-            map(_request, cursors),
+            map(functools.partial(self._get_page, item_type=item_type), cursors),
             initial=0,
             total=len(cursors),
             desc=f"Extending {collection_type}",
@@ -188,6 +195,14 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         ]
 
         return tuple(items), cursors[-1]
+
+    async def _get_page(self, page: PageCursor, item_type: str) -> JSON:
+        """Thin wrapper for sending a get request from a page cursor while also formatting a log message"""
+        log_message = None
+        if isinstance(page, IndexCursor):
+            log_message = f"{page.offset:>6}/{page.total:<6} {item_type}s"
+
+        return await self._handler.get(page.url, log_message=log_message)
 
     @classmethod
     def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
@@ -217,6 +232,24 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         if isinstance(response, Sequence) and all(isinstance(it, list) for it in response):  # flatten
             response = list(itertools.chain.from_iterable(response))
         return response
+    
+    @staticmethod
+    def _get_type_value(t: Any) -> str:
+        match t:
+            case str():
+                return t.rstrip("s")
+            case RemoteResource():
+                return t.type.rstrip("s")
+            case _ if isinstance(t, type) and issubclass(t, RemoteResource):
+                return t.type.rstrip("s")
+            case _:
+                return "item"
+
+    @staticmethod
+    def _sort_on_uris(items: Sequence[RT], uris: Sequence[UT]) -> list[RT]:
+        """Sort the given items based on the order of the given URIs."""
+        uri_to_item = {item.uri: item for item in items}
+        return [uri_to_item[uri] for uri in uris if uri in uri_to_item]
 
 
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
@@ -264,17 +297,40 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         :param uris: A list of URIs. See above for accepted formats.
         :param limit: The number of URIs to send in each request to the API.
         """
+        item_type = self._get_type_value(self.type)
+
+        if not uris:
+            self._handler.log("SKIP", self._many_url, message=f"No {item_type}s given to add")
+            return []
+
         if limit is None:
             limit = self._many_limit
 
-        items = []
-        for batch in self._batch_items(uris, limit):
+        async def _get_items(batch: Collection) -> Iterator[RT]:
             url = self._generate_batch_url(self._many_url, batch)
-            response = await self._handler.get(url)
+            message = f"Getting {len(batch):>6} {item_type}s"
+            response = await self._handler.get(url, log_message=message)
+
             response_items = self._get_items_from_response(response=response, path=self._many_path)
-            items.extend(map(self.__class__.create_model, response_items))
+            return map(self.__class__.create_model, response_items)
+
+        batches = list(self._batch_values(uris, limit))
+        bar = self.logger.get_asynchronous_iterator(
+            map(_get_items, batches),
+            initial=0,
+            total=len(batches),
+            desc=f"Getting {item_type}s",
+            unit="batches",
+            disable=len(batches) < self._bar_threshold,
+        )
+        items = [item for batch in await bar for item in batch]
 
         return items
+
+    @classmethod
+    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
+        """Generate a URL for the API endpoint for batched requests."""
+        return base_url.update_query(ids=",".join(map(str, values)))
 
 
 class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
@@ -316,20 +372,42 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request to add items to the resource.",
     )
+    _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
+        # description="The type of the items in the collection."
+    )
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
-    async def append(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
+    async def add(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
+        collection_type = self._get_type_value(self.type)
+        item_type = self._get_type_value(self._extend_type)
+
+        if not uris:
+            self._handler.log("SKIP", url, message=f"No {item_type}s given to add")
+            return 0
+
         if limit is None:
             limit = self._batch_limit
 
-        for batch in self._batch_items(uris, limit):
+        async def _post_items(batch: Collection) -> None:
             body = self._generate_append_batch_body(batch)
-            await self._handler.post(url, json=body)
+            message = f"Adding {len(batch):>6} {item_type}s to {collection_type}"
+            await self._handler.post(url, json=body, log_message=message)
 
+        batches = list(self._batch_values(uris, limit))
+        await self.logger.get_asynchronous_iterator(
+            map(_post_items, batches),
+            initial=0,
+            total=len(batches),
+            desc=f"Adding {item_type}s to {collection_type}",
+            unit="batches",
+            disable=len(batches) < self._bar_threshold,
+        )
+
+        self._handler.log("DONE", url, message=f"Added {len(uris):>6} {item_type}s to {collection_type}")
         return len(uris)
 
     @staticmethod
@@ -341,7 +419,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
-    async def append_and_skip_duplicates(
+    async def add_and_skip_duplicates(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
@@ -357,7 +435,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
                 uris_unique.append(uri)
 
         # noinspection PyArgumentList
-        return await self.append(url, uris_unique, limit=limit)
+        return await self.add(url, uris_unique, limit=limit)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
@@ -365,13 +443,32 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     @_ApiURISchema.validate_call
     async def remove(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Remove items from the current user's saved items for this endpoint resource type."""
+        collection_type = self._get_type_value(self.type)
+        item_type = self._get_type_value(self._extend_type)
+
+        if not uris:
+            self._handler.log("SKIP", url, message=f"No {item_type}s given to remove")
+            return 0
+
         if limit is None:
             limit = self._batch_limit
 
-        for batch in self._batch_items(uris, limit):
+        async def _delete_items(batch: Collection) -> None:
             body = self._generate_remove_batch_body(batch)
-            await self._handler.delete(url, json=body)
+            message = f"Removing {len(batch):>6} {item_type}s from {collection_type}"
+            await self._handler.delete(url, json=body, log_message=message)
 
+        batches = list(self._batch_values(uris, limit))
+        await self.logger.get_asynchronous_iterator(
+            map(_delete_items, batches),
+            initial=0,
+            total=len(batches),
+            desc=f"Removing {item_type}s from {collection_type}",
+            unit="batches",
+            disable=len(batches) < self._bar_threshold,
+        )
+
+        self._handler.log("DONE", url, message=f"Removed {len(uris):>6} {item_type}s from {collection_type}")
         return len(uris)
 
     @staticmethod
@@ -420,13 +517,31 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @_ApiURISchema.validate_call
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
+        item_type = self._get_type_value(self.type)
+
+        if not uris:
+            self._handler.log("SKIP", self._saved_write_url, message=f"No {item_type}s given to add")
+            return 0
+
         if limit is None:
             limit = self._batch_limit
 
-        for batch in self._batch_items(uris, limit):
+        async def _post_items(batch: Collection) -> None:
             body = self._generate_add_batch_body(batch)
-            await self._handler.put(self._saved_write_url, json=body)
+            message = f"Adding {len(batch):>6} {item_type}s"
+            await self._handler.put(self._saved_write_url, json=body, log_message=message)
 
+        batches = list(self._batch_values(uris, limit))
+        await self.logger.get_asynchronous_iterator(
+            map(_post_items, batches),
+            initial=0,
+            total=len(batches),
+            desc=f"Adding {item_type}s",
+            unit="batches",
+            disable=len(batches) < self._bar_threshold,
+        )
+
+        self._handler.log("DONE", self._saved_write_url, message=f"Added {len(uris):>6} {item_type}s")
         return len(uris)
 
     @staticmethod
@@ -439,13 +554,31 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @_ApiURISchema.validate_call
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
         """Remote items from the current user's saved items for this endpoint resource type."""
+        item_type = self._get_type_value(self.type)
+
+        if not uris:
+            self._handler.log("SKIP", self._saved_write_url, message=f"No {item_type}s given to remove")
+            return 0
+
         if limit is None:
             limit = self._batch_limit
 
-        for batch in self._batch_items(uris, limit):
+        async def _delete_items(batch: Collection) -> None:
             body = self._generate_remove_batch_body(batch)
-            await self._handler.delete(self._saved_write_url, json=body)
+            message = f"Removing {len(batch):>6} {item_type}s"
+            await self._handler.delete(self._saved_write_url, json=body, log_message=message)
 
+        batches = list(self._batch_values(uris, limit))
+        await self.logger.get_asynchronous_iterator(
+            map(_delete_items, batches),
+            initial=0,
+            total=len(batches),
+            desc=f"Removing {item_type}s",
+            unit="batches",
+            disable=len(batches) < self._bar_threshold,
+        )
+
+        self._handler.log("DONE", self._saved_write_url, message=f"Removed {len(uris):>6} {item_type}s")
         return len(uris)
 
     @staticmethod

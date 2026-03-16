@@ -90,9 +90,9 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             assert mock_delete.call_count == expected
 
     @pytest.fixture
-    def mock_batch_items(
+    def mock_batch_values(
             self, model: Endpoints, uris: list[URI], batches: list[Iterable[str]], limit: int
     ) -> Generator[Mock, None, None]:
-        with patch.object(model.__class__, "_batch_items", return_value=batches) as mock_batch_items:
-            yield mock_batch_items
-            mock_batch_items.assert_called_once_with(uris, limit)
+        with patch.object(model.__class__, "_batch_values", return_value=batches) as mock_batch_values:
+            yield mock_batch_values
+            mock_batch_values.assert_called_once_with(uris, limit)
