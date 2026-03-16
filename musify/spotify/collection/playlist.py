@@ -3,6 +3,7 @@ from typing import final, Any, ClassVar
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
+from musify.exception import MusifyValueError
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import UniqueSequence, MutableUniqueSequence
@@ -10,7 +11,9 @@ from musify.spotify import SpotifyResource
 from musify.spotify.collection._base import SpotifyCollection
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.track import SpotifyTrack
+from musify.spotify.properties.date import HasSpotifyAddedDate
 from musify.spotify.properties.images import HasSpotifyImages
+from musify.spotify.properties.length import HasSpotifyLength
 from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.properties.uri import SpotifyResourceURI
 from musify.spotify.user import SpotifyUser
@@ -24,21 +27,26 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
     @model_validator(mode="before")
     @classmethod
     def _extract_item_payload(cls, data: dict[str, Any]) -> dict[str, Any]:
-        if not isinstance(data, dict) or "item" not in data:
+        if not isinstance(data, dict):
             return data
 
-        data = {"added_at": data["added_at"]} | data["item"]
+        if "item" not in data and "added_at" not in data:
+            # need to ensure we don't accidentally validate playlist track for non-playlist track data
+            raise MusifyValueError("Expected 'item' key in playlist track data.")
+
+        data = {"added_at": data["added_at"]} | data.get("item", data)
         return data
 
 
 @final
 class SpotifyPlaylist(
-    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyIndexCursor],
     SpotifyResource[SpotifyResourceURI],
     SpotifyCollection[SpotifyPlaylistTrack],
+    HasSpotifyLength,
     HasSpotifyImages,
     HasFollowers,
-    HasAddedDate,
+    HasSpotifyAddedDate,
+    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyIndexCursor],
 ):
     __final__ = True
 

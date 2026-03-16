@@ -5,6 +5,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler, validate_call
 
 from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
+from musify.models.collection.album import AlbumCollection
 from musify.models.cursors import PageCursor
 from musify.models.item.album import HasAlbums, Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
@@ -17,12 +18,17 @@ if TYPE_CHECKING:
     from musify.models.api.artist import HasArtistEndpoints, ArtistReadCollectionEndpoints
 
 
-class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasAlbums[AT], HasTracks[TK, TV]):
+class ArtistCollection[AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasAlbums[AT]):
     """Represents a collection of artists and their properties."""
     @property
     def _items(self) -> list[AT]:
         # mro doesn't always use get albums, overriding to ensure albums are returned
         return self.albums
+
+    @property
+    def tracks(self) -> list[Track]:
+        """The tracks on the albums by this artist."""
+        return [track for album in self.albums for track in album.tracks if isinstance(album, AlbumCollection)]
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
@@ -79,12 +85,15 @@ class ArtistCollection[TK, TV: Track, AT: Album, GT: Genre, UT: URI](Artist[GT, 
         return self
 
 
-class RemoteArtistCollection[TK, TV: RemoteTrack, AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: PageCursor](
-    ArtistCollection[TK, TV, AT, GT, UT],
+
+
+class RemoteArtistCollection[AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: PageCursor](
+    ArtistCollection[AT, GT, UT],
     RemoteArtist[UT, GT],
     RemoteResource[UT],
     RemoteCollection[AT, CT],
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasArtistEndpoints[ArtistReadCollectionEndpoints]) -> None:
-        await api.artists.get_all(self.uri)
+        # noinspection PyProtectedMember
+        self.albums[:] = await api.artists.get_all(self)

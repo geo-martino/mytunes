@@ -1,6 +1,7 @@
 import pytest
 from faker import Faker
 
+from musify.exception import MusifyValueError
 from musify.models.properties.audio import Decibels
 from musify.models.properties.length import Length
 from musify.models.properties.music import KeySignature
@@ -30,10 +31,35 @@ class TestSpotifyTrack(SpotifyResourceTester):
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_length(model, payload)
-        self.assert_expected_popularity(model, payload)
+        self.assert_expected_rating(model, payload)
 
         assert model.disc.number == payload["disc_number"]
         assert model.track.number == payload["track_number"]
+        assert model.track.total == payload["album"]["total_tracks"]
+
+    def test_enrich_with_audio_features_fails(self, generator: SpotifyPayloadGenerator):
+        payload = generator.generate_track()
+        model = SpotifyTrack.model_validate(payload)
+
+        audio_features_payload = generator.generate_audio_features()
+        while audio_features_payload["uri"] == payload["uri"]:
+            audio_features_payload = generator.generate_audio_features()
+
+        audio_features = SpotifyAudioFeatures.model_validate(audio_features_payload)
+        with pytest.raises(MusifyValueError):
+            model.enrich_with_audio_features(audio_features)
+
+    def test_enrich_with_audio_features(self, generator: SpotifyPayloadGenerator):
+        payload = generator.generate_track()
+        model = SpotifyTrack.model_validate(payload)
+
+        audio_features_payload = generator.generate_audio_features()
+        audio_features_payload["uri"] = model.uri
+        audio_features = SpotifyAudioFeatures.model_validate(audio_features_payload)
+
+        model.enrich_with_audio_features(audio_features)
+        assert model.key == audio_features.key
+        assert model.bpm == audio_features.bpm
 
 
 class TestSpotifyAudioFeatures(SpotifyResourceTester):

@@ -1,6 +1,7 @@
 import pytest
 from faker import Faker
 
+from musify.models.properties.date import SparseDate
 from musify.spotify.item.album import SpotifyAlbum
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
@@ -12,6 +13,8 @@ class TestSpotifyAlbum(SpotifyResourceTester):
         return SpotifyAlbum(
             name=faker.name(),
             uri=generator.generate_uri("album"),
+            released_at=SparseDate.model_validate(faker.date()),
+            compilation=faker.boolean(),
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
@@ -24,6 +27,6 @@ class TestSpotifyAlbum(SpotifyResourceTester):
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_genres(model, payload)
-        self.assert_expected_popularity(model, payload)
+        self.assert_expected_rating(model, payload)
 
         assert model.compilation is (payload["album_type"] == "compilation")

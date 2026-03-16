@@ -1,12 +1,15 @@
 from datetime import datetime
-from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self
+from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self, Any
 
-from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, validate_call
+from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, validate_call, \
+    ModelWrapValidatorHandler, model_validator
+from pydantic_core.core_schema import ValidationInfo, FieldValidationInfo
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.audio import Decibels
+from musify.models.properties.date import SparseDate
 from musify.models.properties.length import Length, HasLength
 from musify.models.properties.order import Position
 from musify.models.url import HttpURL
@@ -16,7 +19,7 @@ from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
 from musify.spotify.properties.images import HasSpotifyImages
 from musify.spotify.properties.music import HasSpotifyKeySignature
-from musify.spotify.properties.stats import HasPopularity
+from musify.spotify.properties.rating import HasSpotifyRating
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 if TYPE_CHECKING:
@@ -27,10 +30,10 @@ if TYPE_CHECKING:
 
 @final
 class SpotifyTrack(
-    RemoteTrack[SpotifyArtist, SpotifyAlbum, SpotifyGenre, SpotifyResourceURI],
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
-    HasPopularity,
+    HasSpotifyRating,
+    RemoteTrack[SpotifyArtist, SpotifyAlbum, SpotifyGenre, SpotifyResourceURI],
 ):
     __final__ = True
 
@@ -44,6 +47,11 @@ class SpotifyTrack(
         default=None,
         validation_alias="track_number",
     )
+    released_at: SparseDate | None = Field(
+        description="The date this resource was released.",
+        default=None,
+        validation_alias=AliasPath("album", "release_date"),
+    )
     length: Length | None = Field(
         description="The length of this track in seconds.",
         default=None,
@@ -52,12 +60,53 @@ class SpotifyTrack(
         ),
     )
 
+    @model_validator(mode="wrap")
+    @classmethod
+    def _set_track_total_from_album(
+            cls, data: dict[str, Any], handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        if not isinstance(data, dict):
+            return handler(data)
+
+        album = data.get("album", {})
+        if not album:
+            return handler(data)
+
+        track_total = album.get("total_tracks")
+        if track_total is None:
+            return handler(data)
+
+        self: Self = handler(data)
+        if self.track is None:
+            self.track = Position()
+
+        self.track.total = track_total
+        return self
+
+    @model_validator(mode="after")
+    def _set_images_from_album(self) -> Self:
+        if self.album is None or self.album.images is None:
+            return self
+
+        if set(self.album.images) ^ set(self.images or {}):
+            self.images = self.album.images | (self.images or {})
+        return self
+
     @field_validator("length", mode="before", check_fields=True)
     @classmethod
     def _convert_length_to_seconds[T](cls, duration_ms: T | int) -> T | float:
         if not isinstance(duration_ms, int | float):
             return duration_ms
         return int(duration_ms) / 1000
+
+    def enrich_with_audio_features(self, audio_features: SpotifyAudioFeatures) -> None:
+        if self.uri != audio_features.uri:
+            raise MusifyValueError("Audio features URI does not match track URI")
+
+        if audio_features.key is not None:
+            self.key = audio_features.key
+        if audio_features.bpm is not None:
+            self.bpm = audio_features.bpm
 
 
 type IntervalFloat = Annotated[float, Field(ge=0.0, le=1.0)]

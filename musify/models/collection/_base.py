@@ -33,17 +33,12 @@ class CollectionModel[IT: BaseResource](BaseModel):
 
 # noinspection PyAbstractClass
 class RemoteCollection[IT: RemoteResource, CT: PageCursor](HasPageCursor[CT], CollectionModel[IT]):
-    total: NonNegativeInt | None = Field(
-        description="The total number of items in this collection.",
-        default=None,
-    )
-
     @property
     def has_all_items(self) -> bool | None:
         """Whether this collection has all items loaded."""
-        if self.total is None:
+        if self.cursor.total is None:
             return None
-        return self.count == self.total
+        return self.count == self.cursor.total
 
     @abstractmethod
     def extend(self, api: HasEndpoints) -> None:

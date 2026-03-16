@@ -81,4 +81,5 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasGenreEndpoints[GenreReadCollectionEndpoints]) -> None:
-        await api.genres.get_all(self.uri)
+        # noinspection PyProtectedMember
+        self.tracks._replace(await api.genres.get_all(self))

@@ -133,7 +133,8 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> None:
-        await api.playlists.get_all(self.uri)
+        # noinspection PyProtectedMember
+        self.tracks._replace(await api.playlists.get_all(self))
 
 
 class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](

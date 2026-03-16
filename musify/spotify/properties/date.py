@@ -1,0 +1,23 @@
+from datetime import datetime
+from typing import Self
+
+from pydantic import model_validator
+
+from musify.models.properties.date import HasAddedDate
+from musify.spotify.collection import SpotifyCollection
+
+
+class HasSpotifyAddedDate(HasAddedDate):
+    @model_validator(mode="after")
+    def _set_added_at_from_items(self) -> Self:
+        print("add me", self, next(iter(self._items), None))
+        if not isinstance(self, SpotifyCollection) or not self.has_all_items:
+            return self
+        if not all(isinstance(item, HasAddedDate) and item.added_at is not None for item in self._items):
+            return self
+
+        # assume the first added item is the date this collection was added
+        added_at: datetime = min(item.added_at for item in self._items)
+        if added_at != self.added_at:
+            self.added_at = added_at
+        return self

@@ -288,7 +288,7 @@ class ItemSorter(Processor):
 
     def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
         weight_factor = uniform(-1, 1) * self.shuffle_weight
-        return abs(value - weight_factor * (value - max_value))
+        return abs(float(value) - weight_factor * (float(value) - float(max_value)))
 
     # noinspection PyUnresolvedReferences
     def _shuffle_on_artist(self, items: MutableSequence[HasArtists]) -> None:

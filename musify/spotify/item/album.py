@@ -1,28 +1,36 @@
-from typing import final
+from typing import final, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PositiveInt, computed_field, model_validator
 
+from musify.models import writeable_computed_field
 from musify.models.item.album import RemoteAlbum
+from musify.models.properties.date import SparseDate
+from musify.models.properties.order import Position
 from musify.spotify._base import SpotifyResource
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
 from musify.spotify.properties.images import HasSpotifyImages
-from musify.spotify.properties.stats import HasPopularity
+from musify.spotify.properties.rating import HasSpotifyRating
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 @final
 class SpotifyAlbum(
-    RemoteAlbum[SpotifyArtist, SpotifyGenre, SpotifyResourceURI],
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
-    HasPopularity,
+    HasSpotifyRating,
+    RemoteAlbum[SpotifyArtist, SpotifyGenre, SpotifyResourceURI],
 ):
     __final__ = True
 
-    compilation: bool | None = Field(
+    track_total = writeable_computed_field("track_total")
+
+    released_at: SparseDate = Field(
+        description="The date this album was released.",
+        validation_alias="release_date",
+    )
+    compilation: bool = Field(
         description="Is this a compilation album",
-        default=None,
         validation_alias="album_type",
     )
 

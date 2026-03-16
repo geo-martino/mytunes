@@ -80,4 +80,5 @@ class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, 
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasAlbumEndpoints[AlbumReadCollectionEndpoints]) -> None:
-        await api.albums.get_all(self.uri)
+        # noinspection PyProtectedMember
+        self.tracks._replace(await api.albums.get_all(self))

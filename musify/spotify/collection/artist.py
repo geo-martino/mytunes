@@ -9,17 +9,17 @@ from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
 from musify.spotify.item.track import SpotifyTrack
+from musify.spotify.properties.length import HasSpotifyLength
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 # noinspection PyFinal
 @final
 class SpotifyArtistCollection[AT: SpotifyAlbum](
-    RemoteArtistCollection[
-        str, SpotifyTrack, AT, SpotifyGenre, SpotifyResourceURI, SpotifyIndexCursor | SpotifyInitialCursor
-    ],
     SpotifyArtist,
     SpotifyCollection[AT],
+    HasSpotifyLength,
+    RemoteArtistCollection[AT, SpotifyGenre, SpotifyResourceURI, SpotifyIndexCursor | SpotifyInitialCursor],
 ):
     __final__ = True
 
@@ -29,11 +29,6 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
         validation_alias=AliasPath("albums", "items"),
     )
 
-    total: PositiveInt | None = Field(
-        description="The total number of albums by this artist.",
-        default=None,
-        validation_alias=AliasPath("albums", "total"),
-    )
     # the implementation of SpotifyArtistEndpoints adds a 'starter' cursor to get albums for each artist
     # in the response, therefore we need to support an InitialCursor here to support this
     cursor: SpotifyIndexCursor | SpotifyInitialCursor = Field(

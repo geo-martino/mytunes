@@ -27,13 +27,17 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
     @classmethod
     def _create_type_from_model_generics(cls, model: RemoteModel) -> type[Self]:
         from musify.models.api import Endpoints
-        base = next(
-            base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, Endpoints)
-        )
-        generics = base.__pydantic_generic_metadata__["args"]
+        generics = ()
+        while not generics:
+            base = next(
+                base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, Endpoints)
+            )
+            generics = base.__pydantic_generic_metadata__["args"]
 
-        if all(is_typevar(arg) for arg in generics):
-            generics = model.__pydantic_generic_metadata__["args"]
+            if all(is_typevar(arg) for arg in generics):
+                generics = model.__pydantic_generic_metadata__["args"]
+
+            model = base
 
         uri_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, URI))
         model_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, HasURI))

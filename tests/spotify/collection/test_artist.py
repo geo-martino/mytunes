@@ -38,6 +38,6 @@ class TestSpotifyArtistCollection(SpotifyResourceTester):
         self.assert_expected_images(model, payload)
         self.assert_expected_genres(model, payload)
         self.assert_expected_followers(model, payload)
-        self.assert_expected_popularity(model, payload)
+        self.assert_expected_rating(model, payload)
 
         self.assert_has_all_items(model, payload["albums"]["items"], payload["albums"]["total"])

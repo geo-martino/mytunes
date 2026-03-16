@@ -2,6 +2,7 @@ import pytest
 from faker import Faker
 from yarl import URL
 
+from musify.models.properties.date import SparseDate
 from musify.spotify.collection.album import SpotifyAlbumCollection
 from musify.spotify.cursors import SpotifyIndexCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
@@ -24,7 +25,9 @@ class TestSpotifyAlbumCollection(SpotifyResourceTester):
                 limit=20,
                 offset=0,
                 total=faker.random_int(),
-            )
+            ),
+            released_at=SparseDate.model_validate(faker.date()),
+            compilation=faker.boolean(),
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
@@ -39,6 +42,14 @@ class TestSpotifyAlbumCollection(SpotifyResourceTester):
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
         self.assert_expected_genres(model, payload)
-        self.assert_expected_popularity(model, payload)
+        self.assert_expected_rating(model, payload)
 
         self.assert_has_all_items(model, payload["tracks"]["items"], payload["tracks"]["total"])
+
+        assert model.disc_total == max(track["disc_number"] for track in payload["tracks"]["items"])
+        assert model.compilation is (payload["album_type"] == "compilation")
+
+        for track in model.tracks:
+            assert track.released_at == model.released_at
+            assert track.track.total == model.track_total
+            assert track.disc.total == model.disc_total

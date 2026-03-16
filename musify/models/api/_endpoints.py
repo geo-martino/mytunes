@@ -24,7 +24,7 @@ from musify.models.remote import RemoteModel, RemoteResource
 
 
 class EndpointsMetaclass(AttributeModelMetaclass):
-    def create_model(cls: type[Endpoints], value: Any, kind: str | type = None) -> RemoteResource:
+    def create_model[T: RemoteResource](cls: type[Endpoints], value: Any, kind: str | type[T] = None) -> T:
         """Create an instance of the resource type handled by this API model from the given value."""
         if not cls.__final__:
             raise MusifyTypeError("Can only create resources from final API models.")

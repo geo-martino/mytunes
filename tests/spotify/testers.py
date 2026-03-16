@@ -12,7 +12,8 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
 from musify.spotify import SpotifyResource
-from musify.spotify.properties.stats import HasPopularity, HasFollowers
+from musify.spotify.properties.stats import HasFollowers
+from musify.spotify.properties.rating import HasSpotifyRating
 from musify.spotify.properties.uri import SpotifyUserURI
 from tests.models.testers import UniqueKeyTester, BaseModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator
@@ -67,8 +68,9 @@ class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):
         assert model.followers == payload["followers"]["total"]
 
     @staticmethod
-    def assert_expected_popularity(model: HasPopularity, payload: Json):
-        assert model.popularity == payload["popularity"]
+    def assert_expected_rating(model: HasSpotifyRating, payload: Json):
+        assert model.rating is not None
+        assert int(model.rating) == payload["popularity"]
 
     @staticmethod
     def assert_has_all_items(model: RemoteCollection, items: Collection, total: int):
@@ -82,6 +84,7 @@ class SpotifyResourceTester(UniqueKeyTester, SpotifyModelTester, metaclass=ABCMe
     @staticmethod
     def test_spotify_user_uri_not_allowed(model: SpotifyResource, faker: Faker):
         additional_fields = model.model_dump(exclude={"uri"})
+        print(additional_fields)
 
         uri = SpotifyUserURI(f"spotify:user:{faker.pystr()}")
         with pytest.raises(ValueError):

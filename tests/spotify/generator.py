@@ -87,6 +87,10 @@ class SpotifyPayloadGenerator:
     def add_track_extended_properties(self, payload: dict[str, Any]) -> None:
         """Add extended properties to a track payload in-place."""
         album = self.generate_album()
+        if album["total_tracks"] < payload["track_number"]:
+            # ensure track number is not greater than total tracks in album
+            album["total_tracks"] = payload["track_number"]
+
         artists = [self.generate_artist() for _ in range(self.faker.random_int(1, 5))]
         self.add_album_artists(payload, artists)
 

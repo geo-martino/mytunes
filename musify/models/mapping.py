@@ -86,7 +86,6 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
         if isinstance(__item, Hashable) and __item in self._items:
             return True
         if isinstance(__item, Iterable) and not isinstance(__item, str):
-            print(__item)
             return all(item in self for item in __item)
         # last resort: iteration is a slow comparison on large collections
         return any(__item == i for i in self._items.values())

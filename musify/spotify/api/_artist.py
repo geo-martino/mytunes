@@ -1,4 +1,4 @@
-from typing import ClassVar, final, Literal, Type
+from typing import ClassVar, final, Literal, Type, Any
 
 from aiorequestful.types import JSON
 from pydantic import AliasPath, validate_call
@@ -7,6 +7,7 @@ from yarl import URL
 from musify.models.api import HasSavedEndpoints
 from musify.models.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
     ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints, ArtistEndpoints
+from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.cursors import PageCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
@@ -22,15 +23,15 @@ class _SpotifyArtistEndpoints(
 ):
     type: ClassVar[Type] = SpotifyArtistCollection  # override to force creation of collections from responses
 
+    @staticmethod
+    def _add_albums_cursor_to_item[T: dict[str, Any]](item: T) -> T:
+        url = URL(item["href"]).joinpath("albums")
+        item["albums"] = SpotifyInitialCursor(url=url).model_dump()
+        return item
+
     @classmethod
     def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
-        items = super()._get_items_from_response(response, path=path)
-
-        for item in items:
-            url = URL(item["href"]).joinpath("albums")
-            item["albums"] = SpotifyInitialCursor(url=url).model_dump()
-
-        return items
+        return list(map(cls._add_albums_cursor_to_item, super()._get_items_from_response(response, path=path)))
 
 
 @final
@@ -64,6 +65,14 @@ class SpotifyArtistEndpoints(
     _many_path: ClassVar[str] = "artists"
 
     _extend_path: ClassVar[str] = "items"
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @_ApiURLSchema.validate_call
+    async def get(self, url: ApiURL[SpotifyResourceURI, SpotifyArtist]) -> SpotifyArtistCollection:
+        response = await self._handler.get(url)
+        self._add_albums_cursor_to_item(response)
+        return self.__class__.create_model(response, kind=SpotifyArtistCollection)
 
     @validate_call
     async def get_all(
