@@ -257,6 +257,9 @@ class RemoteLibrary[
         api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
 
         playlists = list(filter(self._should_extend, self.playlists.values()))
+        if not playlists:
+            return False
+
         self.logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
 
         async def _extend_playlist_tracks(pl: VP) -> None:
@@ -384,6 +387,9 @@ class RemoteLibrary[
         api: HasArtistEndpoints[ArtistReadCollectionEndpoints] = self.api
 
         artists = list(filter(self._should_extend, self.artists))
+        if not artists:
+            return False
+
         self.logger.info(f"Loading albums for {len(artists)} saved artists in {self._log_name} library", header=2)
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
@@ -459,6 +465,9 @@ class RemoteLibrary[
         api: HasAlbumEndpoints[AlbumReadCollectionEndpoints] = self.api
 
         albums = list(filter(self._should_extend, self.albums))
+        if not albums:
+            return True
+
         self.logger.info(f"Loading tracks for {len(albums)} saved albums in {self._log_name} library", header=2)
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:

@@ -17,7 +17,7 @@ from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack, TagDumpContext
-from musify.logger import STAT, HEADER_PREFIX
+from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary, RestoreType
 from musify.models.properties.file import PathMapper
 from musify.models.properties.logger import HasLogger
@@ -70,8 +70,14 @@ class LocalLibrary(
         if not self.library_folders:
             return
 
-        extensions = LocalTrack.supported_extensions
-        for folder in self.library_folders:
+        extensions: set[str] = LocalTrack.supported_extensions
+
+        folders = self.library_folders
+        folder_message = "folder" if len(folders) == 1 else "folders"
+        message = f"Scanning {len(folders)} {self.source} library {folder_message} for tracks with extensions:"
+        self.logger.info(message, header=2, hidden=", ".join(sorted(extensions)))
+
+        for folder in folders:
             for path in folder.rglob(f"[!.]*"):
                 if path.suffix.lstrip(".").casefold() not in extensions:
                     continue
@@ -93,7 +99,12 @@ class LocalLibrary(
             }
             folders = {folder for folder in folders if folder.is_dir()}
 
-        extensions = LocalPlaylist.supported_extensions
+        # noinspection PyTypeChecker
+        extensions: set[str] = LocalPlaylist.supported_extensions
+
+        folder_message = "folder" if len(folders) == 1 else "folders"
+        message = f"Scanning {len(folders)} {self.source} library {folder_message} for playlists with extensions:"
+        self.logger.info(message, header=2, hidden=", ".join(sorted(extensions)))
 
         total = 0
         filtered = 0
@@ -161,10 +172,7 @@ class LocalLibrary(
         if not (paths := set(self._iter_track_paths())):
             return False
 
-        self.logger.info(
-            HEADER_PREFIX +
-            colored(f"Loading {len(paths)} tracks in {self.source} library", "cyan", attrs=["bold"])
-        )
+        self.logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(
@@ -258,10 +266,7 @@ class LocalLibrary(
         if not (paths := set(self._iter_playlist_paths())):
             return False
 
-        self.logger.info(
-            HEADER_PREFIX +
-            colored(f"Loading {len(paths)} playlists in {self.source} library", "cyan", attrs=["bold"])
-        )
+        self.logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(

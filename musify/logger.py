@@ -245,5 +245,3 @@ class Logger(logging.Logger):
 
 
 logging.setLoggerClass(Logger)
-
-HEADER_PREFIX = colored("  > ", "magenta", attrs=["bold"])
