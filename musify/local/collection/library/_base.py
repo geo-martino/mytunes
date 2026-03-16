@@ -234,6 +234,8 @@ class LocalLibrary(
 
             return track.path, tags
 
+        self.logger.info(f"Saving {len(self.tracks)} tracks in {self.source} library", header=2)
+
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(
             map(_save_track, self.tracks),
@@ -319,6 +321,8 @@ class LocalLibrary(
         """
         async def _save_playlist(pl: LocalPlaylist) -> tuple[str, Result]:
             return pl.name, await pl.save(dry_run=dry_run)
+
+        self.logger.info(f"Saving {len(self.playlists)} playlists in {self.source} library", header=2)
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(
