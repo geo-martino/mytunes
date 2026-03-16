@@ -1,15 +1,13 @@
 from collections import namedtuple
 from collections.abc import Collection
-from typing import ClassVar, Generator, get_args, NamedTuple, Any
+from typing import ClassVar, Generator, get_args, Any
 from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
-from aiohttp import ClientResponseError, ClientResponse
-from aiorequestful.request import RequestHandler
 from aiorequestful.response.exception import ResponseError
 from faker import Faker
 
-from musify.models.api import RemoteAPI, ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, \
+from musify.models.api import RemoteAPI, ReadSavedEndpoints, WriteSavedEndpoints, \
     ReadItemsEndpoints, ReadItemEndpoints
 from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints
 # noinspection PyProtectedMember
@@ -19,7 +17,6 @@ from musify.models.collection.playlist import Playlist, RemotePlaylist, RemoteMu
 from musify.models.item.album import Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.track import Track, RemoteTrack
-from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI, MockUrlCursor

@@ -1,17 +1,14 @@
-import itertools
 import textwrap
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping, Iterable, Collection, Sequence
+from collections.abc import Mapping, Collection, Sequence
 from typing import ClassVar, Self, Any, Literal
 
-from aiorequestful.exception import HTTPError, RequestError
 from aiorequestful.response.exception import ResponseError
-from aiorequestful.types import JSON
 from pydantic import Field, PrivateAttr, validate_call
 from tabulate import tabulate
 from termcolor import colored
 
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.logger import STAT
 from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints, ReadSavedEndpoints, WriteSavedEndpoints
 from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints, AlbumReadSavedEndpoints, \

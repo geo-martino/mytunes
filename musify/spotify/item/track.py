@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self, Any
 
-from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, validate_call, \
+from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, \
     ModelWrapValidatorHandler, model_validator
-from pydantic_core.core_schema import ValidationInfo, FieldValidationInfo
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel

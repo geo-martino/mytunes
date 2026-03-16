@@ -5,13 +5,13 @@ from unittest.mock import patch, Mock
 from aiorequestful.auth import Authoriser
 
 from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints, \
-    HasEndpoints, ReadItemsEndpoints
-from musify.models.api.album import HasAlbumEndpoints, AlbumEndpoints, AlbumReadSavedEndpoints, \
+    HasEndpoints
+from musify.models.api.album import HasAlbumEndpoints, AlbumReadSavedEndpoints, \
     AlbumWriteSavedEndpoints, AlbumReadItemsEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistEndpoints, ArtistReadSavedEndpoints, \
+from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, \
     ArtistWriteSavedEndpoints, ArtistReadItemsEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackEndpoints, TrackReadSavedEndpoints, \
+from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, \
     TrackWriteSavedEndpoints, TrackReadItemsEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection import RemoteCollection

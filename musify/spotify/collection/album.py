@@ -1,13 +1,10 @@
-from typing import final, Self, Any
+from typing import final, Self
 
 from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
 
 from musify.models.collection.album import RemoteAlbumCollection
-from musify.models.properties.length import Length
-from musify.models.properties.order import Position
 from musify.models.sequence import UniqueSequence
 from musify.spotify.collection._base import SpotifyCollection
-from musify.spotify.collection.playlist import SpotifyPlaylistTrack
 from musify.spotify.cursors import SpotifyIndexCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist

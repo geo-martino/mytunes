@@ -1,6 +1,6 @@
 from typing import final
 
-from pydantic import Field, AliasPath, PositiveInt, model_validator
+from pydantic import Field, AliasPath, model_validator
 
 from musify.models.collection.artist import RemoteArtistCollection
 from musify.spotify.collection._base import SpotifyCollection
@@ -8,7 +8,6 @@ from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
-from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.length import HasSpotifyLength
 from musify.spotify.properties.uri import SpotifyResourceURI
 

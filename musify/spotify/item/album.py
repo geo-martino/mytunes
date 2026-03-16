@@ -1,11 +1,10 @@
-from typing import final, Self
+from typing import final
 
-from pydantic import Field, field_validator, PositiveInt, computed_field, model_validator
+from pydantic import Field, field_validator
 
 from musify.models import writeable_computed_field
 from musify.models.item.album import RemoteAlbum
 from musify.models.properties.date import SparseDate
-from musify.models.properties.order import Position
 from musify.spotify._base import SpotifyResource
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre

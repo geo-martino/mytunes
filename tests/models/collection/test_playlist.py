@@ -1,4 +1,3 @@
-from collections.abc import Collection
 from typing import get_args
 from unittest.mock import patch, AsyncMock
 
@@ -6,17 +5,14 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
-from musify.exception import MusifyValueError
 from musify.models.api import RemoteAPI, WriteCollectionEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints
-from musify.models.collection import SyncResult
 # noinspection PyProtectedMember
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
 from musify.models.cursors import PageCursor
 from musify.models.item.track import RemoteTrack, Track
-from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI
 from tests.models.collection.testers import RemoteCollectionTester

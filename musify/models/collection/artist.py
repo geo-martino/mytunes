@@ -1,7 +1,7 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self, TYPE_CHECKING
 
-from pydantic import model_validator, ModelWrapValidatorHandler, validate_call
+from pydantic import model_validator, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
@@ -10,7 +10,7 @@ from musify.models.cursors import PageCursor
 from musify.models.item.album import HasAlbums, Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
-from musify.models.item.track import HasTracks, Track, RemoteTrack
+from musify.models.item.track import Track
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 
