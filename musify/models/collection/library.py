@@ -20,7 +20,7 @@ from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEn
 from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, TrackWriteSavedEndpoints, \
     TrackReadItemsEndpoints
 from musify.models.api.user import HasUserEndpoints
-from musify.models.collection import SyncResult
+from musify.models.collection import SyncResult, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items, get_sync_message
 from musify.models.collection.album import RemoteAlbumCollection
 from musify.models.collection.artist import RemoteArtistCollection
@@ -36,6 +36,7 @@ from musify.models.user import RemoteUser
 from musify.processors_new.filters import ValuesFilter
 
 type RestoreType[T] = Sequence[Mapping[str, Any]] | Mapping[T, Mapping[str, Any]]
+type RestoreLibraryType[T] = Mapping[T, Mapping[str, Any]] | Mapping[T, Sequence[Mapping[str, Any]]]
 type RestoreSavedItemsType[T] = RestoreType[T] | Sequence[str | URI]
 type RestorePlaylistsType[T] = RestoreType[T] | Mapping[T, Sequence[Mapping[str, Any]]]
 
@@ -177,8 +178,7 @@ class RemoteLibrary[
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     async def load(self):
-        self.logger.debug(f"Load {self._log_name} library: START")
-        self.logger.info(f"\33[1;95m ->\33[1;97m Loading {self._log_name} library \33[0m")
+        self.logger.info(f"Loading {self._log_name} library", header=1)
 
         await self.load_playlists()
         await self.load_playlist_items()
@@ -192,13 +192,35 @@ class RemoteLibrary[
         await self.load_saved_artist_albums()
 
         self.logger.print_line(STAT)
-        self.log_playlists(skip_log=True)
-        self.log_tracks()
-        self.log_albums()
-        self.log_artists()
+        self.log_playlists(skip_log=False)
+        self.log_tracks(skip_log=False)
+        self.log_albums(skip_log=False)
+        self.log_artists(skip_log=False)
 
         self.logger.print_line()
-        self.logger.debug(f"Load {self._log_name} library: DONE\n")
+
+    def dump(self) -> dict[str, Any]:
+        names_seen = set()
+        playlists = []
+        for pl in self.playlists.values():
+            if pl.name in names_seen:
+                continue
+
+            pl_backup = pl.model_dump(exclude={"tracks"})
+            pl_backup["tracks"] = [str(track.uri) for track in pl.tracks]
+            playlists.append(pl_backup)
+
+        return {
+            "tracks": [str(track.uri) for track in self.tracks],
+            "playlists": playlists,
+            "albums": [str(album.uri) for album in self.albums],
+            "artists": [str(artist.uri) for artist in self.artists],
+            "genres": [str(genre.uri) for genre in self.genres],
+        }
+
+    @staticmethod
+    def _should_extend(item: Any) -> bool:
+        return isinstance(item, RemoteCollection) and not item.has_all_items
 
     ###########################################################################
     ## Load - playlists
@@ -211,9 +233,9 @@ class RemoteLibrary[
         ("playlists.saved", PlaylistReadSavedEndpoints, "reading data for saved {type}s"),
     )
     async def load_playlists(self) -> bool:
-        self.logger.debug(f"Load {self._log_name} playlists: START")
         api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadSavedEndpoints]] = self.api
 
+        self.logger.info(f"Loading {self._log_name} playlists", header=2)
         playlists = await api.playlists.saved.get_by_user(self.user)
         if self.playlist_filter is not None:
             playlists: list[VP] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
@@ -222,7 +244,6 @@ class RemoteLibrary[
         # noinspection PyProtectedMember
         self.playlists._replace(playlists_mapped, extract_keys=False)
 
-        self.logger.debug(f"Load {self._log_name} playlists: DONE")
         return True
 
     @HasAPI._validate_api(
@@ -233,22 +254,24 @@ class RemoteLibrary[
     )
     async def load_playlist_items(self) -> bool:
         """Load all playlist items for all currently loaded playlists."""
-        self.logger.debug(f"Load {self._log_name} playlist's tracks: START")
         api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
 
-        async def _load_playlist_tracks(pl: VP) -> None:
+        playlists = list(filter(self._should_extend, self.playlists.values()))
+        self.logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
+
+        async def _extend_playlist_tracks(pl: VP) -> None:
             items = await api.playlists.get_all(pl)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
         await self.logger.get_asynchronous_iterator(
-            map(_load_playlist_tracks, self.playlists.values()),
-            total=len(self.playlists),
+            map(_extend_playlist_tracks, playlists),
             desc=f"Loading {self.source.title()} playlist tracks",
             unit="playlists",
+            initial=0,
+            total=len(playlists),
         )
 
-        self.logger.debug(f"Load {self._log_name} playlist's tracks: DONE")
         return True
 
     def log_playlists(self, skip_log: bool = False) -> list[tuple[str, ...]]:
@@ -292,14 +315,13 @@ class RemoteLibrary[
         ("tracks.saved", TrackReadSavedEndpoints, "reading data for saved {type}s"),
     )
     async def load_tracks(self) -> bool:
-        self.logger.debug(f"Load {self._log_name} saved tracks: START")
         api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints]] = self.api
 
+        self.logger.info(f"Loading {self._log_name} saved tracks", header=2)
         tracks = await api.tracks.saved.get_all()
         # noinspection PyProtectedMember
         self.tracks._replace(tracks)
 
-        self.logger.debug(f"Load {self._log_name} saved tracks: DONE")
         return True
 
     def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
@@ -341,15 +363,14 @@ class RemoteLibrary[
     )
     async def load_saved_artists(self) -> bool:
         """Load all artists available for this library. Replaces all currently loaded artists."""
-        self.logger.debug(f"Load {self._log_name} saved artists: START")
         api: HasArtistEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints]] = self.api
 
+        self.logger.info(f"Loading {self._log_name} saved artists", header=2)
         artists = await api.artists.saved.get_all()
 
         self.artists.clear()
         self.artists.extend(artists)
 
-        self.logger.debug(f"Load {self._log_name} saved artists: DONE")
         return True
 
     @HasAPI._validate_api(
@@ -360,18 +381,24 @@ class RemoteLibrary[
     )
     async def load_saved_artist_albums(self) -> bool:
         """Load all artists albums for all currently loaded albums."""
-        self.logger.debug(f"Load {self._log_name} saved artist's albums: START")
         api: HasArtistEndpoints[ArtistReadCollectionEndpoints] = self.api
 
-        for artist in self.artists:
-            if not isinstance(artist, RemoteArtistCollection):
-                continue
+        artists = list(filter(self._should_extend, self.artists))
+        self.logger.info(f"Loading albums for {len(artists)} saved artists in {self._log_name} library", header=2)
 
+        async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
             albums = await api.artists.get_all(artist)
             artist.albums.clear()
             artist.albums.extend(albums)
 
-        self.logger.debug(f"Load {self._log_name} saved artist's albums: DONE")
+        await self.logger.get_asynchronous_iterator(
+            map(_extend_artist_albums, artists),
+            desc=f"Loading {self.source.title()} artist albums",
+            unit="artists",
+            initial=0,
+            total=len(artists),
+        )
+
         return True
 
     def log_artists(self, skip_log: bool = False) -> tuple[str, ...]:
@@ -411,15 +438,14 @@ class RemoteLibrary[
     )
     async def load_saved_albums(self) -> bool:
         """Load all albums available for this library. Replaces all currently loaded albums."""
-        self.logger.debug(f"Load {self._log_name} saved albums: START")
         api: HasAlbumEndpoints[HasSavedEndpoints[ReadSavedEndpoints]] = self.api
 
+        self.logger.info(f"Loading {self._log_name} saved albums", header=2)
         albums = await api.albums.saved.get_all()
 
         self.albums.clear()
         self.albums.extend(albums)
 
-        self.logger.debug(f"Load {self._log_name} saved albums: DONE")
         return True
 
     @HasAPI._validate_api(
@@ -430,18 +456,24 @@ class RemoteLibrary[
     )
     async def load_saved_album_tracks(self) -> bool:
         """Load all album tracks for all currently loaded albums."""
-        self.logger.debug(f"Load {self._log_name} saved album's tracks: START")
         api: HasAlbumEndpoints[AlbumReadCollectionEndpoints] = self.api
 
-        for album in self.albums:
-            if not isinstance(album, RemoteAlbumCollection):
-                continue
+        albums = list(filter(self._should_extend, self.albums))
+        self.logger.info(f"Loading tracks for {len(albums)} saved albums in {self._log_name} library", header=2)
 
+        async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
             tracks = await api.albums.get_all(album)
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 
-        self.logger.debug(f"Load {self._log_name} saved album's tracks: DONE")
+        await self.logger.get_asynchronous_iterator(
+            map(_extend_album_tracks, albums),
+            desc=f"Loading {self.source.title()} album tracks",
+            unit="albums",
+            initial=0,
+            total=len(albums),
+        )
+
         return True
 
     def log_albums(self, skip_log: bool = False) -> tuple[str, ...]:
@@ -466,31 +498,6 @@ class RemoteLibrary[
 
         return row
 
-    ###########################################################################
-    ## Backup/Restore
-    ###########################################################################
-    def dump(self) -> dict[str, Any]:
-        names_seen = set()
-        playlists = []
-        for pl in self.playlists.values():
-            if pl.name in names_seen:
-                continue
-
-            pl_backup = dict(
-                name=pl.name,
-                description=pl.description,
-                tracks=[str(track.uri) for track in pl.tracks],
-            )
-            playlists.append(pl_backup)
-
-        return {
-            "tracks": [str(track.uri) for track in self.tracks],
-            "playlists": playlists,
-            "albums": [str(album.uri) for album in self.albums],
-            "artists": [str(artist.uri) for artist in self.artists],
-            "genres": [str(genre.uri) for genre in self.genres],
-        }
-
 
 _SYNC_ITEMS_TYPE = Literal["playlists", "tracks", "artists", "albums"]
 
@@ -508,6 +515,65 @@ class RemoteMutableLibrary[
 ](
     MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, API, RT, AT, GT, UT]
 ):
+    async def sync(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncResult]:
+        """
+        Synchronise all items in this library with the remote service.
+
+        Sync options:
+            * 'new': Do not clear any items from the remote service and only add new items.
+            * 'refresh': Clear all items from the remote service first, then add all items.
+            * 'sync': Clear all items not currently on the remote service, then add all items
+                from this library not currently in the remote service.
+
+        :param kind: Sync option for the remote service. See description.
+        :param dry_run: Run function, but do not modify the remote service at all.
+        :return: Map of item type to the results of the sync as a :py:class:`SyncResult` object.
+        """
+        self.logger.info(f"Synchronising {self._log_name} library", header=1)
+
+        results = await self.sync_playlist_items(kind=kind, dry_run=dry_run)
+        results["TRACKS"] = await self.sync_tracks(kind=kind, dry_run=dry_run)
+        results["ARTISTS"] = await self.sync_artists(kind=kind, dry_run=dry_run)
+        results["ALBUMS"] = await self.sync_albums(kind=kind, dry_run=dry_run)
+
+        self.log_sync_results(results, skip_log=False)
+        return results
+
+    def log_sync_results(
+            self, results: Mapping[str, SyncResult], skip_log: bool = False
+    ) -> list[tuple[str, ...]]:
+        """Log stats from the results of a sync operation"""
+        if not results:
+            return []
+
+        rows = []
+        for name, result in results.items():
+            row = (
+                colored(textwrap.shorten(name, self._log_name_max_width, placeholder="..."), "white"),
+                colored(f"{result.start} initial", "cyan"),
+                colored(f"{result.added} added", "green"),
+                colored(f"{result.removed} removed", "red"),
+                colored(f"{result.unchanged} unchanged", "yellow"),
+                colored(f"{result.difference} difference", "blue"),
+                colored(f"{result.final} final", "white", attrs=["bold"]),
+            )
+            rows.append(row)
+
+        if not rows:
+            return rows
+
+        if not skip_log:
+            header = colored(f"{self._log_name.upper()} SYNC RESULTS", "cyan", attrs=["bold"])
+            log = header + ":\n" + tabulate(
+                rows,
+                tablefmt="orgtbl",
+                colalign=("left", "right", "right", "right", "right", "right", "right"),
+            )
+
+            self.logger.stat(log)
+
+        return rows
+
     ###########################################################################
     ## Create/Sync Playlists
     ###########################################################################
@@ -520,18 +586,17 @@ class RemoteMutableLibrary[
     )
     async def create_playlist(self, name: str, **kwargs) -> VP | None:
         """Create a new playlist with the given name and return it."""
-        self.logger.debug(f"Create a playlist on {self._log_name} library: START")
         api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] = self.api
 
         if name in self.playlists:
             self.logger.warning(f"Playlist with name {name!r} already exists in {self._log_name} library.")
             return self.playlists[name]
 
+        self.logger.info(f"Creating playlist {name!r} on {self._log_name} library", header=2)
         playlist = await api.playlists.saved.create(name=name, **kwargs)
         # noinspection PyProtectedMember
         self.playlists._update({playlist.name: playlist}, extract_keys=False)
 
-        self.logger.debug(f"Create a playlist on {self._log_name} library: DONE")
         return playlist
 
     @HasAPI._validate_api(
@@ -557,18 +622,15 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote playlists at all.
         :return: Map of playlist name to the results of the sync as a :py:class:`SyncResult` object.
         """
-        self.logger.debug(f"Sync {self._log_name} playlists: START")
         api: HasPlaylistEndpoints[
             PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]
         ] = self.api
 
-        playlists = tuple(pl for pl in self.playlists.values() if isinstance(pl, RemoteMutablePlaylist))
+        playlists = list(filter(lambda pl: isinstance(pl, RemoteMutablePlaylist), self.playlists.values()))
 
         message_context = get_sync_message(kind, item_type="items", from_type=f"from each {self.source} playlist")
-        message = self.logger.generate_message(
-            f"Synchronising {len(playlists)} {self.source} playlists: {message_context}", header=1
-        )
-        self.logger.info(message)
+        message = f"Synchronising {len(playlists)} playlists on {self._log_name} library: {message_context}"
+        self.logger.info(message, header=1)
 
         async def _sync_playlist(pl: RemoteMutablePlaylist) -> tuple[str, SyncResult]:
             remote = await api.playlists.saved.get_or_create(pl.name)
@@ -577,50 +639,12 @@ class RemoteMutableLibrary[
         
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, playlists),
-            total=len(self.playlists),
             desc=f"Synchronising {self.source.title()} playlists",
             unit="playlists",
+            initial=0,
+            total=len(playlists),
         )
-        results = dict(await bar)
-
-        self.logger.print_line()
-        self.logger.debug(f"Sync {self._log_name} playlists: DONE")
-        return results
-
-    def log_sync_playlist_items(
-            self, results: Mapping[str, SyncResult], skip_log: bool = False
-    ) -> list[tuple[str, ...]]:
-        """Log stats from the results of a ``sync_playlists`` operation"""
-        if not results:
-            return []
-
-        rows = []
-        for name, result in results.items():
-            row = (
-                colored(textwrap.shorten(name, self._log_name_max_width, placeholder="..."), "white"),
-                colored(f"{result.start} initial", "cyan"),
-                colored(f"{result.added} added", "green"),
-                colored(f"{result.removed} removed", "red"),
-                colored(f"{result.unchanged} unchanged", "yellow"),
-                colored(f"{result.difference} difference", "blue"),
-                colored(f"{result.final} final", "white", attrs=["bold"]),
-            )
-            rows.append(row)
-
-        if not rows:
-            return rows
-
-        if not skip_log:
-            header = colored(f"{self._log_name.upper()} SYNC PLAYLIST RESULTS", "cyan", attrs=["bold"])
-            log = header + ":\n" + tabulate(
-                rows,
-                tablefmt="orgtbl",
-                colalign=("left", "right", "right", "right", "right", "right", "right"),
-            )
-
-            self.logger.stat(log)
-
-        return rows
+        return dict(await bar)
 
     ###########################################################################
     ## Sync saved items
@@ -647,15 +671,10 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The results of the sync as a :py:class:`SyncResult` object.
         """
-        self.logger.debug(f"Sync {self._log_name} saved tracks: START")
         api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints | TrackWriteSavedEndpoints]] = self.api
-
-        result = await self._sync_saved_items(
+        return await self._sync_saved_items(
             kind, items_type="tracks", items=self.tracks, api=api.tracks, dry_run=dry_run
         )
-
-        self.logger.debug(f"Sync {self._log_name} saved tracks: DONE")
-        return result
 
     @HasAPI._validate_api(
         "artist",
@@ -679,15 +698,10 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The results of the sync as a :py:class:`SyncResult` object.
         """
-        self.logger.debug(f"Sync {self._log_name} saved artists: START")
         api: HasArtistEndpoints[HasSavedEndpoints[ArtistReadSavedEndpoints | ArtistWriteSavedEndpoints]] = self.api
-
-        result = await self._sync_saved_items(
+        return await self._sync_saved_items(
             kind, items_type="artists", items=self.artists, api=api.artists, dry_run=dry_run
         )
-
-        self.logger.debug(f"Sync {self._log_name} saved artists: DONE")
-        return result
 
     @HasAPI._validate_api(
         "album",
@@ -711,15 +725,10 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The results of the sync as a :py:class:`SyncResult` object.
         """
-        self.logger.debug(f"Sync {self._log_name} saved albums: START")
         api: HasAlbumEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints | AlbumWriteSavedEndpoints]] = self.api
-
-        result = await self._sync_saved_items(
+        return await self._sync_saved_items(
             kind, items_type="albums", items=self.albums, api=api.albums, dry_run=dry_run
         )
-
-        self.logger.debug(f"Sync {self._log_name} saved albums: DONE")
-        return result
 
     async def _sync_saved_items(
             self,
@@ -731,21 +740,15 @@ class RemoteMutableLibrary[
     ) -> SyncResult:
         """Run a sync of the given type by calling the given add and remove functions with the appropriate items."""
         message_context = get_sync_message(kind, item_type=items_type, from_type="from the library")
-        message = self.logger.generate_message(
-            f"Synchronising {len(items)} {self.source} {items_type}: {message_context}", header=1
-        )
-        self.logger.info(message)
+        message = f"Synchronising {len(items)} {items_type} on {self._log_name} library: {message_context}"
+        self.logger.info(message, header=1)
 
         initial = [item.uri for item in items if item.uri]
         remote = await api.saved.get_all()
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)
 
-        if dry_run:
-            removed = len(remove)
-            added = len(add)
-        else:
-            removed = await api.saved.remove_many(remove)
-            added = await api.saved.add_many(add)
+        removed = await api.saved.remove_many(remove) if not dry_run else len(remove)
+        added = await api.saved.add_many(add) if not dry_run else len(add)
 
         return SyncResult(
             start=len(remote),
@@ -759,6 +762,31 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Restore playlists and saved items
     ###########################################################################
+    def restore(
+            self, backup: RestoreLibraryType[_SYNC_ITEMS_TYPE], dry_run: bool = False
+    ) -> dict[str, SyncResult] | SyncResult | None:
+        """
+        Restore library from a backup.
+
+        :param backup: Backup data to restore.
+        :param dry_run: Run function, but do not modify the remote service at all.
+        :return: The results of the restore as a mapping of item type to either a :py:class:`SyncResult` object
+            or a mapping of playlist name to :py:class:`SyncResult
+        """
+        results: dict[str, SyncResult] = {}
+
+        if "playlists" in backup:
+            results |= self.restore_playlists(backup, dry_run=dry_run)
+        if "tracks" in backup:
+            results |= self.restore_tracks(backup, dry_run=dry_run)
+        if "artists" in backup:
+            results |= self.restore_artists(backup, dry_run=dry_run)
+        if "albums" in backup:
+            results |= self.restore_albums(backup, dry_run=dry_run)
+
+        self.log_sync_results(results, skip_log=False)
+        return results
+
     @HasAPI._validate_api(
         "playlist",
         dict,
@@ -771,11 +799,11 @@ class RemoteMutableLibrary[
     )
     @validate_call
     async def restore_playlists(
-            self, playlists: RestorePlaylistsType[str], dry_run: bool = False,
+            self, playlists: RestorePlaylistsType[Literal["playlists"]], dry_run: bool = False,
     ) -> dict[str, SyncResult]:
         """
-        Restore saved tracks from a backup to track objects.
-        This function updates the remote service and reloads this library's tracks after restoring.
+        Restore playlists from a backup dump.
+        This function updates the remote service and reloads this library's playlists after restoring.
 
         Playlists may be in the form of either:
             * A sequence of dictionaries where dictionary is ``{<Dump of playlist data>}``
@@ -786,11 +814,12 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved tracks on the remote service after the sync.
         """
-        self.logger.debug(f"Restore {self._log_name} playlists: START")
         api: (
             HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] |
             HasTrackEndpoints[TrackReadItemsEndpoints]
         ) = self.api
+
+        self.logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
 
         restored: list[VP] = []
         results: dict[str, SyncResult] = {}
@@ -832,7 +861,6 @@ class RemoteMutableLibrary[
         # noinspection PyProtectedMember
         self.playlists._replace({pl.name: pl for pl in restored}, extract_keys=False)
 
-        self.logger.debug(f"Restore {self._log_name} saved tracks: DONE")
         return results
 
     @staticmethod
@@ -858,9 +886,11 @@ class RemoteMutableLibrary[
         ("tracks.saved", TrackWriteSavedEndpoints, "writing data for saved {type}s"),
     )
     @validate_call
-    async def restore_tracks(self, tracks: RestoreSavedItemsType[str], dry_run: bool = False) -> SyncResult | None:
+    async def restore_tracks(
+            self, tracks: RestoreSavedItemsType[Literal["tracks"]], dry_run: bool = False
+    ) -> SyncResult | None:
         """
-        Restore saved tracks from a backup to track objects.
+        Restore saved tracks from a backup dump.
         This function updates the remote service and reloads this library's tracks after restoring.
 
         Tracks may be in the form of either:
@@ -873,17 +903,15 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved tracks on the remote service after the sync.
         """
-        self.logger.debug(f"Restore {self._log_name} saved tracks: START")
         api: HasTrackEndpoints[
             TrackReadItemsEndpoints | HasSavedEndpoints[TrackReadSavedEndpoints | TrackWriteSavedEndpoints]
         ] = self.api
 
+        self.logger.info(f"Restoring {len(tracks)} saved tracks on {self._log_name} library", header=2)
+
         uris = self._extract_uris_from_backup(tracks, key="tracks")
         self.tracks[:] = await api.tracks.get_many(uris)
-        result = await self.sync_tracks(kind="refresh", dry_run=dry_run)
-
-        self.logger.debug(f"Restore {self._log_name} saved tracks: DONE")
-        return result
+        return await self.sync_tracks(kind="refresh", dry_run=dry_run)
 
     @HasAPI._validate_api(
         "artist",
@@ -895,7 +923,9 @@ class RemoteMutableLibrary[
         ("artists.saved", ArtistWriteSavedEndpoints, "writing data for saved {type}s"),
     )
     @validate_call
-    async def restore_artists(self, artists: RestoreSavedItemsType[str], dry_run: bool = False) -> SyncResult | None:
+    async def restore_artists(
+            self, artists: RestoreSavedItemsType[Literal["artists"]], dry_run: bool = False
+    ) -> SyncResult | None:
         """
         Restore saved artists from a backup dump.
         This function updates the remote service and reloads this library's artists after restoring.
@@ -910,17 +940,15 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved artists on the remote service after the sync.
         """
-        self.logger.debug(f"Restore {self._log_name} saved artists: START")
         api: HasArtistEndpoints[
             ArtistReadItemsEndpoints | HasSavedEndpoints[ArtistReadSavedEndpoints | ArtistWriteSavedEndpoints]
         ] = self.api
 
+        self.logger.info(f"Restoring {len(artists)} saved artists on {self._log_name} library", header=2)
+
         uris = self._extract_uris_from_backup(artists, key="artists")
         self.artists[:] = await api.artists.get_many(uris)
-        result = await self.sync_artists(kind="refresh", dry_run=dry_run)
-
-        self.logger.debug(f"Restore {self._log_name} saved artists: DONE")
-        return result
+        return await self.sync_artists(kind="refresh", dry_run=dry_run)
 
     @HasAPI._validate_api(
         "album",
@@ -932,7 +960,9 @@ class RemoteMutableLibrary[
         ("albums.saved", AlbumWriteSavedEndpoints, "writing data for saved {type}s"),
     )
     @validate_call
-    async def restore_albums(self, albums: RestoreSavedItemsType[str], dry_run: bool = False) -> SyncResult | None:
+    async def restore_albums(
+            self, albums: RestoreSavedItemsType[Literal["albums"]], dry_run: bool = False
+    ) -> SyncResult | None:
         """
         Restore saved albums from a backup dump.
         This function updates the remote service and reloads this library's albums after restoring.
@@ -947,17 +977,15 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved albums on the remote service after the sync.
         """
-        self.logger.debug(f"Restore {self._log_name} saved albums: START")
         api: HasAlbumEndpoints[
             AlbumReadItemsEndpoints | HasSavedEndpoints[AlbumReadSavedEndpoints | AlbumWriteSavedEndpoints]
         ] = self.api
 
+        self.logger.info(f"Restoring {len(albums)} saved albums on {self._log_name} library", header=2)
+
         uris = self._extract_uris_from_backup(albums, key="albums")
         self.albums[:] = await api.albums.get_many(uris)
-        result = await self.sync_albums(kind="refresh", dry_run=dry_run)
-
-        self.logger.debug(f"Restore {self._log_name} saved albums: DONE")
-        return result
+        return await self.sync_albums(kind="refresh", dry_run=dry_run)
 
     @staticmethod
     def _extract_uris_from_backup(backup: RestoreSavedItemsType[str], key: _SYNC_ITEMS_TYPE) -> tuple[str | URI, ...]:

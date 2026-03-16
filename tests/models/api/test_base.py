@@ -79,14 +79,14 @@ class TestHasAPI(BaseModelTester):
             ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
             ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
         )
-        def return_bool(self) -> bool:
+        async def return_bool(self) -> bool:
             return True
 
     @pytest.fixture
     def model(self, api: RemoteAPI) -> HasAPI:
         return self.MockHasAPI(api=api)
 
-    def test_validate_api_with_valid_api(self, handler: RequestHandler):
+    async def test_validate_api_with_valid_api(self, handler: RequestHandler):
         class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]):
             pass
 
@@ -94,16 +94,16 @@ class TestHasAPI(BaseModelTester):
             pass
 
         model = self.MockHasAPI(api=MockAPI(handler=handler))
-        assert model.return_bool() is True
+        assert await model.return_bool() is True
 
-    def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
+    async def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockTrackEndpoints]):
             pass
 
         model = self.MockHasAPI(api=MockAPI(handler=handler))
-        assert model.return_bool() is False
+        assert await model.return_bool() is False
 
-    def test_validate_api_fails_on_no_write_saved_playlist_endpoints(self, handler: RequestHandler):
+    async def test_validate_api_fails_on_no_write_saved_playlist_endpoints(self, handler: RequestHandler):
         class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasSavedEndpoints[PlaylistReadSavedEndpoints]):
             pass
 
@@ -111,4 +111,4 @@ class TestHasAPI(BaseModelTester):
             pass
 
         model = self.MockHasAPI(api=MockAPI(handler=handler))
-        assert model.return_bool() is False
+        assert await model.return_bool() is False

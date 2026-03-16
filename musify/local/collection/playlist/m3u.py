@@ -111,6 +111,7 @@ class M3U(LocalPlaylist[PathsFilter]):
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: The results of the sync as a :py:class:`SyncResultM3U` object.
         """
+        # TODO: make this async
         start_paths = list(map(Path, self.path_mapper.unmap_many(self._original, check_existence=False)))
 
         if not dry_run:

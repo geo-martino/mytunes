@@ -21,6 +21,7 @@ from musify.local.exception import MusicBeeIDError, XMLReaderError, FileDoesNotE
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
+from musify.models.properties.logger import HasLogger
 from musify.utils import required_modules_installed
 
 try:
@@ -141,8 +142,6 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
         await self.set_library_folders()
         await super().load_tracks()
 
-        self.logger.debug(f"Enrich {self.source} tracks: START")
-
         track_xml_map = await self._map_track_to_xml()
         track_map = {track.path: track for track in self.tracks}
         for path, track_xml in track_xml_map.items():
@@ -153,7 +152,6 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
             track.play_count = track_xml.get("Play Count", 0)
 
         self._log_errors("Could not find a loaded track for these paths from the MusicBee library file")
-        self.logger.debug(f"Enrich {self.source} tracks: DONE\n")
 
     async def _map_track_to_xml(self, xml: dict[str, Any] = None) -> dict[Path, dict[str, Any]]:
         if xml is None:
@@ -203,8 +201,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
 
         :param dry_run: Run function, but do not modify the file on the disk.
         """
-        self.logger.debug(f"Save {self.source} library file: START")
-
+        # TODO: make this async
         parser = XMLLibraryParser(source=self.xml_library_path, path_keys=self._xml_library_path_keys)
         xml = parser.parse()
 
@@ -219,7 +216,6 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile):
             with self.xml_library_path.open("w", encoding="utf-8") as file:
                 file.write(parser.unparse(xml))
 
-        self.logger.debug(f"Save {self.source} library file: DONE")
         return xml
 
     async def _tracks_to_xml(self, xml: dict[str, Any]) -> tuple[dict[int, dict[str, Any]], dict[Path, int]]:

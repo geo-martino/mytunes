@@ -183,6 +183,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: The results of the sync as a :py:class:`SyncResultXAutoPF` object.
         """
+        # TODO: make this async
         if self._xml is None:
             self._xml = _XMLRoot()
 

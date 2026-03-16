@@ -1,6 +1,6 @@
 import itertools
 import textwrap
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Annotated, ClassVar, Any, final
 
@@ -16,10 +16,11 @@ from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack
+from musify.local.item.track import LocalTrack, TagDumpContext
 from musify.logger import STAT, HEADER_PREFIX
 from musify.models.collection.library import MutableLibrary, RestoreType
 from musify.models.properties.file import PathMapper
+from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.processors_new import Result
 from musify.processors_new.filters import Filter, ValuesFilter
@@ -112,10 +113,7 @@ class LocalLibrary(
         self.logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
     async def load(self) -> None:
-        self.logger.debug(f"Load {self.source} library: START")
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m Loading tracks and playlists in {self.source} library \33[0m"
-        )
+        self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
 
         await self.load_tracks()
         await self.load_playlists()
@@ -128,9 +126,6 @@ class LocalLibrary(
             colalign=("left", "right", "right", "right", "right"),
         )
         self.logger.stat(log)
-
-        self.logger.print_line()
-        self.logger.debug(f"Load {self.source} library: DONE\n")
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -163,26 +158,25 @@ class LocalLibrary(
             self.errors.append(path)
 
     async def load_tracks(self) -> bool:
-        self.logger.debug(f"Find {self.source} track paths: START")
-        paths = set(self._iter_track_paths())
-        self.logger.debug(f"Find {self.source} track paths: DONE")
-        if not paths:
+        if not (paths := set(self._iter_track_paths())):
             return False
 
-        self.logger.debug(f"Load {self.source} tracks: START")
         self.logger.info(
             HEADER_PREFIX +
             colored(f"Loading {len(paths)} tracks in {self.source} library", "cyan", attrs=["bold"])
         )
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        bar = self.logger.get_synchronous_iterator(
-            paths, desc="Loading tracks", unit="tracks", total=len(paths)
+        bar = self.logger.get_asynchronous_iterator(
+            map(self.load_track, paths),
+            desc="Loading tracks",
+            unit="tracks",
+            initial=0,
+            total=len(paths)
         )
-        self.tracks[:] = filter(lambda tr: tr is not None, [await self.load_track(path) for path in bar])
+        self.tracks[:] = filter(lambda tr: tr is not None, await bar)
 
         self._log_errors("Could not load the following tracks")
-        self.logger.debug(f"Load {self.source} tracks: DONE\n")
         return True
 
     def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
@@ -205,6 +199,43 @@ class LocalLibrary(
 
         return row
 
+    @validate_call
+    async def save_tracks(
+            self,
+            include: Sequence[str] = (),
+            exclude: Sequence[str] = (),
+            context: TagDumpContext | None = None,
+            replace: bool = False,
+            dry_run: bool = True
+    ) -> dict[Path, dict[str, Any]]:
+        """
+        For each track in this Library, save its tags to file.
+
+        :param include: The tags to include when writing to the file. If empty, all tags will be included.
+        :param exclude: The tags to exclude from writing to the file. Ignored if empty.
+        :param context: The context to use when writing the tags.
+        :param replace: Destructively replace tags in each file.
+        :param dry_run: Run function, but do not modify the file on the disk.
+        :return: A map of the track path to the tags that were saved.
+        """
+        async def _save_track(track: LocalTrack) -> tuple[Path, dict[str, Any]]:
+            file = await track.load()
+            tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
+            if not dry_run:
+                await track.save(file)
+
+            return track.path, tags
+
+        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
+        bar = self.logger.get_asynchronous_iterator(
+            map(_save_track, self.tracks),
+            desc="Updating tracks",
+            unit="tracks",
+            initial=0,
+            total=len(self.tracks)
+        )
+        return dict(await bar)
+
     ###########################################################################
     ## Playlists
     ###########################################################################
@@ -224,28 +255,27 @@ class LocalLibrary(
             self.errors.append(path)
 
     async def load_playlists(self) -> bool:
-        self.logger.debug(f"Find {self.source} playlist paths: START")
-        paths = set(self._iter_playlist_paths())
-        self.logger.debug(f"Find {self.source} playlist paths: DONE")
-        if not paths:
+        if not (paths := set(self._iter_playlist_paths())):
             return False
 
-        self.logger.debug(f"Load {self.source} playlists: START")
         self.logger.info(
             HEADER_PREFIX +
             colored(f"Loading {len(paths)} playlists in {self.source} library", "cyan", attrs=["bold"])
         )
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        bar = self.logger.get_synchronous_iterator(
-            paths, desc="Loading playlists", unit="playlists", total=len(paths)
+        bar = self.logger.get_asynchronous_iterator(
+            map(self.load_playlist, paths),
+            desc="Loading playlists",
+            unit="playlists",
+            initial=0,
+            total=len(paths)
         )
-        playlists = filter(lambda pl: pl is not None, [await self.load_playlist(path) for path in bar])
+        playlists = filter(lambda pl: pl is not None, await bar)
         playlists = {pl.name: pl for pl in sorted(playlists, key=lambda x: x.name.casefold())}
         self.playlists.replace(playlists, extract_keys=False)
 
         self._log_errors("Could not load the following playlists")
-        self.logger.debug(f"Load {self.source} playlists: DONE\n")
         return True
 
     def log_playlists(self, skip_log: bool = False) -> list[tuple[str, ...]]:
@@ -286,13 +316,14 @@ class LocalLibrary(
             return pl.name, await pl.save(dry_run=dry_run)
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        results = await self.logger.get_asynchronous_iterator(
+        bar = self.logger.get_asynchronous_iterator(
             map(_save_playlist, self.playlists.values()),
             desc="Updating playlists",
-            unit="tracks",
+            unit="playlists",
+            initial=0,
             total=len(self.playlists)
         )
-        return dict(results)
+        return dict(await bar)
 
     ###########################################################################
     ## Collections

@@ -22,7 +22,7 @@ except ImportError:
     tqdm = None
 
 type ProgressBarType[T] = Iterable[T] | tqdm if tqdm is not None else Iterable[T]
-
+type HeaderType = Annotated[int, Field(ge=1, le=4)]
 
 INFO_EXTRA = logging.INFO - 1
 logging.addLevelName(INFO_EXTRA, "INFO_EXTRA")
@@ -75,21 +75,50 @@ class Logger(logging.Logger):
                 console_handlers.add(handler)
 
         return console_handlers
+    
+    @validate_call
+    def debug(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        msg = self.generate_message(msg, header, hidden)
+        super().debug(msg, *args, **kwargs)
 
-    def info_extra(self, msg, *args, **kwargs) -> None:
-        """Log 'msg % args' with severity 'INFO_EXTRA'."""
-        if self.isEnabledFor(INFO_EXTRA):
-            self._log(INFO_EXTRA, msg, args, **kwargs)
-
-    def report(self, msg, *args, **kwargs) -> None:
-        """Log 'msg % args' with severity 'REPORT'."""
-        if self.isEnabledFor(REPORT):
-            self._log(REPORT, msg, args, **kwargs)
-
-    def stat(self, msg, *args, **kwargs) -> None:
+    def stat(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
         """Log 'msg % args' with severity 'STAT'."""
         if self.isEnabledFor(STAT):
+            msg = self.generate_message(msg, header, hidden)
             self._log(STAT, msg, args, **kwargs)
+
+    def report(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        """Log 'msg % args' with severity 'REPORT'."""
+        if self.isEnabledFor(REPORT):
+            msg = self.generate_message(msg, header, hidden)
+            self._log(REPORT, msg, args, **kwargs)
+
+    @validate_call
+    def info_extra(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        """Log 'msg % args' with severity 'INFO_EXTRA'."""
+        if self.isEnabledFor(INFO_EXTRA):
+            msg = self.generate_message(msg, header, hidden)
+            self._log(INFO_EXTRA, msg, args, **kwargs)
+    
+    @validate_call
+    def info(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        msg = self.generate_message(msg, header, hidden)
+        super().info(msg, *args, **kwargs)
+    
+    @validate_call
+    def warning(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        msg = self.generate_message(msg, header, hidden)
+        super().warning(msg, *args, **kwargs)
+    
+    @validate_call
+    def error(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        msg = self.generate_message(msg, header, hidden)
+        super().error(msg, *args, **kwargs)
+    
+    @validate_call
+    def critical(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+        msg = self.generate_message(msg, header, hidden)
+        super().critical(msg, *args, **kwargs)
 
     def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
@@ -114,10 +143,12 @@ class Logger(logging.Logger):
     @validate_call
     def generate_message(
             message: str,
-            header: Annotated[int, Field(ge=1, le=4)],
-            hidden: str = None
+            header: Annotated[int, Field(ge=1, le=4)] | None = None,
+            hidden: str | None = None
     ) -> str:
         match header:
+            case None:
+                header = ""
             case 1:
                 header = "->"
             case 2:
@@ -127,12 +158,15 @@ class Logger(logging.Logger):
             case 3:
                 header = " ·"
 
-        header = colored(header, "magenta", attrs=["bold"])
-        message = colored(message, "white", attrs=["bold"])
-        if hidden:
-            message = f"{message} {colored(hidden, "dark_grey", attrs=['dark'])}"
+        if header:
+            header = colored(header, "magenta", attrs=["bold"])
+            message = colored(message, "white", attrs=["bold"])
 
-        return f"{header} {message}"
+        if hidden:
+            hidden = colored(hidden, "dark_grey", attrs=['dark'])
+
+        parts = [header, message, hidden]
+        return " ".join(part for part in parts if part).strip()
 
     def get_synchronous_iterator[T: Any](
             self, iterable: Iterable[T] | None = None, total: T | int | None = None, **kwargs

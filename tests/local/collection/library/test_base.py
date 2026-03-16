@@ -200,6 +200,11 @@ class TestLocalLibrary(BaseResourceTester):
         # print(model.log_tracks())
         assert len(model.log_tracks()) == 5  # just summarises
 
+    async def test_save_tracks(self, model: LocalLibrary, tracks: list[LocalTrack]):
+        model.tracks.extend(tracks)
+        results = await model.save_tracks(dry_run=True)
+        assert results.keys() == {track.path for track in model.tracks}
+
     ###########################################################################
     ## Playlists
     ###########################################################################

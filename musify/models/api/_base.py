@@ -142,7 +142,6 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
             return invalid_return
 
         def decorator(func: Callable) -> Callable:
-
             @functools.wraps(func)
             def wrapper(self: HasAPI, *args, **kwargs):
                 for key, expected_type, context in expected:

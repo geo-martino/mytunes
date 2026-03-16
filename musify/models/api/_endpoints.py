@@ -180,10 +180,10 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         responses: list[JSON] = await self.logger.get_asynchronous_iterator(
             map(functools.partial(self._get_page, item_type=item_type), cursors),
-            initial=0,
-            total=len(cursors),
             desc=f"Extending {collection_type}",
             unit="pages",
+            initial=0,
+            total=len(cursors),
             disable=len(cursors) < self._bar_threshold,
         )
 
@@ -317,10 +317,10 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         batches = list(self._batch_values(uris, limit))
         bar = self.logger.get_asynchronous_iterator(
             map(_get_items, batches),
-            initial=0,
-            total=len(batches),
             desc=f"Getting {item_type}s",
             unit="batches",
+            initial=0,
+            total=len(batches),
             disable=len(batches) < self._bar_threshold,
         )
         items = [item for batch in await bar for item in batch]
@@ -400,10 +400,10 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
         batches = list(self._batch_values(uris, limit))
         await self.logger.get_asynchronous_iterator(
             map(_post_items, batches),
-            initial=0,
-            total=len(batches),
             desc=f"Adding {item_type}s to {collection_type}",
             unit="batches",
+            initial=0,
+            total=len(batches),
             disable=len(batches) < self._bar_threshold,
         )
 
@@ -461,10 +461,10 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
         batches = list(self._batch_values(uris, limit))
         await self.logger.get_asynchronous_iterator(
             map(_delete_items, batches),
-            initial=0,
-            total=len(batches),
             desc=f"Removing {item_type}s from {collection_type}",
             unit="batches",
+            initial=0,
+            total=len(batches),
             disable=len(batches) < self._bar_threshold,
         )
 
@@ -534,10 +534,10 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         batches = list(self._batch_values(uris, limit))
         await self.logger.get_asynchronous_iterator(
             map(_post_items, batches),
-            initial=0,
-            total=len(batches),
             desc=f"Adding {item_type}s",
             unit="batches",
+            initial=0,
+            total=len(batches),
             disable=len(batches) < self._bar_threshold,
         )
 
@@ -571,10 +571,10 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         batches = list(self._batch_values(uris, limit))
         await self.logger.get_asynchronous_iterator(
             map(_delete_items, batches),
-            initial=0,
-            total=len(batches),
             desc=f"Removing {item_type}s",
             unit="batches",
+            initial=0,
+            total=len(batches),
             disable=len(batches) < self._bar_threshold,
         )
 

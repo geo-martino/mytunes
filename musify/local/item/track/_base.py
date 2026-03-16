@@ -359,6 +359,7 @@ class LocalTrack[FT: FileType](
         return file
 
     async def save(self, file: FT) -> FT:
+        # TODO: make this async somehow?
         file.save()
         return file
 
@@ -394,7 +395,17 @@ class LocalTrack[FT: FileType](
             exclude: Collection[str] = (),
             context: TagDumpContext = None,
             replace: bool = False,
-    ) -> Any:
+    ) -> dict[str, Any]:
+        """
+        Update the tags of the given file with the data from this model.
+
+        :param file: The file to update the tags of.
+        :param include: The tags to include. If empty, all tags will be included.
+        :param exclude: The tags to exclude. Ignored if empty.
+        :param context: The context to use when dumping the tags.
+        :param replace: Whether to replace existing tags with the same ID. If False, existing tags will be preserved.
+        :return: The tags that were updated on the file.
+        """
         self._check_tag_fields(include=include, exclude=exclude)
 
         tags = self.to_tags(include=include, exclude=exclude, context=context)

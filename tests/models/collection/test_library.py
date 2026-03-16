@@ -233,7 +233,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             assert mock_get.call_count == len(playlists)
             assert mock_sync.call_count == len(playlists)
 
-            assert len(model.log_sync_playlist_items(results, skip_log=True)) == len(playlists)
+            assert len(model.log_sync_results(results, skip_log=True)) == len(playlists)
 
     ###########################################################################
     ## Sync saved items
