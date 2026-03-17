@@ -1,9 +1,10 @@
 from argparse import Namespace
+from collections.abc import Generator
 from datetime import date
 from pathlib import Path
 from random import choice, sample
-from typing import Any
-from unittest.mock import patch
+from typing import Any, Sequence
+from unittest.mock import patch, AsyncMock, Mock
 
 import mutagen
 import mutagen.wave
@@ -12,12 +13,12 @@ from faker import Faker
 from pydantic import TypeAdapter
 
 from musify.local.item.artist import LocalArtist
-from musify.local.item.track import LocalTrack, TagDumpContext
+from musify.local.item.track import LocalTrack, TagDumpContext, HasLocalTracks
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import HasMutableURI
-from tests.models.testers import UniqueKeyTester
+from tests.models.testers import UniqueKeyTester, BaseModelTester, BaseResourceTester
 from tests.utils import assert_validator_skips, SimpleURI
 
 
@@ -65,6 +66,18 @@ class TestLocalTrack(UniqueKeyTester):
         file.info = stream_info
 
         return file
+
+    @pytest.fixture
+    def include_tags(self, tags: dict[str, Any], faker: Faker) -> Sequence[str]:
+        return faker.random_elements(list(set(tags) & set(LocalTrack.__tag_fields__)))
+
+    @pytest.fixture
+    def exclude_tags(self, tags: dict[str, Any], faker: Faker) -> Sequence[str]:
+        return faker.random_elements(list(set(tags) & set(LocalTrack.__tag_fields__)))
+
+    @pytest.fixture
+    def context(self) -> TagDumpContext:
+        return TagDumpContext()
 
     ###########################################################################
     ## Utility Methods
@@ -171,7 +184,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert_validator_skips(LocalTrack._map_images, faker.pystr())
         assert_validator_skips(LocalTrack._map_images, faker.pyint())
 
-    def test_serialize_images_skips(self, model: LocalTrack, image_bytes: list[bytes]):
+    def test_serialize_images_skips(self, model: LocalTrack, context: TagDumpContext):
         # skips when not serializing by alias
         info = Namespace(by_alias=False, context=None, mode="python")
         # noinspection PyTypeChecker
@@ -179,7 +192,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert results is model.images
 
         # skips when loaded_images are not available
-        info = Namespace(by_alias=True, context=TagDumpContext(), mode="python")
+        info = Namespace(by_alias=True, context=context, mode="python")
         # noinspection PyTypeChecker
         results = model._serialize_images(model.images, info=info)
         assert not results
@@ -238,16 +251,19 @@ class TestLocalTrack(UniqueKeyTester):
         result = LocalTrack.clear(file)
         assert set(result) == expected & LocalTrack.__tag_fields__
 
-    def test_clear_selected_tags(self, file: mutagen.FileType, faker: Faker):
-        include = sample(list(set(file.tags) & set(LocalTrack.__tag_fields__)), k=4)
-        result = LocalTrack.clear(file, include=include)
-        assert set(result) == set(include)
+    def test_clear_selected_tags(self, file: mutagen.FileType, include_tags: Sequence[str], faker: Faker):
+        result = LocalTrack.clear(file, include=include_tags)
+        assert set(result) == set(include_tags)
 
-    def test_clear_selected_tags_with_exclude(self, file: mutagen.FileType, faker: Faker):
-        include = sample(list(set(file.tags) & set(LocalTrack.__tag_fields__)), k=4)
-        exclude = sample(list(set(file.tags) & set(LocalTrack.__tag_fields__)), k=4)
-        result = LocalTrack.clear(file, include=include, exclude=exclude)
-        assert set(result) == set(t for t in include if t not in exclude)
+    def test_clear_selected_tags_with_exclude(
+            self,
+            file: mutagen.FileType,
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            faker: Faker,
+    ):
+        result = LocalTrack.clear(file, include=include_tags, exclude=exclude_tags)
+        assert set(result) == set(t for t in include_tags if t not in exclude_tags)
 
     def test_clear_tag(self, file: mutagen.FileType, tags: dict[str, Any]):
         tag_id = choice(list(tags))
@@ -288,18 +304,23 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in IsLocalFile.model_fields)
         assert all(key not in tags for key in HasLength.model_fields)
 
-    def test_update_and_replace(self, model: LocalTrack, file: mutagen.FileType, tags: dict[str, Any]):
-        include = sample(list(set(tags) & set(LocalTrack.__tag_fields__)), k=4)
-        exclude = sample(list(set(tags) & set(LocalTrack.__tag_fields__)), k=4)
-        context = TagDumpContext()
-
+    def test_update_and_replace(
+            self,
+            model: LocalTrack,
+            file: mutagen.FileType,
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            context: TagDumpContext,
+            tags: dict[str, Any],
+            faker: Faker
+    ):
         with (
             patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags,
             patch.object(file.__class__, "update") as mock_update,
         ):
-            model.update(file, include=include, exclude=exclude, context=context, replace=True)
+            model.update(file, include=include_tags, exclude=exclude_tags, context=context, replace=True)
 
-            mock_to_tags.assert_called_once_with(include=include, exclude=exclude, context=context)
+            mock_to_tags.assert_called_once_with(include=include_tags, exclude=exclude_tags, context=context)
             mock_update.assert_called_once_with(mock_to_tags.return_value)
 
     def test_update_no_replace(self, adapter: TypeAdapter[LocalTrack], file: mutagen.FileType, tags: dict[str, Any]):
@@ -313,3 +334,92 @@ class TestLocalTrack(UniqueKeyTester):
         ):
             model.update(file, replace=False)
             mock_update.assert_called_once_with(expected)
+
+    ###########################################################################
+    ## HasLocalTracks
+    ###########################################################################
+    @pytest.fixture
+    def replace_tags(self, tags: dict[str, Any], faker: Faker) -> bool:
+        return faker.boolean()
+
+    @pytest.fixture
+    def mock_load(self, file: mutagen.FileType, tracks: list[LocalTrack]) -> Generator[Mock, None, None]:
+        with patch.object(LocalTrack, "load", return_value=file, new_callable=AsyncMock) as mock_load:
+            yield mock_load
+            assert mock_load.call_count == len(tracks)
+
+    @pytest.fixture
+    def mock_update(
+            self,
+            tracks: list[LocalTrack],
+            file: mutagen.FileType,
+            tags: dict[str, Any],
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            context: TagDumpContext,
+            replace_tags: bool,
+            faker: Faker,
+    ) -> Generator[tuple[Mock, list[dict[str, Any]]], None, None]:
+        expected = []
+
+        def _random_tags(*_, **__) -> dict[str, Any]:
+            expected_tags = dict(faker.random_elements(list(tags.items())))
+            expected.append(expected_tags)
+            return expected_tags
+
+        with patch.object(LocalTrack, "update", side_effect=_random_tags) as mock_update:
+            yield mock_update, expected
+
+            assert mock_update.call_count == len(tracks)
+            mock_update.assert_any_call(
+                file, include=include_tags, exclude=exclude_tags, context=context, replace=replace_tags
+            )
+
+    @pytest.fixture
+    def mock_save(self) -> Generator[Mock, None, None]:
+        with patch.object(LocalTrack, "save") as mock_save:
+            yield mock_save
+
+    async def test_save_tracks_dry_run(
+            self,
+            tracks: list[LocalTrack],
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            context: TagDumpContext,
+            replace_tags: bool,
+            mock_load: Mock,
+            mock_update: tuple[Mock, list[dict[str, Any]]],
+            mock_save: Mock,
+    ):
+        model = HasLocalTracks(tracks=tracks)
+        mock_update, expected = mock_update
+
+        results = await model.save_tracks(
+            include=include_tags, exclude=exclude_tags, context=context, replace=replace_tags, dry_run=True
+        )
+        assert set(results.keys()) == {track.path for track in tracks}
+        assert all(t in results.values() for t in expected)
+
+        mock_save.assert_not_called()
+
+    async def test_save_tracks(
+            self,
+            tracks: list[LocalTrack],
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            context: TagDumpContext,
+            replace_tags: bool,
+            mock_load: Mock,
+            mock_update: tuple[Mock, list[dict[str, Any]]],
+            mock_save: Mock,
+    ):
+        model = HasLocalTracks(tracks=tracks)
+        mock_update, expected_tags = mock_update
+
+        results = await model.save_tracks(
+            include=include_tags, exclude=exclude_tags, context=context, replace=replace_tags, dry_run=False
+        )
+        assert set(results.keys()) == {track.path for track in tracks}
+        assert all(t in results.values() for t in expected_tags)
+
+        assert mock_save.call_count == sum(1 for t in expected_tags if t)

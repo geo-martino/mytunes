@@ -1,4 +1,4 @@
-from ._base import LocalTrack, TagDumpContext
+from ._base import LocalTrack, HasLocalTracks, TagDumpContext
 
 __all__ = [
     LocalTrack.__name__,

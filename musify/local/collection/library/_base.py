@@ -16,7 +16,7 @@ from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack, TagDumpContext
+from musify.local.item.track import LocalTrack, TagDumpContext, HasLocalTracks
 from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary, RestoreType
 from musify.models.properties.file import PathMapper
@@ -29,7 +29,9 @@ from musify.processors_new.sort import ItemSorter
 
 @final
 class LocalLibrary(
-    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist], LocalCollection[LocalTrack]
+    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist],
+    LocalCollection[LocalTrack],
+    HasLocalTracks[URI, LocalTrack],
 ):
     """
     Represents a local library, providing various methods for manipulating
@@ -131,12 +133,7 @@ class LocalLibrary(
 
         self.logger.print_line(STAT)
         rows = [self.log_tracks(skip_log=True)] + self.log_playlists(skip_log=True)
-        log = tabulate(
-            rows,
-            tablefmt="orgtbl",
-            colalign=("left", "right", "right", "right", "right"),
-        )
-        self.logger.stat(log)
+        self.logger.stat(self._generate_table(rows))
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -198,53 +195,8 @@ class LocalLibrary(
         )
 
         if not skip_log:
-            log = tabulate(
-                [row],
-                tablefmt="orgtbl",
-                colalign=("left", "right", "right", "right", "right"),
-            )
-            self.logger.stat(log)
-
+            self.logger.stat(self._generate_table([row]))
         return row
-
-    @validate_call
-    async def save_tracks(
-            self,
-            include: Sequence[str] = (),
-            exclude: Sequence[str] = (),
-            context: TagDumpContext | None = None,
-            replace: bool = False,
-            dry_run: bool = True
-    ) -> dict[Path, dict[str, Any]]:
-        """
-        For each track in this Library, save its tags to file.
-
-        :param include: The tags to include when writing to the file. If empty, all tags will be included.
-        :param exclude: The tags to exclude from writing to the file. Ignored if empty.
-        :param context: The context to use when writing the tags.
-        :param replace: Destructively replace tags in each file.
-        :param dry_run: Run function, but do not modify the file on the disk.
-        :return: A map of the track path to the tags that were saved.
-        """
-        async def _save_track(track: LocalTrack) -> tuple[Path, dict[str, Any]]:
-            file = await track.load()
-            tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
-            if not dry_run:
-                await track.save(file)
-
-            return track.path, tags
-
-        self.logger.info(f"Saving {len(self.tracks)} tracks in {self.source} library", header=2)
-
-        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        bar = self.logger.get_asynchronous_iterator(
-            map(_save_track, self.tracks),
-            desc="Updating tracks",
-            unit="tracks",
-            initial=0,
-            total=len(self.tracks)
-        )
-        return dict(await bar)
 
     ###########################################################################
     ## Playlists
@@ -297,24 +249,16 @@ class LocalLibrary(
             )
             rows.append(row)
 
-        if not rows:
-            return rows
-
-        if not skip_log:
+        if rows and not skip_log:
             header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"])
-            log = header + ":\n" + tabulate(
-                rows,
-                tablefmt="orgtbl",
-                colalign=("left", "right", "right", "right", "right"),
-            )
-
+            log = header + ":\n" + self._generate_table(rows)
             self.logger.stat(log)
 
         return rows
 
     async def save_playlists(self, dry_run: bool = True) -> dict[str, Result]:
         """
-        For each Playlist in this Library, saves its associate tracks and its settings (if applicable) to file.
+        Save associated tracks and settings (if applicable) for all playlists in this library.
 
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: A map of the playlist name to the results of its sync as a :py:class:`Result` object.

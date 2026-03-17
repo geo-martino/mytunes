@@ -23,11 +23,13 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models import BaseModel
-from musify.models.item.track import Track
+from musify.models.collection.library import Library
+from musify.models.item.track import Track, HasMutableTracks
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
 from musify.models.properties.image import FileEmbeddedImage, ImageSource
+from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.uri import HasMutableURI, URI
@@ -433,3 +435,66 @@ class LocalTrack[FT: FileType](
             exclude_defaults=True,
             exclude_unset=True,
         )
+
+
+class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
+    @validate_call
+    async def save_tracks(
+            self,
+            include: Sequence[str] = (),
+            exclude: Sequence[str] = (),
+            context: TagDumpContext | None = None,
+            replace: bool = False,
+            dry_run: bool = True
+    ) -> dict[Path, dict[str, Any]]:
+        """
+        Save tags for all tracks in this collection.
+
+        :param include: The tags to include when writing to the file. If empty, all tags will be included.
+        :param exclude: The tags to exclude from writing to the file. Ignored if empty.
+        :param context: The context to use when writing the tags.
+        :param replace: Destructively replace tags in each file.
+        :param dry_run: Run function, but do not modify the file on the disk.
+        :return: A map of the track path to the tags that were saved.
+        """
+        async def _save_track(track: LocalTrack) -> tuple[Path, dict[str, Any]]:
+            file = await track.load()
+            tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
+            if tags and not dry_run:
+                await track.save(file)
+
+            return track.path, tags
+
+        self._log_save_tracks_header()
+
+        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
+        bar = self.logger.get_asynchronous_iterator(
+            map(_save_track, self.tracks),
+            desc="Updating tracks",
+            unit="tracks",
+            initial=0,
+            total=len(self.tracks)
+        )
+        return dict(await bar)
+
+    def _log_save_tracks_header(self) -> None:
+        message = f"Saving {len(self.tracks)} tracks"
+
+        if isinstance(self.type, str):
+            message += f" in {self.type}"
+
+        match self:
+            case HasName() as named:
+                message += f": {named.name!r}"
+            case Library() as library if isinstance(library.source, str):
+                message += f": {library.source!r}"
+
+        self.logger.info(message, header=2)
+
+    def log_save_tracks_results(self, results: dict[Path, dict[str, Any]]) -> None:
+        """Log the results of saving tracks."""
+        for path, tags in results.items():
+            if tags:
+                self.logger.info(f"Updated {path.name} with tags: {', '.join(tags)}")
+            else:
+                self.logger.info(f"No tags updated for {path.name}")

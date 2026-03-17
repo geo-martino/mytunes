@@ -7,7 +7,7 @@ import mutagen
 from pydantic import Field, model_validator, PrivateAttr, ModelWrapValidatorHandler
 
 from musify.local.collection._base import LocalCollection
-from musify.local.item.track import LocalTrack
+from musify.local.item.track import LocalTrack, HasLocalTracks
 from musify.models.collection.playlist import MutablePlaylist
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.properties.logger import HasLogger
@@ -20,7 +20,10 @@ from musify.processors_new.sort import ItemSorter
 
 
 class LocalPlaylistFile[TF: Filter](
-    MutablePlaylist[URI, LocalTrack[mutagen.FileType], URI], LocalCollection[LocalTrack], IsLocalFile, HasLogger
+    MutablePlaylist[URI, LocalTrack[mutagen.FileType], URI],
+    LocalCollection[LocalTrack],
+    IsLocalFile,
+    HasLocalTracks[URI, LocalTrack[mutagen.FileType]],
 ):
     __unique_attributes__ = frozenset({"path"})
 

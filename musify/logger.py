@@ -126,7 +126,7 @@ class Logger(logging.Logger):
             if self.stdout_handlers and any(logging.DEBUG < h.level <= level for h in self.stdout_handlers):
                 print()
 
-    def print_message(self, *values, sep=' ', end='\n') -> None:
+    def print_message(self, *values, sep=' ', end='\n', **kwargs) -> None:
         """
         Wrapper for print. Logs the given ``values`` to the INFO setting.
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
@@ -134,7 +134,7 @@ class Logger(logging.Logger):
         """
         message = sep.join(values)
         if message:
-            self.info(message)
+            self.info(message, **kwargs)
 
         if not values or not self.stdout_handlers or all(h.level > logging.INFO for h in self.stdout_handlers):
             print(*values, sep=sep, end=end)
