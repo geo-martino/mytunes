@@ -260,6 +260,7 @@ class TestEndpoints(EndpointsTester):
     ):
         total = initial_cursor.total
         expected_items = [{"name": faker.word()} for _ in range(total)]
+        show_bar = faker.boolean()
 
         pagination_items = expected_items[:total // 2]
         generation_items = expected_items[total // 2:]
@@ -278,7 +279,7 @@ class TestEndpoints(EndpointsTester):
                 new_callable=AsyncMock
             ) as mock_generation,
         ):
-            items, cursor = await model._get_all_items_by_pagination(initial_cursor, path="items")
+            items, cursor = await model._get_all_items_by_pagination(initial_cursor, path="items", show_bar=show_bar)
             assert len(items) == len(expected_items)
             assert cursor == offset_cursors[-1]
 
@@ -287,7 +288,9 @@ class TestEndpoints(EndpointsTester):
             assert mock_create_model.call_count == len(expected_items[:total // 2])
             assert mock_get_cursor.call_count == 1
             assert mock_generation.call_count == 1
-            mock_generation.assert_called_once_with(cursor=mock_get_cursor.return_value, path="items", kind=None)
+            mock_generation.assert_called_once_with(
+                mock_get_cursor.return_value, path="items", kind=None, show_bar=show_bar
+            )
 
     @staticmethod
     def assert_get_items_from_response(
@@ -445,19 +448,24 @@ class TestReadCollectionEndpoints(EndpointsTester):
             total=faker.random_int(),
         )
 
-    async def test_get_all_from_cursor(self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor):
+    async def test_get_all_from_cursor(
+            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, faker: Faker
+    ):
         expected = [1, 2, 3]
+        show_bar = faker.boolean()
 
         with patch.object(
                 model.__class__, "_get_all_items", return_value=(expected, cursor), new_callable=AsyncMock
         ) as mock_get_all_items:
-            result = await model.get_all(cursor)
+            result = await model.get_all(cursor, show_bar=show_bar)
             assert result == expected
 
-            mock_get_all_items.assert_called_once_with(cursor=cursor, path=model._extend_path, kind=model._extend_type)
+            mock_get_all_items.assert_called_once_with(
+                cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
+            )
 
     async def test_get_all_from_collection(
-            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, collection: RemoteCollection
+            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, collection: RemoteCollection, faker: faker
     ):
         collection.cursor = cursor
         expected_collection = [1, 2, 3]
@@ -466,6 +474,8 @@ class TestReadCollectionEndpoints(EndpointsTester):
 
         cursor.offset = cursor.total + 1  # set cursor to position after total to simulate missing items
         assert cursor.next is None
+
+        show_bar = faker.boolean()
 
         with (
             patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock),
@@ -477,10 +487,12 @@ class TestReadCollectionEndpoints(EndpointsTester):
             ) as mock_get_all_items
         ):
             assert not collection.has_all_items
-            result = await model.get_all(collection)
+            result = await model.get_all(collection, show_bar=show_bar)
             assert result == expected_collection + expected_get
 
-            mock_get_all_items.assert_called_once_with(cursor=cursor, path=model._extend_path, kind=model._extend_type)
+            mock_get_all_items.assert_called_once_with(
+                cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
+            )
             # sets current cursor to current position - limit when missing items
             assert cursor.offset == max(0, collection.count - cursor.limit)
             assert collection.cursor is not cursor
@@ -609,6 +621,7 @@ class TestReadSavedEndpoints(EndpointsTester):
         model = self.MockReadSavedEndpoints(handler=handler)
         limit = faker.random_int(1, 100)
         cursor = MockUrlCursor(url=uri.api_url)
+        show_bar = faker.boolean()
 
         with (
             patch.object(
@@ -618,15 +631,16 @@ class TestReadSavedEndpoints(EndpointsTester):
                 model.__class__, "_get_all_items_by_pagination", return_value=([1], cursor)
             ) as mock_get_all_items,
         ):
-            await model.get_all(limit=limit)
+            await model.get_all(limit=limit, show_bar=show_bar)
 
             mock_validate.assert_called_once_with(dict(
                 url=self.MockReadSavedEndpoints._saved_read_url, limit=limit
             ))
             mock_get_all_items.assert_called_once_with(
-                cursor=mock_validate.return_value,
+                mock_validate.return_value,
                 path=self.MockReadSavedEndpoints._saved_path,
                 kind=self.MockReadSavedEndpoints.type,
+                show_bar=show_bar,
             )
 
     async def test_get_all_uses_default_limit(self, model: ReadSavedEndpoints, uri: URI):

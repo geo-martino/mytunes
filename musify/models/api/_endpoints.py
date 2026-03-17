@@ -2,6 +2,7 @@ import functools
 import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from copy import copy
+from dis import show_code
 from itertools import batched
 from typing import Any, ClassVar, Self, Type, Union
 
@@ -92,6 +93,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             cursor: PageCursor,
             path: str | AliasPath,
             kind: str | Type | None = None,
+            show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
         if cursor.next is None:
@@ -108,9 +110,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         self._handler.log("INFO", cursor.url, message=message)
 
         if isinstance(cursor, IterablePageCursor):
-            items, cursor = await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
+            items, cursor = await self._get_all_items_by_generation(cursor, path=path, kind=kind, show_bar=show_bar)
         else:
-            items, cursor = await self._get_all_items_by_pagination(cursor=cursor, path=path, kind=kind)
+            items, cursor = await self._get_all_items_by_pagination(cursor, path=path, kind=kind, show_bar=show_bar)
 
         amount = cursor.total or "all"
         items_count = f"{len(items):>6}/{amount:<6} {item_type}s"
@@ -129,6 +131,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             cursor: PageCursor,
             path: str | AliasPath,
             kind: str | Type | None = None,
+            show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by paginating through the cursor, which must have a next URL for the first page of items.
@@ -154,7 +157,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
                 # noinspection PyArgumentList
-                response_items, cursor = await self._get_all_items_by_generation(cursor=cursor, path=path, kind=kind)
+                response_items, cursor = await self._get_all_items_by_generation(
+                    cursor, path=path, kind=kind, show_bar=show_bar
+                )
                 items.extend(response_items)
                 break
 
@@ -162,7 +167,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     @validate_call
     async def _get_all_items_by_generation[T: IterablePageCursor](
-            self, cursor: T, path: str | AliasPath, kind: str | Type[RT] | None = None,
+            self, cursor: T, path: str | AliasPath, kind: str | Type[RT] | None = None, show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], T]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
@@ -171,20 +176,22 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         This is usually the faster approach, but is only possible when the API provides the total number of items,
         offset and limit in the cursor.
         """
-        collection_type = self._get_type_value(self.type)
-        item_type = self._get_type_value(kind)
         # noinspection PyTypeChecker
         cursors = list(cursor.iter_pages)
         if not cursors:
             return (), cursor
 
+        collection_type = self._get_type_value(self.type)
+        item_type = self._get_type_value(kind)
+        desc_type = f"{collection_type} {item_type}" if item_type != collection_type else collection_type
+
         responses: list[JSON] = await self.logger.get_asynchronous_iterator(
             map(functools.partial(self._get_page, item_type=item_type), cursors),
-            desc=f"Extending {collection_type}",
+            desc=f"Getting {desc_type}s",
             unit="pages",
             initial=0,
             total=len(cursors),
-            disable=len(cursors) < self._bar_threshold,
+            disable=not show_bar or len(cursors) < self._bar_threshold,
         )
 
         cursors = cursor.sort_responses(responses, path=path)
@@ -284,7 +291,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURISchema.validate_call
-    async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> list[RT]:
+    async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
 
@@ -296,6 +303,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         :param uris: A list of URIs. See above for accepted formats.
         :param limit: The number of URIs to send in each request to the API.
+        :param show_bar: Show progress bar for each batch of URIs.
         """
         item_type = self._get_type_value(self.type)
 
@@ -321,7 +329,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             unit="batches",
             initial=0,
             total=len(batches),
-            disable=len(batches) < self._bar_threshold,
+            disable=not show_bar or len(batches) < self._bar_threshold,
         )
         items = [item for batch in await bar for item in batch]
 
@@ -342,7 +350,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
     )
 
     @validate_call
-    async def get_all(self, collection: PageCursor | HasPageCursor | RT) -> list[RT]:
+    async def get_all(self, collection: PageCursor | HasPageCursor | RT, show_bar: bool = True) -> list[RT]:
         """Get all items in the collection by paginating through its cursor. May also give a cursor directly."""
         match collection:
             case PageCursor():
@@ -358,7 +366,9 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
                 raise MusifyTypeError("Expected a collection or page cursor.")
 
         # noinspection PyArgumentList
-        items, cursor = await self._get_all_items(cursor=cursor, path=self._extend_path, kind=self._extend_type)
+        items, cursor = await self._get_all_items(
+            cursor, path=self._extend_path, kind=self._extend_type, show_bar=show_bar
+        )
         if isinstance(collection, RemoteCollection):
             items = itertools.chain.from_iterable((collection.iter_items, items))
             collection.cursor = cursor
@@ -380,7 +390,9 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
-    async def add(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
+    async def add(
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
+    ) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
         item_type = self._get_type_value(self._extend_type)
@@ -404,7 +416,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
             unit="batches",
             initial=0,
             total=len(batches),
-            disable=len(batches) < self._bar_threshold,
+            disable=not show_bar or len(batches) < self._bar_threshold,
         )
 
         self._handler.log("DONE", url, message=f"Added {len(uris):>6} {item_type}s to {collection_type}")
@@ -441,7 +453,9 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
-    async def remove(self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
+    async def remove(
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
+    ) -> int:
         """Remove items from the current user's saved items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
         item_type = self._get_type_value(self._extend_type)
@@ -465,7 +479,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
             unit="batches",
             initial=0,
             total=len(batches),
-            disable=len(batches) < self._bar_threshold,
+            disable=not show_bar or len(batches) < self._bar_threshold,
         )
 
         self._handler.log("DONE", url, message=f"Removed {len(uris):>6} {item_type}s from {collection_type}")
@@ -489,7 +503,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @validate_call
-    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]:
+    async def get_all(self, limit: PositiveInt | None = None, show_bar: bool = True) -> list[RT]:
         """Get the current user's saved items for this endpoint resource type."""
         if limit is None:
             limit = self._saved_limit
@@ -500,7 +514,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         cursor = adapter.validate_python(dict(url=self._saved_read_url, limit=limit))
 
         # noinspection PyArgumentList
-        items, *_ = await self._get_all_items(cursor=cursor, path=self._saved_path, kind=self.type)
+        items, *_ = await self._get_all_items(cursor, path=self._saved_path, kind=self.type, show_bar=show_bar)
         return list(items)
 
 
@@ -515,7 +529,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURISchema.validate_call
-    async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
+    async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
 
@@ -538,7 +552,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             unit="batches",
             initial=0,
             total=len(batches),
-            disable=len(batches) < self._bar_threshold,
+            disable=not show_bar or len(batches) < self._bar_threshold,
         )
 
         self._handler.log("DONE", self._saved_write_url, message=f"Added {len(uris):>6} {item_type}s")
@@ -552,7 +566,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURISchema.validate_call
-    async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None) -> int:
+    async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
         """Remote items from the current user's saved items for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
 
@@ -575,7 +589,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             unit="batches",
             initial=0,
             total=len(batches),
-            disable=len(batches) < self._bar_threshold,
+            disable=not show_bar or len(batches) < self._bar_threshold,
         )
 
         self._handler.log("DONE", self._saved_write_url, message=f"Removed {len(uris):>6} {item_type}s")

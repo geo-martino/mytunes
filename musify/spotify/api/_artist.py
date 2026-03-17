@@ -78,7 +78,8 @@ class SpotifyArtistEndpoints(
     async def get_all(
             self,
             collection: SpotifyArtistCollection | PageCursor,
-            types: set[Literal["album", "single", "compilation", "appears_on"]] | None = None
+            types: set[Literal["album", "single", "compilation", "appears_on"]] | None = None,
+            show_bar: bool = True,
     ) -> list[SpotifyArtist]:
         query = {"include_groups": ",".join(types)} if types else {}
         match collection:
@@ -88,4 +89,4 @@ class SpotifyArtistEndpoints(
                 cursor = artist.cursor
 
         cursor.url = cursor.url.update_query(query)
-        return await super().get_all(collection)
+        return await super().get_all(collection, show_bar=show_bar)

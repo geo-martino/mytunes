@@ -191,7 +191,7 @@ class RemoteLibrary[
         await self.load_saved_album_tracks()
 
         await self.load_saved_artists()
-        # await self.load_saved_artist_albums()
+        await self.load_saved_artist_albums()
 
         self.logger.print_line(STAT)
 
@@ -267,7 +267,7 @@ class RemoteLibrary[
         self.logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
 
         async def _extend_playlist_tracks(pl: VP) -> None:
-            items = await api.playlists.get_all(pl)
+            items = await api.playlists.get_all(pl, show_bar=False)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
@@ -376,7 +376,7 @@ class RemoteLibrary[
         self.logger.info(f"Loading albums for {len(artists)} saved artists in {self._log_name} library", header=2)
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
-            albums = await api.artists.get_all(artist)
+            albums = await api.artists.get_all(artist, show_bar=False)
             artist.albums.clear()
             artist.albums.extend(albums)
 
@@ -447,7 +447,7 @@ class RemoteLibrary[
         self.logger.info(f"Loading tracks for {len(albums)} saved albums in {self._log_name} library", header=2)
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
-            tracks = await api.albums.get_all(album)
+            tracks = await api.albums.get_all(album, show_bar=False)
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 
@@ -604,7 +604,7 @@ class RemoteMutableLibrary[
         async def _sync_playlist(pl: RemoteMutablePlaylist) -> tuple[str, SyncResult]:
             remote = await api.playlists.saved.get_or_create(pl.name)
             remote.tracks[:] = pl.tracks
-            return pl.name, await remote.sync_items(api=api, kind=kind, dry_run=dry_run)
+            return pl.name, await remote.sync_items(api=api, kind=kind, dry_run=dry_run, show_bar=False)
         
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, playlists),

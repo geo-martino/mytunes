@@ -89,9 +89,10 @@ class SpotifyPlaylistEndpoints(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],
             uris: SpotifyApiURISequence[SpotifyTrack],
-            limit: PositiveInt = None
+            limit: PositiveInt = None,
+            show_bar: bool = True,
     ) -> int:
-        return await super().add(url.joinpath("items"), uris=uris, limit=limit)
+        return await super().add(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
@@ -101,9 +102,10 @@ class SpotifyPlaylistEndpoints(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],
             uris: SpotifyApiURISequence[SpotifyTrack],
-            limit: PositiveInt = None
+            limit: PositiveInt = None,
+            show_bar: bool = True,
     ) -> int:
-        return await super().remove(url.joinpath("items"), uris=uris, limit=limit)
+        return await super().remove(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
 
     @staticmethod
     def _generate_remove_batch_body(values: Iterable[str]) -> JSON:

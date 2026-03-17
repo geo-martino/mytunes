@@ -43,8 +43,6 @@ class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist
         self.tracks.merge(other.tracks, reference=reference.tracks if reference else None)
 
 
-
-
 type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 
 
@@ -142,6 +140,7 @@ class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCu
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],
             kind: SYNC_TYPE = "new",
             dry_run: bool = False,
+            show_bar: bool = True,
     ) -> SyncResult:
         """
         Synchronise the current playlist's items with the remote service.
@@ -155,14 +154,19 @@ class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCu
         :param api: The API to use for synchronisation.
         :param kind: Sync option for the remote playlist. See description.
         :param dry_run: Run function, but do not modify the remote playlists at all.
+        :param show_bar: Show progress bars during sync.
         :return: The results of the sync as a :py:class:`SyncResult` object.
         """
         initial = [track.uri for track in self.tracks if track.uri]
-        remote = await self._get_remote_uris(api)
+        remote = await self._get_remote_uris(api, show_bar=show_bar)
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)
 
-        removed = await api.playlists.remove(self.uri.api_url, uris=remove) if not dry_run else len(remove)
-        added = await api.playlists.add(self.uri.api_url, uris=add) if not dry_run else len(add)
+        removed = await api.playlists.remove(
+            self.uri.api_url, uris=remove, show_bar=show_bar
+        ) if not dry_run else len(remove)
+        added = await api.playlists.add(
+            self.uri.api_url, uris=add, show_bar=show_bar
+        ) if not dry_run else len(add)
 
         return SyncResult(
             start=len(remote),
@@ -173,8 +177,10 @@ class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCu
             final=len(remote) + added - removed
         )
 
-    async def _get_remote_uris(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> list[UT]:
+    async def _get_remote_uris(
+            self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints], show_bar: bool = True
+    ) -> list[UT]:
         # noinspection PyTypeChecker
         cursor_classes = [kls for kls in InitialCursor.registered_submodels if kls.source == self.source]
         cursor = TypeAdapter(Union[*cursor_classes]).validate_python(self.uri.api_url)
-        return [track.uri for track in await api.playlists.get_all(cursor)]
+        return [track.uri for track in await api.playlists.get_all(cursor, show_bar=show_bar)]
