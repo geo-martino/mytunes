@@ -325,14 +325,13 @@ class TestRemoteMutableLibrary(BaseModelTester):
             playlists: list[Playlist],
             faker: Faker
     ):
-        dump = {faker.uuid4(): {"uri": pl.uri} for pl in playlists}
-        expected = tuple({"uri": pl.uri} for pl in playlists)
-        assert model._extract_playlists_from_backup(dump) == expected
-        assert model._extract_playlists_from_backup({"playlists": dump}) == expected
+        dump = {faker.uuid4(): {"uri": pl.uri, "tracks": [{"uri": tr.uri} for tr in pl.tracks]} for pl in playlists}
+        expected = tuple((pl["uri"], pl, tuple(tr["uri"] for tr in pl["tracks"])) for pl in dump.values())
 
-        dump = [{"uri": pl.uri} for pl in playlists]
         assert model._extract_playlists_from_backup(dump) == expected
         assert model._extract_playlists_from_backup({"playlists": dump}) == expected
+        assert model._extract_playlists_from_backup(dump.values()) == expected
+        assert model._extract_playlists_from_backup({"playlists": dump.values()}) == expected
 
     @pytest.fixture
     def playlists_dump(self, playlists: list[Playlist]) -> list[dict[str, Any]]:
@@ -340,16 +339,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             {"name": pl.name, "uri": pl.uri, "tracks": [{"uri": str(tr.uri) for tr in pl.tracks}]}
             for pl in playlists
         ]
-
-    @pytest.fixture
-    def mock_extract_playlists_from_backup(
-            self, model: RemoteMutableLibrary, playlists_dump: list[dict[str, Any]]
-    ) -> Generator[Mock, None, None]:
-        with patch.object(
-                model.__class__, "_extract_playlists_from_backup", return_value=playlists_dump
-        ) as mock_extract:
-            yield mock_extract
-            mock_extract.assert_called_once_with(playlists_dump)
 
     @pytest.fixture
     def mock_get_playlist(
@@ -404,7 +393,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             playlists: list[RemotePlaylist],
             playlists_dump: list[dict[str, Any]],
-            mock_extract_playlists_from_backup: Mock,
             mock_get_playlist: tuple[Mock, list[str]],
             mock_create_playlist: Mock,
             mock_get_tracks: Mock,
@@ -424,7 +412,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             playlists: list[RemotePlaylist],
             playlists_dump: list[dict[str, Any]],
-            mock_extract_playlists_from_backup: Mock,
             mock_get_playlist: tuple[Mock, list[str]],
             mock_create_playlist: Mock,
             mock_get_tracks: Mock,
@@ -468,25 +455,18 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert model._extract_uris_from_backup(dump, key="albums") == expected
         assert model._extract_uris_from_backup({"albums": dump}, key="albums") == expected
 
-    @pytest.fixture
-    def mock_extract_uris_from_backup(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
-        with patch.object(model.__class__, "_extract_uris_from_backup") as mock_extract:
-            yield mock_extract
-
     async def test_restore_tracks(
             self,
             model: RemoteMutableLibrary,
             tracks: list[Track],
-            mock_extract_uris_from_backup: Mock,
             faker: Faker,
     ):
         dry_run = faker.boolean()
 
-        uris = [
+        uris = tuple(
             SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteTrack.type)
             for _ in range(faker.random_int(1, 10))
-        ]
-        mock_extract_uris_from_backup.return_value = uris
+        )
 
         assert model.tracks != tracks
 
@@ -497,7 +477,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             await model.restore_tracks(uris, dry_run=dry_run)
             assert model.tracks == tracks
 
-            mock_extract_uris_from_backup.assert_called_once_with(uris, key="tracks")
             mock_get.assert_called_once_with(uris)
             mock_sync.assert_called_once_with(kind="refresh", dry_run=dry_run)
 
@@ -505,16 +484,14 @@ class TestRemoteMutableLibrary(BaseModelTester):
             self,
             model: RemoteMutableLibrary,
             artists: list[Artist],
-            mock_extract_uris_from_backup: Mock,
             faker: Faker,
     ):
         dry_run = faker.boolean()
 
-        uris = [
+        uris = tuple(
             SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteArtist.type)
             for _ in range(faker.random_int(1, 10))
-        ]
-        mock_extract_uris_from_backup.return_value = uris
+        )
 
         assert model.artists != artists
 
@@ -525,7 +502,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             await model.restore_artists(uris, dry_run=dry_run)
             assert model.artists == artists
 
-            mock_extract_uris_from_backup.assert_called_once_with(uris, key="artists")
             mock_get.assert_called_once_with(uris)
             mock_sync.assert_called_once_with(kind="refresh", dry_run=dry_run)
 
@@ -533,16 +509,14 @@ class TestRemoteMutableLibrary(BaseModelTester):
             self,
             model: RemoteMutableLibrary,
             albums: list[Album],
-            mock_extract_uris_from_backup: Mock,
             faker: Faker,
     ):
         dry_run = faker.boolean()
 
-        uris = [
+        uris = tuple(
             SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteAlbum.type)
             for _ in range(faker.random_int(1, 10))
-        ]
-        mock_extract_uris_from_backup.return_value = uris
+        )
 
         assert model.albums != albums
 
@@ -553,6 +527,5 @@ class TestRemoteMutableLibrary(BaseModelTester):
             await model.restore_albums(uris, dry_run=dry_run)
             assert model.albums == albums
 
-            mock_extract_uris_from_backup.assert_called_once_with(uris, key="albums")
             mock_get.assert_called_once_with(uris)
             mock_sync.assert_called_once_with(kind="refresh", dry_run=dry_run)

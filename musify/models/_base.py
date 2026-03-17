@@ -6,7 +6,8 @@ from functools import cached_property, reduce
 from typing import Any, ClassVar, Self, get_type_hints, Union, cast, Annotated
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
-    Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, GetCoreSchemaHandler, GetJsonSchemaHandler, AliasPath
+    Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, GetCoreSchemaHandler, GetJsonSchemaHandler, AliasPath, \
+    model_validator, ModelWrapValidatorHandler
 # noinspection PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from pydantic.alias_generators import to_snake

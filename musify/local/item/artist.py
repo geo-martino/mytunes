@@ -7,5 +7,5 @@ from musify.models.properties.uri import URI
 
 
 @final
-class LocalArtist[GT: LocalGenre](Artist[GT, URI], LocalModel):
+class LocalArtist[GT: LocalGenre](Artist[GT, URI.annotation], LocalModel):
     __final__ = True

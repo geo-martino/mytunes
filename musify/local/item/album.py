@@ -9,7 +9,7 @@ from musify.models.properties.uri import URI
 
 
 @final
-class LocalAlbum[RT: LocalArtist, GT: LocalGenre](Album[RT, GT, URI], LocalModel):
+class LocalAlbum[RT: LocalArtist, GT: LocalGenre](Album[RT, GT, URI.annotation], LocalModel):
     __final__ = True
 
     track_total = writeable_computed_field("track_total")

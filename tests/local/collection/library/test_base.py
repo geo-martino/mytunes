@@ -59,6 +59,7 @@ class TestLocalLibrary(BaseResourceTester):
 
             track.artists = sample(artists, k=faker.random_int(1, 5))
             track.album = choice(albums)
+            track.album.artists.extend(track.artists)
             track.genres = sample(genres, k=faker.random_int(1, 5))
 
         return tracks
@@ -242,39 +243,3 @@ class TestLocalLibrary(BaseResourceTester):
 
         expected_genres = len(set(genre.name for track in model.tracks for genre in track.genres))
         assert len(list(model.genres())) == expected_genres > 0
-
-    ###########################################################################
-    ## Backup/Restore
-    ###########################################################################
-    def test_backup_dump(self, model: LocalLibrary, tracks: list[LocalTrack], playlists: list[LocalPlaylist]):
-        model.tracks[:] = sorted(tracks, key=lambda t: t.ext)
-        model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
-
-        dump = model.dump()
-        assert len(dump["tracks"]) == len(tracks)
-        assert len(dump["playlists"]) == len(model.playlists)
-
-    def test_restore_tracks(self, model: LocalLibrary):
-        new_title = "brand new title"
-        new_artist = "brand new artist"
-
-        for track in model.tracks:
-            assert track.name != "brand new title"
-            assert track.artist != new_artist
-
-        backup: list[dict[str, Any]] = model.dump()["tracks"]
-        for track in backup:
-            track["name"] = new_title
-
-        model.restore_tracks(backup)
-        for track in model.tracks:
-            assert track.name == "brand new title"
-            assert track.artist != new_artist
-
-        for track in backup:
-            track["artist"] = new_artist
-
-        model.restore_tracks({Path(track["path"]): track for track in backup})
-        for track in model.tracks:
-            assert track.name == "brand new title"
-            assert track.artist == new_artist

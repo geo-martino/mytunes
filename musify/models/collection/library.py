@@ -1,11 +1,12 @@
+import functools
 import re
 import textwrap
 from abc import abstractmethod
 from collections.abc import Mapping, Collection, Sequence
-from typing import ClassVar, Self, Any, Literal
+from typing import ClassVar, Self, Any, Literal, Annotated
 
 from aiorequestful.response.exception import ResponseError
-from pydantic import Field, PrivateAttr, validate_call
+from pydantic import Field, PrivateAttr, validate_call, BeforeValidator
 from tabulate import tabulate
 from termcolor import colored
 
@@ -35,11 +36,6 @@ from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import HasURI, URI
 from musify.models.user import RemoteUser
 from musify.processors_new.filters import ValuesFilter
-
-type RestoreType[T] = Sequence[Mapping[str, Any]] | Mapping[T, Mapping[str, Any]]
-type RestoreLibraryType[T] = Mapping[T, Mapping[str, Any]] | Mapping[T, Sequence[Mapping[str, Any]]]
-type RestoreSavedItemsType[T] = RestoreType[T] | Sequence[str | URI]
-type RestorePlaylistsType[T] = RestoreType[T] | Mapping[T, Sequence[Mapping[str, Any]]]
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):
@@ -476,9 +472,6 @@ class RemoteLibrary[
         return row
 
 
-_SYNC_ITEMS_TYPE = Literal["playlists", "tracks", "artists", "albums"]
-
-
 class RemoteMutableLibrary[
     TK,
     TV: RemoteTrack,
@@ -731,6 +724,43 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Restore playlists and saved items
     ###########################################################################
+    @staticmethod
+    def _extract_playlists_from_backup(
+            backup: Any, key: str = "playlists"
+    ) -> tuple[tuple[str | URI, dict[str, Any], tuple[str | URI, ...]], ...]:
+        if isinstance(backup, Mapping) and key in backup:
+            backup = backup[key]
+
+        match backup:
+            case Mapping() as playlists if all(isinstance(pl, Mapping) and "uri" in pl for pl in playlists.values()):
+                playlists = playlists.values()
+            case Collection() as playlists if all(isinstance(pl, Mapping) and "uri" in pl for pl in playlists):
+                pass
+            case _:
+                raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
+
+        return tuple(
+            (pl["uri"], pl, RemoteMutableLibrary._extract_uris_from_backup(pl, "tracks"))
+            for pl in playlists
+        )
+
+    @staticmethod
+    def _extract_uris_from_backup(backup: Any, key: Literal["tracks", "artists", "albums"]) -> tuple[str | URI, ...]:
+        if isinstance(backup, Mapping) and key in backup:
+            backup = backup[key]
+
+        match backup:
+            case Mapping() as items if all(isinstance(item, Mapping) and "uri" in item for item in items.values()):
+                return tuple(item["uri"] for item in items.values())
+            case Mapping() as items:  # assume keys are URIs if values are not dicts with "uri" keys
+                return tuple(map(str, items.keys()))
+            case Collection() as items if all(isinstance(item, Mapping) and "uri" in item for item in items):
+                return tuple(item["uri"] for item in items)
+            case Collection() as items if not isinstance(items, Mapping):  # assume items are URIs
+                return tuple(map(str, items))
+            case _:
+                raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
+
     def restore(
             self, backup: RestoreLibraryType[_SYNC_ITEMS_TYPE], dry_run: bool = False
     ) -> dict[str, SyncResult] | SyncResult | None:
@@ -768,7 +798,12 @@ class RemoteMutableLibrary[
     )
     @validate_call
     async def restore_playlists(
-            self, playlists: RestorePlaylistsType[Literal["playlists"]], dry_run: bool = False,
+            self,
+            playlists: Annotated[
+                tuple[tuple[str | URI, dict[str, Any], tuple[str | URI, ...]], ...],
+                BeforeValidator(_extract_playlists_from_backup)
+            ],
+            dry_run: bool = False,
     ) -> dict[str, SyncResult]:
         """
         Restore playlists from a backup dump.
@@ -793,11 +828,9 @@ class RemoteMutableLibrary[
         restored: list[VP] = []
         results: dict[str, SyncResult] = {}
 
-        for pl_dump in self._extract_playlists_from_backup(playlists):
-            track_uris = self._extract_uris_from_backup(pl_dump["tracks"], key="tracks")
-
+        for pl_uri, pl_dump, track_uris in playlists:
             try:
-                playlist = await api.playlists.get(pl_dump["uri"])
+                playlist = await api.playlists.get(pl_uri)
             except ResponseError as exc:
                 if not dry_run and exc.response.status == 404:
                     self.logger.warning(
@@ -832,19 +865,6 @@ class RemoteMutableLibrary[
 
         return results
 
-    @staticmethod
-    def _extract_playlists_from_backup(backup: RestorePlaylistsType[str]) -> tuple[dict[str, Any], ...]:
-        if isinstance(backup, Mapping) and "playlists" in backup:
-            backup = backup["playlists"]
-
-        match backup:
-            case Mapping() as playlists if all(isinstance(pl, Mapping) for pl in playlists.values()):
-                return tuple(playlists.values())
-            case Collection() as playlists if all(isinstance(pl, Mapping) for pl in playlists):
-                return tuple(playlists)
-            case _:
-                raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
-
     @HasAPI._validate_api(
         "track",
         None,
@@ -856,7 +876,12 @@ class RemoteMutableLibrary[
     )
     @validate_call
     async def restore_tracks(
-            self, tracks: RestoreSavedItemsType[Literal["tracks"]], dry_run: bool = False
+            self,
+            uris: Annotated[
+                Sequence[str | URI],
+                BeforeValidator(functools.partial(_extract_uris_from_backup, key="tracks"))
+            ],
+            dry_run: bool = False
     ) -> SyncResult | None:
         """
         Restore saved tracks from a backup dump.
@@ -868,7 +893,7 @@ class RemoteMutableLibrary[
             * A mapping of ``{<URI>: {<Dump of track data>}}``
             * A mapping of ``{"tracks": {<URI>: {<Dump of track data>}}}``
 
-        :param tracks: Tracks data. See description for accepted formats.
+        :param uris: Tracks data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved tracks on the remote service after the sync.
         """
@@ -876,9 +901,7 @@ class RemoteMutableLibrary[
             TrackReadItemsEndpoints | HasSavedEndpoints[TrackReadSavedEndpoints | TrackWriteSavedEndpoints]
         ] = self.api
 
-        self.logger.info(f"Restoring {len(tracks)} saved tracks on {self._log_name} library", header=2)
-
-        uris = self._extract_uris_from_backup(tracks, key="tracks")
+        self.logger.info(f"Restoring {len(uris)} saved tracks on {self._log_name} library", header=2)
         self.tracks[:] = await api.tracks.get_many(uris)
         return await self.sync_tracks(kind="refresh", dry_run=dry_run)
 
@@ -893,7 +916,12 @@ class RemoteMutableLibrary[
     )
     @validate_call
     async def restore_artists(
-            self, artists: RestoreSavedItemsType[Literal["artists"]], dry_run: bool = False
+            self,
+            uris: Annotated[
+                Sequence[str | URI],
+                BeforeValidator(functools.partial(_extract_uris_from_backup, key="artists"))
+            ],
+            dry_run: bool = False
     ) -> SyncResult | None:
         """
         Restore saved artists from a backup dump.
@@ -905,7 +933,7 @@ class RemoteMutableLibrary[
             * A mapping of ``{<URI>: {<Dump of artist data>}}``
             * A mapping of ``{"artists": {<URI>: {<Dump of artist data>}}}``
 
-        :param artists: Artists data. See description for accepted formats.
+        :param uris: Artists data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved artists on the remote service after the sync.
         """
@@ -913,9 +941,7 @@ class RemoteMutableLibrary[
             ArtistReadItemsEndpoints | HasSavedEndpoints[ArtistReadSavedEndpoints | ArtistWriteSavedEndpoints]
         ] = self.api
 
-        self.logger.info(f"Restoring {len(artists)} saved artists on {self._log_name} library", header=2)
-
-        uris = self._extract_uris_from_backup(artists, key="artists")
+        self.logger.info(f"Restoring {len(uris)} saved artists on {self._log_name} library", header=2)
         self.artists[:] = await api.artists.get_many(uris)
         return await self.sync_artists(kind="refresh", dry_run=dry_run)
 
@@ -930,7 +956,12 @@ class RemoteMutableLibrary[
     )
     @validate_call
     async def restore_albums(
-            self, albums: RestoreSavedItemsType[Literal["albums"]], dry_run: bool = False
+            self,
+            uris: Annotated[
+                Sequence[str | URI],
+                BeforeValidator(functools.partial(_extract_uris_from_backup, key="albums"))
+            ],
+            dry_run: bool = False
     ) -> SyncResult | None:
         """
         Restore saved albums from a backup dump.
@@ -942,7 +973,7 @@ class RemoteMutableLibrary[
             * A mapping of ``{<URI>: {<Dump of album data>}}``
             * A mapping of ``{"albums": {<URI>: {<Dump of album data>}}}``
 
-        :param albums: Albums data. See description for accepted formats.
+        :param uris: Albums data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved albums on the remote service after the sync.
         """
@@ -950,27 +981,6 @@ class RemoteMutableLibrary[
             AlbumReadItemsEndpoints | HasSavedEndpoints[AlbumReadSavedEndpoints | AlbumWriteSavedEndpoints]
         ] = self.api
 
-        self.logger.info(f"Restoring {len(albums)} saved albums on {self._log_name} library", header=2)
-
-        uris = self._extract_uris_from_backup(albums, key="albums")
+        self.logger.info(f"Restoring {len(uris)} saved albums on {self._log_name} library", header=2)
         self.albums[:] = await api.albums.get_many(uris)
         return await self.sync_albums(kind="refresh", dry_run=dry_run)
-
-    @staticmethod
-    def _extract_uris_from_backup(backup: RestoreSavedItemsType[str], key: _SYNC_ITEMS_TYPE) -> tuple[str | URI, ...]:
-        if isinstance(backup, Mapping) and key in backup:
-            backup = backup[key]
-
-        match backup:
-            case Mapping() as items if all(isinstance(item, Mapping) and "uri" in item for item in items.values()):
-                return tuple(item["uri"] for item in items.values())
-            case Mapping() as items:
-                return tuple(items.keys())
-            case Collection() as items if all(isinstance(item, Mapping) and "uri" in item for item in items):
-                return tuple(item["uri"] for item in items)
-            case Collection() as items if not isinstance(items, Mapping) and all(
-                    isinstance(item, str | URI) for item in items
-            ):
-                return tuple(items)
-            case _:
-                raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")

@@ -1,6 +1,6 @@
 import itertools
 import textwrap
-from collections.abc import Generator, Iterable, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence, Collection
 from pathlib import Path
 from typing import Annotated, ClassVar, Any, final
 
@@ -9,16 +9,17 @@ from tabulate import tabulate
 from termcolor import colored
 
 from musify._types import to_set
-from musify.exception import MusifyError, MusifyValueError
+from musify.exception import MusifyError, MusifyValueError, MusifyTypeError
 from musify.local.collection._base import LocalCollection
 from musify.local.collection.album import LocalAlbumCollection
 from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
+from musify.local.item import LocalAlbum
 from musify.local.item.track import LocalTrack, TagDumpContext, HasLocalTracks
 from musify.logger import STAT
-from musify.models.collection.library import MutableLibrary, RestoreType
+from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
@@ -29,9 +30,9 @@ from musify.processors_new.sort import ItemSorter
 
 @final
 class LocalLibrary(
-    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist],
+    HasLocalTracks[URI.annotation, LocalTrack],
+    MutableLibrary[URI.annotation, LocalTrack, URI.annotation | Path, LocalPlaylist],
     LocalCollection[LocalTrack],
-    HasLocalTracks[URI, LocalTrack],
 ):
     """
     Represents a local library, providing various methods for manipulating
@@ -281,11 +282,14 @@ class LocalLibrary(
     ###########################################################################
     ## Collections
     ###########################################################################
-    def folders(self) -> Generator[Folder, None, None]:
+    def folders(self, tracks: Collection[LocalTrack] = None) -> Generator[Folder, None, None]:
         """
         Dynamically generate a set of folder collections from the tracks in this library.
         Folder collections are generated relevant to the library folder it is found in.
         """
+        if tracks is None:
+            tracks = self.tracks
+
         def get_relative_path(track: LocalTrack) -> Path:
             """Return path of a track relative to the library folders of this library"""
             for folder in self.library_folders:
@@ -294,78 +298,48 @@ class LocalLibrary(
 
             raise MusifyValueError(f"Track path is not relative to any library folders: {track.path}")
 
-        groups = itertools.groupby(sorted(self.tracks, key=get_relative_path), get_relative_path)
+        groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
-            yield Folder(tracks=group, name=path.name)
+            yield Folder(name=path.name, tracks=group)
 
-    def albums(self) -> Generator[LocalAlbumCollection, None, None]:
+    def albums(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalAlbumCollection, None, None]:
         """Dynamically generate a set of album collections from the tracks in this library"""
-        tracks = sorted(self.tracks, key=lambda track: track.album.name if track.album else "")
+        if tracks is None:
+            tracks = self.tracks
+
+        tracks = sorted(tracks, key=lambda track: track.album.name if track.album else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="album")
-        for album, group in grouped.items():
-            if album is None:
+        for name, group in grouped.items():
+            if name is None:
                 continue
-            yield LocalAlbumCollection(tracks=group, name=album)
 
-    def artists(self) -> Generator[LocalArtistCollection, None, None]:
+            album = next(track.album for track in group if track.album and track.album.name.casefold() == name)
+            yield LocalAlbumCollection(**album.model_dump(), tracks=group)
+
+    def artists(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalArtistCollection, None, None]:
         """Dynamically generate a set of artist collections from the tracks in this library"""
-        tracks = sorted(self.tracks, key=lambda track: track.artists[0].name if track.artists else "")
+        if tracks is None:
+            tracks = self.tracks
+
+        tracks = sorted(tracks, key=lambda track: track.artists[0].name if track.artists else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="artists")
-        for artist, group in grouped.items():
-            if artist is None:
+        for name, group in grouped.items():
+            if name is None:
                 continue
-            yield LocalArtistCollection(tracks=group, name=artist)
 
-    def genres(self) -> Generator[LocalGenreCollection, None, None]:
+            artist = next(artist for track in group for artist in track.artists if artist.name.casefold() == name)
+            yield LocalArtistCollection(**artist.model_dump(), albums=self.albums(group))
+
+    def genres(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalGenreCollection, None, None]:
         """Dynamically generate a set of genre collections from the tracks in this library"""
-        tracks = sorted(self.tracks, key=lambda track: track.genre)
+        if tracks is None:
+            tracks = self.tracks
+
+        tracks = sorted(tracks, key=lambda track: track.genre)
         grouped = ItemSorter.group_by_field(items=tracks, field="genres")
-        for genre, group in grouped.items():
-            if genre is None:
-                continue
-            yield LocalGenreCollection(tracks=group, name=genre)
-
-    ###########################################################################
-    ## Restore
-    ###########################################################################
-    @validate_call
-    def restore_tracks(
-            self, backup: RestoreType[str | Path], tags: Annotated[set[str], BeforeValidator(to_set)] = ()
-    ) -> int:
-        """
-        Restore track tags from a backup to loaded track objects. This does not save the updated tags.
-
-        Backup may be in the form of either:
-            * An iterable of dictionaries where dictionary is ``{<Dump of track data>}``
-            * A mapping of ``{<path>: {<Dump of track data>}}``
-            * A mapping of ``{"tracks": {<path>: {<Dump of track data>}}}``
-
-        :param backup: Backup data. See description for accepted formats.
-        :param tags: Set of tags to restore.
-        :return: The number of tracks restored.
-        """
-        tags = (tags or set(LocalTrack.__tag_attributes__)) | set(LocalTrack.__tag_attributes__)
-        backup = self._extract_tracks_from_backup(backup)
-
-        count = 0
-        for track in self.tracks:
-            if not (track_backup := backup.get(track.path)):
+        for name, group in grouped.items():
+            if name is None:
                 continue
 
-            for tag in tags:
-                if tag in track_backup:
-                    setattr(track, tag, track_backup[tag])
-            count += 1
-
-        return count
-
-    @staticmethod
-    def _extract_tracks_from_backup(backup: RestoreType[str | Path]) -> dict[Path, Mapping[str, Any]]:
-        if isinstance(backup, Mapping) and "tracks" in backup:
-            backup = backup["tracks"]
-
-        if isinstance(backup, Mapping):
-            backup = {Path(path): track_map for path, track_map in backup.items()}
-        else:
-            backup = {Path(track_map["path"]): track_map for track_map in backup}
-        return backup
+            genre = next(genre for track in group for genre in track.genres if genre.name.casefold() == name)
+            yield LocalGenreCollection(**genre.model_dump(), tracks=group)

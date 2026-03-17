@@ -4,7 +4,7 @@ from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from io import BytesIO
 from pathlib import Path
-from typing import Self, Any, Literal, ClassVar
+from typing import Self, Any, Literal, ClassVar, Annotated
 
 import aiofiles
 import mutagen
@@ -12,11 +12,13 @@ import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from mutagen import FileType
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
-    InstanceOf, field_serializer
+    InstanceOf, field_serializer, BeforeValidator, TypeAdapter
 # noinspection PyProtectedMember
 from pydantic.fields import Field, FieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo
 
+from musify._types import to_set
+from musify.exception import MusifyTypeError
 from musify.local._base import LocalModel
 from musify.local.exception import FileError, TagError
 from musify.local.item.album import LocalAlbum
@@ -57,9 +59,9 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
 
 class LocalTrack[FT: FileType](
     LocalModel,
-    Track[LocalArtist, LocalAlbum, LocalGenre, URI],
+    Track[LocalArtist, LocalAlbum, LocalGenre, URI.annotation],
     LocalAudioFile,
-    HasMutableURI[URI],
+    HasMutableURI[URI.annotation],
     HasAddedDate,
     HasPlayedDate,
 ):
@@ -186,11 +188,11 @@ class LocalTrack[FT: FileType](
 
         return tag_id
 
-    @staticmethod
-    def _get_ext_from_input(value: Any) -> str:
+    @classmethod
+    def _get_ext_from_input(cls, value: Any) -> str:
         if isinstance(value, mutagen.FileType):
             value = Path(value.filename)
-        return super().get_ext_from_input(value)
+        return super()._get_ext_from_input(value)
 
     ###########################################################################
     ## Validators/Serializers
@@ -552,10 +554,57 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
         for other in others:
             track = self.tracks.get(other)
             if track is None:
-                continue
+                track = next((tr for tr in self.tracks if tr.path == other.path), None)
+                if track is None:
+                    continue
 
             result = track.merge(other, include=include, exclude=exclude, replace=replace)
             if result:
                 updated[track.path] = result
 
         return updated
+
+    ###########################################################################
+    ## Restore
+    ###########################################################################
+    @staticmethod
+    def _extract_tracks_from_backup(backup: Any) -> list[LocalTrack]:
+        if isinstance(backup, Mapping) and "tracks" in backup:
+            backup = backup["tracks"]
+
+        match backup:
+            case Mapping() as items if all(isinstance(item, Mapping) for item in items.values()):
+                tracks = items.values()
+            case Collection() as items if all(isinstance(item, Mapping) for item in items):
+                tracks = items
+            case _:
+                raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
+
+        for track in tracks:  # drop uris as they cause validation errors and are not needed for restoration
+            track.pop("uri", None)
+            track.pop("uris", None)
+
+        return list(map(TypeAdapter(LocalTrack.annotation).validate_python, tracks))
+
+    @validate_call
+    def restore_tracks(
+            self,
+            others: Annotated[Sequence[LocalTrack], BeforeValidator(_extract_tracks_from_backup)],
+            include: Sequence[str] = (),
+            exclude: Sequence[str] = (),
+    ) -> dict[Path, dict[str, Any]]:
+        """
+        Restore track tags from a backup to loaded track objects. This does not save the updated tags.
+
+        Backup may be in the form of either:
+            * An iterable of dictionaries where dictionary is ``{<Dump of track data>}``
+            * A mapping of ``{<path>: {<Dump of track data>}}``
+            * A mapping of ``{"tracks": {<path>: {<Dump of track data>}}}``
+            * An iterable of track objects
+
+        :param others: Backup data. See description for accepted formats.
+        :param include: The fields to include in the merge. If empty, all fields will be included.
+        :param exclude: The fields to exclude from the merge. Ignored if empty.
+        :return: A map of the track path to the fields that were updated on that track.
+        """
+        return self.merge_tracks(others, include=include, exclude=exclude, replace=True)

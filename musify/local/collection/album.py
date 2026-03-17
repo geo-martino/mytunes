@@ -12,6 +12,9 @@ from musify.models.properties.uri import URI
 # noinspection PyFinal
 @final
 class LocalAlbumCollection[TT: LocalTrack, RT: LocalArtist, GT: LocalGenre](
-    HasLocalTracks[URI, TT], AlbumCollection[URI, TT, RT, GT, URI], LocalAlbum[RT, GT], LocalCollection[TT]
+    HasLocalTracks[URI.annotation, TT],
+    AlbumCollection[URI.annotation, TT, RT, GT, URI.annotation],
+    LocalAlbum[RT, GT],
+    LocalCollection[TT]
 ):
     __final__ = True

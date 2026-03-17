@@ -524,3 +524,31 @@ class TestLocalTrack(UniqueKeyTester):
             assert [arg for call in mock_merge.call_args_list for arg in call.args] == overlap
             for call in mock_merge.call_args_list:
                 assert call.kwargs == dict(include=include_tags, exclude=exclude_tags, replace=replace_tags)
+
+    def test_restore_tracks(self, tracks: list[LocalTrack]):
+        model = HasLocalTracks(tracks=tracks)
+
+        new_title = "brand new title"
+        new_artist = "brand new artist"
+
+        for track in model.tracks:
+            assert track.name != "brand new title"
+            assert track.artist != new_artist
+            track.uri = SimpleURI.from_id(choice(range(int(10e9), int(10e10))), kind=LocalTrack.type)
+
+        backup: list[dict[str, Any]] = [track.model_dump() for track in tracks]
+        for track in backup:
+            track["name"] = new_title
+
+        model.restore_tracks(backup)
+        for track in model.tracks:
+            assert track.name == "brand new title"
+            assert track.artist != new_artist
+
+        for track in backup:
+            track["artists"] = [new_artist]
+
+        model.restore_tracks({Path(track["path"]): track for track in backup})
+        for track in model.tracks:
+            assert track.name == "brand new title"
+            assert track.artist == new_artist

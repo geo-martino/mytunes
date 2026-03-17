@@ -34,13 +34,18 @@ class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], H
 
 
 class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist[TK, TV, UT]):
-    def merge(self, other: HasTracks[TK, TV], reference: HasTracks[TK, TV] | None = None) -> None:
+    def merge(self, other: HasTracks[TK, TV] | Playlist, reference: HasTracks[TK, TV] | None = None) -> None:
         """
-        Merge two playlists together.
+        Merge two playlists together by merging tracks and properties.
 
         See :py:meth:`.MutableUniqueSequence.merge` for more information.
         """
         self.tracks.merge(other.tracks, reference=reference.tracks if reference else None)
+        if not isinstance(other, Playlist):
+            return
+
+        self.description = other.description
+        self.images |= other.images
 
 
 type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
