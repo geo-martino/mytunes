@@ -19,7 +19,7 @@ from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import HasMutableURI
 from tests.models.testers import UniqueKeyTester, BaseModelTester, BaseResourceTester
-from tests.utils import assert_validator_skips, SimpleURI
+from tests.utils import assert_validator_skips, SimpleURI, split_list
 
 
 class TestLocalTrack(UniqueKeyTester):
@@ -335,6 +335,69 @@ class TestLocalTrack(UniqueKeyTester):
             model.update(file, replace=False)
             mock_update.assert_called_once_with(expected)
 
+    @pytest.fixture
+    def merge_tracks(self, tracks: list[LocalTrack], faker: Faker) -> tuple[LocalTrack, LocalTrack]:
+        track, other = faker.random_elements(tracks, length=2)
+
+        other.name = faker.sentence()
+        other.artists = faker.words()
+        other.uri = SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type)
+
+        track.released_at = None
+        other.released_at = faker.date()
+
+        track.rating = faker.random_int(1, 90)
+        other.rating = track.rating + 5
+
+        assert track.name != other.name
+        assert track.artist != other.artist
+        assert track.album == other.album
+        assert track.genres == other.genres
+        assert track.released_at != other.released_at
+        assert track.rating != other.rating
+        assert track.uri != other.uri
+
+        return track, other
+
+    def test_merge_no_replace(self, merge_tracks: tuple[LocalTrack, LocalTrack]):
+        track, other = merge_tracks
+
+        expected = {
+            "released_at": other.released_at,
+        }
+
+        result = track.merge(other, include={"name", "uri", "artists", "released_at"})
+        assert result == expected
+
+        assert track.name != other.name  # doesn't replace because it was already set
+        assert track.artist != other.artist  # doesn't replace because it was already set
+        assert track.album == other.album
+        assert track.genres == other.genres
+        assert track.released_at == other.released_at
+        assert track.rating != other.rating
+        assert track.uri != other.uri  # uri field is always ignored
+
+    def test_merge_with_replace(self, merge_tracks: tuple[LocalTrack, LocalTrack]):
+        track, other = merge_tracks
+
+        expected = {
+            "artists": other.artists,
+            "rating": other.rating,
+            "released_at": other.released_at,
+        }
+
+        result = track.merge(other, replace=True, exclude={"name"})
+        assert result == expected
+
+        assert track.name != other.name
+        assert track.artist == other.artist
+        assert track.album == other.album
+        assert track.genres == other.genres
+        assert track.released_at == other.released_at
+        assert track.rating == other.rating
+        assert track.uri != other.uri  # uri field is always ignored
+
+
     ###########################################################################
     ## HasLocalTracks
     ###########################################################################
@@ -423,3 +486,41 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(t in results.values() for t in expected_tags)
 
         assert mock_save.call_count == sum(1 for t in expected_tags if t)
+
+    @pytest.fixture
+    def mock_merge(
+            self,
+            tracks: list[LocalTrack],
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            replace_tags: bool,
+            faker: Faker,
+    ) -> Generator[tuple[Mock, list[dict[str, Any]]], None, None]:
+
+        with patch.object(LocalTrack, "merge", side_effect=_random_tags) as mock_update:
+            yield mock_update, expected
+
+            assert mock_update.call_count == len(tracks)
+            mock_update.assert_any_call(
+                file, include=include_tags, exclude=exclude_tags, context=context, replace=replace_tags
+            )
+
+    def test_merge_tracks(
+            self,
+            tracks: list[LocalTrack],
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            replace_tags: bool,
+            faker: Faker,
+    ):
+        tracks, others, overlap = split_list(tracks, 2, overlap=5)
+        model = HasLocalTracks(tracks=tracks)
+
+        with patch.object(LocalTrack, "merge", return_value={"field": "value"}) as mock_merge:
+            result = model.merge_tracks(others, include=include_tags, exclude=exclude_tags, replace=replace_tags)
+            assert result.keys() == {track.path for track in overlap}
+
+            assert mock_merge.call_count == len(overlap)
+            assert [arg for call in mock_merge.call_args_list for arg in call.args] == overlap
+            for call in mock_merge.call_args_list:
+                assert call.kwargs == dict(include=include_tags, exclude=exclude_tags, replace=replace_tags)

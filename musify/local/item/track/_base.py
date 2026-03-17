@@ -37,10 +37,7 @@ from musify.models.properties.uri import HasMutableURI, URI
 
 class TagDumpContext[T](BaseModel):
     map_uri_to_tag: Literal["comments"] = Field(
-        description=(
-            "The tag type to use for storing the URIs of the track. "
-            "By default, the URIs will not be dumped to any tag."
-        ),
+        description="The tag to use for storing the URIs of the track.",
         default="comments"
     )
     loaded_images: Mapping[str, InstanceOf[PILImageFile.ImageFile]] = Field(
@@ -436,6 +433,41 @@ class LocalTrack[FT: FileType](
             exclude_unset=True,
         )
 
+    def merge(
+            self,
+            other: Track,
+            include: Collection[str] = (),
+            exclude: Collection[str] = (),
+            replace: bool = False,
+    ) -> dict[str, Any]:
+        """
+        Merge the data from another track into this track.
+
+        :param other: The track to merge data from.
+        :param include: The fields to include in the merge. If empty, all fields will be included.
+        :param exclude: The fields to exclude from the merge. Ignored if empty.
+        :param replace: Whether to replace the existing value of a field if it is not None.
+        :return: The fields that were updated on this track.
+        """
+        include = set(include or self.__tag_fields__) & set(self.__tag_fields__)
+        exclude = set(exclude) & set(self.__tag_fields__)
+
+        updated = {}
+        for field in include - exclude:
+            if not hasattr(other, field):
+                continue
+
+            value = getattr(other, field)
+            if value == getattr(self, field):
+                continue
+            if not replace and getattr(self, field) is not None:
+                continue
+
+            setattr(self, field, value)
+            updated[field] = value
+
+        return updated
+
 
 class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
     @validate_call
@@ -498,3 +530,32 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
                 self.logger.info(f"Updated {path.name} with tags: {', '.join(tags)}")
             else:
                 self.logger.info(f"No tags updated for {path.name}")
+
+    @validate_call
+    def merge_tracks(
+            self,
+            others: Iterable[Track],
+            include: Sequence[str] = (),
+            exclude: Sequence[str] = (),
+            replace: bool = False,
+    ) -> dict[Path, dict[str, Any]]:
+        """
+        Merge the given tracks into the tracks of this collection.
+
+        :param others: The tracks to merge into this collection.
+        :param include: The fields to include in the merge. If empty, all fields will be included.
+        :param exclude: The fields to exclude from the merge. Ignored if empty.
+        :param replace: Whether to replace the existing value of a field if it is not None.
+        :return: A map of the track path to the fields that were updated on that track.
+        """
+        updated: dict[Path, dict[str, Any]] = {}
+        for other in others:
+            track = self.tracks.get(other)
+            if track is None:
+                continue
+
+            result = track.merge(other, include=include, exclude=exclude, replace=replace)
+            if result:
+                updated[track.path] = result
+
+        return updated
