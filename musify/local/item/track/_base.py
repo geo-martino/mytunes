@@ -180,7 +180,7 @@ class LocalTrack[FT: FileType](
     async def load_file(cls, path: str | Path) -> FT:
         # TODO: improve async performance?
         async with aiofiles.open(path, mode='rb') as file:
-            file = mutagen.File(await file.read())
+            file = mutagen.File(BytesIO(await file.read()))
             file.filename = str(path)
 
         return file
@@ -334,6 +334,14 @@ class LocalTrack[FT: FileType](
                 mapped_images[key] = image
 
         return mapped_images
+
+    @model_validator(mode="after")
+    def _assign_path_to_embedded_images(self) -> Self:
+        for image in self.images.values():
+            if isinstance(image, self.EmbeddedImage) and image.path is None:
+                image.path = self.path
+
+        return self
 
     @field_serializer("images", mode="plain", when_used="unless-none")
     def _serialize_images(self, images: Any, info: FieldSerializationInfo) -> list:
