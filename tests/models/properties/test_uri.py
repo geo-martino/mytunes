@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 
 from musify.exception import MusifyValueError
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
@@ -36,7 +36,7 @@ def uri(faker: Faker) -> SimpleURI:
 
 
 @pytest.fixture
-def uris(models: list[BaseResource], faker: Faker) -> list[SimpleURI]:
+def uris(models: list[ResourceModel], faker: Faker) -> list[SimpleURI]:
     seen = set()
     uris = []
 

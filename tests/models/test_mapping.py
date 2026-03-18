@@ -9,7 +9,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 
 from musify.exception import MusifyKeyError
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
@@ -17,7 +17,7 @@ from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 
 class TestUniqueMapping:
     @pytest.fixture
-    def mapping(self, models: list[BaseResource]) -> UniqueMapping:
+    def mapping(self, models: list[ResourceModel]) -> UniqueMapping:
         mapping = UniqueMapping({key: model for model in models for key in model.unique_keys})
         assert mapping._items
         return mapping
@@ -30,7 +30,7 @@ class TestUniqueMapping:
             self,
             mapping: UniqueMapping,
             adapter: TypeAdapter[UniqueMapping],
-            models: list[BaseResource],
+            models: list[ResourceModel],
             faker: Faker
     ):
         assert adapter.validate_python(mapping) is mapping, "Failed to validate existing models"
@@ -49,7 +49,7 @@ class TestUniqueMapping:
         with pytest.raises(ValueError):
             adapter.validate_python(artists)
 
-    def test_init(self, mapping: UniqueMapping, models: list[BaseResource], faker: Faker):
+    def test_init(self, mapping: UniqueMapping, models: list[ResourceModel], faker: Faker):
         assert UniqueMapping(mapping) is not mapping
         assert UniqueMapping(mapping) == mapping
 
@@ -70,18 +70,18 @@ class TestUniqueMapping:
         with pytest.raises(ValueError):
             assert mapping[artist]
 
-    def test_container_methods(self, mapping: UniqueMapping, model: BaseResource):
+    def test_container_methods(self, mapping: UniqueMapping, model: ResourceModel):
         assert model in mapping
         assert all(key in mapping for key in model.unique_keys)
 
         assert mapping.values() in mapping
         assert (key for model in mapping.values() for key in model.unique_keys) in mapping
 
-    def test_collection_methods(self, mapping: UniqueMapping, models: list[BaseResource]):
+    def test_collection_methods(self, mapping: UniqueMapping, models: list[ResourceModel]):
         assert len(mapping) == len(models)
         assert list(iter(mapping)) == list(mapping._items.keys())
 
-    def test_equality(self, mapping: UniqueMapping, models: list[BaseResource]):
+    def test_equality(self, mapping: UniqueMapping, models: list[ResourceModel]):
         assert mapping is not UniqueMapping(models)
         assert mapping == UniqueMapping(models)
 
@@ -96,11 +96,11 @@ class TestUniqueMapping:
         assert mapping_copy._items is not mapping._items
         assert mapping_copy._items == mapping._items
 
-    def test_getitem(self, mapping: UniqueMapping, model: BaseResource):
+    def test_getitem(self, mapping: UniqueMapping, model: ResourceModel):
         assert mapping[model] == model
         assert mapping[next(iter(model.unique_keys))] == model
 
-    def test_getitem_fails(self, mapping: UniqueMapping, models: list[BaseResource]):
+    def test_getitem_fails(self, mapping: UniqueMapping, models: list[ResourceModel]):
         initial = models[2:]
         mapping = UniqueMapping(initial)
 
@@ -109,7 +109,7 @@ class TestUniqueMapping:
         with pytest.raises(KeyError):
             assert mapping["unknown"]
 
-    def test_update(self, models: list[BaseResource]):
+    def test_update(self, models: list[ResourceModel]):
         initial = models[2:]
         mapping = UniqueMapping(initial)
         assert not all(key in mapping._items for model in models for key in model.unique_keys)
@@ -119,7 +119,7 @@ class TestUniqueMapping:
         assert all(key in mapping._items for model in models for key in model.unique_keys)
         assert len(mapping) == len(models)
 
-    def test_replace(self, models: list[BaseResource], faker: Faker):
+    def test_replace(self, models: list[ResourceModel], faker: Faker):
         initial = faker.random_elements(models)
         mapping = UniqueMapping(initial)
         assert all(key in mapping._items for model in initial for key in model.unique_keys)
@@ -157,7 +157,7 @@ class TestMutableUniqueMapping:
         with pytest.raises(ValueError):
             mapping.remove(artist)
 
-    def test_setitem(self, model: BaseResource):
+    def test_setitem(self, model: ResourceModel):
         mapping = MutableUniqueMapping()
         assert len(mapping) == 0
 
@@ -170,13 +170,13 @@ class TestMutableUniqueMapping:
         assert model in mapping
         assert len(mapping) == 1
 
-    def test_setitem_fails(self, model: BaseResource):
+    def test_setitem_fails(self, model: ResourceModel):
         mapping = MutableUniqueMapping()
 
         with pytest.raises(ValueError):
             mapping[choice(list(model.unique_keys))] = "invalid value"
 
-    def test_delitem(self, model: BaseResource, models: list[BaseResource]):
+    def test_delitem(self, model: ResourceModel, models: list[ResourceModel]):
         mapping = MutableUniqueMapping(models)
         assert model in mapping
 
@@ -184,12 +184,12 @@ class TestMutableUniqueMapping:
         assert model not in mapping
         assert all(key not in mapping._items for key in model.unique_keys)
 
-    def test_delitem_fails(self, model: BaseResource):
+    def test_delitem_fails(self, model: ResourceModel):
         mapping = MutableUniqueMapping()
         with pytest.raises(KeyError):
             del mapping[model]
 
-    def test_add(self, models: list[BaseResource]):
+    def test_add(self, models: list[ResourceModel]):
         initial = models[2:]
         mapping = MutableUniqueMapping(initial)
         assert len(mapping) == len(initial)
@@ -206,20 +206,20 @@ class TestMutableUniqueMapping:
         mapping.add(choice(list(mapping.values())))
         assert len(mapping) == len(initial) + 1
 
-    def test_add_fails(self, models: list[BaseResource]):
+    def test_add_fails(self, models: list[ResourceModel]):
         initial = models[2:]
         mapping = MutableUniqueMapping(initial)
 
         with pytest.raises(ValueError):
             mapping.add("invalid value")
 
-    def test_update(self, models: list[BaseResource]):
+    def test_update(self, models: list[ResourceModel]):
         with patch.object(UniqueMapping, "_update") as mock_update:
             mapping = MutableUniqueMapping(models)
             mapping.update(models)
             mock_update.assert_called_once()
 
-    def test_remove(self, models: list[BaseResource]):
+    def test_remove(self, models: list[ResourceModel]):
         initial = models[2:]
         mapping = MutableUniqueMapping(initial)
         assert len(mapping) == len(initial)
@@ -236,7 +236,7 @@ class TestMutableUniqueMapping:
         assert models[0] not in mapping
         mapping.remove(models[0])
 
-    def test_clear(self, models: list[BaseResource]):
+    def test_clear(self, models: list[ResourceModel]):
         initial = models[2:]
         mapping = MutableUniqueMapping(initial)
         assert mapping._items
@@ -244,7 +244,7 @@ class TestMutableUniqueMapping:
         mapping.clear()
         assert not mapping._items
 
-    def test_replace(self, models: list[BaseResource]):
+    def test_replace(self, models: list[ResourceModel]):
         with patch.object(UniqueMapping, "_replace") as mock_update:
             mapping = MutableUniqueMapping(models)
             mapping.replace(models)

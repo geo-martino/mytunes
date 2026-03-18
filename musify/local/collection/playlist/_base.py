@@ -1,34 +1,38 @@
 from abc import abstractmethod
 from collections.abc import Collection, MutableMapping
 from pathlib import Path
-from typing import Self, Any
+from typing import Self, Any, Annotated
 
 import mutagen
 from pydantic import Field, model_validator, PrivateAttr, ModelWrapValidatorHandler
 
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks
+from musify.models._metaclass import makecls
+from musify.models._metadata import UniqueAttribute
 from musify.models.collection.playlist import MutablePlaylist
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
-from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
+from musify.models.result import Result
 from musify.models.sequence import MutableUniqueSequence
-from musify.processors_new import Result
 from musify.processors_new.filters import Filter, MatchFilter
 from musify.processors_new.limit import ItemLimiter
 from musify.processors_new.sort import ItemSorter
 
 
 class LocalPlaylistFile[TF: Filter](
-    MutablePlaylist[URI.annotation, LocalTrack[mutagen.FileType], URI.annotation],
-    LocalCollection[LocalTrack],
     IsLocalFile,
-    HasLocalTracks[URI.annotation, LocalTrack[mutagen.FileType]],
+    LocalCollection[LocalTrack],
+    MutablePlaylist[URI, LocalTrack[mutagen.FileType], URI],
+    HasLocalTracks[URI, LocalTrack[mutagen.FileType]],
+    metaclass=makecls()
 ):
-    __unique_attributes__ = frozenset({"path"})
-
     _original: MutableUniqueSequence[str, LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)
 
+    # override to apply uniqueness metadata
+    path: Annotated[Path, UniqueAttribute()] = Field(
+        description="The path to the playlist file on the local filesystem."
+    )
     matcher: TF | None = Field(
         description="Filter object to use for matching tracks.",
         default=None,

@@ -40,7 +40,7 @@ class TestComparer(BaseModelTester):
             Comparer(condition="Contains", field="track_total")
 
         with pytest.raises(ValueError):
-            Comparer(condition="Contains", field="album_artist")
+            Comparer(condition="Contains", field="album_name")
 
     def test_init_simple(self):
         comparer = Comparer(condition="Contains", field="comments")

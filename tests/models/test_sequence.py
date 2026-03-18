@@ -7,7 +7,7 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.sequence import UniqueSequence, MutableUniqueSequence
@@ -16,7 +16,7 @@ from tests.utils import split_list
 
 class TestUniqueSequence:
     @pytest.fixture
-    def sequence(self, models: list[BaseResource]) -> UniqueSequence:
+    def sequence(self, models: list[ResourceModel]) -> UniqueSequence:
         sequence = UniqueSequence(models)
         assert sequence._items
         return sequence
@@ -29,7 +29,7 @@ class TestUniqueSequence:
             self,
             sequence: UniqueSequence,
             adapter: TypeAdapter[UniqueSequence],
-            models: list[BaseResource],
+            models: list[ResourceModel],
             faker: Faker
     ):
         assert adapter.validate_python(sequence) is sequence, "Failed to validate existing models"
@@ -46,7 +46,7 @@ class TestUniqueSequence:
         with pytest.raises(ValueError):
             adapter.validate_python(artists)
 
-    def test_init(self, sequence: UniqueSequence, models: list[BaseResource], faker: Faker):
+    def test_init(self, sequence: UniqueSequence, models: list[ResourceModel], faker: Faker):
         assert UniqueSequence(sequence) is not sequence
         assert UniqueSequence(sequence) == sequence
 
@@ -76,18 +76,18 @@ class TestUniqueSequence:
         with pytest.raises(ValueError):
             assert sequence.outer_difference(artists)
 
-    def test_container_methods(self, sequence: UniqueSequence, model: BaseResource):
+    def test_container_methods(self, sequence: UniqueSequence, model: ResourceModel):
         assert model in sequence
         assert all(key in sequence for key in model.unique_keys)
 
         assert sequence._items in sequence
         assert (key for model in sequence._items for key in model.unique_keys) in sequence
 
-    def test_collection_methods(self, sequence: UniqueSequence, models: list[BaseResource]):
+    def test_collection_methods(self, sequence: UniqueSequence, models: list[ResourceModel]):
         assert len(sequence) == len(models)
         assert list(iter(sequence)) == sequence._items
 
-    def test_equality(self, sequence: UniqueSequence, models: list[BaseResource]):
+    def test_equality(self, sequence: UniqueSequence, models: list[ResourceModel]):
         assert sequence is not UniqueSequence(models)
         assert sequence == UniqueSequence(models)
 
@@ -102,12 +102,12 @@ class TestUniqueSequence:
         assert sequence_copy._items is not sequence._items
         assert sequence_copy._items == sequence._items
 
-    def test_getitem(self, sequence: UniqueSequence, models: list[BaseResource]):
+    def test_getitem(self, sequence: UniqueSequence, models: list[ResourceModel]):
         assert sequence[0] == models[0]
         assert sequence[:2] == models[:2]
         assert sequence[next(iter(models[0].unique_keys))] == models[0]
 
-    def test_getitem_fails(self, sequence: UniqueSequence, models: list[BaseResource]):
+    def test_getitem_fails(self, sequence: UniqueSequence, models: list[ResourceModel]):
         initial = models[2:]
         sequence = UniqueSequence(initial)
 
@@ -117,7 +117,7 @@ class TestUniqueSequence:
             assert sequence["unknown"]
 
     @staticmethod
-    def test_intersection(models: list[BaseResource]):
+    def test_intersection(models: list[ResourceModel]):
         initial, other, _ = map(tuple, split_list(models, 2))
         sequence = UniqueSequence(initial)
 
@@ -126,7 +126,7 @@ class TestUniqueSequence:
         assert sequence.intersection(other + initial[2:]) == initial[2:]
 
     @staticmethod
-    def test_difference(models: list[BaseResource]):
+    def test_difference(models: list[ResourceModel]):
         initial, other, _ = map(tuple, split_list(models, 2))
         sequence = UniqueSequence(initial)
 
@@ -135,7 +135,7 @@ class TestUniqueSequence:
         assert sequence.difference(other + initial[2:]) == initial[:2]
 
     @staticmethod
-    def test_outer_difference(models: list[BaseResource]):
+    def test_outer_difference(models: list[ResourceModel]):
         initial, other, _ = map(tuple, split_list(models, 2))
         sequence = UniqueSequence(initial)
 
@@ -182,7 +182,7 @@ class TestMutableUniqueSequence:
         with pytest.raises(ValueError):
             sequence.remove(artist)
 
-    def test_setitem(self, models: list[BaseResource]):
+    def test_setitem(self, models: list[ResourceModel]):
         initial, other, _ = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
 
@@ -199,14 +199,14 @@ class TestMutableUniqueSequence:
         assert sequence._items[0:2] == initial[1:3]
         assert all(key in sequence._items_mapped for m in initial[1:3] for key in m.unique_keys)
 
-    def test_setitem_fails(self, models: list[BaseResource]):
+    def test_setitem_fails(self, models: list[ResourceModel]):
         initial = models[:3]
         sequence = MutableUniqueSequence(initial)
 
         with pytest.raises(ValueError):
             sequence[0] = "invalid value"
 
-    def test_delitem(self, models: list[BaseResource]):
+    def test_delitem(self, models: list[ResourceModel]):
         sequence = MutableUniqueSequence(models)
         model = models[0]
         assert model in sequence
@@ -224,7 +224,7 @@ class TestMutableUniqueSequence:
         with pytest.raises(KeyError):
             del sequence[0]
 
-    def test_mutable_dunder_methods(self, models: list[BaseResource]):
+    def test_mutable_dunder_methods(self, models: list[ResourceModel]):
         initial, other, _ = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
         original = sequence.copy()
@@ -245,7 +245,7 @@ class TestMutableUniqueSequence:
         assert sequence._items == other
         assert all(key in sequence._items_mapped for m in other for key in m.unique_keys)
 
-    def test_append(self, models: list[BaseResource]):
+    def test_append(self, models: list[ResourceModel]):
         initial = models[3:]
         sequence = MutableUniqueSequence(initial)
         original_length = len(sequence._items)
@@ -267,7 +267,7 @@ class TestMutableUniqueSequence:
         assert sequence._items[-2] == model
         assert sequence._items_mapped.keys() == expected_keys
 
-    def test_extend(self, models: list[BaseResource]):
+    def test_extend(self, models: list[ResourceModel]):
         initial, other, _ = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
         original_length = len(sequence._items)
@@ -287,7 +287,7 @@ class TestMutableUniqueSequence:
         assert sequence._items[-len(other) * 2:-len(other)] == other
         assert sequence._items_mapped.keys() == expected_keys
 
-    def test_insert(self, models: list[BaseResource]):
+    def test_insert(self, models: list[ResourceModel]):
         initial = models[3:]
         sequence = MutableUniqueSequence(initial)
         original_length = len(sequence._items)
@@ -309,7 +309,7 @@ class TestMutableUniqueSequence:
         assert sequence._items[3] == model
         assert sequence._items_mapped.keys() == expected_keys
 
-    def test_merge_without_reference(self, models: list[BaseResource]):
+    def test_merge_without_reference(self, models: list[ResourceModel]):
         initial, other, overlap = split_list(models, 2, 3)
         other_original = other.copy()
 
@@ -322,7 +322,7 @@ class TestMutableUniqueSequence:
         # given sequence remains unchanged
         assert other == other_original
 
-    def test_merge_with_reference(self, models: list[BaseResource]):
+    def test_merge_with_reference(self, models: list[ResourceModel]):
         for i, model in enumerate(models):
             model.name = str(i)
 
@@ -349,7 +349,7 @@ class TestMutableUniqueSequence:
         assert other == other_original
         assert reference == reference_original
 
-    def test_remove(self, model: BaseResource, models: list[BaseResource]):
+    def test_remove(self, model: ResourceModel, models: list[ResourceModel]):
         sequence = MutableUniqueSequence(models)
         assert model in sequence
 
@@ -357,7 +357,7 @@ class TestMutableUniqueSequence:
         assert model not in sequence._items
         assert all(key not in sequence._items_mapped for key in model.unique_keys)
 
-    def test_clear(self, models: list[BaseResource]):
+    def test_clear(self, models: list[ResourceModel]):
         initial = models[3:]
         sequence = MutableUniqueSequence(initial)
         assert sequence._items

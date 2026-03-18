@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from pydantic import NonNegativeFloat, Field
 
-from musify.models._base import AttributeResource
+from musify.models._attribute import AttributeModel
+from musify.models._metadata import Attribute
 from musify.models.properties import NumberModel
 
 
@@ -10,9 +13,9 @@ class Rating[T: int | float](NumberModel[T]):
     pass
 
 
-class HasRating(AttributeResource):
+class HasRating(AttributeModel):
     """Represents a resource that has a rating."""
-    rating: Rating[NonNegativeFloat] | None = Field(
+    rating: Annotated[Rating[NonNegativeFloat] | None, Attribute()] = Field(
         description="The rating of this resource.",
         default=None,
     )

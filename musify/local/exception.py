@@ -77,7 +77,7 @@ class FileDoesNotExistError(FileError, FileNotFoundError):
 ###########################################################################
 ## Track errors
 ###########################################################################
-class TagError(LocalError):
+class TagError(LocalError, ValueError):
     """Exception raised for errors related to track tag errors."""
 
 

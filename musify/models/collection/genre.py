@@ -10,7 +10,6 @@ from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import URI
-from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
     from musify.models.api.genre import HasGenreEndpoints, GenreReadCollectionEndpoints
@@ -76,8 +75,7 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
 class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
     GenreCollection[UT, TT],
     RemoteGenre[UT],
-    RemoteResource[UT],
-    RemoteCollection[TT, CT],
+    RemoteCollection[TT, UT, CT],
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasGenreEndpoints[GenreReadCollectionEndpoints]) -> None:

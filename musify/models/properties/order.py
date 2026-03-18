@@ -1,31 +1,30 @@
 from __future__ import annotations
 
 from functools import total_ordering
-from typing import Any, Self, ClassVar
+from typing import Any, Self, ClassVar, Annotated
 
 from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelWrapValidatorHandler
 
 from musify.exception import MusifyValueError
-from musify.models._base import AttributeModel, AttributeResource
+from musify.models._attribute import AttributeModel
+from musify.models._metadata import TagAttribute, Attribute
 
 
 @total_ordering
 class Position(AttributeModel):
     """Represents the index position of a resource within a parent resource."""
-    __tag_attributes__ = ("number", "total")
-
     #: The separator to use when parsing a string representation of the position.
     sep: ClassVar[str] = "/"
 
-    number: PositiveInt | None = Field(
+    number: Annotated[PositiveInt | None, TagAttribute()] = Field(
         description="The index position of the resource within the parent resource.",
         default=None,
     )
-    total: PositiveInt | None = Field(
+    total: Annotated[PositiveInt | None, TagAttribute()] = Field(
         description="The total number of resources in the parent resource.",
         default=None,
     )
-    zero_fill: bool | NonNegativeInt = Field(
+    zero_fill: Annotated[bool | NonNegativeInt, Attribute()] = Field(
         description="Number of digits to zero-fill each number when rendering the position as a string.",
         default=False,
     )
@@ -99,17 +98,17 @@ class Position(AttributeModel):
         return other is not None and self.number < int(other)
 
 
-class HasTrackPosition(AttributeResource):
-    """Represents a resource that has a track position."""
-    track: Position | None = Field(
+class HasTrackPosition(AttributeModel):
+    """Represents a model that has a track position."""
+    track: Annotated[Position | None, Attribute()] = Field(
         description="The position in the collection that this track is featured on.",
         default=None,
     )
 
 
-class HasDiscPosition(AttributeResource):
-    """Represents a resource that has a disc position."""
-    disc: Position | None = Field(
+class HasDiscPosition(AttributeModel):
+    """Represents a model that has a disc position."""
+    disc: Annotated[Position | None, Attribute()] = Field(
         description="The position of the disc in the collection that this resource is featured on.",
         default=None,
     )

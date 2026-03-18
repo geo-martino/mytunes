@@ -12,6 +12,9 @@ from termcolor import colored
 
 from musify.exception import MusifyTypeError
 from musify.logger import STAT
+from musify.models import ResourceModel
+from musify.models._metaclass import makecls
+from musify.models._metadata import Attribute
 from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints, ReadSavedEndpoints, WriteSavedEndpoints
 from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints, AlbumReadSavedEndpoints, \
     AlbumWriteSavedEndpoints, AlbumReadItemsEndpoints
@@ -58,7 +61,7 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], 
 
 # noinspection PyAbstractClass
 class Library[TK, TV: Track, KP, VP: Playlist](
-    HasTracksAndPlaylists[TK, TV, KP, VP], HasLogger
+    ResourceModel, HasTracksAndPlaylists[TK, TV, KP, VP], HasLogger, metaclass=makecls()
 ):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"
@@ -141,7 +144,7 @@ class RemoteLibrary[
     )
 
     @property
-    def user(self) -> UT | None:
+    def user(self) -> Annotated[UT | None, Attribute()]:
         """The currently authenticated user."""
         return self._user
 

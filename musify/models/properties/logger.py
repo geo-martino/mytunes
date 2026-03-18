@@ -1,7 +1,5 @@
-import functools
 import logging
 from functools import cached_property
-from inspect import iscoroutine, isawaitable
 
 from musify.logger import Logger
 from musify.models._base import BaseModel

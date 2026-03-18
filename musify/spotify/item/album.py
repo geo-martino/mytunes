@@ -1,8 +1,8 @@
-from typing import final
+from typing import final, Annotated
 
 from pydantic import Field, field_validator
 
-from musify.models import writeable_computed_field
+from musify.models._metadata import Attribute
 from musify.models.item.album import RemoteAlbum
 from musify.models.properties.date import SparseDate
 from musify.spotify._base import SpotifyResource
@@ -22,13 +22,11 @@ class SpotifyAlbum(
 ):
     __final__ = True
 
-    track_total = writeable_computed_field("track_total")
-
-    released_at: SparseDate = Field(
+    released_at: Annotated[SparseDate, Attribute()] = Field(
         description="The date this album was released.",
         validation_alias="release_date",
     )
-    compilation: bool = Field(
+    compilation: Annotated[bool, Attribute()] = Field(
         description="Is this a compilation album",
         validation_alias="album_type",
     )

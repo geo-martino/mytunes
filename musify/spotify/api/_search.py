@@ -3,7 +3,7 @@ from typing import ClassVar, final, Any
 from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
 
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from musify.models.api.search import SearchEndpoints
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
@@ -47,7 +47,7 @@ class SpotifySearchEndpoints(
 
     @staticmethod
     @validate_call
-    def _format_query_from_item(item: BaseResource, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(item: ResourceModel, **kwargs) -> dict[str, Any]:
         match item:
             case Track() as track if track.artists:
                 query = f"track:{track.name} artist:{track.artists[0].name}"

@@ -1,12 +1,12 @@
 from collections.abc import MutableSequence, MutableMapping, Iterable
 from copy import copy
-from typing import Any, ClassVar, Self, final
+from typing import Any, ClassVar, Self, final, Annotated
 
 import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer, ModelWrapValidatorHandler
+    field_validator, field_serializer, ModelWrapValidatorHandler, NonNegativeFloat
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
 from musify._types import StrippedString
@@ -15,11 +15,13 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.local.item.track._base import TagDumpContext
+from musify.models._metadata import TagAttribute
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
+from musify.models.properties.rating import Rating
 
 
 @final
@@ -52,73 +54,73 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
                 data=data,
             )
 
-    name: StrippedString | None = Field(
+    name: Annotated[StrippedString | None, TagAttribute()] = Field(
         description="A title of this track.",
         default=None,
         alias="TIT2",
     )
-    artists: list[LocalArtist] = Field(
+    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="TPE1",
     )
-    album: LocalAlbum | None = Field(
+    album: Annotated[LocalAlbum | None, TagAttribute()] = Field(
         description="The album this track is featured on.",
         default=None,
         alias="TALB",
     )
-    # album_artist: LocalArtist | None = Field(
+    # album_artist: Annotated[LocalArtist | None, TagAttribute()] = Field(
     #     default=None,
     #     alias="TPE2",
     # )
-    genres: list[LocalGenre] = Field(
+    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         alias="TCON",
     )
-    track: Position | None = Field(
+    track: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
         alias="TRCK",
     )
-    disc: Position | None = Field(
+    disc: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
         alias="TPOS",
     )
-    bpm: PositiveFloat | None = Field(
+    bpm: Annotated[PositiveFloat | None, TagAttribute()] = Field(
         description="The tempo of this track.",
         default=None,
         alias="TBPM",
     )
-    key: KeySignature | None = Field(
+    key: Annotated[KeySignature | None, TagAttribute()] = Field(
         description="The key of this track.",
         default=None,
         alias="TKEY",
     )
-    released_at: SparseDate | None = Field(
+    released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
         description="The date this track was released.",
         default=None,
         validation_alias=AliasChoices("TDAT", "TDOR", "TYER", "TORY", "TDRC"),
         serialization_alias="TDAT",
     )
-    rating: float | None = Field(
+    rating: Annotated[Rating[NonNegativeFloat] | None, TagAttribute()] = Field(
         description="The rating of this track.",
         default=None,
         alias="POPM",
     )
-    comments: list[str] = Field(
+    comments: Annotated[list[str], TagAttribute()] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("COMM", "COMMENT"),
         serialization_alias="COMM",
     )
-    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
+    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
         description="Images associated with this track.",
         default=None,
         alias=EmbeddedImage.alias,
     )
-    # compilation: list[str] | None = Field(
+    # compilation: Annotated[bool | None, TagAttribute()] = Field(
     #     default=None,
     #     alias="TCMP",
     # )

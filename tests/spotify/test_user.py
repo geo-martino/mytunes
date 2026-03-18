@@ -3,11 +3,12 @@ from faker import Faker
 
 from musify.spotify.properties.uri import SpotifyUserURI, SpotifyResourceURI
 from musify.spotify.user import SpotifyUser
+from tests.models.testers import UniqueKeyTester
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyModelTester
 
 
-class TestSpotifyUser(SpotifyModelTester):
+class TestSpotifyUser(UniqueKeyTester, SpotifyModelTester):
     @pytest.fixture
     def model(self, resource_id: str, faker: Faker) -> SpotifyUser:
         return SpotifyUser(

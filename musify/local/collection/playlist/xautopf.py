@@ -21,8 +21,8 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
+from musify.models.result import Result
 from musify.models.sequence import MutableUniqueSequence
-from musify.processors_new import Result
 from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter
 from musify.processors_new.limit import ItemLimiter

@@ -10,7 +10,7 @@ from termcolor import colored
 
 from musify._types import to_list
 from musify.exception import MusifyValueError
-from musify.models import BaseModel, BaseResource
+from musify.models import BaseModel, ResourceModel
 from musify.models.collection import CollectionModel
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
@@ -31,7 +31,7 @@ COLOUR_ATTRIBUTES = Literal[
 ]
 
 
-class ModelFormatter[RT: BaseResource](BaseModel):
+class ModelFormatter[RT: ResourceModel](BaseModel):
     """A formatter for a BaseModel. This is used to format the model's data for output."""
 
     fields: Sequence[FIELDS] = Field(
@@ -137,12 +137,12 @@ class ModelFormatter[RT: BaseResource](BaseModel):
     def format(self, item: RT | Iterable[RT], indices: bool | Sequence = False) -> str:
         """Format the given item."""
         match item:
-            case BaseResource():
+            case ResourceModel():
                 rows = [self._format_row(item)]
             case Iterable():
                 rows = [self._format_row(i) for i in item]
             case _:
-                raise MusifyValueError("Item must be a BaseResource or a sequence of BaseResources.")
+                raise MusifyValueError("Item must be a ResourceModel or a sequence of ResourceModels.")
 
         return tabulate(
             rows,

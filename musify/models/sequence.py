@@ -2,28 +2,28 @@ from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterat
 from typing import Any, Self, overload, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
-from pydantic_core import core_schema
+from pydantic_core import core_schema, CoreSchema
 
 from musify.exception import MusifyValueError
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from musify.models.mapping import MutableUniqueMapping
 
 
-class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
+class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
     """
-    Stores :py:class:`BaseResource` items with optimisations
+    Stores :py:class:`ResourceModel` items with optimisations
     to execute functionality on the sequence according to the item's unique keys.
     """
     # noinspection PyUnusedLocal
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if args:
             keys_schema = handler.generate_schema(args[0])
             values_schema = handler.generate_schema(args[1])
         else:
             keys_schema = core_schema.any_schema()
-            values_schema = core_schema.is_instance_schema(BaseResource)
+            values_schema = core_schema.is_instance_schema(ResourceModel)
 
         schema = core_schema.union_schema([
             core_schema.is_instance_schema(cls),
@@ -45,7 +45,7 @@ class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
     def _construct(cls, value: Any) -> Self:
         if isinstance(value, cls):
             return value
-        if isinstance(value, BaseResource):
+        if isinstance(value, ResourceModel):
             return cls((value,))
         if isinstance(value, Iterable):
             return cls(value)
@@ -172,9 +172,9 @@ class UniqueSequence[TK, TV: BaseResource](Sequence[TV]):
         self._extend(__m, allow_duplicates=allow_duplicates)
 
 
-class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], MutableSequence[TV]):
+class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], MutableSequence[TV]):
     """
-    Stores :py:class:`BaseResource` items with optimisations
+    Stores :py:class:`ResourceModel` items with optimisations
     to execute functionality on the sequence according to the item's unique keys.
     """
     @overload
@@ -192,14 +192,14 @@ class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], Mutabl
         else:
             self._items[index] = value
 
-        if isinstance(value, BaseResource):
+        if isinstance(value, ResourceModel):
             self._items_mapped.add(value)
         else:
             self._items_mapped.update(value)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
-        if isinstance(item := self[index], BaseResource):  # index is an int
+        if isinstance(item := self[index], ResourceModel):  # index is an int
             # noinspection PyArgumentList
             self.remove(item)
             return
@@ -300,7 +300,7 @@ class MutableUniqueSequence[TK, TV: BaseResource](UniqueSequence[TK, TV], Mutabl
     @validate_call
     def remove(self, __value: TV | Sequence[TV]) -> None:
         """Remove one item from this sequence"""
-        if isinstance(__value, BaseResource):
+        if isinstance(__value, ResourceModel):
             __value = (__value,)
 
         for item in __value:

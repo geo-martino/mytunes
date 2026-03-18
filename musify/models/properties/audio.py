@@ -4,6 +4,7 @@ from typing import Any, Annotated
 import mutagen
 from pydantic import Field, PositiveInt, PositiveFloat
 
+from musify.models._metadata import Attribute
 from musify.models.properties._core import NumberModel
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
@@ -21,19 +22,19 @@ class Decibels(NumberModel[Annotated[float, Field(ge=-60.0, le=0.0)]]):
 class IsAudioFile(HasLength, IsFile):
     """Attributes and operations for an audio on a filesystem."""
 
-    channels: PositiveInt | None = Field(
+    channels: Annotated[PositiveInt | None, Attribute()] = Field(
         description="The number of channels in this audio file i.e. 1 for mono, 2 for stereo, ...",
         default=None,
     )
-    bit_rate: PositiveFloat | None = Field(
+    bit_rate: Annotated[PositiveFloat | None, Attribute()] = Field(
         description="The bit rate of this track in kbps",
         default=None,
     )
-    bit_depth: PositiveInt | None = Field(
+    bit_depth: Annotated[PositiveInt | None, Attribute()] = Field(
         description="The bit depth of this track in bits",
         default=None,
     )
-    sample_rate: PositiveFloat | None = Field(
+    sample_rate: Annotated[PositiveFloat | None, Attribute()] = Field(
         description="The sample rate of the audio file, in kHz.",
         default=None,
     )

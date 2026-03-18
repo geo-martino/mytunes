@@ -1,8 +1,9 @@
-from typing import final
+from typing import final, Annotated
 
 from pydantic import Field, AliasPath
 
 from musify._types import String
+from musify.models._metadata import Attribute
 from musify.models.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
 from musify.spotify import SpotifyModel
 
@@ -20,12 +21,12 @@ class SpotifyIndexCursor(SpotifyPageCursor, IndexCursor):
 class SpotifyKeyCursor(SpotifyPageCursor, KeyCursor):
     __final__ = True
 
-    before: String | None = Field(
+    before: Annotated[String | None, Attribute()] = Field(
         description="The key to get the previous page of items",
         default=None,
         validation_alias=AliasPath("cursors", "before"),
     )
-    after: String | None = Field(
+    after: Annotated[String | None, Attribute()] = Field(
         description="The key to get the next page of items",
         default=None,
         validation_alias=AliasPath("cursors", "after"),

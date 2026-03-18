@@ -91,26 +91,35 @@ class KaraokeScorer(StringScorer):
         is_karaoke = any(phrase in value.casefold() for phrase in self.karaoke_phrases)
         return is_karaoke
 
-    def _calculate_score_and_log(self, item: HasName, value: str | None) -> bool:
+    def _calculate_score_for_name(self, item: HasName) -> bool:
+        if not isinstance(item, HasName):
+            return False
+
+        value = item.name
         score = self._calculate_score(value)
+
         self._log_score(item=item, result=score, item_val=value)
         return score
 
-    def _calculate_score_for_name(self, item: HasName) -> bool:
-        value = item.name
-        return self._calculate_score_and_log(item, value=value)
-
-    def _calculate_score_for_artist(self, item: HasName | HasArtists) -> bool:
-        if not isinstance(item, HasArtists):
+    def _calculate_score_for_artist(self, item: HasArtists) -> bool:
+        if not isinstance(item, HasName) or not isinstance(item, HasArtists):
             return False
+
         value = item.artist
-        return self._calculate_score_and_log(item, value=value)
+        score = self._calculate_score(value)
+
+        self._log_score(item=item, result=score, item_val=value)
+        return score
 
     def _calculate_score_for_album(self, item: HasName | HasAlbum) -> bool:
-        if not isinstance(item, HasAlbum) or item.album is None:
+        if not not isinstance(item, HasName) or not isinstance(item, HasAlbum) or item.album is None:
             return False
+
         value = item.album.name
-        return self._calculate_score_and_log(item, value=value)
+        score = self._calculate_score(value)
+
+        self._log_score(item=item, result=score, item_val=value)
+        return score
 
 
 @final

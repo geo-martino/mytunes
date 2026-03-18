@@ -1,14 +1,14 @@
 from collections.abc import MutableMapping
-from typing import final, Any, ClassVar
+from typing import final, Any, ClassVar, Annotated, Mapping
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
 from musify.exception import MusifyValueError
+from musify.models._metadata import Attribute
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import UniqueSequence, MutableUniqueSequence
 from musify.spotify import SpotifyResource
-from musify.spotify.collection._base import SpotifyCollection
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.date import HasSpotifyAddedDate
@@ -41,7 +41,6 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
 @final
 class SpotifyPlaylist(
     SpotifyResource[SpotifyResourceURI],
-    SpotifyCollection[SpotifyPlaylistTrack],
     HasSpotifyLength,
     HasSpotifyImages,
     HasFollowers,
@@ -52,28 +51,28 @@ class SpotifyPlaylist(
 
     source: ClassVar[str] = "spotify"
 
-    description: str | None = Field(
+    description: Annotated[str | None, Attribute()] = Field(
         description="The description of the playlist.",
         default=None,
     )
-    collaborative: bool = Field(
+    collaborative: Annotated[bool, Attribute()] = Field(
         description="Whether the owner allows other users to modify the playlist.",
     )
 
-    tracks: UniqueSequence[str, SpotifyPlaylistTrack] = Field(
+    tracks: Annotated[UniqueSequence[str, SpotifyPlaylistTrack], Attribute()] = Field(
         description="The tracks in this playlist.",
         default_factory=UniqueSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items"),
         frozen=True,
     )
 
-    total: NonNegativeInt = Field(
+    total: Annotated[NonNegativeInt, Attribute()] = Field(
         description="The total number of tracks in this playlist.",
         validation_alias=AliasPath("items", "total")
     )
     # getting current user's saved playlists return a 'starter' cursor of just the URL and total
     # we therefore need to support an InitialCursor here to support this
-    cursor: SpotifyIndexCursor | SpotifyInitialCursor = Field(
+    cursor: Annotated[SpotifyIndexCursor | SpotifyInitialCursor, Attribute()] = Field(
         description=(
             "The cursor for the current page of tracks. "
             "This is used for pagination and should be passed to the next page request to extend the collection."
@@ -100,7 +99,7 @@ class SpotifyMutablePlaylist(
 ):
     __final__ = True
 
-    tracks: MutableUniqueSequence[str, SpotifyPlaylistTrack] = Field(
+    tracks: Annotated[MutableUniqueSequence[str, SpotifyPlaylistTrack], Attribute()] = Field(
         description="The tracks in this playlist.",
         default_factory=MutableUniqueSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")

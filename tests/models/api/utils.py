@@ -38,6 +38,8 @@ class MockRemoteResource(RemoteResource[SimpleURI]):
 
 
 class MockRemoteCollection(MockRemoteResource, RemoteCollection):
+    type: ClassVar[str] = MockRemoteResource.type
+
     def _items(self) -> list:
         return []
 

@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Iterable
-from typing import Any, ClassVar, final
+from typing import Any, ClassVar, final, Annotated
 
 import mutagen.id3
 import mutagen.mp4
@@ -13,6 +13,7 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.models._metadata import TagAttribute
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature
@@ -55,67 +56,67 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
 
             return mutagen.mp4.MP4Cover(data, imageformat=image_format)
 
-    name: StrippedString | None = Field(
+    name: Annotated[StrippedString | None, TagAttribute()] = Field(
         description="A title of this track.",
         default=None,
         alias="©nam"
     )
-    artists: list[LocalArtist] = Field(
+    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="©ART"
     )
-    album: LocalAlbum | None = Field(
+    album: Annotated[LocalAlbum | None, TagAttribute()] = Field(
         description="The album this track is featured on.",
         default=None,
         alias="©alb"
     )
-    # album_artist: list[LocalAlbum] | None = Field(
+    # album_artist: Annotated[LocalArtist | None, TagAttribute()] = Field(
     #     default=None,
     #     alias="aART"
     # )
-    genres: list[LocalGenre] = Field(
+    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("©gen", "gnre", "----:com.apple.iTunes:GENRE"),
         serialization_alias="©gen",
     )
-    track: Position | None = Field(
+    track: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
         alias="trkn"
     )
-    disc: Position | None = Field(
+    disc: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
         alias="disk"
     )
-    bpm: PositiveFloat | None = Field(
+    bpm: Annotated[PositiveFloat | None, TagAttribute()] = Field(
         description="The tempo of this track.",
         default=None,
         alias="tmpo"
     )
-    key: KeySignature | None = Field(
+    key: Annotated[KeySignature | None, TagAttribute()] = Field(
         description="The key of this track.",
         default=None,
         alias="----:com.apple.iTunes:INITIALKEY"
     )
-    released_at: SparseDate | None = Field(
+    released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
         description="The date this track was released.",
         default=None,
         alias="©day"
     )
-    comments: list[str] = Field(
+    comments: Annotated[list[str], TagAttribute()] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
         alias="©cmt"
     )
-    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
+    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
         description="Images associated with this track.",
         default=None,
         alias=EmbeddedImage.alias,
     )
-    # compilation: list[str] | None = Field(
+    # compilation: Annotated[bool | None, TagAttribute()] = Field(
     #     default=None,
     #     alias="cpil"
     # )

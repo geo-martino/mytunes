@@ -6,7 +6,7 @@ import pytest
 
 from musify.local.collection.playlist import LocalPlaylist
 from musify.models.properties.file import PathStemMapper
-from musify.processors_new import Result
+from musify.models.result import Result
 from tests.models.testers import UniqueKeyTester
 
 

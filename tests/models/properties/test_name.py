@@ -2,10 +2,10 @@ import pytest
 from faker import Faker
 
 from musify.models.properties.name import HasName
-from tests.models.testers import BaseResourceTester
+from tests.models.testers import BaseModelTester
 
 
-class TestHasName(BaseResourceTester):
+class TestHasName(BaseModelTester):
     @pytest.fixture
     def model(self) -> HasName:
         return HasName(name="Test Name")

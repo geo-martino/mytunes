@@ -3,17 +3,18 @@ from typing import Collection, Iterable, TYPE_CHECKING
 
 from pydantic import Field, NonNegativeInt
 
-from musify.models import BaseResource, BaseModel, abstract_property
+from musify.models import ResourceModel, BaseModel, abstract_property
 from musify.models.cursors import PageCursor, HasPageCursor
+from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
-from musify.processors_new import Result
+from musify.models.result import Result
 
 if TYPE_CHECKING:
     from musify.models.api import HasEndpoints
 
 
 # noinspection PyAbstractClass
-class CollectionModel[IT: BaseResource](BaseModel):
+class CollectionModel[IT: ResourceModel](BaseModel):
     """Defines a common base models for attributes made of common collection properties."""
     @abstract_property
     def _items(self) -> Collection:
@@ -32,7 +33,9 @@ class CollectionModel[IT: BaseResource](BaseModel):
 
 
 # noinspection PyAbstractClass
-class RemoteCollection[IT: RemoteResource, CT: PageCursor](HasPageCursor[CT], CollectionModel[IT]):
+class RemoteCollection[IT: RemoteResource, UT: URI, CT: PageCursor](
+    CollectionModel[IT], RemoteResource[UT], HasPageCursor[CT]
+):
     @property
     def has_all_items(self) -> bool | None:
         """Whether this collection has all items loaded."""

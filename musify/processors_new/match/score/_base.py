@@ -1,11 +1,10 @@
 from abc import abstractmethod
-from typing import MutableSequence, Any
+from typing import Any
 
 from pydantic import Field
 
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI
 from musify.processors_new import Processor
 from musify.processors_new.match.clean import TagCleaner
 
@@ -44,7 +43,7 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
 
         score = self._calculate_score(item_val, other_val) * self.weight
 
-        self._log_score(item=item, other=other, result=score, item_val=item_val, other_val=other_val)
+        self._log_score(item=item, result=score, item_val=item_val, other_val=other_val)
         return score
 
     @abstractmethod
@@ -52,35 +51,23 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         """Scores the similarity between the value and other value without applying the weight."""
         raise NotImplementedError
 
-    def log(self, messages: MutableSequence[str], pad: str = ' ') -> None:
-        """
-        Log lists of ``messages`` in a uniform aligned format with a given ``pad`` character.
-
-        Convenience function for ensuring consistent log format for results of operations of this class
-        and any other classes which use this class.
-        """
-        messages[0] = pad * 3 + ' ' + (messages[0] if messages[0] else "unknown")
-        self.logger.debug(" | ".join(messages))
-
     def _log_score[T: HasName](
             self,
             item: T,
-            item_val: Any,
             result: Any,
-            other: T | None = None,
+            item_val: Any,
             other_val: Any = None,
+            method: str = "SCORE",
     ) -> None:
         """Wrapper for initially logging a score in a uniform aligned format"""
-        if other is not None and isinstance(other, HasURI):
-            log_result = f"> Scoring URI: {other.uri}"
-        else:
-            log_result = "> Score failed"
-
         if isinstance(result, float):
             result = round(result, 2)
 
-        log = [item.name, log_result, f"{self.type:<10}={result:<5}"]
-        if item_val or other_val:
-            log.append(f"{item_val!r} -> {other_val!r}")
+        messages = [f"{self.type:>10}={result:<5}"]
+        if not other_val:
+            messages.append(item_val)
+        else:
+            messages.append(f"{item_val!r} -> {other_val!r}")
 
-        self.log(log)
+        log = self._format_item_message(method=method, item=item, messages=messages)
+        self.logger.debug(log)

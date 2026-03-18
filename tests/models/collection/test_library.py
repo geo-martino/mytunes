@@ -21,11 +21,11 @@ from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI, MockUrlCursor
 from tests.models.collection.utils import assert_sync_items_result
-from tests.models.testers import BaseResourceTester, BaseModelTester
+from tests.models.testers import NoUniqueKeyTester, BaseModelTester
 from tests.utils import SimpleURI
 
 
-class TestLibrary(BaseResourceTester):
+class TestLibrary(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> HasTracksAndPlaylists:
         return HasTracksAndPlaylists()

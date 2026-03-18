@@ -3,7 +3,7 @@ Base classes for all processors in this module. Also contains decorators for use
 """
 import os
 import textwrap
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Iterable
 from functools import partial, update_wrapper
 from typing import Any, Optional, Self
 
@@ -14,16 +14,41 @@ from termcolor import colored
 from musify.exception import MusifyValueError
 from musify.models import BaseModel, abstract_property
 from musify.models.properties.logger import HasLogger
-
-
-class Result(BaseModel):
-    """Stores the results of an operation"""
-    model_config = ConfigDict(frozen=True)
+from musify.models.properties.name import HasName
+from musify.models.properties.uri import HasURI
 
 
 class Processor(BaseModel):
     """Generic base class for processors"""
-    pass
+    @classmethod
+    def _format_item_message(
+            cls,
+            method: str,
+            item: Any,
+            messages: str | Iterable,
+            max_widths: int | Iterable[int] = None,
+            pad: str = " ",
+    ) -> str:
+        if isinstance(messages, str):
+            messages = (messages,)
+
+        title = cls._get_item_log_value(item)
+        header = f"{pad[0] * 3} {method.upper():<7}: {title}"
+        return tabulate(
+            [header] + list(map(str, messages)),
+            tablefmt="orgtbl",
+            maxcolwidths=max_widths,
+        )
+
+    @staticmethod
+    def _get_item_log_value(item: Any) -> str:
+        match item:
+            case HasURI() if item.uri is not None:
+                return str(item.uri)
+            case HasName():
+                return str(item.name)
+            case _:
+                return "- UNKNOWN -"
 
 
 # noinspection PyPep8Naming,SpellCheckingInspection

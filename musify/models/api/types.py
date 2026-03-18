@@ -6,7 +6,7 @@ from typing import Any, get_args, Callable, Self, Annotated
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema
+from pydantic_core import core_schema, CoreSchema
 from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
@@ -59,7 +59,7 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
 
 class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if not args:
             raise MusifyTypeError(f"Must define generic types for {type(source)}")
@@ -143,7 +143,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
     @classmethod
     def __get_pydantic_json_schema__(
-            cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+            cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         return handler(core_schema.url_schema())
 
@@ -182,7 +182,7 @@ type ApiURL[UT: URI, MT: HasURI] = Annotated[URL, _ApiURLSchema[UT, MT]]
 
 class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if not args:
             raise MusifyTypeError(f"Must define generic types for {type(source)}")
@@ -239,7 +239,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
     @classmethod
     def __get_pydantic_json_schema__(
-            cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+            cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 

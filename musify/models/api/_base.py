@@ -2,7 +2,7 @@ import contextlib
 import functools
 from abc import abstractmethod
 from collections.abc import Mapping, Callable
-from typing import Self, Any
+from typing import Self, Any, Annotated
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
@@ -12,6 +12,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Fie
 from typing_inspection.typing_objects import is_typevar
 
 from musify.exception import MusifyValueError
+from musify.models._metadata import Attribute
 from musify.models.api._endpoints import HasEndpoints, Endpoints
 from musify.models.properties.logger import HasLogger
 from musify.models.remote import RemoteModel
@@ -125,7 +126,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
 
 
 class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
-    api: API = Field(
+    api: Annotated[API, Attribute()] = Field(
         description="The API client model used to interact with the remote service.."
     )
 

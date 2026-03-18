@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 
 from musify.models.properties import NumberModel, HasSeparableTags
-from tests.models.testers import BaseResourceTester, BaseModelTester
+from tests.models.testers import BaseModelTester
 
 
 class TestNumberModel(BaseModelTester):
@@ -25,7 +25,7 @@ class TestNumberModel(BaseModelTester):
         assert model > model.root - 2
 
 
-class TestHasSeparableTags(BaseResourceTester):
+class TestHasSeparableTags(BaseModelTester):
     @pytest.fixture
     def model(self) -> HasSeparableTags:
         return HasSeparableTags()

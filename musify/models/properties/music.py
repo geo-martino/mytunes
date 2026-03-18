@@ -4,7 +4,9 @@ from typing import ClassVar, Annotated, Self
 
 from pydantic import Field, field_validator, model_validator, ModelWrapValidatorHandler
 
-from musify.models._base import BaseModel, AttributeResource
+from musify.models._attribute import AttributeModel
+from musify.models._base import BaseModel
+from musify.models._metadata import Attribute
 
 
 class KeySignature(BaseModel):
@@ -74,9 +76,9 @@ class KeySignature(BaseModel):
         return hash((self.root, self.mode))
 
 
-class HasKeySignature(AttributeResource):
+class HasKeySignature(AttributeModel):
     """Represents a resource that has a key signature."""
-    key: KeySignature | None = Field(
+    key: Annotated[KeySignature | None, Attribute()] = Field(
         description="The key signature of this track.",
         default=None,
     )

@@ -10,7 +10,11 @@ from yarl import URL
 
 from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
-from musify.models._base import RootModel, AttributeResource, abstract_property
+from musify.models import abstract_property, ResourceModel
+from musify.models._attribute import AttributeModel
+from musify.models._base import RootModel
+from musify.models._metaclass import makecls
+from musify.models._metadata import UniqueAttribute, Attribute
 from musify.models.url import HttpURL
 
 
@@ -118,10 +122,8 @@ class URI(RootModel[str]):
         return super().__eq__(other)
 
 
-class HasURI[UT: URI](AttributeResource):
-    __unique_attributes__ = frozenset({"uri"})
-
-    uri: UT | None = Field(
+class HasURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls()):
+    uri: Annotated[UT | None, UniqueAttribute()] = Field(
         description="The URI for this resource on the remote repository",
         frozen=True,
         default=None,
@@ -146,7 +148,7 @@ class HasURI[UT: URI](AttributeResource):
 
 
 class HasMutableURI[UT: URI](HasURI[UT]):
-    source: str | None = Field(
+    source: Annotated[str | None, Attribute()] = Field(
         description=(
             "The type of remote repository this resource is associated with. "
             "This is used to extract the appropriate URI from a list of available URIs "

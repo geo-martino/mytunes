@@ -3,14 +3,14 @@ from typing import Self
 
 from pydantic import model_validator
 
+from musify.models.collection import RemoteCollection
 from musify.models.properties.date import HasAddedDate
-from musify.spotify.collection import SpotifyCollection
 
 
 class HasSpotifyAddedDate(HasAddedDate):
     @model_validator(mode="after")
     def _set_added_at_from_items(self) -> Self:
-        if not isinstance(self, SpotifyCollection) or not self.has_all_items:
+        if not isinstance(self, RemoteCollection) or not self.has_all_items:
             return self
         if not all(isinstance(item, HasAddedDate) and item.added_at is not None for item in self._items):
             return self

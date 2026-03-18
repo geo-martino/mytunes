@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Sequence
-from typing import ClassVar, Any, Self, final
+from typing import ClassVar, Any, Self, final, Annotated
 
 from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
@@ -7,19 +7,20 @@ from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks
+from musify.models._metadata import Attribute
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
 
 
 @final
-class Folder[TT: LocalTrack](HasLocalTracks[URI.annotation, TT], LocalCollection[TT], HasName, HasLength):
+class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasName, HasLength):
     """Represents a folder collection and its properties."""
     __final__ = True
 
     type: ClassVar[str] = "folder"
 
-    name: StrippedString = Field(
+    name: Annotated[StrippedString, Attribute()] = Field(
         description="The name of this folder.",
         default=None,
         alias="folder",

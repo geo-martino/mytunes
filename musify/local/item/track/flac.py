@@ -1,20 +1,23 @@
 from collections.abc import MutableMapping, Iterable
-from typing import Any, Self, final
+from typing import Any, Self, final, Annotated
 
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, ModelWrapValidatorHandler
+from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
+    ModelWrapValidatorHandler, NonNegativeFloat
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
+from musify.models._metadata import TagAttribute
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageFile, ImageURL
 from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
+from musify.models.properties.rating import Rating
 from musify.utils import get_base_types
 
 
@@ -49,46 +52,50 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
             return picture
 
-    artists: list[LocalArtist] = Field(
+    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="artist",
     )
-    genres: list[LocalGenre] = Field(
+    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         alias="genre",
     )
-    track: Position | None = Field(
+    track: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the track in the album that this track is featured on.",
         default=None,
         validation_alias=AliasChoices("tracknumber", "tracktotal"),
         serialization_alias="tracknumber",
     )
-    disc: Position | None = Field(
+    disc: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
         validation_alias=AliasChoices("discnumber", "disctotal"),
         serialization_alias="discnumber",
     )
-    released_at: SparseDate | None = Field(
+    released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
         description="The date this track was released.",
         default=None,
         validation_alias=AliasChoices("date", "release date", "year"),
         serialization_alias="date",
     )
-    key: KeySignature | None = Field(
+    key: Annotated[KeySignature | None, TagAttribute()] = Field(
         description="The key of this track.",
         default=None,
         alias="initialkey",
     )
-    comments: list[str] = Field(
+    rating: Annotated[Rating[NonNegativeFloat] | None, TagAttribute()] = Field(
+        description="The rating of this track.",
+        default=None,
+    )
+    comments: Annotated[list[str], TagAttribute()] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("comment", "description"),
         alias="comment",
     )
-    images: MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None = Field(
+    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
         description="Images associated with this track.",
         default=None,
     )

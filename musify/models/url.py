@@ -2,14 +2,14 @@ from typing import Annotated, Any
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema
+from pydantic_core import core_schema, CoreSchema
 from yarl import URL as YARL_URL
 
 
 class _URLSchema:
     # noinspection PyUnusedLocal
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         url_schema = core_schema.url_schema(host_required=True)
         cast_str_schema = core_schema.chain_schema(
             [
@@ -32,7 +32,7 @@ class _URLSchema:
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         return handler(core_schema.url_schema())
 

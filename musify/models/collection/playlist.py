@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union, Any
 
-from pydantic import Field, validate_call, BeforeValidator, TypeAdapter
+from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, model_validator, computed_field, PositiveInt
 
 from musify._types import StrippedString
+from musify.exception import MusifyValueError
+from musify.models._metaclass import makecls
+from musify.models._metadata import Attribute
 from musify.models.collection._base import CollectionModel, RemoteCollection, SyncResult
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items
 from musify.models.cursors import PageCursor, InitialCursor
@@ -16,18 +20,19 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI
-from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 
 if TYPE_CHECKING:
     from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
 
 
-class Playlist[TK, TV: Track, UT: URI](HasTracks[TK, TV], HasName, HasURI[UT], HasLength, HasImages):
+class Playlist[TK, TV: Track, UT: URI](
+    HasTracks[TK, TV], HasName, HasLength, HasImages, HasURI[UT], metaclass=makecls()
+):
     """Represents a playlist collection and its properties."""
     type: ClassVar[str] = "playlist"
 
-    description: StrippedString | None = Field(
+    description: Annotated[StrippedString | None, Attribute()] = Field(
         description="The description of the playlist.",
         default=None,
     )
@@ -74,7 +79,7 @@ type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
 
 class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
     """A mixin class to add a `playlists` field to a model."""
-    playlists: UniqueMapping[TK, TV] = Field(
+    playlists: Annotated[UniqueMapping[TK, TV], Attribute()] = Field(
         description="The playlists in this collection",
         default_factory=UniqueMapping[TK, TV],
         frozen=True,
@@ -87,7 +92,7 @@ class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
 
 class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
     """A mixin class to add a mutable `playlists` field to a model."""
-    playlists: MutableUniqueMapping[TK, TV] = Field(
+    playlists: Annotated[MutableUniqueMapping[TK, TV], Attribute()] = Field(
         description="The playlists in this collection",
         default_factory=MutableUniqueMapping[TK, TV],
         frozen=True,
@@ -116,16 +121,22 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
             self.playlists[playlist].merge(playlist, reference=reference[playlist] if reference else None)
 
 
+# noinspection PyAbstractClass
 class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
-    Playlist[UT, TT, UT], RemoteResource[UT], RemoteCollection[TT, CT]
+    Playlist[UT, TT, UT], RemoteCollection[TT, UT, CT], metaclass=makecls()
 ):
-    owner: OT = Field(
+    owner: Annotated[OT, Attribute()] = Field(
         description="The owner of this playlist.",
     )
-    public: bool | None = Field(
+    public: Annotated[bool | None, Attribute()] = Field(
         description="Whether this playlist is publicly available.",
         default=None,
     )
+
+    @computed_field(description="The total number of items in this playlist")
+    @property
+    def item_total(self) -> PositiveInt | None:
+        return self.cursor.total
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasPlaylistEndpoints[PlaylistReadItemEndpoints]) -> Self:

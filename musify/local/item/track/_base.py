@@ -17,14 +17,16 @@ from pydantic import field_validator, model_validator, validate_call, AliasChoic
 from pydantic.fields import Field, FieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo
 
-from musify._types import to_set
+from musify._types import StrippedString
 from musify.exception import MusifyTypeError
 from musify.local._base import LocalModel
 from musify.local.exception import FileError, TagError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
-from musify.models import BaseModel
+from musify.models import BaseModel, ResourceModel
+from musify.models._metaclass import makecls
+from musify.models._metadata import TagAttribute
 from musify.models.collection.library import Library
 from musify.models.item.track import Track, HasMutableTracks
 from musify.models.properties.audio import IsAudioFile
@@ -59,13 +61,23 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
 
 class LocalTrack[FT: FileType](
     LocalModel,
-    Track[LocalArtist, LocalAlbum, LocalGenre, URI.annotation],
     LocalAudioFile,
-    HasMutableURI[URI.annotation],
+    HasMutableURI[URI],
     HasAddedDate,
     HasPlayedDate,
+    Track[LocalArtist, LocalAlbum, LocalGenre, URI],
+    metaclass=makecls()
 ):
-    __tag_fields__ = frozenset(set(Track.model_fields.keys()) - {"uri"} | {"compilation"})
+    # override to apply file tag metadata and alias
+    name: Annotated[StrippedString, TagAttribute()] = Field(
+        description="The name of this track.",
+        alias="title",
+    )
+    # override to apply file tag metadata
+    album: Annotated[LocalAlbum | None, TagAttribute()] = Field(
+        description="The album this track is featured on.",
+        default=None,
+    )
 
     # noinspection PyAbstractClass
     class EmbeddedImage[TT](FileEmbeddedImage):
@@ -344,9 +356,20 @@ class LocalTrack[FT: FileType](
     ## IO
     ###########################################################################
     @classmethod
-    def _check_tag_fields(cls, include: Collection[str], exclude: Collection[str]) -> None:
-        if extra_fields := (set(include) | set(exclude)) - set(cls.__tag_fields__):
-            raise TagError(f"Unrecognised tag fields: {', '.join(extra_fields)}")
+    def _validate_tag_fields(cls, fields: Collection[str]) -> tuple[str, ...]:
+        invalid_tag_fields = [field for field in fields if field not in cls.__tag_fields__]
+        if invalid_tag_fields:
+            raise TagError(f"Unrecognised tag fields: {", ".join(invalid_tag_fields)}")
+        return tuple(fields)
+
+    @classmethod
+    def _map_tag_fields(cls, fields: Collection[str]) -> tuple[str, ...]:
+        tag_fields = []
+        for field in cls._validate_tag_fields(fields):
+            if (tag_field := cls.__tag_fields__[field]) not in tag_fields:
+                tag_fields.append(tag_field)
+
+        return tuple(tag_fields)
 
     async def _check_and_load_file(self, file: FT = None) -> FT:
         if file is None:
@@ -371,12 +394,16 @@ class LocalTrack[FT: FileType](
             include: Collection[str] = (),
             exclude: Collection[str] = (),
     ) -> dict[str, set[str]]:
-        cls._check_tag_fields(include=include, exclude=exclude)
+        include = cls._validate_tag_fields(include or cls.__tag_fields__)
+        exclude = cls._validate_tag_fields(exclude)
 
-        names = (set(include or cls.__tag_fields__) - set(exclude)) & cls.__tag_fields__
+        tag_fields = set(include) - set(exclude)
         removed = {
-            name: {tag_id for alias in cls._get_aliases(name) for tag_id in cls._clear_tag(file, alias)}
-            for name in names
+            tag_field: {
+                tag_id for alias in cls._get_aliases(tag_field, with_serialization_alias=True)
+                for tag_id in cls._clear_tag(file, alias)
+            }
+            for tag_field in tag_fields
         }
         return {k: v for k, v in removed.items() if v}
 
@@ -407,8 +434,6 @@ class LocalTrack[FT: FileType](
         :param replace: Whether to replace existing tags with the same ID. If False, existing tags will be preserved.
         :return: The tags that were updated on the file.
         """
-        self._check_tag_fields(include=include, exclude=exclude)
-
         tags = self.to_tags(include=include, exclude=exclude, context=context)
         if not replace:
             tags = {k: v for k, v in tags.items() if k not in file.tags}
@@ -422,12 +447,12 @@ class LocalTrack[FT: FileType](
             exclude: Collection[str] = (),
             context: TagDumpContext[FT] = None
     ) -> dict[str, Any]:
-        include = set(include or self.__tag_fields__) & set(self.__tag_fields__)
-        exclude = set(exclude) & set(self.__tag_fields__)
+        include = self._validate_tag_fields(include or self.__tag_fields__)
+        exclude = self._validate_tag_fields(exclude)
 
         return self.model_dump(
-            include=include,
-            exclude=exclude,
+            include=set(include),
+            exclude=set(exclude),
             context=context,
             by_alias=True,
             exclude_none=True,
@@ -451,22 +476,25 @@ class LocalTrack[FT: FileType](
         :param replace: Whether to replace the existing value of a field if it is not None.
         :return: The fields that were updated on this track.
         """
-        include = set(include or self.__tag_fields__) & set(self.__tag_fields__)
-        exclude = set(exclude) & set(self.__tag_fields__)
+        include = self._map_tag_fields(include or self.__tag_fields__)
+        exclude = self._map_tag_fields(exclude)
+        tag_fields = set(include) - set(exclude)
 
         updated = {}
-        for field in include - exclude:
-            if not hasattr(other, field):
+        for tag_field in tag_fields:
+            if not hasattr(other, tag_field):
+                continue
+            if "." in tag_field and ".".join(tag_field.split(".")[:-1]) in tag_fields:
+                continue  # skip if already setting parent
+
+            value = getattr(other, tag_field)
+            if value == getattr(self, tag_field):
+                continue
+            if not replace and getattr(self, tag_field) is not None:
                 continue
 
-            value = getattr(other, field)
-            if value == getattr(self, field):
-                continue
-            if not replace and getattr(self, field) is not None:
-                continue
-
-            setattr(self, field, value)
-            updated[field] = value
+            setattr(self, tag_field, value)
+            updated[tag_field] = value
 
         return updated
 
@@ -514,7 +542,7 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
     def _log_save_tracks_header(self) -> None:
         message = f"Saving {len(self.tracks)} tracks"
 
-        if isinstance(self.type, str):
+        if isinstance(self, ResourceModel) and isinstance(self.type, str):
             message += f" in {self.type}"
 
         match self:

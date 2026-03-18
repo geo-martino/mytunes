@@ -8,7 +8,7 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from tests.utils import GENRES
 
 
@@ -17,7 +17,7 @@ def models(
         tracks: list[LocalTrack],
         artists: list[LocalArtist],
         albums: list[LocalAlbum],
-) -> list[BaseResource]:
+) -> list[ResourceModel]:
     return [*tracks, *artists, *albums]
 
 

@@ -12,7 +12,6 @@ from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI
-from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
     from musify.models.api.artist import HasArtistEndpoints, ArtistReadCollectionEndpoints
@@ -90,8 +89,7 @@ class ArtistCollection[AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasAlbums[
 class RemoteArtistCollection[AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: PageCursor](
     ArtistCollection[AT, GT, UT],
     RemoteArtist[UT, GT],
-    RemoteResource[UT],
-    RemoteCollection[AT, CT],
+    RemoteCollection[AT, UT, CT],
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasArtistEndpoints[ArtistReadCollectionEndpoints]) -> None:

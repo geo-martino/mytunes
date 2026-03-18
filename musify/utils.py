@@ -10,6 +10,7 @@ from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
 
 from aiorequestful.types import Number
 from typing_extensions import get_origin, evaluate_forward_ref
+from typing_inspection.typing_objects import is_annotated
 
 from musify.exception import MusifyTypeError, MusifyImportError
 
@@ -297,8 +298,7 @@ def get_base_types(
         case TypeAliasType():
             ano = annotation.__value__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
-        case _ if hasattr(annotation, "__metadata__"):  # Annotated types
-            # noinspection PyUnresolvedReferences
+        case _ if is_annotated(get_origin(annotation)):
             ano = annotation.__origin__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case _:

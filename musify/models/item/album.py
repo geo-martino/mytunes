@@ -1,9 +1,10 @@
-from typing import ClassVar, TYPE_CHECKING, Self
+from typing import ClassVar, TYPE_CHECKING, Self, Annotated
 
-from pydantic import Field, field_validator, computed_field, PositiveInt
+from pydantic import Field, field_validator, computed_field
 
-from musify._types import StrippedString
-from musify.models._base import AttributeResource
+from musify.models._attribute import AttributeModel
+from musify.models._metaclass import makecls
+from musify.models._metadata import TagAttribute, Attribute
 from musify.models.collection import CollectionModel
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
@@ -21,46 +22,83 @@ if TYPE_CHECKING:
 
 
 class Album[RT: Artist, GT: Genre, UT: URI](
-    HasArtists[RT], HasGenres[GT], HasName, HasURI[UT], HasLength, HasRating, HasReleaseDate, HasImages
+    HasArtists[RT],
+    HasGenres[GT],
+    HasName,
+    HasURI[UT],
+    HasLength,
+    HasRating,
+    HasReleaseDate,
+    HasImages,
+    metaclass=makecls()
 ):
     type: ClassVar[str] = "album"
 
-    name: StrippedString = Field(
-        description="The name of this album.",
-        alias="album",
-    )
-    compilation: bool | None = Field(
+    compilation: Annotated[bool | None, Attribute()] = Field(
         description="Is this a compilation album",
         default=None,
     )
-    # noinspection PyArgumentList
-    track_total = computed_field(
-        lambda x: None,
-        description="The total number of tracks on this album",
-        return_type=PositiveInt | None,
-    )
-    # noinspection PyArgumentList
-    disc_total = computed_field(
-        lambda x: None,
-        description="The total number of discs for this album",
-        return_type=PositiveInt | None,
-    )
+
+    @field_validator("artists", mode="before", check_fields=True)
+    @classmethod
+    def _validate_artists[T](cls, value: T) -> T | list:
+        match value:
+            case list() if all(isinstance(item, list) for item in value):
+                value = [v for val in value for v in val]
+        return value
+
+    @field_validator("compilation", mode="before", check_fields=True)
+    @classmethod
+    def _validate_compilation[T](cls, value: T) -> T | bool | None:
+        match value:
+            case str():
+                value = bool(value)
+            case list():
+                value = bool(next(iter(value), None))
+
+        return value
 
 
-class HasAlbum[AT: Album](AttributeResource):
-    album: AT | None = Field(
+class HasAlbum[AT: Album](AttributeModel):
+    album: Annotated[AT | None, Attribute()] = Field(
         description="The album associated with this resource.",
         default=None,
     )
 
+    @computed_field(
+        description="The main artist on the album.",
+    )
     @property
-    def compilation(self) -> bool | None:
+    def album_artist(self) -> Annotated[str | None, TagAttribute()]:
+        """The main artist on the album."""
+        if self.album is None or not self.album.artists:
+            return None
+        return self.album.artists[0].name
+
+    @album_artist.setter
+    def album_artist(self, value: Artist) -> None:
+        if self.album is None:
+            return
+
+        self.album.artists = [value, *(self.album.artists or ())]
+
+    @computed_field(
+        description="Whether the album is a compilation album.",
+    )
+    @property
+    def compilation(self) -> Annotated[bool | None, TagAttribute()]:
         """Whether the album is a compilation album."""
         return self.album.compilation if self.album is not None else None
 
+    @compilation.setter
+    def compilation(self, value: bool) -> None:
+        if self.album is None:
+            return
+        self.album.compilation = value
 
-class HasAlbums[AT: Album](HasSeparableTags, CollectionModel[AT]):
-    albums: list[AT] = Field(
+
+class HasAlbums[AT: Album](CollectionModel[AT], HasSeparableTags):
+    albums: Annotated[list[AT], Attribute()] = Field(
         description="The albums associated with this resource.",
         default_factory=list,
     )
@@ -78,7 +116,7 @@ class HasAlbums[AT: Album](HasSeparableTags, CollectionModel[AT]):
         return cls._separate_tags(value)
 
 
-class RemoteAlbum[RT: RemoteArtist, GT: RemoteGenre, UT: URI](Album[RT, GT, UT], RemoteResource[UT]):
+class RemoteAlbum[RT: RemoteArtist, GT: RemoteGenre, UT: URI](Album[RT, GT, UT], RemoteResource[UT], metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasAlbumEndpoints[AlbumReadItemEndpoints]) -> Self:
         return await api.albums.get(self.uri)

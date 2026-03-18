@@ -436,13 +436,8 @@ class TestReadCollectionEndpoints(EndpointsTester):
         return MockIndexCursor(url=uri.api_url, limit=limit, offset=offset, total=total)
 
     @pytest.fixture
-    @patch.multiple(
-        RemoteCollection,
-        __abstractmethods__=set(),
-        _items=PropertyMock(),
-    )
     def collection(self, uri: URI, cursor: PageCursor, faker: Faker) -> RemoteCollection:
-        return RemoteCollection(
+        return MockRemoteCollection(
             uri=uri,
             cursor=cursor,
             total=faker.random_int(),
@@ -511,13 +506,12 @@ class TestWriteCollectionEndpoints(EndpointsTester):
         return self.MockWriteCollectionEndpoints(handler=handler)
 
     @pytest.fixture
-    @patch.multiple(
-        RemoteCollection,
-        __abstractmethods__=set(),
-        _items=PropertyMock(),
-    )
     def collection(self, uri: URI, faker: Faker) -> RemoteCollection:
-        return RemoteCollection(uri=uri, cursor=MockUrlCursor(url=uri.api_url), total=faker.random_int())
+        return MockRemoteCollection(
+            uri=uri,
+            cursor=MockUrlCursor(url=faker.url()),
+            total=faker.random_int(),
+        )
 
     # noinspection PyMethodOverriding
     @pytest.fixture

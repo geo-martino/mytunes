@@ -1027,7 +1027,7 @@ class TestXMLSmartPlaylist(BaseModelTester):
             "@LayoutGroupBy": faker.random_int(0, 10),
             "@ShuffleMode": to_pascal(choice([enum for enum in ShuffleMode]).name),
             "@ShuffleSameArtistWeight": faker.random_int(0, 10) / 10,
-            "@GroupBy": choice(Track.__tag_attributes__),
+            "@GroupBy": faker.random_element(Track.__tag_attributes__),
             "@ConsolidateAlbums": faker.boolean(),
             "@MusicLibraryPath": faker.file_path(),
         }

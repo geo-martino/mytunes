@@ -5,7 +5,7 @@ from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
 from io import BytesIO
 from pathlib import Path
-from typing import Self, ClassVar, Any
+from typing import Self, ClassVar, Any, Annotated
 
 import aiofiles
 import aiohttp
@@ -16,7 +16,10 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
-from musify.models._base import BaseModel, AttributeResource
+from musify.models._attribute import AttributeModel
+from musify.models._base import BaseModel
+from musify.models._metadata import Attribute
+from musify.models.properties.file import IsLocalFile
 from musify.models.url import HttpURL
 
 
@@ -28,23 +31,23 @@ class ImageBase(BaseModel):
         if isinstance(enum, mutagen.id3.PictureType)
     }
 
-    type: UpperSnakeCase = Field(
+    type: Annotated[UpperSnakeCase, Attribute()] = Field(
         description="The type of the image, as defined by ID3 tags.",
         default="COVER_FRONT",
     )
-    mime: StrippedString | None = Field(
+    mime: Annotated[StrippedString | None, Attribute()] = Field(
         description="The MIME type of the image.",
         default=None,
     )
-    description: StrippedString | None = Field(
+    description: Annotated[StrippedString | None, Attribute()] = Field(
         description="A description of the image.",
         default=None,
     )
-    height: PositiveInt | None = Field(
+    height: Annotated[PositiveInt | None, Attribute()] = Field(
         description="The height of the image in pixels.",
         default=None,
     )
-    width: PositiveInt | None = Field(
+    width: Annotated[PositiveInt | None, Attribute()] = Field(
         description="The width of the image in pixels.",
         default=None,
     )
@@ -133,12 +136,8 @@ class ImageSource(ImageBase):
         raise NotImplementedError
 
 
-class ImageFile(ImageSource):
+class ImageFile(ImageSource, IsLocalFile):
     """Represents an image file saved on a filesystem."""
-    path: Path = Field(
-        description="The path to the image file.",
-    )
-
     def __str__(self) -> str:
         return str(self.path)
 
@@ -159,7 +158,7 @@ class ImageFile(ImageSource):
 # noinspection PyAbstractClass
 class FileEmbeddedImage(ImageSource):
     """Represents an embedded image of a file."""
-    path: Path | None = Field(
+    path: Annotated[Path | None, Attribute()] = Field(
         description="The path to the file containing the embedded image.",
         default=None,
     )
@@ -174,7 +173,7 @@ class FileEmbeddedImage(ImageSource):
 
 class ImageURL(ImageSource):
     """Represents an image link."""
-    url: HttpURL = Field(
+    url: Annotated[HttpURL, Attribute()] = Field(
         description="The URL of the image.",
     )
 
@@ -204,9 +203,9 @@ class ImageURL(ImageSource):
         return Image.open(BytesIO(image_bytes))
 
 
-class HasImages(AttributeResource):
+class HasImages(AttributeModel):
     """Represents a resource that has associated images."""
-    images: MutableMapping[str, ImageFile | ImageURL] = Field(
+    images: Annotated[MutableMapping[str, ImageFile | ImageURL], Attribute()] = Field(
         description="Images associated with this resource mapped to their type.",
         default_factory=dict,
     )

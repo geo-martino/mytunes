@@ -7,7 +7,8 @@ from typing import ClassVar, Iterable, Any, Self
 from pydantic import PrivateAttr, ValidationError
 
 from musify._types import String
-from musify.models._base import AttributeResource, RootModel
+from musify.models._attribute import AttributeModel
+from musify.models._base import RootModel
 
 
 @total_ordering
@@ -56,7 +57,7 @@ class NumberModel[T: int | float](RootModel[T]):
         return self.model_validate(self.root / float(other))
 
 
-class HasSeparableTags(AttributeResource):
+class HasSeparableTags(AttributeModel):
     """Represents a resource that has a tag separator."""
     _tag_sep: ClassVar[Sequence[String]] = PrivateAttr(
         # description="The separator used to separate tags in this resource.",

@@ -2,7 +2,6 @@ import functools
 import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from copy import copy
-from dis import show_code
 from itertools import batched
 from typing import Any, ClassVar, Self, Type, Union
 
@@ -15,7 +14,7 @@ from pydantic_core import PydanticUndefined
 from yarl import URL
 
 from musify.exception import MusifyTypeError
-from musify.models._base import AttributeModelMetaclass
+from musify.models._attribute import AttributeModelMetaclass
 from musify.models.api.exception import APIError
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection

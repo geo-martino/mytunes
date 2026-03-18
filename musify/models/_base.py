@@ -1,75 +1,15 @@
-import functools
-from abc import abstractmethod
-from collections.abc import Hashable, Iterable, Callable
-from enum import IntEnum
-from functools import cached_property, reduce
-from typing import Any, ClassVar, Self, get_type_hints, Union, cast, Annotated
+import inspect
+from typing import Any, cast, get_origin, Union
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
-    Field, ConfigDict, TypeAdapter, AliasGenerator, AliasChoices, GetCoreSchemaHandler, GetJsonSchemaHandler, AliasPath, \
-    model_validator, ModelWrapValidatorHandler
-# noinspection PyProtectedMember
+    ConfigDict, AliasGenerator, AliasChoices, AliasPath
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
-from pydantic.alias_generators import to_snake
+# noinspection PyProtectedMember
 from pydantic.fields import FieldInfo
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema, CoreSchema, PydanticUndefined
+from pydantic_core import PydanticUndefined
+from typing_inspection.typing_objects import is_annotated
 
-from musify.exception import MusifyValueError, MusifyAttributeError
-from musify.utils import get_base_types
-
-
-def abstract_property(func: Callable[[Any], Any]) -> property:
-    """
-    Create a new abstract property for an attribute.
-
-    This is just a convenience decorator for combining `property` and `abstractmethod` decorators i.e.
-
-    ```python
-        @property
-        @abstractmethod
-        def my_property(self):
-            ...
-    ```
-    """
-    @functools.wraps(func)
-    def wrapper(self):
-        return func(self)
-    return property(abstractmethod(wrapper))
-
-
-def readable_computed_field(name: str) -> property:
-    """Create a new readable computed_field for an attribute with the given ``name``."""
-    name = f"__{name.lstrip("_")}"
-
-    def fget(self) -> Any:
-        field = self.model_computed_fields[name.lstrip("_")]
-        value = getattr(self, name, None)
-        TypeAdapter(field.return_type).validate_python(value)  # validate return
-        return value
-
-    return property(fget)
-
-
-def writeable_computed_field(name: str) -> property:
-    """Create a new writeable computed_field for an attribute with the given ``name``."""
-    name = f"__{name.lstrip("_")}"
-
-    def fget(self) -> Any:
-        field = self.__class__.model_computed_fields[name.lstrip("_")]
-        value = getattr(self, name, None)
-        TypeAdapter(field.return_type).validate_python(value)  # validate return
-        return value
-
-    def fset(self, value) -> None:
-        field = self.__class__.model_computed_fields[name.lstrip("_")]
-        value = TypeAdapter(field.return_type).validate_python(value)
-        setattr(self, name, value)
-
-    def fdel(self) -> None:
-        delattr(self, name)
-
-    return property(fget, fset, fdel)
+from musify.exception import MusifyAttributeError
 
 
 class ModelMetaclass(PydanticModelMetaclass):
@@ -93,10 +33,8 @@ class ModelMetaclass(PydanticModelMetaclass):
         ))
 
         if cls.__final__:
-            cls.__model_registry__.add(cls)
-
-        if cls.__final__:
             cls._validate_all_class_vars_set()
+            cls.__model_registry__.add(cls)
 
         return cls
 
@@ -105,6 +43,44 @@ class ModelMetaclass(PydanticModelMetaclass):
         for name in cls.__class_vars__:
             if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
                 raise MusifyAttributeError(f"{cls.__name__} must have a {name!r} class attribute defined.")
+
+    def _metadata_fields(cls) -> dict[str, tuple[Any, list[Any]]]:
+        """Get all fields and properties with metadata for this model."""
+        return {
+            **cls._get_model_fields_with_metadata(),
+            **cls._get_computed_fields_with_metadata(),
+            **cls._get_properties_with_metadata(),
+        }
+
+    def _get_model_fields_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
+        fields = cast('type[BaseModel]', cls).model_fields
+        return {
+            name: (field_info.annotation, field_info.metadata)
+            for name, field_info in fields.items()
+            if field_info.metadata
+        }
+
+    def _get_computed_fields_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
+        fields = cast('type[BaseModel]', cls).model_computed_fields
+        return {
+            name: (field_info.return_type, field_info.return_type.__metadata__)
+            for name, field_info in fields.items()
+            if is_annotated(get_origin(field_info.return_type))
+        }
+
+    def _get_properties_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
+        properties = {}
+        for kls in cls.mro():
+            for name, prop in vars(kls).items():
+                if name.startswith("_") or not isinstance(prop, property):
+                    continue
+
+                annotation = inspect.signature(prop.fget).return_annotation
+                if not is_annotated(get_origin(annotation)):
+                    continue
+                properties[name] = (annotation, annotation.__metadata__)
+
+        return properties
 
     @property
     def registered_submodels[T: BaseModel](cls: type[T]) -> list[type[T]]:
@@ -161,17 +137,23 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             setattr(self, field, value)
 
     @classmethod
-    def _get_aliases(cls, name: str) -> set[str]:
+    def _get_aliases(cls, name: str, with_serialization_alias: bool = False) -> set[str]:
         try:
             field: FieldInfo = cls.model_fields[name]
         except KeyError:  # not a field, must be a property or computed field
             return {name}
 
-        aliases = {name, field.serialization_alias, field.alias}
-        if isinstance(field.validation_alias, str):
-            aliases.add(field.validation_alias)
-        elif isinstance(field.validation_alias, AliasChoices):
-            aliases |= set(al for al in field.validation_alias.choices if isinstance(al, str))
+        aliases: set[str | None] = {field.alias}
+        if cls.model_config["validate_by_name"]:
+            aliases.add(name)
+        if with_serialization_alias:
+            aliases.add(field.serialization_alias)
+
+        match field.validation_alias:
+            case str():
+                aliases.add(field.validation_alias)
+            case AliasChoices():
+                aliases.update(al for al in field.validation_alias.choices if isinstance(al, str))
 
         return {al for al in aliases if al}
 
@@ -206,262 +188,3 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
 class RootModel[T](PydanticRootModel[T], BaseModel):
     __doc__ = BaseModel.__doc__
-
-
-class ResourceMetaclass(ModelMetaclass):
-    """
-    Metaclass for creating resource models for this package.
-
-    Expands on base model metaclass to add support for:
-    - Updating the discriminated union annotation to use the `type` field as a discriminator for subclasses.
-    - Merging the configured unique attributes from all subclasses.
-    """
-
-    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
-        cls = cast('type[BaseResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
-
-        cls.__unique_attributes__ = frozenset({
-            *getattr(cls, "__unique_attributes__", []),
-            *(attr for base in bases for attr in getattr(base, "__unique_attributes__", []))
-        })
-
-        return cls
-
-    @property
-    def annotation[T: BaseResource](cls: type[T]) -> type[T]:
-        if not cls.registered_submodels:
-            return cls
-        return Annotated[
-            super().annotation,
-            Field(discriminator="type"),
-        ]
-
-
-class BaseResource(BaseModel, metaclass=ResourceMetaclass):
-    """
-    A base class for creating resource models in this package.
-
-    Expands on the base model to add support for:
-    - The `type` field which can be used as a discriminator for subclasses in the discriminated union annotation.
-    - Returning field values which correspond to the unique keys of the resource.
-    - Equality comparison of models based on their unique keys.
-    """
-    type: ClassVar[str] = Field(description="The type of resource this is.")
-
-    @cached_property
-    def unique_keys(self) -> set[Hashable]:
-        """Get the keys to match on from the matchable attributes of this models"""
-        values = {getattr(self, key) for key in self.__unique_attributes__}
-        if None in values:
-            values.remove(None)
-
-        # also always allow matching on the string representation of the key
-        values.update({str(value) for value in values})
-        # allow matching identifiers
-        values.add(id(self))
-
-        return values
-
-    def __eq__(self, other):
-        if not isinstance(other, BaseResource):
-            return super().__eq__(other)
-        return self.unique_keys == other.unique_keys
-    #
-    # def __setattr__(self, key: str, value: Any) -> None:
-    #     """Set the value of a given attribute key"""
-    #     super().__setattr__(key, value)
-    #     if key in self.__unique_attributes__ and hasattr(self, "unique_keys"):
-    #         del self.unique_keys  # clear the cached property
-
-
-class AttributeModelMetaclass(ModelMetaclass):
-    """
-    Metaclass for creating attribute models for this package.
-
-    Expands on base model metaclass to add support for:
-    - Setting tag attributes which are configured from the defined fields and properties of a model
-    - Functionality for getting field info from a nested key using dot notation
-    """
-
-    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
-        cls = cast('type[AttributeResource]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
-
-        cls.__include_fields__ = any((
-            getattr(cls, "__include_fields__", False),
-            *(getattr(base, "__include_fields__", False) for base in bases)
-        ))
-        cls.__include_properties__ = any((
-            getattr(cls, "__include_properties__", False),
-            *(getattr(base, "__include_properties__", False) for base in bases)
-        ))
-
-        if "__tag_attributes__" not in namespace:
-            attribute_names = []
-            if cls.__include_fields__:
-                keys = cls.__annotations__.keys() - cls.__class_vars__  # exclude class vars
-                attribute_names.extend(name for name in keys if not name.startswith("_"))
-            if cls.__include_properties__:
-                attribute_names.extend(name for name, method in namespace.items() if isinstance(method, property))
-
-            cls.__tag_attributes__ = tuple(attribute_names)
-
-        cls.__tag_attributes__ = tuple(cls._get_tag_attributes(cls.__tag_attributes__))
-
-        return cls
-
-    def _get_tag_attributes(cls: type[AttributeModel], attributes: Iterable[str]) -> tuple[str]:
-        attribute_names = []
-        for attr in attributes:
-            names = cls._get_nested_tag_attributes(attr) + cls._get_parent_tag_attributes()
-            attribute_names.extend(attr for attr in names if attr not in attribute_names)
-
-        return tuple(attribute_names)
-
-    def _get_nested_tag_attributes(cls: type[AttributeModel], name: str) -> list[str]:
-        annotation = cls._get_attribute_annotation(name)
-
-        attribute_names = [name]
-        for kls in get_base_types(annotation, ignore_none=True, resolve_generics=True):
-            if not issubclass(kls, AttributeModel):
-                continue
-
-            attribute_names.extend(
-                attr_name for attr in kls.__tag_attributes__
-                if (attr_name := f"{name}.{attr}") not in attribute_names
-            )
-
-        return attribute_names
-
-    def _get_attribute_annotation(cls: type[AttributeModel], name: str) -> type:
-        field: FieldInfo | None = cls.model_fields.get(name)
-        if field is not None:
-            annotation = field.annotation
-        elif isinstance(field := cls.get_nested_field_info(name), FieldInfo):
-            annotation = field.annotation
-        elif isinstance(field, property):
-            try:
-                annotation = get_type_hints(field.fget, include_extras=True)["return"]
-            except NameError:  # Forward reference not resolved
-                annotation = Any
-        else:
-            annotation = type(field)
-
-        return annotation
-
-    def _get_parent_tag_attributes(cls: type[AttributeModel]) -> list[str]:
-        attribute_names = []
-        for kls in cls.mro():
-            if kls is not cls and kls not in (AttributeModel, AttributeModel) and issubclass(kls, AttributeModel):
-                attribute_names.extend(attr for attr in kls.__tag_attributes__ if attr not in attribute_names)
-
-        return attribute_names
-
-    def get_nested_field_info(cls: AttributeModel, key: str) -> FieldInfo:
-        """Get field info for a given key, supporting nested keys using dot notation."""
-        if len(key_split := key.split(".")) == 1:
-            if key in cls.model_fields:
-                return cls.model_fields[key]
-            return getattr(cls, key)
-
-        key_iter = iter(key_split[:-1])
-        field = reduce(
-            AttributeModelMetaclass._get_tag_field_from_field_info,
-            key_iter,
-            AttributeModelMetaclass._get_tag_field_from_field_info(cls, next(key_iter))
-        )
-
-        return AttributeModelMetaclass.get_nested_field_info(field, key_split[-1])
-
-    @staticmethod
-    def _get_tag_field_from_field_info(cls: AttributeModel, key: str) -> type:
-        if key not in cls.model_fields:
-            return getattr(cls, key)
-
-        annotation = cls.model_fields[key].annotation
-        return next(
-            (
-                arg for arg in get_base_types(annotation, ignore_none=True, resolve_generics=True)
-                if issubclass(arg, AttributeModel)
-            ),
-            annotation
-        )
-
-
-class AttributeModel(BaseModel, metaclass=AttributeModelMetaclass):
-    """
-    A base class for creating attribute models in this package.
-
-    Expands on the base model to add support for:
-    - Getting and setting attributes from nested fields of models using dot notation
-    """
-
-    def __getattr__(self, key: str) -> Any:
-        if len(key_split := key.split(".")) == 1:
-            # noinspection PyUnresolvedReferences
-            return super().__getattr__(key)
-
-        key_iter = iter(key_split)
-        if (initial := getattr(self, next(key_iter))) is None:
-            return
-
-        try:
-            return reduce(getattr, key_iter, initial)
-        except AttributeError:
-            return None
-
-    def __setattr__(self, key: str, value: Any) -> None:
-        if len(key_split := key.split(".")) == 1:
-            return super().__setattr__(key, value)
-
-        if (item := getattr(self, ".".join(key_split[:-1]))) is None:
-            raise MusifyAttributeError(f"Item not found for setting attribute: {key}")
-        setattr(item, key_split[-1], value)
-
-
-class AttributeResourceMetaclass(ResourceMetaclass, AttributeModelMetaclass):
-    """Mixin for attribute and resource metaclasses"""
-
-
-class AttributeResource(AttributeModel, BaseResource, metaclass=AttributeResourceMetaclass):
-    """
-    A base class for creating attribute resource models in this package.
-    
-    Mixin for attribute and resource models, combining the functionality of both.
-    """
-    __include_fields__ = True
-    __include_properties__ = True
-
-
-class IntEnumModel(IntEnum):
-    """
-    Expands the IntEnum to allow usage as a Pydantic model
-
-    Adds support for:
-    - Validation from both integers and strings which represent the name of the enum member
-    """
-
-    # noinspection PyUnusedLocal
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(
-            cls._construct,
-            core_schema.union_schema(
-                [core_schema.str_schema(), core_schema.int_schema()]
-            ),
-            serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x.name),
-        )
-
-    # noinspection PyUnusedLocal
-    @classmethod
-    def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        return {'enum': [m.name for m in cls], 'type': 'string'}
-
-    @classmethod
-    def _construct(cls, value: Any) -> Self:
-        match value:
-            case str():
-                return cls[to_snake(value).upper()]
-            case int():
-                return cls(value)
-            case _:
-                raise MusifyValueError(f"Cannot get enum for {value!r}")

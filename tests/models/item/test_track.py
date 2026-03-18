@@ -3,11 +3,11 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify.local.collection.album import LocalAlbumCollection
-from musify.local.item.album import LocalAlbum
+from musify.models.collection.album import AlbumCollection
+from musify.models.item.album import Album
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.properties.order import Position
-from tests.models.testers import BaseResourceTester, UniqueKeyTester
+from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
@@ -19,12 +19,26 @@ class TestTrack(UniqueKeyTester):
         )
         return Track(name=faker.sentence(), uri=uri)
 
-    # noinspection PyUnresolvedReferences
-    def test_set_track_total_from_album(self, faker: Faker):
-        track = Track(name=faker.sentence(), album=LocalAlbum(name=faker.sentence()))
-        assert track.track is None, "Default value not replaced when no number found on Album"
+    @pytest.fixture
+    def tracks(self, album: Album, tracks: list[Track], faker: Faker) -> list[Track]:
+        for track in tracks:
+            total = faker.random_int(1, 5)
 
-        album = LocalAlbum(name=faker.sentence(), track_total=faker.random_int(10, 20))
+            track.album = album
+            track.disc = Position(number=faker.random_int(1, total), total=total)
+
+        return tracks
+
+    # noinspection PyUnresolvedReferences
+    def test_set_track_total_from_album(self, tracks: list[Track], faker: Faker):
+        # does not attempt to set track.total when not available
+        track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
+        assert track.track is None
+        track = Track(name=faker.sentence(), album=AlbumCollection(name=faker.sentence()))
+        assert track.track is None
+
+        album = AlbumCollection(name=tracks[0].album.name, tracks=tracks)
+        assert album.track_total == len(tracks)
 
         track = Track(name=faker.sentence(), album=album)
         assert track.track is not None
@@ -35,16 +49,16 @@ class TestTrack(UniqueKeyTester):
         assert track.track.number == 5
         assert track.track.total == album.track_total
 
-        album = LocalAlbumCollection(name=faker.sentence())
-        track = Track(name=faker.sentence(), album=album)
-        assert track.track is None  # does not attempt to set track.total when not available
-
     # noinspection PyUnresolvedReferences
-    def test_set_disc_total_from_album(self, faker: Faker):
-        track = Track(name=faker.sentence(), album=LocalAlbum(name=faker.sentence()))
-        assert track.disc is None, "Default value not replaced when no number found on Album"
+    def test_set_disc_total_from_album(self, tracks: list[Track], faker: Faker):
+        # does not attempt to set disc.total when not available
+        track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
+        assert track.disc is None
+        track = Track(name=faker.sentence(), album=AlbumCollection(name=faker.sentence()))
+        assert track.disc is None
 
-        album = LocalAlbum(name=faker.sentence(), disc_total=faker.random_int(10, 20))
+        album = AlbumCollection(name=tracks[0].album.name, tracks=tracks)
+        assert album.disc_total == max(track.disc.total for track in tracks)
 
         track = Track(name=faker.sentence(), album=album)
         assert track.disc is not None
@@ -54,10 +68,6 @@ class TestTrack(UniqueKeyTester):
         track = Track(name=faker.sentence(), album=album, disc=5)
         assert track.disc.number == 5
         assert track.disc.total == album.disc_total
-
-        album = LocalAlbumCollection(name=faker.sentence())
-        track = Track(name=faker.sentence(), album=album)
-        assert track.disc is None  # does not attempt to set disc.total when not available
 
     def test_equality(self, faker: Faker):
         track = Track(name=faker.sentence(), artist=faker.name(), album=faker.name())
@@ -74,7 +84,7 @@ class TestTrack(UniqueKeyTester):
         assert track != track_different_album, "Tracks with different albums should not be equal"
 
 
-class TestHasTracks(BaseResourceTester):
+class TestHasTracks(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, tracks: list[Track]) -> HasTracks:
         return HasTracks(tracks=tracks)
@@ -96,7 +106,7 @@ class TestHasTracks(BaseResourceTester):
         assert model.disc_total is None
 
 
-class TestHasMutableTracks(BaseResourceTester):
+class TestHasMutableTracks(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, tracks: list[Track]) -> HasMutableTracks:
         return HasMutableTracks(tracks=tracks)

@@ -1,7 +1,7 @@
 from collections.abc import Sequence, MutableMapping
 from typing import Self, Any, TYPE_CHECKING
 
-from pydantic import model_validator, ModelWrapValidatorHandler
+from pydantic import model_validator, ModelWrapValidatorHandler, computed_field, PositiveInt
 
 from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
@@ -11,7 +11,6 @@ from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.uri import URI
-from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
     from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints
@@ -75,9 +74,13 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](HasTracks[T
 class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, UT: URI, CT: PageCursor](
     AlbumCollection[UT, TT, RT, GT, UT],
     RemoteAlbum[UT, RT, GT],
-    RemoteResource[UT],
-    RemoteCollection[TT, CT],
+    RemoteCollection[TT, UT, CT],
 ):
+    @computed_field(description="The total number of tracks in this album")
+    @property
+    def track_total(self) -> PositiveInt | None:
+        return self.cursor.total
+
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasAlbumEndpoints[AlbumReadCollectionEndpoints]) -> None:
         # noinspection PyProtectedMember

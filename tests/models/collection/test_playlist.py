@@ -1,5 +1,5 @@
 from typing import get_args
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
 from faker import Faker

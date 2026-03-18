@@ -12,13 +12,14 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 
+from musify.local.exception import TagError
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, TagDumpContext, HasLocalTracks
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import HasMutableURI
-from tests.models.testers import UniqueKeyTester, BaseModelTester, BaseResourceTester
+from tests.models.testers import UniqueKeyTester
 from tests.utils import assert_validator_skips, SimpleURI, split_list
 
 
@@ -37,7 +38,7 @@ class TestLocalTrack(UniqueKeyTester):
             "name": ["Sleepwalk My Life Away"],
             "artists": ["Metallica"],
             "album": ["72 Seasons"],
-            "album artist": ["Metallica"],
+            "album_artist": ["Metallica"],
             "genres": ["Hard Rock", "Metal" + sep + "Rock", "Thrash Metal"],
             "track": ["04"],
             "disc": ["1/2"],
@@ -249,7 +250,7 @@ class TestLocalTrack(UniqueKeyTester):
     def test_clear_all_tags(self, file: mutagen.FileType, faker: Faker):
         expected = set(file.tags.keys())
         result = LocalTrack.clear(file)
-        assert set(result) == expected & LocalTrack.__tag_fields__
+        assert set(result) == expected & set(LocalTrack.__tag_fields__)
 
     def test_clear_selected_tags(self, file: mutagen.FileType, include_tags: Sequence[str], faker: Faker):
         result = LocalTrack.clear(file, include=include_tags)
@@ -277,17 +278,21 @@ class TestLocalTrack(UniqueKeyTester):
 
     # noinspection PyTestUnpassedFixture
     def test_to_selected_tags(self, model: LocalTrack):
-        tags = model.to_tags(include={"name", "artists", "album", "does not exist"}, exclude={"name"})
+        tags = model.to_tags(include={"name", "album", "album_artist", "compilation"}, exclude={"name"})
         assert "title" not in tags
-        assert "artists" in tags
-        assert "album" in tags
-        assert "genres" not in tags
+        assert "album_artist" in tags
+        assert "compilation" in tags
+        assert "comments" not in tags
 
-        tags = model.to_tags(exclude={"name", "artists", "does not exist"})
+        tags = model.to_tags(exclude={"name", "comments"})
         assert "title" not in tags
-        assert "artists" not in tags
         assert "album" in tags
-        assert "genres" in tags
+        assert "album_artist" in tags
+        assert "compilation" in tags
+        assert "comments" not in tags
+
+        with pytest.raises(TagError):
+            model.to_tags(exclude={"name", "does not exist"})
 
     # noinspection PyTypeChecker,PyTestUnpassedFixture
     def test_to_tags_contains_no_properties(self, model: LocalTrack):
@@ -299,10 +304,10 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in HasLength.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_fields)
 
-        # ignores properties even when explicitly given to include
-        tags = model.to_tags(include={"path", "length"})
-        assert all(key not in tags for key in IsLocalFile.model_fields)
-        assert all(key not in tags for key in HasLength.model_fields)
+        with pytest.raises(TagError):
+            model.to_tags(include={"path"})
+        with pytest.raises(TagError):
+            model.to_tags(include={"length"})
 
     def test_update_and_replace(
             self,
@@ -346,15 +351,15 @@ class TestLocalTrack(UniqueKeyTester):
         track.released_at = None
         other.released_at = faker.date()
 
-        track.rating = faker.random_int(1, 90)
-        other.rating = track.rating + 5
+        track.comments = faker.words()
+        other.comments = track.comments + faker.words()
 
         assert track.name != other.name
         assert track.artist != other.artist
         assert track.album == other.album
         assert track.genres == other.genres
         assert track.released_at != other.released_at
-        assert track.rating != other.rating
+        assert track.comments != other.comments
         assert track.uri != other.uri
 
         return track, other
@@ -366,7 +371,7 @@ class TestLocalTrack(UniqueKeyTester):
             "released_at": other.released_at,
         }
 
-        result = track.merge(other, include={"name", "uri", "artists", "released_at"})
+        result = track.merge(other, include={"name", "artists", "released_at"})
         assert result == expected
 
         assert track.name != other.name  # doesn't replace because it was already set
@@ -374,16 +379,15 @@ class TestLocalTrack(UniqueKeyTester):
         assert track.album == other.album
         assert track.genres == other.genres
         assert track.released_at == other.released_at
-        assert track.rating != other.rating
-        assert track.uri != other.uri  # uri field is always ignored
+        assert track.comments != other.comments
 
     def test_merge_with_replace(self, merge_tracks: tuple[LocalTrack, LocalTrack]):
         track, other = merge_tracks
 
         expected = {
             "artists": other.artists,
-            "rating": other.rating,
             "released_at": other.released_at,
+            "comments": other.comments,
         }
 
         result = track.merge(other, replace=True, exclude={"name"})
@@ -394,7 +398,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert track.album == other.album
         assert track.genres == other.genres
         assert track.released_at == other.released_at
-        assert track.rating == other.rating
+        assert track.comments == other.comments
         assert track.uri != other.uri  # uri field is always ignored
 
 

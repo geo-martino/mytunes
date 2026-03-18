@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import Self, Annotated
 
 from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
 from musify._types import StrippedString
-from musify.models._base import AttributeResource
+from musify.models._attribute import AttributeModel
+from musify.models._metadata import Attribute
 
 
-class HasName(AttributeResource):
-    name: StrippedString = Field(
+class HasName(AttributeModel):
+    name: Annotated[StrippedString, Attribute()] = Field(
         description="The name of this resource."
     )
 

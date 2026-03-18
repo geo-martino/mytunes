@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 
 from musify.models.item.genre import Genre, HasGenres, RemoteGenre
-from tests.models.testers import BaseResourceTester, UniqueKeyTester
+from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
 from tests.utils import GENRES, SimpleURI
 
 
@@ -14,7 +14,7 @@ class TestGenre(UniqueKeyTester):
         return Genre(name=choice(GENRES))
 
 
-class TestHasGenres(BaseResourceTester):
+class TestHasGenres(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, genres: list[Genre]) -> HasGenres:
         return HasGenres(genres=genres)

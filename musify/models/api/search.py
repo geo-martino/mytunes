@@ -5,7 +5,7 @@ from typing import ClassVar, Any, Type
 from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
 
-from musify.models import BaseResource
+from musify.models import ResourceModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
@@ -70,14 +70,14 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         raise NotImplementedError
 
     @validate_call
-    async def query_item(self, item: BaseResource, **kwargs) -> list[RT]:
+    async def query_item(self, item: ResourceModel, **kwargs) -> list[RT]:
         """Query for items that match the given item."""
         kwargs = self._format_query_from_item(item, **kwargs)
         return next(iter((await self.query(**kwargs)).values()))
 
     @staticmethod
     @abstractmethod
-    def _format_query_from_item(item: BaseResource, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(item: ResourceModel, **kwargs) -> dict[str, Any]:
         """Should return the kwargs to pass to _format_query_params"""
         raise NotImplementedError
 

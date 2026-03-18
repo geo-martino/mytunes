@@ -2,24 +2,24 @@ from collections.abc import Iterable, Mapping, MutableMapping, Hashable
 from typing import Self, Any, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call
-from pydantic_core import core_schema
+from pydantic_core import core_schema, CoreSchema
 
 from musify.exception import MusifyKeyError, MusifyTypeError
-from musify.models import BaseResource
+from musify.models import ResourceModel
 
 
-class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
-    """Stores :py:class:`BaseResource` items mapped according to their unique keys."""
+class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
+    """Stores :py:class:`ResourceModel` items mapped according to their unique keys."""
     # noinspection PyUnusedLocal
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if args:
             keys_schema = handler.generate_schema(args[0])
             values_schema = handler.generate_schema(args[1])
         else:
             keys_schema = core_schema.any_schema()
-            values_schema = core_schema.is_instance_schema(BaseResource)
+            values_schema = core_schema.is_instance_schema(ResourceModel)
 
         schema = core_schema.union_schema([
             core_schema.is_instance_schema(cls),
@@ -41,7 +41,7 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
     def _construct(cls, value: Self | Iterable[TV] | Mapping[Any, TV]) -> Self:
         if isinstance(value, cls):
             return value
-        if isinstance(value, BaseResource):
+        if isinstance(value, ResourceModel):
             return cls((value,))
         if isinstance(value, Mapping):
             return cls(value.values())
@@ -81,7 +81,7 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
 
     # @validate_call  # not currently working with generics
     def __contains__(self, __item: TK | TV | Iterable[TK | TV]) -> bool:
-        if isinstance(__item, BaseResource):
+        if isinstance(__item, ResourceModel):
             return any(key in self._items for key in __item.unique_keys)
         if isinstance(__item, Hashable) and __item in self._items:
             return True
@@ -92,7 +92,7 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
 
     @validate_call
     def __getitem__(self, __key: TK | TV) -> TV:
-        if not isinstance(__key, BaseResource):
+        if not isinstance(__key, ResourceModel):
             return self._items[__key]
 
         try:
@@ -130,8 +130,8 @@ class UniqueMapping[TK, TV: BaseResource](Mapping[TK | TV, TV]):
         self._update(__m, extract_keys=extract_keys)
 
 
-class MutableUniqueMapping[TK, TV: BaseResource](UniqueMapping[TK, TV], MutableMapping[TK | TV, TV]):
-    """Stores :py:class:`BaseResource` items mapped according to their unique keys."""
+class MutableUniqueMapping[TK, TV: ResourceModel](UniqueMapping[TK, TV], MutableMapping[TK | TV, TV]):
+    """Stores :py:class:`ResourceModel` items mapped according to their unique keys."""
     @validate_call
     def __setitem__(self, __key: TK, __value: TV):
         # noinspection PyArgumentList

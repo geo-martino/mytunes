@@ -1,7 +1,8 @@
+from copy import deepcopy
 from typing import final, ClassVar
 
 import pytest
-from pydantic import Field
+from pydantic import Field, AliasChoices
 
 from musify.exception import MusifyAttributeError
 from musify.models import BaseModel
@@ -12,7 +13,7 @@ class FinalModel(BaseModel):
     __final__ = True
 
 
-class TestBaseModel:
+class TestFinalModel:
 
     def test_final_model_registration(self):
         """Test that final models are registered in the model registry"""
@@ -44,5 +45,51 @@ class TestBaseModel:
             var3 = 42
 
     def test_validate_class_vars_skips_on_non_final_model(self):
-        class Child(self.ParentWithClassVars):
+        class Child(self.ParentWithClassVars):  # just check this doesn't fail
             pass
+
+
+class TestBaseModel:
+    class TestModel(BaseModel):
+        field1: str = Field(
+            alias="alias1",
+            validation_alias="valid1",
+            serialization_alias="serial1",
+        )
+        field2: int = Field(
+            validation_alias=AliasChoices("choice1", "choice2"),
+        )
+        field3: int = Field(
+            serialization_alias="serial1",
+        )
+
+    def test_get_aliases_skips_name(self):
+        cls = deepcopy(self.TestModel)
+        cls.model_config["validate_by_name"] = False
+
+        assert cls._get_aliases("field1") == {"alias1", "valid1"}
+        assert cls._get_aliases("field2") == {"choice1", "choice2"}
+        assert cls._get_aliases("field3") == {"field3"}
+
+    def test_get_aliases_includes_name(self):
+        cls = deepcopy(self.TestModel)
+        cls.model_config["validate_by_name"] = True
+
+        assert cls._get_aliases("field1") == {"field1", "alias1", "valid1"}
+        assert cls._get_aliases("field2") == {"field2", "choice1", "choice2"}
+        assert cls._get_aliases("field3") == {"field3"}
+
+    def test_get_aliases_includes_serialization_alias(self):
+        cls = deepcopy(self.TestModel)
+        cls.model_config["validate_by_name"] = True
+
+        assert cls._get_aliases("field1", True) == {"field1", "alias1", "valid1", "serial1"}
+        assert cls._get_aliases("field2", True) == {"field2", "choice1", "choice2"}
+        assert cls._get_aliases("field3", True) == {"field3", "serial1"}
+
+    def test_get_value_from_data(self):
+        data = {"alias1": "value", "choice1": 42, "field3": 100}
+
+        assert self.TestModel._get_value_from_data(data, "field1") == "value"
+        assert self.TestModel._get_value_from_data(data, "field2") == 42
+        assert self.TestModel._get_value_from_data(data, "field3") == 100

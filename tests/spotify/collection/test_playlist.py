@@ -1,3 +1,5 @@
+from unittest.mock import Mock, patch
+
 import pytest
 from faker import Faker
 from yarl import URL

@@ -5,7 +5,8 @@ from typing import Annotated, Any, Self
 
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ModelWrapValidatorHandler
 
-from musify.models._base import AttributeResource, AttributeModel
+from musify.models._attribute import AttributeModel
+from musify.models._metadata import TagAttribute, Attribute
 
 
 class SparseDate(AttributeModel):
@@ -15,18 +16,20 @@ class SparseDate(AttributeModel):
     This allows for defining a date as just the year, or just the year and month,
     while also allowing for a full date definition of year, month, and day.
     """
-    __tag_attributes__ = ("year", "month", "day")
-
-    year: PositiveInt = Field(
+    year: Annotated[PositiveInt, TagAttribute()] = Field(
         description="The year.",
     )
-    month: Annotated[int, Field(ge=1, le=12)] | None = Field(
+    month: Annotated[int, TagAttribute()] | None = Field(
         description="The month.",
         default=None,
+        ge=1,
+        le=12,
     )
-    day: Annotated[int, Field(ge=1, le=31)] | None = Field(
+    day: Annotated[int, TagAttribute()] | None = Field(
         description="The day.",
         default=None,
+        ge=1,
+        le=31,
     )
 
     # noinspection PyNestedDecorators
@@ -82,29 +85,29 @@ class SparseDate(AttributeModel):
         return super().__eq__(other)
 
 
-class HasReleaseDate(AttributeResource):
+class HasReleaseDate(AttributeModel):
     """Represents a resource that has an associated release date."""
-    released_at: SparseDate | None = Field(
+    released_at: Annotated[SparseDate | None, Attribute()] = Field(
         description="The date this resource was released.",
         default=None,
     )
 
 
-class HasAddedDate(AttributeResource):
+class HasAddedDate(AttributeModel):
     """Represents a resource that has an associated added date."""
-    added_at: datetime | None = Field(
+    added_at: Annotated[datetime | None, Attribute()] = Field(
         description="The date this resource was added to the collection.",
         default=None,
     )
 
 
-class HasPlayedDate(AttributeResource):
+class HasPlayedDate(AttributeModel):
     """Represents a resource that has an associated played date."""
-    last_played_at: datetime | None = Field(
+    last_played_at: Annotated[datetime | None, Attribute()] = Field(
         description="The date this resource was last played.",
         default=None,
     )
-    play_count: NonNegativeInt | None = Field(
+    play_count: Annotated[NonNegativeInt | None, Attribute()] = Field(
         description="The number of times this resource has been played.",
         default=None,
     )

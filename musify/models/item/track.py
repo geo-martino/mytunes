@@ -1,9 +1,11 @@
-from typing import ClassVar, Self, TYPE_CHECKING
+from typing import ClassVar, Self, TYPE_CHECKING, Annotated
 
 from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
 
-from musify._types import StrippedString
-from musify.models._base import AttributeResource
+from musify.models import ResourceModel
+from musify.models._attribute import AttributeModel
+from musify.models._metaclass import makecls
+from musify.models._metadata import TagAttribute, Attribute
 from musify.models.collection import CollectionModel
 from musify.models.item.album import HasAlbum, Album, RemoteAlbum
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
@@ -36,26 +38,28 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
     HasURI[UT],
     HasLength,
     HasKeySignature,
+    ResourceModel,
+    metaclass=makecls()
 ):
     """Represents a track resource and its properties."""
     type: ClassVar[str] = "track"
 
-    name: StrippedString = Field(
-        description="The title of this track.",
-        alias="title",
-    )
-    bpm: PositiveFloat | None = Field(
+    bpm: Annotated[PositiveFloat | None, TagAttribute()] = Field(
         description="The tempo of this track.",
         default=None,
     )
-    comments: list[str] = Field(
+    comments: Annotated[list[str], TagAttribute()] = Field(
         description="Freeform comments that are associated with this track.",
         default_factory=list,
     )
 
     @model_validator(mode="after")
     def _set_track_total_from_album(self) -> Self:
-        if self.album is None or not (total := self.album.track_total):
+        from musify.models.collection.album import AlbumCollection
+
+        if self.album is None:
+            return self
+        if not isinstance(self.album, AlbumCollection) or not (total := self.album.track_total):
             return self
 
         if self.track is not None:
@@ -67,7 +71,11 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
 
     @model_validator(mode="after")
     def _set_disc_total_from_album(self) -> Self:
-        if self.album is None or not (total := self.album.disc_total):
+        from musify.models.collection.album import AlbumCollection
+
+        if self.album is None:
+            return self
+        if not isinstance(self.album, AlbumCollection) or not (total := self.album.disc_total):
             return self
 
         if self.disc is not None:
@@ -97,9 +105,9 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
 
 
-class HasTracks[TK, TV: Track](AttributeResource, CollectionModel[TV]):
+class HasTracks[TK, TV: Track](CollectionModel[TV], AttributeModel):
     """A mixin class to add a `tracks` field to a model."""
-    tracks: UniqueSequence[TK, TV] = Field(
+    tracks: Annotated[UniqueSequence[TK, TV], Attribute()] = Field(
         description="The tracks in this collection",
         default_factory=UniqueSequence[TK, TV],
         frozen=True,
@@ -127,7 +135,7 @@ class HasTracks[TK, TV: Track](AttributeResource, CollectionModel[TV]):
 
 class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
     """A mixin class to add a mutable `tracks` field to a model."""
-    tracks: MutableUniqueSequence[TK, TV] = Field(
+    tracks: Annotated[MutableUniqueSequence[TK, TV], Attribute()] = Field(
         description="The tracks in this collection",
         default_factory=MutableUniqueSequence[TK, TV],
         frozen=True,
@@ -139,10 +147,9 @@ class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
 
 
 class RemoteTrack[RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
-        Track[RT, AT, GT, UT],
-        RemoteResource[UT],
+        Track[RT, AT, GT, UT], RemoteResource[UT], metaclass=makecls()
 ):
-    artists: list[RT] = Field(
+    artists: Annotated[list[RT], Attribute()] = Field(
         description="The artists associated with this resource.",
         default_factory=list,
     )

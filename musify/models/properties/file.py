@@ -10,10 +10,13 @@ import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyValueError, MusifyTypeError
-from musify.models._base import AttributeResource, BaseModel, AttributeResourceMetaclass, abstract_property
+from musify.models import abstract_property
+from musify.models._attribute import AttributeModelMetaclass
+from musify.models._base import BaseModel
+from musify.models._metadata import Attribute
 
 
-class IsFileMetaclass(AttributeResourceMetaclass):
+class IsFileMetaclass(AttributeModelMetaclass):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
@@ -40,35 +43,35 @@ class IsFileMetaclass(AttributeResourceMetaclass):
 
 
 # noinspection PyAbstractClass
-class IsFile(AttributeResource, metaclass=IsFileMetaclass):
+class IsFile(BaseModel, metaclass=IsFileMetaclass):
     """Attributes and operations for a file on some system."""
     @abstract_property
-    def folder(self) -> str:
+    def folder(self) -> Annotated[str, Attribute()]:
         """The name of the parent folder of the file."""
         raise NotImplementedError
 
     @abstract_property
-    def filename(self) -> str:
+    def filename(self) -> Annotated[str, Attribute()]:
         """The filename without extension."""
         raise NotImplementedError
 
     @abstract_property
-    def ext(self) -> str:
+    def ext(self) -> Annotated[str, Attribute()]:
         """The file extension in lowercase."""
         raise NotImplementedError
 
     @abstract_property
-    def size(self) -> int | None:
+    def size(self) -> Annotated[int | None, Attribute()]:
         """The size of the file in bytes."""
         raise NotImplementedError
 
     @abstract_property
-    def created_at(self) -> datetime | None:
+    def created_at(self) -> Annotated[datetime | None, Attribute()]:
         """The date that the file was created."""
         raise NotImplementedError
 
     @abstract_property
-    def modified_at(self) -> datetime | None:
+    def modified_at(self) -> Annotated[datetime | None, Attribute()]:
         """The date that the file was last modified."""
         raise NotImplementedError
 
@@ -103,7 +106,7 @@ class IsLocalFileMetaclass(IsFileMetaclass):
 
 class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
     """Attributes and operations for a file on a local filesystem."""
-    path: Path = Field(
+    path: Annotated[Path, Attribute()] = Field(
         description="The path to the file on the local filesystem."
     )
 
@@ -151,27 +154,27 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
         return path.suffix.lstrip(".").casefold()
 
     @property
-    def folder(self) -> str:
+    def folder(self) -> Annotated[str, Attribute()]:
         return self.path.parent.name
 
     @property
-    def filename(self) -> str:
+    def filename(self) -> Annotated[str, Attribute()]:
         return self.path.stem
 
     @property
-    def ext(self) -> str:
+    def ext(self) -> Annotated[str, Attribute()]:
         return self.path.suffix.lower()
 
     @property
-    def size(self) -> int | None:
+    def size(self) -> Annotated[int | None, Attribute()]:
         return self.path.stat().st_size if self.path.is_file() else None
 
     @property
-    def created_at(self) -> datetime | None:
+    def created_at(self) -> Annotated[datetime | None, Attribute()]:
         return datetime.fromtimestamp(self.path.stat().st_ctime) if self.path.is_file() else None
 
     @property
-    def modified_at(self) -> datetime | None:
+    def modified_at(self) -> Annotated[datetime | None, Attribute()]:
         return datetime.fromtimestamp(self.path.stat().st_mtime) if self.path.is_file() else None
 
 

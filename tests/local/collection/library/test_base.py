@@ -2,7 +2,6 @@ import os
 from collections.abc import Generator
 from pathlib import Path
 from random import choice, sample
-from typing import Any
 from unittest import mock
 from unittest.mock import patch
 
@@ -18,10 +17,10 @@ from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
 from musify.processors_new.filters import ValuesFilter
-from tests.models.testers import BaseResourceTester
+from tests.models.testers import NoUniqueKeyTester
 
 
-class TestLocalLibrary(BaseResourceTester):
+class TestLocalLibrary(NoUniqueKeyTester):
     @pytest.fixture
     def library_folders(self, faker: Faker, tmp_path: Path) -> list[Path]:
         """The folders which contain library tracks and playlists."""

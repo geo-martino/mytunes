@@ -2,10 +2,10 @@ import pytest
 from faker import Faker
 
 from musify.spotify.properties.music import HasSpotifyKeySignature
-from tests.models.testers import BaseResourceTester
+from tests.models.testers import NoUniqueKeyTester
 
 
-class TestHasSpotifyKeySignature(BaseResourceTester):
+class TestHasSpotifyKeySignature(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> HasSpotifyKeySignature:
         return HasSpotifyKeySignature(

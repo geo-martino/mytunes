@@ -4,10 +4,12 @@ import re
 from datetime import timedelta
 from functools import reduce, total_ordering
 from operator import mul
+from typing import Annotated
 
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
 
-from musify.models._base import AttributeResource
+from musify.models import AttributeModel
+from musify.models._metadata import Attribute
 from musify.models.properties._core import NumberModel
 
 
@@ -55,9 +57,9 @@ class Length(NumberModel[NonNegativeInt | NonNegativeFloat]):
         return length
 
 
-class HasLength(AttributeResource):
+class HasLength(AttributeModel):
     """Represents a resource that has a length."""
-    length: Length | None = Field(
+    length: Annotated[Length | None, Attribute()] = Field(
         description="The length of this resource.",
         default=None,
     )

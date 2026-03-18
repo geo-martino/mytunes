@@ -7,9 +7,10 @@ from pydantic import Field, field_validator, BeforeValidator, field_serializer, 
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
-from musify.models import BaseResource, abstract_property
+from musify.models import ResourceModel, abstract_property
 from musify.models.properties.file import IsLocalFile, PathMapper, PathInputType
-from musify.processors_new._base import Processor, Result
+from musify.models.result import Result
+from musify.processors_new._base import Processor
 from musify.processors_new.compare import Comparer
 
 
@@ -182,7 +183,7 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
         ))
 
 
-class ComparerFilter[CT: str | BaseResource](Filter[CT]):
+class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     comparers: Mapping[Comparer, tuple[bool, Self]] = Field(
         description=(

@@ -10,7 +10,7 @@ from faker import Faker
 from musify.exception import MusifyTypeError
 # noinspection PyProtectedMember
 from musify.models.properties.file import IsLocalFile, PathMapper, PathStemMapper
-from tests.models.testers import BaseResourceTester, BaseModelTester
+from tests.models.testers import BaseModelTester
 
 
 def _generate_file_paths(
@@ -32,7 +32,7 @@ def _generate_directory_paths(
     return (path.parent for path in _generate_file_paths(faker, system=system, count=count))
 
 
-class TestIsLocalFile(BaseResourceTester):
+class TestIsLocalFile(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> IsLocalFile:
         return IsLocalFile(path=Path(faker.file_path()))

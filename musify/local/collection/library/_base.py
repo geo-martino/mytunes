@@ -1,37 +1,34 @@
 import itertools
 import textwrap
-from collections.abc import Generator, Iterable, Mapping, Sequence, Collection
+from collections.abc import Generator, Iterable, Collection
 from pathlib import Path
-from typing import Annotated, ClassVar, Any, final
+from typing import Annotated, ClassVar, final
 
-from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, validate_call
-from tabulate import tabulate
+from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter
 from termcolor import colored
 
 from musify._types import to_set
-from musify.exception import MusifyError, MusifyValueError, MusifyTypeError
+from musify.exception import MusifyError, MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.collection.album import LocalAlbumCollection
 from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item import LocalAlbum
-from musify.local.item.track import LocalTrack, TagDumpContext, HasLocalTracks
+from musify.local.item.track import LocalTrack, HasLocalTracks
 from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
-from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
-from musify.processors_new import Result
+from musify.models.result import Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
 
 
 @final
 class LocalLibrary(
-    HasLocalTracks[URI.annotation, LocalTrack],
-    MutableLibrary[URI.annotation, LocalTrack, URI.annotation | Path, LocalPlaylist],
+    HasLocalTracks[URI, LocalTrack],
+    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist],
     LocalCollection[LocalTrack],
 ):
     """

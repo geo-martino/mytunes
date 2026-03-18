@@ -6,9 +6,10 @@ import mutagen.wave
 import pytest
 from faker import Faker
 
+from musify.models._metaclass import makecls
 from musify.models.properties.audio import IsAudioFile, Decibels
 from musify.models.properties.file import IsLocalFile
-from tests.models.testers import BaseResourceTester, BaseModelTester
+from tests.models.testers import BaseModelTester
 
 
 class TestDecibels(BaseModelTester):
@@ -20,11 +21,11 @@ class TestDecibels(BaseModelTester):
         assert re.match(r"-\d{1,2}\.\d{0,3}", str(model))
 
 
-class LocalAudioFile(IsLocalFile, IsAudioFile):
+class LocalAudioFile(IsLocalFile, IsAudioFile, metaclass=makecls()):
     pass
 
 
-class TestIsAudioFile(BaseResourceTester):
+class TestIsAudioFile(BaseModelTester):
 
     @pytest.fixture
     def model(self, faker: Faker, tmp_path: Path) -> IsAudioFile:

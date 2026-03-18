@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 
 from musify.models.item.album import Album, HasAlbums, RemoteAlbum
-from tests.models.testers import BaseResourceTester, UniqueKeyTester
+from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
@@ -15,7 +15,7 @@ class TestAlbum(UniqueKeyTester):
         return Album(name=faker.word(), uri=uri)
 
 
-class TestHasAlbums(BaseResourceTester):
+class TestHasAlbums(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, albums: list[Album]) -> HasAlbums:
         return HasAlbums(albums=albums)

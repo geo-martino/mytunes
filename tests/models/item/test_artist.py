@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 
 from musify.models.item.artist import Artist, HasArtists, RemoteArtist
-from tests.models.testers import BaseResourceTester, UniqueKeyTester
+from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
@@ -15,7 +15,7 @@ class TestArtist(UniqueKeyTester):
         return Artist(name=faker.word(), uri=uri)
 
 
-class TestHasArtists(BaseResourceTester):
+class TestHasArtists(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, artists: list[Artist]) -> HasArtists:
         return HasArtists(artists=artists)
