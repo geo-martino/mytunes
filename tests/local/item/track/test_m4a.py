@@ -162,6 +162,10 @@ class TestM4A(LocalTrackTester):
             "cpil": True,
         }
 
+        expected_images = {kind: M4A.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        for image in expected_images.values():
+            image.path = model.path
+
         model = M4A(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
@@ -175,7 +179,7 @@ class TestM4A(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-        assert model.images == {kind: M4A.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        assert model.images == expected_images
 
     def test_to_tags(self, model: M4A, uri: URI, pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
         model.name = "Sleepwalk My Life Away"

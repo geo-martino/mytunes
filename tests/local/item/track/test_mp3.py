@@ -183,6 +183,10 @@ class TestMP3(LocalTrackTester):
             choice(("COMM", "COMMENT")) + ":URI:eng": mutagen.id3.COMM(text="spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"),
         } | {f"APIC:{kind}": pic for kind, pic in pictures.items()}
 
+        expected_images = {kind: MP3.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        for image in expected_images.values():
+            image.path = model.path
+
         model = MP3(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
@@ -196,7 +200,7 @@ class TestMP3(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
-        assert model.images == {kind: MP3.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        assert model.images == expected_images
 
     def test_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         model.name = "Sleepwalk My Life Away"

@@ -190,6 +190,10 @@ class TestWMA(LocalTrackTester):
             "COMPILATION": [ASFUnicodeAttribute("0")],
         }
 
+        expected_images = {kind: WMA.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        for image in expected_images.values():
+            image.path = model.path
+
         model = WMA(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
@@ -203,7 +207,7 @@ class TestWMA(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-        assert model.images == {kind: WMA.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        assert model.images == expected_images
 
     def test_to_tags(self, model: WMA, uri: URI, pictures: dict[str, mutagen.asf.ASFByteArrayAttribute], faker: Faker):
         model.name = "Sleepwalk My Life Away"

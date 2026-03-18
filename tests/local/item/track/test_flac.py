@@ -266,6 +266,10 @@ class TestFLAC(LocalTrackTester):
             "images": list(pictures.values()),
         }
 
+        expected_images = {kind: FLAC.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        for image in expected_images.values():
+            image.path = model.path
+
         model = FLAC(**tags, path=model.path)
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
@@ -279,7 +283,7 @@ class TestFLAC(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
-        assert model.images == {kind: FLAC.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
+        assert model.images == expected_images
 
     def test_to_tags(self, model: FLAC, uri: URI, pictures: dict[str, mutagen.flac.Picture], faker: Faker):
         model.name = "Sleepwalk My Life Away"
