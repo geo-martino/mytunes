@@ -13,7 +13,7 @@ from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track import TagDumpContext
+from musify.local.item.track import TagContext
 from musify.local.item.track.flac import FLAC
 from musify.models.properties.date import SparseDate
 from musify.models.properties.music import KeySignature
@@ -122,7 +122,7 @@ class TestFLAC(LocalTrackTester):
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
             "album": ["72 Seasons"],
-            "album artist": ["Metallica"],
+            "albumartist": ["Metallica"],
         }
         result = FLAC._merge_position_values(tags, lambda x: x)
 
@@ -135,7 +135,7 @@ class TestFLAC(LocalTrackTester):
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
             "album": ["72 Seasons"],
-            "album artist": ["Metallica"],
+            "albumartist": ["Metallica"],
             "track": 3,
             "tracknumber": 5,
             "tracktotal": 10,
@@ -153,7 +153,7 @@ class TestFLAC(LocalTrackTester):
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
             "album": ["72 Seasons"],
-            "album artist": ["Metallica"],
+            "albumartist": ["Metallica"],
             "track": ["3/5"],
             "tracktotal": ["10/20"],
             "discnumber": 2,
@@ -217,7 +217,7 @@ class TestFLAC(LocalTrackTester):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
         info = Namespace(
-            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+            field_name="comments", by_alias=True, context=TagContext(map_uri_to_tag="comments"), mode="python"
         )
         # noinspection PyTypeChecker
         assert model._serialize_strings(value, info=info) == expected
@@ -246,14 +246,14 @@ class TestFLAC(LocalTrackTester):
         assert model._serialize_position_tags(position, info=info) == expected
 
     def test_from_tags(
-            self, model: FLAC, image_bytes: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker
+            self, model: FLAC, uri: URI, image_bytes: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker
     ):
         sep = choice(FLAC._tag_sep)
         tags = {
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
             "album": ["72 Seasons"],
-            "album artist": ["Metallica"],
+            "albumartist": ["Metallica and friends"],
             "genre": ["Hard Rock", "Metal" + sep + "Rock", "Thrash Metal"],
             choice(("tracknumber", "tracktotal")): ["04"],
             "discnumber": ["1"],
@@ -261,8 +261,8 @@ class TestFLAC(LocalTrackTester):
             "bpm": ["124.931"],
             "key": ["B"],
             choice(("date", "year")): ["2023-04-14"],
-            choice(("comment", "description")): ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
-            "compilation": ["0"],
+            choice(("comment", "description")): [str(uri)],
+            "compilation": ["1"],
             "images": list(pictures.values()),
         }
 
@@ -270,10 +270,13 @@ class TestFLAC(LocalTrackTester):
         for image in expected_images.values():
             image.path = model.path
 
-        model = FLAC(**tags, path=model.path)
+        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        model = FLAC.model_validate(dict(**tags, path=model.path), context=context)
+
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
+        assert model.album_artist.name == "Metallica and friends"
         assert [genre.name for genre in model.genres] == ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         assert model.track.number == 4
         assert model.track.total is None
@@ -282,13 +285,19 @@ class TestFLAC(LocalTrackTester):
         assert model.bpm == 124.931
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
-        assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
+        assert model.compilation is True
+        assert model.comments == [str(uri)]
         assert model.images == expected_images
+
+        assert model.source == uri.source
+        assert model.uris == [uri]
+        assert model.uri == uri
 
     def test_to_tags(self, model: FLAC, uri: URI, pictures: dict[str, mutagen.flac.Picture], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
+        model.album_artist = "Metallica and friends"
         model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         model.track = 4
         model.track.zero_fill = 2
@@ -296,6 +305,7 @@ class TestFLAC(LocalTrackTester):
         model.bpm = 124.931
         model.key = "B"
         model.released_at = "2023-04-14"
+        model.compilation = True
         model.comments = [faker.sentence()]
         model.uri = uri
         model.images = pictures
@@ -304,6 +314,7 @@ class TestFLAC(LocalTrackTester):
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
             "album": ["72 Seasons"],
+            "albumartist": ["Metallica and friends"],
             "genre": ["Hard Rock", "Metal", "Rock", "Thrash Metal"],
             "tracknumber": ["04"],
             "discnumber": ["1"],
@@ -311,11 +322,12 @@ class TestFLAC(LocalTrackTester):
             "bpm": ["124.931"],
             "initialkey": ["B"],
             "date": ["2023-04-14"],
+            "compilation": ["1"],
             "comment": [*model.comments, str(uri)],
         }
 
         loaded_images = {kind: Image.open(BytesIO(pic.data)) for kind, pic in pictures.items()}
-        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        context = TagContext(map_uri_to_tag="comments", loaded_images=loaded_images)
         result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if k != "images"} == expected

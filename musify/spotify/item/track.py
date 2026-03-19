@@ -33,7 +33,7 @@ class SpotifyTrack(
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasSpotifyRating,
-    RemoteTrack[SpotifyArtist, SpotifyAlbum, SpotifyGenre, SpotifyResourceURI],
+    RemoteTrack[SpotifyResourceURI, SpotifyArtist, SpotifyAlbum, SpotifyGenre],
 ):
     __final__ = True
 

@@ -17,11 +17,11 @@ from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI
 from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.collection.utils import assert_sync_items_result
-from tests.models.testers import BaseModelTester, UniqueKeyTester
+from tests.models.testers import BaseModelTester, UniqueKeyTester, NoUniqueKeyTester
 from tests.utils import split_list, SimpleURI
 
 
-class TestPlaylist(UniqueKeyTester):
+class TestPlaylist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Playlist:
         uri = SimpleURI.from_id(
@@ -30,7 +30,7 @@ class TestPlaylist(UniqueKeyTester):
         return Playlist(name=faker.sentence(), uri=uri)
 
 
-class TestMutablePlaylist(UniqueKeyTester):
+class TestMutablePlaylist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> MutablePlaylist:
         uri = SimpleURI.from_id(

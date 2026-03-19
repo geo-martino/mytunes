@@ -12,10 +12,12 @@ from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
 from musify.local.item.artist import LocalArtist
-from musify.local.item.track import TagDumpContext
+from musify.local.item.track import TagContext
 from musify.local.item.track.mp3 import MP3
 from musify.models.properties.uri import URI
+from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
+from tests.utils import SimpleURI
 
 
 @pytest.fixture
@@ -60,7 +62,7 @@ class TestMP3(LocalTrackTester):
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
         return MP3(name=faker.sentence(), uri=uri, path=path)
     
-    def test_merge_suffixed_tags(self, faker: Faker):
+    def test_merge_suffixed_tags(self, uri: URI, faker: Faker):
         data: dict[str, str | bytes | list] = {
             "TIT2": "Track title",
             "TPE1": "Artist name",
@@ -68,7 +70,7 @@ class TestMP3(LocalTrackTester):
             "APIC:Cover Front": faker.image(),
             "APIC:Cover Back": faker.image(),
             "COMM": faker.sentence(),
-            "COMM:URI:eng": f"spotify:track:{faker.pystr(19, 19)}",
+            "COMM:URI:eng": str(uri),
             "COMM:ID3V1 COMMENT:eng": faker.sentence(),
         }
 
@@ -79,14 +81,14 @@ class TestMP3(LocalTrackTester):
         # noinspection PyCallingNonCallable
         assert MP3._merge_suffixed_tags(data, lambda x: x) == expected
 
-    def test_format_to_tags(self, model: MP3, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
+    def test_format_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         tags = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
             "TPE1": mutagen.id3.TPE1(text="Metallica"),
             "TALB": mutagen.id3.TALB(text="72 Seasons"),
             "COMM": [
                 mutagen.id3.COMM(text=faker.sentence(), desc="Description"),
-                mutagen.id3.COMM(text="spotify:track:1WjgFpSxwA0Bqyr7hWc3f1", desc="URI", lang="eng"),
+                mutagen.id3.COMM(text=str(uri), desc="URI", lang="eng"),
             ],
             "APIC": list(pictures.values()),
         }
@@ -158,7 +160,7 @@ class TestMP3(LocalTrackTester):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
         info = Namespace(
-            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+            field_name="comments", by_alias=True, context=TagContext(map_uri_to_tag="comments"), mode="python"
         )
 
         # noinspection PyTypeChecker
@@ -166,31 +168,37 @@ class TestMP3(LocalTrackTester):
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
-    def test_from_tags(self, model: MP3, image_bytes: list[bytes], pictures: dict[str, mutagen.id3.APIC], faker: Faker):
+    def test_from_tags(
+            self, model: MP3, uri: URI, image_bytes: list[bytes], pictures: dict[str, mutagen.id3.APIC], faker: Faker
+    ):
         sep = choice(MP3._tag_sep)
         tags = {
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
             "TPE1": mutagen.id3.TPE1(text="Metallica"),
             "TALB": mutagen.id3.TALB(text="72 Seasons"),
-            "TPE2": mutagen.id3.TPE2(text="Metallica"),
+            "TPE2": mutagen.id3.TPE2(text="Metallica and friends"),
             "TCON": mutagen.id3.TCON(text=sep.join(("Hard Rock", "Metal", "Rock", "Thrash Metal"))),
             "TRCK": mutagen.id3.TRCK(text="04"),
             "TPOS": mutagen.id3.TPOS(text="1/2"),
             "TBPM": mutagen.id3.TBPM(text="124.931"),
             "TKEY": mutagen.id3.TKEY(text="B"),
+            "TCMP": mutagen.id3.TCMP(text="1"),
             choice(("TDRC", "TDAT", "TDOR", "TYER", "TORY")): mutagen.id3.TDRC(text="2023-04-14"),
             choice(("COMM", "COMMENT")) + ":ID3V1 COMMENT:eng": mutagen.id3.COMM(text=faker.sentence()),
-            choice(("COMM", "COMMENT")) + ":URI:eng": mutagen.id3.COMM(text="spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"),
+            choice(("COMM", "COMMENT")) + ":URI:eng": mutagen.id3.COMM(text=str(uri)),
         } | {f"APIC:{kind}": pic for kind, pic in pictures.items()}
 
         expected_images = {kind: MP3.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
         for image in expected_images.values():
             image.path = model.path
 
-        model = MP3(**tags, path=model.path)
+        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        model = MP3.model_validate(dict(**tags, path=model.path), context=context)
+
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
+        assert model.album_artist.name == "Metallica and friends"
         assert [genre.name for genre in model.genres] == ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         assert model.track.number == 4
         assert model.track.total is None
@@ -199,19 +207,26 @@ class TestMP3(LocalTrackTester):
         assert model.bpm == 124.931
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
+        assert model.compilation is True
         assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
         assert model.images == expected_images
+
+        assert model.source == uri.source
+        assert model.uris == [uri]
+        assert model.uri == uri
 
     def test_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
+        model.album_artist = "Metallica and friends"
         model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         model.track = 4
         model.disc = (1, 2)
         model.bpm = 124.931
         model.key = "B"
         model.released_at = "2023-04-14"
+        model.compilation = True
         model.comments = [faker.sentence()]
         model.uri = uri
         model.images = pictures
@@ -220,18 +235,20 @@ class TestMP3(LocalTrackTester):
             "TIT2": mutagen.id3.TIT2(text="Sleepwalk My Life Away"),
             "TPE1": mutagen.id3.TPE1(text="Metallica"),
             "TALB": mutagen.id3.TALB(text="72 Seasons"),
+            "TPE2": mutagen.id3.TPE2(text="Metallica and friends"),
             "TCON": mutagen.id3.TCON(text=model._join_tags(("Hard Rock", "Metal", "Rock", "Thrash Metal"))),
             "TRCK": mutagen.id3.TRCK(text="4"),
             "TPOS": mutagen.id3.TPOS(text="1/2"),
             "TBPM": mutagen.id3.TBPM(text="124.931"),
             "TKEY": mutagen.id3.TKEY(text="B"),
             "TDAT": mutagen.id3.TDAT(text="2023-04-14"),
-            "COMM:1:eng": mutagen.id3.COMM(text=model.comments[0]),
-            f"COMM:{uri.source}URI:eng": mutagen.id3.COMM(text=str(uri), desc=f"{uri.source}URI"),
+            "TCMP": mutagen.id3.TCMP(text="1"),
+            "COMM:1:eng": mutagen.id3.COMM(text=model.comments[0], lang="eng"),
+            f"COMM:{uri.source}URI:eng": mutagen.id3.COMM(text=str(uri), lang="eng", desc=f"{uri.source}URI"),
         }
 
         loaded_images = {kind: Image.open(BytesIO(pic.data)) for kind, pic in pictures.items()}
-        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        context = TagContext(map_uri_to_tag="comments", loaded_images=loaded_images)
         result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if not k.startswith("APIC")} == expected

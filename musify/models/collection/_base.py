@@ -33,7 +33,7 @@ class CollectionModel[IT: ResourceModel](BaseModel):
 
 
 # noinspection PyAbstractClass
-class RemoteCollection[IT: RemoteResource, UT: URI, CT: PageCursor](
+class RemoteCollection[UT: URI, IT: RemoteResource, CT: PageCursor](
     CollectionModel[IT], RemoteResource[UT], HasPageCursor[CT]
 ):
     @property

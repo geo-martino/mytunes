@@ -1,3 +1,4 @@
+import contextlib
 import itertools
 from abc import abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
@@ -12,10 +13,10 @@ import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from mutagen import FileType
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
-    InstanceOf, field_serializer, BeforeValidator, TypeAdapter
+    InstanceOf, field_serializer, BeforeValidator, TypeAdapter, ValidationError
 # noinspection PyProtectedMember
-from pydantic.fields import Field, FieldInfo
-from pydantic_core.core_schema import FieldSerializationInfo
+from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
+from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo
 
 from musify._types import StrippedString
 from musify.exception import MusifyTypeError
@@ -39,14 +40,21 @@ from musify.models.properties.order import Position
 from musify.models.properties.uri import HasMutableURI, URI
 
 
-class TagDumpContext[T](BaseModel):
-    map_uri_to_tag: Literal["comments"] = Field(
-        description="The tag to use for storing the URIs of the track.",
-        default="comments"
+class TagContext(BaseModel):
+    remote_source: StrippedString | None = Field(
+        description="The remote source for determining which URI to use when processing track URIs.",
+        default=None,
+        validation_alias="source",
+    )
+    map_uri_to_field: Literal["comments"] = Field(
+        description="The field to use for storing the URIs of the track.",
+        default="comments",
+        validation_alias=AliasChoices("field", "tag"),
     )
     loaded_images: Mapping[str, InstanceOf[PILImageFile.ImageFile]] = Field(
         description="The image properties and their loaded images.",
-        default_factory=dict
+        default_factory=dict,
+        validation_alias="images",
     )
 
 
@@ -59,14 +67,15 @@ class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
         return data
 
 
+# noinspection PyAbstractClass
 class LocalTrack[FT: FileType](
     LocalModel,
     LocalAudioFile,
-    HasMutableURI[URI],
+    HasMutableURI,
     HasAddedDate,
     HasPlayedDate,
-    Track[LocalArtist, LocalAlbum, LocalGenre, URI],
-    metaclass=makecls()
+    Track[LocalArtist, LocalAlbum, LocalGenre],
+    metaclass=makecls(),
 ):
     # override to apply file tag metadata and alias
     name: Annotated[StrippedString, TagAttribute()] = Field(
@@ -78,6 +87,22 @@ class LocalTrack[FT: FileType](
         description="The album this track is featured on.",
         default=None,
     )
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _set_computed_fields(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model: Self = handler(data)
+
+        for field_name in cls.model_computed_fields:
+            if field_name not in cls.__tag_attributes__ or not hasattr(getattr(cls, field_name), "fset"):
+                continue
+            if (value := cls._get_value_from_data(data, field_name)) is None:
+                continue
+            if value == getattr(model, field_name):
+                continue
+            setattr(model, field_name, value)
+
+        return model
 
     # noinspection PyAbstractClass
     class EmbeddedImage[TT](FileEmbeddedImage):
@@ -164,6 +189,16 @@ class LocalTrack[FT: FileType](
             """Builds the image tag object for serialization."""
             raise NotImplementedError
 
+    @Track.album_artist.setter
+    def album_artist(self, value: Any) -> None:
+        value = self._extract_first_value_from_single_sequence(value)
+        super(Track, type(self)).album_artist.fset(self, value)
+
+    @Track.compilation.setter
+    def compilation(self, value: Any) -> None:
+        value = self._extract_first_value_from_single_sequence(value)
+        super(Track, type(self)).compilation.fset(self, value)
+
     ###########################################################################
     ## Utility Methods
     ###########################################################################
@@ -187,15 +222,15 @@ class LocalTrack[FT: FileType](
 
     @classmethod
     def _get_tag_id(cls, name: str) -> str | None:
-        field: FieldInfo = cls.model_fields[name]
+        field: FieldInfo | ComputedFieldInfo = cls.model_fields.get(name, cls.model_computed_fields.get(name))
         tag_id = None
-        if isinstance(field.serialization_alias, str):
+        if isinstance(field, FieldInfo) and isinstance(field.serialization_alias, str):
             tag_id = field.serialization_alias
         elif isinstance(field.alias, str):
             tag_id = field.alias
-        elif isinstance(field.validation_alias, str):
+        elif isinstance(field, FieldInfo) and isinstance(field.validation_alias, str):
             tag_id = field.validation_alias
-        elif isinstance(field.validation_alias, AliasChoices):
+        elif isinstance(field, FieldInfo) and isinstance(field.validation_alias, AliasChoices):
             tag_id = next(iter(field.validation_alias.choices))
 
         return tag_id
@@ -306,12 +341,39 @@ class LocalTrack[FT: FileType](
     @staticmethod
     def _convert_values_to_list(data: MutableMapping[str, Any]) -> None:
         for key, val in data.items():
+            if isinstance(val, bool):  # never convert bools to list of bools
+                continue
             if not isinstance(val, (tuple, list)):
                 data[key] = [val]
 
+    @model_validator(mode="after")
+    def _assign_uris_from_context(self, info: ValidationInfo) -> Self:
+        if not isinstance(context := info.context, TagContext):
+            return self
+        if not (values := getattr(self, context.map_uri_to_field, [])):
+            return self
+
+        if context.remote_source and context.remote_source != self.source:
+            self.source = context.remote_source
+
+        # TODO: we import all available URIs here to ensure they show up in the annotation
+        #  This isn't great...
+        from musify.spotify.properties.uri import SpotifyResourceURI
+
+        adapter = TypeAdapter(URI.annotation)
+        uris = []
+        for value in values:
+            with contextlib.suppress(ValidationError):
+                uri = adapter.validate_python(value)
+                uris.append(uri)
+
+        if values != self.uris:
+            self.uris = uris
+        return self
+
     def _extend_with_uris(self, values: MutableSequence[Any], info: FieldSerializationInfo) -> None:
         context = info.context
-        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+        if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
             values.extend(self.uris)
 
     # noinspection PyNestedDecorators
@@ -349,7 +411,7 @@ class LocalTrack[FT: FileType](
             return images
 
         context = info.context
-        if not isinstance(context, TagDumpContext) or not context.loaded_images:
+        if not isinstance(context, TagContext) or not context.loaded_images:
             return []
         if missing_images := set(context.loaded_images) - set(self.images or ()):
             # noinspection PyUnboundLocalVariable
@@ -429,7 +491,7 @@ class LocalTrack[FT: FileType](
             file: FT,
             include: Collection[str] = (),
             exclude: Collection[str] = (),
-            context: TagDumpContext = None,
+            context: TagContext = None,
             replace: bool = False,
     ) -> dict[str, Any]:
         """
@@ -453,7 +515,7 @@ class LocalTrack[FT: FileType](
             self,
             include: Collection[str] = (),
             exclude: Collection[str] = (),
-            context: TagDumpContext[FT] = None
+            context: TagContext[FT] = None
     ) -> dict[str, Any]:
         include = self._validate_tag_fields(include or self.__tag_fields__)
         exclude = self._validate_tag_fields(exclude)
@@ -513,7 +575,7 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
             self,
             include: Sequence[str] = (),
             exclude: Sequence[str] = (),
-            context: TagDumpContext | None = None,
+            context: TagContext | None = None,
             replace: bool = False,
             dry_run: bool = True
     ) -> dict[Path, dict[str, Any]]:

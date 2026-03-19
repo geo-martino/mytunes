@@ -15,7 +15,7 @@ from musify.exception import MusifyValueError
 from musify.models import BaseModel, abstract_property
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI
 
 
 class Processor(BaseModel):
@@ -43,7 +43,9 @@ class Processor(BaseModel):
     @staticmethod
     def _get_item_log_value(item: Any) -> str:
         match item:
-            case HasURI() if item.uri is not None:
+            case HasImmutableURI() if item.uri is not None:
+                return str(item.uri)
+            case HasMutableURI() if item.has_uri:
                 return str(item.uri)
             case HasName():
                 return str(item.name)

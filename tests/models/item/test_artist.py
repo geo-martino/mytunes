@@ -6,7 +6,7 @@ from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
-class TestArtist(UniqueKeyTester):
+class TestArtist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Artist:
         uri = SimpleURI.from_id(

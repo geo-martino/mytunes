@@ -14,11 +14,11 @@ from pydantic import TypeAdapter
 
 from musify.local.exception import TagError
 from musify.local.item.artist import LocalArtist
-from musify.local.item.track import LocalTrack, TagDumpContext, HasLocalTracks
+from musify.local.item.track import LocalTrack, TagContext, HasLocalTracks
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength
-from musify.models.properties.uri import HasMutableURI
+from musify.models.properties.uri import HasMutableURI, URI
 from tests.models.testers import UniqueKeyTester
 from tests.utils import assert_validator_skips, SimpleURI, split_list
 
@@ -32,21 +32,27 @@ class TestLocalTrack(UniqueKeyTester):
         return LocalTrack(**tags, uri=uri, path=faker.file_path())
 
     @pytest.fixture
-    def tags(self, image_files: list[ImageFile]) -> dict[str, Any]:
+    def uri(self, faker: Faker) -> SimpleURI:
+        return SimpleURI.from_id(
+            faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type
+        )
+
+    @pytest.fixture
+    def tags(self, uri: URI, image_files: list[ImageFile]) -> dict[str, Any]:
         sep = choice(LocalTrack._tag_sep)
         return {
             "name": ["Sleepwalk My Life Away"],
             "artists": ["Metallica"],
             "album": ["72 Seasons"],
-            "album_artist": ["Metallica"],
+            "album_artist": ["Metallica and friends"],
             "genres": ["Hard Rock", "Metal" + sep + "Rock", "Thrash Metal"],
             "track": ["04"],
             "disc": ["1/2"],
             "bpm": ["124.931"],
             "key": ["B"],
             "released_at": ["2023-04-14"],
-            "comments": ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
-            "compilation": ["0"],
+            "comments": [str(uri)],
+            "compilation": ["1"],
             "images": image_files,
         }
 
@@ -77,8 +83,8 @@ class TestLocalTrack(UniqueKeyTester):
         return faker.random_elements(list(set(tags) & set(LocalTrack.__tag_fields__)))
 
     @pytest.fixture
-    def context(self) -> TagDumpContext:
-        return TagDumpContext()
+    def context(self) -> TagContext:
+        return TagContext()
 
     ###########################################################################
     ## Utility Methods
@@ -185,7 +191,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert_validator_skips(LocalTrack._map_images, faker.pystr())
         assert_validator_skips(LocalTrack._map_images, faker.pyint())
 
-    def test_serialize_images_skips(self, model: LocalTrack, context: TagDumpContext):
+    def test_serialize_images_skips(self, model: LocalTrack, context: TagContext):
         # skips when not serializing by alias
         info = Namespace(by_alias=False, context=None, mode="python")
         # noinspection PyTypeChecker
@@ -198,11 +204,14 @@ class TestLocalTrack(UniqueKeyTester):
         results = model._serialize_images(model.images, info=info)
         assert not results
 
-    def test_from_tags(self, image_files: list[ImageFile], tags: dict[str, Any], faker: Faker):
-        model = LocalTrack(**tags, path=faker.file_path())
+    def test_from_tags(self, uri: URI, image_files: list[ImageFile], tags: dict[str, Any], faker: Faker):
+        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        model = LocalTrack.model_validate(dict(**tags, path=faker.file_path()), context=context)
+
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
+        assert model.album_artist.name == "Metallica and friends"
         assert [genre.name for genre in model.genres] == ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         assert model.track.number == 4
         assert model.track.total is None
@@ -211,7 +220,12 @@ class TestLocalTrack(UniqueKeyTester):
         assert model.bpm == 124.931
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
+        assert model.compilation is True
         assert model.comments == tags["comments"]
+
+        assert model.source == uri.source
+        assert model.uris == [uri]
+        assert model.uri == uri
 
         # only sets the first image of each image type
         expected = {}
@@ -315,7 +329,7 @@ class TestLocalTrack(UniqueKeyTester):
             file: mutagen.FileType,
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
-            context: TagDumpContext,
+            context: TagContext,
             tags: dict[str, Any],
             faker: Faker
     ):
@@ -423,7 +437,7 @@ class TestLocalTrack(UniqueKeyTester):
             tags: dict[str, Any],
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
-            context: TagDumpContext,
+            context: TagContext,
             replace_tags: bool,
             faker: Faker,
     ) -> Generator[tuple[Mock, list[dict[str, Any]]], None, None]:
@@ -452,7 +466,7 @@ class TestLocalTrack(UniqueKeyTester):
             tracks: list[LocalTrack],
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
-            context: TagDumpContext,
+            context: TagContext,
             replace_tags: bool,
             mock_load: Mock,
             mock_update: tuple[Mock, list[dict[str, Any]]],
@@ -474,7 +488,7 @@ class TestLocalTrack(UniqueKeyTester):
             tracks: list[LocalTrack],
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
-            context: TagDumpContext,
+            context: TagContext,
             replace_tags: bool,
             mock_load: Mock,
             mock_update: tuple[Mock, list[dict[str, Any]]],

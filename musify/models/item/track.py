@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from musify.models.api.track import HasTrackEndpoints, TrackReadItemEndpoints
 
 
-class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
+class Track[RT: Artist, AT: Album, GT: Genre](
     HasArtists[RT],
     HasAlbum[AT],
     HasGenres[GT],
@@ -35,7 +35,6 @@ class Track[RT: Artist, AT: Album, GT: Genre, UT: URI](
     HasRating,
     HasReleaseDate,
     HasImages,
-    HasURI[UT],
     HasLength,
     HasKeySignature,
     ResourceModel,
@@ -146,8 +145,8 @@ class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
         return self.tracks
 
 
-class RemoteTrack[RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre, UT: URI](
-        Track[RT, AT, GT, UT], RemoteResource[UT], metaclass=makecls()
+class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
+    Track[RT, AT, GT], RemoteResource[UT], metaclass=makecls()
 ):
     artists: Annotated[list[RT], Attribute()] = Field(
         description="The artists associated with this resource.",

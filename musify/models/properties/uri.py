@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Collection
-from typing import ClassVar, Self, Any, Annotated
+from typing import ClassVar, Self, Any, Annotated, Literal
 
-from pydantic import PrivateAttr, model_validator, field_validator, Field, BeforeValidator
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, AliasChoices
+from pydantic.root_model import RootModelRootType
+from pydantic_core import PydanticUndefined, ValidationError
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
@@ -12,7 +14,7 @@ from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
 from musify.models import abstract_property, ResourceModel
 from musify.models._attribute import AttributeModel
-from musify.models._base import RootModel
+from musify.models._base import RootModel, BaseModel
 from musify.models._metaclass import makecls
 from musify.models._metadata import UniqueAttribute, Attribute
 from musify.models.url import HttpURL
@@ -34,6 +36,13 @@ class URI(RootModel[str]):
         # ),
         default="unavailable",
     )
+
+    def __new__(cls, *args, **kwargs):
+        if cls is URI:
+            raise MusifyValueError(
+                "URI cannot be instantiated directly, must be subclassed with a specific source and type"
+            )
+        return super().__new__(cls)
 
     # noinspection PyNestedDecorators
     @model_validator(mode="after")
@@ -122,8 +131,8 @@ class URI(RootModel[str]):
         return super().__eq__(other)
 
 
-class HasURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls()):
-    uri: Annotated[UT | None, UniqueAttribute()] = Field(
+class HasImmutableURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls()):
+    uri: Annotated[URI | None, UniqueAttribute()] = Field(
         description="The URI for this resource on the remote repository",
         frozen=True,
         default=None,
@@ -140,14 +149,14 @@ class HasURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls()):
         return uri
 
     def __eq__(self, other: HasURI):
-        if not isinstance(other, HasURI) or (self.uri is None and other.uri is None):
+        if not isinstance(other, (HasImmutableURI, HasMutableURI)) or (self.uri is None and other.uri is None):
             return super().__eq__(other)
         if self is other:
             return True
         return self.uri is not None and other.uri is not None and self.uri == other.uri
 
 
-class HasMutableURI[UT: URI](HasURI[UT]):
+class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
     source: Annotated[str | None, Attribute()] = Field(
         description=(
             "The type of remote repository this resource is associated with. "
@@ -156,11 +165,19 @@ class HasMutableURI[UT: URI](HasURI[UT]):
         ),
         default=None,
     )
-    uris: Annotated[list[UT], BeforeValidator(to_list)] = Field(
+    uris: Annotated[list[URI], BeforeValidator(to_list)] = Field(
         description="A list of URIs that represent this resource.",
         default_factory=list,
-        validation_alias="uri",
     )
+
+    def __init__(self, **data):
+        # support passing a single URI for convenience
+        uri = data.pop("uri", None)
+        uris = data.pop("uris", [])
+        if uri is not None:
+            uris.append(uri)
+
+        super().__init__(uris=uris, **data)
 
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
@@ -172,7 +189,7 @@ class HasMutableURI[UT: URI](HasURI[UT]):
     # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @staticmethod
-    def _uris_must_be_from_unique_sources[T: Collection](uris: T) -> T:
+    def _validate_uris_from_unique_sources[T: Collection](uris: T) -> T:
         sources: set[str] = set()
         duplicates: set[str] = set()
 
@@ -188,60 +205,50 @@ class HasMutableURI[UT: URI](HasURI[UT]):
     # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @classmethod
-    def _uris_must_match_type[T: Collection](cls, uris: T) -> T:
+    def _validate_uris_match_type[T: Collection](cls, uris: T) -> T:
         for uri in uris:
-            cls._validate_uri_matches_type(uri)
+            if not uri.type == cls.type:
+                raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
         return uris
 
-    def __getattribute__(self, key: str):
-        if key != "uri":
-            return super().__getattribute__(key)
-        return self._get_uri()
-
-    def _get_uri(self) -> Self:
+    @computed_field(
+        description="The URI of the currently configured source.",
+    )
+    @property
+    def uri(self) -> Annotated[URI | None, UniqueAttribute()]:
         if self.source is None:
             return
         return next((uri for uri in self.uris if uri.source == self.source and uri.exists), None)
 
-    def __setattr__(self, key: str, value: Any):
-        if key != "uri":
-            return super().__setattr__(key, value)
-
-        self._set_uri(value)
-        if hasattr(self, "unique_keys"):
-            del self.unique_keys  # clear the cached property
-
-    def _set_uri(self, uri: UT):
-        if not isinstance(uri, URI):
+    @uri.setter
+    def uri(self, value: URI):
+        if not isinstance(value, URI):
             raise MusifyValueError("URI must be a URI instance")
 
         if self.source is None:
-            self.source = uri.source
-        elif uri.source != self.source:
-            raise MusifyValueError(f"Cannot set URI from {uri.source} to {self.source}")
+            self.source = value.source
+        elif value.source != self.source:
+            raise MusifyValueError(f"Cannot set URI from {value.source} to {self.source}")
 
         for idx, existing in enumerate(self.uris):  # replace matching source URI in-place at same position
-            if existing.source == uri.source:
+            if existing.source == value.source:
                 self.uris.remove(existing)
-                self.uris.insert(idx, uri)
+                self.uris.insert(idx, value)
                 return
 
-        self.uris.append(uri)
-
-    def __delattr__(self, key: str):
-        if key != "uri":
-            return super().__delattr__(key)
-
-        self._del_uri()
+        self.uris.append(value)
         if hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 
-    def _del_uri(self):
+    @uri.deleter
+    def uri(self):
         if self.has_uri is None:
             return
 
         idx = next(i for i, uri in enumerate(self.uris) if uri.source == self.source)
         del self.uris[idx]
+        if hasattr(self, "unique_keys"):
+            del self.unique_keys  # clear the cached property
 
     @property
     def has_uri(self) -> bool | None:
@@ -253,6 +260,11 @@ class HasMutableURI[UT: URI](HasURI[UT]):
         return next((uri.exists for uri in self.uris if uri.source == self.source), None)
 
     def __eq__(self, other: HasURI):
-        if isinstance(other, HasMutableURI) and not other.has_uri:
+        if not isinstance(other, (HasImmutableURI, HasMutableURI)) or (self.uri is None and other.uri is None):
             return False
-        return super().__eq__(other)
+        if self is other:
+            return True
+        return self.uri is not None and other.uri is not None and self.uri == other.uri
+
+
+type HasURI[UT] = HasImmutableURI[UT] | HasMutableURI

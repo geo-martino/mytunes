@@ -7,11 +7,11 @@ from musify.models.collection.artist import ArtistCollection, RemoteArtistCollec
 from musify.models.cursors import PageCursor
 from musify.models.item.album import Album
 from tests.models.collection.testers import RemoteCollectionTester
-from tests.models.testers import UniqueKeyTester
+from tests.models.testers import UniqueKeyTester, NoUniqueKeyTester
 from tests.utils import SimpleURI
 
 
-class TestArtistCollection(UniqueKeyTester):
+class TestArtistCollection(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, albums: list[Album], faker: Faker) -> ArtistCollection:
         uri = SimpleURI.from_id(

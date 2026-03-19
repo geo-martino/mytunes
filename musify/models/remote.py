@@ -6,7 +6,7 @@ from pydantic import Field
 from musify.models import BaseModel
 from musify.models._metaclass import makecls
 from musify.models._metadata import UniqueAttribute
-from musify.models.properties.uri import URI, HasURI
+from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 
 if TYPE_CHECKING:
     from musify.models.api import HasEndpoints
@@ -19,7 +19,7 @@ class RemoteModel(BaseModel):
 
 
 # noinspection PyAbstractClass
-class RemoteResource[UT: URI](HasURI[UT], RemoteModel, metaclass=makecls()):
+class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=makecls()):
     uri: Annotated[UT, UniqueAttribute()]
 
     def __hash__(self):

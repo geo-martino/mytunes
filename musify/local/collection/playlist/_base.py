@@ -23,7 +23,7 @@ from musify.processors_new.sort import ItemSorter
 class LocalPlaylistFile[TF: Filter](
     IsLocalFile,
     LocalCollection[LocalTrack],
-    MutablePlaylist[URI, LocalTrack[mutagen.FileType], URI],
+    MutablePlaylist[URI, LocalTrack[mutagen.FileType]],
     HasLocalTracks[URI, LocalTrack[mutagen.FileType]],
     metaclass=makecls()
 ):

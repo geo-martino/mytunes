@@ -11,7 +11,7 @@ from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
-from musify.models.properties.uri import URI, HasURI
+from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
@@ -40,7 +40,7 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
             model = base
 
         uri_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, URI))
-        model_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, HasURI))
+        model_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, HasImmutableURI))
         return cls[uri_t, model_t]
 
     @staticmethod

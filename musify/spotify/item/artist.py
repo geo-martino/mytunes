@@ -15,6 +15,6 @@ class SpotifyArtist(
     HasSpotifyImages,
     HasSpotifyRating,
     HasFollowers,
-    RemoteArtist[SpotifyGenre, SpotifyResourceURI],
+    RemoteArtist[SpotifyResourceURI, SpotifyGenre],
 ):
     __final__ = True

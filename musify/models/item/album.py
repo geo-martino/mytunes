@@ -2,6 +2,7 @@ from typing import ClassVar, TYPE_CHECKING, Self, Annotated
 
 from pydantic import Field, field_validator, computed_field
 
+from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._metaclass import makecls
 from musify.models._metadata import TagAttribute, Attribute
@@ -21,15 +22,15 @@ if TYPE_CHECKING:
     from musify.models.api.album import HasAlbumEndpoints, AlbumReadItemEndpoints
 
 
-class Album[RT: Artist, GT: Genre, UT: URI](
+class Album[RT: Artist, GT: Genre](
     HasArtists[RT],
     HasGenres[GT],
     HasName,
-    HasURI[UT],
     HasLength,
     HasRating,
     HasReleaseDate,
     HasImages,
+    ResourceModel,
     metaclass=makecls()
 ):
     type: ClassVar[str] = "album"
@@ -69,15 +70,17 @@ class HasAlbum[AT: Album](AttributeModel):
         description="The main artist on the album.",
     )
     @property
-    def album_artist(self) -> Annotated[str | None, TagAttribute()]:
+    def album_artist(self) -> Annotated[Artist | None, TagAttribute()]:
         """The main artist on the album."""
         if self.album is None or not self.album.artists:
             return None
-        return self.album.artists[0].name
+        return self.album.artists[0]
 
     @album_artist.setter
     def album_artist(self, value: Artist) -> None:
-        if self.album is None:
+        if self.album is None or value in self.album.artists:
+            return
+        if isinstance(value, str) and value in {artist.name for artist in self.album.artists}:
             return
 
         self.album.artists = [value, *(self.album.artists or ())]
@@ -91,7 +94,7 @@ class HasAlbum[AT: Album](AttributeModel):
         return self.album.compilation if self.album is not None else None
 
     @compilation.setter
-    def compilation(self, value: bool) -> None:
+    def compilation(self, value: bool | None) -> None:
         if self.album is None:
             return
         self.album.compilation = value
@@ -116,7 +119,7 @@ class HasAlbums[AT: Album](CollectionModel[AT], HasSeparableTags):
         return cls._separate_tags(value)
 
 
-class RemoteAlbum[RT: RemoteArtist, GT: RemoteGenre, UT: URI](Album[RT, GT, UT], RemoteResource[UT], metaclass=makecls()):
+class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasAlbumEndpoints[AlbumReadItemEndpoints]) -> Self:
         return await api.albums.get(self.uri)

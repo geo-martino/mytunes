@@ -1,11 +1,11 @@
-from collections.abc import MutableMapping, Iterable
+from collections.abc import MutableMapping, Iterable, Sequence
 from typing import Any, Self, final, Annotated
 
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    ModelWrapValidatorHandler, NonNegativeFloat
+    ModelWrapValidatorHandler, NonNegativeFloat, computed_field, ConfigDict
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.artist import LocalArtist
@@ -25,6 +25,11 @@ from musify.utils import get_base_types
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
     __supported_extensions__ = frozenset({"flac"})
     __final__ = True
+
+    model_config = ConfigDict(
+        # catches fields like albumartist etc.
+        alias_generator=lambda name: name.lower().replace("_", "")
+    )
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.Picture]):
         @classmethod
@@ -124,7 +129,8 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             aliases = (al for al in field.validation_alias.choices if isinstance(al, str))
             values = []
             if cls.model_config.get("validate_by_name") and data.get(name, None) is not None:
-                values.append(data.pop(name))
+                value = data.pop(name)
+                values.extend(value) if isinstance(value, Sequence) else values.append(value)
                 # assume first alias choice is an alias for the position number
                 # look for total number from 2nd alias choice onward
                 next(aliases)
@@ -149,18 +155,6 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         self._convert_values_to_list(data)
         return data
 
-    @field_serializer("album", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
-        if not info.by_alias and info.mode == "json":
-            return self._extract_name(value)
-        return self._extract_name(value)
-
-    @field_serializer("artists", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
-        if info.mode == "json":
-            return self._extract_names(value)
-        return self._join_split_tags(value)
-
     @field_serializer(
         "key", "bpm", "released_at",
         mode="plain", when_used="unless-none",
@@ -178,6 +172,24 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         values = self._extract_names(value)
         self._extend_with_uris(values, info=info)
         return list(map(str, values))
+
+    @field_serializer("compilation", mode="plain", when_used="unless-none")
+    def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
+        if not info.by_alias and info.mode != "json":
+            return value
+        return str(int(value))
+
+    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
+    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
+        if not info.by_alias and info.mode == "json":
+            return self._extract_name(value)
+        return self._extract_name(value)
+
+    @field_serializer("artists", mode="plain", when_used="unless-none")
+    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
+        if info.mode == "json":
+            return self._extract_names(value)
+        return self._join_split_tags(value)
 
     @field_serializer("track", "disc", mode="plain", when_used="unless-none")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:

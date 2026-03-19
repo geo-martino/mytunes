@@ -12,7 +12,7 @@ from faker import Faker
 from mutagen.mp4 import MP4FreeForm, MP4Cover
 
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track import TagDumpContext
+from musify.local.item.track import TagContext
 from musify.local.item.track.m4a import M4A
 from musify.models.properties.date import SparseDate
 from musify.models.properties.music import KeySignature
@@ -110,7 +110,7 @@ class TestM4A(LocalTrackTester):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
         info = Namespace(
-            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+            field_name="comments", by_alias=True, context=TagContext(map_uri_to_tag="comments"), mode="python"
         )
 
         # noinspection PyTypeChecker
@@ -139,14 +139,14 @@ class TestM4A(LocalTrackTester):
         assert model._serialize_position_tags(position, info) == [position.numbers]
 
     def test_from_tags(
-            self, model: M4A, image_bytes: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker
+            self, model: M4A, uri: URI, image_bytes: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker
     ):
         sep = choice(M4A._tag_sep)
         tags = {
             "©nam": ["Sleepwalk My Life Away"],
             "©ART": ["Metallica"],
             "©alb": ["72 Seasons"],
-            "aART": ["Metallica"],
+            "aART": ["Metallica and friends"],
             choice(("----:com.apple.iTunes:GENRE", "©gen", "gnre")): [
                 MP4FreeForm(b"Hard Rock"),
                 MP4FreeForm(f"Metal{sep}Rock".encode()),
@@ -157,7 +157,7 @@ class TestM4A(LocalTrackTester):
             "tmpo": [124],
             "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
             "©day": ["2023-04-14"],
-            "©cmt": ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"],
+            "©cmt": [str(uri)],
             "covr": list(map(MP4Cover, image_bytes)),
             "cpil": True,
         }
@@ -166,10 +166,13 @@ class TestM4A(LocalTrackTester):
         for image in expected_images.values():
             image.path = model.path
 
-        model = M4A(**tags, path=model.path)
+        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        model = M4A.model_validate(dict(**tags, path=model.path), context=context)
+
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
+        assert model.album_artist.name == "Metallica and friends"
         assert [genre.name for genre in model.genres] == ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         assert model.track.number == 4
         assert model.track.total is None
@@ -178,13 +181,19 @@ class TestM4A(LocalTrackTester):
         assert model.bpm == 124
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
-        assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
+        assert model.compilation is True
+        assert model.comments == [str(uri)]
         assert model.images == expected_images
+
+        assert model.source == uri.source
+        assert model.uris == [uri]
+        assert model.uri == uri
 
     def test_to_tags(self, model: M4A, uri: URI, pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
+        model.album_artist = "Metallica and friends"
         model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         model.track = 4
         model.track.zero_fill = 2
@@ -192,6 +201,7 @@ class TestM4A(LocalTrackTester):
         model.bpm = 124.931
         model.key = "B"
         model.released_at = "2023-04-14"
+        model.compilation = True
         model.comments = [faker.sentence()]
         model.uri = uri
         model.images = pictures
@@ -200,17 +210,19 @@ class TestM4A(LocalTrackTester):
             "©nam": ["Sleepwalk My Life Away"],
             "©ART": ["Metallica"],
             "©alb": ["72 Seasons"],
+            "aART": ["Metallica and friends"],
             "©gen": ["Hard Rock", "Metal", "Rock", "Thrash Metal"],
             "trkn": [(4,)],
             "disk": [(1, 2)],
             "tmpo": [124],
             "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
             "©day": ["2023-04-14"],
+            "cpil": True,
             "©cmt": [*model.comments, str(uri)],
         }
 
         loaded_images = {kind: Image.open(BytesIO(bytes(pic))) for kind, pic in pictures.items()}
-        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        context = TagContext(map_uri_to_tag="comments", loaded_images=loaded_images)
         result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if k != "covr"} == expected

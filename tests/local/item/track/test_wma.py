@@ -15,7 +15,7 @@ from faker import Faker
 from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 
 from musify.local.item.genre import LocalGenre
-from musify.local.item.track import TagDumpContext
+from musify.local.item.track import TagContext
 from musify.local.item.track.wma import WMA
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
@@ -112,7 +112,7 @@ class TestWMA(LocalTrackTester):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
         info = Namespace(
-            field_name="comments", by_alias=True, context=TagDumpContext(map_uri_to_tag="comments"), mode="python"
+            field_name="comments", by_alias=True, context=TagContext(map_uri_to_tag="comments"), mode="python"
         )
         # noinspection PyTypeChecker
         assert model._serialize_unicode_attributes(value, info=info) == expected
@@ -167,14 +167,14 @@ class TestWMA(LocalTrackTester):
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
     def test_from_tags(
-            self, model: WMA, image_bytes: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker
+            self, model: WMA, uri: URI, image_bytes: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker
     ):
         sep = choice(WMA._tag_sep)
         tags = {
             "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],
             "Author": [ASFUnicodeAttribute("Metallica")],
             "WM/AlbumTitle": [ASFUnicodeAttribute("72 Seasons")],
-            "WM/AlbumArtist": [ASFUnicodeAttribute("Metallica")],
+            "WM/AlbumArtist": [ASFUnicodeAttribute("Metallica and friends")],
             "WM/Genre": [
                 ASFUnicodeAttribute("Hard Rock"),
                 ASFUnicodeAttribute("Metal" + sep + "Rock"),
@@ -185,19 +185,22 @@ class TestWMA(LocalTrackTester):
             "WM/BeatsPerMinute": [ASFUnicodeAttribute("124.931")],
             "WM/InitialKey": [ASFUnicodeAttribute("B")],
             choice(("WM/Year", "WM/OriginalReleaseYear")): [ASFUnicodeAttribute("2023-04-14")],
-            choice(("Description", "WM/Comments")): [ASFUnicodeAttribute("spotify:track:1WjgFpSxwA0Bqyr7hWc3f1")],
+            choice(("Description", "WM/Comments")): [ASFUnicodeAttribute(str(uri))],
             "WM/Picture": list(pictures.values()),
-            "COMPILATION": [ASFUnicodeAttribute("0")],
+            "COMPILATION": [ASFUnicodeAttribute("1")],
         }
 
         expected_images = {kind: WMA.EmbeddedImage.model_validate(attr) for kind, attr in pictures.items()}
         for image in expected_images.values():
             image.path = model.path
 
-        model = WMA(**tags, path=model.path)
+        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        model = WMA.model_validate(dict(**tags, path=model.path), context=context)
+
         assert model.name == "Sleepwalk My Life Away"
         assert model.artist == "Metallica"
         assert model.album.name == "72 Seasons"
+        assert model.album_artist.name == "Metallica and friends"
         assert [genre.name for genre in model.genres] == ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         assert model.track.number == 4
         assert model.track.total is None
@@ -206,13 +209,19 @@ class TestWMA(LocalTrackTester):
         assert model.bpm == 124.931
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
-        assert model.comments == ["spotify:track:1WjgFpSxwA0Bqyr7hWc3f1"]
+        assert model.compilation is True
+        assert model.comments == [str(uri)]
         assert model.images == expected_images
+
+        assert model.source == uri.source
+        assert model.uris == [uri]
+        assert model.uri == uri
 
     def test_to_tags(self, model: WMA, uri: URI, pictures: dict[str, mutagen.asf.ASFByteArrayAttribute], faker: Faker):
         model.name = "Sleepwalk My Life Away"
         model.artist = "Metallica"
         model.album = "72 Seasons"
+        model.album_artist = "Metallica and friends"
         model.genres = ["Hard Rock", "Metal", "Rock", "Thrash Metal"]
         model.track = 4
         model.track.zero_fill = 2
@@ -220,6 +229,7 @@ class TestWMA(LocalTrackTester):
         model.bpm = 124.931
         model.key = "B"
         model.released_at = "2023-04-14"
+        model.compilation = True
         model.comments = [faker.sentence()]
         model.uri = uri
         model.images = pictures
@@ -228,6 +238,7 @@ class TestWMA(LocalTrackTester):
             "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],
             "Author": [ASFUnicodeAttribute("Metallica")],
             "WM/AlbumTitle": [ASFUnicodeAttribute("72 Seasons")],
+            "WM/AlbumArtist": [ASFUnicodeAttribute("Metallica and friends")],
             "WM/Genre": [
                 ASFUnicodeAttribute("Hard Rock"),
                 ASFUnicodeAttribute("Metal"),
@@ -239,6 +250,7 @@ class TestWMA(LocalTrackTester):
             "WM/BeatsPerMinute": [ASFUnicodeAttribute("124.931")],
             "WM/InitialKey": [ASFUnicodeAttribute("B")],
             "WM/Year": [ASFUnicodeAttribute("2023-04-14")],
+            "COMPILATION": [ASFUnicodeAttribute("1")],
             "WM/Comments": list(map(ASFUnicodeAttribute, [*model.comments, str(uri)])),
         }
 
@@ -246,7 +258,7 @@ class TestWMA(LocalTrackTester):
             kind: Image.open(BytesIO(WMA.EmbeddedImage._get_bytes(pic)))
             for kind, pic in pictures.items()
         }
-        context = TagDumpContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        context = TagContext(map_uri_to_tag="comments", loaded_images=loaded_images)
         result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if k != "WM/Picture"} == expected

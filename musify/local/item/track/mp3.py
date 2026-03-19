@@ -6,7 +6,7 @@ import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer, ModelWrapValidatorHandler, NonNegativeFloat
+    field_validator, field_serializer, ModelWrapValidatorHandler, NonNegativeFloat, computed_field
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
 from musify._types import StrippedString
@@ -14,7 +14,7 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.local.item.track._base import TagDumpContext
+from musify.local.item.track._base import TagContext
 from musify.models._metadata import TagAttribute
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
@@ -69,10 +69,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         default=None,
         alias="TALB",
     )
-    # album_artist: Annotated[LocalArtist | None, TagAttribute()] = Field(
-    #     default=None,
-    #     alias="TPE2",
-    # )
     genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
@@ -120,10 +116,30 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         default=None,
         alias=EmbeddedImage.alias,
     )
-    # compilation: Annotated[bool | None, TagAttribute()] = Field(
-    #     default=None,
-    #     alias="TCMP",
-    # )
+
+    @computed_field(
+        description="The main artist on the album.",
+        alias="TPE2",
+    )
+    def album_artist(self) -> Annotated[LocalArtist | None, TagAttribute()]:
+        return super().album_artist
+
+    @album_artist.setter
+    def album_artist(self, value: LocalArtist) -> None:
+        value = self._deserialize_text_frame(value)
+        super(type(self), type(self)).album_artist.fset(self, value)
+
+    @computed_field(
+        description="Whether the album is a compilation album.",
+        alias="TCMP",
+    )
+    def compilation(self) -> Annotated[bool | None, TagAttribute()]:
+        return super().compilation
+
+    @compilation.setter
+    def compilation(self, value: bool | None) -> None:
+        value = self._deserialize_text_frame(value)
+        super(type(self), type(self)).compilation.fset(self, value)
 
     @classmethod
     def _get_frame_class(cls, info: FieldSerializationInfo) -> type[mutagen.id3.Frame]:
@@ -228,10 +244,17 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         # noinspection PyUnresolvedReferences
         return value.rating
 
-    @field_serializer("album", mode="plain", when_used="unless-none")
+    @field_serializer("compilation", mode="plain", when_used="unless-none")
+    def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
+        if not info.by_alias and info.mode != "json":
+            return value
+        return self._serialize_text_frame(str(int(value)), info=info)
+
+    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
     def _serialize_name[T: str | HasName](
             self, value: T, info: SerializationInfo
     ) -> T | str | InstanceOf[mutagen.id3.TextFrame]:
+        print("UNM", value, info)
         if info.mode == "json":
             return self._extract_name(value)
         # noinspection PyArgumentList
@@ -259,8 +282,10 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         if not isinstance(value, tuple | list):
             value = [value]
 
+        print("SER", value, info)
         frame_cls = self._get_frame_class(info)
         tag_value = self._join_split_tags(value)
+        print(frame_cls, tag_value)
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="plain", when_used="unless-none")
@@ -274,7 +299,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         values: list[frame_cls] = [frame_cls(text=item, lang="eng") for item in values]
 
         context = info.context
-        if self.uris and isinstance(context, TagDumpContext) and context.map_uri_to_tag == info.field_name:
+        if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
             values.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI", lang="eng") for uri in self.uris)
 
         return values

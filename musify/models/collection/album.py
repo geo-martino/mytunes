@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints
 
 
-class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](HasTracks[TK, TV], Album[RT, GT, UT]):
+class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](HasTracks[TK, TV], Album[RT, GT]):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
@@ -71,10 +71,10 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre, UT: URI](HasTracks[T
         return self
 
 
-class RemoteAlbumCollection[TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, UT: URI, CT: PageCursor](
-    AlbumCollection[UT, TT, RT, GT, UT],
-    RemoteAlbum[UT, RT, GT],
-    RemoteCollection[TT, UT, CT],
+class RemoteAlbumCollection[UT: URI, TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, CT: PageCursor](
+    AlbumCollection[UT, TT, RT, GT],
+    RemoteAlbum[URI, RT, GT],
+    RemoteCollection[UT, TT, CT],
 ):
     @computed_field(description="The total number of tracks in this album")
     @property

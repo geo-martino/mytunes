@@ -102,7 +102,6 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
     Expands on Pydantic base model to add:
     - Standard configuration for all models in the package.
-    - Support for setting writeable computed fields on initialization.
     - Additional helper methods
     """
 
@@ -115,26 +114,6 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             validation_alias=lambda name: name.replace("_", "").rstrip("s")
         ),
     )
-
-    def __init__(self, **kwargs):
-        # Allow setting writeable computed fields on init
-        computed_field_values = {}
-        for field in self.__class__.model_computed_fields.keys():
-            if field in self.__class__.model_fields or kwargs.get(field) is None:
-                continue
-
-            attr = getattr(self.__class__, field)
-            if attr.fset is not None:
-                computed_field_values[field] = kwargs.pop(field)
-            elif any(
-                    name.endswith(field_private := f"_{field}")
-                    for name in getattr(self.__class__, "__private_attributes__", ())
-            ):
-                computed_field_values[field_private] = kwargs.pop(field)
-
-        super().__init__(**kwargs)
-        for field, value in computed_field_values.items():
-            setattr(self, field, value)
 
     @classmethod
     def _get_aliases(cls, name: str, with_serialization_alias: bool = False) -> set[str]:
@@ -159,12 +138,16 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
     @classmethod
     def _get_value_from_data(cls, data: dict[str, Any], field_name: str) -> Any:
-        field: FieldInfo = cls.model_fields[field_name]
+        field: FieldInfo = cls.model_fields.get(field_name)
+        if field is None:
+            field = cls.model_computed_fields.get(field_name)
+        if field is None:
+            return
 
         if field.alias is not None and field.alias in data:
             return data[field.alias]
 
-        elif field.validation_alias is not None:
+        elif isinstance(field, FieldInfo) and field.validation_alias is not None:
             validation_aliases: list[str | AliasPath] = (
                 field.validation_alias.choices
                 if isinstance(field.validation_alias, AliasChoices)
@@ -182,7 +165,7 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
         if field_name in data:
             return data[field_name]
 
-        if not field.is_required():
+        if isinstance(field, FieldInfo) and not field.is_required():
             return field.get_default(call_default_factory=True, validated_data=data)
 
 

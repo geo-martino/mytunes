@@ -60,7 +60,7 @@ class HasGenres[GT: Genre](CollectionModel[GT], HasSeparableTags):
         self.genres = value
 
 
-class RemoteGenre[UT: URI](Genre, RemoteResource[UT], metaclass=makecls()):
+class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasGenreEndpoints[GenreReadItemEndpoints]) -> Self:
         return await api.genres.get(self.uri)

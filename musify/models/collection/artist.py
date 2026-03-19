@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from musify.models.api.artist import HasArtistEndpoints, ArtistReadCollectionEndpoints
 
 
-class ArtistCollection[AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasAlbums[AT]):
+class ArtistCollection[AT: Album, GT: Genre](Artist[GT], HasAlbums[AT]):
     """Represents a collection of artists and their properties."""
     @property
     def _items(self) -> list[AT]:
@@ -84,12 +84,10 @@ class ArtistCollection[AT: Album, GT: Genre, UT: URI](Artist[GT, UT], HasAlbums[
         return self
 
 
-
-
-class RemoteArtistCollection[AT: RemoteAlbum, GT: RemoteGenre, UT: URI, CT: PageCursor](
-    ArtistCollection[AT, GT, UT],
+class RemoteArtistCollection[UT: URI, AT: RemoteAlbum, GT: RemoteGenre, CT: PageCursor](
+    ArtistCollection[AT, GT],
     RemoteArtist[UT, GT],
-    RemoteCollection[AT, UT, CT],
+    RemoteCollection[UT, AT, CT],
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasArtistEndpoints[ArtistReadCollectionEndpoints]) -> None:

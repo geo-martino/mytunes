@@ -2,11 +2,11 @@ import pytest
 from faker import Faker
 
 from musify.local.collection.artist import LocalArtistCollection
-from tests.models.testers import UniqueKeyTester
+from tests.models.testers import UniqueKeyTester, NoUniqueKeyTester
 from tests.utils import SimpleURI
 
 
-class TestLocalArtistCollection(UniqueKeyTester):
+class TestLocalArtistCollection(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> LocalArtistCollection:
         uri = SimpleURI.from_id(

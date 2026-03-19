@@ -8,5 +8,5 @@ from musify.models.properties.uri import URI
 
 
 @final
-class LocalAlbum[RT: LocalArtist, GT: LocalGenre](Album[RT, GT, URI], LocalModel):
+class LocalAlbum[RT: LocalArtist, GT: LocalGenre](Album[RT, GT], LocalModel):
     __final__ = True

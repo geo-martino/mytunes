@@ -15,7 +15,7 @@ from musify.models.collection import CollectionModel
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI
 
 FIELDS = Literal[
     "Name", "Length", "URI", "Public URL"
@@ -205,12 +205,12 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
     @staticmethod
     @validate_call
-    def _get_uri(item: HasURI) -> str | None:
+    def _get_uri(item: HasImmutableURI | HasMutableURI) -> str | None:
         return str(item.uri) if item.uri is not None else None
 
     @staticmethod
     @validate_call
-    def _get_public_url(item: HasURI) -> str | None:
+    def _get_public_url(item: HasImmutableURI | HasMutableURI) -> str | None:
         return str(item.uri.public_url) if item.uri is not None else None
 
 

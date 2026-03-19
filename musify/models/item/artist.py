@@ -2,6 +2,7 @@ from typing import ClassVar, TYPE_CHECKING, Self, Annotated
 
 from pydantic import Field, field_validator
 
+from musify.models import ResourceModel
 from musify.models._metaclass import makecls
 from musify.models._metadata import Attribute
 from musify.models.collection import CollectionModel
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from musify.models.api.artist import HasArtistEndpoints, ArtistReadItemEndpoints
 
 
-class Artist[GT: Genre, UT: URI](HasGenres[GT], HasName, HasURI[UT], HasRating, metaclass=makecls()):
+class Artist[GT: Genre](HasGenres[GT], HasName, HasRating, ResourceModel, metaclass=makecls()):
     """Represents an artist resource and its properties."""
     type: ClassVar[str] = "artist"
 
@@ -55,7 +56,7 @@ class HasArtists[RT: Artist](CollectionModel[RT], HasSeparableTags):
         self.artists = value
 
 
-class RemoteArtist[GT: RemoteGenre, UT: URI](Artist[GT, UT], RemoteResource[UT], metaclass=makecls()):
+class RemoteArtist[UT: URI, GT: RemoteGenre](Artist[GT], RemoteResource[UT], metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasArtistEndpoints[ArtistReadItemEndpoints]) -> Self:
         return await api.artists.get(self.uri)

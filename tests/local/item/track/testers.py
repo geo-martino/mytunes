@@ -15,7 +15,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 
 from musify.local.exception import FileError
-from musify.local.item.track import LocalTrack, TagDumpContext
+from musify.local.item.track import LocalTrack, TagContext
 from musify.models.properties.image import ImageFile
 from musify.models.properties.name import HasName
 from tests.models.testers import BaseModelTester, UniqueKeyTester
@@ -183,7 +183,7 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
 
         image_model = model.EmbeddedImage(mime="image/png", height=100, width=100)
         loaded_images = {kind: image_object for kind in model.images}
-        context = Namespace(by_alias=True, context=TagDumpContext(loaded_images=loaded_images))
+        context = Namespace(by_alias=True, context=TagContext(loaded_images=loaded_images))
         assert loaded_images
 
         with (

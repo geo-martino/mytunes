@@ -9,6 +9,7 @@ from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, model_v
 
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
+from musify.models import ResourceModel
 from musify.models._metaclass import makecls
 from musify.models._metadata import Attribute
 from musify.models.collection._base import CollectionModel, RemoteCollection, SyncResult
@@ -26,8 +27,8 @@ if TYPE_CHECKING:
     from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
 
 
-class Playlist[TK, TV: Track, UT: URI](
-    HasTracks[TK, TV], HasName, HasLength, HasImages, HasURI[UT], metaclass=makecls()
+class Playlist[TK, TV: Track](
+    HasTracks[TK, TV], HasName, HasLength, HasImages, ResourceModel, metaclass=makecls()
 ):
     """Represents a playlist collection and its properties."""
     type: ClassVar[str] = "playlist"
@@ -38,7 +39,7 @@ class Playlist[TK, TV: Track, UT: URI](
     )
 
 
-class MutablePlaylist[TK, TV: Track, UT: URI](HasMutableTracks[TK, TV], Playlist[TK, TV, UT]):
+class MutablePlaylist[TK, TV: Track](HasMutableTracks[TK, TV], Playlist[TK, TV]):
     def merge(self, other: HasTracks[TK, TV] | Playlist, reference: HasTracks[TK, TV] | None = None) -> None:
         """
         Merge two playlists together by merging tracks and properties.
@@ -122,8 +123,8 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
 
 
 # noinspection PyAbstractClass
-class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
-    Playlist[UT, TT, UT], RemoteCollection[TT, UT, CT], metaclass=makecls()
+class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
+    Playlist[UT, TT], RemoteCollection[UT, TT, CT], metaclass=makecls()
 ):
     owner: Annotated[OT, Attribute()] = Field(
         description="The owner of this playlist.",
@@ -148,8 +149,8 @@ class RemotePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
         self.tracks._replace(await api.playlists.get_all(self))
 
 
-class RemoteMutablePlaylist[TT: RemoteTrack, UT: URI, OT: RemoteUser, CT: PageCursor](
-    MutablePlaylist[UT, TT, UT], RemotePlaylist[TT, UT, OT, CT]
+class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
+    MutablePlaylist[UT, TT], RemotePlaylist[UT, TT, OT, CT]
 ):
     async def sync_items(
             self,

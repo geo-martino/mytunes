@@ -18,7 +18,7 @@ class SpotifyAlbum(
     SpotifyResource[SpotifyResourceURI],
     HasSpotifyImages,
     HasSpotifyRating,
-    RemoteAlbum[SpotifyArtist, SpotifyGenre, SpotifyResourceURI],
+    RemoteAlbum[SpotifyResourceURI, SpotifyArtist, SpotifyGenre],
 ):
     __final__ = True
 

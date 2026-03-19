@@ -1,6 +1,7 @@
 import itertools
 import textwrap
 from collections.abc import Generator, Iterable, Collection
+from functools import cached_property
 from pathlib import Path
 from typing import Annotated, ClassVar, final
 
@@ -15,7 +16,7 @@ from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack, HasLocalTracks
+from musify.local.item.track import LocalTrack, HasLocalTracks, TagContext
 from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
@@ -55,6 +56,11 @@ class LocalLibrary(
     errors: list[str] = Field(
         description="List of errors encountered while loading the library.",
         default_factory=list,
+    )
+    tracks_load_settings: TagContext = Field(
+        description="Settings to apply when loading tracks in this library.",
+        default_factory=TagContext,
+        validation_alias="tracks_load_context",
     )
 
     @field_validator("playlist_filter", mode="before", check_fields=True)
@@ -148,16 +154,21 @@ class LocalLibrary(
     ###########################################################################
     ## Tracks
     ###########################################################################
+    @cached_property
+    def _track_adapter(self) -> TypeAdapter[LocalTrack]:
+        return TypeAdapter[LocalTrack](LocalTrack.annotation)
+
     async def load_track(self, path: str | Path) -> LocalTrack | None:
         """
         Loads the track at the given ``path``.
 
         Handles exceptions by logging paths which produce errors to internal list of ``errors``.
         """
+        self.logger.debug(f"Loading track: {path}")
+
         try:
-            self.logger.debug(f"Loading track: {path}")
             file = await LocalTrack.load_file(path)
-            track = TypeAdapter[LocalTrack](LocalTrack.annotation).validate_python(file)
+            track = self._track_adapter.validate_python(file, context=self.tracks_load_settings)
             return track
         except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
             self.logger.debug(f"Load error for track: {path} - {ex}")
@@ -199,15 +210,20 @@ class LocalLibrary(
     ###########################################################################
     ## Playlists
     ###########################################################################
+    @cached_property
+    def _playlist_adapter(self) -> TypeAdapter[LocalPlaylist]:
+        return TypeAdapter[LocalPlaylist](LocalPlaylist.annotation)
+
     async def load_playlist(self, path: str | Path) -> LocalPlaylist | None:
         """
         Loads the playlist at the given ``path`` and assigns optional arguments using this library's attributes.
 
         Handles exceptions by logging paths which produce errors to internal list of ``errors``.
         """
+        self.logger.debug(f"Loading playlist: {path}")
+
         try:
-            self.logger.debug(f"Loading playlist: {path}")
-            playlist = TypeAdapter[LocalPlaylist](LocalPlaylist.annotation).validate_python(path)
+            playlist = self._playlist_adapter.validate_python(path)
             playlist.path_mapper = self.path_mapper
             return await playlist.load(self.tracks)
         except (MusifyError, ValueError, FileNotFoundError) as ex:

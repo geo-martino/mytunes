@@ -4,7 +4,8 @@ from typing import Any, ClassVar, final, Annotated
 import mutagen.id3
 import mutagen.mp4
 from PIL import ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, \
+    computed_field
 from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
 
 from musify._types import StrippedString
@@ -71,10 +72,6 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias="©alb"
     )
-    # album_artist: Annotated[LocalArtist | None, TagAttribute()] = Field(
-    #     default=None,
-    #     alias="aART"
-    # )
     genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
@@ -116,10 +113,28 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias=EmbeddedImage.alias,
     )
-    # compilation: Annotated[bool | None, TagAttribute()] = Field(
-    #     default=None,
-    #     alias="cpil"
-    # )
+
+    @computed_field(
+        description="The main artist on the album.",
+        alias="aART",
+    )
+    def album_artist(self) -> Annotated[LocalArtist | None, TagAttribute()]:
+        return super().album_artist
+
+    @album_artist.setter
+    def album_artist(self, value: LocalArtist) -> None:
+        super(type(self), type(self)).album_artist.fset(self, value)
+
+    @computed_field(
+        description="Whether the album is a compilation album.",
+        alias="cpil",
+    )
+    def compilation(self) -> Annotated[bool | None, TagAttribute()]:
+        return super().compilation
+
+    @compilation.setter
+    def compilation(self, value: bool | None) -> None:
+        super(type(self), type(self)).compilation.fset(self, value)
 
     # noinspection PyNestedDecorators
     @field_validator("key", mode="before")
@@ -153,22 +168,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
                 data[key] = [mutagen.mp4.MP4FreeForm(v.encode()) for v in val]
         return data
 
-    @field_serializer("album", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
-        if info.by_alias or info.mode == "json":
-            return self._extract_name(value)
-        return self._extract_name(value)
-
-    @field_serializer("artists", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
-        if info.mode == "json":
-            return self._extract_names(value)
-        return self._join_split_tags(value)
-
-    @field_serializer(
-        "key", "released_at",
-        mode="plain", when_used="unless-none",
-    )
+    @field_serializer("key", "released_at", mode="plain", when_used="unless-none")
     def _serialize_string(self, value: Any, info: SerializationInfo) -> str:
         if not info.by_alias or info.mode == "json":
             return value
@@ -182,6 +182,18 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         values = self._extract_names(value)
         self._extend_with_uris(values, info=info)
         return list(map(str, values))
+
+    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
+    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
+        if info.by_alias or info.mode == "json":
+            return self._extract_name(value)
+        return self._extract_name(value)
+
+    @field_serializer("artists", mode="plain", when_used="unless-none")
+    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
+        if info.mode == "json":
+            return self._extract_names(value)
+        return self._join_split_tags(value)
 
     @field_serializer("bpm", mode="plain", when_used="unless-none")
     def _serialize_bpm[T: int | float](self, value: T, info: FieldSerializationInfo) -> T | list[int] | None:

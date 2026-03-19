@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from musify.models.api.genre import HasGenreEndpoints, GenreReadCollectionEndpoints
 
 
-class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
+class GenreCollection[TK, TV: Track](HasTracks[TK, TV], Genre, HasLength):
     """Represents a genre collection and its properties."""
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
@@ -75,7 +75,7 @@ class GenreCollection[TK, TV: Track](Genre, HasTracks[TK, TV], HasLength):
 class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
     GenreCollection[UT, TT],
     RemoteGenre[UT],
-    RemoteCollection[TT, UT, CT],
+    RemoteCollection[UT, TT,  CT],
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasGenreEndpoints[GenreReadCollectionEndpoints]) -> None:

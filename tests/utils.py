@@ -5,7 +5,7 @@ import string
 from collections.abc import Collection, Iterator, Callable
 from pathlib import Path
 from random import choice, randrange, sample
-from typing import Any, Self
+from typing import Any, Self, final
 from uuid import uuid4
 
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -152,8 +152,9 @@ def split_list[T](lst: Collection[T], n: int, overlap: int = 0) -> Iterator[list
 
     yield overlap_result
 
-
+@final
 class SimpleURI(URI):
+    __final__ = True
     _source = "remote"
 
     @property

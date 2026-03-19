@@ -11,7 +11,7 @@ from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
 
-class TestTrack(UniqueKeyTester):
+class TestTrack(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Track:
         uri = SimpleURI.from_id(

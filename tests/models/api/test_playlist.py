@@ -7,6 +7,7 @@ from faker import Faker
 
 from musify.models.api.playlist import PlaylistReadSavedEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.models.collection.playlist import RemotePlaylist, Playlist
+from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 from tests.models.api.testers import EndpointsTester
 from tests.models.api.utils import MockUrlCursor
@@ -19,7 +20,8 @@ def playlists(playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list
         RemotePlaylist(
             **pl.model_dump(),
             owner=RemoteUser(name=faker.name(), uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)),
-            cursor=MockUrlCursor(url=faker.url())
+            cursor=MockUrlCursor(url=faker.url()),
+            uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemotePlaylist.type)
         )
         for pl in playlists
     ]

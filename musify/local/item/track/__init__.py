@@ -1,8 +1,8 @@
-from ._base import LocalTrack, HasLocalTracks, TagDumpContext
+from ._base import LocalTrack, HasLocalTracks, TagContext
 
 __all__ = [
     LocalTrack.__name__,
-    TagDumpContext.__name__,
+    TagContext.__name__,
 ]
 
 # we must import all the supported formats here so that they are registered in the registry

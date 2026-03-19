@@ -5,7 +5,8 @@ from typing import ClassVar, Any, final, Annotated
 import mutagen.asf
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, InstanceOf
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, \
+    InstanceOf, computed_field
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify._types import StrippedString
@@ -104,10 +105,6 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default=None,
         alias="WM/AlbumTitle"
     )
-    # album_artist: Annotated[LocalArtist | None, TagAttribute()] = Field(
-    #     default=None,
-    #     alias="WM/AlbumArtist"
-    # )
     genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
@@ -150,10 +147,30 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default=None,
         alias=EmbeddedImage.alias,
     )
-    # compilation: Annotated[bool | None, TagAttribute()] = Field(
-    #     default=None,
-    #     alias="COMPILATION"
-    # )
+
+    @computed_field(
+        description="The main artist on the album.",
+        alias="WM/AlbumArtist",
+    )
+    def album_artist(self) -> Annotated[LocalArtist | None, TagAttribute()]:
+        return super().album_artist
+
+    @album_artist.setter
+    def album_artist(self, value: LocalArtist) -> None:
+        value = self._deserialize_unicode_attribute(value)
+        super(type(self), type(self)).album_artist.fset(self, value)
+
+    @computed_field(
+        description="Whether the album is a compilation album.",
+        alias="COMPILATION",
+    )
+    def compilation(self) -> Annotated[bool | None, TagAttribute()]:
+        return super().compilation
+
+    @compilation.setter
+    def compilation(self, value: bool | None) -> None:
+        value = self._deserialize_unicode_attribute(value)
+        super(type(self), type(self)).compilation.fset(self, value)
 
     # noinspection PyNestedDecorators
     @field_validator(
@@ -181,7 +198,13 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
             return value
         return list(map(cls._deserialize_unicode_attribute, value))
 
-    @field_serializer("album", mode="plain", when_used="unless-none")
+    @field_serializer("compilation", mode="plain", when_used="unless-none")
+    def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
+        if not info.by_alias and info.mode != "json":
+            return value
+        return self._serialize_unicode_attribute(str(int(value)), info=info)
+
+    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
     def _serialize_name(
         self, value: str | HasName, info: SerializationInfo
     ) -> str | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
@@ -228,7 +251,8 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
 
     @field_serializer("track", mode="plain", when_used="unless-none")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
-        return super()._serialize_position_tags(value, info=info)
+        tags = super()._serialize_position_tags(value, info=info)
+        return {k: self._serialize_unicode_attribute(v, info=info) for k, v in tags.items()} if tags else None
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
