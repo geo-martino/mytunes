@@ -1,15 +1,17 @@
+from collections.abc import Collection
 from typing import Any
 
 from pydantic import Field, NonNegativeInt
 
 from musify.models import AttributeModel
+from musify.models.collection import CollectionModel
 from musify.models.item.album import HasAlbum
 from musify.models.properties.date import HasReleaseDate, SparseDate
 from musify.models.properties.length import HasLength, Length
-from musify.processors_new.match.clean._base import TagCleaner
+from musify.processors_new.clean._base import TagCleaner
 
 
-class NumericCleaner[I: AttributeModel](TagCleaner[I, int | float]):
+class NumericCleaner[IT: AttributeModel](TagCleaner[IT, int | float]):
     round_to_nearest: NonNegativeInt = Field(
         description="Round the value to nearest integer.",
         default=0,
@@ -19,7 +21,7 @@ class NumericCleaner[I: AttributeModel](TagCleaner[I, int | float]):
     def can_clean(cls, item: Any) -> bool:
         return item is None or isinstance(item, int | float)
 
-    def clean(self, item: int | float | I | None) -> int | float:
+    def clean(self, item: int | float | IT | None) -> int | float:
         if item is None:
             return 0
 
@@ -93,3 +95,25 @@ class ReleaseYearCleaner(NumericCleaner[HasAlbum | HasReleaseDate]):
                 year = super()._get_item_value(item)
 
         return year
+
+
+class TotalItemsCleaner(NumericCleaner[CollectionModel]):
+    @classmethod
+    def can_clean(cls, item: Any) -> bool:
+        match item:
+            case CollectionModel():
+                return super().can_clean(item.count)
+            case _:
+                return super().can_clean(item)
+
+    @classmethod
+    def _get_item_value(cls, item: CollectionModel | Collection | None) -> int:
+        match item:
+            case CollectionModel():
+                total = item.count
+            case Collection() as items if not isinstance(items, str):
+                total = len(items)
+            case _:
+                total = super()._get_item_value(item)
+
+        return total

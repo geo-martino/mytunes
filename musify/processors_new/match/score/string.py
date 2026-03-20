@@ -7,17 +7,17 @@ from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
 from musify.models.properties.name import HasName
-from musify.processors_new.match.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
+from musify.processors_new.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from musify.processors_new.match.score._base import Scorer
 
 
 # noinspection PyAbstractClass
-class StringScorer[C: StringCleaner](Scorer[C]):
+class StringScorer[CT: StringCleaner](Scorer[CT]):
     pass
 
 
 # noinspection PyAbstractClass
-class StringScoreReducer[C: StringCleaner](StringScorer[C]):
+class StringScoreReducer[CT: StringCleaner](StringScorer[CT]):
     reduce_on_phrases: set[LowerStrippedString] = Field(
         description=(
             "A set of phrases which, if found in one value but not the other and vice-versa, "

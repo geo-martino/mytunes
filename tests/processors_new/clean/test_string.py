@@ -7,7 +7,7 @@ from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.properties.name import HasName
-from musify.processors_new.match.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
+from musify.processors_new.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from tests.models.testers import BaseModelTester
 
 

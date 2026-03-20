@@ -6,10 +6,11 @@ from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
 
 from musify.exception import MusifyValueError
-from musify.models import ResourceModel
+from musify.models import ResourceModel, BaseModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
+from musify.processors_new.clean.string import NameCleaner
 
 
 # noinspection PyAbstractClass
@@ -27,6 +28,15 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
     _query_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request.",
+    )
+
+    cleaner: NameCleaner | None = Field(
+        description=(
+            "The cleaner to use for cleaning the query parameters generated for an item. "
+            "If None, no cleaning will be done. "
+            "This doesn't apply to the query string passed to the query method, which is always used as-is."
+        ),
+        default=None,
     )
 
     @classmethod
@@ -78,10 +88,9 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         return results
 
-    @classmethod
     @abstractmethod
     def _format_query_params(
-            cls, query: str, types: set[Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -91,9 +100,8 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         kwargs = self._format_query_from_item(item, **kwargs)
         return next(iter((await self.query(**kwargs)).values()))
 
-    @classmethod
     @abstractmethod
-    def _format_query_from_item(cls, item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(self, item: ResourceModel, **kwargs) -> dict[str, Any]:
         """Should return the kwargs to pass to _format_query_params"""
         raise NotImplementedError
 

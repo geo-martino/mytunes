@@ -6,7 +6,7 @@ from pydantic import Field
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.processors_new import Processor
-from musify.processors_new.match.clean import TagCleaner
+from musify.processors_new.clean import TagCleaner
 
 
 # noinspection PyAbstractClass

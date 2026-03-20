@@ -1,6 +1,6 @@
 from typing import ClassVar, final, Any
 
-from pydantic import PositiveInt, validate_call, AliasPath
+from pydantic import PositiveInt, validate_call, AliasPath, Field
 from yarl import URL
 
 from musify.models import ResourceModel
@@ -9,6 +9,8 @@ from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
+from musify.models.properties.name import HasName
+from musify.processors_new.clean.string import NameCleaner
 from musify.spotify import API_URL, SpotifyResource
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.playlist import SpotifyPlaylist
@@ -29,16 +31,15 @@ class SpotifySearchEndpoints(
     _query_path: ClassVar[AliasPath] = AliasPath("{type}s", "items")
     _query_limit: ClassVar[int] = 10
 
-    @classmethod
     @validate_call
     def _format_query_params(
-            cls,
+            self,
             query: str,
             types: set[str | type[Track] | type[Album] | type[Artist] | type[Playlist]],
             limit: PositiveInt | None = None,
             offset: PositiveInt | None = None,
     ) -> dict[str, Any]:
-        types_mapped = map(cls._map_type_to_str, types)
+        types_mapped = map(self._map_type_to_str, types)
 
         params: dict[str, Any] = {"q": query, "type": ",".join(types_mapped)}
         if limit is not None:
@@ -48,24 +49,26 @@ class SpotifySearchEndpoints(
 
         return params
 
-    @classmethod
     @validate_call
-    def _format_query_from_item(cls, item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(self, item: ResourceModel, **kwargs) -> dict[str, Any]:
         match item:
             case Track() as track if track.artists:
-                query = f"track:{track.name} artist:{track.artists[0].name}"
+                query = f"track:{self._get_name(track)} artist:{self._get_name(track.artists[0])}"
             case Track() as track:
-                query = track.name
+                query = self._get_name(track)
             case Album() as album if album.artists:
-                query = f"album:{album.name} artist:{album.artists[0].name}"
+                query = f"album:{self._get_name(album)} artist:{self._get_name(album.artists[0])}"
             case Album() as album:
-                query = album.name
+                query = self._get_name(album)
             case Artist() as artist:
-                query = artist.name
+                query = self._get_name(artist)
             case Playlist() as playlist:
-                query = playlist.name
+                query = self._get_name(playlist)
             case _:
                 raise ValueError(f"Unsupported item type: {item.type}")
 
         item_type = item if isinstance(item, SpotifyResource) else item.type
         return {"query": query, "types": {item_type}} | kwargs
+
+    def _get_name(self, item: HasName) -> str:
+        return self.cleaner.clean(item.name) if self.cleaner is not None else item.name

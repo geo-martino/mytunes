@@ -15,6 +15,7 @@ from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
+from musify.processors_new.clean.string import NameCleaner
 from musify.processors_new.download import ItemDownloadHelper
 from tests.conftest import LogCapturer
 from tests.libraries.remote.core.processors.utils import patch_input
@@ -31,11 +32,11 @@ class TestItemDownloadHelper(BaseModelTester):
             "https://uk.7digital.com/search?q={}&f=9%2C2",
             "https://www.junodownload.com/search/?q%5Ball%5D%5B%5D={}&solrorder=relevancy",
             "https://www.jamendo.com/search?q={}",
-            "https://www.amazon.com/s?k={}&i=digital-music",
+            "https://www.amazon.com/s?length={}&i=digital-music",
             "https://www.google.com/search?q={}%20mp3",
         ]
         return ItemDownloadHelper(
-            urls=sample(sites, k=randrange(2, len(sites))),
+            urls=faker.random_elements(sites, length=randrange(2, len(sites))),
             fields=["name", "artists"],
             interval=faker.random_int(1, 5),
             unique_only=False,
@@ -66,7 +67,7 @@ class TestItemDownloadHelper(BaseModelTester):
         tracks = list(map(copy, tracks[:10]))
 
         for track in tracks:
-            track.artists = sample(artists, k=faker.random_int(1, 3))
+            track.artists = faker.random_elements(artists, length=faker.random_int(1, 3))
             track.album = choice(albums)
 
         return tracks
@@ -132,7 +133,7 @@ class TestItemDownloadHelper(BaseModelTester):
             mock_pause: mock.MagicMock,
     ):
         for track in tracks:
-            track.artists = sample(artists, k=faker.random_int(0, 3))
+            track.artists = faker.random_elements(artists, length=faker.random_int(0, 3))
 
         model.open_sites(tracks)
 
@@ -150,6 +151,29 @@ class TestItemDownloadHelper(BaseModelTester):
                 # and the requested field is just 'artist' not 'artists'
                 if len(track.artists) > 1:
                     assert track.artist not in url
+
+    def test_url_formats_cleaned(
+            self,
+            model: ItemDownloadHelper,
+            urls: list[str],
+            tracks: list[Track],
+            artists: list[Artist],
+            faker: Faker,
+            mock_pause: mock.MagicMock,
+    ):
+        # similar to before, just check that cleaned value is in URL instead
+        model.cleaner = NameCleaner()
+        for track in tracks:
+            track.artists = artists
+
+        model.open_sites(tracks)
+
+        urls_batched = itertools.batched(urls, len(model.urls))
+        for track in tracks:
+            for url in next(urls_batched):
+                url = unquote(url)
+                assert model._get_query_part(track.name) in url
+                assert model._get_query_part(track.artists[0].name) in url
 
     def test_pause_1(
             self, model: ItemDownloadHelper, urls: list[str], unique_tracks: list[Track], log_capturer: LogCapturer
@@ -179,7 +203,7 @@ class TestItemDownloadHelper(BaseModelTester):
             log_capturer: LogCapturer
     ):
         # force a few poison apples
-        for item in sample(unique_tracks, k=3):
+        for item in faker.random_elements(unique_tracks, length=3):
             item.artist = None
             item.album = None
 

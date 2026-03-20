@@ -9,10 +9,10 @@ from musify.models import AttributeModel
 from musify.models.item.album import HasAlbum, Album
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.properties.name import HasName
-from musify.processors_new.match.clean._base import TagCleaner
+from musify.processors_new.clean._base import TagCleaner
 
 
-class StringCleaner[I: AttributeModel](TagCleaner[I, str]):
+class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):
     split_on: set[str] = Field(
         description=(
             "A set of phrases for which the cleaner will slice the tag value on and remove anything that comes after. "
@@ -41,7 +41,7 @@ class StringCleaner[I: AttributeModel](TagCleaner[I, str]):
     def can_clean(cls, item: Any) -> bool:
         return item is None or isinstance(item, str)
 
-    def clean(self, item: str | I | None) -> str:
+    def clean(self, item: str | IT | None) -> str:
         if item is None:
             return ""
 

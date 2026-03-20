@@ -108,12 +108,31 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
         default=True,
     )
 
+    items_only_on_collections: bool = Field(
+        description=(
+            "Whether to always search for collections by searching for the items individually instead of the "
+            "collection as a whole. "
+            "In case of the latter, items will be matched to the items in the matched collection. "
+            "This overrides all other settings related to searching for collections if set to True."
+        ),
+        default=False,
+    )
     compilation_albums_as_tracks_only: bool = Field(
         description=(
-            "Whether to search for compilation albums as albums and match tracks to the matched album "
-            "or to just search for the individual tracks instead."
+            "Whether to always search for compilation albums by searching for the individual tracks instead of the "
+            "album as a whole. "
+            "In case of the latter, tracks will be matched to the tracks in the matched album."
         ),
-        default=True,
+        default=False,
+    )
+    keep_matching_collection_items: bool = Field(
+        description=(
+            "If matching a collection and there are still unmatched items, searching for matches "
+            "for the outstanding items individually. "
+            "This only applies if the collection has been searched for as a whole with items matched "
+            "to that result first."
+        ),
+        default=False,
     )
 
     @field_validator("api", mode="after", check_fields=True)
@@ -144,8 +163,7 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
     async def search_item[T: ResourceModel](self, item: T) -> T | None:
         """Search for matches for the given item and return the matching result if found"""
         self._log_start([item], default_type="item")
-        results = await self._query(item)
-        return self._match_item(item, results)
+        return await self._query_and_match(item)
 
     @validate_call
     async def search_items[T: ResourceModel](self, items: Sequence[T]) -> SearchResult[T]:
@@ -159,8 +177,7 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
         unmatched = []
 
         async def _search_and_match_item(item: T) -> None:
-            results = await self._query(item)
-            match = self._match_item(item, results)
+            match = await self._query_and_match(item)
             if match is not None:
                 matched.append(item)
                 matches.append(match)
@@ -240,14 +257,51 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
             return name, await self._search_items(collection.iter_items, show_bar=show_bar)
         collection: ResourceModel | CollectionModel  # type checked in the above condition
 
-        results = await self._query(collection)
-        match = self._match_item(collection, results)
+        match = await self._query_and_match(collection)
         match = await self._extend_collection_items(match)
         if match is None or not isinstance(match, CollectionModel):
             return name, await self._search_items(collection.iter_items, show_bar=show_bar)
 
         items, skipped = self._split_items(collection.iter_items)
-        return name, self._match_items(items, list(match.iter_items), skipped)
+        result = self._match_items(items, list(match.iter_items), skipped)
+        if self.keep_matching_collection_items and result.unmatched:
+            result = await self._search_from_result(result, items)
+
+        return name, result
+
+    async def _search_from_result[T: ResourceModel](self, result: SearchResult[T], items: Iterable[T]) -> SearchResult[T]:
+        # attempt to search for the unmatched items from the given search result
+        # we pop items from the result lists as we go to match the same order as the given items
+        # for consistency in ordering
+        result_matches = list(result.matches)
+        result_matched = list(result.matched)
+
+        matches = []
+        matched = []
+        unmatched = []
+
+        async def _search_and_match_item(item: Any) -> None:
+            if item in result_matched:
+                matches.append(result_matches.pop(0))
+                matched.append(result_matched.pop(0))
+
+            match = await self._query_and_match(item)
+            if match is not None:
+                matched.append(item)
+                matches.append(match)
+            else:
+                unmatched.append(item)
+
+        unit = self._get_unit(items, default_type="items")
+        await self.logger.get_asynchronous_iterator(
+            map(_search_and_match_item, result.unmatched),
+            desc="Searching",
+            unit=unit,
+            initial=0,
+            total=len(result.unmatched),
+        )
+
+        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped)
 
     async def _extend_collection_items[T: RemoteResource | RemoteCollection](self, collection: T) -> T:
         message = "Cannot extend items in collection: valid endpoints not configured for this resource type"
@@ -284,6 +338,10 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
 
         self._log_debug(item, message=f"Found {len(results)} results")
         return results
+
+    async def _query_and_match(self, item: ResourceModel) -> RemoteResource | None:
+        results = await self._query(item)
+        return self._match_item(item, results) if results else None
 
     def _split_items(self, items: Iterable[Any]) -> tuple[list[Any], list[Any]]:
         valid = []
@@ -342,6 +400,11 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
 
     def _should_search_on_items_only(self, item: CollectionModel) -> bool:
         message = "Searching as items only"
+        if self.items_only_on_collections:
+            reason = "set to search for collections as items only"
+            self._log_debug(item, message=f"{message}: {reason}")
+            return True
+
         match item:
             case AlbumCollection() as coll if self.compilation_albums_as_tracks_only and coll.compilation:
                 reason = "is compilation album + set to search for compilation albums as tracks only"

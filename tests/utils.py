@@ -123,7 +123,7 @@ def random_genres(size: int | None = None) -> list[str]:
 
 
 #### NEW
-def split_list[T](lst: Collection[T], n: int, overlap: int = 0) -> Iterator[list[T]]:
+def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterator[list[T]]:
     """
     Split a list into n sub-lists of approximately equal size.
 
@@ -131,6 +131,8 @@ def split_list[T](lst: Collection[T], n: int, overlap: int = 0) -> Iterator[list
     :param n: The number of sub-lists to create.
     :param overlap: The number of overlapping elements between sub-lists.
     """
+    if n is None:
+        n = choice(range(1, len(lst) + 1))
     if overlap >= len(lst):
         raise ValueError("Overlap must be less than the size of the list.")
 

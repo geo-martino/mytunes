@@ -5,8 +5,10 @@ import pytest
 
 from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum, Album
+from musify.models.item.track import HasTracks, Track
 from musify.models.properties.length import HasLength
-from musify.processors_new.match.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner
+from musify.processors_new.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
+    TotalItemsCleaner
 from tests.models.testers import BaseModelTester
 
 
@@ -86,3 +88,15 @@ class TestReleaseYearCleaner(NumericCleanerTester):
         assert model._get_item_value(item.album) == year
         assert model._get_item_value(item.album.released_at) == year
         assert model._get_item_value(item.album.released_at.year) == year
+
+
+class TestTotalItemsCleaner(NumericCleanerTester):
+    @pytest.fixture
+    def model(self) -> TotalItemsCleaner:
+        return TotalItemsCleaner()
+
+    def test_get_item_value(self, model: TotalItemsCleaner, tracks: list[Track]):
+        item = HasTracks(tracks=tracks)
+
+        assert model._get_item_value(item) == item.count == len(tracks)
+        assert model._get_item_value(item.tracks) == item.count == len(tracks)

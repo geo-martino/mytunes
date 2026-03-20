@@ -67,12 +67,12 @@ class MockUserEndpoints(
 class MockSearchEndpoints(
     SearchEndpoints[SimpleURI, RemoteUser]
 ):
-    @staticmethod
-    def _format_query_params(query: str, types: set, limit: PositiveInt | None = None, **kwargs) -> dict[str, Any]:
+    def _format_query_params(
+            self, query: str, types: set, limit: PositiveInt | None = None, **kwargs
+    ) -> dict[str, Any]:
         pass
 
-    @staticmethod
-    def _format_query_from_item(item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(self, item: ResourceModel, **kwargs) -> dict[str, Any]:
         pass
 
 

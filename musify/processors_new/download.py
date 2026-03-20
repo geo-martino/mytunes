@@ -17,6 +17,7 @@ from musify.models import AttributeModel
 from musify.models.item.track import HasTracks
 from musify.models.properties.name import HasName
 from musify.processors_new._base import InputProcessor
+from musify.processors_new.clean.string import NameCleaner
 
 
 class ItemDownloadHelper(InputProcessor):
@@ -34,6 +35,13 @@ class ItemDownloadHelper(InputProcessor):
     interval: PositiveInt = Field(
         description="The number of tracks to open sites for before pausing for user input.",
         default=1,
+    )
+    cleaner: NameCleaner | None = Field(
+        description=(
+            "The cleaner to use for cleaning the query parameters generated for an item. "
+            "If None, no cleaning will be done."
+        ),
+        default=None,
     )
     unique_only: bool = Field(
         description=(
@@ -95,25 +103,38 @@ class ItemDownloadHelper(InputProcessor):
         self.logger.info(f"Formatting queries for {len(items)} items using fields: {', '.join(fields)}")
         return [(self._format_query_for_item(item, fields=fields), item) for item in items]
 
-    @staticmethod
-    def _format_query_for_item(item: Any, fields: Iterable[str]) -> str:
+    def _format_query_for_item(self, item: Any, fields: Iterable[str]) -> str:
         query_parts = []
         for field in fields:
             if (value := getattr(item, field, None)) is None:
                 continue
 
-            if isinstance((value_many := getattr(item, field, None)), (list, tuple)):
-                value = next(iter(value_many), None)
+            match value:
+                case str() | HasName():
+                    value = self._get_query_part(value)
+                case list() | tuple() | set() | dict():
+                    value = " ".join(val for val in map(self._get_query_part, value) if val)
+                case _ if value is not None:
+                    value = str(value)
+                case _:
+                    continue
 
-            if isinstance(value, HasName):
-                value = value.name
-            elif isinstance(value, (tuple, set, list, dict)):
-                value = " ".join(v.name if isinstance(v, HasName) else v for v in value)
+            query_parts.append(value)
 
-            if value is not None:
-                query_parts.append(str(value))
-
+        print(query_parts)
+        print(fields)
         return quote(" ".join(query_parts))
+
+    def _get_query_part(self, item: Any) -> str | None:
+        match item:
+            case HasName():
+                return self._get_query_part(item.name)
+            case str() if self.cleaner is not None:
+                return self.cleaner.clean(item)
+            case str():
+                return item
+            case _:
+                return None
 
     def _filter_queries_for_items[T: AttributeModel](self, queries: Iterable[tuple[str, T]]) -> list[tuple[str, T]]:
         result: dict[str, T] = {}
