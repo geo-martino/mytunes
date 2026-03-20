@@ -5,6 +5,7 @@ from typing import ClassVar, Any, Type
 from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
 
+from musify.exception import MusifyValueError
 from musify.models import ResourceModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.properties.uri import URI
@@ -28,19 +29,32 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # description="The maximum number of items that can be sent in each request.",
     )
 
-    def _get_query_path(self, kind: Type[RT]) -> str | AliasPath:
-        match self._query_path:
+    @classmethod
+    def _get_query_path(cls, kind: str | Type[RT]) -> str | AliasPath:
+        match cls._query_path:
             case None:
                 return kind.type
             case str() as path:
                 return path.format(type=kind.type)
             case AliasPath() as path:
+                kind = cls._map_type_to_str(kind)
                 # noinspection PyTypeChecker
-                return AliasPath(*(str(part).format(type=kind.type) for part in path.path))
+                return AliasPath(*(str(part).format(type=kind) for part in path.path))
+
+    @staticmethod
+    def _map_type_to_str(kind: str | Type[RT]) -> str:
+        match kind:
+            case str():
+                return kind
+            case ResourceModel():
+                return kind.type
+            case _ if isinstance(kind, type) and issubclass(kind, ResourceModel):
+                return kind.type
+        raise MusifyValueError(f"Unknown search type: {kind}")
 
     @validate_call
     async def query(
-            self, query: str, types: set[Type[RT]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[str | Type[RT]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
         if limit is None:
@@ -50,22 +64,24 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         response = await self._handler.get(self._query_url, params=params)
 
         if "error" in response:
-            message = [f"Query: {query}", f"Types: {",".join(types)}", response["error"]]
+            types_mapped = map(self._map_type_to_str, types)
+            message = [f"Query: {query}", f"Types: {",".join(types_mapped)}", response["error"]]
             self._handler.log("SKIP", self._query_url, message=message, level=logging.ERROR)
             return {}
 
         results: dict[str, list[RT]] = {}
         for kind in types:
+            key = self._map_type_to_str(kind)
             path = self._get_query_path(kind=kind)
             items = self._get_items_from_response(response, path=path)
-            results[kind.type] = [self.__class__.create_model(it, kind=kind) for it in items]
+            results[key] = [self.__class__.create_model(it, kind=kind) for it in items]
 
         return results
 
-    @staticmethod
+    @classmethod
     @abstractmethod
     def _format_query_params(
-            query: str, types: set[Type[RT]], limit: PositiveInt | None = None, **kwargs
+            cls, query: str, types: set[Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -75,9 +91,9 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         kwargs = self._format_query_from_item(item, **kwargs)
         return next(iter((await self.query(**kwargs)).values()))
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def _format_query_from_item(item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(cls, item: ResourceModel, **kwargs) -> dict[str, Any]:
         """Should return the kwargs to pass to _format_query_params"""
         raise NotImplementedError
 

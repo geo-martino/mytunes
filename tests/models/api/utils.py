@@ -1,50 +1,28 @@
-from random import choice
-from typing import ClassVar, Self, final
+from typing import ClassVar, final, Any
 from unittest.mock import patch, Mock
 
 from aiorequestful.auth import Authoriser
+from pydantic import PositiveInt
 
-from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints, \
-    HasEndpoints
+from musify.models import ResourceModel
+from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints
 from musify.models.api.album import HasAlbumEndpoints, AlbumReadSavedEndpoints, \
     AlbumWriteSavedEndpoints, AlbumReadItemsEndpoints
 from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, \
     ArtistWriteSavedEndpoints, ArtistReadItemsEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api.search import SearchEndpoints, HasSearchEndpoints
 from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, \
     TrackWriteSavedEndpoints, TrackReadItemsEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
-from musify.models.collection import RemoteCollection
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.cursors import IndexCursor, UrlCursor
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
-from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
+from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
-
-
-class MockRemoteResource(RemoteResource[SimpleURI]):
-    source: ClassVar[str] = "mock"
-    type: ClassVar[str] = choice((
-        RemoteTrack.type,
-        RemoteAlbum.type,
-        RemoteArtist.type,
-    ))
-
-    def reload(self, api: HasEndpoints) -> Self:
-        return self
-
-
-class MockRemoteCollection(MockRemoteResource, RemoteCollection):
-    type: ClassVar[str] = MockRemoteResource.type
-
-    def _items(self) -> list:
-        return []
-
-    def extend(self, api: HasEndpoints) -> None:
-        pass
 
 
 @final
@@ -66,6 +44,8 @@ class MockInitialCursor(UrlCursor):
 
 
 class MockRemoteAuthoriser(RemoteAuthoriser[Mock]):
+    source: ClassVar[str] = MockRemoteResource.source
+
     client_id: str = "test_client_id"
 
     @patch.multiple(
@@ -82,6 +62,18 @@ class MockUserEndpoints(
     UserEndpoints[SimpleURI, RemoteUser]
 ):
     pass
+
+
+class MockSearchEndpoints(
+    SearchEndpoints[SimpleURI, RemoteUser]
+):
+    @staticmethod
+    def _format_query_params(query: str, types: set, limit: PositiveInt | None = None, **kwargs) -> dict[str, Any]:
+        pass
+
+    @staticmethod
+    def _format_query_from_item(item: ResourceModel, **kwargs) -> dict[str, Any]:
+        pass
 
 
 class MockTrackSavedEndpoints(
@@ -142,9 +134,10 @@ class MockPlaylistEndpoints(
 class MockRemoteAPI(
     RemoteAPI[MockRemoteAuthoriser],
     HasUserEndpoints[MockUserEndpoints],
+    HasSearchEndpoints[MockSearchEndpoints],
     HasTrackEndpoints[MockTrackEndpoints],
     HasArtistEndpoints[MockArtistEndpoints],
     HasAlbumEndpoints[MockAlbumEndpoints],
     HasPlaylistEndpoints[MockPlaylistEndpoints],
 ):
-    pass
+    source: ClassVar[str] = MockRemoteAuthoriser.source

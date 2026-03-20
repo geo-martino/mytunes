@@ -43,7 +43,7 @@ class TestSpotifySearchEndpoints(BaseModelTester):
 
         result = model._format_query_from_item(item=item, **additional)
         assert result.pop("query") == expected_query
-        assert result.pop("types") == {type(item)}
+        assert result.pop("types") == {item.type}
         assert result == additional
 
     async def test_format_query_from_track(self, model: SpotifySearchEndpoints, faker: Faker):

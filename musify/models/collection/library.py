@@ -103,18 +103,6 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         """Log stats on currently loaded playlists"""
         raise NotImplementedError
 
-    @staticmethod
-    def _generate_table(rows: Collection[Collection[str]]) -> str:
-        col_count = max(map(len, rows)) if rows else 0
-        table = tabulate(
-            rows,
-            tablefmt="orgtbl",
-            colalign=("left", *["right"] * max(0, col_count - 1)),
-        )
-        table = re.sub(r"\| +\|", "|", table)
-        table = re.sub(r"\| +\|", "|", table)
-        return table
-
 
 # noinspection PyAbstractClass
 class MutableLibrary[TK, TV: Track, KP, VP: Playlist](

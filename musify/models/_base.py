@@ -1,4 +1,6 @@
 import inspect
+import re
+from collections.abc import Collection
 from typing import Any, cast, get_origin, Union
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
@@ -7,6 +9,7 @@ from pydantic._internal._model_construction import ModelMetaclass as PydanticMod
 # noinspection PyProtectedMember
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
+from tabulate import tabulate
 from typing_inspection.typing_objects import is_annotated
 
 from musify.exception import MusifyAttributeError
@@ -114,6 +117,18 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             validation_alias=lambda name: name.replace("_", "").rstrip("s")
         ),
     )
+
+    @staticmethod
+    def _generate_table(rows: Collection[Collection[str]]) -> str:
+        col_count = max(map(len, rows)) if rows else 0
+        table = tabulate(
+            rows,
+            tablefmt="orgtbl",
+            colalign=("left", *["right"] * max(0, col_count - 1)),
+        )
+        table = re.sub(r"\| +\|", "|", table)
+        table = re.sub(r"\| +\|", "|", table)
+        return table
 
     @classmethod
     def _get_aliases(cls, name: str, with_serialization_alias: bool = False) -> set[str]:

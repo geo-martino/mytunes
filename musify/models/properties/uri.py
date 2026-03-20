@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Collection
-from typing import ClassVar, Self, Any, Annotated, Literal
+from typing import ClassVar, Self, Any, Annotated, Literal, TypeIs
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, AliasChoices
 from pydantic.root_model import RootModelRootType
@@ -268,3 +268,11 @@ class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
 
 
 type HasURI[UT] = HasImmutableURI[UT] | HasMutableURI
+
+
+def item_has_uri(item: Any) -> TypeIs[HasURI]:
+    """Whether the given item has a URI."""
+    return any((
+        isinstance(item, HasMutableURI) and item.has_uri,
+        isinstance(item, HasImmutableURI) and item.uri is not None,
+    ))

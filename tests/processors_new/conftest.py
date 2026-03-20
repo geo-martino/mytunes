@@ -5,6 +5,8 @@ import pytest
 from faker import Faker
 
 from musify.local.item.track import LocalTrack
+from musify.models.api import RemoteAPI
+from tests.models.api.utils import MockRemoteAPI
 
 
 # noinspection PyTypeChecker
@@ -26,3 +28,8 @@ def local_tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
         tracks.append(track)
 
     return tracks
+
+
+@pytest.fixture
+def api() -> RemoteAPI:
+    return MockRemoteAPI()

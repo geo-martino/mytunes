@@ -9,7 +9,7 @@ from musify.models.api.search import SearchEndpoints
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.track import Track, RemoteTrack
 from tests.models.api.testers import EndpointsTester
-from tests.models.api.utils import MockRemoteResource
+from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
 

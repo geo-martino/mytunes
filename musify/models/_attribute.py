@@ -75,10 +75,10 @@ class AttributeModelMetaclass(ModelMetaclass):
             if issubclass(kls, AttributeModel):
                 yield kls
 
-    def get_nested_field_info(cls: AttributeModel, key: str) -> FieldInfo:
+    def get_nested_field_info(cls: type[AttributeModel], key: str) -> FieldInfo:
         """Get field info for a given key, supporting nested keys using dot notation."""
         if len(key_split := key.split(".")) == 1:
-            if key in cls.model_fields:
+            if issubclass(cls, BaseModel) and key in cls.model_fields:
                 return cls.model_fields[key]
             return getattr(cls, key)
 

@@ -241,19 +241,19 @@ class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
 
 class MatchResult[T: Any](Result):
     """Results from :py:class:`MatchFilter` separated by individual filter results."""
-    included: Sequence[T] = Field(
+    included: tuple[T, ...] = Field(
         description="Objects that matched include settings.",
         default_factory=tuple,
     )
-    excluded: Sequence[T] = Field(
+    excluded: tuple[T, ...] = Field(
         description="Objects that matched exclude settings.",
         default_factory=tuple,
     )
-    compared: Sequence[T] = Field(
+    compared: tuple[T, ...] = Field(
         description="Objects that matched :py:class:`Comparer` settings",
         default_factory=tuple,
     )
-    grouped: Sequence[T] = Field(
+    grouped: tuple[T, ...] = Field(
         description="Objects that matched on any ``group_by`` settings",
         default_factory=tuple,
     )

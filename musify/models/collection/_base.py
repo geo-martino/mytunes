@@ -44,7 +44,7 @@ class RemoteCollection[UT: URI, IT: RemoteResource, CT: PageCursor](
         return self.count == self.cursor.total
 
     @abstractmethod
-    def extend(self, api: HasEndpoints) -> None:
+    async def extend(self, api: HasEndpoints) -> None:
         """Extend this collection by loading all remaining pages of items using the provided API."""
         raise NotImplementedError
 

@@ -60,10 +60,11 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
             method: str = "SCORE",
     ) -> None:
         """Wrapper for initially logging a score in a uniform aligned format"""
-        if isinstance(result, float):
-            result = round(result, 2)
+        result = self._clean_log_value(result)
+        item_val = self._clean_log_value(item_val)
+        other_val = self._clean_log_value(other_val)
 
-        messages = [f"{self.type:>10}={result:<5}"]
+        messages = [f"{self.type:>14}={result:<10}"]
         if not other_val:
             messages.append(item_val)
         else:
@@ -71,3 +72,10 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
 
         log = self._format_item_message(method=method, item=item, messages=messages)
         self.logger.debug(log)
+
+    @staticmethod
+    def _clean_log_value[T](value: T) -> T:
+        match value:
+            case float():
+                value = round(value, 2)
+        return value

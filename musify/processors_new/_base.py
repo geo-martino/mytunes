@@ -15,7 +15,7 @@ from musify.exception import MusifyValueError
 from musify.models import BaseModel, abstract_property
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI
+from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI, item_has_uri
 
 
 class Processor(BaseModel):
@@ -26,7 +26,6 @@ class Processor(BaseModel):
             method: str,
             item: Any,
             messages: str | Iterable,
-            max_widths: int | Iterable[int] = None,
             pad: str = " ",
     ) -> str:
         if isinstance(messages, str):
@@ -34,18 +33,12 @@ class Processor(BaseModel):
 
         title = cls._get_item_log_value(item)
         header = f"{pad[0] * 3} {method.upper():<7}: {title}"
-        return tabulate(
-            [header] + list(map(str, messages)),
-            tablefmt="orgtbl",
-            maxcolwidths=max_widths,
-        )
+        return "|" + " | ".join([header] + list(map(str, messages)))
 
     @staticmethod
     def _get_item_log_value(item: Any) -> str:
         match item:
-            case HasImmutableURI() if item.uri is not None:
-                return str(item.uri)
-            case HasMutableURI() if item.has_uri:
+            case HasImmutableURI() | HasMutableURI() if item_has_uri(item):
                 return str(item.uri)
             case HasName():
                 return str(item.name)

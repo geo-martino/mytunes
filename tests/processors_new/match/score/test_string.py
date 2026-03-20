@@ -47,12 +47,25 @@ class TestStringScoreReducer(BaseModelTester):
         model.reduce_factor = 0.5
         assert model._reduce_score(score=score, value="test value", other="other value") == score
 
-        model.reduce_on_phrases = {"other"}
-        model.reduce_factor = 1
-        assert model._reduce_score(score=score, value="test value", other="other value") == score
-
         model.reduce_factor = 0.5
         assert model._reduce_score(score=0, value="test value", other="other value") == 0
+
+
+    def test_reduce_score(self, model: StringScoreReducer, faker: Faker):
+        model.reduce_factor = faker.random_int(0, 99) / 100
+        model.reduce_on_phrases = {"other"}
+
+        score = faker.random_int()
+        expected = round(score * model.reduce_factor, 2)
+
+        # reduce phrases not found in either value
+        assert model._reduce_score(score=score, value="test value", other="another test value") == score
+
+        reduced_score = model._reduce_score(score=score, value="test value", other="other value")
+        assert round(reduced_score, 2) == expected
+
+        reduced_score = model._reduce_score(score=score, value="other value", other="test value")
+        assert round(reduced_score, 2) == expected
 
 
 class TestKaraokeScorer(StringScorerTester):

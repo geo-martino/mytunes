@@ -119,6 +119,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
     async def load_settings_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
+        # TODO: make this async
         with self.xml_settings_path.open("r", encoding="utf-8") as file:
             #: A map representation of the loaded XML settings data
             settings: dict[str, Any] = xmltodict.parse(file.read())
@@ -135,6 +136,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
     async def load_library_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
+        # TODO: make this async
         parser = XMLLibraryParser(source=self.xml_library_path, path_keys=self._xml_library_path_keys)
         return parser.parse()
 

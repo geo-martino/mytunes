@@ -313,6 +313,7 @@ class LocalLibrary(
 
         groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
+            tracks = sorted(tracks, key=lambda track: track.filename)
             yield Folder(name=path.name, tracks=group)
 
     def albums(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalAlbumCollection, None, None]:
@@ -327,7 +328,8 @@ class LocalLibrary(
                 continue
 
             album = next(track.album for track in group if track.album and track.album.name.casefold() == name)
-            yield LocalAlbumCollection(**album.model_dump(), tracks=group)
+            tracks = sorted(tracks, key=lambda track: track.track or 0)
+            yield LocalAlbumCollection(**album.model_dump(), tracks=tracks)
 
     def artists(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalArtistCollection, None, None]:
         """Dynamically generate a set of artist collections from the tracks in this library"""
@@ -341,7 +343,8 @@ class LocalLibrary(
                 continue
 
             artist = next(artist for track in group for artist in track.artists if artist.name.casefold() == name)
-            yield LocalArtistCollection(**artist.model_dump(), albums=self.albums(group))
+            albums = sorted(self.albums(group), key=lambda album: album.name)
+            yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
     def genres(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalGenreCollection, None, None]:
         """Dynamically generate a set of genre collections from the tracks in this library"""
@@ -355,4 +358,5 @@ class LocalLibrary(
                 continue
 
             genre = next(genre for track in group for genre in track.genres if genre.name.casefold() == name)
-            yield LocalGenreCollection(**genre.model_dump(), tracks=group)
+            tracks = sorted(tracks, key=lambda track: track.track or 0)
+            yield LocalGenreCollection(**genre.model_dump(), tracks=tracks)

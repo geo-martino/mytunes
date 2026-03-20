@@ -1,8 +1,9 @@
-from typing import Literal, Any, final
+from typing import Literal, Any, final, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from musify._types import LowerStrippedString
+from musify.exception import MusifyValueError
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
 from musify.models.properties.name import HasName
@@ -19,7 +20,7 @@ class StringScorer[C: StringCleaner](Scorer[C]):
 class StringScoreReducer[C: StringCleaner](StringScorer[C]):
     reduce_on_phrases: set[LowerStrippedString] = Field(
         description=(
-            "A set of phrases which, if found in the name of the item but not the other, "
+            "A set of phrases which, if found in one value but not the other and vice-versa, "
             "will reduce the name score by a factor of reduce_factor. "
         ),
         default_factory=set,
@@ -32,14 +33,29 @@ class StringScoreReducer[C: StringCleaner](StringScorer[C]):
         default=1.0,
     )
 
+    @model_validator(mode="after")
+    def _validate_reduction_values(self) -> Self:
+        if not self.reduce_on_phrases:
+            return self
+        if self.reduce_factor == 1:
+            raise MusifyValueError("reduce_factor must be set to a value other than 1 when reduce_on_phrases is set")
+        return self
+
     def _reduce_score(self, score: int | float, value: str, other: str | None) -> float:
         if not value or not other:
             return score
         if not score or self.reduce_factor == 1 or not self.reduce_on_phrases:
             return score
 
-        if any(word not in value.casefold() and word in other.casefold() for word in self.reduce_on_phrases):
+        in_value_only = any(
+            word in value.casefold().split() and word not in other.casefold().split() for word in self.reduce_on_phrases
+        )
+        in_other_only = any(
+            word not in value.casefold().split() and word in other.casefold().split() for word in self.reduce_on_phrases
+        )
+        if in_value_only or in_other_only:
             score = max(score * self.reduce_factor, 0)
+
         return score
 
 

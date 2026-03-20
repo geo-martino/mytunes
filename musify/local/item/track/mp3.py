@@ -254,7 +254,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     def _serialize_name[T: str | HasName](
             self, value: T, info: SerializationInfo
     ) -> T | str | InstanceOf[mutagen.id3.TextFrame]:
-        print("UNM", value, info)
         if info.mode == "json":
             return self._extract_name(value)
         # noinspection PyArgumentList
@@ -282,10 +281,8 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         if not isinstance(value, tuple | list):
             value = [value]
 
-        print("SER", value, info)
         frame_cls = self._get_frame_class(info)
         tag_value = self._join_split_tags(value)
-        print(frame_cls, tag_value)
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="plain", when_used="unless-none")

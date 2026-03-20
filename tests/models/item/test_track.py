@@ -22,7 +22,7 @@ class TestTrack(NoUniqueKeyTester):
     @pytest.fixture
     def tracks(self, album: Album, tracks: list[Track], faker: Faker) -> list[Track]:
         for track in tracks:
-            total = faker.random_int(1, 5)
+            total = faker.random_int(5, 10)
 
             track.album = album
             track.disc = Position(number=faker.random_int(1, total), total=total)

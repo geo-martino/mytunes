@@ -20,8 +20,8 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 @final
 class SpotifySearchEndpoints(
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyResource],
-    SearchEndpoints[SpotifyResourceURI, SpotifyResource],
+    SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist],
+    SearchEndpoints[SpotifyResourceURI, SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist],
 ):
     __final__ = True
 
@@ -29,15 +29,18 @@ class SpotifySearchEndpoints(
     _query_path: ClassVar[AliasPath] = AliasPath("{type}s", "items")
     _query_limit: ClassVar[int] = 10
 
-    @staticmethod
+    @classmethod
     @validate_call
     def _format_query_params(
+            cls,
             query: str,
-            types: set[type[SpotifyTrack] | type[SpotifyAlbum] | type[SpotifyArtist] | type[SpotifyPlaylist]],
+            types: set[str | type[Track] | type[Album] | type[Artist] | type[Playlist]],
             limit: PositiveInt | None = None,
             offset: PositiveInt | None = None,
     ) -> dict[str, Any]:
-        params: dict[str, Any] = {"q": query, "type": ",".join((it.type for it in types))}
+        types_mapped = map(cls._map_type_to_str, types)
+
+        params: dict[str, Any] = {"q": query, "type": ",".join(types_mapped)}
         if limit is not None:
             params["limit"] = limit
         if offset is not None:
@@ -45,9 +48,9 @@ class SpotifySearchEndpoints(
 
         return params
 
-    @staticmethod
+    @classmethod
     @validate_call
-    def _format_query_from_item(item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(cls, item: ResourceModel, **kwargs) -> dict[str, Any]:
         match item:
             case Track() as track if track.artists:
                 query = f"track:{track.name} artist:{track.artists[0].name}"
@@ -64,4 +67,5 @@ class SpotifySearchEndpoints(
             case _:
                 raise ValueError(f"Unsupported item type: {item.type}")
 
-        return {"query": query, "types": {type(item)}} | kwargs
+        item_type = item if isinstance(item, SpotifyResource) else item.type
+        return {"query": query, "types": {item_type}} | kwargs

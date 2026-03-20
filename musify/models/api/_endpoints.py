@@ -14,6 +14,7 @@ from pydantic_core import PydanticUndefined
 from yarl import URL
 
 from musify.exception import MusifyTypeError
+from musify.models import ResourceModel
 from musify.models._attribute import AttributeModelMetaclass
 from musify.models.api.exception import APIError
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
@@ -244,9 +245,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         match t:
             case str():
                 return t.rstrip("s")
-            case RemoteResource():
+            case ResourceModel():
                 return t.type.rstrip("s")
-            case _ if isinstance(t, type) and issubclass(t, RemoteResource):
+            case _ if isinstance(t, type) and issubclass(t, ResourceModel):
                 return t.type.rstrip("s")
             case _:
                 return "item"

@@ -8,6 +8,7 @@ from musify.models import AttributeModel
 from musify.models.collection import CollectionModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
+from musify.models.properties.uri import item_has_uri
 from musify.processors_new import Processor
 from musify.processors_new.match.score import Scorer
 
@@ -71,29 +72,34 @@ class Matcher(Processor, HasLogger):
 
         self._log_scorers(scorers, item=item, others=others)
 
+        other = None
         for other in others:
             score = self.score(scorers, item=item, other=other)
-            if score > best_score:
+            if score > self.min_score and score > best_score:
                 best_match = other
                 best_score = score
 
             if score >= self.max_score:  # break early if a good enough match is found
-                message = [self._get_item_log_value(other), "MAX SCORE REACHED"]
-                log = self._format_item_message(method="BREAK", item=item, messages=message, pad=" ")
-                self.logger.debug(log)
                 break
 
-        if best_score < self.min_score:
-            message = "MIN SCORE NOT REACHED"
-            log = self._format_item_message(method="FAILED", item=item, messages=message, pad="<")
+            messages = [self._get_item_log_value(other), f"SCORE={score:.2f}"]
+            log = self._format_item_message(method="SUM", item=item, messages=messages, pad="-")
             self.logger.debug(log)
-            return None
 
-        message = [self._get_item_log_value(best_match), f"{"SCORE":>10}={best_score}"]
-        log = self._format_item_message(method="MATCHED", item=item, messages=message, pad="<")
+        messages = [self._get_item_log_value(best_match or other), f"SCORE={best_score:.2f}"]
+        if best_score <= self.min_score:
+            method = "FAILED"
+            messages.append(f"< MIN SCORE ({self.min_score:.2f})")
+        elif best_score >= self.max_score:
+            method = "MATCHED"
+            messages.append(f"> MAX SCORE ({self.max_score:.2f})")
+        else:
+            method = "MATCHED"
+            messages.append("= BEST SCORE")
+
+        log = self._format_item_message(method=method, item=item, messages=messages, pad="<")
         self.logger.debug(log)
-
-        return best_match
+        return best_match  # will be None if no match above min_score was found
 
     def _log_scorers(self, scorers: list[Scorer], item: Any, others: Collection) -> None:
         """Log the scorers being used for a given item and other item."""
@@ -102,7 +108,7 @@ class Matcher(Processor, HasLogger):
         messages = [
             f"ITEMS: {len(others)}",
             f"REQUIRED: {", ".join(scorer.type for scorer in required)}" if required else "No required scorers",
-            f"OPTIONAL: {", ".join(scorer.type for scorer in optional)}" if required else "No optional scorers",
+            f"OPTIONAL: {", ".join(scorer.type for scorer in optional)}" if optional else "No optional scorers",
         ]
         log = self._format_item_message(method="START", item=item, messages=messages, pad=">")
 
@@ -117,9 +123,9 @@ class Matcher(Processor, HasLogger):
         for scorer in filter(lambda x: x.required, scorers):
             score = scorer.score(item, other)
             if score < self.max_score:
-                self.logger.debug(
-                    f"Required scorer {scorer.type} scored {score} which is below the max score threshold. Stopping."
-                )
+                message = ["REQUIRED SCORER FAILED".ljust(25), f"{scorer.type}={score:.2f} < {self.max_score:.2f}"]
+                log = self._format_item_message(method="SKIP", item=item, messages=message, pad="<")
+                self.logger.debug(log)
                 return 0
 
             scores.append(score)
@@ -164,9 +170,9 @@ class Matcher(Processor, HasLogger):
         messages = [f"ITEMS: {len(items)}", f"OTHERS: {len(others)}"]
 
         if not items or not others:
-            log = self._format_item_message(method="SKIP", item=item, messages=messages, pad=" ")
+            log = self._format_item_message(method="SKIP", item=item, messages=messages)
             self.logger.debug(log)
             return
 
-        log = self._format_item_message(method="ITEMS", item=item, messages=messages, pad=" ")
+        log = self._format_item_message(method="ITEMS", item=item, messages=messages)
         self.logger.debug(log)

@@ -8,7 +8,7 @@ from yarl import URL
 # noinspection PyProtectedMember
 from musify.models.api.types import _ApiURLSchema, _ApiURISchema
 from musify.models.properties.uri import URI
-from tests.models.api.utils import MockRemoteResource
+from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
 

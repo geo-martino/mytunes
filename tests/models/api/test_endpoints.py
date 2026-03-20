@@ -20,7 +20,8 @@ from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
-from tests.models.api.utils import MockRemoteResource, MockRemoteCollection, MockIndexCursor, MockUrlCursor
+from tests.models.api.utils import MockIndexCursor, MockUrlCursor
+from tests.models.utils import MockRemoteResource, MockRemoteCollection
 from tests.utils import SimpleURI
 
 

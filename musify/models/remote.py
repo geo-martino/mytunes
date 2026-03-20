@@ -26,7 +26,7 @@ class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=makecl
         return hash(self.uri)
 
     @abstractmethod
-    def reload(self, api: HasEndpoints) -> Self:
+    async def reload(self, api: HasEndpoints) -> Self:
         """
         Reload this remote resource using the provided API.
         Returns a new instance of the resource with the updated data.

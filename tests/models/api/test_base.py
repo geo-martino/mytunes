@@ -34,6 +34,7 @@ class TestRemoteAPI(BaseModelTester):
 
     def test_from_handler(self, handler: RequestHandler):
         model = MockRemoteAPI.model_validate(handler)
+        assert model.search._handler is handler
         assert model.users._handler is handler
         assert model.tracks._handler is handler
         assert model.artists._handler is handler
@@ -42,6 +43,7 @@ class TestRemoteAPI(BaseModelTester):
 
     def test_from_authoriser(self, authoriser: RemoteAuthoriser):
         model = MockRemoteAPI.model_validate(authoriser)
+        assert isinstance(model.search._handler, RequestHandler)
         assert isinstance(model.users._handler, RequestHandler)
         assert isinstance(model.tracks._handler, RequestHandler)
         assert isinstance(model.artists._handler, RequestHandler)
@@ -50,6 +52,7 @@ class TestRemoteAPI(BaseModelTester):
 
     def test_from_credentials(self, authoriser: RemoteAuthoriser):
         model = MockRemoteAPI.model_validate(authoriser.model_dump())
+        assert isinstance(model.search._handler, RequestHandler)
         assert isinstance(model.users._handler, RequestHandler)
         assert isinstance(model.tracks._handler, RequestHandler)
         assert isinstance(model.artists._handler, RequestHandler)
@@ -59,6 +62,7 @@ class TestRemoteAPI(BaseModelTester):
     def test_checks_all_handlers_are_the_same(self):
         with pytest.raises(ValidationError, match="All endpoint models must use the same request handler"):
             MockRemoteAPI(
+                search=RequestHandler.create(),
                 users=RequestHandler.create(),
                 tracks=RequestHandler.create(),
                 artists=RequestHandler.create(),

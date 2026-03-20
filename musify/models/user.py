@@ -23,5 +23,5 @@ class RemoteUser[UT: URI](RemoteResource[UT], HasName, HasImages):
         default=None,
     )
 
-    def reload(self, api: HasUserEndpoints[UserEndpoints]) -> Self:
-        return api.users.get_me()
+    async def reload(self, api: HasUserEndpoints[UserEndpoints]) -> Self:
+        return await api.users.get_me()
