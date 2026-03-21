@@ -14,6 +14,8 @@ from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutable
 from musify.models.cursors import PageCursor
 from musify.models.item.track import RemoteTrack, Track
 from musify.models.user import RemoteUser
+from musify.processors_new.compare import Comparer
+from musify.processors_new.filters import ComparerFilter
 from tests.models.api.utils import MockRemoteAPI
 from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.collection.utils import assert_sync_items_result
@@ -131,12 +133,14 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     async def test_sync_items(
             self,
             model: RemoteMutablePlaylist,
+            tracks: list[RemoteTrack],
             api: HasPlaylistEndpoints,
             faker: Faker,
     ):
         kind = faker.random_element(get_args(SYNC_TYPE))
 
-        initial = [track.uri for track in model.tracks]
+        assert model.tracks == tracks
+        initial = [track.uri for track in tracks]
         add = faker.random_elements(initial)
         remove = faker.random_elements(initial, length=faker.random_int(0, len(add)))
         unchanged = faker.random_elements(initial)
@@ -150,7 +154,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             patch(
                 "musify.models.collection.playlist.get_sync_items",
                 return_value=(add, remove, unchanged)
-            ) as mock_get_sync_items,
+            ) as mock_get_items,
             patch.object(
                 WriteCollectionEndpoints, "add", return_value=len(add), new_callable=AsyncMock
             ) as mock_add,
@@ -161,7 +165,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             result = await model.sync_items(api, kind=kind, dry_run=dry_run, show_bar=show_bar)
 
             mock_get_remote_uris.assert_called_once_with(api, show_bar=show_bar)
-            mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
+            mock_get_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
             assert_sync_items_result(result, remote_uris, add, remove, unchanged)
 
             if dry_run:
@@ -170,3 +174,32 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             else:
                 mock_add.assert_called_once_with(model.uri.api_url, uris=add, show_bar=show_bar)
                 mock_remove.assert_called_once_with(model.uri.api_url, uris=remove, show_bar=show_bar)
+
+    async def test_sync_items_applies_filter(
+            self,
+            model: RemoteMutablePlaylist,
+            tracks: list[Track],
+            api: HasPlaylistEndpoints,
+            faker: Faker,
+    ):
+        assert model.tracks == tracks
+        expected = faker.random_elements(tracks, unique=True)
+
+        items_filter = ComparerFilter(
+            comparers=Comparer(
+                field="name",
+                condition="is in",
+                expected=[track.name for track in expected]
+            )
+        )
+
+        with (
+            patch.object(model, "_get_remote_uris", return_value=[]),
+            patch("musify.models.collection.playlist.get_sync_items", return_value=([], [], [])) as mock_get_items,
+            patch.object(WriteCollectionEndpoints, "add", new_callable=AsyncMock),
+            patch.object(WriteCollectionEndpoints, "remove", new_callable=AsyncMock),
+        ):
+            await model.sync_items(api, items_filter=items_filter)
+
+            result = mock_get_items.call_args.kwargs["initial"]
+            assert sorted(result) == sorted(track.uri for track in expected)

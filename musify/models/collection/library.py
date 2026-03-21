@@ -38,7 +38,7 @@ from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteT
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import HasURI, URI
 from musify.models.user import RemoteUser
-from musify.processors_new.filters import ValuesFilter
+from musify.processors_new.filters import ValuesFilter, ComparerFilter
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):
@@ -476,6 +476,14 @@ class RemoteMutableLibrary[
 ](
     MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, API, RT, AT, GT, UT]
 ):
+    sync_filter: ComparerFilter | None = Field(
+        description=(
+            "The filter to apply when syncing items to the library. "
+            "Only items matching the filter will be added when syncing."
+        ),
+        default=None,
+    )
+
     async def sync(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncResult]:
         """
         Synchronise all items in this library with the remote service.
@@ -588,7 +596,9 @@ class RemoteMutableLibrary[
         async def _sync_playlist(pl: RemoteMutablePlaylist) -> tuple[str, SyncResult]:
             remote = await api.playlists.saved.get_or_create(pl.name)
             remote.tracks[:] = pl.tracks
-            return pl.name, await remote.sync_items(api=api, kind=kind, dry_run=dry_run, show_bar=False)
+            return pl.name, await remote.sync_items(
+                api=api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run, show_bar=False
+            )
         
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, playlists),
@@ -686,7 +696,7 @@ class RemoteMutableLibrary[
     async def _sync_saved_items(
             self,
             kind: SYNC_TYPE,
-            items_type: _SYNC_ITEMS_TYPE,
+            items_type: str,
             items: Collection[HasURI],
             api: HasSavedEndpoints[ReadSavedEndpoints | WriteSavedEndpoints],
             dry_run: bool,
@@ -696,6 +706,7 @@ class RemoteMutableLibrary[
         message = f"Synchronising {len(items)} {items_type} on {self._log_name} library: {message_context}"
         self.logger.info(message, header=1)
 
+        items = self._filter_items(items, items_type=items_type)
         initial = [item.uri for item in items if item.uri]
         remote = await api.saved.get_all()
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)
@@ -711,6 +722,20 @@ class RemoteMutableLibrary[
             difference=added - removed,
             final=len(remote) + added - removed
         )
+
+    def _filter_items[T: Collection](self, items: T, items_type: str) -> T:
+        """Filter the given items using this library's sync filter if given."""
+        if self.sync_filter is None:
+            return items
+
+        initial_count = len(items)
+        filtered_items = self.sync_filter.apply(items)
+        difference = len(filtered_items) - initial_count
+        if difference:
+            message = colored(f"Filtered out {difference} {items_type}.", "dark_gray", attrs=["dark"])
+            self.logger.info(message, header=3)
+
+        return items
 
     ###########################################################################
     ## Restore playlists and saved items
@@ -752,8 +777,9 @@ class RemoteMutableLibrary[
             case _:
                 raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
 
+    # TODO: fix typing on restore functions, it's a bit too messy and confusing...
     def restore(
-            self, backup: RestoreLibraryType[_SYNC_ITEMS_TYPE], dry_run: bool = False
+            self, backup: Any, dry_run: bool = False
     ) -> dict[str, SyncResult] | SyncResult | None:
         """
         Restore library from a backup.

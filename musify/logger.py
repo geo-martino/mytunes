@@ -155,7 +155,7 @@ class Logger(logging.Logger):
                 header = " >"
             case 3:
                 header = " -"
-            case 3:
+            case 4:
                 header = " ·"
 
         if header:
@@ -163,7 +163,7 @@ class Logger(logging.Logger):
             message = colored(message, "white", attrs=["bold"])
 
         if hidden:
-            hidden = colored(hidden, "dark_grey", attrs=['dark'])
+            hidden = colored(hidden, "dark_grey", attrs=["dark"])
 
         parts = [header, message, hidden]
         return " ".join(part for part in parts if part).strip()

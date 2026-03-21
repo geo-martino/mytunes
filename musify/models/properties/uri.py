@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Collection
+from functools import total_ordering
 from typing import ClassVar, Self, Any, Annotated, Literal, TypeIs
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, AliasChoices
@@ -21,6 +22,7 @@ from musify.models.url import HttpURL
 
 
 # noinspection PyAbstractClass
+@total_ordering
 class URI(RootModel[str]):
     """Stores a URI for a resource from a specific remote repository."""
     _source: ClassVar[str] = PrivateAttr(
@@ -129,6 +131,9 @@ class URI(RootModel[str]):
             return str(self) == other or self.id == other
 
         return super().__eq__(other)
+
+    def __lt__(self, other: URI):
+        return str(self) < str(other)
 
 
 class HasImmutableURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls()):

@@ -23,6 +23,9 @@ class Filter[T](Processor):
         """Indicates if the filter is set and ready to be used."""
         raise NotImplementedError
 
+    def __bool__(self) -> bool:
+        return self.ready
+
     @abstractmethod
     def check(self, item: T, *args, **kwargs) -> bool:
         """

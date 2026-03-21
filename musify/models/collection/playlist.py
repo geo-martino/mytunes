@@ -22,6 +22,7 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI
 from musify.models.user import RemoteUser
+from musify.processors_new.filters import ComparerFilter
 
 if TYPE_CHECKING:
     from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
@@ -156,6 +157,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             self,
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],
             kind: SYNC_TYPE = "new",
+            items_filter: ComparerFilter | None = None,
             dry_run: bool = False,
             show_bar: bool = True,
     ) -> SyncResult:
@@ -171,10 +173,13 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
         :param api: The API to use for synchronisation.
         :param kind: Sync option for the remote playlist. See description.
         :param dry_run: Run function, but do not modify the remote playlists at all.
+        :param items_filter: An optional filter to apply to items before syncing.
+            Only items that pass the filter will be synced.
         :param show_bar: Show progress bars during sync.
         :return: The results of the sync as a :py:class:`SyncResult` object.
         """
-        initial = [track.uri for track in self.tracks if track.uri]
+        tracks = items_filter.apply(self.tracks) if items_filter else self.tracks
+        initial = [track.uri for track in tracks if track.uri]
         remote = await self._get_remote_uris(api, show_bar=show_bar)
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)
 
@@ -197,6 +202,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
     async def _get_remote_uris(
             self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints], show_bar: bool = True
     ) -> list[UT]:
+        # TODO: consider putting this logic in a classmethod on InitialCursor?
         # noinspection PyTypeChecker
         cursor_classes = [kls for kls in InitialCursor.registered_submodels if kls.source == self.source]
         cursor = TypeAdapter(Union[*cursor_classes]).validate_python(self.uri.api_url)

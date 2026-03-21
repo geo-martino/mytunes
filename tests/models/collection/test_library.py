@@ -38,7 +38,7 @@ class TestLibrary(NoUniqueKeyTester):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
         assert all(track not in library.tracks for track in library.tracks_in_playlists)
 
-        uris = [str(track.uri) for track in library.tracks_in_playlists]
+        uris = [track.uri for track in library.tracks_in_playlists]
         assert sorted(uris) == sorted(set(uris))  # no duplicates
 
     def test_items_count(self, tracks: list[Track], playlists: list[Playlist]):
@@ -150,8 +150,8 @@ class TestRemoteLibrary(BaseModelTester):
         mock_get_all.assert_called_once()
         assert len(loaded_items) == len(mock_get_all.return_value)
 
-        expected_uris = sorted(str(item.uri) for item in mock_get_all.return_value)
-        assert sorted(str(item.uri) for item in loaded_items) == expected_uris
+        expected_uris = sorted(item.uri for item in mock_get_all.return_value)
+        assert sorted(item.uri for item in loaded_items) == expected_uris
 
     async def test_load_playlists(self, model: RemoteLibrary, playlists: list[Playlist], user: RemoteUser, mock_get_all: Mock):
         for pl in playlists:
@@ -241,7 +241,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     async def test_sync_saved_items(
             self,
             model: RemoteMutableLibrary,
-            tracks: list[Track],
+            tracks: list[RemoteTrack],
             faker: Faker,
     ):
         kind = faker.random_element(get_args(SYNC_TYPE))
@@ -255,6 +255,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         remote_uris = [SimpleURI.from_id(i, kind=RemoteTrack.type) for i in range(faker.random_int(1, 10))]
 
         with (
+            patch.object(model, "_filter_items", return_value=tracks) as mock_filter_items,
             patch.object(
                 ReadSavedEndpoints, "get_all", return_value=remote_uris, new_callable=AsyncMock
             ) as mock_get_all,
@@ -273,6 +274,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
                 kind=kind, items_type="tracks", items=tracks, api=model.api.tracks, dry_run=dry_run
             )
 
+            mock_filter_items.assert_called_once_with(tracks, items_type="tracks")
             mock_get_all.assert_called_once()
             mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
             assert_sync_items_result(result, remote_uris, add, remove, unchanged)

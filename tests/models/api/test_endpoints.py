@@ -561,8 +561,8 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             uris.pop(faker.random_int(0, len(uris) - 1)) for _ in range(faker.random_int(1, len(uris) - 10))
         ]
 
-        assert sorted(map(str, uris_collection)) != sorted(map(str, uris))
-        assert sorted(map(str, uris_duplicated)) != sorted(map(str, uris))
+        assert sorted(uris_collection) != sorted(uris)
+        assert sorted(uris_duplicated) != sorted(uris)
 
         url = converter(uri)
         limit = faker.random_int(1)
