@@ -18,7 +18,7 @@ _log_formatters = [
 
 
 class RemotePlaylistsResult[T: RemoteTrack](CountResult):
-    _log_key_formatter: ClassVar[LogFormatter] = LogFormatter(
+    _key_formatter: ClassVar[LogFormatter] = LogFormatter(
         max_width=40,
         colour="white",
     )

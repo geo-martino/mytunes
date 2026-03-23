@@ -1,16 +1,17 @@
+import re
 import textwrap
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
 from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
+from tabulate import tabulate
 from termcolor import colored
 
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.models import BaseModel
 from musify.models.metadata import Attribute
-from musify.models.properties.logger import generate_table
 
 
 @dataclass(config=ConfigDict(frozen=True))
@@ -97,16 +98,17 @@ class Result(BaseModel):
     """Stores the results of an operation"""
     model_config = ConfigDict(frozen=True)
 
-    _log_header_formatter: ClassVar[LogFormatter] = LogFormatter(
+    _table_format: ClassVar[str] = "orgtbl"
+    _header_formatter: ClassVar[LogFormatter] = LogFormatter(
         colour="cyan",
         colour_attributes=["bold"],
     )
-    _log_key_formatter: ClassVar[LogFormatter] = LogFormatter(
+    _key_formatter: ClassVar[LogFormatter] = LogFormatter(
         max_width=40,
         colour="white",
         colour_attributes=["bold"],
     )
-    _log_name_formatter: ClassVar[LogFormatter] = LogFormatter(
+    _name_formatter: ClassVar[LogFormatter] = LogFormatter(
         colour="white",
     )
 
@@ -115,10 +117,17 @@ class Result(BaseModel):
         """Generate a formatted table of stats for multiple results"""
         # take key when not a Result to allow for separating lines
         rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results.items()]
-        table = generate_table(rows)
+        col_count = max(map(len, rows)) if rows else 0
+        table = tabulate(
+            rows,
+            tablefmt=cls._table_format,
+            colalign=("left", *["right"] * max(0, col_count - 1)),
+        )
+        table = re.sub(r"\| +\|", "|", table)
+        table = re.sub(r"\| +\|", "|", table)
 
         if header:
-            table = cls._log_header_formatter.get_value(header) + ":\n" + table
+            table = cls._header_formatter.get_value(header) + ":\n" + table
 
         return table
 
@@ -127,7 +136,7 @@ class Result(BaseModel):
         row = []
 
         if key:
-            row.append(self._log_key_formatter.get_value(key))
+            row.append(self._key_formatter.get_value(key))
 
         for field_name, (_, metadata) in self.__class__._metadata_fields.items():
             if not self._has_formatters(metadata):
@@ -150,12 +159,12 @@ class Result(BaseModel):
 
     @classmethod
     def _get_field_cell(cls, value: str, name: str) -> str:
-        return f"{value} {cls._log_name_formatter.get_value(name).replace("_", " ")}"
+        return f"{value} {cls._name_formatter.get_value(name).replace("_", " ")}"
 
 
 class CountResult(Result):
     """Same as Result but only with numeric fields which can be summed in a totals row."""
-    _log_total_key_formatter: ClassVar[LogFormatter] = LogFormatter(
+    _total_key_formatter: ClassVar[LogFormatter] = LogFormatter(
         max_width=40,
         colour="white",
         colour_attributes=["bold"],
@@ -164,7 +173,7 @@ class CountResult(Result):
     @classmethod
     def generate_totals_log(cls, results: Iterable[Self]) -> tuple[str, ...]:
         """Generate a log of total stats for multiple results"""
-        row = [cls._log_total_key_formatter.get_value("TOTAL")]
+        row = [cls._total_key_formatter.get_value("TOTAL")]
 
         for field_name, (_, metadata) in cls._metadata_fields.items():
             if not cls._has_formatters(metadata):
@@ -188,7 +197,7 @@ class TotalCountResult(CountResult):
     Same as CountResult but with an additional total column at the end of the log
     for the sum of all numeric fields in a row.
     """
-    _log_total_value_formatter: ClassVar[LogFormatter] = LenLogFormatter(
+    _total_value_formatter: ClassVar[LogFormatter] = LenLogFormatter(
         width=6,
         alignment="right",
         colour="magenta",
@@ -223,5 +232,5 @@ class TotalCountResult(CountResult):
 
     @classmethod
     def _get_total_cell(cls, total: int) -> str:
-        value = cls._log_total_value_formatter.get_value(total)
+        value = cls._total_value_formatter.get_value(total)
         return cls._get_field_cell(value, "total")

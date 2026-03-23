@@ -149,27 +149,28 @@ class TestResult(BaseModelTester):
     def test_generate_log_on_values(self, model: Result, amount_formatter: LogFormatter, unit_formatter: LogFormatter):
         result = model.__class__(name="test 1", amount=5, unit="apples")
         expected = (
-            model._log_key_formatter.get_value("Test Result"),
-            f"{amount_formatter.get_value(5)} {model._log_name_formatter.get_value("amount")}",
-            f"{unit_formatter.get_value("apples")} {model._log_name_formatter.get_value("unit")}",
+            model._key_formatter.get_value("Test Result"),
+            f"{amount_formatter.get_value(5)} {model._name_formatter.get_value("amount")}",
+            f"{unit_formatter.get_value("apples")} {model._name_formatter.get_value("unit")}",
         )
         assert result.generate_log("Test Result") == expected
 
     def test_generate_log_on_none(self, model: Result, amount_formatter: LogFormatter, unit_formatter: LogFormatter):
         result = model.__class__(name="test 2", amount=None, unit=None)
         expected = (
-            model._log_key_formatter.get_value("Test Result"),
-            f"{amount_formatter.get_value("")} {model._log_name_formatter.get_value("amount")}",
-            f"{unit_formatter.get_value("")} {model._log_name_formatter.get_value("unit")}",
+            model._key_formatter.get_value("Test Result"),
+            f"{amount_formatter.get_value("")} {model._name_formatter.get_value("amount")}",
+            f"{unit_formatter.get_value("")} {model._name_formatter.get_value("unit")}",
         )
         assert result.generate_log("Test Result") == expected
 
     def test_generate_table(self, model: Result, results: list[Result]):
         results = {result.name: result for result in results}
-        table = model.generate_table(results)
-        assert len(table.splitlines()) == len(results)
+        table = model.generate_table(results, header="Test Results")
+
+        assert len(table.splitlines()) == len(results) + 1  # adds header row
         # adds key to each row
-        assert len(table.splitlines()[0].split(" | ")) == len(next(iter(results.values())).generate_log()) + 1
+        assert len(table.splitlines()[1].split(" | ")) == len(next(iter(results.values())).generate_log()) + 1
 
 
 class TestCountResult(BaseModelTester):
@@ -198,9 +199,9 @@ class TestCountResult(BaseModelTester):
 
     def test_generate_totals_log(self, model: CountResult, results: list[CountResult], formatter: LogFormatter):
         expected = (
-            model._log_total_key_formatter.get_value("TOTAL"),
-            f"{formatter.get_value(27)} {model._log_name_formatter.get_value("count")}",
-            f"{formatter.get_value(9)} {model._log_name_formatter.get_value("items")}",
+            model._total_key_formatter.get_value("TOTAL"),
+            f"{formatter.get_value(27)} {model._name_formatter.get_value("count")}",
+            f"{formatter.get_value(9)} {model._name_formatter.get_value("items")}",
         )
         assert model.generate_totals_log(results) == expected
 
@@ -234,12 +235,12 @@ class TestTotalCountResult(BaseModelTester):
     ):
         result = model.__class__(name="test 1", count=5, items=[1, 2, 3])
         expected_total = " ".join((
-            model._log_total_value_formatter.get_value(8),
-            model._log_name_formatter.get_value("total"),
+            model._total_value_formatter.get_value(8),
+            model._name_formatter.get_value("total"),
         ))
         expected = (
-            f"{formatter.get_value(5)} {model._log_name_formatter.get_value("count")}",
-            f"{formatter.get_value(3)} {model._log_name_formatter.get_value("items")}",
+            f"{formatter.get_value(5)} {model._name_formatter.get_value("count")}",
+            f"{formatter.get_value(3)} {model._name_formatter.get_value("items")}",
             expected_total
         )
         assert result.generate_log() == expected
@@ -248,13 +249,13 @@ class TestTotalCountResult(BaseModelTester):
             self, model: TotalCountResult, results: list[TotalCountResult], formatter: LogFormatter
     ):
         expected_total = " ".join((
-            model._log_total_value_formatter.get_value(36),
-            model._log_name_formatter.get_value("total"),
+            model._total_value_formatter.get_value(36),
+            model._name_formatter.get_value("total"),
         ))
         expected = (
-            model._log_total_key_formatter.get_value("TOTAL"),
-            f"{formatter.get_value(27)} {model._log_name_formatter.get_value("count")}",
-            f"{formatter.get_value(9)} {model._log_name_formatter.get_value("items")}",
+            model._total_key_formatter.get_value("TOTAL"),
+            f"{formatter.get_value(27)} {model._name_formatter.get_value("count")}",
+            f"{formatter.get_value(9)} {model._name_formatter.get_value("items")}",
             expected_total
         )
         assert model.generate_totals_log(results) == expected
