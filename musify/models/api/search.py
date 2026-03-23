@@ -90,7 +90,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @abstractmethod
     def _format_query_params(
-            self, query: str, types: set[Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[str | Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
         raise NotImplementedError
 

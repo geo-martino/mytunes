@@ -7,6 +7,7 @@ import pydantic
 import pytest
 from faker import Faker
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture, mocker
 
 from musify.exception import MusifyKeyError
 from musify.models import ResourceModel
@@ -213,11 +214,12 @@ class TestMutableUniqueMapping:
         with pytest.raises(ValueError):
             mapping.add("invalid value")
 
-    def test_update(self, models: list[ResourceModel]):
-        with patch.object(UniqueMapping, "_update") as mock_update:
-            mapping = MutableUniqueMapping(models)
-            mapping.update(models)
-            mock_update.assert_called_once()
+    def test_update(self, models: list[ResourceModel], mocker: MockerFixture):
+        mock_update = mocker.spy(UniqueMapping, "_update")
+
+        mapping = MutableUniqueMapping(models)
+        mapping.update(models)
+        mock_update.assert_called_once()
 
     def test_remove(self, models: list[ResourceModel]):
         initial = models[2:]
@@ -244,8 +246,9 @@ class TestMutableUniqueMapping:
         mapping.clear()
         assert not mapping._items
 
-    def test_replace(self, models: list[ResourceModel]):
-        with patch.object(UniqueMapping, "_replace") as mock_update:
-            mapping = MutableUniqueMapping(models)
-            mapping.replace(models)
-            mock_update.assert_called_once()
+    def test_replace(self, models: list[ResourceModel], mocker: MockerFixture):
+        mock_replace = mocker.spy(UniqueMapping, "_replace")
+
+        mapping = MutableUniqueMapping(models)
+        mapping.replace(models)
+        mock_replace.assert_called_once()

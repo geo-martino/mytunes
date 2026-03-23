@@ -82,7 +82,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return self
 
     @staticmethod
-    def _batch_values(values: Iterable, limit: int) -> batched[str]:
+    def _batch_values(values: Iterable, limit: int) -> batched:
         """Batch the given values into sublists of the given size."""
         return itertools.batched(map(str, values), limit)
 

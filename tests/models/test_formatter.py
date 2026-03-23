@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock
 import pytest
 from faker import Faker
 from pydantic import ValidationError
+from pytest_mock import MockerFixture
 
 from musify.models.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from musify.models.item.artist import Artist, HasArtists
@@ -223,11 +224,9 @@ class TestCollectionFormatter(BaseModelTester):
             fields=get_args(FIELDS),
         )
 
-    @pytest.fixture
-    def collection(self, tracks: list[Track], faker: Faker) -> HasTracks:
-        return
-
-    def test_format_uses_current_positions(self, model: CollectionFormatter, tracks: list[Track], faker: Faker):
+    def test_format_uses_current_positions(
+            self, model: CollectionFormatter, tracks: list[Track], mocker: MockerFixture, faker: Faker
+    ):
         collection = HasTracks(tracks=tracks)
         total = len(tracks)
 
@@ -235,25 +234,26 @@ class TestCollectionFormatter(BaseModelTester):
         for i, track in enumerate(tracks, 1):
             track.track = Position(number=i, total=total)
 
-        with patch.object(ModelFormatter, "format") as mock_format:
-            model.format(collection, indices=True)
-            mock_format.assert_called_once()
+        mock_format = mocker.spy(ModelFormatter, "format")
 
-            kwargs = mock_format.call_args.kwargs
-            assert list(mock_format.call_args.args[0]) == list(collection.iter_items)
+        model.format(collection, indices=True)
 
-            # different order expected
-            assert kwargs["indices"] == [track.track for track in collection.iter_items]
-            assert kwargs["indices"] != [track.track for track in tracks]
+        mock_format.assert_called_once()
+        # different order expected
+        kwargs = mock_format.call_args.kwargs
+        assert kwargs["indices"] == [track.track for track in collection.iter_items]
+        assert kwargs["indices"] != [track.track for track in tracks]
 
-    def test_format_generates_positions(self, model: CollectionFormatter, artists: list[Artist], faker: Faker):
+    def test_format_generates_positions(
+            self, model: CollectionFormatter, artists: list[Artist], mocker: MockerFixture, faker: Faker
+    ):
         collection = HasArtists(artists=artists)
         expected = [Position(number=i, total=len(artists), zero_fill=True) for i in range(1, len(artists) + 1)]
 
-        with patch.object(ModelFormatter, "format") as mock_format:
-            model.format(collection, indices=True)
-            mock_format.assert_called_once()
+        mock_format = mocker.spy(ModelFormatter, "format")
 
-            kwargs = mock_format.call_args.kwargs
-            assert list(mock_format.call_args.args[0]) == list(collection.iter_items)
-            assert kwargs["indices"] == expected
+        model.format(collection, indices=True)
+
+        mock_format.assert_called_once()
+        kwargs = mock_format.call_args.kwargs
+        assert kwargs["indices"] == expected

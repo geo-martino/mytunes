@@ -10,6 +10,7 @@ import pytest
 from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
+from pytest_mock import MockerFixture
 
 from musify.models.api import Endpoints
 from musify.models.properties.uri import URI
@@ -54,10 +55,6 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         return faker.random_int(1, 20)
 
     @pytest.fixture
-    def batches(self, uris: list[URI], limit: int) -> list[tuple[str, ...]]:
-        return list(itertools.batched((uri.id for uri in uris), limit))
-
-    @pytest.fixture
     def mock_get(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
         expected = math.ceil(len(uris) / limit)
 
@@ -91,8 +88,8 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
 
     @pytest.fixture
     def mock_batch_values(
-            self, model: Endpoints, uris: list[URI], batches: list[Iterable[str]], limit: int
+            self, model: Endpoints, uris: list[URI], limit: int, mocker: MockerFixture
     ) -> Generator[Mock, None, None]:
-        with patch.object(model.__class__, "_batch_values", return_value=batches) as mock_batch_values:
-            yield mock_batch_values
-            mock_batch_values.assert_called_once_with(uris, limit)
+        mock_batch_values = mocker.spy(Endpoints, "_batch_values")
+        yield mock_batch_values
+        mock_batch_values.assert_called_once_with(uris, limit)
