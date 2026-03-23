@@ -4,13 +4,14 @@ from datetime import date
 from pathlib import Path
 from random import choice, sample
 from typing import Any, Sequence
-from unittest.mock import patch, AsyncMock, Mock
+from unittest.mock import patch, AsyncMock, Mock, MagicMock
 
 import mutagen
 import mutagen.wave
 import pytest
 from faker import Faker
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 
 from musify.local.exception import TagError
 from musify.local.item.artist import LocalArtist
@@ -86,14 +87,18 @@ class TestLocalTrack(UniqueKeyTester):
     def context(self) -> TagContext:
         return TagContext()
 
+    @pytest.fixture
+    def mock_load_file(self, file: mutagen.FileType) -> Generator[Mock, None, None]:
+        with patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
+            yield mock_load
+
     ###########################################################################
     ## Utility Methods
     ###########################################################################
-    async def test_from_path(self, file: mutagen.FileType):
-        with patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
-            model = await LocalTrack.from_path(file.filename)
-            mock_load.assert_called_once_with(file.filename)
-            assert model.name == file["name"][0]
+    async def test_from_path(self, file: mutagen.FileType, mock_load_file: Mock):
+        model = await LocalTrack.from_path(file.filename)
+        mock_load_file.assert_called_once_with(file.filename)
+        assert model.name == file["name"][0]
 
     async def test_load_file(self, faker: Faker, tmp_path: Path):
         path = tmp_path.joinpath(faker.file_name(category="audio"))
@@ -242,19 +247,19 @@ class TestLocalTrack(UniqueKeyTester):
         model: LocalTrack,
         adapter: TypeAdapter[LocalTrack],
         file: mutagen.FileType,
-        tags: dict[str, Any]
+        tags: dict[str, Any],
+        mock_load_file: Mock,
     ):
         expected = adapter.validate_python(tags | dict(path=file.filename))
 
-        with patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
-            await model.load()
+        await model.load()
 
-            mock_load.assert_called_once()
-            assert model is not expected
-            assert model.name == expected.name
-            assert model.artist == expected.artist
-            assert model.album.name == expected.album.name
-            assert model.genre == expected.genre
+        mock_load_file.assert_called_once()
+        assert model is not expected
+        assert model.name == expected.name
+        assert model.artist == expected.artist
+        assert model.album.name == expected.album.name
+        assert model.genre == expected.genre
 
     async def test_save(self, model: LocalTrack, file: mutagen.FileType, faker: Faker):
         with patch.object(file.__class__, "save") as mock_save:
@@ -323,6 +328,11 @@ class TestLocalTrack(UniqueKeyTester):
         with pytest.raises(TagError):
             model.to_tags(include={"length"})
 
+    @pytest.fixture
+    def mock_to_tags(self, tags: dict[str, Any]) -> Generator[Mock, None, None]:
+        with patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags:
+            yield mock_to_tags
+
     def test_update_and_replace(
             self,
             model: LocalTrack,
@@ -330,29 +340,34 @@ class TestLocalTrack(UniqueKeyTester):
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
             context: TagContext,
-            tags: dict[str, Any],
-            faker: Faker
+            mock_to_tags: Mock,
+            mocker: MockerFixture,
     ):
-        with (
-            patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags,
-            patch.object(file.__class__, "update") as mock_update,
-        ):
-            model.update(file, include=include_tags, exclude=exclude_tags, context=context, replace=True)
+        mock_update = mocker.spy(file, "update")
 
-            mock_to_tags.assert_called_once_with(include=include_tags, exclude=exclude_tags, context=context)
-            mock_update.assert_called_once_with(mock_to_tags.return_value)
+        model.update(file, include=include_tags, exclude=exclude_tags, context=context, replace=True)
 
-    def test_update_no_replace(self, adapter: TypeAdapter[LocalTrack], file: mutagen.FileType, tags: dict[str, Any]):
+        mock_to_tags.assert_called_once_with(include=include_tags, exclude=exclude_tags, context=context)
+        mock_update.assert_called_once_with(mock_to_tags.return_value)
+
+    def test_update_no_replace(
+            self,
+            adapter: TypeAdapter[LocalTrack],
+            file: mutagen.FileType,
+            tags: dict[str, Any],
+            mock_to_tags: Mock,
+            mocker: MockerFixture,
+    ):
         file.tags = dict(sample(list(tags.items()), k=4))
         expected = {k: v for k, v in tags.items() if k not in file.tags}
         model = adapter.validate_python(tags | dict(path=file.filename))
 
-        with (
-            patch.object(LocalTrack, "to_tags", return_value=tags.copy()),
-            patch.object(file.__class__, "update") as mock_update,
-        ):
-            model.update(file, replace=False)
-            mock_update.assert_called_once_with(expected)
+        mock_update = mocker.spy(file, "update")
+
+        model.update(file, replace=False)
+
+        mock_to_tags.assert_called_once_with(include=(), exclude=(), context=None)
+        mock_update.assert_called_once_with(expected)
 
     @pytest.fixture
     def merge_tracks(self, tracks: list[LocalTrack], faker: Faker) -> tuple[LocalTrack, LocalTrack]:
@@ -414,7 +429,6 @@ class TestLocalTrack(UniqueKeyTester):
         assert track.released_at == other.released_at
         assert track.comments == other.comments
         assert track.uri != other.uri  # uri field is always ignored
-
 
     ###########################################################################
     ## HasLocalTracks
@@ -505,68 +519,67 @@ class TestLocalTrack(UniqueKeyTester):
 
         assert mock_save.call_count == sum(1 for t in expected_tags if t)
 
-    @pytest.fixture
-    def mock_merge(
-            self,
-            tracks: list[LocalTrack],
-            include_tags: Sequence[str],
-            exclude_tags: Sequence[str],
-            replace_tags: bool,
-            faker: Faker,
-    ) -> Generator[tuple[Mock, list[dict[str, Any]]], None, None]:
-
-        with patch.object(LocalTrack, "merge", side_effect=_random_tags) as mock_update:
-            yield mock_update, expected
-
-            assert mock_update.call_count == len(tracks)
-            mock_update.assert_any_call(
-                file, include=include_tags, exclude=exclude_tags, context=context, replace=replace_tags
-            )
-
     def test_merge_tracks(
             self,
             tracks: list[LocalTrack],
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
             replace_tags: bool,
+            mocker: MockerFixture,
             faker: Faker,
     ):
         tracks, others, overlap = split_list(tracks, 2, overlap=5)
         model = HasLocalTracks(tracks=tracks)
+        expected = []
 
-        with patch.object(LocalTrack, "merge", return_value={"field": "value"}) as mock_merge:
+        def _generate_tags(*_, **__) -> dict[str, Any]:
+            tags = faker.pydict()
+            expected.append(tags)
+            return tags
+
+        with patch.object(LocalTrack, "merge", side_effect=_generate_tags) as mock_merge:
             result = model.merge_tracks(others, include=include_tags, exclude=exclude_tags, replace=replace_tags)
             assert result.keys() == {track.path for track in overlap}
+            assert list(result.values()) == expected
 
             assert mock_merge.call_count == len(overlap)
             assert [arg for call in mock_merge.call_args_list for arg in call.args] == overlap
             for call in mock_merge.call_args_list:
                 assert call.kwargs == dict(include=include_tags, exclude=exclude_tags, replace=replace_tags)
 
-    def test_restore_tracks(self, tracks: list[LocalTrack]):
-        model = HasLocalTracks(tracks=tracks)
+    @pytest.fixture
+    def restore_tracks(self, tracks: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
+        for track in tracks:
+            track.uri = SimpleURI.from_id(faker.pystr(22, 22), kind=LocalTrack.type)
+        return tracks
 
+    def test_restore_tracks_on_field(self, restore_tracks: list[LocalTrack], faker: Faker):
         new_title = "brand new title"
         new_artist = "brand new artist"
 
-        for track in model.tracks:
-            assert track.name != "brand new title"
-            assert track.artist != new_artist
-            track.uri = SimpleURI.from_id(choice(range(int(10e9), int(10e10))), kind=LocalTrack.type)
-
-        backup: list[dict[str, Any]] = [track.model_dump() for track in tracks]
+        backup: list[dict[str, Any]] = [track.model_dump() for track in restore_tracks]
         for track in backup:
             track["name"] = new_title
 
+        model = HasLocalTracks(tracks=restore_tracks)
         model.restore_tracks(backup)
+
         for track in model.tracks:
-            assert track.name == "brand new title"
+            assert track.name == new_title
             assert track.artist != new_artist
 
+    def test_restore_tracks_on_fields(self, restore_tracks: list[LocalTrack], faker: Faker):
+        new_title = "brand new title"
+        new_artist = "brand new artist"
+
+        backup: list[dict[str, Any]] = [track.model_dump() for track in restore_tracks]
         for track in backup:
+            track["name"] = new_title
             track["artists"] = [new_artist]
 
+        model = HasLocalTracks(tracks=restore_tracks)
         model.restore_tracks({Path(track["path"]): track for track in backup})
+
         for track in model.tracks:
             assert track.name == "brand new title"
             assert track.artist == new_artist
