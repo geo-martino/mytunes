@@ -214,9 +214,6 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         xml["Tracks"] = dict(sorted(tracks.items(), key=lambda item: item[0]))
         xml["Playlists"] = sorted(playlists.values(), key=lambda pl_xml: pl_xml["Playlist ID"])
 
-        print(xml)
-        print(tracks)
-
         if not dry_run:
             with self.xml_library_path.open("w", encoding="utf-8") as file:
                 file.write(parser.unparse(xml))
