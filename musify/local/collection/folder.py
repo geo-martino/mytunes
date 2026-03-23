@@ -7,7 +7,7 @@ from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI

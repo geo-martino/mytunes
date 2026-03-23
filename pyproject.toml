@@ -30,7 +30,7 @@ dependencies = [
     "python-dateutil~=2.9.0",
     "Pillow~=12.1.1",
     "pydantic~=2.12.5",
-    "tabulate[widechars]~=0.9.0",
+    "tabulate[widechars]~=0.10.0",
     "termcolor~=3.3.0",
     "email-validator>=2.3.0",
 ]
@@ -104,7 +104,7 @@ distance-dirty = "{base_version}"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-color=yes"
+addopts = "--color=yes"
 markers = [
     "slow: marks test as slow (deselect with '-m \"not slow\"')",
     "manual: marks tests to be run only when manually directed to by the developer",

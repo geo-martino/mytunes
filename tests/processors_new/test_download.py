@@ -2,7 +2,7 @@ import itertools
 import math
 from collections.abc import Generator
 from copy import copy
-from random import sample, randrange, choice
+from random import randrange, choice
 from unittest import mock
 from unittest.mock import patch
 from urllib.parse import unquote

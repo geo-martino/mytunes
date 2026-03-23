@@ -21,10 +21,10 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
-from musify.models.result import Result
+from musify.models.result import LogFormatter, CountResult
 from musify.models.sequence import MutableUniqueSequence
 from musify.processors_new.compare import Comparer
-from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter
+from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter, MatchResult
 from musify.processors_new.limit import ItemLimiter
 from musify.processors_new.sort import ItemSorter
 from musify.utils import required_modules_installed
@@ -39,33 +39,82 @@ REQUIRED_MODULES = [xmltodict]
 AutoMatcher = MatchFilter[LocalTrack, PathsFilter, PathsFilter]
 
 
-class SyncResultXAutoPF(Result):
+class SyncXAutoPFResult(CountResult):
     """Stores the results of a sync with a local XAutoPF playlist."""
-    #: The total number of tracks in the playlist before the sync.
-    start: int
-    #: The number of tracks that matched the include settings before the sync.
-    start_included: int
-    #: The number of tracks that matched the exclude settings before the sync.
-    start_excluded: int
-    #: The number of tracks that matched all the :py:class:`Comparer` settings before the sync.
-    start_compared: int
-    #: The limit count before the sync. 0 if no limiter was present.
-    start_limiter: int
-    #: Was a sorter present on the playlist before the sync.
-    start_sorter: bool
+    start: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+    ] = Field(
+        description="The total number of tracks in the playlist before the sync."
+    )
+    start_included: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"]),
+    ] = Field(
+        description="The number of tracks that matched the include settings before the sync."
+    )
+    start_excluded: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"]),
+    ] = Field(
+        description="The number of tracks that matched the exclude settings before the sync."
+    )
+    start_compared: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"]),
+    ] = Field(
+        description="The number of tracks that matched the comparer settings before the sync."
+    )
+    start_limit: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+    ] = Field(
+        description="The limit count before the sync. 0 if no limiter was present."
+    )
+    start_sort: Annotated[
+        bool,
+        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+    ] = Field(
+        description="Was a sorter present on the playlist before the sync."
+    )
 
-    #: The total number of tracks in the playlist after the sync.
-    final: int
-    #: The number of tracks that matched the include settings after the sync.
-    final_included: int
-    #: The number of tracks that matched the exclude settings after the sync.
-    final_excluded: int
-    #: The number of tracks that matched all the :py:class:`Comparer` settings after the sync.
-    final_compared: int
-    #: The limit count after the sync. 0 if no limiter was present.
-    final_limiter: int
-    #: Was a sorter present on the playlist after the sync.
-    final_sorter: bool
+
+    final: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+    ] = Field(
+        description="The total number of tracks in the playlist after the sync."
+    )
+    final_included: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"]),
+    ] = Field(
+        description="The number of tracks that matched the include settings after the sync."
+    )
+    final_excluded: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"]),
+    ] = Field(
+        description="The number of tracks that matched the exclude settings after the sync."
+    )
+    final_compared: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"]),
+    ] = Field(
+        description="The number of tracks that matched the comparer settings after the sync."
+    )
+    final_limit: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+    ] = Field(
+        description="The limit count after the sync. 0 if no limiter was present."
+    )
+    final_sort: Annotated[
+        bool,
+        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+    ] = Field(
+        description="Was a sorter present on the playlist after the sync."
+    )
 
     @classmethod
     def from_xml(
@@ -76,7 +125,7 @@ class SyncResultXAutoPF(Result):
             final_xml: _XMLRoot,
             reference: LocalTrack | None = None,
     ) -> Self:
-        """Create a SyncResultXAutoPF from the given XML objects."""
+        """Create a sync result from the given XML objects."""
         return cls(
             start=len(initial_tracks),
             start_included=len(initial_xml.smart_playlist.source.exceptions_include or ()),
@@ -84,11 +133,11 @@ class SyncResultXAutoPF(Result):
             start_compared=len(
                 initial_xml.smart_playlist.source.conditions.comparers.apply(initial_tracks, reference=reference)
             ),
-            start_limiter=(
+            start_limit=(
                 initial_xml.smart_playlist.source.limit.count
                 if initial_xml.smart_playlist.source.limit.enabled else 0
             ),
-            start_sorter=(
+            start_sort=(
                 len(initial_xml.smart_playlist.source.sort_by.sort_fields) > 0
                 if initial_xml.smart_playlist.source.sort_by is not None else False
             ),
@@ -98,11 +147,11 @@ class SyncResultXAutoPF(Result):
             final_compared=len(
                 final_xml.smart_playlist.source.conditions.comparers.apply(final_tracks, reference=reference)
             ),
-            final_limiter=(
+            final_limit=(
                 final_xml.smart_playlist.source.limit.count
                 if final_xml.smart_playlist.source.limit.enabled else 0
             ),
-            final_sorter=(
+            final_sort=(
                 len(final_xml.smart_playlist.source.sort_by.sort_fields) > 0
                 if final_xml.smart_playlist.source.sort_by is not None else False
             ),
@@ -176,12 +225,17 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             self.tracks[:] = self.tracks.unique
         super()._limit_tracks(ignore=ignore)
 
-    async def save(self, dry_run: bool = True, *_, **__) -> SyncResultXAutoPF:
+    def log_load(self, result: MatchResult) -> None:
+        """Log the given results of loading tracks."""
+        table = MatchResult.generate_table(results={self.name: result})
+        self.logger.stat(table)
+
+    async def save(self, dry_run: bool = True, *_, **__) -> SyncXAutoPFResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
 
         :param dry_run: Run function, but do not modify the file on the disk.
-        :return: The results of the sync as a :py:class:`SyncResultXAutoPF` object.
+        :return: The results of the sync.
         """
         # TODO: make this async
         if self._xml is None:
@@ -207,7 +261,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             self._original = self.tracks.copy()
 
         reference = self._get_reference_for_last_played_track(initial_tracks + self.tracks)
-        return SyncResultXAutoPF.from_xml(
+        return SyncXAutoPFResult.from_xml(
             initial_xml=initial_xml,
             initial_tracks=initial_tracks,
             final_xml=xml,
@@ -247,6 +301,11 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         if self.matcher.exclude.path_mapper is not None:
             excluded = self.matcher.exclude.path_mapper.unmap_many(excluded, check_existence=False)
         self.matcher.exclude.values &= set(map(str, excluded))
+
+    def log_save(self, result: SyncXAutoPFResult) -> None:
+        """Log the given results of matching tracks."""
+        table = SyncXAutoPFResult.generate_table(results={self.name: result})
+        self.logger.stat(table)
 
 
 class _XMLField(metaclass=ABCMeta):

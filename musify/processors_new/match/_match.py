@@ -8,7 +8,6 @@ from musify.models import AttributeModel
 from musify.models.collection import CollectionModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import item_has_uri
 from musify.processors_new import Processor
 from musify.processors_new.match.score import Scorer
 

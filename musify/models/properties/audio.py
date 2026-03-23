@@ -4,7 +4,7 @@ from typing import Any, Annotated
 import mutagen
 from pydantic import Field, PositiveInt, PositiveFloat
 
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 from musify.models.properties._core import NumberModel
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength

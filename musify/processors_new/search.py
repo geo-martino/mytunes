@@ -1,9 +1,8 @@
 import textwrap
 from collections.abc import Sequence, MutableSequence, Collection, Mapping, Iterable
-from typing import Self, Any
+from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator
-from termcolor import colored
 
 from musify.exception import MusifyValueError
 from musify.models import ResourceModel
@@ -16,32 +15,47 @@ from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
 from musify.models.remote import RemoteResource
-from musify.models.result import Result
+from musify.models.result import TotalCountResult, LenLogFormatter
 from musify.processors_new import Processor
 from musify.processors_new.match import Matcher
 
 
-class SearchResult[T: ResourceModel](Result):
+class SearchResult[T: Any](TotalCountResult):
     """Stores the results of the searching process."""
-    matches: tuple[T, ...] = Field(
+    matches: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(condition=lambda x: False),  # never log this attribute
+    ] = Field(
         description=(
             "The matches from the API that were found in the search. This will match the items in the `matched` "
             "attribute so that the corresponding items can be easily mapped together."
         ),
         default_factory=tuple
     )
-    matched: tuple[T, ...] = Field(
+    matched: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
         description=(
             "The given items which were matched during the search. This will match the items in the `matches` "
             "attribute so that the corresponding items can be easily mapped together."
         ),
         default_factory=tuple
     )
-    unmatched: tuple[T, ...] = Field(
+    unmatched: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
         description="The items for which matches were not found from the search.",
         default_factory=tuple
     )
-    skipped: tuple[T, ...] = Field(
+    skipped: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
         description="The items which were skipped during the search.",
         default_factory=tuple
     )
@@ -52,43 +66,10 @@ class SearchResult[T: ResourceModel](Result):
             raise MusifyValueError("The number of matches must be equal to the number of matched items.")
         return self
 
-    def generate_log(self, name: str) -> tuple[str, ...]:
-        """Generate a log of stats for this result"""
-        matched = len(self.matches)
-        unmatched = len(self.unmatched)
-        skipped = len(self.skipped)
-
-        header = textwrap.shorten(name, 30, placeholder="...")
-        row = (
-            colored(header, "cyan", attrs=["bold"]),
-            colored(f"{matched:>6} matched", "green" if matched > 0 else "blue"),
-            colored(f"{unmatched:>6} unmatched", "green" if unmatched == 0 else "red"),
-            colored(f"{skipped:>6} skipped", "green" if skipped == 0 else "yellow"),
-            colored(f"{matched + unmatched + skipped:>6} total", "white"),
-        )
-
-        return row
-
-    @staticmethod
-    def generate_totals_log(results: Iterable[SearchResult]) -> tuple[str, ...]:
-        """Generate a log of total stats for multiple results"""
-        matched = sum(len(result.matches) for result in results)
-        unmatched = sum(len(result.unmatched) for result in results)
-        skipped = sum(len(result.skipped) for result in results)
-
-        row = (
-            colored("TOTALS", "white", attrs=["bold"]),
-            colored(f"{matched:>6} matched", "green" if matched > 0 else "blue"),
-            colored(f"{unmatched:>6} unmatched", "green" if unmatched == 0 else "red"),
-            colored(f"{skipped:>6} skipped", "green" if skipped == 0 else "yellow"),
-        )
-
-        return row
-
 
 class Searcher[API: RemoteAPI](Processor, HasLogger):
     api: API | HasSearchEndpoints = Field(
-        description="The API to use for searching for matches.",
+        description="The API to use when searching for matches.",
     )
     matcher: Matcher | None = Field(
         description="The matcher to use for confirming closest matches returned by the API",
@@ -419,16 +400,11 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
     ###########################################################################
     ## Logging
     ###########################################################################
-    def log_results(self, results: Mapping[str, SearchResult], skip_log: bool = False) -> list[tuple[str, ...]]:
-        """Log stats on the given search results"""
-        rows = [result.generate_log(name) for name, result in results.items()]
-        rows.append(SearchResult.generate_totals_log(results.values()))
-
-        if not skip_log:
-            table = self._generate_table(rows)
-            self.logger.report(table)
-
-        return rows
+    def log_results(self, results: Mapping[str, SearchResult]) -> None:
+        """Log the given search results"""
+        header = f"{self.source.upper()} SEARCH RESULTS"
+        table = SearchResult.generate_table(results=results, header=header)
+        self.logger.report(table)
 
     def _log_start(self, items: Collection, default_type: str) -> None:
         types = {f"{it.type.rstrip("s")}s" for it in items if isinstance(it, ResourceModel)}

@@ -1,9 +1,8 @@
 import itertools
-import textwrap
 from collections.abc import Generator, Iterable, Collection
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, ClassVar, final
+from typing import Annotated, ClassVar, final, Self
 
 from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter
 from termcolor import colored
@@ -21,9 +20,69 @@ from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
 from musify.models.properties.uri import URI
-from musify.models.result import Result
+from musify.models.result import TotalCountResult, LenLogFormatter
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
+
+
+class LibraryURIsResult[T: LocalTrack](TotalCountResult):
+    """Stores the results of the URIs on loaded tracks in a local library."""
+    source: str = Field(
+        description="The remote library source these URIs are associated with.",
+    )
+    available: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="The tracks which are available on this source i.e. the track has a matching URI set.",
+        default_factory=tuple
+    )
+    missing: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description=(
+            "The tracks which are missing matching URIs "
+            "i.e. it is unknown whether the track exists on this source or not."
+        ),
+        default_factory=tuple
+    )
+    unavailable: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description=(
+            "The tracks which are confirmed to be unavailable on this source "
+            "i.e. the track does not have a matching URI set because it doesn't exist on the remote library."
+        ),
+        default_factory=tuple
+    )
+
+    @classmethod
+    def from_tracks(cls, source: str, tracks: Iterable[T]) -> Self:
+        """Create a result from the given tracks."""
+        return cls(
+            source=source,
+            available=filter(lambda x: cls._is_available(source, x), tracks),
+            missing=filter(lambda x: cls._is_missing(source, x), tracks),
+            unavailable=filter(lambda x: cls._is_unavailable(source, x), tracks),
+        )
+
+    @staticmethod
+    def _is_available(source: str, track: T) -> bool:
+        return any(uri.source == source and uri.exists for uri in track.uris)
+
+    @staticmethod
+    def _is_missing(source: str, track: T) -> bool:
+        return all(uri.source != source for uri in track.uris)
+
+    @staticmethod
+    def _is_unavailable(source: str, track: T) -> bool:
+        return any(uri.source == source and not uri.exists for uri in track.uris)
+
 
 
 @final
@@ -135,9 +194,13 @@ class LocalLibrary(
         await self.load_tracks()
         await self.load_playlists()
 
+        header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
+        results = {"TRACKS": self._generate_track_uris_results()}
+        results |= self._generate_playlist_uris_results()
+        table = LibraryURIsResult.generate_table(results=results, header=header)
+
         self.logger.print_line(STAT)
-        rows = [self.log_tracks(skip_log=True)] + self.log_playlists(skip_log=True)
-        self.logger.stat(self._generate_table(rows))
+        self.logger.stat(table)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -193,19 +256,15 @@ class LocalLibrary(
         self._log_errors("Could not load the following tracks")
         return True
 
-    def log_tracks(self, skip_log: bool = False) -> tuple[str, ...]:
-        header = textwrap.shorten(f"{self.source.upper()} URIS", 20, placeholder="...")
-        row = (
-            colored(header, "cyan", attrs=["bold"]),
-            colored(f"{sum(track.has_uri is True for track in self.tracks)} available", "green"),
-            colored(f"{sum(track.has_uri is None for track in self.tracks)} missing", "red"),
-            colored(f"{sum(track.has_uri is False for track in self.tracks)} unavailable", "yellow"),
-            colored(f"{len(self.tracks)} total", "blue", attrs=["bold"]),
-        )
+    def log_tracks(self) -> None:
+        result = self._generate_track_uris_results()
+        key = f"{self.source.upper()} TRACK URIS"
+        table = result.generate_table(results={key: result})
 
-        if not skip_log:
-            self.logger.stat(self._generate_table([row]))
-        return row
+        self.logger.stat(table)
+
+    def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
+        return LibraryURIsResult.from_tracks(self.source, self.tracks)
 
     ###########################################################################
     ## Playlists
@@ -251,24 +310,18 @@ class LocalLibrary(
         self._log_errors("Could not load the following playlists")
         return True
 
-    def log_playlists(self, skip_log: bool = False) -> list[tuple[str, ...]]:
-        rows = []
-        for name, playlist in self.playlists.items():
-            row = (
-                colored(textwrap.shorten(name, 20, placeholder="..."), "white"),
-                colored(f"{sum(track.has_uri is True for track in playlist.tracks)} available", "green"),
-                colored(f"{sum(track.has_uri is None for track in playlist.tracks)} missing", "red"),
-                colored(f"{sum(track.has_uri is False for track in playlist.tracks)} unavailable", "yellow"),
-                colored(f"{len(playlist.tracks)} total", "blue", attrs=["bold"]),
-            )
-            rows.append(row)
+    def log_playlists(self) -> None:
+        results = self._generate_playlist_uris_results()
+        header = f"{self.source.upper()} PLAYLIST URIS"
+        table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        if rows and not skip_log:
-            header = colored(f"{self.source.upper()} PLAYLISTS", "cyan", attrs=["bold"])
-            log = header + ":\n" + self._generate_table(rows)
-            self.logger.stat(log)
+        self.logger.stat(table)
 
-        return rows
+    def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
+        return {
+            name: LibraryURIsResult.from_tracks(self.source, playlist.tracks)
+            for name, playlist in self.playlists.items()
+        }
 
     async def save_playlists(self, dry_run: bool = True) -> dict[str, Result]:
         """

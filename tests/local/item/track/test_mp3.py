@@ -15,9 +15,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.track import TagContext
 from musify.local.item.track.mp3 import MP3
 from musify.models.properties.uri import URI
-from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
-from tests.utils import SimpleURI
 
 
 @pytest.fixture

@@ -1,26 +1,25 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union, Any
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union
 
-from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, model_validator, computed_field, PositiveInt
+from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, computed_field, PositiveInt
 
 from musify._types import StrippedString
-from musify.exception import MusifyValueError
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
-from musify.models._metadata import Attribute
-from musify.models.collection._base import CollectionModel, RemoteCollection, SyncResult
+from musify.models.collection import SyncRemoteResult
+from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items
 from musify.models.cursors import PageCursor, InitialCursor
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
+from musify.models.metadata import Attribute
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI, URI
+from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 from musify.processors_new.filters import ComparerFilter
 
@@ -160,7 +159,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             items_filter: ComparerFilter | None = None,
             dry_run: bool = False,
             show_bar: bool = True,
-    ) -> SyncResult:
+    ) -> SyncRemoteResult:
         """
         Synchronise the current playlist's items with the remote service.
 
@@ -176,7 +175,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
         :param items_filter: An optional filter to apply to items before syncing.
             Only items that pass the filter will be synced.
         :param show_bar: Show progress bars during sync.
-        :return: The results of the sync as a :py:class:`SyncResult` object.
+        :return: The sync result.
         """
         tracks = items_filter.apply(self.tracks) if items_filter else self.tracks
         initial = [track.uri for track in tracks if track.uri]
@@ -190,7 +189,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             self.uri.api_url, uris=add, show_bar=show_bar
         ) if not dry_run else len(add)
 
-        return SyncResult(
+        return SyncRemoteResult(
             start=len(remote),
             added=added,
             removed=removed,

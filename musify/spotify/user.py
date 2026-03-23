@@ -3,7 +3,7 @@ from typing import final, Annotated
 from pydantic import Field
 
 from musify._types import StrippedString
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 from musify.models.user import RemoteUser
 from musify.spotify._base import SpotifyResource
 from musify.spotify.properties.images import HasSpotifyImages

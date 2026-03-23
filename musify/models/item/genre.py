@@ -5,8 +5,8 @@ from pydantic import Field, field_validator
 from musify._types import StrippedString
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
-from musify.models._metadata import UniqueAttribute, Attribute
 from musify.models.collection import CollectionModel
+from musify.models.metadata import UniqueAttribute, Attribute
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI

@@ -1,6 +1,6 @@
 from typing import ClassVar, final, Any
 
-from pydantic import PositiveInt, validate_call, AliasPath, Field
+from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
 
 from musify.models import ResourceModel
@@ -10,7 +10,6 @@ from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.properties.name import HasName
-from musify.processors_new.clean.string import NameCleaner
 from musify.spotify import API_URL, SpotifyResource
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.playlist import SpotifyPlaylist

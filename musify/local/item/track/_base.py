@@ -27,9 +27,9 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models import BaseModel, ResourceModel
 from musify.models._metaclass import makecls
-from musify.models._metadata import TagAttribute
 from musify.models.collection.library import Library
 from musify.models.item.track import Track, HasMutableTracks
+from musify.models.metadata import TagAttribute
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
@@ -358,7 +358,6 @@ class LocalTrack[FT: FileType](
 
         # TODO: we import all available URIs here to ensure they show up in the annotation
         #  This isn't great...
-        from musify.spotify.properties.uri import SpotifyResourceURI
 
         adapter = TypeAdapter(URI.annotation)
         uris = []
@@ -623,13 +622,13 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
 
         self.logger.info(message, header=2)
 
-    def log_save_tracks_results(self, results: dict[Path, dict[str, Any]]) -> None:
-        """Log the results of saving tracks."""
+    def log_save_tracks_results(self, results: Mapping[Path, Iterable[str]]) -> None:
+        """Log the given results of saving tracks."""
         for path, tags in results.items():
             if tags:
-                self.logger.info(f"Updated {path.name} with tags: {', '.join(tags)}")
+                self.logger.debug(f"Updated {path.name} with tags: {', '.join(tags)}")
             else:
-                self.logger.info(f"No tags updated for {path.name}")
+                self.logger.debug(f"No tags updated for {path.name}")
 
     @validate_call
     def merge_tracks(

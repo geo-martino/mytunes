@@ -1,5 +1,4 @@
 # Solution from http://www.phyast.pitt.edu/~micheles/python/metatype.html
-from musify.models import ResourceModel, AttributeModel
 
 metadic = {}
 

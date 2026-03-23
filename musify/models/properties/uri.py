@@ -3,11 +3,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection
 from functools import total_ordering
-from typing import ClassVar, Self, Any, Annotated, Literal, TypeIs
+from typing import ClassVar, Self, Any, Annotated, TypeIs
 
-from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, AliasChoices
-from pydantic.root_model import RootModelRootType
-from pydantic_core import PydanticUndefined, ValidationError
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
@@ -15,9 +13,9 @@ from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
 from musify.models import abstract_property, ResourceModel
 from musify.models._attribute import AttributeModel
-from musify.models._base import RootModel, BaseModel
+from musify.models._base import RootModel
 from musify.models._metaclass import makecls
-from musify.models._metadata import UniqueAttribute, Attribute
+from musify.models.metadata import UniqueAttribute, Attribute
 from musify.models.url import HttpURL
 
 

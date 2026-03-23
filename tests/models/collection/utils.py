@@ -1,11 +1,11 @@
 from collections.abc import Collection
 
-from musify.models.collection import SyncResult
+from musify.models.collection import SyncRemoteResult
 from musify.models.properties.uri import URI
 
 
 def assert_sync_items_result(
-        result: SyncResult,
+        result: SyncRemoteResult,
         initial: Collection[URI],
         added: Collection[URI],
         removed: Collection[URI],

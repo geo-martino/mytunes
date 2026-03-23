@@ -15,7 +15,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.local.item.track._base import TagContext
-from musify.models._metadata import TagAttribute
+from musify.models.metadata import TagAttribute
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.music import KeySignature

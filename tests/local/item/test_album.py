@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 
 from musify.local.item.album import LocalAlbum
-from tests.models.testers import UniqueKeyTester, NoUniqueKeyTester
+from tests.models.testers import NoUniqueKeyTester
 from tests.utils import SimpleURI
 
 

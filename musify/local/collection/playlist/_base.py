@@ -9,8 +9,8 @@ from pydantic import Field, model_validator, PrivateAttr, ModelWrapValidatorHand
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks
 from musify.models._metaclass import makecls
-from musify.models._metadata import UniqueAttribute
 from musify.models.collection.playlist import MutablePlaylist
+from musify.models.metadata import UniqueAttribute
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.properties.uri import URI
 from musify.models.result import Result

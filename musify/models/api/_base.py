@@ -12,8 +12,8 @@ from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Fie
 from typing_inspection.typing_objects import is_typevar
 
 from musify.exception import MusifyValueError
-from musify.models._metadata import Attribute
 from musify.models.api._endpoints import HasEndpoints, Endpoints
+from musify.models.metadata import Attribute
 from musify.models.properties.logger import HasLogger
 from musify.models.remote import RemoteModel
 

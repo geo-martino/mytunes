@@ -6,7 +6,7 @@ from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
 from musify._types import StrippedString
 from musify.models._attribute import AttributeModel
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 
 
 class HasName(AttributeModel):

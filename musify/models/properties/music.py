@@ -6,7 +6,7 @@ from pydantic import Field, field_validator, model_validator, ModelWrapValidator
 
 from musify.models._attribute import AttributeModel
 from musify.models._base import BaseModel
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 
 
 class KeySignature(BaseModel):

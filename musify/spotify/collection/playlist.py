@@ -1,11 +1,11 @@
 from collections.abc import MutableMapping
-from typing import final, Any, ClassVar, Annotated, Mapping
+from typing import final, Any, ClassVar, Annotated
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
 from musify.exception import MusifyValueError
-from musify.models._metadata import Attribute
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.models.metadata import Attribute
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import UniqueSequence, MutableUniqueSequence
 from musify.spotify import SpotifyResource

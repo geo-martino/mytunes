@@ -6,7 +6,7 @@ from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
 
 from musify.exception import MusifyValueError
-from musify.models import ResourceModel, BaseModel
+from musify.models import ResourceModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource

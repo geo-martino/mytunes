@@ -1,6 +1,4 @@
 import inspect
-import re
-from collections.abc import Collection
 from typing import Any, cast, get_origin, Union
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
@@ -9,7 +7,6 @@ from pydantic._internal._model_construction import ModelMetaclass as PydanticMod
 # noinspection PyProtectedMember
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
-from tabulate import tabulate
 from typing_inspection.typing_objects import is_annotated
 
 from musify.exception import MusifyAttributeError
@@ -47,15 +44,17 @@ class ModelMetaclass(PydanticModelMetaclass):
             if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
                 raise MusifyAttributeError(f"{cls.__name__} must have a {name!r} class attribute defined.")
 
+    @property
     def _metadata_fields(cls) -> dict[str, tuple[Any, list[Any]]]:
         """Get all fields and properties with metadata for this model."""
         return {
-            **cls._get_model_fields_with_metadata(),
-            **cls._get_computed_fields_with_metadata(),
-            **cls._get_properties_with_metadata(),
+            **cls._model_fields_with_metadata,
+            **cls._computed_fields_with_metadata,
+            **cls._properties_with_metadata,
         }
 
-    def _get_model_fields_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
+    @property
+    def _model_fields_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
         fields = cast('type[BaseModel]', cls).model_fields
         return {
             name: (field_info.annotation, field_info.metadata)
@@ -63,7 +62,8 @@ class ModelMetaclass(PydanticModelMetaclass):
             if field_info.metadata
         }
 
-    def _get_computed_fields_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
+    @property
+    def _computed_fields_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
         fields = cast('type[BaseModel]', cls).model_computed_fields
         return {
             name: (field_info.return_type, field_info.return_type.__metadata__)
@@ -71,7 +71,8 @@ class ModelMetaclass(PydanticModelMetaclass):
             if is_annotated(get_origin(field_info.return_type))
         }
 
-    def _get_properties_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
+    @property
+    def _properties_with_metadata(cls) -> dict[str, tuple[Any, list[Any]]]:
         properties = {}
         for kls in cls.mro():
             for name, prop in vars(kls).items():
@@ -117,18 +118,6 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             validation_alias=lambda name: name.replace("_", "").rstrip("s")
         ),
     )
-
-    @staticmethod
-    def _generate_table(rows: Collection[Collection[str]]) -> str:
-        col_count = max(map(len, rows)) if rows else 0
-        table = tabulate(
-            rows,
-            tablefmt="orgtbl",
-            colalign=("left", *["right"] * max(0, col_count - 1)),
-        )
-        table = re.sub(r"\| +\|", "|", table)
-        table = re.sub(r"\| +\|", "|", table)
-        return table
 
     @classmethod
     def _get_aliases(cls, name: str, with_serialization_alias: bool = False) -> set[str]:

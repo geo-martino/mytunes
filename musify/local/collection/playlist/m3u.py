@@ -2,35 +2,57 @@ import asyncio
 from collections import Counter
 from collections.abc import Sequence, Collection
 from pathlib import Path
-from typing import Self, final as final_decorator
+from typing import Self, final as final_decorator, Annotated
 
-from pydantic import Field, TypeAdapter
+from pydantic import Field, TypeAdapter, NonNegativeInt
 
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
-from musify.models.result import Result
+from musify.models.result import LogFormatter, CountResult
 from musify.processors_new.filters import PathsFilter
 
 
-class SyncResultM3U(Result):
+class SyncM3UResult(CountResult):
     """Stores the results of a sync with a local M3U playlist"""
-    start: int = Field(
-        description="The total number of tracks in the playlist before the sync.",
+    start: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+    ] = Field(
+        description="The total number of tracks in the playlist before the sync."
     )
-    added: int = Field(
-        description="The number of tracks added to the playlist.",
+    added: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="The number of tracks added to the playlist."
     )
-    removed: int = Field(
-        description="The number of tracks removed from the playlist.",
+    removed: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="The number of tracks removed from the playlist."
     )
-    unchanged: int = Field(
-        description="The number of tracks that were in the playlist before and after the sync.",
+    unchanged: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="The number of tracks that were in the playlist both before and after the sync."
     )
-    difference: int = Field(
-        description="The difference between the total number tracks in the playlist from before and after the sync.",
+    difference: Annotated[
+        int,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x != 0),
+    ] = Field(
+        description="The difference between the total number tracks from before and after the sync."
     )
-    final: int = Field(
-        description="The total number of tracks in the playlist after the sync.",
+    final: Annotated[
+        NonNegativeInt,
+        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+    ] = Field(
+        description="The total number of tracks in the playlist after the sync."
     )
 
     @classmethod
@@ -104,12 +126,12 @@ class M3U(LocalPlaylist[PathsFilter]):
 
         self.tracks.sort(key=lambda track: paths.index(track.path))
 
-    async def save(self, dry_run: bool = True, *_, **__) -> SyncResultM3U:
+    async def save(self, dry_run: bool = True, *_, **__) -> SyncM3UResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
 
         :param dry_run: Run function, but do not modify the file on the disk.
-        :return: The results of the sync as a :py:class:`SyncResultM3U` object.
+        :return: The results of the sync.
         """
         # TODO: make this async
         start_paths = list(map(Path, self.path_mapper.unmap_many(self._original, check_existence=False)))
@@ -126,4 +148,9 @@ class M3U(LocalPlaylist[PathsFilter]):
             self._original = self.tracks.copy()  # update original tracks to newly saved tracks
 
         final_paths = list(map(Path, self.path_mapper.unmap_many(self.tracks, check_existence=False)))
-        return SyncResultM3U.from_paths(start_paths, final_paths)
+        return SyncM3UResult.from_paths(start_paths, final_paths)
+
+    def log_save(self, result: SyncM3UResult) -> None:
+        """Log the given results of matching tracks."""
+        table = SyncM3UResult.generate_table(results={self.name: result})
+        self.logger.stat(table)

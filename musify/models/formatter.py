@@ -15,7 +15,7 @@ from musify.models.collection import CollectionModel
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition
-from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI
+from musify.models.properties.uri import HasImmutableURI, HasMutableURI
 
 FIELDS = Literal[
     "Name", "Length", "URI", "Public URL"

@@ -6,8 +6,8 @@ from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFl
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel
-from musify.models._metadata import Attribute
 from musify.models.item.track import RemoteTrack
+from musify.models.metadata import Attribute
 from musify.models.properties.audio import Decibels
 from musify.models.properties.date import SparseDate
 from musify.models.properties.length import Length, HasLength

@@ -7,7 +7,7 @@ from musify.models.collection.artist import ArtistCollection, RemoteArtistCollec
 from musify.models.cursors import PageCursor
 from musify.models.item.album import Album
 from tests.models.collection.testers import RemoteCollectionTester
-from tests.models.testers import UniqueKeyTester, NoUniqueKeyTester
+from tests.models.testers import NoUniqueKeyTester
 from tests.utils import SimpleURI
 
 

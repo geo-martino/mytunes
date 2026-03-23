@@ -7,7 +7,6 @@ from faker import Faker
 
 from musify.models.api.playlist import PlaylistReadSavedEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.models.collection.playlist import RemotePlaylist, Playlist
-from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 from tests.models.api.testers import EndpointsTester
 from tests.models.api.utils import MockUrlCursor

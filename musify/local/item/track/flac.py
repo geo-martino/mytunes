@@ -5,13 +5,13 @@ import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    ModelWrapValidatorHandler, NonNegativeFloat, computed_field, ConfigDict
+    ModelWrapValidatorHandler, NonNegativeFloat, ConfigDict
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
-from musify.models._metadata import TagAttribute
+from musify.models.metadata import TagAttribute
 from musify.models.properties.date import SparseDate
 from musify.models.properties.image import ImageFile, ImageURL
 from musify.models.properties.music import KeySignature

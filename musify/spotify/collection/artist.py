@@ -2,8 +2,8 @@ from typing import final, Annotated
 
 from pydantic import Field, AliasPath, model_validator
 
-from musify.models._metadata import Attribute
 from musify.models.collection.artist import RemoteArtistCollection
+from musify.models.metadata import Attribute
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist

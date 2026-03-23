@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 from musify.models.properties.rating import HasRating, Rating
 
 

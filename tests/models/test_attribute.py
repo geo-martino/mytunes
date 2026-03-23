@@ -5,7 +5,7 @@ from pydantic import computed_field
 
 from musify.exception import MusifyAttributeError
 from musify.models._attribute import AttributeModel
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 from tests.models.testers import BaseModelTester
 
 

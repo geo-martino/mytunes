@@ -1,5 +1,5 @@
 from typing import get_args
-from unittest.mock import patch, AsyncMock, Mock
+from unittest.mock import patch, AsyncMock
 
 import pytest
 from faker import Faker
@@ -19,7 +19,7 @@ from musify.processors_new.filters import ComparerFilter
 from tests.models.api.utils import MockRemoteAPI
 from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.collection.utils import assert_sync_items_result
-from tests.models.testers import BaseModelTester, UniqueKeyTester, NoUniqueKeyTester
+from tests.models.testers import BaseModelTester, NoUniqueKeyTester
 from tests.utils import split_list, SimpleURI
 
 

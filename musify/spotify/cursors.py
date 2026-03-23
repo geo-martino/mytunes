@@ -3,8 +3,8 @@ from typing import final, Annotated
 from pydantic import Field, AliasPath
 
 from musify._types import String
-from musify.models._metadata import Attribute
 from musify.models.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
+from musify.models.metadata import Attribute
 from musify.spotify import SpotifyModel
 
 

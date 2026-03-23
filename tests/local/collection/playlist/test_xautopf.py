@@ -12,7 +12,7 @@ from pydantic.alias_generators import to_pascal
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
-    _XMLRoot, _XMLDisplayFields, SyncResultXAutoPF, AutoMatcher
+    _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
 from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
@@ -25,22 +25,22 @@ from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.models.testers import BaseModelTester
 
 
-class TestSyncResultXAutoPF(BaseModelTester):
+class TestSyncXAutoPFResult(BaseModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> SyncResultXAutoPF:
-        return SyncResultXAutoPF(
+    def model(self, faker: Faker) -> SyncXAutoPFResult:
+        return SyncXAutoPFResult(
             start=faker.random_int(0, 100),
             start_included=faker.random_int(0, 100),
             start_excluded=faker.random_int(0, 100),
             start_compared=faker.random_int(0, 100),
-            start_limiter=faker.random_int(0, 100),
-            start_sorter=faker.boolean(),
+            start_limit=faker.random_int(0, 100),
+            start_sort=faker.boolean(),
             final=faker.random_int(0, 100),
             final_included=faker.random_int(0, 100),
             final_excluded=faker.random_int(0, 100),
             final_compared=faker.random_int(0, 100),
-            final_limiter=faker.random_int(0, 100),
-            final_sorter=faker.boolean(),
+            final_limit=faker.random_int(0, 100),
+            final_sort=faker.boolean(),
         )
 
     def test_from_xml(self, tracks: list[LocalTrack], xml_playlist_recent: str, faker: Faker):
@@ -71,20 +71,20 @@ class TestSyncResultXAutoPF(BaseModelTester):
         initial_tracks = tracks[5:29]
         final_tracks = tracks[:12] + tracks[23:27]
 
-        result = SyncResultXAutoPF.from_xml(initial_tracks, initial_xml, final_tracks, final_xml)
-        assert result == SyncResultXAutoPF(
+        result = SyncXAutoPFResult.from_xml(initial_tracks, initial_xml, final_tracks, final_xml)
+        assert result == SyncXAutoPFResult(
             start=len(initial_tracks),
             start_included=len(initial_matcher.include.values),
             start_excluded=len(initial_matcher.exclude.values),
             start_compared=15,
-            start_limiter=20,
-            start_sorter=True,
+            start_limit=20,
+            start_sort=True,
             final=len(final_tracks),
             final_included=len(final_matcher.include.values),
             final_excluded=len(final_matcher.exclude.values),
             final_compared=12,
-            final_limiter=15,
-            final_sorter=True,
+            final_limit=15,
+            final_sort=True,
         )
 
 

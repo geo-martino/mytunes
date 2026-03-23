@@ -7,17 +7,17 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 
-from musify.local.collection.playlist.m3u import M3U, SyncResultM3U
+from musify.local.collection.playlist.m3u import M3U, SyncM3UResult
 from musify.local.item.track import LocalTrack
 from musify.models.properties.file import PathMapper
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.models.testers import BaseModelTester
 
 
-class TestSyncResultM3U(BaseModelTester):
+class TestSyncM3UResult(BaseModelTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> SyncResultM3U:
-        return SyncResultM3U(
+    def model(self, faker: Faker) -> SyncM3UResult:
+        return SyncM3UResult(
             start=faker.random_int(0, 100),
             added=faker.random_int(0, 100),
             removed=faker.random_int(0, 100),
@@ -30,7 +30,7 @@ class TestSyncResultM3U(BaseModelTester):
         paths_initial = [Path(faker.file_path()) for _ in range(10)]
         paths_final = paths_initial[:5] + [Path(faker.file_path()) for _ in range(7)]
 
-        result = SyncResultM3U.from_paths(paths_initial, paths_final)
+        result = SyncM3UResult.from_paths(paths_initial, paths_final)
 
         assert result.start == len(paths_initial)
         assert result.added == 7

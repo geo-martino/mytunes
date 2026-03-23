@@ -2,8 +2,8 @@ from typing import final, Annotated
 
 from pydantic import Field, field_validator
 
-from musify.models._metadata import Attribute
 from musify.models.item.album import RemoteAlbum
+from musify.models.metadata import Attribute
 from musify.models.properties.date import SparseDate
 from musify.spotify._base import SpotifyResource
 from musify.spotify.item.artist import SpotifyArtist

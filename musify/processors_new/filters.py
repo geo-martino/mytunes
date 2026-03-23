@@ -1,15 +1,15 @@
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping, Sequence, Iterable
+from collections.abc import Collection, Iterator, Mapping, Iterable
 from pathlib import Path
 from typing import Any, Annotated, Self
 
-from pydantic import Field, field_validator, BeforeValidator, field_serializer, model_validator
+from pydantic import Field, field_validator, BeforeValidator, field_serializer, model_validator, computed_field
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
 from musify.models import ResourceModel, abstract_property
 from musify.models.properties.file import IsLocalFile, PathMapper, PathInputType
-from musify.models.result import Result
+from musify.models.result import Result, LenLogFormatter
 from musify.processors_new._base import Processor
 from musify.processors_new.compare import Comparer
 
@@ -244,25 +244,49 @@ class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
 
 class MatchResult[T: Any](Result):
     """Results from :py:class:`MatchFilter` separated by individual filter results."""
-    included: tuple[T, ...] = Field(
-        description="Objects that matched include settings.",
+    included: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="Items that matched include settings.",
         default_factory=tuple,
     )
-    excluded: tuple[T, ...] = Field(
-        description="Objects that matched exclude settings.",
+    excluded: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="Items that matched exclude settings.",
         default_factory=tuple,
     )
-    compared: tuple[T, ...] = Field(
-        description="Objects that matched :py:class:`Comparer` settings",
+    compared: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="Items that matched comparer settings",
         default_factory=tuple,
     )
-    grouped: tuple[T, ...] = Field(
-        description="Objects that matched on any ``group_by`` settings",
+    grouped: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ] = Field(
+        description="Items that matched on any 'group by' settings",
         default_factory=tuple,
     )
 
+    @computed_field(
+        description="The final combined results of the match",
+        alias="final",
+    )
     @property
-    def combined(self) -> list[T]:
+    def combined(self) -> Annotated[
+        list[T],
+        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    ]:
         """Combine the individual results to one combined list"""
         return [track for track in [*self.compared, *self.included, *self.grouped] if track not in self.excluded]
 

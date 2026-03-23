@@ -4,7 +4,6 @@ from musify.local._base import LocalModel
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.models.item.album import Album
-from musify.models.properties.uri import URI
 
 
 @final

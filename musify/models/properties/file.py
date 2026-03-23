@@ -13,7 +13,7 @@ from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import abstract_property
 from musify.models._attribute import AttributeModelMetaclass
 from musify.models._base import BaseModel
-from musify.models._metadata import Attribute
+from musify.models.metadata import Attribute
 
 
 class IsFileMetaclass(AttributeModelMetaclass):

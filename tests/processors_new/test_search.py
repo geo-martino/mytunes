@@ -7,7 +7,7 @@ from faker import Faker
 
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI
-from musify.models.api.search import SearchEndpoints, HasSearchEndpoints
+from musify.models.api.search import SearchEndpoints
 from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
 from musify.models.item.album import Album
@@ -18,8 +18,8 @@ from musify.processors_new.match import Matcher
 from musify.processors_new.match.score import NameScorer
 from musify.processors_new.search import Searcher, SearchResult
 from tests.models.api.utils import MockUrlCursor
-from tests.models.utils import MockRemoteCollection, MockRemoteResource
 from tests.models.testers import BaseModelTester
+from tests.models.utils import MockRemoteCollection, MockRemoteResource
 from tests.processors_new.utils import MockCollection
 from tests.utils import SimpleURI, split_list
 

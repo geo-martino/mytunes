@@ -6,7 +6,7 @@ from typing import Annotated, Any, Self
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ModelWrapValidatorHandler
 
 from musify.models._attribute import AttributeModel
-from musify.models._metadata import TagAttribute, Attribute
+from musify.models.metadata import TagAttribute, Attribute
 
 
 class SparseDate(AttributeModel):

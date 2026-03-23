@@ -7,7 +7,7 @@ from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelW
 
 from musify.exception import MusifyValueError
 from musify.models._attribute import AttributeModel
-from musify.models._metadata import TagAttribute, Attribute
+from musify.models.metadata import TagAttribute, Attribute
 
 
 @total_ordering

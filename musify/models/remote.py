@@ -5,8 +5,8 @@ from pydantic import Field
 
 from musify.models import BaseModel
 from musify.models._metaclass import makecls
-from musify.models._metadata import UniqueAttribute
-from musify.models.properties.uri import URI, HasURI, HasImmutableURI
+from musify.models.metadata import UniqueAttribute
+from musify.models.properties.uri import URI, HasImmutableURI
 
 if TYPE_CHECKING:
     from musify.models.api import HasEndpoints

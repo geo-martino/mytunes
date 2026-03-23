@@ -5,11 +5,9 @@ import pytest
 from faker import Faker
 from pydantic import InstanceOf
 
-from musify.models.item.track import Track, HasTracks
 from musify.processors_new.match.score.numeric import NumericScorer, RangeScorer, LengthScorer, ReleaseYearScorer, \
     TotalItemsScorer
 from tests.models.testers import BaseModelTester
-from tests.utils import split_list
 
 
 class NumericScorerTester(BaseModelTester, metaclass=ABCMeta):

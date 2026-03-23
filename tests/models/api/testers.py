@@ -13,8 +13,8 @@ from faker import Faker
 
 from musify.models.api import Endpoints
 from musify.models.properties.uri import URI
-from tests.models.utils import MockRemoteResource
 from tests.models.testers import BaseModelTester
+from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
 URI_TYPE_CONVERTERS = {

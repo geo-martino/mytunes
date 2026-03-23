@@ -121,8 +121,6 @@ class ItemDownloadHelper(InputProcessor):
 
             query_parts.append(value)
 
-        print(query_parts)
-        print(fields)
         return quote(" ".join(query_parts))
 
     def _get_query_part(self, item: Any) -> str | None:

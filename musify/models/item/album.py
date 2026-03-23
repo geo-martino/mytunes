@@ -5,17 +5,17 @@ from pydantic import Field, field_validator, computed_field
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._metaclass import makecls
-from musify.models._metadata import TagAttribute, Attribute
 from musify.models.collection import CollectionModel
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
+from musify.models.metadata import TagAttribute, Attribute
 from musify.models.properties import HasSeparableTags
 from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
-from musify.models.properties.uri import HasURI, URI
+from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:

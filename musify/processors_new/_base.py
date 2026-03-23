@@ -15,7 +15,7 @@ from musify.exception import MusifyValueError
 from musify.models import BaseModel, abstract_property
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI, item_has_uri
+from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
 
 
 class Processor(BaseModel):
