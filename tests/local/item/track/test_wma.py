@@ -58,6 +58,7 @@ class TestWMAEmbeddedImage(LocalTrackEmbeddedImageTester):
         assert id3_type == kind
         assert size < len(attr.value)
 
+    def test_unpack_bytes_fails_safely(self, pictures: dict[str, ASFByteArrayAttribute]):
         with patch.object(WMA.EmbeddedImage, "_get_type_from_number", side_effect=ValueError):
             id3_type, _ = WMA.EmbeddedImage._unpack_bytes(next(iter(pictures.values())))
             assert id3_type is None

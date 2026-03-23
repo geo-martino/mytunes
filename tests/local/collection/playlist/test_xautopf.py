@@ -8,6 +8,7 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 from pydantic.alias_generators import to_pascal
+from pytest_mock import MockerFixture, mocker
 
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
@@ -311,7 +312,7 @@ class TestXAutoPF(LocalPlaylistTester):
         assert model.tracks == tracks_expected
 
     @staticmethod
-    async def assert_load(model: XAutoPF, xml: _XMLRoot, tracks: list[LocalTrack]) -> None:
+    async def assert_load(model: XAutoPF, xml: _XMLRoot, tracks: list[LocalTrack], mocker: MockerFixture) -> None:
         """Asserts loading of a playlist from a given path with expected XML structure and tracks."""
         assert model._xml is None
         assert not model.tracks
@@ -332,29 +333,30 @@ class TestXAutoPF(LocalPlaylistTester):
         assert model.limiter == xml.smart_playlist.source.limit.limiter
         assert model.sorter == xml.smart_playlist.sorter
 
-        with (
-            patch.object(XAutoPF, "_match_tracks", return_value=None) as mock_match,
-            patch.object(XAutoPF, "_limit_tracks", return_value=None) as mock_limit,
-            patch.object(XAutoPF, "_sort_tracks", return_value=None) as mock_sort,
-        ):
-            reference = model._get_reference_for_last_played_track(tracks.copy())
-            await model.load(tracks)
+        mock_match = mocker.spy(model, "_match_tracks")
+        mock_limit = mocker.spy(model, "_limit_tracks")
+        mock_sort = mocker.spy(model, "_sort_tracks")
 
-            mock_match.assert_called_once_with(tracks=tracks, reference=reference)
-            mock_limit.assert_called_once_with(ignore=model.matcher.exclude.values)
-            mock_sort.assert_called_once_with()
+        reference = model._get_reference_for_last_played_track(tracks.copy())
+        await model.load(tracks)
 
-    async def test_load_from_no_file(self, model: XAutoPF, tracks: list[LocalTrack]):
+        mock_match.assert_called_once_with(tracks=tracks, reference=reference)
+        mock_limit.assert_called_once_with(ignore=model.matcher.exclude.values)
+        mock_sort.assert_called_once_with()
+
+    async def test_load_from_no_file(self, model: XAutoPF, tracks: list[LocalTrack], mocker: MockerFixture):
         model = XAutoPF(path=model.path, path_mapper=model.path_mapper)
-        await self.assert_load(model, _XMLRoot(), tracks)
+        await self.assert_load(model, _XMLRoot(), tracks, mocker=mocker)
 
-    async def test_load_from_file(self, model: XAutoPF, xml_playlist: str, tracks: list[LocalTrack]):
+    async def test_load_from_file(
+            self, model: XAutoPF, xml_playlist: str, tracks: list[LocalTrack], mocker: MockerFixture
+    ):
         model.path.parent.mkdir(parents=True, exist_ok=True)
         model.path.write_text(xml_playlist, encoding="utf-8")
 
         model = XAutoPF(path=model.path, path_mapper=model.path_mapper)
         xml = _XMLRoot.model_validate(xml_playlist)
-        await self.assert_load(model, xml, tracks)
+        await self.assert_load(model, xml, tracks, mocker=mocker)
 
     def test_clean_matcher_paths_filters_paths(
             self, model_with_tracks: XAutoPF, matcher: MatchFilter, tracks: list[LocalTrack],
@@ -971,7 +973,7 @@ class TestXMLSmartPlaylist(BaseModelTester):
         model.parse_matcher(matcher)
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 
-    def test_parse_matcher(self, model: _XMLSmartPlaylist):
+    def test_parse_matcher(self, model: _XMLSmartPlaylist, mocker: MockerFixture):
         matcher = MatchFilter(
             compare=ComparerFilter[LocalTrack](),
             include=PathsFilter(values={"a", "b", "c"}),
@@ -979,10 +981,12 @@ class TestXMLSmartPlaylist(BaseModelTester):
             group_by="album",
         )
 
-        with patch.object(_XMLSource, "parse_matcher") as mock_parse:
-            model.parse_matcher(matcher)
-            mock_parse.assert_called_once_with(matcher)
-            assert model.group_by == matcher.group_by
+        mock_parse = mocker.spy(_XMLSource, "parse_matcher")
+
+        model.parse_matcher(matcher)
+
+        mock_parse.assert_called_once_with(model.source, matcher)
+        assert model.group_by == matcher.group_by
 
     def test_build_sorter(self, model: _XMLSmartPlaylist, faker: Faker):
         model.shuffle_mode = "RecentAdded"
@@ -1006,18 +1010,20 @@ class TestXMLSmartPlaylist(BaseModelTester):
         assert model.shuffle_mode == _XMLSmartPlaylist.model_fields["shuffle_mode"].default
         assert model.shuffle_same_artist_weight == sorter.shuffle_weight
 
-    def test_parse_sorter(self, model: _XMLSmartPlaylist, faker: Faker):
+    def test_parse_sorter(self, model: _XMLSmartPlaylist, mocker: MockerFixture, faker: Faker):
         sorter = ItemSorter(
             sort_fields={"name": faker.boolean()},
             shuffle_mode=ShuffleMode.RECENT_ADDED,
             shuffle_weight=faker.random_int(-10, 10) / 10,
         )
 
-        with patch.object(_XMLSource, "parse_sorter") as mock_parse:
-            model.parse_sorter(sorter)
-            mock_parse.assert_called_once_with(sorter)
-            assert model.shuffle_mode == to_pascal(sorter.shuffle_mode.name)
-            assert model.shuffle_same_artist_weight == sorter.shuffle_weight
+        mock_parse = mocker.spy(_XMLSource, "parse_sorter")
+
+        model.parse_sorter(sorter)
+
+        mock_parse.assert_called_once_with(model.source, sorter)
+        assert model.shuffle_mode == to_pascal(sorter.shuffle_mode.name)
+        assert model.shuffle_same_artist_weight == sorter.shuffle_weight
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLSmartPlaylist], faker: Faker):
         xml = {

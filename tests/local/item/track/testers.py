@@ -13,6 +13,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 
 from musify.local.exception import FileError
 from musify.local.item.track import LocalTrack, TagContext
@@ -53,11 +54,15 @@ class LocalTrackEmbeddedImageTester(BaseModelTester, metaclass=ABCMeta):
         assert model.width == other.width
 
     @staticmethod
-    async def test_get_file(model: LocalTrack.EmbeddedImage):
+    async def test_get_file_skips(model: LocalTrack.EmbeddedImage):
         file = mutagen.FileType()
         file.filename = str(model.path)
         assert await model._get_file(file) is file  # doesn't change file when given
 
+    @staticmethod
+    async def test_get_file_from_disk(model: LocalTrack.EmbeddedImage):
+        file = mutagen.FileType()
+        file.filename = str(model.path)
         with patch.object(LocalTrack, "load_file", return_value=file) as mock_get_bytes:
             assert await model._get_file() is file
             mock_get_bytes.assert_called_once_with(model.path)
@@ -146,14 +151,13 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
         return file
 
     @staticmethod
-    def test_extract_tags_from_mutagen_called_on_validate(model: LocalTrack, file: mutagen.FileType):
-        with patch.object(
-                model.__class__,
-                "_extract_tags_from_mutagen",
-                side_effect=model.__class__._extract_tags_from_mutagen
-        ) as mock_extract_tags:
-            model.__class__.model_validate(file)
-            mock_extract_tags.assert_called_once_with(file)
+    def test_extract_tags_from_mutagen_called_on_validate(
+            model: LocalTrack, file: mutagen.FileType, mocker: MockerFixture
+    ):
+        mock_extract_tags = mocker.spy(model.__class__, "_extract_tags_from_mutagen")
+
+        model.model_validate(file)
+        mock_extract_tags.assert_called_once_with(file)
 
     @staticmethod
     def test_map_images(model: LocalTrack, pictures: dict[str, Any]):
@@ -177,25 +181,25 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_serialize_images(
-            model: LocalTrack, image_bytes: list[bytes], image_object: PILImageFile, pictures: dict[str, Any]
+            model: LocalTrack,
+            image_bytes: list[bytes],
+            image_object: PILImageFile,
+            pictures: dict[str, Any],
+            mocker: MockerFixture,
     ):
         model.images = pictures
 
-        image_model = model.EmbeddedImage(mime="image/png", height=100, width=100)
         loaded_images = {kind: image_object for kind in model.images}
         context = Namespace(by_alias=True, context=TagContext(loaded_images=loaded_images))
         assert loaded_images
 
-        with (
-            patch.object(
-                model.EmbeddedImage, "from_image_model", return_value=image_model
-            ) as mock_from_image_model,
-            patch.object(model.EmbeddedImage, "build") as mock_build,
-        ):
-            # noinspection PyTypeChecker
-            result = model._serialize_images(image_bytes, info=context)
-            assert len(result) == len(loaded_images)
+        mock_build = mocker.spy(model.EmbeddedImage, "build")
+        mock_from_image_model = mocker.spy(model.EmbeddedImage, "from_image_model")
 
-            for kind, image in loaded_images.items():
-                mock_from_image_model.assert_any_call(model.images[kind])
-                mock_build.assert_any_call(image)
+        # noinspection PyTypeChecker
+        result = model._serialize_images(image_bytes, info=context)
+        assert len(result) == len(loaded_images)
+
+        for kind, image in loaded_images.items():
+            mock_from_image_model.assert_any_call(model.images[kind])
+            assert any(image in call.args for call in mock_build.mock_calls)

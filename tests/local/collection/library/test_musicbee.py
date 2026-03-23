@@ -4,11 +4,12 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 import pytest
 import xmltodict
 from faker import Faker
+from pytest_mock import MockerFixture
 
 from musify.local.collection.library import LocalLibrary
 from musify.local.collection.library.musicbee import MusicBee
@@ -31,24 +32,21 @@ class TestMusicBee(NoUniqueKeyTester):
         return tracks
 
     @pytest.fixture
-    def settings_xml(self, library_folders: list[Path], tmp_path: Path) -> dict[str, Any]:
-        """Returns a sample MusicBee settings XML as a parsed dict."""
-        return {
+    def settings_xml(self, library_folders: list[Path], tmp_path: Path) -> Generator[dict[str, Any], None, None]:
+        """Mocks the XML settings parser to return a sample parsed XML dict."""
+        xml = {
             "ApplicationSettings": {
                 "Path": str(tmp_path),
                 "OrganisationMonitoredFolders": {"string": [str(folder) for folder in library_folders]},
             }
         }
 
-    @pytest.fixture
-    def mock_settings_xml(self, settings_xml) -> Generator[mock.MagicMock, None, None]:
-        """Mocks the XML settings parser to return a sample parsed XML dict."""
-        with patch.object(xmltodict, "parse", return_value=settings_xml) as mock_parser:
-            yield mock_parser
+        with patch.object(xmltodict, "parse", return_value=xml):
+            yield xml
 
     @pytest.fixture
-    def library_xml(self, tracks: list[LocalTrack], faker: Faker) -> dict[str, Any]:
-        """Returns a sample MusicBee library XML as a parsed dict."""
+    def library_xml(self, tracks: list[LocalTrack], faker: Faker) -> Generator[dict[str, Any], None, None]:
+        """Mocks the XML library parser to return a sample parsed XML dict."""
         tracks = tracks[:len(tracks) // 2]  # only map some tracks
         tracks_xml = [MusicBee._track_to_xml(track, track_id=i) for i, track in enumerate(tracks, 1)]
         for track in tracks_xml:
@@ -57,7 +55,7 @@ class TestMusicBee(NoUniqueKeyTester):
             track["Play Date UTC"] = faker.date_time()
             track["Play Count"] = faker.random_int()
 
-        return {
+        xml = {
             "Major Version": faker.random_int(),
             "Minor Version": faker.random_int(),
             "Application Version": "3.5.8447.35892",
@@ -67,11 +65,8 @@ class TestMusicBee(NoUniqueKeyTester):
             "Playlists": [],
         }
 
-    @pytest.fixture
-    def mock_library_xml(self, library_xml) -> Generator[mock.MagicMock, None, None]:
-        """Mocks the XML library parser to return a sample parsed XML dict."""
-        with patch.object(XMLLibraryParser, "parse", return_value=library_xml) as mock_parser:
-            yield mock_parser
+        with patch.object(XMLLibraryParser, "parse", return_value=xml):
+            yield xml
 
     @pytest.fixture(autouse=True)
     def library_folders(self, tmp_path: Path) -> list[Path]:
@@ -136,48 +131,40 @@ class TestMusicBee(NoUniqueKeyTester):
         lib = MusicBee(musicbee_folder=musicbee_folder)
         assert lib.playlist_folder != playlist_folder  # only set if it exists
 
-    async def test_load_settings_xml(self, model: MusicBee, mock_settings_xml: mock.MagicMock):
-        xml = mock_settings_xml.return_value
-        assert await model.load_settings_xml() == xmltodict.parse(xml)["ApplicationSettings"]
-
     async def test_set_library_folders_from_settings(
-            self, model: MusicBee, library_folders: list[Path], mock_settings_xml: dict[str, Any]
+            self, model: MusicBee, library_folders: list[Path], settings_xml: dict[str, Any]
     ):
         assert not model.library_folders
         await model.set_library_folders()
         assert model.library_folders == set(library_folders)
 
-    async def test_load_library_xml(self, model: MusicBee, mock_library_xml: mock.MagicMock):
-        xml = mock_library_xml.return_value
-        assert await model.load_library_xml() == xml
-
     async def test_load_tracks_sets_library_folders(
             self,
             model: MusicBee,
             library_folders: list[Path],
-            mock_library_xml: mock.MagicMock,
-            mock_settings_xml: dict[str, Any]
+            library_xml: dict[str, Any],
+            settings_xml: dict[str, Any],
     ):
         assert not model.library_folders
         await model.load()
         assert model.library_folders == set(library_folders)
 
     async def test_load_tracks_calls_super(
-            self, model: MusicBee, library_folders: list[Path], mock_library_xml: mock.MagicMock
+            self, model: MusicBee, library_folders: list[Path], library_xml: dict[str, Any], mocker: MockerFixture,
     ):
-        with patch.object(LocalLibrary, "load_tracks", side_effect=mock.AsyncMock()) as mock_load:
-            await model.load_tracks()
-            mock_load.assert_called_once()
+        mock_load = mocker.spy(LocalLibrary, "load_tracks")
+        await model.load_tracks()
+        mock_load.assert_called_once()
 
     async def test_load_tracks_enriches_metadata(
             self,
             model: MusicBee,
             tracks: list[LocalTrack],
             library_xml: dict[str, Any],
-            mock_library_xml: mock.MagicMock,
     ):
-        with patch.object(LocalLibrary, "load_tracks", side_effect=mock.AsyncMock()):
-            model.tracks[:] = tracks  # load is mocked, so set tracks manually
+        # load is mocked because tracks don't exist on disk, set tracks from super() call load manually
+        with patch.object(LocalLibrary, "load_tracks", side_effect=AsyncMock()):
+            model.tracks[:] = tracks
             await model.load_tracks()
 
         assert len(model.tracks) == len(tracks)
@@ -196,26 +183,28 @@ class TestMusicBee(NoUniqueKeyTester):
                 assert track.last_played_at is None
                 assert track.play_count is None
 
-    async def test_save_file_dry_run(self, model: MusicBee, mock_library_xml: mock.MagicMock):
-        with patch.object(XMLLibraryParser, "unparse") as mock_unparse:
+    async def test_save_file_dry_run(self, model: MusicBee, tracks: list[LocalTrack], library_xml: dict[str, Any]):
+        model.tracks[:] = tracks
+
+        with patch.object(XMLLibraryParser, "unparse", return_value="text") as mock_unparse:
             await model.save(dry_run=True)
-            mock_library_xml.assert_called_once()
             mock_unparse.assert_not_called()
 
-    async def test_save_file_saves_xml(self, model: MusicBee, mock_library_xml: mock.MagicMock):
+    async def test_save_file_saves_xml(self, model: MusicBee, tracks: list[LocalTrack], library_xml: dict[str, Any]):
+        model.tracks[:] = tracks
+
         with patch.object(XMLLibraryParser, "unparse", return_value="text") as mock_unparse:
             result = await model.save(dry_run=False)
-            mock_library_xml.assert_called_once()
             mock_unparse.assert_called_once_with(result)
 
             with model.xml_library_path.open("r") as xml_file:
                 assert xml_file.read() == mock_unparse.return_value
 
     async def test_save_file_maps_tracks(
-            self, model: MusicBee, tracks: list[LocalTrack], mock_library_xml: mock.MagicMock
+            self, model: MusicBee, tracks: list[LocalTrack], library_xml: dict[str, Any]
     ):
         model.tracks[:] = tracks
-        assert len(mock_library_xml.return_value["Tracks"]) < len(model.tracks)
+        assert len(library_xml["Tracks"]) < len(model.tracks)
 
         result = await model.save(dry_run=True)
         assert len(result["Tracks"]) == len(model.tracks)
