@@ -18,11 +18,6 @@ _log_formatters = [
 
 
 class RemotePlaylistsResult[T: RemoteTrack](CountResult):
-    _key_formatter: ClassVar[LogFormatter] = LogFormatter(
-        max_width=40,
-        colour="white",
-    )
-
     tracks: Annotated[tuple[T, ...], *_log_formatters] = Field(
         description="The tracks in this result.",
     )
