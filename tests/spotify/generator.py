@@ -122,10 +122,12 @@ class SpotifyPayloadGenerator:
 
         return tracks
 
-    def generate_audio_features(self) -> dict[str, Any]:
+    def generate_audio_features(self, track_id: str | None = None) -> dict[str, Any]:
         """Return a randomly generated Spotify API response for a Track's audio features."""
-        track_id = self.generate_resource_id()
         kind = "track"
+
+        if not track_id:
+            track_id = self.generate_resource_id()
         href = URL(self.generate_href(kind, track_id))
 
         # noinspection SpellCheckingInspection
@@ -239,13 +241,15 @@ class SpotifyPayloadGenerator:
     ################################################################################
     ## Artists
     ################################################################################
-    def generate_artist(self) -> dict[str, Any]:
+    def generate_artist(self, artist_id: str | None = None) -> dict[str, Any]:
         """
         Return a randomly generated Spotify API response for an artist.
         Optionally include additional properties.
         """
-        artist_id = self.generate_resource_id()
         kind = "artist"
+
+        if not artist_id:
+            artist_id = self.generate_resource_id()
 
         payload = {
             "external_urls": self.generate_external_urls(kind, artist_id),

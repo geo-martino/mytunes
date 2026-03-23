@@ -21,10 +21,6 @@ from tests.spotify.generator import SpotifyPayloadGenerator
 
 class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):
 
-    @pytest.fixture(scope="class")
-    def generator(self, faker: Faker) -> SpotifyPayloadGenerator:
-        return SpotifyPayloadGenerator(faker)
-
     ################################################################################
     ## Response assertions
     ################################################################################

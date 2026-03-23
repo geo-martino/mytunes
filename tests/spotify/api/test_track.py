@@ -1,9 +1,13 @@
 import math
-from unittest.mock import patch, AsyncMock
+from collections.abc import Generator
+from typing import Any
+from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
+from pytest_mock import MockerFixture
+from yarl import URL
 
 from musify.spotify import API_URL
 # noinspection PyProtectedMember
@@ -11,6 +15,7 @@ from musify.spotify.api._track import SpotifyTrackEndpoints
 from musify.spotify.item.track import SpotifyAudioFeatures, SpotifyAudioAnalysis
 from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.models.testers import BaseModelTester
+from tests.spotify.generator import SpotifyPayloadGenerator
 
 
 class TestSpotifyTrackEndpoints(BaseModelTester):
@@ -19,67 +24,76 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
         return SpotifyTrackEndpoints.model_validate(handler)
 
     @pytest.fixture
+    def uri(self, faker: Faker) -> SpotifyResourceURI:
+        return SpotifyResourceURI.from_id(faker.pystr(22, 22), kind="track")
+
+    @pytest.fixture
     def uris(self, faker: Faker) -> list[SpotifyResourceURI]:
         return [
             SpotifyResourceURI.from_id(faker.pystr(22, 22), kind="track")
             for _ in range(faker.random_int(1, 50))
         ]
 
+    @pytest.fixture
+    def mock_get_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+        def _generate_payload(url: URL, *_, **__) -> dict[str, Any]:
+            track_id = url.path.split("/")[-1]
+            return generator.generate_audio_features(track_id)
+
+        with patch.object(RequestHandler, "get", side_effect=_generate_payload, new_callable=AsyncMock) as mock_get:
+            yield mock_get
+
     async def test_get_audio_features(
             self,
             model: SpotifyTrackEndpoints,
-            uris: list[SpotifyResourceURI],
-            faker: Faker,
+            uri: SpotifyResourceURI,
+            mock_get_features: Mock,
     ):
-        uri = faker.random_element(uris)
-        response = {"uri": str(uri)}
+        model = await model.get_audio_features(uri)
+        mock_get_features.assert_called_with(API_URL.joinpath("audio-features", uri.id))
+        assert isinstance(model, SpotifyAudioFeatures)
+        assert model.uri == uri
 
-        with (
-            patch.object(RequestHandler, "get", return_value=response, new_callable=AsyncMock) as mock_get,
-            patch.object(SpotifyAudioFeatures, "model_validate") as mock_model_validate,
-        ):
-            await model.get_audio_features(uri)
+    @pytest.fixture
+    def mock_get_many_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+        def _generate_payload(url: URL, params: dict[str, Any], *_, **__) -> dict[str, Any]:
+            track_ids = params["ids"].split(",")
+            return {"audio_features": [generator.generate_audio_features(track_id) for track_id in track_ids]}
 
-            mock_get.assert_called_with(API_URL.joinpath("audio-features", uri.id))
-            mock_model_validate.assert_called_with(mock_get.return_value)
+        with patch.object(RequestHandler, "get", side_effect=_generate_payload, new_callable=AsyncMock) as mock_get:
+            yield mock_get
 
     async def test_get_many_audio_features(
             self,
             model: SpotifyTrackEndpoints,
             uris: list[SpotifyResourceURI],
+            mock_get_many_features: Mock,
             faker: Faker,
     ):
         limit = faker.random_int(1, 10)
         expected = math.ceil(len(uris) / limit)
 
-        def _return_response[T](*_, params: dict, **__) -> T:
-            ids = params["ids"].split(",")
-            return {"audio_features": [{"id": id_} for id_ in ids]}
+        results = await model.get_many_audio_features(uris, limit=limit)
+        assert all(isinstance(result, SpotifyAudioFeatures) for result in results)
+        assert len(results) == len(uris)
+        assert sorted(result.uri for result in results) == sorted(uris)
 
-        with (
-            patch.object(RequestHandler, "get", side_effect=_return_response, new_callable=AsyncMock) as mock_get,
-            patch.object(SpotifyAudioFeatures, "model_validate") as mock_model_validate,
-        ):
-            result = await model.get_many_audio_features(uris, limit=limit)
-            assert len(result) == len(uris)
+        assert mock_get_many_features.call_count == expected
 
-            assert mock_get.call_count == expected
-            assert mock_model_validate.call_count == len(uris)
+    @pytest.fixture
+    def mock_get_analysis(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+        def _generate_payload(*_, **__) -> dict[str, Any]:
+            return generator.generate_audio_analysis()
+
+        with patch.object(RequestHandler, "get", side_effect=_generate_payload, new_callable=AsyncMock) as mock_get:
+            yield mock_get
 
     async def test_get_audio_analysis(
             self,
             model: SpotifyTrackEndpoints,
-            uris: list[SpotifyResourceURI],
-            faker: Faker,
+            uri: SpotifyResourceURI,
+            mock_get_analysis: Mock,
     ):
-        uri = faker.random_element(uris)
-        response = {"uri": str(uri)}
-
-        with (
-            patch.object(RequestHandler, "get", return_value=response, new_callable=AsyncMock) as mock_get,
-            patch.object(SpotifyAudioAnalysis, "model_validate") as mock_model_validate,
-        ):
-            await model.get_audio_analysis(uri)
-
-            mock_get.assert_called_with(API_URL.joinpath("audio-analysis", uri.id))
-            mock_model_validate.assert_called_with(mock_get.return_value)
+        model = await model.get_audio_analysis(uri)
+        mock_get_analysis.assert_called_with(API_URL.joinpath("audio-analysis", uri.id))
+        assert isinstance(model, SpotifyAudioAnalysis)  # no id on this model so just check it's the right type
