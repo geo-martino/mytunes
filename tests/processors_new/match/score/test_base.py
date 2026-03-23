@@ -24,7 +24,7 @@ class TestScorer(BaseModelTester):
         item = HasName(name="test item")
         other = HasName(name="other item")
 
-        with patch.object(Scorer, "_calculate_score", return_value=1) as mock_calculate_score:
+        with patch.object(model, "_calculate_score", return_value=1) as mock_calculate_score:  # abstractmethod
             model.score(item=item, other=other)
             mock_calculate_score.assert_called_once_with(item.name, other.name)
 

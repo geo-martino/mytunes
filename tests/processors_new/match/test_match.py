@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
 
 from musify.models.collection.album import AlbumCollection
 from musify.models.item.album import HasAlbums, Album
@@ -115,16 +116,16 @@ class TestMatcher(BaseModelTester):
         assert model.match(track, tracks) is None
 
     def test_match_breaks_early(self, model: Matcher, tracks: list[Track]):
+        # first track is a perfect match (score == 1), should break early and not check the rest
         track = tracks.pop()
+
         with patch.object(Matcher, "score", return_value=1) as mock_score:
-            # first track is match, should break early and not check the rest
             model.match(track, [track] + tracks)
             mock_score.assert_called_once()
 
     def test_score(self, model: Matcher, tracks: list[Track]):
         track = tracks[0]
-        scorers = model.get_scorers_for_item(track)
-        assert model.score(scorers, track, track) == 1
+        assert model.score(track, track) == 1
 
     def test_score_always_between_0_and_1(
             self, model: Matcher, tracks: list[Track], albums: list[AlbumCollection], faker: Faker
@@ -133,12 +134,10 @@ class TestMatcher(BaseModelTester):
             scorer.weight = faker.random_int()
 
         for other in tracks:
-            scorers = model.get_scorers_for_item(other)
-            assert 0 <= model.score(scorers, tracks[0], other) <= 1
+            assert 0 <= model.score(tracks[0], other) <= 1
 
         for other in albums:
-            scorers = model.get_scorers_for_item(other)
-            assert 0 <= model.score(scorers, albums[0], other) <= 1
+            assert 0 <= model.score(albums[0], other) <= 1
 
     def test_score_respects_required_scorer(self, model: Matcher, tracks: list[Track]):
         track = tracks[0]
@@ -146,23 +145,25 @@ class TestMatcher(BaseModelTester):
         other.name = "complete-and-utter-nonsense"
 
         scorers = model.get_scorers_for_item(track)
-        assert model.score(scorers, track, other) == 0.8  # name doesn't match but still returns score
+        assert all(not scorer.required for scorer in scorers if isinstance(scorer, NameScorer))
+        assert model.score(track, other, scorers=scorers) == 0.8  # name doesn't match but still returns score
 
         scorers.append(NameScorer(required=True))
-        assert model.score(scorers, track, other) == 0  # name doesn't match and is required, so returns 0
+        assert model.score(track, other, scorers=scorers) == 0  # name doesn't match and is required, so returns 0
 
-    def test_score_items_if_configured(self, model: Matcher, albums: list[AlbumCollection]):
-        album = albums.pop()
-        scorers = model.get_scorers_for_item(album)
+    def test_score_items_if_configured(self, model: Matcher, albums: list[AlbumCollection], mocker: MockerFixture):
+        album_1 = albums.pop()
+        album_2 = albums.pop()
 
-        with patch.object(Matcher, '_score_items', return_value=[0.1] * len(album.tracks)) as mock_score_items:
-            model.score_items_in_collections = False
-            model.score(scorers, album, album)
-            mock_score_items.assert_not_called()
+        mock_score_items = mocker.spy(model, "_score_items")
 
-            model.score_items_in_collections = True
-            model.score(scorers, album, album)
-            mock_score_items.assert_called_once_with(album.tracks, album.tracks)
+        model.score_items_in_collections = False
+        model.score(album_1, album_2)
+        mock_score_items.assert_not_called()
+
+        model.score_items_in_collections = True
+        model.score(album_1, album_2)
+        mock_score_items.assert_called_once_with(album_1.tracks, album_2.tracks)
 
     def test_score_items(self, model: Matcher, tracks: list[Track]):
         assert model._score_items(tracks, tracks) == [1.0] * len(tracks)

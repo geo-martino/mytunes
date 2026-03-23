@@ -73,7 +73,7 @@ class Matcher(Processor, HasLogger):
 
         other = None
         for other in others:
-            score = self.score(scorers, item=item, other=other)
+            score = self.score(item=item, other=other, scorers=scorers)
             if score > self.min_score and score > best_score:
                 best_match = other
                 best_score = score
@@ -113,8 +113,13 @@ class Matcher(Processor, HasLogger):
 
         self.logger.debug(log)
 
-    def score[T: AttributeModel | HasName](self, scorers: Sequence[Scorer], item: T, other: T) -> float:
+    def score[T: AttributeModel | HasName](
+            self, item: T, other: T, scorers: Sequence[Scorer] | None = None, score_items_in_collections: bool = True
+    ) -> float:
         """Scores the similarity between the given items."""
+        if scorers is None:
+            scorers = self.get_scorers_for_item(item)
+
         scores = []
         weight = sum(scorer.weight for scorer in scorers)
 
@@ -131,9 +136,9 @@ class Matcher(Processor, HasLogger):
 
         scores.extend(scorer.score(item, other) for scorer in filter(lambda x: not x.required, scorers))
 
-        if self.score_items_in_collections and isinstance(item, CollectionModel):
+        if score_items_in_collections and self.score_items_in_collections and isinstance(item, CollectionModel):
             items = list(item.iter_items) if isinstance(item, CollectionModel) else []
-            others = list(item.iter_items) if isinstance(item, CollectionModel) else []
+            others = list(other.iter_items) if isinstance(other, CollectionModel) else []
             self._log_score_items(item, items, others)
 
             collection_scores = self._score_items(items, others)
@@ -153,7 +158,7 @@ class Matcher(Processor, HasLogger):
             score = 0
 
             for i, other in enumerate(others):
-                score = self.score(scorers, item=item, other=other)
+                score = self.score(item=item, other=other, scorers=scorers, score_items_in_collections=False)
 
                 if score >= self.max_score:  # break early if a good enough match is found
                     others.pop(i)  # remove the matched track to prevent it from being matched again

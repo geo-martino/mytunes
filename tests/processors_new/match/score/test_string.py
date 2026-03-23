@@ -5,6 +5,7 @@ from unittest.mock import patch, Mock
 import pytest
 from faker import Faker
 from pydantic import InstanceOf
+from pytest_mock import MockerFixture
 
 from musify.models.item.track import Track
 from musify.processors_new.match.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
@@ -22,10 +23,10 @@ class StringScorerTester(BaseModelTester, metaclass=ABCMeta):
 
 class StringScoreReducerTester(BaseModelTester, metaclass=ABCMeta):
     @staticmethod
-    def test_reduce_score(model: StringScorer):
-        with patch.object(StringScoreReducer, "_reduce_score") as mock_reduce_score:
-            model._calculate_score("test value", "other value")
-            mock_reduce_score.assert_called_once()
+    def test_reduce_score_is_called(model: StringScorer, mocker: MockerFixture):
+        mock_reduce_score = mocker.spy(model, "_reduce_score")
+        model._calculate_score("test value", "other value")
+        mock_reduce_score.assert_called_once()
 
 
 class TestStringScoreReducer(BaseModelTester):
