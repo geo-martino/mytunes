@@ -2,7 +2,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from random import choice
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 import mutagen.id3
 import pytest
@@ -184,7 +184,7 @@ class TestHasImages(BaseModelTester):
 
         classes = {m.__class__ for m in model.images.values()}
         mock_load = (
-            patch.object(cls, "load", return_value=image_object, new_callable=mock.AsyncMock,)
+            patch.object(cls, "load", return_value=image_object, new_callable=AsyncMock)
             for cls in classes
         )
         mock_update = (

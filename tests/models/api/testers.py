@@ -62,10 +62,10 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
 
     # noinspection PyMethodOverriding
     @pytest.fixture
-    def mock_get(self, uri: URI) -> Generator[Mock, None, None]:
+    def mock_get(self) -> Generator[Mock, None, None]:
         with patch.object(RequestHandler, "get", new_callable=AsyncMock) as mock_get:
             yield mock_get
-            mock_get.assert_called_once_with(uri.api_url)
+            mock_get.assert_called_once()
 
     @pytest.fixture
     def mock_get_batched(

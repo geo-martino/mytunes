@@ -137,7 +137,7 @@ class TestIterablePageCursor(BaseModelTester):
         return IterablePageCursor(url=faker.url())
 
     @pytest.fixture
-    def mock_next(self, model: IterablePageCursor) -> Generator[Mock, None, None]:
+    def mock_next(self) -> Generator[Mock, None, None]:
         with patch.object(IterablePageCursor, "next", new_callable=PropertyMock) as mock_next:
             yield mock_next
 
@@ -270,7 +270,7 @@ class TestIndexCursor(BaseModelTester):
         iter_cursors = iter(cursors)
 
         with patch.object(
-                IndexCursor, "get_cursor_from_response", side_effect=lambda *_: next(iter_cursors)
+                IndexCursor, "get_cursor_from_response", side_effect=lambda *_, **__: next(iter_cursors)
         ) as mock_get_cursor:
             result = IndexCursor.sort_responses(responses=responses, path="id")
             assert responses == expected_responses

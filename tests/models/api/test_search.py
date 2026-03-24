@@ -40,14 +40,7 @@ class TestSearchEndpoints(EndpointsTester):
         return {RemoteTrack, RemoteAlbum}
 
     @pytest.fixture
-    def mock_get(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
-        response = {model._query_path: {"tracks": [{"name": faker.name()}], "albums": [{"name": faker.name()}]}}
-
-        with patch.object(RequestHandler, "get", return_value=response, new_callable=AsyncMock) as mock_get:
-            yield mock_get
-
-    @pytest.fixture
-    def mock_query_params(self, faker: Faker) -> Generator[Mock, None, None]:
+    def mock_query_params(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
         def _format_query_params(
                 query: str, types: set[type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
         ) -> dict[str, Any]:
@@ -56,14 +49,8 @@ class TestSearchEndpoints(EndpointsTester):
                 params["limit"] = limit
             return params | kwargs
 
-        with patch.object(SearchEndpoints, "_format_query_params", side_effect=_format_query_params) as mock_params:
+        with patch.object(model, "_format_query_params", side_effect=_format_query_params) as mock_params:
             yield mock_params
-
-    @pytest.fixture(autouse=True)
-    def mock_create_model(self, faker: Faker):
-        """Need to patch create_model for all tests since it will try to create models from non-final types and fail"""
-        with patch.object(SearchEndpoints, "create_model", return_value={"name": faker.name()}) as mock_create_model:
-            yield mock_create_model
 
     async def test_query(
             self,
@@ -76,6 +63,10 @@ class TestSearchEndpoints(EndpointsTester):
         query = faker.sentence()
         limit = faker.random_int(1, 50)
         expected_params = {"query": query, "types": {t.type for t in types}, "limit": limit}
+
+        mock_get.return_value = {
+            model._query_path: {"tracks": [{"name": faker.name()}], "albums": [{"name": faker.name()}]}
+        }
 
         result = await model.query(query=query, types=types, limit=limit)
 

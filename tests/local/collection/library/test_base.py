@@ -3,7 +3,7 @@ from collections.abc import Generator
 from pathlib import Path
 from random import choice, sample
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import pytest
 from faker import Faker
@@ -64,7 +64,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         return tracks
 
     @pytest.fixture
-    def mock_load_track(self, tracks: list[LocalTrack]) -> Generator[mock.MagicMock, None, None]:
+    def mock_load_track(self, tracks: list[LocalTrack]) -> Generator[Mock, None, None]:
         """Mock LocalLibrary.load_track to return the provided tracks"""
         tracks_mapped = {track.path: track for track in tracks}
 
@@ -106,7 +106,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         return playlists
 
     @pytest.fixture
-    def mock_load_playlist(self, playlists: list[LocalPlaylist]) -> Generator[mock.MagicMock, None, None]:
+    def mock_load_playlist(self, playlists: list[LocalPlaylist]) -> Generator[Mock, None, None]:
         """Mock LocalLibrary.load_playlist to return the provided tracks"""
         pl_mapped = {pl.path: pl for pl in playlists}
 
@@ -152,14 +152,14 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert {path.stem for path in model._iter_playlist_paths()} == names
 
     @staticmethod
-    def assert_tracks_loaded(model: LocalLibrary, tracks: list[LocalTrack], mock_load: mock.MagicMock) -> None:
+    def assert_tracks_loaded(model: LocalLibrary, tracks: list[LocalTrack], mock_load: Mock) -> None:
         """Assert that the given tracks were loaded into the model"""
         assert mock_load.call_count == len(tracks)
         mock_load.assert_has_calls([mock.call(track.path) for track in tracks], any_order=True)
         assert sorted(model.tracks, key=lambda x: x.path) == sorted(tracks, key=lambda x: x.path)
 
     @staticmethod
-    def assert_playlists_loaded(model: LocalLibrary, playlists: list[Playlist], mock_load: mock.MagicMock) -> None:
+    def assert_playlists_loaded(model: LocalLibrary, playlists: list[Playlist], mock_load: Mock) -> None:
         """Assert that the given playlists were loaded into the model"""
         assert mock_load.call_count == len(playlists)
         mock_load.assert_has_calls([mock.call(pl.path) for pl in playlists], any_order=True)
@@ -169,9 +169,9 @@ class TestLocalLibrary(NoUniqueKeyTester):
             self,
             model: LocalLibrary,
             tracks: list[LocalTrack],
-            mock_load_track: mock.MagicMock,
+            mock_load_track: Mock,
             playlists: list[LocalPlaylist],
-            mock_load_playlist: mock.MagicMock
+            mock_load_playlist: Mock
     ):
         await model.load()
         self.assert_tracks_loaded(model, tracks, mock_load_track)
@@ -186,7 +186,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert model.errors == [path]
 
     async def test_load_tracks(
-            self, model: LocalLibrary, tracks: list[LocalTrack], mock_load_track: mock.MagicMock,
+            self, model: LocalLibrary, tracks: list[LocalTrack], mock_load_track: Mock,
     ):
         for track in tracks[:10]:  # ensure these tracks preloaded tracks are replaced
             model.tracks.append(track)
@@ -204,7 +204,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert model.errors == [path]
 
     async def test_load_playlists(
-            self, model: LocalLibrary, playlists: list[LocalPlaylist], mock_load_playlist: mock.MagicMock,
+            self, model: LocalLibrary, playlists: list[LocalPlaylist], mock_load_playlist: Mock,
     ):
         for pl in playlists[:5]:  # ensure these tracks preloaded playlists are replaced
             model.playlists[pl.name] = pl

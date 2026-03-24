@@ -262,7 +262,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert model.genre == expected.genre
 
     async def test_save(self, model: LocalTrack, file: mutagen.FileType, faker: Faker):
-        with patch.object(file.__class__, "save") as mock_save:
+        with patch.object(mutagen.FileType, "save") as mock_save:
             await model.save(file)
             mock_save.assert_called_once()
 

@@ -3,6 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 from random import shuffle, choice, sample
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 from faker import Faker
@@ -207,15 +208,15 @@ class TestComparerFilter(FilterTester):
     ):
         model.match_all = False
 
-        comparer_1_sub = mock.MagicMock()
+        comparer_1_sub = MagicMock()
         comparer_1_sub.check.return_value = True
         model.comparers[comparers[0]] = (True, comparer_1_sub)
 
-        comparer_2_sub = mock.MagicMock()
+        comparer_2_sub = MagicMock()
         comparer_2_sub.check.return_value = False
         model.comparers[comparers[1]] = (False, comparer_2_sub)
 
-        comparer_3_sub = mock.MagicMock()
+        comparer_3_sub = MagicMock()
         comparer_3_sub.check.return_value = False
         model.comparers[comparers[2]] = (True, comparer_3_sub)
 

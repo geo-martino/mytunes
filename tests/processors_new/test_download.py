@@ -4,7 +4,7 @@ from collections.abc import Generator
 from copy import copy
 from random import randrange, choice
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from urllib.parse import unquote
 
 import pytest
@@ -54,9 +54,9 @@ class TestItemDownloadHelper(BaseModelTester):
             yield
 
     @pytest.fixture
-    def mock_pause(self) -> Generator[mock.MagicMock, None, None]:
+    def mock_pause(self, model: ItemDownloadHelper) -> Generator[Mock, None, None]:
         """Mock for pause functionality"""
-        with patch.object(ItemDownloadHelper, "_pause") as mock_pause:
+        with patch.object(model, "_pause") as mock_pause:
             yield mock_pause
 
     @pytest.fixture
@@ -101,7 +101,7 @@ class TestItemDownloadHelper(BaseModelTester):
             urls: list[str],
             unique_tracks: list[Track],
             duplicate_tracks: list[Track],
-            mock_pause: mock.MagicMock,
+            mock_pause: Mock,
     ):
         model.unique_only = True
 
@@ -115,7 +115,7 @@ class TestItemDownloadHelper(BaseModelTester):
             urls: list[str],
             unique_tracks: list[Track],
             duplicate_tracks: list[Track],
-            mock_pause: mock.MagicMock,
+            mock_pause: Mock,
     ):
         model.unique_only = False
 
@@ -130,7 +130,7 @@ class TestItemDownloadHelper(BaseModelTester):
             tracks: list[Track],
             artists: list[Artist],
             faker: Faker,
-            mock_pause: mock.MagicMock,
+            mock_pause: Mock,
     ):
         for track in tracks:
             track.artists = faker.random_elements(artists, length=faker.random_int(0, 3))
@@ -159,7 +159,7 @@ class TestItemDownloadHelper(BaseModelTester):
             tracks: list[Track],
             artists: list[Artist],
             faker: Faker,
-            mock_pause: mock.MagicMock,
+            mock_pause: Mock,
     ):
         # similar to before, just check that cleaned value is in URL instead
         model.cleaner = NameCleaner()
