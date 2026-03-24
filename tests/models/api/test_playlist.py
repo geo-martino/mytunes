@@ -77,26 +77,32 @@ class TestPlaylistWriteSavedEndpoints(EndpointsTester):
     def model(self, handler: RequestHandler) -> PlaylistReadWriteSavedEndpoints:
         return PlaylistReadWriteSavedEndpoints(handler=handler)
 
+    @pytest.fixture
+    def mock_create(self) -> Generator[Mock, None, None]:
+        with patch.object(PlaylistReadWriteSavedEndpoints, "create") as mock_create:
+            yield mock_create
+
     async def test_get_or_create_gets_existing(
             self,
             model: PlaylistReadWriteSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
-            faker: Faker
+            mock_create: Mock,
+            faker: Faker,
     ):
         expected = faker.random_element(playlists)
         name = expected.name
         kwargs = dict(description=faker.sentence())
 
-        with patch.object(model.__class__, "create") as mock_create:
-            assert await model.get_or_create(name=name, **kwargs) is expected
-            mock_create.assert_not_called()
+        assert await model.get_or_create(name=name, **kwargs) is expected
+        mock_create.assert_not_called()
 
     async def test_get_or_create_creates_new(
             self,
             model: PlaylistReadWriteSavedEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
+            mock_create: Mock,
             faker: Faker
     ):
         name = None
@@ -105,8 +111,6 @@ class TestPlaylistWriteSavedEndpoints(EndpointsTester):
             name = faker.word()
 
         kwargs = dict(description=faker.sentence())
-        expected = "created_playlist"
 
-        with patch.object(model.__class__, "create", return_value=expected) as mock_create:
-            await model.get_or_create(name=name, **kwargs)
-            mock_create.assert_called_once_with(name=name, **kwargs)
+        await model.get_or_create(name=name, **kwargs)
+        mock_create.assert_called_once_with(name=name, **kwargs)

@@ -78,6 +78,6 @@ class TestSpotifySearchEndpoints(BaseModelTester):
 
     async def test_format_query_from_playlist(self, model: SpotifySearchEndpoints, faker: Faker):
         item = Playlist(name=faker.word())
-        expected_query = item.name
+        expected_query = item.name.casefold()
 
         self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)

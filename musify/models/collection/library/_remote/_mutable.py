@@ -182,7 +182,7 @@ class RemoteMutableLibrary[
         """
         api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints | TrackWriteSavedEndpoints]] = self.api
         return await self._sync_saved_items(
-            kind, items_type="tracks", items=self.tracks, api=api.tracks, dry_run=dry_run
+            kind=kind, items_type="tracks", items=self.tracks, api=api.tracks, dry_run=dry_run
         )
 
     @HasAPI._validate_api(
@@ -209,7 +209,7 @@ class RemoteMutableLibrary[
         """
         api: HasArtistEndpoints[HasSavedEndpoints[ArtistReadSavedEndpoints | ArtistWriteSavedEndpoints]] = self.api
         return await self._sync_saved_items(
-            kind, items_type="artists", items=self.artists, api=api.artists, dry_run=dry_run
+            kind=kind, items_type="artists", items=self.artists, api=api.artists, dry_run=dry_run
         )
 
     @HasAPI._validate_api(
@@ -236,7 +236,7 @@ class RemoteMutableLibrary[
         """
         api: HasAlbumEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints | AlbumWriteSavedEndpoints]] = self.api
         return await self._sync_saved_items(
-            kind, items_type="albums", items=self.albums, api=api.albums, dry_run=dry_run
+            kind=kind, items_type="albums", items=self.albums, api=api.albums, dry_run=dry_run
         )
 
     async def _sync_saved_items(

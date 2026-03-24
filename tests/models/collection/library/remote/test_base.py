@@ -28,11 +28,6 @@ class TestRemoteLibrary(BaseModelTester):
         library._user = user
         return library
 
-    @pytest.fixture
-    def mock_get_all(self) -> Generator[Mock, None, None]:
-        with patch.object(ReadSavedEndpoints, "get_all") as mock_get_all:
-            yield mock_get_all
-
     @staticmethod
     def assert_items_loaded(loaded_items: Collection[RemoteResource], mock_get_all: Mock) -> None:
         """Assert that the given tracks were loaded into the model"""
@@ -42,7 +37,9 @@ class TestRemoteLibrary(BaseModelTester):
         expected_uris = sorted(item.uri for item in mock_get_all.return_value)
         assert sorted(item.uri for item in loaded_items) == expected_uris
 
-    async def test_load_playlists(self, model: RemoteLibrary, playlists: list[Playlist], user: RemoteUser, mock_get_all: Mock):
+    async def test_load_playlists(
+            self, model: RemoteLibrary, playlists: list[Playlist], user: RemoteUser, mock_get_all: Mock
+    ):
         for pl in playlists:
             pl.owner = user
 
