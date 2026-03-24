@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 
+from musify import MODULE_ROOT
 from musify.exception import MusifyValueError
 # noinspection PyProtectedMember
 from musify.models.collection._sync import get_sync_items_for_add, get_sync_items_for_refresh, get_sync_items_for_sync, \
@@ -13,9 +14,9 @@ from tests.utils import SimpleURI
 
 def test_get_sync_items_calls_expected_getter():
     with (
-        patch("musify.models.collection._sync.get_sync_items_for_add") as mock_add,
-        patch("musify.models.collection._sync.get_sync_items_for_refresh") as mock_refresh,
-        patch("musify.models.collection._sync.get_sync_items_for_sync") as mock_sync,
+        patch(f"{MODULE_ROOT}.models.collection._sync.get_sync_items_for_add") as mock_add,
+        patch(f"{MODULE_ROOT}.models.collection._sync.get_sync_items_for_refresh") as mock_refresh,
+        patch(f"{MODULE_ROOT}.models.collection._sync.get_sync_items_for_sync") as mock_sync,
     ):
         get_sync_items(kind="new", initial=(), remote=())
         mock_add.assert_called_once()

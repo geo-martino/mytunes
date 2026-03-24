@@ -7,6 +7,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
+from musify import MODULE_ROOT
 from musify.models.api import RemoteAPI, WriteCollectionEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints
 # noinspection PyProtectedMember
@@ -142,7 +143,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         remove = faker.random_elements(initial, length=faker.random_int(0, len(add)))
         unchanged = faker.random_elements(initial)
 
-        target = "musify.models.collection.playlist.get_sync_items"
+        target = f"{MODULE_ROOT}.models.collection.playlist.get_sync_items"
         with patch(target, return_value=(add, remove, unchanged)) as mock_get_items:
             yield mock_get_items
 

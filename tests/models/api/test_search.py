@@ -113,7 +113,7 @@ class TestSearchEndpoints(EndpointsTester):
         mock_get.return_value = {model._query_path: {"tracks": [{"name": item.name}]}}
 
         with patch.object(
-                SearchEndpoints, "_format_query_from_item", return_value=expected_query
+                model, "_format_query_from_item", return_value=expected_query
         ) as mock_format_query:
             await model.query_item(item=item, limit=limit)
 

@@ -8,6 +8,7 @@ from aiorequestful.response.exception import ResponseError
 from faker import Faker
 from pytest_mock import MockerFixture
 
+from musify import MODULE_ROOT
 from musify.models.api import RemoteAPI, ReadSavedEndpoints, WriteSavedEndpoints, ReadItemEndpoints, ReadItemsEndpoints
 from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints
 from musify.models.collection._sync import SYNC_TYPE
@@ -122,7 +123,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         remove = faker.random_elements(initial, length=faker.random_int(0, len(add)))
         unchanged = faker.random_elements(initial)
 
-        target = "musify.models.collection.library._remote._mutable.get_sync_items"
+        target = f"{MODULE_ROOT}.models.collection.library._remote._mutable.get_sync_items"
         with patch(target, return_value=(add, remove, unchanged)) as mock_get_items:
             yield mock_get_items
 
@@ -210,7 +211,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
     @pytest.fixture
     def mock_sync_saved_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
-        with patch.object(model.__class__, "_sync_saved_items") as mock_sync:
+        with patch.object(model, "_sync_saved_items") as mock_sync:
             yield mock_sync
 
     async def test_sync_tracks(self, model: RemoteMutableLibrary, mock_sync_saved_items: Mock, faker: Faker):

@@ -1,5 +1,6 @@
 import math
 import random
+from collections.abc import Generator
 from copy import copy
 from typing import Self, final, ClassVar
 from unittest.mock import patch, Mock, PropertyMock
@@ -135,16 +136,21 @@ class TestIterablePageCursor(BaseModelTester):
     def model(self, faker: Faker) -> IterablePageCursor:
         return IterablePageCursor(url=faker.url())
 
-    def test_iter_pages_fails(self, model: IterablePageCursor, faker: Faker):
-        with patch.object(model.__class__, "next", return_value=model, new_callable=PropertyMock):
-            with pytest.raises(MusifyValueError, match="The next cursor is the same as the current cursor"):
-                assert list(model.iter_pages)
+    @pytest.fixture
+    def mock_next(self, model: IterablePageCursor) -> Generator[Mock, None, None]:
+        with patch.object(IterablePageCursor, "next", new_callable=PropertyMock) as mock_next:
+            yield mock_next
 
-    def test_iter_pages(self, model: IterablePageCursor, faker: Faker):
+    def test_iter_pages_fails(self, model: IterablePageCursor, mock_next: Mock, faker: Faker):
+        mock_next.return_value = model
+        with pytest.raises(MusifyValueError, match="The next cursor is the same as the current cursor"):
+            assert list(model.iter_pages)
+
+    def test_iter_pages(self, model: IterablePageCursor, mock_next: Mock, faker: Faker):
+        mock_next.return_value = None
         # can't find a way to test an actual iterable set of pages
         # just check that it doesn't iter when no next page is available
-        with patch.object(model.__class__, "next", return_value=None, new_callable=PropertyMock):
-            assert not list(model.iter_pages)
+        assert not list(model.iter_pages)
 
 
 class TestIndexCursor(BaseModelTester):
@@ -264,7 +270,7 @@ class TestIndexCursor(BaseModelTester):
         iter_cursors = iter(cursors)
 
         with patch.object(
-                model.__class__, "get_cursor_from_response", side_effect=lambda *_: next(iter_cursors)
+                IndexCursor, "get_cursor_from_response", side_effect=lambda *_: next(iter_cursors)
         ) as mock_get_cursor:
             result = IndexCursor.sort_responses(responses=responses, path="id")
             assert responses == expected_responses
