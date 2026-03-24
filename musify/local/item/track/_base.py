@@ -19,9 +19,9 @@ from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo
 
 from musify._types import StrippedString
-from musify.exception import MusifyTypeError
+from musify.exception import MusifyTypeError, MusifyValueError
 from musify.local._base import LocalModel
-from musify.local.exception import FileError, TagError
+from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
@@ -428,7 +428,7 @@ class LocalTrack[FT: FileType](
     def _validate_tag_fields(cls, fields: Collection[str]) -> tuple[str, ...]:
         invalid_tag_fields = [field for field in fields if field not in cls.__tag_fields__]
         if invalid_tag_fields:
-            raise TagError(f"Unrecognised tag fields: {", ".join(invalid_tag_fields)}")
+            raise MusifyValueError(f"Unrecognised tag fields: {", ".join(invalid_tag_fields)}")
         return tuple(fields)
 
     @classmethod

@@ -10,7 +10,7 @@ from typing import Any, Literal, Annotated, Mapping
 from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.models import ResourceModel, IntEnumModel, AttributeModel
 from musify.models.item.artist import HasArtists
 from musify.models.item.track import Track
@@ -20,7 +20,6 @@ from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.processors_new._base import Processor
-from musify.processors_new.exception import SorterProcessorError
 from musify.utils import flatten_nested, strip_ignore_words, IGNORE_WORDS_DEFAULT
 
 _SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
@@ -258,7 +257,7 @@ class ItemSorter(Processor):
     # noinspection PyUnresolvedReferences
     def _shuffle_on_rating(self, items: MutableSequence[HasRating]) -> None:
         if not all(isinstance(item, HasRating) for item in items):
-            raise SorterProcessorError(
+            raise MusifyAttributeError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
                 "as they do not all have a rating."
             )
@@ -273,7 +272,7 @@ class ItemSorter(Processor):
     # noinspection PyUnresolvedReferences
     def _shuffle_on_added_at(self, items: MutableSequence[HasAddedDate]) -> None:
         if not all(isinstance(item, HasAddedDate) for item in items):
-            raise SorterProcessorError(
+            raise MusifyAttributeError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
                 "as they do not all have an added at date."
             )
@@ -292,7 +291,7 @@ class ItemSorter(Processor):
     # noinspection PyUnresolvedReferences
     def _shuffle_on_artist(self, items: MutableSequence[HasArtists]) -> None:
         if not all(isinstance(item, HasArtists) for item in items):
-            raise SorterProcessorError(
+            raise MusifyAttributeError(
                 f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
                 "as they do not all have an artist."
             )

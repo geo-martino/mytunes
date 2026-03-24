@@ -3,7 +3,8 @@ from collections.abc import Collection, Iterator, Mapping, Iterable
 from pathlib import Path
 from typing import Any, Annotated, Self
 
-from pydantic import Field, field_validator, BeforeValidator, field_serializer, model_validator, computed_field
+from pydantic import Field, field_validator, BeforeValidator, field_serializer, model_validator, computed_field, \
+    validate_call
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
@@ -94,6 +95,7 @@ class ValuesFilter[T](Filter[T]):
     def ready(self) -> bool:
         return len(self.values) > 0
 
+    @validate_call
     def check(self, item: T, *_, **__) -> bool:
         return item in self.values
 
@@ -153,9 +155,8 @@ class PathsFilter(ValuesFilter[str]):
             self.values = values
         return self
 
+    @validate_call
     def check(self, item: PathInputType, *_, **__) -> bool:
-        if not isinstance(item, str | Path | IsLocalFile):
-            raise MusifyTypeError(f"Unrecognised type for path filtering: {type(item)}")
         return self.path_mapper.unmap(item, check_existence=False) in self.values
 
 
@@ -173,6 +174,7 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
     def filters(self) -> Collection[Filter]:
         return self.include, self.exclude
 
+    @validate_call
     def check(self, item: T, *_, **__) -> bool:
         match = self.include.check(item)
         if self.exclude.ready:
@@ -222,6 +224,7 @@ class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
     def ready(self) -> bool:
         return len(self.comparers) > 0
 
+    @validate_call
     def check(self, item: CT, reference: CT | None = None, *_, **__) -> bool:
         # initial state determined by ready and match_all states
         matched = self.ready and self.match_all
@@ -313,6 +316,7 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
         default=None,
     )
 
+    @validate_call
     def check(self, item: T, reference: T | None = None, *_, **__) -> bool:
         if self.exclude.check(item, reference=reference):
             return False

@@ -13,7 +13,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from musify.local.exception import TagError
+from musify.exception import MusifyValueError
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, TagContext, HasLocalTracks
 from musify.models.properties.file import IsLocalFile
@@ -310,7 +310,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert "compilation" in tags
         assert "comments" not in tags
 
-        with pytest.raises(TagError):
+        with pytest.raises(MusifyValueError):
             model.to_tags(exclude={"name", "does not exist"})
 
     # noinspection PyTypeChecker,PyTestUnpassedFixture
@@ -323,9 +323,9 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in HasLength.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_fields)
 
-        with pytest.raises(TagError):
+        with pytest.raises(MusifyValueError):
             model.to_tags(include={"path"})
-        with pytest.raises(TagError):
+        with pytest.raises(MusifyValueError):
             model.to_tags(include={"length"})
 
     @pytest.fixture

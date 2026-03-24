@@ -11,6 +11,7 @@ from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
 from musify.exception import MusifyTypeError, MusifyValueError
+from musify.models.exception import MusifyValidationError, ModelError, RequestError
 from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
@@ -21,7 +22,7 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
     def _get_param_position(func: Callable, param_key: str) -> int:
         if param_key not in (params := inspect.signature(func).parameters):
             param_keys = ", ".join(params)
-            raise MusifyTypeError(f"Function must have a {param_key!r} parameter. Found: {param_keys}")
+            raise ModelError(f"Function must have a {param_key!r} parameter. Found: {param_keys}")
         return list(params).index(param_key)
 
     @classmethod
@@ -50,11 +51,12 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
         if param_key in kwargs:
             value = kwargs.pop(param_key)
             return args[:param_idx], value, args[param_idx:]
+
         with contextlib.suppress(IndexError):
             value = args.pop(param_idx)
             return args[:param_idx], value, args[param_idx:]
 
-        raise MusifyValueError(f"{param_key!r} value is required.")
+        raise RequestError(f"{param_key!r} value is required.")
 
 
 class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
@@ -62,7 +64,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if not args:
-            raise MusifyTypeError(f"Must define generic types for {type(source)}")
+            raise ModelError(f"Must define generic types for {type(source)}")
 
         uri_t: UT = args[0]
         model_t: type[MT] = args[1]
@@ -72,7 +74,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         def _from_api_uri(url: URL) -> URL:
             uri = TypeAdapter(uri_t).validate_python(url)
             if not str(url).startswith(str(uri.api_url)):
-                raise ValueError("URL does not match the expected API URL format.")
+                raise MusifyValidationError("URL does not match the expected API URL format.")
             return url
 
         from_api_url_schema = core_schema.chain_schema(
@@ -103,7 +105,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         def _from_model(model: HasURI) -> URL:
             uri = model.uri
             if uri is None:
-                raise MusifyValueError("Model does not have a URI.")
+                raise MusifyValidationError("Model does not have a URI.")
             return _from_uri(uri)
 
         from_model_schema = core_schema.chain_schema(
@@ -185,7 +187,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if not args:
-            raise MusifyTypeError(f"Must define generic types for {type(source)}")
+            raise ModelError(f"Must define generic types for {type(source)}")
 
         uri_t: UT = args[0]
         model_t: type[MT] = args[1]
@@ -201,7 +203,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
         def _from_model(model: HasURI) -> URI:
             if model.uri is None:
-                raise MusifyValueError("Model does not have a URI.")
+                raise MusifyValidationError("Model does not have a URI.")
             return model.uri
 
         from_model_schema = core_schema.chain_schema(

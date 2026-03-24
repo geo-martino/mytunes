@@ -17,6 +17,7 @@ from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, 
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
+from musify.models.exception import APIModelError
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
@@ -47,7 +48,7 @@ class TestCreateFromResponse:
         __final__ = True
 
     def test_create_fails_on_non_final_class(self):
-        with pytest.raises(MusifyTypeError, match="Can only create resources from final API models"):
+        with pytest.raises(APIModelError, match="Can only create resources from final API models"):
             Endpoints.create_model({})
 
     def test_create_fails_on_unmatched_source(self):
@@ -57,7 +58,7 @@ class TestCreateFromResponse:
             source = "unknown_source"
             type = MockRemoteResource.type
 
-        with pytest.raises(MusifyTypeError, match="No registered resource models found"):
+        with pytest.raises(APIModelError, match="No registered resource models found"):
             MockEndpointsTest.create_model({})
 
     def test_create_fails_on_unmatched_kind(self):
@@ -67,7 +68,7 @@ class TestCreateFromResponse:
             source = MockRemoteResource.source
             type = "unknown_type"
 
-        with pytest.raises(MusifyTypeError, match=f"Could not find a registered {MockRemoteResource.source!r} model"):
+        with pytest.raises(APIModelError, match=f"Could not find a registered {MockRemoteResource.source!r} model"):
             MockEndpointsTest.create_model({})
 
     def test_creates_current_kind(self, faker: Faker):

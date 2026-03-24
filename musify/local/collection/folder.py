@@ -7,6 +7,7 @@ from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks
+from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
@@ -42,9 +43,9 @@ class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasNa
 
         names = {track.folder for track in tracks}
         if len(names) == 0:  # This shouldn't happen, but just in case
-            raise MusifyValueError("No folder given and no folders found in tracks")
+            raise MusifyValidationError("No folder given and no folders found in tracks")
         if len(names) > 1:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"No folder given and tracks are from different folders: {", ".join(map(str, names))}"
             )
 
@@ -75,7 +76,7 @@ class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasNa
 
         names = {track.folder for track in self.tracks}
         if len(names) > 1:
-            raise MusifyValueError(f"Tracks are from different folders: {", ".join(map(str, names))}")
+            raise MusifyValidationError(f"Tracks are from different folders: {", ".join(map(str, names))}")
 
         return self.tracks
 

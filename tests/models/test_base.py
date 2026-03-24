@@ -6,6 +6,7 @@ from pydantic import Field, AliasChoices
 
 from musify.exception import MusifyAttributeError
 from musify.models import BaseModel
+from musify.models.exception import ModelError
 
 
 @final
@@ -26,12 +27,12 @@ class TestFinalModel:
         var3: ClassVar[int]
 
     def test_validate_class_vars_not_set_on_final_model(self):
-        with pytest.raises(MusifyAttributeError):
+        with pytest.raises(ModelError):
             @final
             class Child(self.ParentWithClassVars):
                 __final__ = True
 
-        with pytest.raises(MusifyAttributeError):
+        with pytest.raises(ModelError):
             @final
             class Child(self.ParentWithClassVars):  # var2 is still not set
                 __final__ = True

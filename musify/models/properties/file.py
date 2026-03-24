@@ -13,6 +13,7 @@ from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import abstract_property
 from musify.models._attribute import AttributeModelMetaclass
 from musify.models._base import BaseModel
+from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute
 
 
@@ -274,7 +275,7 @@ class PathStemMapper(PathMapper):
         if isinstance(value, str | PurePath):
             value = [value]
         elif not isinstance(value, Iterable):
-            raise MusifyValueError(f"Unrecognised input type: {value!r}")
+            raise MusifyValidationError(f"Unrecognised input type: {value!r}")
 
         return {path.casefold(): path for path in map(str, value)}
 
@@ -285,7 +286,7 @@ class PathStemMapper(PathMapper):
         if isinstance(value, Mapping):
             value = value.items()
         elif not isinstance(value, Iterable):
-            raise MusifyValueError(f"Unrecognised input type: {value!r}")
+            raise MusifyValidationError(f"Unrecognised input type: {value!r}")
 
         return {str(k): str(v) for k, v in value}
 

@@ -10,6 +10,7 @@ from pydantic_core import PydanticUndefined
 from typing_inspection.typing_objects import is_annotated
 
 from musify.exception import MusifyAttributeError
+from musify.models.exception import ModelError
 
 
 class ModelMetaclass(PydanticModelMetaclass):
@@ -42,7 +43,7 @@ class ModelMetaclass(PydanticModelMetaclass):
         """Validate that all class variables defined on this model and its subclasses are set."""
         for name in cls.__class_vars__:
             if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
-                raise MusifyAttributeError(f"{cls.__name__} must have a {name!r} class attribute defined.")
+                raise ModelError(f"{cls.__name__} must have a {name!r} class attribute defined.")
 
     @property
     def _metadata_fields(cls) -> dict[str, tuple[Any, list[Any]]]:

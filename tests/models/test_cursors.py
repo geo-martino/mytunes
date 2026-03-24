@@ -12,6 +12,7 @@ from yarl import URL
 
 from musify.exception import MusifyValueError
 from musify.models.cursors import PageCursor, IterablePageCursor, IndexCursor, KeyCursor, UrlCursor, InitialCursor
+from musify.models.exception import CursorError
 from tests.models.testers import BaseModelTester
 
 
@@ -143,7 +144,7 @@ class TestIterablePageCursor(BaseModelTester):
 
     def test_iter_pages_fails(self, model: IterablePageCursor, mock_next: Mock, faker: Faker):
         mock_next.return_value = model
-        with pytest.raises(MusifyValueError, match="The next cursor is the same as the current cursor"):
+        with pytest.raises(CursorError, match="The next cursor is the same as the current cursor"):
             assert list(model.iter_pages)
 
     def test_iter_pages(self, model: IterablePageCursor, mock_next: Mock, faker: Faker):
@@ -151,6 +152,9 @@ class TestIterablePageCursor(BaseModelTester):
         # can't find a way to test an actual iterable set of pages
         # just check that it doesn't iter when no next page is available
         assert not list(model.iter_pages)
+
+    def test_sort_responses(self, faker: Faker):
+        pass  # TODO: write me
 
 
 class TestIndexCursor(BaseModelTester):

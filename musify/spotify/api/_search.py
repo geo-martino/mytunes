@@ -6,6 +6,7 @@ from yarl import URL
 from musify.models import ResourceModel
 from musify.models.api.search import SearchEndpoints
 from musify.models.collection.playlist import Playlist
+from musify.models.exception import RequestError
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
@@ -64,7 +65,7 @@ class SpotifySearchEndpoints(
             case Playlist() as playlist:
                 query = self._get_name(playlist)
             case _:
-                raise ValueError(f"Unsupported item type: {item.type}")
+                raise RequestError(f"Unsupported item type: {item.type}")
 
         item_type = item if isinstance(item, SpotifyResource) else item.type
         return {"query": query, "types": {item_type}} | kwargs

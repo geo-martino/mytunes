@@ -21,6 +21,7 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
+from musify.models.exception import MusifyValidationError
 from musify.models.result import LogFormatter, CountResult
 from musify.models.sequence import MutableUniqueSequence
 from musify.processors_new.compare import Comparer
@@ -531,13 +532,13 @@ class _XMLCondition(_XMLBaseModel):
     @classmethod
     def _validate_field_is_mapped(cls, field: str) -> str:
         if field not in cls.name_field_map:
-            raise MusifyValueError(f"Unrecognised condition field name: {field}")
+            raise MusifyValidationError(f"Unrecognised condition field name: {field}")
         return field
 
     @model_validator(mode="after")
     def _validate_only_and_either_or_set(self) -> Self:
         if self.And is not None and self.Or is not None:
-            raise MusifyValueError("Condition can only have either 'And' or 'Or' set, not both.")
+            raise MusifyValidationError("Condition can only have either 'And' or 'Or' set, not both.")
         return self
 
     @model_validator(mode="wrap")
@@ -694,7 +695,7 @@ class _XMLDisplayField(_XMLBaseModel):
     @staticmethod
     def _validate_code_is_mapped(code: int) -> int:
         if code not in _XMLCondition.code_name_map:
-            raise MusifyValueError(f"Unrecognised display field code: {code}")
+            raise MusifyValidationError(f"Unrecognised display field code: {code}")
         return code
 
     @property
@@ -737,7 +738,7 @@ class _XMLSortBy(_XMLBaseModel):
     @staticmethod
     def _validate_field_is_mapped(code: int) -> int:
         if code not in _XMLCondition.code_name_map:
-            raise MusifyValueError(f"Unrecognised sort field code: {code}")
+            raise MusifyValidationError(f"Unrecognised sort field code: {code}")
         return code
 
     @property
@@ -802,7 +803,7 @@ class _XMLDefinedSort(_XMLBaseModel):
     @classmethod
     def _validate_id_is_mapped(cls, value: int) -> int:
         if value not in cls.fields_map:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"Unrecognised defined sort ID: {value}. Available IDs: {", ".join(map(str, cls.fields_map))}"
             )
         return value

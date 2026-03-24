@@ -6,6 +6,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler
 from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
 from musify.models.cursors import PageCursor
+from musify.models.exception import MusifyValidationError
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
@@ -33,9 +34,9 @@ class GenreCollection[TK, TV: Track](HasTracks[TK, TV], Genre, HasLength):
 
         names = {genre.name for track in tracks for genre in track.genres}
         if len(names) == 0:
-            raise MusifyValueError("No genre given and no genres found in tracks")
+            raise MusifyValidationError("No genre given and no genres found in tracks")
         if len(names) > 1:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"No genre given and tracks are from different genres: {", ".join(map(str, names))}"
             )
 
@@ -67,7 +68,9 @@ class GenreCollection[TK, TV: Track](HasTracks[TK, TV], Genre, HasLength):
         for track in self.tracks:
             names = {genre.name for genre in track.genres}
             if self.name not in names:
-                raise MusifyValueError(f"Track does not contain the genre {self.name!r}: {", ".join(map(str, names))}")
+                raise MusifyValidationError(
+                    f"Track does not contain the genre {self.name!r}: {", ".join(map(str, names))}"
+                )
 
         return self
 

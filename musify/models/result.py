@@ -9,7 +9,7 @@ from tabulate import tabulate
 from termcolor import colored
 
 from musify._types import StrippedString
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import BaseModel
 from musify.models.metadata import Attribute
 
@@ -91,7 +91,7 @@ class LenLogFormatter(LogFormatter[int]):
             case Collection() if not isinstance(value, str):
                 return len(value)
             case _:
-                raise MusifyValueError(f"Value must be an int or a collection, got {type(value)}")
+                raise MusifyTypeError(f"Value must be an int or a collection, got {type(value)}")
 
 
 class Result(BaseModel):

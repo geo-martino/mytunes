@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 
 import pytest
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists, Artist
 from musify.models.properties.name import HasName
@@ -23,7 +23,7 @@ class StringCleanerTester(BaseModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_get_item_value_fails(model: StringCleaner):
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MusifyTypeError):
             model._get_item_value(123)
 
 

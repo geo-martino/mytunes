@@ -5,6 +5,7 @@ from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
 from musify.exception import MusifyValueError
+from musify.models.exception import MusifyValidationError
 from musify.models.properties.uri import URI
 from musify.spotify._url import API_URL, PUBLIC_URL
 
@@ -28,7 +29,7 @@ class _SpotifyURIBase(URI):
     @classmethod
     def _validate_uri_length(cls, uri: str) -> str:
         if len(uri.split(":")) != 3:
-            raise MusifyValueError("Invalid Spotify URI format. Expected format: {spotify}:{type}:{id}")
+            raise MusifyValidationError("Invalid Spotify URI format. Expected format: {spotify}:{type}:{id}")
         return uri
 
     @classmethod
@@ -96,13 +97,13 @@ class SpotifyResourceURI(_SpotifyURIBase):
     def _validate_id_length(cls, uri: str) -> str:
         id_value = uri.split(":")[-1]
         if len(id_value) != 22:
-            raise MusifyValueError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
+            raise MusifyValidationError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
         return uri
 
     @model_validator(mode="after")
     def _type_is_not_user(self) -> Self:
         if self.type == "user":
-            raise MusifyValueError("Spotify user URIs are not allowed for this model.")
+            raise MusifyValidationError("Spotify user URIs are not allowed for this model.")
         return self
 
 
@@ -113,5 +114,5 @@ class SpotifyUserURI(_SpotifyURIBase):
     @model_validator(mode="after")
     def _type_is_user(self) -> Self:
         if self.type != "user":
-            raise MusifyValueError("Only Spotify user URIs are allowed for this model.")
+            raise MusifyValidationError("Only Spotify user URIs are allowed for this model.")
         return self

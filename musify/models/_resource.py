@@ -5,6 +5,7 @@ from pydantic import Field
 
 from musify.exception import MusifyTypeError
 from musify.models._base import ModelMetaclass, BaseModel
+from musify.models.exception import ModelError
 from musify.models.metadata import UniqueAttribute
 
 
@@ -23,7 +24,7 @@ class ResourceMetaclass(ModelMetaclass):
         metadata_fields = cls._metadata_fields
 
         if (key := "__unique_attributes__") in namespace:
-            raise MusifyTypeError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
+            raise ModelError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
         cls.__unique_attributes__ = frozenset(mcs._get_unique_fields(metadata_fields))
 
         return cls

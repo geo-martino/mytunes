@@ -6,6 +6,7 @@ from musify.models.properties.audio import Decibels
 from musify.models.properties.length import Length
 from musify.models.properties.music import KeySignature
 from musify.spotify import API_URL
+from musify.spotify.exception import SpotifyAPIError, SpotifyError
 # noinspection PyProtectedMember
 from musify.spotify.item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis, \
     _SpotifyAudioAnalysisMeta, _SpotifyAudioAnalysisTrack
@@ -46,7 +47,7 @@ class TestSpotifyTrack(SpotifyResourceTester):
             audio_features_payload = generator.generate_audio_features()
 
         audio_features = SpotifyAudioFeatures.model_validate(audio_features_payload)
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(SpotifyError):
             model.enrich_with_audio_features(audio_features)
 
     def test_enrich_with_audio_features(self, generator: SpotifyPayloadGenerator):

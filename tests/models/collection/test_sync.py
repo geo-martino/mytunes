@@ -8,6 +8,7 @@ from musify.exception import MusifyValueError
 # noinspection PyProtectedMember
 from musify.models.collection._sync import get_sync_items_for_add, get_sync_items_for_refresh, get_sync_items_for_sync, \
     get_sync_items
+from musify.models.exception import RequestError
 from musify.models.item.track import RemoteTrack
 from tests.utils import SimpleURI
 
@@ -35,7 +36,7 @@ def test_get_sync_items_calls_expected_getter():
 
 
 def test_get_sync_items_fails_on_unknown_type():
-    with pytest.raises(MusifyValueError, match="Invalid sync type"):
+    with pytest.raises(RequestError, match="Invalid sync type"):
         # noinspection PyTypeChecker
         get_sync_items(kind="unknown_type", initial=(), remote=())
 

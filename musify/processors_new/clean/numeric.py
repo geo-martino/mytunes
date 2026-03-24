@@ -1,7 +1,7 @@
 from collections.abc import Collection
 from typing import Any
 
-from pydantic import Field, NonNegativeInt
+from pydantic import Field, NonNegativeInt, validate_call
 
 from musify.models import AttributeModel
 from musify.models.collection import CollectionModel
@@ -21,6 +21,7 @@ class NumericCleaner[IT: AttributeModel](TagCleaner[IT, int | float]):
     def can_clean(cls, item: Any) -> bool:
         return item is None or isinstance(item, int | float)
 
+    @validate_call
     def clean(self, item: int | float | IT | None) -> int | float:
         if item is None:
             return 0

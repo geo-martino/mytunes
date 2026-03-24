@@ -12,12 +12,14 @@ from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 from aiorequestful.types import Number
-from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, ModelWrapValidatorHandler, BeforeValidator
+from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, ModelWrapValidatorHandler, BeforeValidator, \
+    FilePath
 
 from musify._types import to_set
+from musify.exception import MusifyTypeError, MusifyValueError
 from musify.local.collection.library._base import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.exception import MusicBeeIDError, XMLReaderError, FileDoesNotExistError
+from musify.local.exception import XMLReaderError, FileDoesNotExistError
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
 from musify.models._metaclass import makecls
@@ -71,12 +73,12 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     )
 
     @property
-    def xml_settings_path(self) -> Path:
+    def xml_settings_path(self) -> FilePath:
         """The path to the MusicBee settings file."""
         return self.musicbee_folder.joinpath(self._xml_settings_path)
 
     @property
-    def xml_library_path(self) -> Path:
+    def xml_library_path(self) -> FilePath:
         """The path to the MusicBee library file."""
         return self.musicbee_folder.joinpath(self._xml_library_path)
 
@@ -89,33 +91,28 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         data["path"] = Path(data[key]).joinpath(cls._xml_library_path)
         return handler(data)
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _validate_settings_file_exists(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model = handler(value)
-        if not model.xml_settings_path.is_file():
-            raise FileDoesNotExistError(model.xml_settings_path, "MusicBee settings file does not exist")
-        return model
+    @model_validator(mode="after")
+    def _validate_settings_file_exists(self) -> Self:
+        if not self.xml_settings_path.is_file():
+            raise FileDoesNotExistError(self.xml_settings_path, "MusicBee settings file does not exist")
+        return self
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _validate_library_file_exists(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model = handler(value)
-        if not model.xml_library_path.is_file():
-            raise FileDoesNotExistError(model.xml_library_path, "MusicBee library file does not exist")
-        return model
+    @model_validator(mode="after")
+    def _validate_library_file_exists(self) -> Self:
+        if not self.xml_library_path.is_file():
+            raise FileDoesNotExistError(self.xml_library_path, "MusicBee library file does not exist")
+        return self
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _validate_playlists_folder_exists(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model = handler(value)
-        if model.playlist_folder.is_absolute():
-            return model
+    @model_validator(mode="after")
+    def _validate_playlists_folder_exists(self) -> Self:
+        if self.playlist_folder.is_absolute():
+            return self
 
-        path = model.musicbee_folder.joinpath(model.playlist_folder)
+        path = self.musicbee_folder.joinpath(self.playlist_folder)
         if path.is_dir():
-            model.playlist_folder = path
-        return model
+            self.playlist_folder = path
+
+        return self
 
     async def load_settings_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
@@ -251,7 +248,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
         data = {
             "Track ID": track_id,
-            "Persistent ID": cls._generate_persistent_id(id_=persistent_id, value=track.path),
+            "Persistent ID": cls._generate_persistent_id(persistent_id=persistent_id, value=track.path),
             "Name": track.name,
             "Artist": track.artist,
             "Album": track.album,
@@ -311,7 +308,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     ) -> dict[str, Any]:
         data = {
             "Playlist ID": playlist_id,
-            "Playlist Persistent ID": cls._generate_persistent_id(id_=persistent_id, value=playlist.path),
+            "Playlist Persistent ID": cls._generate_persistent_id(persistent_id=persistent_id, value=playlist.path),
             "All Items": True,  # don't know what this does, what happens if 'False'?
             "Name": playlist.name,
             "Description": playlist.description,
@@ -321,16 +318,16 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         return dict(filter(lambda item: item[1] is not None, data.items()))
 
     @staticmethod
-    def _generate_persistent_id(value: str | Path | None = None, id_: str | None = None) -> str:
-        if not value and not id_:
-            raise MusicBeeIDError(
+    def _generate_persistent_id(value: str | Path | None = None, persistent_id: str | None = None) -> str:
+        if not value and not persistent_id:
+            raise MusifyTypeError(
                 "You must provide either a persistent ID to validate or a value to generate a persistent ID from."
             )
 
-        id_ = id_ or hashlib.sha256(str(value).encode("utf-8")).hexdigest()[:16]
-        if (length := len(id_)) > 16:
-            raise MusicBeeIDError(f"Persistent ID is >16-characters in length ({length=}): {id_}")
-        return id_.upper()
+        persistent_id = persistent_id or hashlib.sha256(str(value).encode("utf-8")).hexdigest()[:16]
+        if (length := len(persistent_id)) > 16:
+            raise MusifyValueError(f"Persistent ID is >16-characters in length ({length=}): {persistent_id}")
+        return persistent_id.upper()
 
 
 # noinspection PyProtectedMember
@@ -420,11 +417,17 @@ class XMLLibraryParser(BaseModel):
         elif peek is not None and peek.tag == "array":
             return self._parse_array(elem)
         elif peek is not None:
-            raise XMLReaderError(f"Unrecognised element: {element.tag}, {element.text}, {peek.tag}, {peek.text}")
+            raise XMLReaderError(
+                self.source, f"Unrecognised element: {element.tag}, {element.text}, {peek.tag}, {peek.text}"
+            )
         elif element is not None:
-            raise XMLReaderError(f"Unrecognised element: {element.tag}, {element.text}")
+            raise XMLReaderError(
+                self.source, f"Unrecognised element: {element.tag}, {element.text}"
+            )
         else:
-            raise XMLReaderError(f"Unrecognised element: {elem.tag}, {elem.text}")
+            raise XMLReaderError(
+                self.source, f"Unrecognised element: {elem.tag}, {elem.text}"
+            )
 
     def _parse_array(self, element: Element | None = None) -> list[Any]:
         array = []
@@ -526,7 +529,9 @@ class XMLLibraryParser(BaseModel):
                 for item in value:
                     self._unparse_dict(element=array_element, data=item)
             else:
-                raise XMLReaderError(f"Unexpected value type: {value} ({type(value)})")
+                raise XMLReaderError(
+                    self.source, f"Unexpected value type: {value} ({type(value)})"
+                )
 
     def unparse(self, data: Mapping[str, Any]) -> str:
         """Un-parse a map of XML ``data`` to XML and save to file."""

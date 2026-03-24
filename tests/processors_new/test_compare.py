@@ -6,6 +6,7 @@ from random import choice, sample
 import pytest
 from faker import Faker
 
+from musify.exception import MusifyTypeError
 from musify.local.item.track import LocalTrack
 from musify.local.item.track.mp3 import MP3
 from musify.models.properties.date import SparseDate
@@ -13,7 +14,6 @@ from musify.models.properties.length import Length
 from musify.models.properties.music import KeySignature
 from musify.models.properties.order import Position
 from musify.processors_new.compare import Comparer, COMPARISON_FIELDS
-from musify.processors_new.exception import ComparerError
 from musify.processors_new.time import TimeMapper
 from tests.models.testers import BaseModelTester
 
@@ -189,12 +189,12 @@ class TestComparer(BaseModelTester):
 
     def test_compare_with_no_expected_and_no_reference_fails(self, track: MP3, tracks: list[LocalTrack]):
         comparer = Comparer(condition="is", field="name")
-        with pytest.raises(ComparerError):
+        with pytest.raises(MusifyTypeError):
             comparer.compare(track)
 
     def test_compare_when_reference_required_but_not_provided_fails(self, track: MP3):
         comparer = Comparer(condition="StartsWith", field="album", reference_required=True)
-        with pytest.raises(ComparerError):
+        with pytest.raises(MusifyTypeError):
             comparer.compare(item=track)
 
     def test_compare_on_null_check(self, track: MP3):

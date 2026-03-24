@@ -9,9 +9,10 @@ from tabulate import tabulate
 from termcolor import colored
 
 from musify._types import to_list
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import BaseModel, ResourceModel
 from musify.models.collection import CollectionModel
+from musify.models.exception import MusifyValidationError
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition
@@ -129,7 +130,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             return
 
         if len(value) != len(self.fields):
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"The number of {name} must match the number of fields. "
                 f"{len(value)} {name} != {len(self.fields)} fields."
             )
@@ -142,7 +143,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             case Iterable():
                 rows = [self._format_row(i) for i in item]
             case _:
-                raise MusifyValueError("Item must be a ResourceModel or a sequence of ResourceModels.")
+                raise MusifyTypeError("Item must be a ResourceModel or a sequence of ResourceModels.")
 
         return tabulate(
             rows,

@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 from termcolor import can_colorize
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models.result import LogFormatter, LenLogFormatter, Result, CountResult, TotalCountResult
 from tests.models.testers import BaseModelTester
 
@@ -115,7 +115,7 @@ class TestLenLogFormatter:
 
     def test_get_length_fails(self, faker: Faker):
         formatter = LenLogFormatter()
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MusifyTypeError):
             assert formatter.get_value("invalid value")
 
 

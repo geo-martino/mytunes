@@ -6,6 +6,7 @@ from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFl
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel
+from musify.models.exception import MusifyValidationError
 from musify.models.item.track import RemoteTrack
 from musify.models.metadata import Attribute
 from musify.models.properties.audio import Decibels
@@ -14,6 +15,7 @@ from musify.models.properties.length import Length, HasLength
 from musify.models.properties.order import Position
 from musify.models.url import HttpURL
 from musify.spotify._base import SpotifyResource, SpotifyModel
+from musify.spotify.exception import SpotifyAPIError, SpotifyError
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
@@ -101,7 +103,7 @@ class SpotifyTrack(
 
     def enrich_with_audio_features(self, audio_features: SpotifyAudioFeatures) -> None:
         if self.uri != audio_features.uri:
-            raise MusifyValueError("Audio features URI does not match track URI")
+            raise SpotifyError("Audio features URI does not match track URI")
 
         if audio_features.key is not None:
             self.key = audio_features.key
@@ -222,7 +224,7 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
 
         expected_type = "track"
         if not uri.type == expected_type:
-            raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {expected_type!r}")
+            raise MusifyValidationError(f"URI type {uri.type!r} does not match expected type {expected_type!r}")
         return uri
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports

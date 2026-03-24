@@ -6,6 +6,7 @@ from pydantic_core import core_schema, CoreSchema
 
 from musify.exception import MusifyKeyError, MusifyTypeError
 from musify.models import ResourceModel
+from musify.models.exception import MusifyValidationError
 
 
 class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
@@ -47,7 +48,7 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
             return cls(value.values())
         if isinstance(value, Iterable):
             return cls(value)
-        raise MusifyTypeError(f"Unrecognised value type: {value!r}")
+        raise MusifyValidationError(f"Unrecognised value type: {value!r}")
 
     def __init__(self, items: Iterable[TV] = None):
         if items is None:

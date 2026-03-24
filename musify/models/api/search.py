@@ -8,6 +8,7 @@ from yarl import URL
 from musify.exception import MusifyValueError
 from musify.models import ResourceModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
+from musify.models.exception import RequestError
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 from musify.processors_new.clean.string import NameCleaner
@@ -60,7 +61,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
                 return kind.type
             case _ if isinstance(kind, type) and issubclass(kind, ResourceModel):
                 return kind.type
-        raise MusifyValueError(f"Unknown search type: {kind}")
+        raise RequestError(f"Unknown search type: {kind}")
 
     @validate_call
     async def query(

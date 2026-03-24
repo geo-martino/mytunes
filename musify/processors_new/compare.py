@@ -17,6 +17,7 @@ from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase
+from musify.exception import MusifyAttributeError, MusifyTypeError
 from musify.models import AttributeModel
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
@@ -24,7 +25,6 @@ from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
-from musify.processors_new.exception import ComparerError
 from musify.processors_new.time import TimeMapper
 
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
@@ -241,10 +241,11 @@ class Comparer(DynamicProcessor):
 
     def _validate_compare_args(self, reference: Any | None = None) -> None:
         if reference is None and self.reference_required:
-            raise ComparerError("A reference is required for this instance of Comparer")
+            raise MusifyTypeError(f"A reference is required for this instance of {self.__class__.__name__}")
+
         signature = inspect.getfullargspec(self._processor_method.func)
         if reference is None and "expected" in signature.args and not self.expected:
-            raise ComparerError("No comparative item given and no expected values set")
+            raise MusifyTypeError("No comparative item given and no expected values set")
 
     def _get_value_from_item(self, item: Any) -> Any:
         if self.field and isinstance(item, AttributeModel):

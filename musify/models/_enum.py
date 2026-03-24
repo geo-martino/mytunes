@@ -7,6 +7,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
 from musify.exception import MusifyValueError
+from musify.models.exception import MusifyValidationError
 
 
 class IntEnumModel(IntEnum):
@@ -41,4 +42,4 @@ class IntEnumModel(IntEnum):
             case int():
                 return cls(value)
             case _:
-                raise MusifyValueError(f"Cannot get enum for {value!r}")
+                raise MusifyValidationError(f"Cannot get enum for {value!r}")

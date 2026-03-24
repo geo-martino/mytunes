@@ -6,6 +6,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler, computed_field,
 from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
 from musify.models.cursors import PageCursor
+from musify.models.exception import MusifyValidationError
 from musify.models.item.album import Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
@@ -33,9 +34,9 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](HasTracks[TK, TV], A
 
         names = {track.album.name if track.album is not None else None for track in tracks}
         if len(names) == 0:
-            raise MusifyValueError("No album name given and no album names found in tracks")
+            raise MusifyValidationError("No album name given and no album names found in tracks")
         if len(names) > 1:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"No album name given and tracks are from different albums: {", ".join(map(str, names))}"
             )
 
@@ -66,7 +67,7 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](HasTracks[TK, TV], A
 
         names = {track.album.name if track.album is not None else None for track in self.tracks}
         if len(set(filter(lambda x: x is not None, names))) > 1:
-            raise MusifyValueError(f"Tracks are from different albums: {", ".join(map(str, names))}")
+            raise MusifyValidationError(f"Tracks are from different albums: {", ".join(map(str, names))}")
 
         return self
 

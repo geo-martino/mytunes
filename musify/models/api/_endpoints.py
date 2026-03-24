@@ -16,7 +16,7 @@ from yarl import URL
 from musify.exception import MusifyTypeError
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModelMetaclass
-from musify.models.api.exception import APIError
+from musify.models.exception import APIError, APIModelError, RequestError, CursorError
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
@@ -29,7 +29,7 @@ class EndpointsMetaclass(AttributeModelMetaclass):
     def create_model[T: RemoteResource](cls: type[Endpoints], value: Any, kind: str | type[T] = None) -> T:
         """Create an instance of the resource type handled by this API model from the given value."""
         if not cls.__final__:
-            raise MusifyTypeError("Can only create resources from final API models.")
+            raise APIModelError("Can only create resources from final API models.")
 
         if isinstance(kind, type) and issubclass(kind, RemoteResource) and kind.__final__:
             # just try to create the resource directly if a final resource type is given
@@ -41,7 +41,7 @@ class EndpointsMetaclass(AttributeModelMetaclass):
         # noinspection PyTypeChecker
         source_classes = [kls for kls in RemoteResource.registered_submodels if kls.source == cls.source]
         if not source_classes:
-            raise MusifyTypeError(f"No registered resource models found for source {cls.source!r}.")
+            raise APIModelError(f"No registered resource models found for source {cls.source!r}.")
 
         if isinstance(kind, str):
             type_classes = [kls for kls in source_classes if kls.type == kind]
@@ -49,7 +49,7 @@ class EndpointsMetaclass(AttributeModelMetaclass):
             type_classes = [kls for kls in source_classes if issubclass(kls, kind)]
             kind = kind.__name__
         if not type_classes:
-            raise MusifyTypeError(f"Could not find a registered {cls.source!r} model for type {kind!r}.")
+            raise APIModelError(f"Could not find a registered {cls.source!r} model for type {kind!r}.")
 
         return TypeAdapter(Union[*type_classes]).validate_python(value)
 
@@ -167,7 +167,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             cursor = cursor.get_cursor_from_response(response=response, path=path)
 
             if cursor.next == cursor:
-                raise APIError("Cursor next URL is the same as the current page URL, cannot paginate further.")
+                raise CursorResponseError("The next cursor is the same as the current cursor, which may cause an infinite loop.")
 
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
@@ -372,7 +372,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
             case HasPageCursor() as collection:
                 cursor = collection.cursor
             case _:
-                raise MusifyTypeError("Expected a collection or page cursor.")
+                raise RequestError("Expected a collection or page cursor.")
 
         # noinspection PyArgumentList
         items, cursor = await self._get_all_items(

@@ -6,6 +6,7 @@ from pydantic_core import core_schema, CoreSchema
 
 from musify.exception import MusifyValueError
 from musify.models import ResourceModel
+from musify.models.exception import MusifyValidationError
 from musify.models.mapping import MutableUniqueMapping
 
 
@@ -43,13 +44,14 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
 
     @classmethod
     def _construct(cls, value: Any) -> Self:
-        if isinstance(value, cls):
-            return value
-        if isinstance(value, ResourceModel):
-            return cls((value,))
-        if isinstance(value, Iterable):
-            return cls(value)
-        raise MusifyValueError(f"Invalid value: {value}")
+        match value:
+            case cls():
+                return value
+            case ResourceModel():
+                return cls((value,))
+            case Iterable():
+                return cls(value)
+        raise MusifyValidationError(f"Invalid value: {value}")
 
     @property
     def unique(self) -> Iterator[TV]:

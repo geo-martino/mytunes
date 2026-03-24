@@ -11,8 +11,9 @@ from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Field, ValidationError, ConfigDict
 from typing_inspection.typing_objects import is_typevar
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.models.api._endpoints import HasEndpoints, Endpoints
+from musify.models.exception import MusifyValidationError, RequestError, EndpointsError
 from musify.models.metadata import Attribute
 from musify.models.properties.logger import HasLogger
 from musify.models.remote import RemoteModel
@@ -90,7 +91,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         # noinspection PyProtectedMember
         handlers = {id(getattr(self, field_name)._handler) for field_name in self.__class__.model_fields.keys()}
         if len(handlers) != 1:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 "All endpoint models must use the same request handler for API to function correctly."
             )
 
@@ -166,7 +167,7 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
 
         for key in key.split("."):
             if not hasattr(api, key):
-                raise AttributeError(f"API does not have attribute '{key}'.")
+                raise EndpointsError(f"API does not have attribute '{key}'.")
             api = getattr(api, key)
 
         return api

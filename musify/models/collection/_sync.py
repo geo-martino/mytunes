@@ -2,7 +2,8 @@ from typing import Literal, Collection, Annotated
 
 from pydantic import NonNegativeInt, Field
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
+from musify.models.exception import RequestError
 from musify.models.result import LogFormatter, CountResult
 
 
@@ -63,7 +64,7 @@ def get_sync_message(kind: SYNC_TYPE, item_type: str, from_type: str) -> str:
         case "sync":
             return f"clearing extra {item_type} from {from_type} first"
         case _:
-            raise MusifyValueError(f"Invalid sync type: {kind}")
+            raise RequestError(f"Invalid sync type: {kind}")
 
 
 def get_sync_items[T](
@@ -78,7 +79,7 @@ def get_sync_items[T](
         case "sync":
             return get_sync_items_for_sync(initial, remote)
         case _:
-            raise MusifyValueError(f"Invalid sync type: {kind}")
+            raise RequestError(f"Invalid sync type: {kind}")
 
 
 def get_sync_items_for_add[T](initial: Collection[T], remote: Collection[T]) -> tuple[list[T], list[T], list[T]]:

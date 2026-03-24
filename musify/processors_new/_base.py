@@ -13,6 +13,7 @@ from termcolor import colored
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel, abstract_property
+from musify.models.exception import MusifyValidationError
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
@@ -128,10 +129,10 @@ class DynamicProcessor(Processor):
         if self._processor_name is None:
             if not self._processor_required:
                 return self
-            raise MusifyValueError(f"No processor given.")
+            raise MusifyValidationError(f"No processor given.")
 
         if processor_name not in self.__processor_method_map__:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"Invalid processor name {self._processor_name!r}. "
                 f"Must be one of: {', '.join(self.__processor_method_map__)}"
             )

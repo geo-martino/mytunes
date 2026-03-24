@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import AttributeModel
 from musify.processors_new import Processor
 
@@ -23,4 +23,4 @@ class TagCleaner[IT: AttributeModel, VT: Any](Processor):
     @abstractmethod
     def _get_item_value(cls, item: IT | None) -> VT:
         """Get the value from the given item."""
-        raise MusifyValueError(f"Cannot clean item of type {type(item)} with {cls.__class__.__name__}")
+        raise MusifyTypeError(f"Cannot clean item of type {type(item)} with {cls.__class__.__name__}")

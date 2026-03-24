@@ -2,9 +2,9 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, validate_call
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import AttributeModel
 from musify.models.item.album import HasAlbum, Album
 from musify.models.item.artist import HasArtists, Artist
@@ -41,6 +41,7 @@ class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):
     def can_clean(cls, item: Any) -> bool:
         return item is None or isinstance(item, str)
 
+    @validate_call
     def clean(self, item: str | IT | None) -> str:
         if item is None:
             return ""
@@ -104,7 +105,8 @@ class ArtistCleaner(StringCleaner[HasArtists]):
             case _:
                 return super().can_clean(item)
 
-    def clean(self, item: str | Sequence[str] | Artist | HasArtists) -> list[str]:
+    @validate_call
+    def clean(self, item: str | Sequence[str] | Artist | Sequence[Artist] | HasArtists) -> list[str]:
         match item:
             case str() | Artist():
                 artists = [item]
@@ -113,7 +115,7 @@ class ArtistCleaner(StringCleaner[HasArtists]):
             case Sequence():
                 artists = item
             case _ if not self.can_clean(item):
-                raise MusifyValueError(f"Cannot clean item of type {type(item)} with {self.__class__.__name__}")
+                raise MusifyTypeError(f"Cannot clean item of type {type(item)} with {self.__class__.__name__}")
 
         return [val for val in map(super().clean, artists) if val]
 

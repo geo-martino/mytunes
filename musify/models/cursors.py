@@ -1,6 +1,6 @@
 import contextlib
 from abc import abstractmethod
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Mapping
 from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Generator, Union, Annotated
@@ -11,6 +11,7 @@ from pydantic import Field, NonNegativeInt, model_validator, ValidationError, Ty
 from musify._types import String
 from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models import abstract_property
+from musify.models.exception import RequestError, CursorError, CursorResponseError
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
@@ -75,7 +76,7 @@ class PageCursor(RemoteModel):
         raise NotImplementedError
 
     @classmethod
-    def get_cursor_from_response(cls, response: JSON, path: str | AliasPath) -> PageCursor:
+    def get_cursor_from_response(cls, response: Mapping[str, Any], path: str | AliasPath) -> PageCursor:
         """
         Get the cursor from the given response data at the given path.
 
@@ -92,7 +93,7 @@ class PageCursor(RemoteModel):
             if kls.source == cls.source and not issubclass(kls, InitialCursor)
         ]
         if not classes:
-            raise MusifyTypeError(f"No registered cursor models found for source {cls.source!r}.")
+            raise CursorResponseError(f"No registered cursor models found for source {cls.source!r}.")
 
         # prioritise iterable cursors since they can be used for more efficient concurrent pagination
         classes.sort(key=lambda kls: issubclass(kls, IterablePageCursor), reverse=True)
@@ -109,12 +110,14 @@ class PageCursor(RemoteModel):
                 for key in alias.path:
                     with contextlib.suppress(ValidationError):
                         return adapter.validate_python(response)
+
                     response = response[key]
 
-        raise MusifyValueError(f"Could not find cursor in response at the given path: {path}.")
+        raise CursorResponseError(f"Could not find cursor in response at the given path: {path}.")
 
     def __lt__(self, other: Any) -> bool:
         return self.url < other.url
+
 
 class HasPageCursor[CT: PageCursor](RemoteModel):
     cursor: CT = Field(
@@ -145,9 +148,7 @@ class IterablePageCursor(PageCursor):
         """Iteratively generate the next cursors for the next pages of items, if any."""
         cursor = self.next
         if cursor == self:
-            raise MusifyValueError(
-                "The next cursor is the same as the current cursor, which may cause an infinite loop."
-            )
+            raise CursorError("The next cursor is the same as the current cursor, which may cause an infinite loop.")
 
         while cursor is not None:
             yield cursor

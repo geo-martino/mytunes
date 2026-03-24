@@ -11,12 +11,12 @@ from pydantic import NonNegativeInt, Field, field_validator
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
+from musify.exception import MusifyTypeError, MusifyAttributeError
 from musify.models import ResourceModel, IntEnumModel
 from musify.models.item.album import HasAlbum
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
 from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
-from musify.processors_new.exception import LimiterProcessorError
 from musify.processors_new.sort import ItemSorter
 
 
@@ -125,7 +125,9 @@ class ItemLimiter(DynamicProcessor):
 
         for item in items:
             if not isinstance(item, HasAlbum):
-                raise LimiterProcessorError("The given item cannot be limited on albums as it does not have an album.")
+                raise MusifyAttributeError(
+                    "The given item cannot be limited on albums as it does not have an album."
+                )
             elif item.album is None:
                 continue
 
@@ -163,7 +165,7 @@ class ItemLimiter(DynamicProcessor):
         match self.kind.value:
             case num if 10 < num < 20:
                 if not isinstance(item, HasLength):
-                    raise LimiterProcessorError(
+                    raise MusifyAttributeError(
                         "The given item cannot be limited on length as it does not have a length."
                     )
                 elif item.length is None:
@@ -174,7 +176,7 @@ class ItemLimiter(DynamicProcessor):
 
             case num if 20 <= num < 30:
                 if not isinstance(item, IsFile):
-                    raise LimiterProcessorError("The given item cannot be limited on bytes as it is not a file.")
+                    raise MusifyAttributeError("The given item cannot be limited on bytes as it is not a file.")
                 elif item.size is None:
                     return
 
@@ -182,7 +184,7 @@ class ItemLimiter(DynamicProcessor):
                 return item.size / (bytes_scale ** (num % 10))
 
             case _:
-                raise LimiterProcessorError(f"Unrecognised LimitType: {self.kind}")
+                raise MusifyTypeError(f"Cannot convert to numeric value for this limit type: {self.kind}")
 
     @dynamicprocessormethod
     def _random(self, items: MutableSequence[ResourceModel]) -> None:

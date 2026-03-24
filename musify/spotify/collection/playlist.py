@@ -5,6 +5,7 @@ from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
 from musify.exception import MusifyValueError
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute
 from musify.models.properties.date import HasAddedDate
 from musify.models.sequence import UniqueSequence, MutableUniqueSequence
@@ -32,7 +33,7 @@ class SpotifyPlaylistTrack(SpotifyTrack, HasAddedDate):
 
         if "item" not in data and "added_at" not in data:
             # need to ensure we don't accidentally validate playlist track for non-playlist track data
-            raise MusifyValueError("Expected 'item' key in playlist track data.")
+            raise MusifyValidationError("Expected 'item' key in playlist track data.")
 
         data = {"added_at": data["added_at"]} | data.get("item", data)
         return data

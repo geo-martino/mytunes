@@ -18,6 +18,7 @@ from musify._types import StrippedString, UpperSnakeCase
 from musify.exception import MusifyValueError
 from musify.models._attribute import AttributeModel
 from musify.models._base import BaseModel
+from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute
 from musify.models.properties.file import IsLocalFile
 from musify.models.url import HttpURL
@@ -65,11 +66,7 @@ class ImageBase(BaseModel):
         if not isinstance(image, PILImageFile.ImageFile):
             return handler(image)
 
-        try:
-            obj = cls()
-        except TypeError as ex:  # raised when trying to instantiate a models with missing abstract methods
-            raise MusifyValueError(str(ex))
-
+        obj = cls()
         obj.update_attributes(image)
         return obj
 
@@ -95,7 +92,7 @@ class ImageBase(BaseModel):
         # noinspection PyTypeChecker
         types = dict(zip(map(int, cls.__type_map.values()), cls.__type_map.keys()))
         if value not in types:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"Invalid picture type value: {value}. Valid values are: {", ".join(map(str, types))}"
             )
 
@@ -106,7 +103,9 @@ class ImageBase(BaseModel):
     @classmethod
     def _validate_id3_type(cls, value: str) -> str:
         if value not in cls.__type_map:
-            raise MusifyValueError(f"Invalid ID3-tag type: {value}. Valid values are: {', '.join(cls.__type_map)}")
+            raise MusifyValidationError(
+                f"Invalid ID3-tag type: {value}. Valid values are: {', '.join(cls.__type_map)}"
+            )
         return value
 
     def update_attributes(self, image: PILImageFile.ImageFile) -> None:
@@ -130,6 +129,13 @@ class ImageBase(BaseModel):
 
 # noinspection PyAbstractClass
 class ImageSource(ImageBase):
+    def __new__(cls, *args, **kwargs):
+        if cls is ImageSource:
+            raise MusifyValidationError(
+                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
+            )
+        return super().__new__(cls)
+
     @abstractmethod
     async def load(self, **kwargs) -> PILImageFile.ImageFile:
         """Load the image."""

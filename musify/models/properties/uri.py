@@ -15,6 +15,7 @@ from musify.models import abstract_property, ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._base import RootModel
 from musify.models._metaclass import makecls
+from musify.models.exception import MusifyValidationError
 from musify.models.metadata import UniqueAttribute, Attribute
 from musify.models.url import HttpURL
 
@@ -39,8 +40,8 @@ class URI(RootModel[str]):
 
     def __new__(cls, *args, **kwargs):
         if cls is URI:
-            raise MusifyValueError(
-                "URI cannot be instantiated directly, must be subclassed with a specific source and type"
+            raise MusifyValidationError(
+                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
             )
         return super().__new__(cls)
 
@@ -48,10 +49,10 @@ class URI(RootModel[str]):
     @model_validator(mode="after")
     def _validate_source(self) -> Self:
         if not isinstance(self.root, str):
-            raise MusifyValueError(f"URI root must be a string, got {type(self.root)}")
+            raise MusifyValidationError(f"URI root must be a string, got {type(self.root)}")
 
         if self.source != self._source:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"Given URI does not belong to this {self._source!r} repository type. Found: {self.source!r}"
             )
         return self
@@ -148,7 +149,7 @@ class HasImmutableURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls(
             return uri
 
         if not uri.type == cls.type:
-            raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
+            raise MusifyValidationError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
         return uri
 
     def __eq__(self, other: HasURI):
@@ -202,7 +203,7 @@ class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
             sources.add(uri.source)
 
         if duplicates:
-            raise MusifyValueError(f"Duplicate URIs found from sources: {', '.join(duplicates)}")
+            raise MusifyValidationError(f"Duplicate URIs found from sources: {', '.join(duplicates)}")
         return uris
 
     # noinspection PyNestedDecorators
@@ -211,7 +212,7 @@ class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
     def _validate_uris_match_type[T: Collection](cls, uris: T) -> T:
         for uri in uris:
             if not uri.type == cls.type:
-                raise MusifyValueError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
+                raise MusifyValidationError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
         return uris
 
     @computed_field(
@@ -226,12 +227,12 @@ class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
     @uri.setter
     def uri(self, value: URI):
         if not isinstance(value, URI):
-            raise MusifyValueError("URI must be a URI instance")
+            raise MusifyValidationError("URI must be a URI instance")
 
         if self.source is None:
             self.source = value.source
         elif value.source != self.source:
-            raise MusifyValueError(f"Cannot set URI from {value.source} to {self.source}")
+            raise MusifyValidationError(f"Cannot set URI from {value.source} to {self.source}")
 
         for idx, existing in enumerate(self.uris):  # replace matching source URI in-place at same position
             if existing.source == value.source:

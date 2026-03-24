@@ -10,8 +10,9 @@ from pydantic import SecretStr, Field, field_validator, PrivateAttr
 from yarl import URL
 
 from musify.models.api import RemoteAuthoriser
-from musify.models.api.exception import APIError
+from musify.models.exception import APIError
 from musify.spotify import SpotifyModel, API_URL
+from musify.spotify.exception import SpotifyAuthenticationError
 
 
 class SpotifyAuthoriser(RemoteAuthoriser[AuthorisationCodeFlow], SpotifyModel):
@@ -83,7 +84,7 @@ class SpotifyAuthoriser(RemoteAuthoriser[AuthorisationCodeFlow], SpotifyModel):
             return "href" in r and "display_name" in r
         except ClientResponseError:
             if "premium subscription" in await response.text():
-                raise APIError(
+                raise SpotifyAuthenticationError(
                     "The access token is valid but the Spotify API cannot be accessed with a free account. "
                     "A premium subscription is required."
                 )

@@ -6,6 +6,7 @@ from pydantic.fields import FieldInfo
 from musify.exception import MusifyTypeError, MusifyAttributeError
 from musify.models._base import ModelMetaclass, BaseModel
 from musify.models._resource import ResourceModel
+from musify.models.exception import ModelError
 from musify.models.metadata import Attribute, TagAttribute
 from musify.utils import get_base_types
 
@@ -24,11 +25,11 @@ class AttributeModelMetaclass(ModelMetaclass):
         metadata_fields = cls._metadata_fields
 
         if (key := "__tag_attributes__") in namespace:
-            raise MusifyTypeError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
+            raise ModelError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
         cls.__tag_attributes__ = frozenset(mcs._get_attribute_fields(metadata_fields))
 
         if (key := "__tag_fields__") in namespace:
-            raise MusifyTypeError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
+            raise ModelError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
         cls.__tag_fields__ = mcs._get_tag_fields(metadata_fields)
 
         return cls

@@ -10,6 +10,7 @@ from musify.models.api import RemoteAPI
 from musify.models.api.search import HasSearchEndpoints
 from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
+from musify.models.exception import MusifyValidationError
 from musify.models.properties.file import IsFile, IsLocalFile
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
@@ -63,7 +64,7 @@ class SearchResult[T: Any](TotalCountResult):
     @model_validator(mode="after")
     def _validate_matches_are_equal(self) -> Self:
         if len(self.matches) != len(self.matched):
-            raise MusifyValueError("The number of matches must be equal to the number of matched items.")
+            raise MusifyValidationError("The number of matches must be equal to the number of matched items.")
         return self
 
 
@@ -120,9 +121,9 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
     @classmethod
     def _api_has_necessary_endpoints(cls, api: API | HasSearchEndpoints) -> API | HasSearchEndpoints:
         if not isinstance(api, RemoteAPI):
-            raise MusifyValueError("API object must be an instance of RemoteAPI")
+            raise MusifyValidationError(f"API object must be an instance of {RemoteAPI.__name__}")
         if not isinstance(api, HasSearchEndpoints):
-            raise MusifyValueError("API object must have search endpoints")
+            raise MusifyValidationError("API object must have search endpoints")
         return api
 
     @property

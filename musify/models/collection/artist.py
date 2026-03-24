@@ -7,6 +7,7 @@ from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
 from musify.models.collection.album import AlbumCollection
 from musify.models.cursors import PageCursor
+from musify.models.exception import MusifyValidationError
 from musify.models.item.album import HasAlbums, Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
@@ -45,9 +46,9 @@ class ArtistCollection[AT: Album, GT: Genre](Artist[GT], HasAlbums[AT]):
 
         names = {album.artist for album in albums}
         if len(names) == 0:
-            raise MusifyValueError("No artist given and no artists found in albums")
+            raise MusifyValidationError("No artist given and no artists found in albums")
         if len(names) > 1:
-            raise MusifyValueError(
+            raise MusifyValidationError(
                 f"No artist given and albums are from different artists: {", ".join(map(str, names))}"
             )
 
@@ -79,7 +80,9 @@ class ArtistCollection[AT: Album, GT: Genre](Artist[GT], HasAlbums[AT]):
         for album in self.albums:
             names = {artist.name for artist in album.artists}
             if self.name not in names:
-                raise MusifyValueError(f"Album does not contain the artist {self.name!r}: {", ".join(map(str, names))}")
+                raise MusifyValidationError(
+                    f"Album does not contain the artist {self.name!r}: {", ".join(map(str, names))}"
+                )
 
         return self
 

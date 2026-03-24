@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 
 import pytest
 
-from musify.exception import MusifyValueError
+from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models.item.album import HasAlbum, Album
 from musify.models.item.track import HasTracks, Track
 from musify.models.properties.length import HasLength
@@ -27,7 +27,7 @@ class NumericCleanerTester(BaseModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_get_item_value_fails(model: NumericCleaner):
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MusifyTypeError):
             model._get_item_value("invalid item")
 
 
