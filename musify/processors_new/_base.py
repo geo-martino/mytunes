@@ -5,7 +5,7 @@ import os
 import textwrap
 from collections.abc import Callable, Mapping, Iterable
 from functools import partial, update_wrapper
-from typing import Any, Optional, Self
+from typing import Any, Optional, Self, cast
 
 from pydantic import ConfigDict, model_validator, PrivateAttr
 from tabulate import tabulate
@@ -13,7 +13,8 @@ from termcolor import colored
 
 from musify.exception import MusifyValueError
 from musify.models import BaseModel, abstract_property
-from musify.models.exception import MusifyValidationError
+from musify.models._base import ModelMetaclass
+from musify.models.exception import MusifyValidationError, ModelError
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
@@ -48,7 +49,7 @@ class Processor(BaseModel):
 
 
 # noinspection PyPep8Naming,SpellCheckingInspection
-class dynamicprocessormethod:
+class processor:
     """
     Decorator for methods on a class decorated with the :py:func:`processor` decorator
 
@@ -74,50 +75,65 @@ class dynamicprocessormethod:
         return self.func(self.instance_, *args, **kwargs) if self.instance_ else self.func(*args, **kwargs)
 
 
-# noinspection SpellCheckingInspection,PyAbstractClass
-class DynamicProcessor(Processor):
+class DynamicProcessorMetaclass(ModelMetaclass):
     """
-    Base class for implementations with :py:func:`dynamicprocessormethod` methods.
+    Metaclass for creating base models which support dynamic processor methods.
 
-    Classes that implement this base class have a ``__processormethods__`` class attribute
-    which is a list of strings of all the processor methods this class contains.
-    If a :py:func:`dynamicprocessormethod` has alternative method names, these names will be added
-    to the class' ``__dict__`` as callable methods which point to the decorated method.
+    Expands on base model metaclass to add support for:
+    - Storing a map of processor method names to their corresponding method on the class, including alternative names.
+    - Validation of the processor method name to be called when calling the processor.
+    - Calling a processor method on the class based on a given processor method name.
+    """
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = cast('type[DynamicProcessor]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
 
-    Optionally, you may also define a ``_processor_method_fmt`` class method which
+        if (key := "__processor_method_map__") in namespace:
+            raise ModelError(f"Cannot define {key} on {cls.__name__!r} as it is a reserved name.")
+        cls.__processor_method_map__ = mcs._get_processor_methods(namespace, cls._clean_processor_name)
+
+        return cls
+
+    @staticmethod
+    def _get_processor_methods(namespace: dict[str, Any], cleaner: Callable[[str], str]) -> dict[str, str]:
+        methods: dict[str, str] = {}
+
+        for method in namespace.values():
+            if not isinstance(method, processor):
+                continue
+
+            methods[cleaner(method.__name__)] = method.__name__
+            for name in method.alternative_names:
+                methods[cleaner(name)] = method.__name__
+
+        return methods
+
+
+# noinspection SpellCheckingInspection,PyAbstractClass
+class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
+    """
+    Base class for implementations with :py:func:`processor` decorated methods.
+
+    Classes that implement this base class have a ``__processor_method_map__`` class attribute
+    which is a mapping of all accepted processor names to the processor methods this class contains.
+
+    Optionally, you may also define a ``_clean_processor_name`` class method which
     applies some transformation to all method names.
-    The transformed method name is then appended to the class' ``__dict__``.
     The transformation is always applied before extending the class with any given
     alternative method names.
     """
-    model_config = ConfigDict(ignored_types=(dynamicprocessormethod,))
-
-    #: The set of processor methods on this processor and any alternative names for them.
-    __processor_method_map__: dict[str, str] = {}
-    _processor_required: bool = PrivateAttr(default=True)  # whether a processor method is required or not
+    model_config = ConfigDict(ignored_types=(processor,))
 
     @staticmethod
     def _clean_processor_name(name: str) -> str:
         return name
 
-    def __new__(cls, *_, **__):
-        for method in cls.__dict__.copy().values():
-            if not isinstance(method, dynamicprocessormethod):
-                continue
-
-            cls.__processor_method_map__[cls._clean_processor_name(method.__name__)] = method.__name__
-            for name in method.alternative_names:
-                cls.__processor_method_map__[cls._clean_processor_name(name)] = method.__name__
-
-        return super().__new__(cls)
-
-    @abstract_property
-    def _processor_name(self) -> str | None:
+    @property
+    def _processor_name(self) -> str:
         """The processor method name to be used when calling this processor"""
         raise NotImplementedError
 
     @property
-    def _processor_method(self) -> dynamicprocessormethod:
+    def _processor_method(self) -> processor:
         """The processor method to be used when calling this processor"""
         processor_name = self._clean_processor_name(self._processor_name)
         method_name = self.__processor_method_map__[processor_name]
@@ -125,23 +141,22 @@ class DynamicProcessor(Processor):
 
     @model_validator(mode="after")
     def _validate_processor(self) -> Self:
-        processor_name = self._clean_processor_name(self._processor_name)
-        if self._processor_name is None:
-            if not self._processor_required:
-                return self
-            raise MusifyValidationError(f"No processor given.")
+        try:
+            processor_name = self._processor_name
+        except NotImplementedError:
+            return self  # processor not required
 
-        if processor_name not in self.__processor_method_map__:
+        if processor_name is None:
+            raise MusifyValidationError("No processor given.")
+
+        clean_processor_name = self._clean_processor_name(processor_name)
+        if clean_processor_name not in self.__processor_method_map__:
             raise MusifyValidationError(
-                f"Invalid processor name {self._processor_name!r}. "
+                f"Invalid processor name {processor_name!r}. "
                 f"Must be one of: {', '.join(self.__processor_method_map__)}"
             )
 
         return self
-
-    def __call__(self, *args, **kwargs) -> Any:
-        """Run the dynamic processor"""
-        return self._processor_method(*args, **kwargs)
 
 
 class InputProcessor(Processor, HasLogger):

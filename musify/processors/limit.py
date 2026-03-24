@@ -12,7 +12,7 @@ from musify.models.track import Track
 from musify.field import Fields
 from musify.models._base import MusifyResource
 from musify.models.properties.file import File
-from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify.processors.base import DynamicProcessor, processor
 from musify.processors.exception import LimiterProcessorError
 from musify.processors.sort import ItemSorter
 from musify.types import MusifyEnum
@@ -168,39 +168,39 @@ class ItemLimiter(DynamicProcessor):
         else:
             raise LimiterProcessorError(f"Unrecognised LimitType: {self.kind}")
 
-    @dynamicprocessormethod
+    @processor
     def _random(self, items: MutableSequence[MusifyResource]) -> None:
         shuffle(items)
 
-    @dynamicprocessormethod
+    @processor
     def _highest_rating(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.RATING, reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _lowest_rating(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.RATING)
 
-    @dynamicprocessormethod
+    @processor
     def _most_recently_played(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.LAST_PLAYED, reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _least_recently_played(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.LAST_PLAYED)
 
-    @dynamicprocessormethod
+    @processor
     def _most_often_played(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.PLAY_COUNT, reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _least_often_played(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.PLAY_COUNT)
 
-    @dynamicprocessormethod
+    @processor
     def _most_recently_added(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.DATE_ADDED, reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _least_recently_added(self, items: list[MusifyResource]) -> None:
         ItemSorter.sort_by_field(items, Fields.DATE_ADDED)
 

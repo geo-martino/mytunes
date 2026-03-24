@@ -2,24 +2,24 @@ from random import choice
 
 import pytest
 
-from musify.processors_new import DynamicProcessor, dynamicprocessormethod
+from musify.processors_new import DynamicProcessor, processor
 from tests.models.testers import BaseModelTester
 
 
 def test_dynamic_processor_method_decorator():
-    @dynamicprocessormethod
+    @processor
     def test_1():
         return 1
 
-    assert isinstance(test_1, dynamicprocessormethod)
+    assert isinstance(test_1, processor)
     assert not test_1.alternative_names
     assert test_1() == 1
 
-    @dynamicprocessormethod("alt_1", "alt_2")
+    @processor("alt_1", "alt_2")
     def test_2():
         return 2
 
-    assert isinstance(test_2, dynamicprocessormethod)
+    assert isinstance(test_2, processor)
     assert test_2.alternative_names == ("alt_1", "alt_2")
     assert test_2() == 2
 
@@ -34,15 +34,15 @@ class MockDynamicProcessor(DynamicProcessor):
     def _processor_name(self) -> str:
         return self.processor_name
 
-    @dynamicprocessormethod
+    @processor
     def processor_1(self):
         return 1
 
-    @dynamicprocessormethod("_processor_2_alt")
+    @processor("_processor_2_alt")
     def processor_2(self):
         return 2
 
-    @dynamicprocessormethod("processor_3_alternative__", "_ProcessorExtra")
+    @processor("processor_3_alternative__", "_ProcessorExtra")
     def processor_3(self):
         return 3
 
@@ -65,12 +65,12 @@ class TestDynamicProcessor(BaseModelTester):
     def test_gets_processor_method(self, model: MockDynamicProcessor):
         model.processor_name = "processor_1"
         assert model._processor_method == model.processor_1
-        assert model() == 1
+        assert model._processor_method() == 1
 
         model.processor_name = "_processor_2_alt"
         assert model._processor_method == model.processor_2
-        assert model() == 2
+        assert model._processor_method() == 2
 
         model.processor_name = "_ProcessorExtra"
         assert model._processor_method == model.processor_3
-        assert model() == 3
+        assert model._processor_method() == 3

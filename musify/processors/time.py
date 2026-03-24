@@ -7,7 +7,7 @@ from typing import Any
 from dateutil.relativedelta import relativedelta
 
 from musify.printer import PrettyPrinter
-from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify.processors.base import DynamicProcessor, processor
 
 
 class TimeMapper(DynamicProcessor, PrettyPrinter):
@@ -30,32 +30,32 @@ class TimeMapper(DynamicProcessor, PrettyPrinter):
         """Run the mapping function"""
         return super().__call__(value)
 
-    @dynamicprocessormethod
+    @processor
     def seconds(self, value: Any) -> timedelta:
         """Map given ``value`` in seconds to :py:class:`timedelta`"""
         return timedelta(seconds=int(value))
 
-    @dynamicprocessormethod("min")
+    @processor("min")
     def minutes(self, value: Any) -> timedelta:
         """Map given ``value`` in minutes to :py:class:`timedelta`"""
         return timedelta(minutes=int(value))
 
-    @dynamicprocessormethod
+    @processor
     def hours(self, value: Any) -> timedelta:
         """Map given ``value`` in hours to :py:class:`timedelta`"""
         return timedelta(hours=int(value))
 
-    @dynamicprocessormethod
+    @processor
     def days(self, value: Any) -> timedelta:
         """Map given ``value`` in days to :py:class:`timedelta`"""
         return timedelta(days=int(value))
 
-    @dynamicprocessormethod
+    @processor
     def weeks(self, value: Any) -> timedelta:
         """Map given ``value`` in weeks to :py:class:`timedelta`"""
         return timedelta(weeks=int(value))
 
-    @dynamicprocessormethod
+    @processor
     def months(self, value: Any) -> relativedelta:
         """Map given ``value`` in months to :py:class:`timedelta`"""
         return relativedelta(months=int(value))

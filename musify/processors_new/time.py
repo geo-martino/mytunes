@@ -10,7 +10,7 @@ from pydantic import field_validator, Field, model_validator, ModelWrapValidator
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
-from musify.processors_new import DynamicProcessor, dynamicprocessormethod
+from musify.processors_new import DynamicProcessor, processor
 
 
 class TimeMapper(DynamicProcessor):
@@ -28,7 +28,7 @@ class TimeMapper(DynamicProcessor):
     )
 
     @property
-    def _processor_name(self) -> str | None:
+    def _processor_name(self) -> str:
         return self.unit
 
     # noinspection PyNestedDecorators
@@ -101,39 +101,36 @@ class TimeMapper(DynamicProcessor):
     def __hash__(self) -> int:
         return hash(self.key)
 
-    def __call__[T: date | datetime](self, value: T) -> T:
-        return self.apply(value)
-
     def apply[T: date | datetime](self, value: T) -> T:
         """Apply the time delta to the given date or datetime."""
-        return super().__call__(value)
+        return self._processor_method(value)
 
-    @dynamicprocessormethod("s", "sec", "secs", "second")
+    @processor("s", "sec", "secs", "second")
     def _seconds[T: date | datetime](self, value: T) -> T:
         delta = timedelta(seconds=self.amount)
         return value + delta if self.add else value - delta
 
-    @dynamicprocessormethod("m", "min", "mins", "minute")
+    @processor("m", "min", "mins", "minute")
     def _minutes[T: date | datetime](self, value: T) -> T:
         delta = timedelta(minutes=self.amount)
         return value + delta if self.add else value - delta
 
-    @dynamicprocessormethod("h", "hr", "hrs", "hour")
+    @processor("h", "hr", "hrs", "hour")
     def _hours[T: date | datetime](self, value: T) -> T:
         delta = timedelta(hours=self.amount)
         return value + delta if self.add else value - delta
 
-    @dynamicprocessormethod("d", "day", "days")
+    @processor("d", "day", "days")
     def _days[T: date | datetime](self, value: T) -> T:
         delta = timedelta(days=self.amount)
         return value + delta if self.add else value - delta
 
-    @dynamicprocessormethod("w", "wk", "wks", "week")
+    @processor("w", "wk", "wks", "week")
     def _weeks[T: date | datetime](self, value: T) -> T:
         delta = relativedelta(weeks=self.amount)
         return value + delta if self.add else value - delta
 
-    @dynamicprocessormethod("mon", "mons", "mth", "mths", "month")
+    @processor("mon", "mons", "mth", "mths", "month")
     def _months[T: date | datetime](self, value: T) -> T:
         delta = relativedelta(months=self.amount)
         return value + delta if self.add else value - delta

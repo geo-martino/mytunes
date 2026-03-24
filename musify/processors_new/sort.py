@@ -202,9 +202,6 @@ class ItemSorter(Processor):
 
         return grouped
 
-    def __call__(self, *args, **kwargs) -> None:
-        return self.sort(*args, **kwargs)
-
     def sort[T: ResourceModel](self, items: MutableSequence[T]) -> None:
         """Sorts a sequence of ``items`` in-place."""
         if len(items) == 0:

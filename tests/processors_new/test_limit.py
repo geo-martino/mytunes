@@ -78,13 +78,13 @@ class TestItemLimiter(BaseModelTester):
 
     def test_limit_on_items_2(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=10, sorted_by="HighestRating")
-        limiter(tracks)
+        limiter.limit(tracks)
         assert len(tracks) == 10
         assert {track.album.name for track in tracks} == {"album 5"}
 
     def test_limit_on_items_3(self, tracks: list[LocalTrack]):
         limiter = ItemLimiter(limit_by=20, sorted_by="most often played")
-        limiter(tracks)
+        limiter.limit(tracks)
         assert len(tracks) == 20
         assert {track.album.name for track in tracks} == {"album 1", "album 3"}
 

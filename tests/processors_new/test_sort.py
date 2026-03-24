@@ -220,7 +220,7 @@ class TestItemSorter(BaseModelTester):
     def test_multi_sort(self, tracks: list[LocalTrack]):
         tracks_sorted = sorted(tracks, key=lambda t: (t.album, t.disc.number, t.track.number))
         sorter = ItemSorter(fields=["album", "disc", "track"])
-        sorter(tracks)
+        sorter.sort(tracks)
         assert tracks == tracks_sorted
 
         # complex multi-sort, includes reverse options
@@ -235,6 +235,6 @@ class TestItemSorter(BaseModelTester):
 
         fields = {"album": True, "disc": False, "track": True}
         sorter = ItemSorter(fields=fields)
-        sorter(tracks)
+        sorter.sort(tracks)
 
         assert tracks == tracks_sorted

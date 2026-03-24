@@ -16,7 +16,7 @@ from musify.models import ResourceModel, IntEnumModel
 from musify.models.item.album import HasAlbum
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
-from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
+from musify.processors_new._base import DynamicProcessor, processor
 from musify.processors_new.sort import ItemSorter
 
 
@@ -41,8 +41,6 @@ class LimitType(IntEnumModel):
 
 class ItemLimiter(DynamicProcessor):
     """Limit items in a Sequence in-place based on given conditions."""
-
-    _processor_required = False
 
     limit_by: NonNegativeInt = Field(
         description="The number of items to limit to. A value of 0 applies no limiting.",
@@ -73,8 +71,8 @@ class ItemLimiter(DynamicProcessor):
     )
 
     @property
-    def _processor_name(self) -> str | None:
-        return self.sorted_by
+    def _processor_name(self) -> str:
+        return self.sorted_by or super()._processor_name
 
     @field_validator("sorted_by", mode="before", check_fields=True)
     @staticmethod
@@ -82,9 +80,6 @@ class ItemLimiter(DynamicProcessor):
         if not name:
             return
         return to_snake(name).replace(" ", "_").strip("_")
-
-    def __call__(self, *args, **kwargs) -> None:
-        return self.limit(*args, **kwargs)
 
     def limit[T: ResourceModel](self, items: MutableSequence[T], ignore: Collection[T] = ()) -> None:
         """
@@ -97,7 +92,7 @@ class ItemLimiter(DynamicProcessor):
             return
 
         if self.sorted_by:  # sort the input items in-place if sort method given
-            super().__call__(items)
+            self._processor_method(items)
 
         items_limit = self._get_items_to_limit(items, ignore)
         match self.kind:
@@ -186,38 +181,38 @@ class ItemLimiter(DynamicProcessor):
             case _:
                 raise MusifyTypeError(f"Cannot convert to numeric value for this limit type: {self.kind}")
 
-    @dynamicprocessormethod
+    @processor
     def _random(self, items: MutableSequence[ResourceModel]) -> None:
         shuffle(items)
 
-    @dynamicprocessormethod
+    @processor
     def _highest_rating(self, items: MutableSequence[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "rating", reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _lowest_rating(self, items: MutableSequence[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "rating")
 
-    @dynamicprocessormethod
+    @processor
     def _most_recently_played(self, items: MutableSequence[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "last_played_at", reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _least_recently_played(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "last_played_at")
 
-    @dynamicprocessormethod
+    @processor
     def _most_often_played(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "play_count", reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _least_often_played(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "play_count")
 
-    @dynamicprocessormethod
+    @processor
     def _most_recently_added(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "added_at", reverse=True)
 
-    @dynamicprocessormethod
+    @processor
     def _least_recently_added(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "added_at")

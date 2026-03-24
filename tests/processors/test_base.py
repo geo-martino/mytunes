@@ -1,22 +1,22 @@
 from typing import Any
 
-from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify.processors.base import DynamicProcessor, processor
 
 
 def test_dynamic_processor_method_decorator():
-    @dynamicprocessormethod
+    @processor
     def test_1():
         return 1
 
-    assert isinstance(test_1, dynamicprocessormethod)
+    assert isinstance(test_1, processor)
     assert not test_1.alternative_names
     assert test_1() == 1
 
-    @dynamicprocessormethod("alt_1", "alt_2")
+    @processor("alt_1", "alt_2")
     def test_2():
         return 2
 
-    assert isinstance(test_2, dynamicprocessormethod)
+    assert isinstance(test_2, processor)
     assert test_2.alternative_names == ("alt_1", "alt_2")
     assert test_2() == 2
 
@@ -25,15 +25,15 @@ def test_dynamic_processor_method_decorator():
 class TestDynamicProcessor(DynamicProcessor):
     __test__ = False
 
-    @dynamicprocessormethod
+    @processor
     def processor_1(self):
         return 1
 
-    @dynamicprocessormethod("processor_2_alt")
+    @processor("processor_2_alt")
     def processor_2(self):
         return 2
 
-    @dynamicprocessormethod("processor_3_alternative", "processor_extra")
+    @processor("processor_3_alternative", "processor_extra")
     def processor_3(self):
         return 3
 

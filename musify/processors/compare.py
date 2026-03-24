@@ -13,7 +13,7 @@ from aiorequestful.types import UnitSequence
 
 from musify.field import Field
 from musify.models._base import MusifyResource
-from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify.processors.base import DynamicProcessor, processor
 from musify.processors.exception import ComparerError
 from musify.processors.time import TimeMapper
 from musify.utils import to_collection
@@ -205,83 +205,83 @@ class Comparer(DynamicProcessor, Hashable):
 
         return seconds
 
-    @dynamicprocessormethod
+    @processor
     def _is(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if expected is None:
             return False
         return value == expected[0]
 
-    @dynamicprocessormethod
+    @processor
     def _is_not(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         return not self._is(value=value, expected=expected)
 
-    @dynamicprocessormethod("greater_than", "in_the_last")
+    @processor("greater_than", "in_the_last")
     def _is_after(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False
         return value > expected[0]
 
-    @dynamicprocessormethod("less_than", "not_in_the_last")
+    @processor("less_than", "not_in_the_last")
     def _is_before(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False
         return value < expected[0]
 
-    @dynamicprocessormethod
+    @processor
     def _is_in(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         return expected is not None and value in expected
 
-    @dynamicprocessormethod
+    @processor
     def _is_not_in(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         return not self._is_in(value=value, expected=expected)
 
-    @dynamicprocessormethod
+    @processor
     def _in_range(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None or expected[1] is None:
             return False
         return expected[0] <= value <= expected[1]
 
-    @dynamicprocessormethod
+    @processor
     def _not_in_range(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         return not self._in_range(value=value, expected=expected)
 
-    @dynamicprocessormethod
+    @processor
     def _is_not_null(self, value: Any | None, _: Sequence[Any] | None = None) -> bool:
         return value is not None or value is True
 
-    @dynamicprocessormethod
+    @processor
     def _is_null(self, value: Any | None, _: Sequence[Any] | None = None) -> bool:
         return value is None or value is False
 
-    @dynamicprocessormethod
+    @processor
     def _starts_with(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False
         return value.startswith(str(expected[0]))
 
-    @dynamicprocessormethod
+    @processor
     def _ends_with(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False
         return value.endswith(str(expected[0]))
 
-    @dynamicprocessormethod
+    @processor
     def _contains(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False
         return str(expected[0]) in value
 
-    @dynamicprocessormethod
+    @processor
     def _does_not_contain(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         return not self._contains(value=value, expected=expected)
 
-    @dynamicprocessormethod
+    @processor
     def _matches_reg_ex(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False
         return bool(re.search(str(expected[0]), str(value)))
 
-    @dynamicprocessormethod
+    @processor
     def _matches_reg_ex_ignore_case(self, value: Any | None, expected: Sequence[Any] | None) -> bool:
         if value is None or expected is None or expected[0] is None:
             return False

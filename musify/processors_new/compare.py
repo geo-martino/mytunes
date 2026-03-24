@@ -24,7 +24,7 @@ from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
-from musify.processors_new._base import DynamicProcessor, dynamicprocessormethod
+from musify.processors_new._base import DynamicProcessor, processor
 from musify.processors_new.time import TimeMapper
 
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
@@ -237,7 +237,7 @@ class Comparer(DynamicProcessor):
         elif isinstance(expected_value, TimeMapper):  # apply map to current time for comparison
             expected_value = expected_value.apply(datetime.now())
 
-        return super().__call__(actual_value, expected_value)
+        return self._processor_method(actual_value, expected_value)
 
     def _validate_compare_args(self, reference: Any | None = None) -> None:
         if reference is None and self.reference_required:
@@ -258,83 +258,83 @@ class Comparer(DynamicProcessor):
 
         return value
 
-    @dynamicprocessormethod
+    @processor
     def _is[T](self, actual: T | None, expected: T | None) -> bool:
         if expected is None:
             return False
         return actual == expected
 
-    @dynamicprocessormethod
+    @processor
     def _is_not[T](self, actual: T | None, expected: T | None) -> bool:
         return not self._is(actual=actual, expected=expected)
 
-    @dynamicprocessormethod("greater_than", "in_the_last")
+    @processor("greater_than", "in_the_last")
     def _is_after[T: int | float](self, actual: T | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual > expected
 
-    @dynamicprocessormethod("less_than", "not_in_the_last")
+    @processor("less_than", "not_in_the_last")
     def _is_before[T: int | float](self, actual: T | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual < expected
 
-    @dynamicprocessormethod
+    @processor
     def _is_in[T](self, actual: T, expected: set[T] | None) -> bool:
         return expected is not None and actual in expected
 
-    @dynamicprocessormethod
+    @processor
     def _is_not_in[T](self, actual: T, expected: set[T] | None) -> bool:
         return not self._is_in(actual=actual, expected=expected)
 
-    @dynamicprocessormethod
+    @processor
     def _in_range[T: int | float](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
         if actual is None or expected is None or expected[0] is None or expected[1] is None:
             return False
         return expected[0] <= actual <= expected[1]
 
-    @dynamicprocessormethod
+    @processor
     def _not_in_range[T: int | float](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
         return not self._in_range(actual=actual, expected=expected)
 
-    @dynamicprocessormethod
+    @processor
     def _is_not_null(self, actual: Any, *_) -> bool:
         return actual is not None or actual is True
 
-    @dynamicprocessormethod
+    @processor
     def _is_null(self, actual: Any, *_) -> bool:
         return actual is None or actual is False
 
-    @dynamicprocessormethod
+    @processor
     def _starts_with(self, actual: str | None, expected: str | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual.startswith(expected)
 
-    @dynamicprocessormethod
+    @processor
     def _ends_with(self, actual: Any | None, expected: str | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual.endswith(expected)
 
-    @dynamicprocessormethod
+    @processor
     def _contains[T](self, actual: Sequence[T] | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return expected in actual
 
-    @dynamicprocessormethod
+    @processor
     def _does_not_contain[T](self, actual: Sequence[T] | None, expected: T | None) -> bool:
         return not self._contains(actual=actual, expected=expected)
 
-    @dynamicprocessormethod
+    @processor
     def _matches_reg_ex(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False
         return bool(re.search(expected, actual))
 
-    @dynamicprocessormethod
+    @processor
     def _matches_reg_ex_ignore_case(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False
