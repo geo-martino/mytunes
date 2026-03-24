@@ -4,7 +4,7 @@ from abc import ABCMeta
 from collections.abc import Generator, Iterable
 from random import choice
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from aiohttp import ClientSession
@@ -14,6 +14,7 @@ from pytest_mock import MockerFixture
 
 from musify.models.api import Endpoints
 from musify.models.properties.uri import URI
+from tests.models.api.utils import MockIndexCursor
 from tests.models.testers import BaseModelTester
 from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
@@ -54,16 +55,33 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
     def limit(self, faker: Faker) -> int:
         return faker.random_int(1, 20)
 
+    @pytest.fixture(autouse=True)
+    def mock_create_model(self) -> Generator[Mock, None, None]:
+        with patch.object(Endpoints, "create_model", side_effect=lambda x, *_, **__: x) as mock_create_model:
+            yield mock_create_model
+
+    # noinspection PyMethodOverriding
     @pytest.fixture
-    def mock_get(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_get(self, uri: URI) -> Generator[Mock, None, None]:
+        with patch.object(RequestHandler, "get", new_callable=AsyncMock) as mock_get:
+            yield mock_get
+            mock_get.assert_called_once_with(uri.api_url)
+
+    @pytest.fixture
+    def mock_get_batched(
+            self, uris: list[URI], limit: int, items: list[dict[str, Any]], items_key: str, faker: Faker
+    ) -> Generator[Mock, None, None]:
         expected = math.ceil(len(uris) / limit)
 
-        with patch.object(RequestHandler, "get") as mock_get:
+        def _return_items(*_, **__) -> dict[str, list[dict[str, Any]]]:
+            return {items_key: list(faker.random_elements(items, length=limit))}
+
+        with patch.object(RequestHandler, "get", side_effect=_return_items) as mock_get:
             yield mock_get
             assert mock_get.call_count == expected
 
     @pytest.fixture
-    def mock_post(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_post_batched(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(RequestHandler, "post") as mock_post:
@@ -71,7 +89,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             assert mock_post.call_count == expected
 
     @pytest.fixture
-    def mock_put(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_put_batched(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(RequestHandler, "put") as mock_put:
@@ -79,7 +97,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             assert mock_put.call_count == expected
 
     @pytest.fixture
-    def mock_delete(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_delete_batched(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(RequestHandler, "delete") as mock_delete:
@@ -93,3 +111,31 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         mock_batch_values = mocker.spy(Endpoints, "_batch_values")
         yield mock_batch_values
         mock_batch_values.assert_called_once_with(uris, limit)
+
+    @pytest.fixture
+    def mock_batch_values_empty(self, model: Endpoints) -> Generator[Mock, None, None]:
+        with patch.object(Endpoints, "_batch_values", return_value=[]) as mock_batch_values:
+            yield mock_batch_values
+
+    @pytest.fixture
+    def items(self, total: int, faker: Faker) -> list[dict[str, Any]]:
+        return [{"name": faker.word()} for _ in range(total)]
+
+    @pytest.fixture
+    def total(self, faker: Faker) -> int:
+        return faker.random_int(100, 200)
+
+    @pytest.fixture
+    def items_key(self) -> str:
+        return "items"
+
+    @pytest.fixture
+    def mock_get_all_items(self, items: list[dict[str, Any]], faker: Faker) -> Generator[Mock, None, None]:
+        total = faker.random_int(1, 100)
+        cursor = MockIndexCursor(
+            url=faker.url(), offset=total + 1, limit=faker.random_int(0, 20), total=total
+        )
+
+        with patch.object(Endpoints, "_get_all_items", return_value=(items, cursor)) as mock_get_all_items:
+            yield mock_get_all_items
+            mock_get_all_items.assert_called_once()

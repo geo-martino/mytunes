@@ -16,7 +16,7 @@ from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, 
     TrackWriteSavedEndpoints, TrackReadItemsEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
-from musify.models.cursors import IndexCursor, UrlCursor
+from musify.models.cursors import IndexCursor, UrlCursor, KeyCursor
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
@@ -27,6 +27,12 @@ from tests.utils import SimpleURI
 
 @final
 class MockIndexCursor(IndexCursor):
+    __final__ = True
+    source: ClassVar[str] = MockRemoteResource.source
+
+
+@final
+class MockKeyCursor(KeyCursor):
     __final__ = True
     source: ClassVar[str] = MockRemoteResource.source
 

@@ -2,25 +2,27 @@ import math
 from collections.abc import Callable, Generator, Sequence
 from copy import deepcopy
 from typing import Any, final
+from unittest import mock
 from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import AliasPath, TypeAdapter
+from pytest_mock import MockerFixture
 from yarl import URL
 
 from musify.exception import MusifyTypeError
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import RemoteCollection
-from musify.models.cursors import PageCursor, IndexCursor
+from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
-from tests.models.api.utils import MockIndexCursor, MockUrlCursor
+from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor
 from tests.models.utils import MockRemoteResource, MockRemoteCollection
 from tests.utils import SimpleURI
 
@@ -100,15 +102,36 @@ class TestEndpoints(EndpointsTester):
         )
 
     @pytest.fixture
-    def initial_cursor(self, uri: URI, faker: Faker) -> PageCursor:
-        limit = faker.random_int(1, 20)
-        offset = faker.random_int(1, 100)
-        total = offset + limit * faker.random_int(3, 10)
-        return MockIndexCursor(url=uri.api_url, limit=limit, offset=offset, total=total)
+    def cursor(
+            self,
+            index_cursors: list[IndexCursor],
+            url_cursors: list[UrlCursor],
+            total: int,
+            uri: URI,
+            faker: Faker
+    ) -> PageCursor:
+        key_cursor = MockKeyCursor(
+            url=uri.api_url,
+            before=faker.pystr(22, 22),
+            after=faker.pystr(22, 22),
+            total=total,
+        )
+        return faker.random_element([
+            index_cursors[0],
+            key_cursor,
+            url_cursors[0],
+            MockInitialCursor(url=uri.api_url, total=total),
+        ])
 
     @pytest.fixture
-    def offset_cursors(self, initial_cursor: IndexCursor, uri: URI, faker: Faker) -> list[IndexCursor]:
+    def index_cursors(self, uri: URI, total: int, faker: Faker) -> list[IndexCursor]:
+        # at least 3 pages to properly test pagination and generation
+        limit = faker.random_int(1, 20)
+        offset = max(0, total - faker.random_int(limit * 3, total))
+
+        initial_cursor = MockIndexCursor(url=uri.api_url, limit=limit, offset=offset, total=total)
         cursors = list(initial_cursor.iter_pages)
+
         assert len(set(cursor.offset for cursor in cursors)) == len(cursors)
         assert len(set(cursor.url for cursor in cursors)) == len(cursors)
         assert cursors[-1].offset + cursors[-1].limit > initial_cursor.total
@@ -117,187 +140,197 @@ class TestEndpoints(EndpointsTester):
 
         return cursors
 
+    @pytest.fixture
+    def url_cursors(self, index_cursors: list[IndexCursor]) -> list[UrlCursor]:
+        return [
+            MockUrlCursor(
+                url=cursor.url,
+                previous=cursor.previous.url if cursor.previous else None,
+                next=cursor.next.url if cursor.next else None,
+                total=cursor.total,
+            )
+            for cursor in index_cursors
+        ]
+
+    @pytest.fixture
+    def expected_urls(self, index_cursors: list[IndexCursor]) -> list[URL]:
+        return [cursor.next.url for cursor in index_cursors if cursor.next]
+
+    @pytest.fixture
+    def expected_items(self, items: list[dict[str, Any]], index_cursors: list[IndexCursor]) -> list[dict[str, Any]]:
+        initial_cursor = index_cursors[0]
+        return items[initial_cursor.next.offset:]
+
+    @pytest.fixture
+    def mock_index_pages(
+            self,
+            index_cursors: list[IndexCursor],
+            items: list[dict[str, Any]],
+            total: int,
+            items_key: str,
+    ) -> Generator[Mock, None, None]:
+        cursors = {cursor.url: cursor for cursor in index_cursors}
+
+        def _return_response(url: URL, *_, **__) -> dict[str, Any]:
+            cursor = cursors[url]
+            page_items = items[cursor.offset:cursor.offset + cursor.limit]
+            return cursor.model_dump() | {items_key: page_items}
+
+        with patch.object(RequestHandler, "get", side_effect=_return_response, new_callable=AsyncMock) as mock_get:
+            yield mock_get
+
+    @pytest.fixture
+    def mock_url_pages(
+            self,
+            index_cursors: list[IndexCursor],
+            url_cursors: list[UrlCursor],
+            items: list[dict[str, Any]],
+            total: int,
+    ) -> Generator[Mock, None, None]:
+        cursors = {cursor.url: cursor for cursor in url_cursors}
+        index_cursors = {cursor.url: cursor for cursor in index_cursors}
+
+        def _return_response(url: URL, *_, **__) -> dict[str, Any]:
+            url_cursor = cursors[url]
+            index_cursor = index_cursors[url]
+            page_items = items[index_cursor.offset:index_cursor.offset + index_cursor.limit]
+            return url_cursor.model_dump() | {"items": page_items}
+
+        with (
+            patch.object(RequestHandler, "get", side_effect=_return_response, new_callable=AsyncMock) as mock_get,
+            # force validating response as UrlCursor, otherwise it will be validated as IndexCursor
+            patch.object(
+                PageCursor,
+                "get_cursor_from_response",
+                side_effect=lambda response, *_, **__: MockUrlCursor.model_validate(response)
+            )
+        ):
+            yield mock_get
+
+    @pytest.fixture
+    def mock_pagination(self, model: Endpoints, mocker: MockerFixture) -> Mock:
+        return mocker.spy(model, "_get_all_items_by_pagination")
+
+    @pytest.fixture
+    def mock_generation(self, model: Endpoints, mocker: MockerFixture) -> Mock:
+        return mocker.spy(model, "_get_all_items_by_generation")
+
+    @pytest.fixture
+    def mock_get_page(self, model: Endpoints, mocker: MockerFixture) -> Mock:
+        return mocker.spy(model, "_get_page")
+
     def test_from_handler(self, handler: RequestHandler):
         assert Endpoints.model_validate(handler)._handler is handler
         assert Endpoints.model_validate(dict(handler=handler))._handler is handler
 
-    async def test_get_all_items_picks_pagination(self, model: Endpoints, initial_cursor: IndexCursor):
-        cursor = MockUrlCursor(url=initial_cursor.url, next=initial_cursor.next.url)
+    async def test_get_all_items_skips(
+            self, model: Endpoints, url_cursors: list[UrlCursor], mock_pagination: Mock, mock_generation: Mock,
+    ):
+        cursor = url_cursors[-1]
+        assert cursor.next is None
 
-        with (
-            patch.object(
-                model.__class__, "_get_all_items_by_pagination", return_value=([], initial_cursor)
-            ) as mock_pagination,
-            patch.object(
-                model.__class__, "_get_all_items_by_generation", return_value=([], initial_cursor)
-            ) as mock_generation,
-        ):
-            await model._get_all_items(cursor, path="items")
-            mock_pagination.assert_called_once()
-            mock_generation.assert_not_called()
-
-    async def test_get_all_items_picks_generation(self, model: Endpoints, initial_cursor: IndexCursor, faker: Faker):
-        initial_cursor.offset = faker.random_int(1, 100)
-        initial_cursor.limit = faker.random_int(1, 100)
-        initial_cursor.total = faker.random_int(1, 100)
-
-        with (
-            patch.object(
-                model.__class__, "_get_all_items_by_pagination", return_value=([], initial_cursor)
-            ) as mock_pagination,
-            patch.object(
-                model.__class__, "_get_all_items_by_generation", return_value=([], initial_cursor)
-            ) as mock_generation,
-        ):
-            await model._get_all_items(initial_cursor, path="items")
-            mock_pagination.assert_not_called()
-            mock_generation.assert_called_once()
+        assert await model._get_all_items(cursor, path="items") == ((), cursor)
+        mock_pagination.assert_not_called()
+        mock_generation.assert_not_called()
 
     async def test_get_all_items_by_pagination(
             self,
             model: Endpoints,
-            uri: URI,
-            initial_cursor: IndexCursor,
-            offset_cursors: list[IndexCursor],
+            url_cursors: list[UrlCursor],
+            items_key: str,
+            expected_items: list[dict[str, Any]],
+            expected_urls: list[URL],
+            mock_url_pages: Mock,
+            mock_pagination: Mock,
+            mock_generation: Mock,
+            mock_get_page: Mock,
+            mock_create_model: Mock,
             faker: Faker,
     ):
-        url_cursors = [MockUrlCursor(url=initial_cursor.url, next=initial_cursor.next.url)]
-        for cursor in offset_cursors:
-            cursor = MockUrlCursor(url=cursor.url, next=cursor.next.url if cursor.next else None)
-            url_cursors.append(cursor)
+        items, cursor = await model._get_all_items(url_cursors[0], path=items_key)
 
-        total = initial_cursor.total
-        available_items = [{"name": faker.word()} for _ in range(total)]
-        expected_items = available_items[:total - offset_cursors[0].offset]
-        available_items = expected_items.copy()
-        expected_urls = [cursor.url for cursor in offset_cursors]
-        iter_cursors = iter(url_cursors[1:])  # skip initial cursor which is used for the first request
+        assert len(items) == len(expected_items)
+        assert cursor == url_cursors[-1]
 
-        def _get_items_from_response(*_, **__) -> Sequence[dict]:
-            return [available_items.pop() for _ in range(initial_cursor.limit) if available_items]
+        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, kind=None, show_bar=True)
+        mock_generation.assert_not_called()
 
-        def _return_cursor(*_, **__) -> PageCursor:
-            return next(iter_cursors)
+        actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
+        expected_cursors = [cursor.next for cursor in url_cursors if cursor.next]
+        assert actual_cursors == expected_cursors
 
-        def _return_response[T](item: T, *_, **__) -> T:
-            return item
+        # -1 because the last page is not requested as it has no next page
+        assert mock_url_pages.call_count == len(url_cursors) - 1
+        assert mock_create_model.call_count == len(expected_items)
 
-        with (
-            patch.object(RequestHandler, "get", side_effect=_return_cursor, new_callable=AsyncMock) as mock_get,
-            patch.object(
-                model.__class__, "_get_items_from_response", side_effect=_get_items_from_response
-            ) as mock_get_items_from_response,
-            patch.object(model.__class__, "create_model", side_effect=_return_response) as mock_create_model,
-        ):
-            items, cursor = await model._get_all_items_by_pagination(url_cursors[0], path="items")
-            assert len(items) == len(expected_items)
-            assert cursor == url_cursors[-1]
-
-            assert mock_get_items_from_response.call_count == len(offset_cursors)
-            assert mock_create_model.call_count == len(expected_items)
-
-            urls = [call.args[0] for call in mock_get.call_args_list]
-            assert urls == expected_urls
+        urls = [call.args[0] for call in mock_url_pages.call_args_list]
+        assert urls == expected_urls
 
     async def test_get_all_items_by_generation(
             self,
             model: Endpoints,
-            uri: URI,
-            initial_cursor: IndexCursor,
-            offset_cursors: list[IndexCursor],
+            index_cursors: list[IndexCursor],
+            items_key: str,
+            expected_items: list[dict[str, Any]],
+            expected_urls: list[URL],
+            mock_index_pages: Mock,
+            mock_pagination: Mock,
+            mock_generation: Mock,
+            mock_get_page: Mock,
+            mock_create_model: Mock,
             faker: Faker,
     ):
-        total = initial_cursor.total
-        available_items = [{"name": faker.word()} for _ in range(total)]
-        expected_items = available_items[:total - offset_cursors[0].offset]
-        expected_urls = [cursor.url for cursor in offset_cursors]
+        items, cursor = await model._get_all_items(index_cursors[0], path=items_key)
 
-        def _get_response(url: URL, *_, **__) -> dict:
-            limit = int(url.query["limit"])
-            offset = int(url.query["offset"])
-            next_offset = offset + limit
+        assert len(items) == len(expected_items)
+        assert cursor == index_cursors[-1]
 
-            response_items = available_items[offset:next_offset]
-            response_cursor = next(c for c in offset_cursors if c.offset == offset)
-            return {"cursor": response_cursor, "items": response_items}
+        mock_pagination.assert_not_called()
+        mock_generation.assert_called_once_with(index_cursors[0], path=items_key, kind=None, show_bar=True)
 
-        def _get_cursor_from_response(response: dict[str, Any], *_, **__) -> PageCursor:
-            return response["cursor"]
+        # async so order is not guaranteed
+        actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
+        expected_cursors = [cursor.next for cursor in index_cursors if cursor.next]
+        assert sorted(actual_cursors) == sorted(expected_cursors)
 
-        def _get_items_from_response(response: dict[str, Any], *_, **__) -> list[dict]:
-            return response["items"]
+        # -1 because the last page is not requested as it has no next page
+        assert mock_index_pages.call_count == len(index_cursors) - 1
+        assert mock_create_model.call_count == len(expected_items)
 
-        def _return_item[T](item: T, *_, **__) -> T:
-            return item
-
-        with (
-            patch.object(
-                initial_cursor.__class__, "iter_pages", return_value=offset_cursors, new_callable=PropertyMock
-            ),
-            patch.object(RequestHandler, "get", side_effect=_get_response, new_callable=AsyncMock) as mock_get,
-            patch.object(
-                model.__class__, "_get_items_from_response", side_effect=_get_items_from_response
-            ) as mock_get_items_from_response,
-            patch.object(model.__class__, "create_model", side_effect=_return_item) as mock_create_model,
-            patch.object(PageCursor, "get_cursor_from_response", side_effect=_get_cursor_from_response),
-        ):
-            items, cursor = await model._get_all_items_by_generation(initial_cursor, path="items")
-            assert len(items) == len(expected_items)
-            assert cursor == offset_cursors[-1]
-
-            assert mock_get_items_from_response.call_count == len(offset_cursors)
-            assert mock_create_model.call_count == len(expected_items)
-
-            urls = [call.args[0] for call in mock_get.call_args_list]
-            assert sorted(urls) == sorted(expected_urls)  # async so order is not guaranteed
+        urls = [call.args[0] for call in mock_index_pages.call_args_list]
+        assert sorted(urls) == sorted(expected_urls)  # async so order is not guaranteed
 
     async def test_get_all_items_by_pagination_switches_to_generation(
             self,
             model: Endpoints,
-            uri: URI,
-            initial_cursor: IndexCursor,
-            offset_cursors: list[IndexCursor],
+            url_cursors: list[UrlCursor],
+            index_cursors: list[IndexCursor],
+            items_key: str,
+            expected_items: list[dict[str, Any]],
+            expected_urls: list[URL],
+            mock_index_pages: Mock,
+            mock_pagination: Mock,
+            mock_generation: Mock,
+            mock_get_page: Mock,
             faker: Faker,
     ):
-        total = initial_cursor.total
-        expected_items = [{"name": faker.word()} for _ in range(total)]
         show_bar = faker.boolean()
 
-        pagination_items = expected_items[:total // 2]
-        generation_items = expected_items[total // 2:]
+        items, cursor = await model._get_all_items_by_pagination(url_cursors[0], path=items_key, show_bar=show_bar)
 
-        with (
-            patch.object(RequestHandler, "get", return_value=pagination_items, new_callable=AsyncMock) as mock_get,
-            patch.object(
-                model.__class__, "_get_items_from_response", return_value=pagination_items
-            ) as mock_get_items_from_response,
-            patch.object(model.__class__, "create_model", return_value=pagination_items) as mock_create_model,
-            patch.object(PageCursor, "get_cursor_from_response", return_value=offset_cursors[0]) as mock_get_cursor,
-            patch.object(
-                model.__class__,
-                "_get_all_items_by_generation",
-                return_value=(generation_items, offset_cursors[-1]),
-                new_callable=AsyncMock
-            ) as mock_generation,
-        ):
-            items, cursor = await model._get_all_items_by_pagination(initial_cursor, path="items", show_bar=show_bar)
-            assert len(items) == len(expected_items)
-            assert cursor == offset_cursors[-1]
+        assert cursor == index_cursors[-1]
+        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, show_bar=show_bar)
+        mock_generation.assert_called_once_with(index_cursors[1], path=items_key, kind=None, show_bar=show_bar)
 
-            assert mock_get.call_count == 1
-            assert mock_get_items_from_response.call_count == 1
-            assert mock_create_model.call_count == len(expected_items[:total // 2])
-            assert mock_get_cursor.call_count == 1
-            assert mock_generation.call_count == 1
-            mock_generation.assert_called_once_with(
-                mock_get_cursor.return_value, path="items", kind=None, show_bar=show_bar
-            )
+        # async so order is not guaranteed
+        actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
+        expected_cursors = [url_cursors[0].next] + [cursor.next for cursor in index_cursors[1:] if cursor.next]
+        assert sorted(actual_cursors) == sorted(expected_cursors)
 
     @staticmethod
     def assert_get_items_from_response(
             model: Endpoints, response: dict[str, Any], path: str | AliasPath, expected: list[Any]
     ):
-
         items = list(model._get_items_from_response(response=response, path=path))
         assert items == expected
 
@@ -343,29 +376,12 @@ class TestReadItemEndpoints(EndpointsTester):
             handler=handler,
         )
 
-    @pytest.fixture
-    def response(self, uri: URI) -> dict[str, Any]:
-        return {"id": uri.id, "uri": str(uri)}
-
-    @pytest.fixture
-    def mock_get(self, uri: URI, response: dict[str, Any]) -> Generator[Mock, None, None]:
-        with patch.object(RequestHandler, "get", return_value=response) as mock_get:
-            yield mock_get
-            mock_get.assert_called_once_with(uri.api_url)
-
-    @pytest.fixture
-    def mock_create_model(self, model: ReadItemEndpoints, response: dict[str, Any]) -> Generator[Mock, None, None]:
-        with patch.object(model.__class__, "create_model") as mock_create_model:
-            yield mock_create_model
-            mock_create_model.assert_called_once_with(response)
-
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
-    async def test_get_on_uri(
+    async def test_get(
             self,
             model: ReadItemEndpoints,
             uri: URI,
             mock_get: Mock,
-            mock_create_model: Mock,
             converter: Callable[[URI], Any],
     ):
         await model.get(converter(uri))
@@ -381,35 +397,25 @@ class TestReadItemsEndpoints(EndpointsTester):
     def model(self, handler: RequestHandler) -> ReadItemsEndpoints:
         return self.MockReadItemsEndpoints(handler=handler)
 
-    @pytest.fixture
-    def mock_get_items_from_response(
-            self, model: ReadItemsEndpoints, uris: list[URI], limit: int
-    ) -> Generator[Mock, None, None]:
-        expected = math.ceil(len(uris) / limit)
-
-        with patch.object(
-                model.__class__, "_get_items_from_response"
-        ) as mock_get_items_from_response:
-            yield mock_get_items_from_response
-            assert mock_get_items_from_response.call_count == expected
-
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_get_many(
             self,
             model: ReadItemsEndpoints,
             uris: list[URI],
             limit: int,
-            mock_get: Mock,
+            items: list[dict[str, Any]],
+            mock_get_batched: Mock,
             mock_batch_values: Mock,
-            mock_get_items_from_response: Mock,
             converter: Callable[[URI], Any],
     ):
         await model.get_many(list(map(converter, uris)), limit=limit)
+        mock_batch_values.assert_called_once_with(uris, limit)
 
-    async def test_get_many_uses_default_limit(self, model: ReadItemsEndpoints, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
-            await model.get_many(uris)
-            mock_batch_values.assert_called_once_with(uris, model._many_limit)
+    async def test_get_many_uses_default_limit(
+            self, model: ReadItemsEndpoints, uris: list[URI], mock_batch_values_empty: Mock,
+    ):
+        await model.get_many(uris)
+        mock_batch_values_empty.assert_called_once_with(uris, model._many_limit)
 
     def test_generate_batch_url(self, uris: list[URI]):
         url = URL("https://api.example.com/resources")
@@ -430,69 +436,66 @@ class TestReadCollectionEndpoints(EndpointsTester):
         return self.MockReadCollectionEndpoints(handler=handler)
 
     @pytest.fixture
-    def cursor(self, uri: URI, faker: Faker) -> PageCursor:
+    def cursor(self, uri: URI, total: int, faker: Faker) -> PageCursor:
+        # at least 3 pages to properly test pagination and generation
         limit = faker.random_int(1, 20)
-        offset = faker.random_int(1, 100)
-        total = offset + limit * faker.random_int(3, 10)
+        offset = max(0, total - faker.random_int(limit * 3, total))
+
         return MockIndexCursor(url=uri.api_url, limit=limit, offset=offset, total=total)
 
     @pytest.fixture
-    def collection(self, uri: URI, cursor: PageCursor, faker: Faker) -> RemoteCollection:
-        return MockRemoteCollection(
-            uri=uri,
-            cursor=cursor,
-            total=faker.random_int(),
-        )
+    def collection(self, uri: URI, cursor: PageCursor, total: int, faker: Faker) -> RemoteCollection:
+        return MockRemoteCollection(uri=uri, cursor=cursor, total=total)
 
     async def test_get_all_from_cursor(
-            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, faker: Faker
+            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, mock_get_all_items: Mock, faker: Faker
     ):
-        expected = [1, 2, 3]
+        expected_items, _ = mock_get_all_items.return_value
         show_bar = faker.boolean()
 
-        with patch.object(
-                model.__class__, "_get_all_items", return_value=(expected, cursor), new_callable=AsyncMock
-        ) as mock_get_all_items:
-            result = await model.get_all(cursor, show_bar=show_bar)
-            assert result == expected
+        result = await model.get_all(cursor, show_bar=show_bar)
+        assert result == expected_items
 
-            mock_get_all_items.assert_called_once_with(
-                cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
-            )
+        mock_get_all_items.assert_called_once_with(
+            cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
+        )
 
     async def test_get_all_from_collection(
-            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, collection: RemoteCollection, faker: faker
+            self,
+            model: ReadCollectionEndpoints,
+            uri: URI,
+            cursor: PageCursor,
+            collection: RemoteCollection,
+            items: list[dict[str, Any]],
+            mock_get_all_items: Mock,
+            faker: faker
     ):
         collection.cursor = cursor
-        expected_collection = [1, 2, 3]
-        expected_get = [4, 5, 6]
+
+        expected_collection = items[:len(items) // 5]
         expected_cursor = deepcopy(cursor)
+        mock_get_all_items.return_value = (items[len(items) // 5:], expected_cursor)
 
         cursor.offset = cursor.total + 1  # set cursor to position after total to simulate missing items
         assert cursor.next is None
 
         show_bar = faker.boolean()
 
-        with (
-            patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock),
-            patch.object(
-                model.__class__,
-                "_get_all_items",
-                return_value=(expected_get, expected_cursor),
-                new_callable=AsyncMock
-            ) as mock_get_all_items
-        ):
+        with patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock):
             assert not collection.has_all_items
+
             result = await model.get_all(collection, show_bar=show_bar)
-            assert result == expected_collection + expected_get
+
+            assert result == items
+
+            # sets provided cursor to current position - limit when missing items
+            assert cursor.offset == max(0, collection.count - cursor.limit)
+            assert collection.cursor is not cursor
+            assert collection.cursor is expected_cursor
 
             mock_get_all_items.assert_called_once_with(
                 cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
             )
-            # sets current cursor to current position - limit when missing items
-            assert cursor.offset == max(0, collection.count - cursor.limit)
-            assert collection.cursor is not cursor
-            assert collection.cursor is expected_cursor
 
 
 class TestWriteCollectionEndpoints(EndpointsTester):
@@ -507,21 +510,8 @@ class TestWriteCollectionEndpoints(EndpointsTester):
         return self.MockWriteCollectionEndpoints(handler=handler)
 
     @pytest.fixture
-    def collection(self, uri: URI, faker: Faker) -> RemoteCollection:
-        return MockRemoteCollection(
-            uri=uri,
-            cursor=MockUrlCursor(url=faker.url()),
-            total=faker.random_int(),
-        )
-
-    # noinspection PyMethodOverriding
-    @pytest.fixture
-    def mock_get(
-            self, model: WriteCollectionEndpoints, uri: URI, collection: RemoteCollection
-    ) -> Generator[Mock, None, None]:
-        with patch.object(model.__class__, "get", return_value=collection, new_callable=AsyncMock) as mock_get:
-            yield mock_get
-            mock_get.assert_called_once_with(uri.api_url)
+    def collection(self, uri: URI, total: int, faker: Faker) -> RemoteCollection:
+        return MockRemoteCollection(uri=uri, cursor=MockUrlCursor(url=faker.url()), total=total)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_add(
@@ -531,19 +521,23 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             uris: list[URI],
             limit: int,
             mock_batch_values: Mock,
-            mock_post: Mock,
+            mock_post_batched: Mock,
             faker: Faker,
             converter: Callable[[URI], Any],
     ):
         url = converter(uri)
-        uris = list(map(self._convert_uri_to_random_input_type, uris))
-        result = await model.add(url, uris, limit=limit)
-        assert result == len(uris)
+        to_add = list(map(self._convert_uri_to_random_input_type, uris))
 
-    async def test_add_uses_default_limit(self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
-            await model.add(uri.api_url, uris)
-            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
+        result = await model.add(url, to_add, limit=limit)
+
+        assert result == len(uris)
+        mock_batch_values.assert_called_once_with(uris, limit)
+
+    async def test_add_uses_default_limit(
+            self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
+    ):
+        await model.add(uri.api_url, uris)
+        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_add_and_skip_duplicates(
@@ -569,9 +563,10 @@ class TestWriteCollectionEndpoints(EndpointsTester):
         uris_duplicated = list(map(self._convert_uri_to_random_input_type, uris_duplicated))
         collection_items = [MockRemoteResource(uri=uri) for uri in uris_collection]
 
+        # we just want to test that duplicates are skipped when adding, so we mock all surrounding logic
         with (
-            patch.object(model.__class__, "get_all", return_value=collection_items, new_callable=AsyncMock),
-            patch.object(model.__class__, "add", new_callable=AsyncMock) as mock_add
+            patch.object(ReadCollectionEndpoints, "get_all", return_value=collection_items, new_callable=AsyncMock),
+            patch.object(WriteCollectionEndpoints, "add", new_callable=AsyncMock) as mock_add
         ):
             await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
             mock_add.assert_called_once_with(uri.api_url, uris, limit=limit)
@@ -584,19 +579,21 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             uris: list[URI],
             limit: int,
             mock_batch_values: Mock,
-            mock_delete: Mock,
+            mock_delete_batched: Mock,
             faker: Faker,
             converter: Callable[[URI], Any],
     ):
         url = converter(uri)
-        uris = list(map(self._convert_uri_to_random_input_type, uris))
-        result = await model.remove(url, uris, limit=limit)
+        to_remove = list(map(self._convert_uri_to_random_input_type, uris))
+
+        result = await model.remove(url, to_remove, limit=limit)
         assert result == len(uris)
 
-    async def test_remove_uses_default_limit(self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
-            await model.remove(uri.api_url, uris)
-            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
+    async def test_remove_uses_default_limit(
+            self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
+    ):
+        await model.remove(uri.api_url, uris)
+        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
 
 
 class TestReadSavedEndpoints(EndpointsTester):
@@ -612,45 +609,37 @@ class TestReadSavedEndpoints(EndpointsTester):
     def model(self, handler: RequestHandler) -> ReadSavedEndpoints:
         return self.MockReadSavedEndpoints(handler=handler)
 
-    async def test_get_all(self, handler: RequestHandler, uri: URI, faker: Faker):
+    @pytest.fixture
+    def mock_validate_cursor(self, model: ReadSavedEndpoints, uri: URI, faker: faker) -> Generator[Mock, None, None]:
+        cursor = MockInitialCursor(url=uri.api_url)
+
+        with patch.object(TypeAdapter, "validate_python", return_value=cursor) as mock_validate:
+            yield mock_validate
+
+    async def test_get_all(
+            self, handler: RequestHandler, mock_get_all_items: Mock, mock_validate_cursor: Mock, faker: Faker
+    ):
         model = self.MockReadSavedEndpoints(handler=handler)
         limit = faker.random_int(1, 100)
-        cursor = MockUrlCursor(url=uri.api_url)
         show_bar = faker.boolean()
 
-        with (
-            patch.object(
-                TypeAdapter, "validate_python", return_value=cursor
-            ) as mock_validate,
-            patch.object(
-                model.__class__, "_get_all_items_by_pagination", return_value=([1], cursor)
-            ) as mock_get_all_items,
-        ):
-            await model.get_all(limit=limit, show_bar=show_bar)
+        await model.get_all(limit=limit, show_bar=show_bar)
 
-            mock_validate.assert_called_once_with(dict(
-                url=self.MockReadSavedEndpoints._saved_read_url, limit=limit
-            ))
-            mock_get_all_items.assert_called_once_with(
-                mock_validate.return_value,
-                path=self.MockReadSavedEndpoints._saved_path,
-                kind=self.MockReadSavedEndpoints.type,
-                show_bar=show_bar,
-            )
+        mock_validate_cursor.assert_called_once_with(dict(
+            url=self.MockReadSavedEndpoints._saved_read_url, limit=limit
+        ))
+        mock_get_all_items.assert_called_once_with(
+            mock_validate_cursor.return_value,
+            path=self.MockReadSavedEndpoints._saved_path,
+            kind=self.MockReadSavedEndpoints.type,
+            show_bar=show_bar,
+        )
 
-    async def test_get_all_uses_default_limit(self, model: ReadSavedEndpoints, uri: URI):
-        cursor = MockUrlCursor(url=uri.api_url)
-
-        with (
-            patch.object(
-                TypeAdapter, "validate_python", return_value=cursor
-            ) as mock_validate,
-            patch.object(model.__class__, "_get_all_items_by_pagination", return_value=([1], cursor)),
-        ):
-            await model.get_all()
-            mock_validate.assert_called_once_with(dict(
-                url=self.MockReadSavedEndpoints._saved_read_url, limit=model._saved_limit
-            ))
+    async def test_get_all_uses_default_limit(self, model: ReadSavedEndpoints, mock_validate_cursor: Mock):
+        await model.get_all()
+        mock_validate_cursor.assert_called_once_with(dict(
+            url=self.MockReadSavedEndpoints._saved_read_url, limit=model._saved_limit
+        ))
 
 
 class TestWriteSavedEndpoints(EndpointsTester):
@@ -671,17 +660,19 @@ class TestWriteSavedEndpoints(EndpointsTester):
             uris: list[URI],
             limit: int,
             mock_batch_values: Mock,
-            mock_put: Mock,
+            mock_put_batched: Mock,
             faker: Faker,
     ):
-        uris = list(map(self._convert_uri_to_random_input_type, uris))
-        result = await model.add_many(uris, limit=limit)
+        to_add = list(map(self._convert_uri_to_random_input_type, uris))
+
+        result = await model.add_many(to_add, limit=limit)
         assert result == len(uris)
 
-    async def test_add_many_uses_default_limit(self, model: WriteSavedEndpoints, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
-            await model.add_many(uris)
-            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
+    async def test_add_many_uses_default_limit(
+            self, model: WriteSavedEndpoints, uris: list[URI], mock_batch_values_empty: Mock
+    ):
+        await model.add_many(uris)
+        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
 
     async def test_remove_many(
             self,
@@ -689,14 +680,16 @@ class TestWriteSavedEndpoints(EndpointsTester):
             uris: list[URI],
             limit: int,
             mock_batch_values: Mock,
-            mock_delete: Mock,
+            mock_delete_batched: Mock,
             faker: Faker,
     ):
-        uris = list(map(self._convert_uri_to_random_input_type, uris))
-        result = await model.remove_many(uris, limit=limit)
+        to_remove = list(map(self._convert_uri_to_random_input_type, uris))
+
+        result = await model.remove_many(to_remove, limit=limit)
         assert result == len(uris)
 
-    async def test_remove_many_uses_default_limit(self, model: WriteSavedEndpoints, uris: list[URI]):
-        with patch.object(model.__class__, "_batch_values", return_value=[]) as mock_batch_values:
-            await model.remove_many(uris)
-            mock_batch_values.assert_called_once_with(uris, model._batch_limit)
+    async def test_remove_many_uses_default_limit(
+            self, model: WriteSavedEndpoints, uris: list[URI], mock_batch_values_empty: Mock
+    ):
+        await model.remove_many(uris)
+        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)

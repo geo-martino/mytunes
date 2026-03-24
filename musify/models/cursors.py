@@ -2,6 +2,7 @@ import contextlib
 from abc import abstractmethod
 from collections.abc import MutableMapping
 from copy import deepcopy
+from functools import total_ordering
 from typing import ClassVar, Any, Self, Generator, Union, Annotated
 
 from aiorequestful.types import JSON
@@ -14,6 +15,7 @@ from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
 
+@total_ordering
 class PageCursor(RemoteModel):
     """A page cursor for paginated API responses."""
     url: HttpURL = Field(
@@ -111,6 +113,8 @@ class PageCursor(RemoteModel):
 
         raise MusifyValueError(f"Could not find cursor in response at the given path: {path}.")
 
+    def __lt__(self, other: Any) -> bool:
+        return self.url < other.url
 
 class HasPageCursor[CT: PageCursor](RemoteModel):
     cursor: CT = Field(

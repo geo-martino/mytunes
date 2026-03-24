@@ -98,6 +98,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         """Get all items from a request with paginated responses using the fastest available method."""
         if cursor.next is None:
             self._handler.log("SKIP", cursor.url, message="Cursor already fully extended")
+            return (), cursor
 
         collection_type = self._get_type_value(self.type)
         item_type = self._get_type_value(kind)
@@ -109,21 +110,35 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             message = f"Getting {amount} {item_type}s"
         self._handler.log("INFO", cursor.url, message=message)
 
-        if isinstance(cursor, IterablePageCursor):
-            items, cursor = await self._get_all_items_by_generation(cursor, path=path, kind=kind, show_bar=show_bar)
+        items, cursor = await self._get_all_items_from_cursor(cursor, path=path, kind=kind, show_bar=show_bar)
+
+        message = f"Retrieved "
+        if cursor.total:
+            message += f"{len(items):>6}/{cursor.total:<6}"
         else:
-            items, cursor = await self._get_all_items_by_pagination(cursor, path=path, kind=kind, show_bar=show_bar)
+            message += f"{len(items):>6}"
 
-        amount = cursor.total or "all"
-        items_count = f"{len(items):>6}/{amount:<6} {item_type}s"
-
+        message += f" {item_type}s"
         if item_type != collection_type:
-            message = f"Retrieved {items_count} for {collection_type}"
-        else:
-            message = f"Retrieved {items_count}"
+            message += f" for {collection_type}"
+
         self._handler.log("DONE", cursor.url, message=message)
 
         return items, cursor
+
+    # noinspection PyArgumentList
+    async def _get_all_items_from_cursor(
+            self,
+            cursor: PageCursor,
+            path: str | AliasPath,
+            kind: str | Type | None = None,
+            show_bar: bool = True,
+    ) -> tuple[tuple[RT, ...], PageCursor]:
+        match cursor:
+            case IterablePageCursor():
+                return await self._get_all_items_by_generation(cursor, path=path, kind=kind, show_bar=show_bar)
+            case _:
+                return await self._get_all_items_by_pagination(cursor, path=path, kind=kind, show_bar=show_bar)
 
     @validate_call
     async def _get_all_items_by_pagination(
@@ -251,12 +266,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 return t.type.rstrip("s")
             case _:
                 return "item"
-
-    @staticmethod
-    def _sort_on_uris(items: Sequence[RT], uris: Sequence[UT]) -> list[RT]:
-        """Sort the given items based on the order of the given URIs."""
-        uri_to_item = {item.uri: item for item in items}
-        return [uri_to_item[uri] for uri in uris if uri in uri_to_item]
 
 
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
