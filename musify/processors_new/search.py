@@ -166,6 +166,8 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
                 unmatched.append(item)
 
         items, skipped = self._split_items(items)
+        print(len(items), len(matches), len(unmatched), len(skipped))
+
         unit = self._get_unit(items, default_type="items")
         await self.logger.get_asynchronous_iterator(
             map(_search_and_match_item, items),
@@ -287,6 +289,7 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
     async def _extend_collection_items[T: RemoteResource | RemoteCollection](self, collection: T) -> T:
         message = "Cannot extend items in collection: valid endpoints not configured for this resource type"
         if not isinstance(collection, RemoteCollection):
+            print(collection)
             try:
                 collection = await collection.reload(self.api)
             except AttributeError:

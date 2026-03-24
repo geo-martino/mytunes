@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
 
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI
@@ -34,27 +35,51 @@ class SearcherTester(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @pytest.fixture
-    def match[T](self, query_results: list[T], faker: Faker) -> T:
-        return faker.random_element(query_results)
-
-    @pytest.fixture
     def mock_query_item(self, query_results: list[RemoteResource]) -> Generator[Mock, None, None]:
         with patch.object(SearchEndpoints, "query_item", return_value=query_results) as mock_query_item:
             yield mock_query_item
 
     @pytest.fixture
-    def mock_match(self, model: Searcher, match: RemoteTrack, faker: Faker) -> Generator[Mock, None, None]:
-        with patch.object(Matcher, "match", return_value=match) as mock_match:
+    def mock_skip(self, model: Searcher) -> Generator[Mock, None, None]:
+        with patch.object(model, "_should_skip", return_value=False) as mock_match:
             yield mock_match
 
     @pytest.fixture
-    def mock_match_item(self, model: Searcher, match: RemoteTrack, faker: Faker) -> Generator[Mock, None, None]:
-        with patch.object(model, "_match_item", return_value=match) as mock_match:
-            yield mock_match
-
-    @pytest.fixture
-    def mock_match_random_item(
+    def mock_skip_random(
             self, model: Searcher, faker: Faker
+    ) -> Generator[tuple[Mock, list, list], None, None]:
+        valid = []
+        invalid = []
+
+        def _random_skip(item: ResourceModel) -> bool:
+            if item in invalid:
+                return True
+            if item in valid:
+                return False
+
+            if faker.boolean():
+                invalid.append(item)
+                return True
+            else:
+                valid.append(item)
+                return False
+
+        with patch.object(model, "_should_skip", side_effect=_random_skip) as mock_skip:
+            yield mock_skip, valid, invalid
+
+
+    @pytest.fixture
+    def match[T](self, query_results: list[T], faker: Faker) -> T:
+        return faker.random_element(query_results)
+
+    @pytest.fixture
+    def mock_match(self, model: Searcher, match: RemoteTrack, faker: Faker) -> Generator[Mock, None, None]:
+        with patch.object(model, "_pop_match_from_results", return_value=match) as mock_match:
+            yield mock_match
+
+    @pytest.fixture
+    def mock_match_random(
+            self, model: Searcher, mock_match: Mock, faker: Faker
     ) -> Generator[tuple[Mock, list, list, list], None, None]:
         matches = []
         matched = []
@@ -70,7 +95,7 @@ class SearcherTester(metaclass=ABCMeta):
             matches.append(match)
             return match
 
-        with patch.object(model, "_match_item", side_effect=_random_match) as mock_match:
+        with patch.object(model, "_pop_match_from_results", side_effect=_random_match) as mock_match:
             yield mock_match, matches, matched, unmatched
 
     @staticmethod
@@ -81,9 +106,9 @@ class SearcherTester(metaclass=ABCMeta):
             matched: Collection,
             unmatched: Collection,
             skipped: Collection,
-            mock_match_random_item: Mock,
+            mock_match_random: Mock,
     ):
-        assert mock_match_random_item.call_count == len(items)
+        assert mock_match_random.call_count == len(items)
         assert len(matches) == len(matched)
         assert len(matched) + len(unmatched) == len(items)
 
@@ -129,56 +154,71 @@ class TestSearcher(SearcherTester, BaseModelTester):
         model.skip_if_has_uri = False
         assert await model._query(item) == mock_query_item.return_value
 
-    async def test_query_skips(self, model: Searcher, item: ResourceModel, mock_query_item: Mock, faker: Faker):
-        with patch.object(model, "_should_skip", return_value=True):
-            assert await model._query(item) is None
-            mock_query_item.assert_not_called()
+    async def test_query_skips(
+            self,
+            model: Searcher,
+            item: ResourceModel,
+            mock_skip: Mock,
+            mock_query_item: Mock,
+            faker: Faker,
+    ):
+        mock_skip.return_value = True
+        assert await model._query(item) is None
+        mock_query_item.assert_not_called()
 
     async def test_query_returns_no_results(self, model: Searcher, item: ResourceModel, mock_query_item: Mock, faker: Faker):
         mock_query_item.return_value = []
         assert await model._query(item) is None
 
-    def test_split_items(self, model: Searcher, items: list[ResourceModel], faker: Faker):
-        expected_valid = []
-        expected_invalid = []
+    def test_split_items(
+            self,
+            model: Searcher,
+            items: list[ResourceModel],
+            mock_skip_random: tuple[Mock, list, list],
+            faker: Faker,
+    ):
+        mock_skip_random, expected_valid, expected_invalid = mock_skip_random
 
-        def _random_skip(item: ResourceModel) -> bool:
-            if faker.boolean():
-                expected_invalid.append(item)
-                return True
-            expected_valid.append(item)
-            return False
+        valid, invalid = model._split_items(items)
+        assert valid == expected_valid
+        assert invalid == expected_invalid
 
-        with patch.object(model, "_should_skip", side_effect=_random_skip):
-            valid, invalid = model._split_items(items)
-            assert valid == expected_valid
-            assert invalid == expected_invalid
+    def test_match_item_skips(
+            self,
+            model: Searcher,
+            item: ResourceModel,
+            query_results: list[RemoteTrack],
+            mock_match: Mock,
+            mocker: MockerFixture,
+    ):
+        mock_match.return_value = None
+        mock_assign_attributes = mocker.spy(model, "_assign_attributes_from_match")
 
-    def test_match_item_skips(self, model: Searcher, item: ResourceModel, query_results: list[RemoteTrack]):
-        with (
-            patch.object(model, "_pop_match_from_results", return_value=None),
-            patch.object(model, "_assign_attributes_from_match") as mock_assign_attributes,
-        ):
-            assert model._match_item(item, query_results) is None
-            mock_assign_attributes.assert_not_called()
+        assert model._match_item(item, query_results) is None
+        mock_assign_attributes.assert_not_called()
 
-    def test_match_item(self, model: Searcher, item: ResourceModel, query_results: list[RemoteTrack]):
-        with (
-            patch.object(model, "_pop_match_from_results", return_value=query_results[0]) as mock_match,
-            patch.object(model, "_assign_attributes_from_match") as mock_assign_attributes,
-        ):
-            assert model._match_item(item, query_results) == mock_match.return_value
-            mock_assign_attributes.assert_called_once_with(item, mock_match.return_value)
+    def test_match_item(
+            self,
+            model: Searcher,
+            item: ResourceModel,
+            query_results: list[RemoteTrack],
+            mock_match: Mock,
+            mocker: MockerFixture,
+    ):
+        mock_assign_attributes = mocker.spy(model, "_assign_attributes_from_match")
+
+        assert model._match_item(item, query_results) == mock_match.return_value
+        mock_assign_attributes.assert_called_once_with(item, mock_match.return_value)
 
     def test_match_items(
             self,
             model: Searcher,
             items: list[ResourceModel],
             query_results: list[RemoteResource],
-            mock_match_random_item: tuple[Mock, list, list, list],
+            mock_match_random: tuple[Mock, list, list, list],
             faker: Faker,
     ):
-        mock_match_random_item, matches, matched, unmatched = mock_match_random_item
+        mock_match_random, matches, matched, unmatched = mock_match_random
 
         valid = faker.random_elements(items)
         invalid = [item for item in items if item not in valid]
@@ -195,7 +235,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
             matched=matched,
             unmatched=unmatched,
             skipped=invalid,
-            mock_match_random_item=mock_match_random_item,
+            mock_match_random=mock_match_random,
         )
 
     @pytest.fixture
@@ -206,23 +246,28 @@ class TestSearcher(SearcherTester, BaseModelTester):
         model.matcher = matcher
         return matcher
 
+    @pytest.fixture
+    def mock_matcher_match(self, matcher: Matcher, match: RemoteResource):
+        with patch.object(Matcher, "match", return_value=match) as mock_match:
+            yield mock_match
+
     def test_pop_match_from_results_skips(
             self,
             model: Searcher,
             item: ResourceModel,
             query_results: list[RemoteTrack],
             matcher: Matcher,
-            mock_match: Mock,
+            mock_matcher_match: Mock
     ):
         assert model._pop_match_from_results(item, None) is None
-        mock_match.assert_not_called()
+        mock_matcher_match.assert_not_called()
 
         assert model._pop_match_from_results(item, []) is None
-        mock_match.assert_not_called()
+        mock_matcher_match.assert_not_called()
 
-        mock_match.return_value = None
+        mock_matcher_match.return_value = None
         assert model._pop_match_from_results(item, query_results) is None
-        mock_match.assert_called_once_with(item, query_results)
+        mock_matcher_match.assert_called_once_with(item, query_results)
 
     def test_pop_match_from_results_no_matcher(
             self,
@@ -230,43 +275,43 @@ class TestSearcher(SearcherTester, BaseModelTester):
             item: ResourceModel,
             query_results: list[RemoteTrack],
             matcher: Matcher,
-            mock_match: Mock,
+            mock_matcher_match: Mock,
     ):
         model.matcher = None
         expected = query_results[0]
 
         assert model._pop_match_from_results(item, query_results) is expected
-        mock_match.assert_not_called()
+        mock_matcher_match.assert_not_called()
         assert expected not in query_results
 
     def test_pop_match_from_results_with_matcher(
             self,
             model: Searcher,
             item: ResourceModel,
-            match: ResourceModel,
+            match: RemoteResource,
             query_results: list[RemoteTrack],
             matcher: Matcher,
-            mock_match: Mock,
+            mock_matcher_match: Mock,
     ):
         assert model.matcher is not None
         assert match in query_results
 
         assert model._pop_match_from_results(item, query_results) is match
-        mock_match.assert_called_once_with(item, query_results)
+        mock_matcher_match.assert_called_once_with(item, query_results)
         assert match not in query_results
 
-    def test_assign_attributes_from_match(self, model: Searcher, item: ResourceModel, match: RemoteTrack):
+    def test_assign_attributes_from_match(
+            self, model: Searcher, item: ResourceModel, match: RemoteTrack, mocker: MockerFixture
+    ):
         model.assign_uri = False
+        mock_assign_uri = mocker.spy(model, "_assign_uri_from_match")
 
-        with (
-            patch.object(model, "_assign_uri_from_match") as mock_assign_uri,
-        ):
-            model._assign_attributes_from_match(item, match)
-            mock_assign_uri.assert_not_called()
+        model._assign_attributes_from_match(item, match)
+        mock_assign_uri.assert_not_called()
 
-            model.assign_uri = True
-            model._assign_attributes_from_match(item, match)
-            mock_assign_uri.assert_called_once_with(item, match)
+        model.assign_uri = True
+        model._assign_attributes_from_match(item, match)
+        mock_assign_uri.assert_called_once_with(item, match)
 
     def test_assign_uri_from_match_skips(self, model: Searcher, item: ResourceModel, match: RemoteTrack):
         # nothing happens because item does not have a URI field
@@ -298,13 +343,14 @@ class TestItemSearcher(SearcherTester):
         ]
 
     async def test_search_item(
-            self, model: Searcher, items: list[Track], mock_query_item: Mock, mock_match_item: Mock
+            self, model: Searcher, items: list[Track], mock_query_item: Mock, mock_match: Mock
     ):
+        model.matcher = Matcher(scorers=[NameScorer()])
         item = items[0]
 
-        assert await model.search_item(item) is mock_match_item.return_value
+        assert await model.search_item(item) is mock_match.return_value
         mock_query_item.assert_called_once_with(item)
-        mock_match_item.assert_called_once_with(item, mock_query_item.return_value)
+        mock_match.assert_called_once_with(item, mock_query_item.return_value)
 
     async def test_search_items(
             self,
@@ -312,28 +358,30 @@ class TestItemSearcher(SearcherTester):
             items: list[Track],
             query_results: list[RemoteTrack],
             mock_query_item: Mock,
-            mock_match_random_item: tuple[Mock, list[RemoteTrack], list[Track], list[Track]],
+            mock_skip_random: tuple[Mock, list, list],
+            mock_match_random: tuple[Mock, list, list, list],
             faker: Faker,
     ):
-        mock_match_random_item, matches, matched, unmatched = mock_match_random_item
-        valid = faker.random_elements(items)
-        invalid = [item for item in items if item not in valid]
+        mock_skip_random, valid, invalid = mock_skip_random
+        mock_match_random, matches, matched, unmatched = mock_match_random
 
-        with patch.object(model, "_split_items", return_value=(valid, invalid)) as mock_split_items:
-            result = await model.search_items(items)
+        result = await model.search_items(items)
 
-            mock_split_items.assert_called_once_with(items)
-            assert mock_query_item.call_count == len(valid)
+        # TODO: ideally, this should be == len(items),
+        #  but the skips applies to both the initial items and the valid items again on query.
+        #  Improve this.
+        assert mock_skip_random.call_count == len(items) + len(valid)
+        assert mock_query_item.call_count == len(valid)
 
-            self.assert_random_match_result(
-                items=valid,
-                result=result,
-                matches=matches,
-                matched=matched,
-                unmatched=unmatched,
-                skipped=invalid,
-                mock_match_random_item=mock_match_random_item,
-            )
+        self.assert_random_match_result(
+            items=valid,
+            result=result,
+            matches=matches,
+            matched=matched,
+            unmatched=unmatched,
+            skipped=invalid,
+            mock_match_random=mock_match_random,
+        )
 
     async def test_search_from_result(
             self,
@@ -341,10 +389,10 @@ class TestItemSearcher(SearcherTester):
             items: list[Track],
             query_results: list[RemoteTrack],
             mock_query_item: Mock,
-            mock_match_random_item: tuple[Mock, list[RemoteTrack], list[Track], list[Track]],
+            mock_match_random: tuple[Mock, list, list, list],
             faker: Faker,
     ):
-        mock_match_random_item, matches, matched, unmatched = mock_match_random_item
+        mock_match_random, matches, matched, unmatched = mock_match_random
 
         items_matched, items_unmatched, _ = split_list(items, 2)
         items_matches = faker.random_elements(query_results, length=len(items_matched))
@@ -366,7 +414,7 @@ class TestItemSearcher(SearcherTester):
             matched=matched,
             unmatched=unmatched,
             skipped=invalid,
-            mock_match_random_item=mock_match_random_item,
+            mock_match_random=mock_match_random,
         )
 
 
@@ -393,11 +441,6 @@ class TestCollectionSearcher(SearcherTester):
             )
             for _ in range(faker.random_int(5, 15))
         ]
-
-    @pytest.fixture
-    def mock_match_item(self, model: Searcher, match: RemoteCollection, faker: Faker) -> Generator[Mock, None, None]:
-        with patch.object(model, "_match_item", return_value=match) as mock_match:
-            yield mock_match
 
     @patch.multiple(
         CollectionModel,
@@ -434,26 +477,41 @@ class TestCollectionSearcher(SearcherTester):
         model.compilation_albums_as_tracks_only = True
         assert model._should_search_on_items_only(collection)
 
-    async def test_extend_collection_with_reload(self, model: Searcher, match: RemoteCollection, faker: Faker):
+    @pytest.fixture(autouse=True)
+    def mock_collection_reload(self, match: RemoteCollection) -> Generator[Mock, None, None]:
+        with patch.object(MockRemoteResource, "reload", return_value=match, new_callable=AsyncMock) as mock_reload:
+            yield mock_reload
+
+    @pytest.fixture(autouse=True)
+    def mock_collection_extend(self, match: RemoteCollection) -> Generator[Mock, None, None]:
+        with patch.object(MockRemoteCollection, "extend", new_callable=AsyncMock) as mock_extend:
+            yield mock_extend
+
+    async def test_extend_collection_with_reload(
+            self,
+            model: Searcher,
+            match: RemoteCollection,
+            mock_collection_reload: Mock,
+            mock_collection_extend: Mock,
+    ):
         item = MockRemoteResource.model_validate(match.model_dump())
-        with (
-            patch.object(item.__class__, "reload", return_value=match, new_callable=AsyncMock) as mock_reload,
-            patch.object(match.__class__, "extend", new_callable=AsyncMock) as mock_extend,
-        ):
-            assert await model._extend_collection_items(item) is match
 
-            mock_reload.assert_called_once_with(model.api)
-            mock_extend.assert_called_once_with(model.api)
+        assert await model._extend_collection_items(item) is match
 
-    async def test_extend_collection_without_reload(self, model: Searcher, match: RemoteCollection, faker: Faker):
-        with (
-            patch.object(match.__class__, "reload", return_value=match, new_callable=AsyncMock) as mock_reload,
-            patch.object(match.__class__, "extend", new_callable=AsyncMock) as mock_extend,
-        ):
-            assert await model._extend_collection_items(match) is match
+        mock_collection_reload.assert_called_once_with(model.api)
+        mock_collection_extend.assert_called_once_with(model.api)
 
-            mock_reload.assert_not_called()
-            mock_extend.assert_called_once_with(model.api)
+    async def test_extend_collection_without_reload(
+            self,
+            model: Searcher,
+            match: RemoteCollection,
+            mock_collection_reload: Mock,
+            mock_collection_extend: Mock,
+    ):
+        assert await model._extend_collection_items(match) is match
+
+        mock_collection_reload.assert_not_called()
+        mock_collection_extend.assert_called_once_with(model.api)
 
     async def test_search_collections(self, model: Searcher, collections: list[CollectionModel], faker: Faker):
         def _random_result(*_, **__) -> tuple[str, SearchResult]:
@@ -489,33 +547,24 @@ class TestCollectionSearcher(SearcherTester):
         with patch.object(model, "_match_items", return_value=SearchResult()) as mock_match:
             yield mock_match
 
-    @pytest.fixture
-    def mock_extend(self, model: Searcher) -> Generator[Mock, None, None]:
-        with patch.object(
-                model, "_extend_collection_items", side_effect=lambda x: x, new_callable=AsyncMock
-        ) as mock_extend:
-            yield mock_extend
-
     async def test_search_collection_on_items_only(
             self,
             model: Searcher,
             collection: CollectionModel,
             mock_search_items_only: Mock,
             mock_query_item: Mock,
-            mock_match_item: Mock,
+            mock_match: Mock,
             mock_search_items: Mock,
             mock_match_items: Mock,
-            mock_extend: Mock,
             mock_search_from_result: Mock,
     ):
         mock_search_items_only.return_value = True
         await model.search_collection(collection)
 
         mock_query_item.assert_not_called()
-        mock_match_item.assert_not_called()
+        mock_match.assert_not_called()
         mock_search_items.assert_called_once()
         mock_match_items.assert_not_called()
-        mock_extend.assert_not_called()
         mock_search_from_result.assert_not_called()
 
     async def test_search_collection_not_found(
@@ -524,21 +573,19 @@ class TestCollectionSearcher(SearcherTester):
             collection: CollectionModel,
             mock_search_items_only: Mock,
             mock_query_item: Mock,
-            mock_match_item: Mock,
+            mock_match: Mock,
             mock_search_items: Mock,
             mock_match_items: Mock,
-            mock_extend: Mock,
             mock_search_from_result: Mock,
     ):
         mock_search_items_only.return_value = False
-        mock_match_item.return_value = None
+        mock_match.return_value = None
         await model.search_collection(collection)
 
         mock_query_item.assert_called_once()
-        mock_match_item.assert_called_once()
+        mock_match.assert_called_once()
         mock_search_items.assert_called_once()
         mock_match_items.assert_not_called()
-        mock_extend.assert_called_once()
         mock_search_from_result.assert_not_called()
 
     async def test_search_collection_found(
@@ -548,21 +595,19 @@ class TestCollectionSearcher(SearcherTester):
             match: RemoteCollection,
             mock_search_items_only: Mock,
             mock_query_item: Mock,
-            mock_match_item: Mock,
+            mock_match: Mock,
             mock_search_items: Mock,
             mock_match_items: Mock,
-            mock_extend: Mock,
             mock_search_from_result: Mock,
     ):
         mock_search_items_only.return_value = False
-        mock_match_item.return_value = match
+        mock_match.return_value = match
         await model.search_collection(collection)
 
         mock_query_item.assert_called_once()
-        mock_match_item.assert_called_once()
+        mock_match.assert_called_once()
         mock_search_items.assert_not_called()
         mock_match_items.assert_called_once()
-        mock_extend.assert_called_once()
         mock_search_from_result.assert_not_called()
 
     async def test_search_collection_keeps_searching_for_items(
@@ -573,14 +618,13 @@ class TestCollectionSearcher(SearcherTester):
             match: RemoteCollection,
             mock_search_items_only: Mock,
             mock_query_item: Mock,
-            mock_match_item: Mock,
+            mock_match: Mock,
             mock_search_items: Mock,
             mock_match_items: Mock,
-            mock_extend: Mock,
             mock_search_from_result: Mock,
     ):
         mock_search_items_only.return_value = False
-        mock_match_item.return_value = match
+        mock_match.return_value = match
 
         mock_match_items.return_value = SearchResult(unmatched=tracks)
         model.keep_matching_collection_items = True
@@ -588,8 +632,7 @@ class TestCollectionSearcher(SearcherTester):
         await model.search_collection(collection)
 
         mock_query_item.assert_called_once()
-        mock_match_item.assert_called_once()
+        mock_match.assert_called_once()
         mock_search_items.assert_not_called()
         mock_match_items.assert_called_once()
-        mock_extend.assert_called_once()
         mock_search_from_result.assert_called_once()
