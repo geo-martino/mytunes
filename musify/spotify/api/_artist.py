@@ -72,7 +72,7 @@ class SpotifyArtistEndpoints(
     async def get(self, url: ApiURL[SpotifyResourceURI, SpotifyArtist]) -> SpotifyArtistCollection:
         response = await self._handler.get(url)
         self._add_albums_cursor_to_item(response)
-        return self.__class__.create_model(response, kind=SpotifyArtistCollection)
+        return self.__class__.create_model(response, context=self._model_context, kind=SpotifyArtistCollection)
 
     @validate_call
     async def get_all(

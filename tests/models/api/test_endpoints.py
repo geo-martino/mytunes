@@ -1,6 +1,6 @@
 from collections.abc import Callable, Generator
 from copy import deepcopy
-from typing import Any, final
+from typing import Any, final, ClassVar
 from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
 import pytest
@@ -11,7 +11,8 @@ from pytest_mock import MockerFixture
 from yarl import URL
 
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
+    ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints, HasEndpoints
+from musify.models.api._endpoints import RemoteModelContext
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
 from musify.models.exception import APIModelError
@@ -19,8 +20,11 @@ from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
+from musify.models.remote import RemoteModel
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
-from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor
+from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor, \
+    MockSearchEndpoints, MockUserEndpoints, MockTrackEndpoints, MockArtistEndpoints, MockPlaylistEndpoints, \
+    MockAlbumEndpoints
 from tests.models.utils import MockRemoteResource, MockRemoteCollection
 from tests.utils import SimpleURI
 
@@ -44,11 +48,23 @@ class TestCreateFromResponse:
     class MockRemoteAlbum(RemoteAlbum, MockRemoteResource):
         __final__ = True
 
-    def test_create_fails_on_non_final_class(self):
-        with pytest.raises(APIModelError, match="Can only create resources from final API models"):
-            Endpoints.create_model({})
+    @pytest.fixture
+    def context(self) -> RemoteModelContext:
+        return RemoteModelContext()
 
-    def test_create_fails_on_unmatched_source(self):
+    @pytest.fixture
+    def mock_model_validate(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(RemoteModel, "model_validate")
+
+    @pytest.fixture
+    def mock_validate_python(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(TypeAdapter, "validate_python")
+
+    def test_create_fails_on_non_final_class(self, context: RemoteModelContext):
+        with pytest.raises(APIModelError, match="Can only create resources from final API models"):
+            Endpoints.create_model({}, context=context)
+
+    def test_create_fails_on_unmatched_source(self, context: RemoteModelContext):
         @final
         class MockEndpointsTest(Endpoints[SimpleURI, MockRemoteResource]):
             __final__ = True
@@ -56,9 +72,9 @@ class TestCreateFromResponse:
             type = MockRemoteResource.type
 
         with pytest.raises(APIModelError, match="No registered resource models found"):
-            MockEndpointsTest.create_model({})
+            MockEndpointsTest.create_model({}, context=context)
 
-    def test_create_fails_on_unmatched_kind(self):
+    def test_create_fails_on_unmatched_kind(self, context: RemoteModelContext):
         @final
         class MockEndpointsTest(Endpoints[SimpleURI, MockRemoteResource]):
             __final__ = True
@@ -66,16 +82,34 @@ class TestCreateFromResponse:
             type = "unknown_type"
 
         with pytest.raises(APIModelError, match=f"Could not find a registered {MockRemoteResource.source!r} model"):
-            MockEndpointsTest.create_model({})
+            MockEndpointsTest.create_model({}, context=context)
 
-    def test_creates_current_kind(self, faker: Faker):
+    def test_creates_current_kind(
+            self,
+            context: RemoteModelContext,
+            mock_model_validate: Mock,
+            mock_validate_python: Mock,
+            faker: Faker,
+    ):
         uri = SimpleURI.from_id(faker.random_int(1, 100), kind=self.MockEndpoints.type)
 
-        result = self.MockEndpoints.create_model(dict(name=faker.word(), uri=uri))
+        data = dict(name=faker.word(), uri=uri)
+        result = self.MockEndpoints.create_model(data, context=context)
+
         assert isinstance(result, MockRemoteResource)
         assert result.type == self.MockEndpoints.type
 
-    def test_creates_given_kind(self, faker: Faker):
+        mock_model_validate.assert_not_called()
+        mock_validate_python.assert_called_once()
+        assert mock_validate_python.call_args.kwargs == {"context": context}
+
+    def test_creates_given_type_from_name(
+            self,
+            context: RemoteModelContext,
+            mock_model_validate: Mock,
+            mock_validate_python: Mock,
+            faker: Faker,
+    ):
         types = [
             RemoteTrack.type,
             RemoteAlbum.type,
@@ -86,10 +120,46 @@ class TestCreateFromResponse:
 
         uri = SimpleURI.from_id(faker.random_int(1, 100), kind=expected_type)
 
-        result = self.MockEndpoints.create_model(dict(name=faker.word(), uri=uri), kind=expected_type)
+        data = dict(name=faker.word(), uri=uri)
+        result = self.MockEndpoints.create_model(data, context=context, kind=expected_type)
+
         assert isinstance(result, MockRemoteResource)
         assert result.type != self.MockEndpoints.type
         assert result.type == expected_type
+
+        mock_model_validate.assert_not_called()
+        mock_validate_python.assert_called_once()
+        assert mock_validate_python.call_args.kwargs == {"context": context}
+
+    def test_creates_given_type_from_type(
+            self,
+            context: RemoteModelContext,
+            mock_validate_python: Mock,
+            mocker: MockerFixture,
+            faker: Faker,
+    ):
+        types = [
+            RemoteTrack,
+            RemoteAlbum,
+            RemoteArtist,
+        ]
+        expected_type = faker.random_element(types)
+
+        @final
+        class MockType(expected_type):
+            __final__ = True  # needed to force its creation from the object
+            source: ClassVar[str] = "test"
+
+        uri = SimpleURI.from_id(faker.random_int(1, 100), kind=MockType.type)
+        mock_model_validate = mocker.spy(MockType, "model_validate")
+
+        data = dict(name=faker.word(), uri=uri)
+        result = self.MockEndpoints.create_model(data, context=context, kind=MockType)
+
+        assert isinstance(result, expected_type)
+
+        mock_model_validate.assert_called_once_with(data, context=context)
+        mock_validate_python.assert_not_called()
 
 
 class TestEndpoints(EndpointsTester):

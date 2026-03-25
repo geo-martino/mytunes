@@ -43,9 +43,6 @@ class TestMusicBee(NoUniqueKeyTester):
             }
         }
 
-        print(MusicBee.required_modules_installed)
-        print(MusicBee.__required_modules__)
-
         with patch.object(xmltodict, "parse", return_value=xml):
             yield xml
 

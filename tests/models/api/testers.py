@@ -59,7 +59,6 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         with patch.object(Endpoints, "create_model", side_effect=lambda x, *_, **__: x) as mock_create_model:
             yield mock_create_model
 
-    # noinspection PyMethodOverriding
     @pytest.fixture
     def mock_get(self) -> Generator[Mock, None, None]:
         with patch.object(RequestHandler, "get", new_callable=AsyncMock) as mock_get:

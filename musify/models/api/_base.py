@@ -12,7 +12,7 @@ from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Fie
 from typing_inspection.typing_objects import is_typevar
 
 from musify.models.api._endpoints import HasEndpoints, Endpoints
-from musify.models.exception import MusifyValidationError, EndpointsError
+from musify.models.exception import EndpointsError
 from musify.models.metadata import Attribute
 from musify.models.properties.logger import HasLogger
 from musify.models.remote import RemoteModel
@@ -36,18 +36,6 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
 class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
     @model_validator(mode="wrap")
     @classmethod
-    def _from_handler[T](cls, value: T | RequestHandler, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        key = "handler"
-        if isinstance(value, Mapping) and set(value.keys()) == {key}:
-            value = value[key]
-        if not isinstance(value, RequestHandler):
-            return handler(value)
-
-        data = {name: {key: value} for name in cls.model_fields.keys()}
-        return handler(data)
-
-    @model_validator(mode="wrap")
-    @classmethod
     def _from_authoriser[T](cls, value: T | RemoteAuthoriser, handler: ModelWrapValidatorHandler[Self]) -> Self:
         key = "authoriser"
         if isinstance(value, Mapping) and set(value.keys()) == {key}:
@@ -68,6 +56,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
 
         with contextlib.suppress(ValidationError):
             value = cls._create_authoriser_from_credentials(value)
+
         return handler(value)
 
     @classmethod
@@ -85,24 +74,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         auth_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, RemoteAuthoriser))
         return auth_t.model_validate(credentials)
 
-    @model_validator(mode="after")
-    def _all_handlers_are_the_same(self) -> Self:
-        # noinspection PyProtectedMember
-        handlers = {id(getattr(self, field_name)._handler) for field_name in self.__class__.model_fields.keys()}
-        if len(handlers) != 1:
-            raise MusifyValidationError(
-                "All endpoint models must use the same request handler for API to function correctly."
-            )
-
-        return self
-
-    async def __aenter__(self) -> Self:
-        # noinspection PyProtectedMember
-        handler: RequestHandler = next(
-            getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys()
-        )
-        await handler.__aenter__()
-
+    # TODO: figure out cache
         # try:
         #     await self._setup_cache()
         # except CacheError:
@@ -114,15 +86,6 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         #         # all repositories must use the same payload handler as the request handler
         #         # for it to function correctly
         #         repository.settings.payload_handler = self.handler.payload_handler
-
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        for field_name in self.__class__.model_fields.keys():
-            # noinspection PyProtectedMember
-            handler: RequestHandler = getattr(self, field_name)._handler
-            if not handler.closed:
-                await handler.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):

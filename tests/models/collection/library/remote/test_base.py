@@ -25,7 +25,7 @@ class TestRemoteLibrary(BaseModelTester):
     @pytest.fixture
     def model(self, api: RemoteAPI, user: RemoteUser) -> RemoteLibrary:
         library = MockRemoteLibrary(api=api)
-        library._user = user
+        library.api.users._user = user
         return library
 
     @staticmethod

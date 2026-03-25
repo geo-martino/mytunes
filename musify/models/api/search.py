@@ -84,7 +84,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             key = self._map_type_to_str(kind)
             path = self._get_query_path(kind=kind)
             items = self._get_items_from_response(response, path=path)
-            results[key] = [self.__class__.create_model(it, kind=kind) for it in items]
+            results[key] = [self.__class__.create_model(it, context=self._model_context, kind=kind) for it in items]
 
         return results
 

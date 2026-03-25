@@ -58,6 +58,9 @@ class SpotifyAuthoriser(RemoteAuthoriser[AuthorisationCodeFlow], SpotifyModel):
             token_request.headers = {}
         token_request.headers["content-type"] = "application/x-www-form-urlencoded"
 
+        # WORKAROUND: maybe need to fix the redirect URI in the base package to use 127.0.0.1 instead of localhost?
+        authoriser.redirect_uri = authoriser.redirect_uri.with_host("127.0.0.1")
+
         if not hasattr(authoriser.refresh_request, "headers"):
             authoriser.refresh_request.headers = {}
         authoriser.refresh_request.headers["content-type"] = "application/x-www-form-urlencoded"

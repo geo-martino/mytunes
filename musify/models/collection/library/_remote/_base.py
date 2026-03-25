@@ -39,15 +39,11 @@ class RemoteLibrary[
 ](
     Library[TK, TV, KP, VP], HasAPI[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
-    _user: UT = PrivateAttr(
-        # description="The currently authenticated user for this library."
-        default=None
-    )
-
     @property
     def user(self) -> Annotated[UT | None, Attribute()]:
         """The currently authenticated user."""
-        return self._user
+        if isinstance(self.api, HasUserEndpoints):
+            return self.api.users.user
 
     @property
     def _log_name(self) -> str:
@@ -58,8 +54,6 @@ class RemoteLibrary[
 
     async def __aenter__(self) -> Self:
         await self.api.__aenter__()
-        if isinstance(self.api, HasUserEndpoints):
-            self._user = await self.api.users.get_me()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -76,7 +70,7 @@ class RemoteLibrary[
         await self.load_saved_albums()
         await self.load_saved_album_tracks()
 
-        await self.load_saved_artists()
+        # await self.load_saved_artists()  # TODO: ADD ME BACK
         # await self.load_saved_artist_albums()  # TODO: ADD ME BACK
 
         self.logger.print_line(STAT)

@@ -71,7 +71,7 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: Re
             return None
 
         response = await self._handler.post(self._saved_read_url, json=kwargs)
-        playlist = self.__class__.create_model(response)
+        playlist = self.__class__.create_model(response, context=self._model_context)
 
         message = f"Created playlist: {playlist.name!r} -> {playlist.uri.api_url}"
         self._handler.log("DONE", self._saved_read_url, message=message)

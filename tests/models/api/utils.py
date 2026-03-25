@@ -67,7 +67,7 @@ class MockRemoteAuthoriser(RemoteAuthoriser[Mock]):
 class MockUserEndpoints(
     UserEndpoints[SimpleURI, RemoteUser]
 ):
-    pass
+    _me_url = "https://api.example.com/v1/me"
 
 
 class MockSearchEndpoints(

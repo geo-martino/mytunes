@@ -97,7 +97,6 @@ class TestLocalLibrary(NoUniqueKeyTester):
                 ))
             path = choice(library_folders).joinpath(playlist_folder).joinpath(path_relative)
 
-            print(LocalPlaylist.registered_submodels)
             playlist = TypeAdapter(LocalPlaylist.annotation).validate_python(dict(path=path))
             playlist.path.parent.mkdir(parents=True, exist_ok=True)
             playlist.path.touch()

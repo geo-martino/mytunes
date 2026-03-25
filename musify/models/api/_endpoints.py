@@ -13,26 +13,41 @@ from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, T
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
-from musify.models import ResourceModel
+from musify.models import ResourceModel, BaseModel
 from musify.models._attribute import AttributeModelMetaclass
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
-from musify.models.exception import APIModelError, RequestError, CursorResponseError
+from musify.models.exception import APIModelError, RequestError, CursorResponseError, MusifyValidationError
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel, RemoteResource
+from musify.models.user import RemoteUser
+from musify.utils import get_base_types
+
+
+class RemoteModelContext(BaseModel):
+    """Additional context to be provided when creating models from API responses."""
+    user: RemoteUser | None = Field(
+        description="The currently authenticated user, if available.",
+        default=None,
+    )
 
 
 class EndpointsMetaclass(AttributeModelMetaclass):
-    def create_model[T: RemoteResource](cls: type[Endpoints], value: Any, kind: str | type[T] = None) -> T:
+    def create_model[T: RemoteResource](
+            cls: type[Endpoints],
+            value: Any,
+            context: RemoteModelContext,
+            kind: str | type[T] = None,
+    ) -> T:
         """Create an instance of the resource type handled by this API model from the given value."""
         if not cls.__final__:
             raise APIModelError("Can only create resources from final API models.")
 
         if isinstance(kind, type) and issubclass(kind, RemoteResource) and kind.__final__:
             # just try to create the resource directly if a final resource type is given
-            return kind.model_validate(value)
+            return kind.model_validate(value, context=context)
 
         if kind is None:
             kind = cls.type
@@ -50,7 +65,7 @@ class EndpointsMetaclass(AttributeModelMetaclass):
         if not type_classes:
             raise APIModelError(f"Could not find a registered {cls.source!r} model for type {kind!r}.")
 
-        return TypeAdapter(Union[*type_classes]).validate_python(value)
+        return TypeAdapter(Union[*type_classes]).validate_python(value, context=context)
 
 
 class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=EndpointsMetaclass):
@@ -64,6 +79,11 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     _handler: InstanceOf[RequestHandler[Authoriser, JSON]] = PrivateAttr(
         # description="The handler for the API endpoint.",
+        default=None,
+    )
+    _user: RT | None = PrivateAttr(
+        # description="The currently authenticated user.",
+        default=None
     )
 
     @model_validator(mode="wrap")
@@ -75,10 +95,47 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         if not isinstance(value, RequestHandler):
             return handler(value)
 
-        data = {name: {key: value} for name in cls.model_fields.keys()}  # nested endpoints
+        # in case of nested endpoints
+        data = {
+            name: {key: value} for name, info in cls.model_fields.items()
+            if any(issubclass(kls, Endpoints) for kls in get_base_types(info.annotation))
+        }
         self = handler(data)
         self._handler = value
         return self
+
+    @property
+    def _nested_endpoints(self) -> list[Endpoints]:
+        return [
+            endpoints for name in self.__class__.model_fields.keys()
+            if isinstance(endpoints := getattr(self, name), Endpoints)
+        ]
+
+    @property
+    def user(self) -> RT | None:
+        """The currently authenticated user, if available."""
+        return self._user
+
+    @user.setter
+    def user(self, value: RT | None) -> None:
+        self._user = value
+
+        # set for all other nested endpoints
+        for endpoints in self._nested_endpoints:
+            endpoints.user = value
+
+    @property
+    def _model_context(self) -> RemoteModelContext:
+        return RemoteModelContext(user=self.user)
+
+    async def __aenter__(self) -> Self:
+        if self._handler.closed:
+            await self._handler.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        if not self._handler.closed:
+            await self._handler.__aexit__(exc_type, exc_val, exc_tb)
 
     @staticmethod
     def _batch_values(values: Iterable, limit: int) -> batched:
@@ -161,7 +218,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             response = await self._get_page(cursor, item_type=item_type)
 
             response_items = self._get_items_from_response(response=response, path=path)
-            items.extend(self.__class__.create_model(it, kind=kind) for it in response_items)
+            items.extend(
+                self.__class__.create_model(it, context=self._model_context, kind=kind) for it in response_items
+            )
 
             cursor = cursor.get_cursor_from_response(response=response, path=path)
 
@@ -212,7 +271,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         cursors = cursor.sort_responses(responses, path=path)
         items: list[RT] = [
-            self.__class__.create_model(item, kind=kind)
+            self.__class__.create_model(item, context=self._model_context, kind=kind)
             for response in responses
             for item in self._get_items_from_response(response=response, path=path)
         ]
@@ -284,7 +343,7 @@ class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             * An ID (as a string) for the resource
         """
         response = await self._handler.get(url)
-        return self.__class__.create_model(response)
+        return self.__class__.create_model(response, context=self._model_context)
 
 
 class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
@@ -332,7 +391,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             response = await self._handler.get(url, log_message=message)
 
             response_items = self._get_items_from_response(response=response, path=self._many_path)
-            return map(self.__class__.create_model, response_items)
+            return (self.__class__.create_model(it, context=self._model_context) for it in response_items)
 
         batches = list(self._batch_values(uris, limit))
         bar = self.logger.get_asynchronous_iterator(
@@ -614,7 +673,53 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
 
 class HasEndpoints(RemoteModel):
-    pass
+    @model_validator(mode="wrap")
+    @classmethod
+    def _from_handler[T](cls, value: T | RequestHandler, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        key = "handler"
+        if isinstance(value, Mapping) and set(value.keys()) == {key}:
+            value = value[key]
+        if not isinstance(value, RequestHandler):
+            return handler(value)
+
+        data = {
+            name: {key: value} for name, info in cls.model_fields.items()
+            if issubclass(info.annotation, Endpoints)
+        }
+
+        self = handler(data)
+        if isinstance(self, Endpoints):
+            self._handler = value
+
+        return self
+
+    @model_validator(mode="after")
+    def _all_handlers_are_the_same(self) -> Self:
+        # noinspection PyProtectedMember
+        handlers = {id(getattr(self, field_name)._handler) for field_name in self.__class__.model_fields.keys()}
+        if len(handlers) != 1:
+            raise MusifyValidationError(
+                "All endpoint models must use the same request handler for API to function correctly."
+            )
+
+        return self
+
+    @property
+    def _nested_endpoints(self) -> list[Endpoints]:
+        return [
+            endpoints for name in self.__class__.model_fields.keys()
+            if isinstance(endpoints := getattr(self, name), Endpoints)
+        ]
+
+    async def __aenter__(self) -> Self:
+        for endpoints in self._nested_endpoints:
+            await endpoints.__aenter__()
+
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        for endpoints in self._nested_endpoints:
+            await endpoints.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class HasSavedEndpoints[ET: ReadSavedEndpoints | WriteSavedEndpoints](HasEndpoints):
