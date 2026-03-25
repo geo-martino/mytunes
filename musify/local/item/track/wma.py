@@ -202,7 +202,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
         if not info.by_alias and info.mode != "json":
             return value
-        return self._serialize_unicode_attribute(str(int(value)), info=info)
+        return self._serialize_unicode_attribute(value=str(int(value)), info=info)
 
     @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
     def _serialize_name(
@@ -252,7 +252,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     @field_serializer("track", mode="plain", when_used="unless-none")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
         tags = super()._serialize_position_tags(value, info=info)
-        return {k: self._serialize_unicode_attribute(v, info=info) for k, v in tags.items()} if tags else None
+        return {k: self._serialize_unicode_attribute(value=v, info=info) for k, v in tags.items()} if tags else None
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:

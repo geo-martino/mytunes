@@ -248,7 +248,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
         if not info.by_alias and info.mode != "json":
             return value
-        return self._serialize_text_frame(str(int(value)), info=info)
+        return self._serialize_text_frame(value=str(int(value)), info=info)
 
     @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
     def _serialize_name[T: str | HasName](

@@ -34,8 +34,12 @@ class SearchResult[T: Any](TotalCountResult):
     )
     matched: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description=(
             "The given items which were matched during the search. This will match the items in the `matches` "
@@ -45,16 +49,24 @@ class SearchResult[T: Any](TotalCountResult):
     )
     unmatched: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The items for which matches were not found from the search.",
         default_factory=tuple
     )
     skipped: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The items which were skipped during the search.",
         default_factory=tuple

@@ -94,7 +94,9 @@ class Logger(logging.Logger):
             self._log(REPORT, msg, args, **kwargs)
 
     @validate_call
-    def info_extra(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def info_extra(
+            self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         """Log 'msg % args' with severity 'INFO_EXTRA'."""
         if self.isEnabledFor(INFO_EXTRA):
             msg = self.generate_message(msg, header, hidden)

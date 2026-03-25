@@ -18,7 +18,7 @@ from musify.models._attribute import AttributeModelMetaclass
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
-from musify.models.exception import APIModelError, RequestError
+from musify.models.exception import APIModelError, RequestError, CursorResponseError
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel, RemoteResource
@@ -166,7 +166,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             cursor = cursor.get_cursor_from_response(response=response, path=path)
 
             if cursor.next == cursor:
-                raise CursorResponseError("The next cursor is the same as the current cursor, which may cause an infinite loop.")
+                raise CursorResponseError(
+                    "The next cursor is the same as the current cursor, which may cause an infinite loop."
+                )
 
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
@@ -293,13 +295,15 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # description="The maximum number of items that can be sent in each request.",
     )
     _many_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response. Use "*" for wildcard matching.",
+        # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURISchema.validate_call
-    async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> list[RT]:
+    async def get_many(
+            self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
+    ) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
 
@@ -351,7 +355,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
 class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
     _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of items in the API response. Use "*" for wildcard matching.",
+        # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
     _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
         # description="The type of the items in the collection."
@@ -507,7 +511,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # description="The maximum number of items that can be sent in each request for saved items.",
     )
     _saved_path: ClassVar[str | AliasPath] = PrivateAttr(
-        # description="The path to the list of saved items in the API response. Use "*" for wildcard matching.",
+        # description="The path to the list of saved items in the API response. Use '*' for wildcard matching.",
     )
 
     @validate_call

@@ -22,7 +22,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
     _query_path: ClassVar[None | str | AliasPath] = PrivateAttr(
         # description=(
-        #   "The path to the results in the API response. Use "*" for wildcard matching."
+        #   "The path to the results in the API response. Use '*' for wildcard matching."
         #   "Use "{type}" to format the resource type"
         # )
     )

@@ -36,7 +36,7 @@ class IsFileMetaclass(AttributeModelMetaclass):
         return Union[*types] if classes else cls
 
     @property
-    def supported_extensions(cls: IsFile) -> set[str]:
+    def supported_extensions(cls: type[IsFile]) -> set[str]:
         """The file extensions supported by this file type."""
         if cls.__final__:
             return set(cls.__supported_extensions__)

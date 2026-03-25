@@ -138,6 +138,7 @@ class Result(BaseModel):
         if key:
             row.append(self._key_formatter.get_value(key))
 
+        # noinspection PyProtectedMember
         for field_name, (_, metadata) in self.__class__._metadata_fields.items():
             if not self._has_formatters(metadata):
                 continue
@@ -197,7 +198,7 @@ class TotalCountResult(CountResult):
     Same as CountResult but with an additional total column at the end of the log
     for the sum of all numeric fields in a row.
     """
-    _total_value_formatter: ClassVar[LogFormatter] = LenLogFormatter(
+    _total_value_formatter: ClassVar[LogFormatter] = LogFormatter(
         width=6,
         alignment="right",
         colour="magenta",
@@ -208,6 +209,7 @@ class TotalCountResult(CountResult):
         row = list(super().generate_log(key))
         total = 0
 
+        # noinspection PyProtectedMember
         for field_name, (_, metadata) in self.__class__._metadata_fields.items():
             if not self._has_formatters(metadata):
                 continue

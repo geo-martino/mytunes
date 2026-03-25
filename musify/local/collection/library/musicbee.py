@@ -21,8 +21,7 @@ from musify.local.collection.library._base import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.exception import XMLReaderError, FileDoesNotExistError
 from musify.local.item.track import LocalTrack
-from musify.models import BaseModel
-from musify.models._metaclass import makecls
+from musify.models import BaseModel, makecls
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
 
 try:

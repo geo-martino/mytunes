@@ -43,10 +43,6 @@ class Processor(BaseModel):
                 return "- UNKNOWN -"
 
 
-
-
-
-
 class InputProcessor(Processor, HasLogger):
     """
     Processor that gets user input as part of it processing.
@@ -55,7 +51,7 @@ class InputProcessor(Processor, HasLogger):
     """
 
     def _get_user_input(self, text: str | None = None) -> str:
-        """Print dialog with optional text and get the user's input."""
+        """Print dialogue with optional text and get the user's input."""
         if not text:
             text = "Enter input"
 

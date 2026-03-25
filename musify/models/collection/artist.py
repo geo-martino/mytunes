@@ -27,7 +27,7 @@ class ArtistCollection[AT: Album, GT: Genre](Artist[GT], HasAlbums[AT]):
     @property
     def tracks(self) -> list[Track]:
         """The tracks on the albums by this artist."""
-        return [track for album in self.albums for track in album.tracks if isinstance(album, AlbumCollection)]
+        return [track for album in self.albums if isinstance(album, AlbumCollection) for track in album.tracks]
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")

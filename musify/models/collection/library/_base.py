@@ -62,6 +62,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         raise NotImplementedError
 
 
+# noinspection PyAbstractClass
 class MutableLibrary[TK, TV: Track, KP, VP: Playlist](
     HasMutableTracks[TK, TV], HasMutablePlaylists[KP, VP], Library[TK, TV, KP, VP]
 ):

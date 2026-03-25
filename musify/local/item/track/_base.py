@@ -25,8 +25,7 @@ from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
-from musify.models import BaseModel, ResourceModel
-from musify.models._metaclass import makecls
+from musify.models import BaseModel, ResourceModel, makecls
 from musify.models.collection.library import Library
 from musify.models.item.track import Track, HasMutableTracks
 from musify.models.metadata import TagAttribute
@@ -358,6 +357,8 @@ class LocalTrack[FT: FileType](
 
         # TODO: we import all available URIs here to ensure they show up in the annotation
         #  This isn't great...
+        # noinspection PyUnusedImports
+        from musify.spotify.properties.uri import SpotifyResourceURI
 
         adapter = TypeAdapter(URI.annotation)
         uris = []
@@ -704,4 +705,4 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
         :param exclude: The fields to exclude from the merge. Ignored if empty.
         :return: A map of the track path to the fields that were updated on that track.
         """
-        return self.merge_tracks(others, include=include, exclude=exclude, replace=True)
+        return self.merge_tracks(others=others, include=include, exclude=exclude, replace=True)

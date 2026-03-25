@@ -129,6 +129,7 @@ class DynamicProcessorMetaclass(ModelMetaclass):
 
     def get_clean_processor_name(cls: type[DynamicProcessor], value: str | None) -> str:
         """The processor attribute metadata on the processor field to be used when calling this processor"""
+        # noinspection PyUnresolvedReferences
         return cls.processor_attribute.cleaner(value) if value else None
 
     @property

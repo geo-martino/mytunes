@@ -12,8 +12,12 @@ from musify.models.item.track import RemoteTrack, HasTracks
 from musify.models.result import CountResult, TotalCountResult, LenLogFormatter
 
 _log_formatters = [
-    LenLogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x == 0),
-    LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+    LenLogFormatter(
+        width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x == 0
+    ),
+    LenLogFormatter(
+        width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+    ),
 ]
 
 

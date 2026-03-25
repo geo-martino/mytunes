@@ -14,24 +14,36 @@ class CheckResult[T: HasURI](Result):
     """Stores the results of the searching process."""
     changed: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The items that had their matches changed during the check.",
         default_factory=tuple
     )
     unavailable: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The items that were marked as unavailable during the check.",
         default_factory=tuple
     )
     skipped: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The items that were skipped during the check.",
         default_factory=tuple

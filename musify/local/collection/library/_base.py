@@ -20,7 +20,7 @@ from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
 from musify.models.properties.uri import URI
-from musify.models.result import TotalCountResult, LenLogFormatter
+from musify.models.result import TotalCountResult, LenLogFormatter, Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
 
@@ -32,16 +32,24 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     )
     available: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The tracks which are available on this source i.e. the track has a matching URI set.",
         default_factory=tuple
     )
     missing: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description=(
             "The tracks which are missing matching URIs "
@@ -51,8 +59,12 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     )
     unavailable: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description=(
             "The tracks which are confirmed to be unavailable on this source "
@@ -82,7 +94,6 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     @staticmethod
     def _is_unavailable(source: str, track: T) -> bool:
         return any(uri.source == source and not uri.exists for uri in track.uris)
-
 
 
 @final

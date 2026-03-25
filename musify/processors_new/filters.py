@@ -229,8 +229,8 @@ class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
         matched = self.ready and self.match_all
 
         for comparer, (sub_combine, sub_filter) in self.comparers.items():
-            cmp_match = comparer.compare(item, reference=reference)
-            sub_match = sub_filter.check(item, reference=reference)
+            cmp_match = comparer.compare(item=item, reference=reference)
+            sub_match = sub_filter.check(item=item, reference=reference)
 
             combined_match = (cmp_match and sub_match) if sub_combine else (cmp_match or sub_match)
             matched = (matched and combined_match) if self.match_all else (matched or combined_match)
@@ -248,32 +248,48 @@ class MatchResult[T: Any](Result):
     """Results from :py:class:`MatchFilter` separated by individual filter results."""
     included: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="Items that matched include settings.",
         default_factory=tuple,
     )
     excluded: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="Items that matched exclude settings.",
         default_factory=tuple,
     )
     compared: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="Items that matched comparer settings",
         default_factory=tuple,
     )
     grouped: Annotated[
         tuple[T, ...],
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LenLogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="Items that matched on any 'group by' settings",
         default_factory=tuple,

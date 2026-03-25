@@ -16,29 +16,45 @@ class SyncRemoteResult(CountResult):
     )
     added: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The number of items added to the resource."
     )
     removed: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The number of items removed from the resource."
     )
     unchanged: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0),
+        LogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LogFormatter(
+            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
     ] = Field(
         description="The number of items that were in the remote resource both before and after the sync."
     )
     difference: Annotated[
         int,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
-        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x != 0),
+        LogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LogFormatter(
+            width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x != 0
+        ),
     ] = Field(
         description="The difference between the total number items from before and after the sync."
     )
