@@ -6,6 +6,7 @@ from faker import Faker
 from pydantic import Json
 
 from musify.models.collection import RemoteCollection
+from musify.models.item.artist import HasArtists
 from musify.models.item.genre import HasGenres
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
@@ -47,16 +48,22 @@ class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):
         assert result.width == expected["width"]
 
     @staticmethod
+    def assert_expected_artists(model: HasArtists, payload: Json):
+        actual = sorted(artist.name for artist in model.artists)
+        expected = sorted(artist["name"] for artist in payload["artists"])
+        assert actual == expected
+
+    @staticmethod
+    def assert_expected_genres(model: HasGenres, payload: Json):
+        assert sorted(genre.name for genre in model.genres) == sorted(payload["genres"])
+
+    @staticmethod
     def assert_expected_length(model: HasLength, payload: Json):
         expected = payload["duration_ms"]
         if isinstance(expected, dict):
             expected = expected["totalMilliseconds"]
 
         assert int(model.length) == int(expected / 1000)
-
-    @staticmethod
-    def assert_expected_genres(model: HasGenres, payload: Json):
-        assert sorted(genre.name for genre in model.genres) == sorted(payload["genres"])
 
     @staticmethod
     def assert_expected_followers(model: HasFollowers, payload: Json):

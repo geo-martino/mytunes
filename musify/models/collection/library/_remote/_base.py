@@ -1,7 +1,6 @@
 from typing import Annotated, Self, Any
 
 import tabulate
-from pydantic import PrivateAttr
 
 from musify.logger import STAT
 from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints, ReadSavedEndpoints

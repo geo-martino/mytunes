@@ -19,6 +19,7 @@ class TestSpotifyAlbum(SpotifyResourceTester):
 
     def test_response(self, generator: SpotifyPayloadGenerator):
         payload = generator.generate_album()
+        generator.add_album_artists(payload)
         generator.add_album_extended_properties(payload)
 
         model = SpotifyAlbum.model_validate(payload)
@@ -26,6 +27,7 @@ class TestSpotifyAlbum(SpotifyResourceTester):
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
+        self.assert_expected_artists(model, payload)
         self.assert_expected_genres(model, payload)
         self.assert_expected_rating(model, payload)
 

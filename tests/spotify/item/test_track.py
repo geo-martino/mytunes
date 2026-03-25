@@ -30,6 +30,7 @@ class TestSpotifyTrack(SpotifyResourceTester):
         self.assert_expected_name(model, payload)
         self.assert_expected_identifiers(model, payload)
         self.assert_expected_images(model, payload)
+        self.assert_expected_artists(model, payload)
         self.assert_expected_length(model, payload)
         self.assert_expected_rating(model, payload)
 

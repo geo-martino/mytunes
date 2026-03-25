@@ -3,7 +3,7 @@ from typing import final
 from musify.models.collection.library import RemoteMutableLibrary
 from musify.spotify import SpotifyModel
 from musify.spotify.api import SpotifyAPI
-from musify.spotify.collection.playlist import SpotifyMutablePlaylist, SpotifyPlaylist
+from musify.spotify.collection.playlist import SpotifyPlaylist
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre

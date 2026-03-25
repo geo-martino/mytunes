@@ -9,8 +9,8 @@ from pydantic_core.core_schema import ValidationInfo
 
 from musify._types import StrippedString
 from musify.models import ResourceModel
-from musify.models._metaclass import makecls
 from musify.models._context import RemoteModelContext
+from musify.models._metaclass import makecls
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items

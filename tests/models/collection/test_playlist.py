@@ -4,7 +4,7 @@ from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter, ValidationError
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
@@ -16,7 +16,6 @@ from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
 from musify.models.cursors import PageCursor
-from musify.models.exception import MusifyValidationError
 from musify.models.item.track import RemoteTrack, Track
 from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
