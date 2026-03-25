@@ -1,1 +1,2 @@
-from ._base import Processor, DynamicProcessor, processor
+from ._base import Processor
+from ._dynamic import processormethod, DynamicProcessor

@@ -3,20 +3,26 @@ Processor that converts representations of time units to python time objects.
 """
 import re
 from datetime import timedelta, datetime, date
-from typing import Any, Annotated, Self
+from typing import Any, Annotated, Self, final
 
 from dateutil.relativedelta import relativedelta
 from pydantic import field_validator, Field, model_validator, ModelWrapValidatorHandler
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
-from musify.processors_new import DynamicProcessor, processor
+from musify.processors_new import DynamicProcessor, processormethod
+from musify.processors_new._dynamic import ProcessorAttribute
 
 
+@final
 class TimeMapper(DynamicProcessor):
     """Map of time character representation to enable simple to use time delta conversion."""
+    __final__ = True
 
-    unit: LowerSnakeCase = Field(
+    unit: Annotated[
+        LowerSnakeCase,
+        ProcessorAttribute(cleaner=lambda x: to_snake(x).replace(" ", "_").strip("_")),
+    ] = Field(
         description="The time unit to add/subtract.",
     )
     amount: Annotated[int, Field(gt=0)] = Field(
@@ -26,10 +32,6 @@ class TimeMapper(DynamicProcessor):
         description="When true, add the time delta to the given datetime, otherwise subtract it.",
         default=False
     )
-
-    @property
-    def _processor_name(self) -> str:
-        return self.unit
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
@@ -53,20 +55,6 @@ class TimeMapper(DynamicProcessor):
             return value
         return re.match(r"^[-+]?\d+(\D+)$", value).group(1)
 
-    @field_validator("unit", mode="before", check_fields=True)
-    @staticmethod
-    def _clean_processor_name(name: str) -> str:
-        return to_snake(name).replace(" ", "_").strip("_")
-
-    # noinspection PyNestedDecorators
-    @model_validator(mode="after")
-    def _map_unit_value(self) -> Any:
-        unit = self._clean_processor_name(self.__processor_method_map__[self.unit])
-        if unit != self.unit:
-            self.unit = unit
-
-        return self
-
     # noinspection PyNestedDecorators
     @field_validator("amount", mode="before", check_fields=True)
     @staticmethod
@@ -82,6 +70,18 @@ class TimeMapper(DynamicProcessor):
         if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
             return value
         return value.startswith("+")
+
+    @model_validator(mode="after")
+    def _map_processor_value(self) -> Any:
+        field_name: str = self.__class__.processor_field_name
+        method_name: str = self._processor_method_name
+
+        field_value = getattr(self, field_name)
+        clean_value = self.__class__.get_clean_processor_name(method_name)
+        if clean_value != field_value:
+            setattr(self, field_name, clean_value)
+
+        return self
 
     @property
     def key(self) -> str:
@@ -105,32 +105,32 @@ class TimeMapper(DynamicProcessor):
         """Apply the time delta to the given date or datetime."""
         return self._processor_method(value)
 
-    @processor("s", "sec", "secs", "second")
+    @processormethod("s", "sec", "secs", "second")
     def _seconds[T: date | datetime](self, value: T) -> T:
         delta = timedelta(seconds=self.amount)
         return value + delta if self.add else value - delta
 
-    @processor("m", "min", "mins", "minute")
+    @processormethod("m", "min", "mins", "minute")
     def _minutes[T: date | datetime](self, value: T) -> T:
         delta = timedelta(minutes=self.amount)
         return value + delta if self.add else value - delta
 
-    @processor("h", "hr", "hrs", "hour")
+    @processormethod("h", "hr", "hrs", "hour")
     def _hours[T: date | datetime](self, value: T) -> T:
         delta = timedelta(hours=self.amount)
         return value + delta if self.add else value - delta
 
-    @processor("d", "day", "days")
+    @processormethod("d", "day", "days")
     def _days[T: date | datetime](self, value: T) -> T:
         delta = timedelta(days=self.amount)
         return value + delta if self.add else value - delta
 
-    @processor("w", "wk", "wks", "week")
+    @processormethod("w", "wk", "wks", "week")
     def _weeks[T: date | datetime](self, value: T) -> T:
         delta = relativedelta(weeks=self.amount)
         return value + delta if self.add else value - delta
 
-    @processor("mon", "mons", "mth", "mths", "month")
+    @processormethod("mon", "mons", "mth", "mths", "month")
     def _months[T: date | datetime](self, value: T) -> T:
         delta = relativedelta(months=self.amount)
         return value + delta if self.add else value - delta

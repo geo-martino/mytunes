@@ -7,20 +7,23 @@ from unittest import mock
 from unittest.mock import patch, AsyncMock
 
 import pytest
-import xmltodict
 from faker import Faker
 from pytest_mock import MockerFixture
 
 from musify.local.collection.library import LocalLibrary
 from musify.local.collection.library.musicbee import MusicBee
-from musify.local.collection.library.musicbee import XMLLibraryParser, REQUIRED_MODULES
+from musify.local.collection.library.musicbee import XMLLibraryParser
 from musify.local.exception import FileDoesNotExistError
 from musify.local.item.track import LocalTrack
-from musify.utils import required_modules_installed
 from tests.models.testers import BaseModelTester, NoUniqueKeyTester
 
+try:
+    import xmltodict
+except ImportError:
+    xmltodict = None
 
-@pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="required modules not installed.")
+
+@pytest.mark.skipif(not MusicBee.required_modules_installed, reason="required modules not installed.")
 class TestMusicBee(NoUniqueKeyTester):
 
     @pytest.fixture
@@ -40,6 +43,9 @@ class TestMusicBee(NoUniqueKeyTester):
                 "OrganisationMonitoredFolders": {"string": [str(folder) for folder in library_folders]},
             }
         }
+
+        print(MusicBee.required_modules_installed)
+        print(MusicBee.__required_modules__)
 
         with patch.object(xmltodict, "parse", return_value=xml):
             yield xml
@@ -210,7 +216,7 @@ class TestMusicBee(NoUniqueKeyTester):
         assert len(result["Tracks"]) == len(model.tracks)
 
 
-@pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="required modules not installed.")
+@pytest.mark.skipif(not XMLLibraryParser.required_modules_installed, reason="required modules not installed.")
 class TestXMLLibraryParser(BaseModelTester):
 
     @pytest.fixture

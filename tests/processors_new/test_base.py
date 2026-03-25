@@ -1,48 +1,48 @@
 from random import choice
+from typing import final, Annotated
 
 import pytest
 
-from musify.processors_new import DynamicProcessor, processor
+from musify.processors_new import DynamicProcessor, processormethod
+from musify.processors_new._dynamic import ProcessorAttribute
 from tests.models.testers import BaseModelTester
 
 
 def test_dynamic_processor_method_decorator():
-    @processor
+    @processormethod
     def test_1():
         return 1
 
-    assert isinstance(test_1, processor)
+    assert isinstance(test_1, processormethod)
     assert not test_1.alternative_names
     assert test_1() == 1
 
-    @processor("alt_1", "alt_2")
+    @processormethod("alt_1", "alt_2")
     def test_2():
         return 2
 
-    assert isinstance(test_2, processor)
+    assert isinstance(test_2, processormethod)
     assert test_2.alternative_names == ("alt_1", "alt_2")
     assert test_2() == 2
 
 
 # noinspection PyMissingOrEmptyDocstring
+@final
 class MockDynamicProcessor(DynamicProcessor):
+    __final__ = True
     __test__ = False
 
-    processor_name: str | None = f"processor_{choice([1, 2, 3])}"
+    processor_name: Annotated[str | None, ProcessorAttribute()] = f"processor_{choice([1, 2, 3])}"
 
-    @property
-    def _processor_name(self) -> str:
-        return self.processor_name
-
-    @processor
+    @processormethod
     def processor_1(self):
         return 1
 
-    @processor("_processor_2_alt")
+    @processormethod("_processor_2_alt")
     def processor_2(self):
         return 2
 
-    @processor("processor_3_alternative__", "_ProcessorExtra")
+    @processormethod("processor_3_alternative__", "_ProcessorExtra")
     def processor_3(self):
         return 3
 

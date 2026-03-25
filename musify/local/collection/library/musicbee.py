@@ -24,7 +24,6 @@ from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
 from musify.models._metaclass import makecls
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
-from musify.utils import required_modules_installed
 
 try:
     import xmltodict
@@ -38,8 +37,6 @@ except ImportError:
     from typing import Never
     Element = Never
 
-REQUIRED_MODULES = [xmltodict, etree]
-
 
 # noinspection PyFinal
 @final
@@ -48,8 +45,9 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     Represents a local MusicBee library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.
     """
-    __supported_extensions__ = frozenset({"xml"})
     __final__ = True
+    __required_modules__ = {"xmltodict": xmltodict, "etree": etree}
+    __supported_extensions__ = frozenset({"xml"})
 
     #: The relative path of the MusicBee settings file in the ``musicbee_folder``.
     _xml_settings_path: ClassVar[Path] = Path("MusicBeeLibrarySettings.ini")
@@ -333,6 +331,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 # noinspection PyProtectedMember
 class XMLLibraryParser(BaseModel):
     """Parses MusicBee XML files to and from iTunes style XML."""
+    __required_modules__ = {"xmltodict": xmltodict, "etree": etree}
 
     _iterparse: etree.iterparse | None = PrivateAttr(default=None)
 
@@ -347,10 +346,6 @@ class XMLLibraryParser(BaseModel):
         description="The string representation of the timestamp format when parsing.",
         default="%Y-%m-%dT%H:%M:%SZ",
     )
-
-    def __new__(cls, *args, **kwargs):
-        required_modules_installed(REQUIRED_MODULES, cls)
-        return super().__new__(cls)
 
     def to_xml_timestamp(self, timestamp: datetime | None) -> str | None:
         """Convert timestamp string as found in the MusicBee XML library file to a ``datetime`` object"""

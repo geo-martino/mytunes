@@ -5,7 +5,7 @@ from collections.abc import Collection, MutableSequence
 from functools import reduce
 from operator import mul
 from random import shuffle
-from typing import Annotated
+from typing import Annotated, final
 
 from pydantic import NonNegativeInt, Field, field_validator
 from pydantic.alias_generators import to_snake
@@ -16,7 +16,8 @@ from musify.models import ResourceModel, IntEnumModel
 from musify.models.item.album import HasAlbum
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
-from musify.processors_new._base import DynamicProcessor, processor
+from musify.processors_new._dynamic import ProcessorAttribute
+from musify.processors_new import processormethod, DynamicProcessor
 from musify.processors_new.sort import ItemSorter
 
 
@@ -39,8 +40,10 @@ class LimitType(IntEnumModel):
     TERABYTES = 24
 
 
+@final
 class ItemLimiter(DynamicProcessor):
     """Limit items in a Sequence in-place based on given conditions."""
+    __final__ = True
 
     limit_by: NonNegativeInt = Field(
         description="The number of items to limit to. A value of 0 applies no limiting.",
@@ -52,7 +55,10 @@ class ItemLimiter(DynamicProcessor):
         default=LimitType.ITEMS,
         alias="on",
     )
-    sorted_by: LowerSnakeCase | None = Field(
+    sorted_by: Annotated[
+        LowerSnakeCase | None,
+        ProcessorAttribute(cleaner=lambda x: to_snake(x).replace(" ", "_").strip("_")),
+    ] = Field(
         description="Before limiting, sort the collection of items by this function first.",
         default=None,
     )
@@ -69,17 +75,6 @@ class ItemLimiter(DynamicProcessor):
         ),
         default=1,
     )
-
-    @property
-    def _processor_name(self) -> str:
-        return self.sorted_by or super()._processor_name
-
-    @field_validator("sorted_by", mode="before", check_fields=True)
-    @staticmethod
-    def _clean_processor_name(name: str | None) -> str | None:
-        if not name:
-            return
-        return to_snake(name).replace(" ", "_").strip("_")
 
     def limit[T: ResourceModel](self, items: MutableSequence[T], ignore: Collection[T] = ()) -> None:
         """
@@ -181,38 +176,38 @@ class ItemLimiter(DynamicProcessor):
             case _:
                 raise MusifyTypeError(f"Cannot convert to numeric value for this limit type: {self.kind}")
 
-    @processor
+    @processormethod
     def _random(self, items: MutableSequence[ResourceModel]) -> None:
         shuffle(items)
 
-    @processor
+    @processormethod
     def _highest_rating(self, items: MutableSequence[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "rating", reverse=True)
 
-    @processor
+    @processormethod
     def _lowest_rating(self, items: MutableSequence[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "rating")
 
-    @processor
+    @processormethod
     def _most_recently_played(self, items: MutableSequence[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "last_played_at", reverse=True)
 
-    @processor
+    @processormethod
     def _least_recently_played(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "last_played_at")
 
-    @processor
+    @processormethod
     def _most_often_played(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "play_count", reverse=True)
 
-    @processor
+    @processormethod
     def _least_often_played(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "play_count")
 
-    @processor
+    @processormethod
     def _most_recently_added(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "added_at", reverse=True)
 
-    @processor
+    @processormethod
     def _least_recently_added(self, items: list[ResourceModel]) -> None:
         ItemSorter.sort_by_field(items, "added_at")

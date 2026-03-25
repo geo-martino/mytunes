@@ -77,8 +77,8 @@ class SyncM3UResult(CountResult):
 @final_decorator
 class M3U(LocalPlaylist[PathsFilter]):
     """For reading and writing data from M3U playlist format."""
-    __supported_extensions__ = frozenset({"m3u"})
     __final__ = True
+    __supported_extensions__ = frozenset({"m3u"})
     
     @staticmethod
     async def _load_track(path: str | Path) -> LocalTrack:

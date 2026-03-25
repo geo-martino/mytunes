@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from dateutil.relativedelta import relativedelta
+from faker import Faker
 
 from musify.processors_new.time import TimeMapper
 from tests.models.testers import BaseModelTester
@@ -11,6 +12,19 @@ class TestTimeMapper(BaseModelTester):
     @pytest.fixture
     def model(self) -> TimeMapper:
         return TimeMapper(unit="days", amount=5, add=True)
+
+    def test_init(self, faker: Faker):
+        model = TimeMapper(unit="d", amount=faker.random_int())
+        assert model.unit == "days"
+        assert model._processor_method == model._days
+
+        model = TimeMapper(unit="__ hours __ ", amount=faker.random_int())
+        assert model.unit == "hours"
+        assert model._processor_method == model._hours
+
+        model = TimeMapper(unit="__wks__", amount=faker.random_int())
+        assert model.unit == "weeks"
+        assert model._processor_method == model._weeks
 
     def test_from_key(self, model: TimeMapper):
         model = model.model_validate("+4h")

@@ -1,4 +1,6 @@
 import inspect
+import sys
+from collections.abc import Collection, Mapping
 from typing import Any, cast, get_origin, Union
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
@@ -9,7 +11,7 @@ from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from typing_inspection.typing_objects import is_annotated
 
-from musify.exception import MusifyAttributeError
+from musify.exception import MusifyAttributeError, MusifyImportError
 from musify.models.exception import ModelError
 
 
@@ -44,6 +46,11 @@ class ModelMetaclass(PydanticModelMetaclass):
         for name in cls.__class_vars__:
             if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
                 raise ModelError(f"{cls.__name__} must have a {name!r} class attribute defined.")
+
+    @property
+    def required_modules_installed(cls: type[BaseModel]) -> bool:
+        """Check if all required modules for this model are installed."""
+        return all(module is not None for module in cls.__required_modules__.values())
 
     @property
     def _metadata_fields(cls) -> dict[str, tuple[Any, list[Any]]]:
@@ -92,7 +99,7 @@ class ModelMetaclass(PydanticModelMetaclass):
         """Get the registered classes for all subclasses of this model."""
         if cls.__final__:
             return []
-        return [kls for kls in cls.__model_registry__ if issubclass(kls, cls)]
+        return [kls for kls in cls.__model_registry__ if issubclass(kls, cls) and kls.required_modules_installed]
 
     @property
     def annotation[T: BaseModel](cls: type[T]) -> type[T]:
@@ -109,6 +116,7 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
     - Standard configuration for all models in the package.
     - Additional helper methods
     """
+    __required_modules__: dict[str, Any] = {}
 
     model_config = ConfigDict(
         validate_default=True,
@@ -119,6 +127,16 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             validation_alias=lambda name: name.replace("_", "").rstrip("s")
         ),
     )
+
+    def __new__(cls, *args, **kwargs):
+        cls._validate_required_modules_installed()
+        return super().__new__(cls)
+
+    @classmethod
+    def _validate_required_modules_installed(cls) -> None:
+        if cls.required_modules_installed:
+            return
+        raise MusifyImportError(f"Cannot use {cls.__name__}. Required modules: {", ".join(cls.__required_modules__)}")
 
     @classmethod
     def _get_aliases(cls, name: str, with_serialization_alias: bool = False) -> set[str]:

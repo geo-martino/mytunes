@@ -11,7 +11,7 @@ from pydantic.alias_generators import to_pascal
 from pytest_mock import MockerFixture, mocker
 
 # noinspection PyProtectedMember
-from musify.local.collection.playlist.xautopf import REQUIRED_MODULES, XAutoPF, _XMLCondition, _XMLConditions, \
+from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
 from musify.local.item.track import LocalTrack
@@ -21,11 +21,11 @@ from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import ComparerFilter, PathsFilter, MatchFilter
 from musify.processors_new.limit import LimitType, ItemLimiter
 from musify.processors_new.sort import ShuffleMode, ItemSorter, SORT_FIELDS
-from musify.utils import required_modules_installed
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.models.testers import BaseModelTester
 
 
+@pytest.mark.skipif(not SyncXAutoPFResult.required_modules_installed, reason="Required modules are not installed")
 class TestSyncXAutoPFResult(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SyncXAutoPFResult:
@@ -221,6 +221,7 @@ def xml_playlist(request) -> str:
     return request.param
 
 
+@pytest.mark.skipif(not XAutoPF.required_modules_installed, reason="Required modules are not installed")
 class TestXAutoPF(LocalPlaylistTester):
 
     @pytest.fixture
@@ -1042,12 +1043,12 @@ class TestXMLSmartPlaylist(BaseModelTester):
         assert result == xml
 
 
+@pytest.mark.skipif(not _XMLRoot.required_modules_installed, reason="Required modules are not installed")
 class TestXMLRoot(BaseModelTester):
     @pytest.fixture
     def model(self) -> _XMLRoot:
         return _XMLRoot()
 
-    @pytest.mark.skipif(not required_modules_installed(REQUIRED_MODULES), reason="xmltodict not installed")
     def test_parse_xml(self, adapter: TypeAdapter, xml_playlist: str):
         model = _XMLRoot.model_validate(xml_playlist)
         assert model.unparse_xml() == xml_playlist

@@ -4,7 +4,7 @@ from typing import final, ClassVar
 import pytest
 from pydantic import Field, AliasChoices
 
-from musify.exception import MusifyAttributeError
+from musify.exception import MusifyAttributeError, MusifyImportError
 from musify.models import BaseModel
 from musify.models.exception import ModelError
 
@@ -63,6 +63,16 @@ class TestBaseModel:
         field3: int = Field(
             serialization_alias="serial1",
         )
+
+    def test_required_modules_installed(self):
+        class TestModelWithNoModules(BaseModel):
+            __required_modules__ = {"nonexistent_module": None}
+            field: str
+
+        assert not TestModelWithNoModules.required_modules_installed
+
+        with pytest.raises(MusifyImportError):
+            TestModelWithNoModules(field="test")
 
     def test_get_aliases_skips_name(self):
         cls = deepcopy(self.TestModel)

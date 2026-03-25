@@ -44,12 +44,15 @@ class TestItemLimiter(BaseModelTester):
 
     def test_init(self):
         limiter = ItemLimiter(sorted_by="HighestRating")
+        assert limiter.sorted_by == "highest_rating"
         assert limiter._processor_method == limiter._highest_rating
 
         limiter = ItemLimiter(sorted_by="__ least_recently_added __ ")
+        assert limiter.sorted_by == "least_recently_added"
         assert limiter._processor_method == limiter._least_recently_added
 
         limiter = ItemLimiter(sorted_by="__most recently played__")
+        assert limiter.sorted_by == "most_recently_played"
         assert limiter._processor_method == limiter._most_recently_played
 
     def test_limit_below_threshold(self, tracks: list[LocalTrack]):

@@ -3,11 +3,10 @@ Processor making comparisons between objects and data types.
 """
 import inspect
 import re
-import typing
 from collections.abc import Sequence
 from datetime import datetime
 from types import NoneType
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final
 
 from pydantic import Field, field_validator, TypeAdapter, model_validator, \
     ModelWrapValidatorHandler
@@ -24,7 +23,8 @@ from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
-from musify.processors_new._base import DynamicProcessor, processor
+from musify.processors_new._dynamic import ProcessorAttribute
+from musify.processors_new import processormethod, DynamicProcessor
 from musify.processors_new.time import TimeMapper
 
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
@@ -40,6 +40,7 @@ _COMPARISON_FIELDS_MAP = {
 COMPARISON_FIELDS = tuple(_COMPARISON_FIELDS_MAP)
 
 
+@final
 class Comparer(DynamicProcessor):
     """
     Compares an item or object with another item, object or a given set of expected values to find a match.
@@ -49,7 +50,12 @@ class Comparer(DynamicProcessor):
     Attempts will be made to convert the expected value to the appropriate type based on Pydantic
     field type conversion rules.
     """
-    condition: LowerSnakeCase = Field(
+    __final__ = True
+
+    condition: Annotated[
+        LowerSnakeCase,
+        ProcessorAttribute(cleaner=lambda x: to_snake(x).replace(" ", "_").strip("_"))
+    ] = Field(
         description="The condition to match on.",
     )
     expected: Any = Field(
@@ -68,15 +74,6 @@ class Comparer(DynamicProcessor):
         ),
         default=False,
     )
-
-    @property
-    def _processor_name(self) -> str:
-        return self.condition
-
-    @field_validator("condition", mode="before", check_fields=True)
-    @staticmethod
-    def _clean_processor_name(name: str) -> str:
-        return to_snake(name).replace(" ", "_").strip("_")
 
     @model_validator(mode="after")
     def _convert_expected_to_time_mapper(self) -> Self:
@@ -98,7 +95,7 @@ class Comparer(DynamicProcessor):
         elif isinstance(field := _COMPARISON_FIELDS_MAP[self.field].get_nested_field_info(self.field), FieldInfo):
             field_type = field.annotation
         elif isinstance(field, property):
-            field_type = typing.get_type_hints(field.fget, include_extras=True)["return"]
+            field_type = get_type_hints(field.fget, include_extras=True)["return"]
         else:
             field_type = field
 
@@ -106,12 +103,12 @@ class Comparer(DynamicProcessor):
 
     @property
     def _actual_type(self) -> type:
-        annotation = typing.get_type_hints(self._processor_method.func, include_extras=True)["actual"]
+        annotation = get_type_hints(self._processor_method.func, include_extras=True)["actual"]
         return self._extract_type_from_annotation(annotation)
 
     @property
     def _expected_type(self) -> type:
-        annotation = typing.get_type_hints(self._processor_method.func, include_extras=True)
+        annotation = get_type_hints(self._processor_method.func, include_extras=True)
         if "expected" not in annotation:  # doesn't take an expected value
             return NoneType
 
@@ -119,11 +116,11 @@ class Comparer(DynamicProcessor):
 
     @staticmethod
     def _extract_type_from_annotation(annotation) -> type:
-        origin = typing.get_origin(annotation)
+        origin = get_origin(annotation)
         if is_union_origin(origin):
-            types = typing.get_args(annotation)
+            types = get_args(annotation)
             types = [t for t in types if t is not NoneType]
-            annotation_type = types[0] if len(types) == 1 else typing.Union[tuple(types)]
+            annotation_type = types[0] if len(types) == 1 else Union[tuple(types)]
         else:
             annotation_type = annotation
 
@@ -136,7 +133,7 @@ class Comparer(DynamicProcessor):
         if model.expected is None:
             return model
 
-        annotation = typing.get_type_hints(model._processor_method.func, include_extras=True)
+        annotation = get_type_hints(model._processor_method.func, include_extras=True)
         if "expected" not in annotation:  # doesn't take an expected value
             model.expected = None
 
@@ -171,9 +168,9 @@ class Comparer(DynamicProcessor):
             model._convert_expected_value(model._field_type)
         elif (
                 is_typevar(model._expected_type)
-                and typing.get_origin(model._actual_type) is Sequence
-                and is_typevar(next(iter(typing.get_args(model._actual_type))))
-                and (expected_type := next(iter(typing.get_args(model._field_type)), None)) is not None
+                and get_origin(model._actual_type) is Sequence
+                and is_typevar(next(iter(get_args(model._actual_type))))
+                and (expected_type := next(iter(get_args(model._field_type)), None)) is not None
         ):
             model._convert_expected_value(expected_type)
 
@@ -187,8 +184,8 @@ class Comparer(DynamicProcessor):
         model: Self = handler(value)
         if (
                   is_typevar(model._actual_type)
-                  and typing.get_origin(model._expected_type) in (Sequence, set)
-                  and is_typevar(next(iter(typing.get_args(model._expected_type)), None))
+                  and get_origin(model._expected_type) in (Sequence, set)
+                  and is_typevar(next(iter(get_args(model._expected_type)), None))
         ):
             expected_type = set[model._field_type]
             model._convert_expected_value(expected_type)
@@ -200,7 +197,7 @@ class Comparer(DynamicProcessor):
             return
 
         # prevent strings being split into list of characters
-        if isinstance(self.expected, str) and typing.get_origin(expected_type) in (set, tuple, list):
+        if isinstance(self.expected, str) and get_origin(expected_type) in (set, tuple, list):
             self.expected = (self.expected,)
 
         try:
@@ -258,83 +255,83 @@ class Comparer(DynamicProcessor):
 
         return value
 
-    @processor
+    @processormethod
     def _is[T](self, actual: T | None, expected: T | None) -> bool:
         if expected is None:
             return False
         return actual == expected
 
-    @processor
+    @processormethod
     def _is_not[T](self, actual: T | None, expected: T | None) -> bool:
         return not self._is(actual=actual, expected=expected)
 
-    @processor("greater_than", "in_the_last")
+    @processormethod("greater_than", "in_the_last")
     def _is_after[T: int | float](self, actual: T | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual > expected
 
-    @processor("less_than", "not_in_the_last")
+    @processormethod("less_than", "not_in_the_last")
     def _is_before[T: int | float](self, actual: T | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual < expected
 
-    @processor
+    @processormethod
     def _is_in[T](self, actual: T, expected: set[T] | None) -> bool:
         return expected is not None and actual in expected
 
-    @processor
+    @processormethod
     def _is_not_in[T](self, actual: T, expected: set[T] | None) -> bool:
         return not self._is_in(actual=actual, expected=expected)
 
-    @processor
+    @processormethod
     def _in_range[T: int | float](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
         if actual is None or expected is None or expected[0] is None or expected[1] is None:
             return False
         return expected[0] <= actual <= expected[1]
 
-    @processor
+    @processormethod
     def _not_in_range[T: int | float](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
         return not self._in_range(actual=actual, expected=expected)
 
-    @processor
+    @processormethod
     def _is_not_null(self, actual: Any, *_) -> bool:
         return actual is not None or actual is True
 
-    @processor
+    @processormethod
     def _is_null(self, actual: Any, *_) -> bool:
         return actual is None or actual is False
 
-    @processor
+    @processormethod
     def _starts_with(self, actual: str | None, expected: str | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual.startswith(expected)
 
-    @processor
+    @processormethod
     def _ends_with(self, actual: Any | None, expected: str | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual.endswith(expected)
 
-    @processor
+    @processormethod
     def _contains[T](self, actual: Sequence[T] | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return expected in actual
 
-    @processor
+    @processormethod
     def _does_not_contain[T](self, actual: Sequence[T] | None, expected: T | None) -> bool:
         return not self._contains(actual=actual, expected=expected)
 
-    @processor
+    @processormethod
     def _matches_reg_ex(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False
         return bool(re.search(expected, actual))
 
-    @processor
+    @processormethod
     def _matches_reg_ex_ignore_case(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False

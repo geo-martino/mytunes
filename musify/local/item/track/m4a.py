@@ -24,8 +24,8 @@ from musify.models.properties.order import Position
 
 @final
 class M4A(LocalTrack[mutagen.mp4.MP4]):
-    __supported_extensions__ = frozenset({"m4a"})
     __final__ = True
+    __supported_extensions__ = frozenset({"m4a"})
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp4.MP4Cover]):
         alias: ClassVar[str] = "covr"

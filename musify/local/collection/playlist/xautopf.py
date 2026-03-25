@@ -28,20 +28,21 @@ from musify.processors_new.compare import Comparer
 from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter, MatchResult
 from musify.processors_new.limit import ItemLimiter
 from musify.processors_new.sort import ItemSorter
-from musify.utils import required_modules_installed
 
 try:
     import xmltodict
 except ImportError:
     xmltodict = None
 
-REQUIRED_MODULES = [xmltodict]
-
 AutoMatcher = MatchFilter[LocalTrack, PathsFilter, PathsFilter]
 
 
+@final
 class SyncXAutoPFResult(CountResult):
     """Stores the results of a sync with a local XAutoPF playlist."""
+    __final__ = True
+    __required_modules__ = {"xmltodict": xmltodict}
+
     start: Annotated[
         NonNegativeInt,
         LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
@@ -78,7 +79,6 @@ class SyncXAutoPFResult(CountResult):
     ] = Field(
         description="Was a sorter present on the playlist before the sync."
     )
-
 
     final: Annotated[
         NonNegativeInt,
@@ -162,8 +162,9 @@ class SyncXAutoPFResult(CountResult):
 @final
 class XAutoPF(LocalPlaylist[AutoMatcher]):
     """For reading and writing data from MusicBee's auto-playlist format."""
-    __supported_extensions__ = frozenset({"xautopf"})
     __final__ = True
+    __required_modules__ = {"xmltodict": xmltodict}
+    __supported_extensions__ = frozenset({"xautopf"})
 
     _xml: _XMLRoot | None = PrivateAttr(default=None)
     _original: MutableUniqueSequence = PrivateAttr(default_factory=MutableUniqueSequence)
@@ -176,10 +177,6 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     @limiter_deduplication.setter
     def limiter_deduplication(self, value: bool):
         self._xml.smart_playlist.source.limit.filter_duplicates = value
-
-    def __new__(cls, *args, **kwargs):
-        required_modules_installed(REQUIRED_MODULES, cls)
-        return super().__new__(cls)
 
     @staticmethod
     def _get_reference_for_last_played_track(tracks: MutableSequence[LocalTrack]) -> LocalTrack | None:
@@ -982,11 +979,9 @@ class _XMLSmartPlaylist(_XMLBaseModel):
 
 
 class _XMLRoot(_XMLBaseModel):
-    smart_playlist: Annotated[_XMLSmartPlaylist, _XMLElementField()] = Field(default_factory=_XMLSmartPlaylist)
+    __required_modules__ = {"xmltodict": xmltodict}
 
-    def __new__(cls, *args, **kwargs):
-        required_modules_installed(REQUIRED_MODULES, cls)
-        return super().__new__(cls)
+    smart_playlist: Annotated[_XMLSmartPlaylist, _XMLElementField()] = Field(default_factory=_XMLSmartPlaylist)
 
     @model_validator(mode="wrap")
     @classmethod

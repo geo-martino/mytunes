@@ -76,7 +76,7 @@ def test_file_paths(logger: Logger):
     assert [path.name for path in logger.file_paths] == ["test1.log", "test2.log"]
 
 
-@pytest.mark.skipif(tqdm is None, reason="required modules not installed")
+@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 def test_tqdm_param_position(logger: Logger):
     assert not logger._bars
     assert logger._get_tqdm_param_position(2) == 2
@@ -96,14 +96,14 @@ def test_tqdm_param_position(logger: Logger):
     assert not logger._bars
 
 
-@pytest.mark.skipif(tqdm is None, reason="required modules not installed")
+@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 def test_tqdm_param_leave(logger: Logger):
     assert logger._get_tqdm_param_leave(position=0)
     assert not logger._get_tqdm_param_leave(position=2)
     assert not logger._get_tqdm_param_leave(position=5)
 
 
-@pytest.mark.skipif(tqdm is None, reason="required modules not installed")
+@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 def test_tqdm_kwargs(logger: Logger):
     kwargs = dict(iterable=range(0, 50), initial=10, disable=True, file=sys.stderr)
     kwargs_processed = logger._get_tqdm_kwargs(**kwargs)
@@ -129,7 +129,7 @@ def test_tqdm_kwargs(logger: Logger):
     assert kwargs_processed["smoothing"] != 0.5
 
 
-@pytest.mark.skipif(tqdm is None, reason="required modules not installed")
+@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 def test_tqdm_iterator_synchronous(logger: Logger):
     logger._bars.clear()
 
@@ -164,7 +164,7 @@ def test_tqdm_iterator_synchronous(logger: Logger):
     logger.disable_bars = False
 
 
-@pytest.mark.skipif(tqdm is None, reason="required modules not installed")
+@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 async def test_tqdm_iterator_asynchronous(logger: Logger):
     async def _task(i: int) -> int:
         return i
