@@ -124,13 +124,3 @@ class SpotifyMutablePlaylist(
             )
 
         return self
-
-    @model_validator(mode="after")
-    def _validate_collaborative(self) -> Self:
-        if self.collaborative and self.public:
-            raise MusifyValidationError(
-                "A playlist cannot be both collaborative and public. "
-                "Spotify does not allow this combination of properties, so this playlist is invalid."
-            )
-
-        return self

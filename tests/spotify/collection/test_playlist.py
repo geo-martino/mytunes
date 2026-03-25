@@ -109,10 +109,3 @@ class TestSpotifyMutablePlaylist(SpotifyResourceTester):
         # not collaborative and user is not the owner, implies immutable
         with pytest.raises(ValidationError, match="implies that this playlist is immutable"):
             SpotifyMutablePlaylist.model_validate(model, context=context)
-
-    def test_validate_collaborative(self, model: SpotifyMutablePlaylist):
-        model.public = False
-        model.collaborative = True  # should be fine
-
-        with pytest.raises(ValidationError, match="cannot be both collaborative and public"):
-            model.public = True

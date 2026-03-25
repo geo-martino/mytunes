@@ -9,7 +9,7 @@ from musify.models.collection.playlist import Playlist, RemotePlaylist, RemoteMu
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack, HasTracks
-from musify.models.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter
+from musify.models.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter
 
 _log_formatters = [
     LenLogFormatter(
@@ -22,8 +22,11 @@ _log_formatters = [
 
 
 class RemotePlaylistsResult[T: RemoteTrack](CountResult):
-    tracks: Annotated[tuple[T, ...], *_log_formatters] = Field(
-        description="The tracks in this result.",
+    owner: Annotated[
+        str,
+        LogFormatter(colour="magenta", max_width=20, include_name_in_log=False)
+    ] = Field(
+        description="The owner of the playlist."
     )
     writeable: Annotated[
         bool,
@@ -44,11 +47,18 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
     ] = Field(
         description="Whether the playlists in this result are writeable (i.e. can be modified by the user).",
     )
+    tracks: Annotated[tuple[T, ...], *_log_formatters] = Field(
+        description="The tracks in this result.",
+    )
 
     @classmethod
     def from_playlist(cls, playlist: RemotePlaylist[Any, T, Any, Any]) -> Self:
         """Create a result from the given playlist."""
-        return cls(tracks=playlist.tracks, writeable=isinstance(playlist, RemoteMutablePlaylist))
+        return cls(
+            tracks=playlist.tracks,
+            owner=playlist.owner.name,
+            writeable=isinstance(playlist, RemoteMutablePlaylist)
+        )
 
     @classmethod
     def from_playlists(cls, playlists: Iterable[RemotePlaylist[Any, T, Any, Any]]) -> dict[str, Self]:

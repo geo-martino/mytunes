@@ -15,7 +15,6 @@ from yarl import URL
 
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModelMetaclass
-from musify.models._context import RemoteModelContext
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
@@ -23,6 +22,7 @@ from musify.models.exception import APIModelError, RequestError, CursorResponseE
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel, RemoteResource
+from musify.models._context import RemoteModelContext
 from musify.utils import get_base_types
 
 

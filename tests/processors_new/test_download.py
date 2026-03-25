@@ -8,7 +8,7 @@ from urllib.parse import unquote
 
 import pytest
 from faker import Faker
-from werkzeug.routing import ValidationError
+from pydantic import ValidationError
 
 from musify import MODULE_ROOT
 from musify.models.collection.playlist import Playlist

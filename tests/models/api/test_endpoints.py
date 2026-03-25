@@ -10,7 +10,6 @@ from pydantic import AliasPath, TypeAdapter
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from musify.models._context import RemoteModelContext
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import RemoteCollection
@@ -21,6 +20,7 @@ from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel
+from musify.models._context import RemoteModelContext
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor
 from tests.models.utils import MockRemoteResource, MockRemoteCollection

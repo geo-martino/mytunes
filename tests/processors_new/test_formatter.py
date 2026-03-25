@@ -9,10 +9,10 @@ from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
-from musify.models.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from musify.models.item.artist import Artist, HasArtists
 from musify.models.item.track import Track, HasTracks
 from musify.models.properties.order import Position
+from musify.processors_new.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from tests.models.testers import BaseModelTester
 
 
@@ -88,7 +88,7 @@ class TestModelFormatter(BaseModelTester):
 
     @pytest.fixture
     def mock_tabulate(self) -> Generator[Mock, None, None]:
-        with patch(f"{MODULE_ROOT}.models.formatter.tabulate") as mock_tabulate:
+        with patch(f"{MODULE_ROOT}.processors_new.formatter.tabulate") as mock_tabulate:
             yield mock_tabulate
 
     @pytest.fixture
@@ -191,7 +191,7 @@ class TestModelFormatter(BaseModelTester):
         def _to_str(v, *_, **__) -> str:
             return str(v)
 
-        with patch(f"{MODULE_ROOT}.models.formatter.colored", side_effect=_to_str) as mock_colored:
+        with patch(f"{MODULE_ROOT}.processors_new.formatter.colored", side_effect=_to_str) as mock_colored:
             model.format(tracks)
 
             rows = mock_tabulate.call_args.args[0]
