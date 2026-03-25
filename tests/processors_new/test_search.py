@@ -426,10 +426,10 @@ class TestCollectionSearcher(SearcherTester):
         return faker.random_element(collections)
 
     @pytest.fixture
-    def collections(self, albums: list[Album], tracks: list[Track], faker: Faker) -> list[CollectionModel]:
+    def collections(self, tracks: list[Track], faker: Faker) -> list[CollectionModel]:
         return [
-            MockCollection(name=album.name, items=faker.random_elements(tracks))
-            for album in albums
+            MockCollection(name=faker.sentence(), items=faker.random_elements(tracks))
+            for _ in range(faker.random_int(5, 10))
         ]
 
     @pytest.fixture

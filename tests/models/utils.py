@@ -1,16 +1,19 @@
 from random import choice
 from typing import ClassVar, Self
 
+from pydantic import Field
+
 from musify.models.api import HasEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.name import HasName
 from musify.models.remote import RemoteResource
 from tests.utils import SimpleURI
 
 
-class MockRemoteResource(RemoteResource[SimpleURI]):
+class MockRemoteResource(RemoteResource[SimpleURI], HasName):
     source: ClassVar[str] = "mock"
     type: ClassVar[str] = choice((
         RemoteTrack.type,
@@ -25,9 +28,11 @@ class MockRemoteResource(RemoteResource[SimpleURI]):
 class MockRemoteCollection(MockRemoteResource, RemoteCollection):
     type: ClassVar[str] = MockRemoteResource.type
 
+    items: list[RemoteResource] = Field(default_factory=list)
+
     @property
     def _items(self) -> list:
-        return []
+        return self.items
 
     async def extend(self, api: HasEndpoints) -> None:
         pass

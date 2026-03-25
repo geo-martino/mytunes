@@ -189,6 +189,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
 
         return self
 
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def sync_items(
             self,
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],

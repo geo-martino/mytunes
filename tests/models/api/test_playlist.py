@@ -14,7 +14,7 @@ from tests.utils import SimpleURI
 
 
 @pytest.fixture
-def playlists(playlists: list[Playlist], user: RemoteUser, faker: Faker) -> list[RemotePlaylist]:
+def playlists(playlists: list[Playlist], faker: Faker) -> list[RemotePlaylist]:
     return [
         RemotePlaylist(
             **pl.model_dump(),

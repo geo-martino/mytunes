@@ -3,9 +3,10 @@ from collections.abc import Sequence, MutableSequence, Collection, Mapping, Iter
 from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator
+from termcolor import colored
 
 from musify.models import ResourceModel
-from musify.models.api import RemoteAPI
+from musify.models.api import RemoteAPI, HasAPI
 from musify.models.api.search import HasSearchEndpoints
 from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
@@ -79,8 +80,11 @@ class SearchResult[T: Any](TotalCountResult):
         return self
 
 
-class Searcher[API: RemoteAPI](Processor, HasLogger):
-    api: API | HasSearchEndpoints = Field(
+type _ApiT = RemoteAPI | HasSearchEndpoints
+
+
+class Searcher[API: _ApiT](Processor, HasAPI):
+    api: API = Field(
         description="The API to use when searching for matches.",
     )
     matcher: Matcher | None = Field(
@@ -130,16 +134,17 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
 
     @field_validator("api", mode="after", check_fields=True)
     @classmethod
-    def _api_has_necessary_endpoints(cls, api: API | HasSearchEndpoints) -> API | HasSearchEndpoints:
+    def _validate_api_has_necessary_endpoints(cls, api: _ApiT) -> _ApiT:
         if not isinstance(api, RemoteAPI):
-            raise MusifyValidationError(f"API object must be an instance of {RemoteAPI.__name__}")
+            raise MusifyValidationError(f"API must be an instance of RemoteAPI, got {type(api)}")
         if not isinstance(api, HasSearchEndpoints):
-            raise MusifyValidationError("API object must have search endpoints")
+            raise MusifyValidationError(f"API does not support search endpoints")
+
         return api
 
     @property
     def source(self) -> str:
-        """The name of the source that this searcher is searching on, derived from the API's source."""
+        """The name of the remote service that this searcher is running on."""
         return self.api.source.title()
 
     async def __aenter__(self) -> Self:
@@ -161,6 +166,10 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
     @validate_call
     async def search_items[T: ResourceModel](self, items: Sequence[T]) -> SearchResult[T]:
         """Search for matches for the given items and return the results."""
+        if len(items) == 0:
+            self._log_skip("No items to search.")
+            return SearchResult()
+
         self._log_start(items, default_type="items")
         return await self._search_items(items, show_bar=True)
 
@@ -227,6 +236,10 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
             self, collections: Sequence[CollectionModel]
     ) -> dict[str, SearchResult[T]]:
         """Search for matches for the given collection and return the results per collection."""
+        if len(collections) == 0 or sum(collection.count for collection in collections) == 0:
+            self._log_skip("No collections or items to search.")
+            return {}
+
         self._log_start(collections, default_type="collections")
 
         async def _search_collection(collection: CollectionModel[T]) -> tuple[str, SearchResult[T]]:
@@ -424,6 +437,9 @@ class Searcher[API: RemoteAPI](Processor, HasLogger):
         log_type = ", ".join(sorted(types)) if types else default_type
         message = f"Searching for matches on {self.source} for {len(items)} {log_type}"
         self.logger.info(message, header=1)
+
+    def _log_skip(self, message: str) -> None:
+        self.logger.extra(colored(message, "yellow"))
 
     def _log_debug(self, item: Any, message: str) -> None:
         name = self._get_item_log_name(item)

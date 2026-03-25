@@ -24,9 +24,9 @@ except ImportError:
 type ProgressBarType[T] = Iterable[T] | tqdm if tqdm is not None else Iterable[T]
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
 
-INFO_EXTRA = logging.INFO - 1
-logging.addLevelName(INFO_EXTRA, "INFO_EXTRA")
-logging.INFO_EXTRA = INFO_EXTRA
+EXTRA = logging.INFO - 1
+logging.addLevelName(EXTRA, "EXTRA")
+logging.EXTRA = EXTRA
 
 REPORT = logging.INFO - 3
 logging.addLevelName(REPORT, "REPORT")
@@ -94,13 +94,13 @@ class Logger(logging.Logger):
             self._log(REPORT, msg, args, **kwargs)
 
     @validate_call
-    def info_extra(
+    def extra(
             self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
     ) -> None:
-        """Log 'msg % args' with severity 'INFO_EXTRA'."""
-        if self.isEnabledFor(INFO_EXTRA):
+        """Log 'msg % args' with severity 'EXTRA'."""
+        if self.isEnabledFor(EXTRA):
             msg = self.generate_message(msg, header, hidden)
-            self._log(INFO_EXTRA, msg, args, **kwargs)
+            self._log(EXTRA, msg, args, **kwargs)
     
     @validate_call
     def info(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:

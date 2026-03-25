@@ -169,13 +169,17 @@ class ItemDownloadHelper(InputProcessor):
 
         return queried, not_queried
 
-    def _pause[T: AttributeModel](self, queried: Collection[T], not_queried: Collection[T], page: int, total: int):
+    def _pause[T: AttributeModel](
+            self, queried: Collection[T], not_queried: Collection[T], page: int, total: int
+    ) -> None:
         valid_fields = self._get_valid_fields_for_items(queried) | self._get_valid_fields_for_items(not_queried)
-        help_text = self._format_help_text_for_items(not_queried=len(not_queried), valid_fields=valid_fields)
+        help_text = self._format_help_text_for_pause(not_queried=len(not_queried), valid_fields=valid_fields)
         self.logger.print_message("\n" + help_text)
 
         while True:
-            match self._get_user_input(f"Enter ({page}/{total})").casefold():
+            value = self._get_user_input(f"Enter ({page}/{total})")
+
+            match value.casefold():
                 case "":  # continue to next batch
                     break
 
@@ -202,7 +206,7 @@ class ItemDownloadHelper(InputProcessor):
                 case inp:
                     self.logger.warning(f"Unrecognised input: {inp}. Enter 'h' to see valid options.")
 
-    def _format_help_text_for_items(self, not_queried: int, valid_fields: Collection[str]) -> str:
+    def _format_help_text_for_pause(self, not_queried: int, valid_fields: Collection[str]) -> str:
         opened = len(self.urls) * (self.interval - not_queried)
         not_opened = f" - Could not open sites for {not_queried} tracks. " if not_queried else ". "
 
@@ -228,8 +232,10 @@ class ItemDownloadHelper(InputProcessor):
             )
         options["h"] = "Show this dialogue again"
 
+        field_names_message = f"\n\nValid fields for this batch: {" ".join(valid_fields)}"
+
         help_text = self._format_help_text(options=options, header=header)
-        help_text += colored(f"\n\nValid fields for this batch: {" ".join(valid_fields)}", "dark_grey")
+        help_text += colored(field_names_message, "dark_grey")
 
         return help_text + "\n"
 

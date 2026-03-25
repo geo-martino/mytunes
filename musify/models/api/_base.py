@@ -113,7 +113,10 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
 
                     if not isinstance(api, expected_type):
                         context = context.format(type=kind)
-                        message = f"Cannot load {self.source.title()} {kind}. API does not support {context}."
+                        message = (
+                            f"Cannot run {self.source.title()} operation for {kind}. "
+                            f"API does not support {context}."
+                        )
                         self.logger.warning(message)
                         return invalid_wrapper()
 

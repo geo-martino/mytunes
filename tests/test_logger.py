@@ -7,7 +7,7 @@ from copy import copy, deepcopy
 
 import pytest
 
-from musify.logger import Logger, INFO_EXTRA, REPORT, STAT
+from musify.logger import Logger, EXTRA, REPORT, STAT
 
 try:
     from tqdm.auto import tqdm
@@ -183,7 +183,7 @@ def test_copy(logger: Logger):
 
 
 def test_logger_set():
-    assert logging.getLevelName("INFO_EXTRA") == INFO_EXTRA
+    assert logging.getLevelName("INFO_EXTRA") == EXTRA
     assert logging.getLevelName("REPORT") == REPORT
     assert logging.getLevelName("STAT") == STAT
 
