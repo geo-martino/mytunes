@@ -15,7 +15,7 @@ class TestArtistCollection(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, albums: list[Album], faker: Faker) -> ArtistCollection:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=ArtistCollection.type
+            faker.pystr(22, 22), kind=ArtistCollection.type
         )
         return ArtistCollection(name=faker.word(), albums=albums, uri=uri)
 
@@ -59,7 +59,7 @@ class TestRemoteArtistCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: PageCursor, faker: Faker) -> RemoteArtistCollection:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteArtistCollection.type
+            faker.pystr(22, 22), kind=RemoteArtistCollection.type
         )
         return RemoteArtistCollection(
             name=faker.word(),

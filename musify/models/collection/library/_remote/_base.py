@@ -123,7 +123,7 @@ class RemoteLibrary[
         api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadSavedEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} playlists", header=2)
-        playlists = await api.playlists.saved.get_by_user(self.user)
+        playlists = await api.playlists.saved.get_all()
         if self.playlist_filter is not None:
             playlists: list[VP] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
 

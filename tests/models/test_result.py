@@ -3,10 +3,10 @@ from typing import Annotated
 
 import pytest
 from faker import Faker
-from termcolor import can_colorize
+from termcolor import can_colorize, colored
 
 from musify.exception import MusifyTypeError
-from musify.models.result import LogFormatter, LenLogFormatter, Result, CountResult, TotalCountResult
+from musify.models.result import LogFormatter, LenLogFormatter, Result, CountResult, TotalCountResult, MapLogFormatter
 from tests.models.testers import BaseModelTester
 
 
@@ -119,6 +119,15 @@ class TestLenLogFormatter:
             assert formatter.get_value("invalid value")
 
 
+class TestMapLogFormatter:
+    def test_get_value_uses_mapped_value(self, faker: Faker):
+        formatter = MapLogFormatter(
+            colour="red", colour_attributes=["bold"], condition=lambda x: x > 5, value="VALUE"
+        )
+        assert formatter.get_value(10) == colored("VALUE", color="red", attrs=["bold"])
+        assert formatter.get_value(5) is None
+
+
 class TestResult(BaseModelTester):
     @pytest.fixture
     def model(self, amount_formatter: LogFormatter, unit_formatter: LogFormatter, faker: Faker) -> Result:
@@ -161,6 +170,24 @@ class TestResult(BaseModelTester):
             model._key_formatter.get_value("Test Result"),
             f"{amount_formatter.get_value("")} {model._name_formatter.get_value("amount")}",
             f"{unit_formatter.get_value("")} {model._name_formatter.get_value("unit")}",
+        )
+        assert result.generate_log("Test Result") == expected
+
+    def test_generate_log_with_include_name_in_log(
+            self, amount_formatter: LogFormatter, unit_formatter: LogFormatter
+    ):
+        unit_formatter = LogFormatter(max_width=10, width=15, alignment="left", include_name_in_log=False)
+
+        class ResultModel(Result):
+            name: str
+            amount: Annotated[int | None, amount_formatter]
+            unit: Annotated[str | None, unit_formatter]
+
+        result = ResultModel(name="test 2", amount=None, unit=None)
+        expected = (
+            ResultModel._key_formatter.get_value("Test Result"),
+            f"{amount_formatter.get_value("")} {ResultModel._name_formatter.get_value("amount")}",
+            unit_formatter.get_value(""),
         )
         assert result.generate_log("Test Result") == expected
 

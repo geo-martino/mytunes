@@ -4,7 +4,7 @@ from pydantic import Field, PrivateAttr
 from yarl import URL
 
 from musify.models.api import Endpoints, HasEndpoints
-from musify.models.api._endpoints import RemoteModelContext
+from musify.models._context import RemoteModelContext
 from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 

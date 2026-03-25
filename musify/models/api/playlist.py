@@ -6,7 +6,7 @@ from pydantic import validate_call, Field, PositiveInt
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
-from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
@@ -28,10 +28,9 @@ class PlaylistReadItemsEndpoints[UT: URI, RT: RemotePlaylist](
     pass
 
 
-class PlaylistReadWriteEndpoints[UT: URI, RT: RemoteMutablePlaylist](
+class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist](
     PlaylistReadItemEndpoints[UT, RT], WriteCollectionEndpoints[UT, RT],
 ):
-    type: ClassVar[Type] = RemoteMutablePlaylist
     _extend_type: ClassVar[Type] = RemoteTrack
 
 
@@ -58,11 +57,9 @@ class PlaylistReadSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
         return [playlists_mapped[name] for name in names if name in playlists_mapped]
 
 
-class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemoteMutablePlaylist, OT: RemoteUser](
+class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
     PlaylistReadSavedEndpoints[UT, RT, OT],
 ):
-    type: ClassVar[Type] = RemoteMutablePlaylist
-
     @validate_call
     async def create(self, **kwargs) -> RT | None:
         """Create a playlist in the current user's library."""

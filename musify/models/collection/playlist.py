@@ -4,15 +4,18 @@ from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union
 
-from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, computed_field, PositiveInt
+from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, computed_field, PositiveInt, model_validator
+from pydantic_core.core_schema import ValidationInfo
 
 from musify._types import StrippedString
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
+from musify.models._context import RemoteModelContext
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items
 from musify.models.cursors import PageCursor, InitialCursor
+from musify.models.exception import MusifyValidationError
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping
 from musify.models.metadata import Attribute
@@ -139,6 +142,26 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
     def item_total(self) -> PositiveInt | None:
         return self.cursor.total
 
+    @staticmethod
+    def _get_context_user(info: ValidationInfo) -> OT | None:
+        if not (context := info.context) or not isinstance(context, RemoteModelContext) or context.user is None:
+            return
+        return context.user
+
+    @model_validator(mode="after")
+    def _validate_mutability(self, info: ValidationInfo) -> Self:
+        if (user := self._get_context_user(info)) is None:
+            return self
+
+        if user == self.owner:
+            raise MusifyValidationError(
+                f"Currently authenticated user is the owner of this playlist "
+                f"({self.owner.name!r} == {user.name!r}), which implies that this playlist is mutable. "
+                "Use the appropriate mutable playlist type to validate this playlist instead."
+            )
+
+        return self
+
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def reload(self, api: HasPlaylistEndpoints[PlaylistReadItemEndpoints]) -> Self:
         return await api.playlists.get(self.uri)
@@ -152,6 +175,20 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
 class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
     MutablePlaylist[UT, TT], RemotePlaylist[UT, TT, OT, CT]
 ):
+    @model_validator(mode="after")
+    def _validate_mutability(self, info: ValidationInfo) -> Self:
+        if (user := self._get_context_user(info)) is None:
+            return self
+
+        if user != self.owner:
+            raise MusifyValidationError(
+                "Currently authenticated user is not the owner of this playlist "
+                f"({self.owner.name!r} != {user.name!r}), which implies that this playlist is immutable. "
+                "Use the appropriate immutable playlist type to validate this playlist instead."
+            )
+
+        return self
+
     async def sync_items(
             self,
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],

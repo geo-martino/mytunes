@@ -1,15 +1,15 @@
 from collections.abc import Iterable
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Self, ClassVar
 
 from pydantic import Field, computed_field
 
 from musify.models.collection.album import AlbumCollection, RemoteAlbumCollection
 from musify.models.collection.artist import RemoteArtistCollection
-from musify.models.collection.playlist import Playlist, RemotePlaylist
+from musify.models.collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack, HasTracks
-from musify.models.result import CountResult, TotalCountResult, LenLogFormatter
+from musify.models.result import CountResult, TotalCountResult, LenLogFormatter, LogFormatter, MapLogFormatter
 
 _log_formatters = [
     LenLogFormatter(
@@ -25,11 +25,30 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
     tracks: Annotated[tuple[T, ...], *_log_formatters] = Field(
         description="The tracks in this result.",
     )
+    writeable: Annotated[
+        bool,
+        MapLogFormatter(
+            value="WRITEABLE",
+            colour="green",
+            colour_attributes=["bold"],
+            condition=lambda x: x,
+            include_name_in_log=False,
+        ),
+        MapLogFormatter(
+            value="READ ONLY",
+            colour="blue",
+            colour_attributes=["bold"],
+            condition=lambda x: not x,
+            include_name_in_log=False,
+        ),
+    ] = Field(
+        description="Whether the playlists in this result are writeable (i.e. can be modified by the user).",
+    )
 
     @classmethod
     def from_playlist(cls, playlist: RemotePlaylist[Any, T, Any, Any]) -> Self:
         """Create a result from the given playlist."""
-        return cls(tracks=playlist.tracks)
+        return cls(tracks=playlist.tracks, writeable=isinstance(playlist, RemoteMutablePlaylist))
 
     @classmethod
     def from_playlists(cls, playlists: Iterable[RemotePlaylist[Any, T, Any, Any]]) -> dict[str, Self]:

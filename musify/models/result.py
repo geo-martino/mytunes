@@ -46,6 +46,11 @@ class LogFormatter[T](Attribute):
         default=lambda _: True,
     )
 
+    include_name_in_log: bool = Field(
+        description="Whether to include the field's name in logs (after the value).",
+        default=True,
+    )
+
     def get_value(self, value: T | None = None, pretty: bool = True) -> str | None:
         """Get the given log value if the value is valid."""
         if value is not None and not self.condition(value):
@@ -94,6 +99,24 @@ class LenLogFormatter(LogFormatter[int]):
                 raise MusifyTypeError(f"Value must be an int or a collection, got {type(value)}")
 
 
+@dataclass(config=ConfigDict(frozen=True))
+class MapLogFormatter[T](LogFormatter[T]):
+    """Metadata for logging a value which should be mapped when logger."""
+    value: str = Field(
+        description="The value to log if the condition is met.",
+    )
+
+    def get_value(self, value: T | None = None, pretty: bool = True) -> str | None:
+        if value is None or not self.condition(value):
+            return None
+
+        if not pretty:
+            return self.value
+
+        value = self._align_value(self.value)
+        return colored(value, color=self.colour, attrs=self.colour_attributes)
+
+
 class Result(BaseModel):
     """Stores the results of an operation"""
     model_config = ConfigDict(frozen=True)
@@ -140,26 +163,28 @@ class Result(BaseModel):
 
         # noinspection PyProtectedMember
         for field_name, (_, metadata) in self.__class__._metadata_fields.items():
-            if not self._has_formatters(metadata):
+            if not (formatters := self._get_formatters(metadata)):
                 continue
-            if (value := self._get_field_value(getattr(self, field_name), metadata)) is None:
+            if (value := self._get_field_value(getattr(self, field_name), formatters)) is None:
                 continue
-            row.append(self._get_field_cell(value, field_name))
+
+            row.append(self._get_field_cell(value, field_name, formatters=formatters))
 
         return tuple(row)
 
     @staticmethod
-    def _has_formatters(metadata: list[Any]) -> bool:
-        return any(isinstance(meta, LogFormatter) for meta in metadata)
+    def _get_formatters(metadata: list[Any]) -> list[LogFormatter]:
+        return [meta for meta in metadata if isinstance(meta, LogFormatter)]
 
-    @staticmethod
-    def _get_field_value(value: Any, metadata: list[Any]) -> str | None:
-        formatters = (meta for meta in metadata if isinstance(meta, LogFormatter))
+    @classmethod
+    def _get_field_value(cls, value: Any, formatters: list[LogFormatter]) -> str | None:
         values = (formatter.get_value(value) for formatter in formatters)
         return next((v for v in values if v is not None), None)
 
     @classmethod
-    def _get_field_cell(cls, value: str, name: str) -> str:
+    def _get_field_cell(cls, value: str, name: str, formatters: list[LogFormatter]) -> str:
+        if not next(formatter.include_name_in_log for formatter in formatters):
+            return value
         return f"{value} {cls._name_formatter.get_value(name).replace("_", " ")}"
 
 
@@ -177,18 +202,17 @@ class CountResult(Result):
         row = [cls._total_key_formatter.get_value("TOTAL")]
 
         for field_name, (_, metadata) in cls._metadata_fields.items():
-            if not cls._has_formatters(metadata):
+            if not (formatters := cls._get_formatters(metadata)):
                 continue
 
-            total = sum(cls._get_field_count(getattr(result, field_name), metadata) for result in results)
+            total = sum(cls._get_field_count(getattr(result, field_name), formatters) for result in results)
             value = cls._get_field_value(total, metadata)
-            row.append(cls._get_field_cell(value, field_name))
+            row.append(cls._get_field_cell(value, field_name, formatters=formatters))
 
         return tuple(row)
 
     @staticmethod
-    def _get_field_count(value: str, metadata: list[Any]) -> int:
-        formatters = (attr for attr in metadata if isinstance(attr, LenLogFormatter))
+    def _get_field_count(value: str, formatters: list[LogFormatter]) -> int:
         values = (formatter.get_value(value, pretty=False) for formatter in formatters)
         return next((int(v) for v in values if v is not None and v.lstrip("-").isdigit()), 0)
 
@@ -211,10 +235,11 @@ class TotalCountResult(CountResult):
 
         # noinspection PyProtectedMember
         for field_name, (_, metadata) in self.__class__._metadata_fields.items():
-            if not self._has_formatters(metadata):
+            if not (formatters := self._get_formatters(metadata)):
                 continue
-            if (count := self._get_field_count(getattr(self, field_name), metadata)) is None:
+            if (count := self._get_field_count(getattr(self, field_name), formatters)) is None:
                 continue
+
             total += count
 
         row.append(self._get_total_cell(total))
@@ -226,7 +251,10 @@ class TotalCountResult(CountResult):
         total = 0
 
         for field_name, (_, metadata) in cls._metadata_fields.items():
-            values = (cls._get_field_count(getattr(result, field_name), metadata) for result in results)
+            if not (formatters := cls._get_formatters(metadata)):
+                continue
+
+            values = (cls._get_field_count(getattr(result, field_name), formatters) for result in results)
             total += sum(v for v in values if v is not None)
 
         row.append(cls._get_total_cell(total))
@@ -235,4 +263,4 @@ class TotalCountResult(CountResult):
     @classmethod
     def _get_total_cell(cls, total: int) -> str:
         value = cls._total_value_formatter.get_value(total)
-        return cls._get_field_cell(value, "total")
+        return cls._get_field_cell(value, "total", formatters=[cls._total_value_formatter])

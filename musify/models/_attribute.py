@@ -73,7 +73,7 @@ class AttributeModelMetaclass(ModelMetaclass):
     @classmethod
     def _get_nested_models(mcs, annotation: Any) -> Iterable[Self]:
         for kls in get_base_types(annotation, ignore_none=True, resolve_generics=True):
-            if issubclass(kls, AttributeModel):
+            if isinstance(kls, type) and issubclass(kls, AttributeModel):
                 yield kls
 
     def get_nested_field_info(cls: type[AttributeModel], key: str) -> FieldInfo:

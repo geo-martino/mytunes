@@ -15,7 +15,7 @@ class TestTrack(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Track:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=Track.type
+            faker.pystr(22, 22), kind=Track.type
         )
         return Track(name=faker.sentence(), uri=uri)
 
@@ -116,6 +116,6 @@ class TestRemoteTrack(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteTrack:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteTrack.type
+            faker.pystr(22, 22), kind=RemoteTrack.type
         )
         return RemoteTrack(name=faker.word(), uri=uri)

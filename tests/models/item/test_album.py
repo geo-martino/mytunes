@@ -10,7 +10,7 @@ class TestAlbum(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Album:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=Album.type
+            faker.pystr(22, 22), kind=Album.type
         )
         return Album(name=faker.word(), uri=uri)
 
@@ -30,6 +30,6 @@ class TestRemoteAlbum(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteAlbum:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=RemoteAlbum.type
+            faker.pystr(22, 22), kind=RemoteAlbum.type
         )
         return RemoteAlbum(name=faker.word(), uri=uri)

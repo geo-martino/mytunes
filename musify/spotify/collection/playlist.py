@@ -1,7 +1,8 @@
 from collections.abc import MutableMapping
-from typing import final, Any, ClassVar, Annotated
+from typing import final, Any, ClassVar, Annotated, Self, Literal
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
+from pydantic_core.core_schema import ValidationInfo
 
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.exception import MusifyValidationError
@@ -45,7 +46,7 @@ class SpotifyPlaylist(
     HasSpotifyImages,
     HasFollowers,
     HasSpotifyAddedDate,
-    RemotePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyIndexCursor],
+    RemotePlaylist[SpotifyResourceURI, SpotifyPlaylistTrack, SpotifyUser, SpotifyIndexCursor],
 ):
     __final__ = True
 
@@ -55,8 +56,9 @@ class SpotifyPlaylist(
         description="The description of the playlist.",
         default=None,
     )
-    collaborative: Annotated[bool, Attribute()] = Field(
+    collaborative: Annotated[Literal[False], Attribute()] = Field(
         description="Whether the owner allows other users to modify the playlist.",
+        default=False,
     )
 
     tracks: Annotated[UniqueSequence[str, SpotifyPlaylistTrack], Attribute()] = Field(
@@ -95,7 +97,7 @@ class SpotifyPlaylist(
 @final
 class SpotifyMutablePlaylist(
     SpotifyPlaylist,
-    RemoteMutablePlaylist[SpotifyPlaylistTrack, SpotifyResourceURI, SpotifyUser, SpotifyIndexCursor],
+    RemoteMutablePlaylist[SpotifyResourceURI, SpotifyPlaylistTrack, SpotifyUser, SpotifyIndexCursor],
 ):
     __final__ = True
 
@@ -104,3 +106,21 @@ class SpotifyMutablePlaylist(
         default_factory=MutableUniqueSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items")
     )
+    collaborative: Annotated[bool, Attribute()] = Field(
+        description="Whether the owner allows other users to modify the playlist.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_mutability(self, info: ValidationInfo) -> Self:
+        if (user := self._get_context_user(info)) is None:
+            return self
+
+        if user != self.owner and not self.collaborative:
+            raise MusifyValidationError(
+                "Currently authenticated user is not the owner of this playlist "
+                f"({self.owner.name!r} != {user.name!r}) and playlist is not collaborative, "
+                "which implies that this playlist is immutable. "
+                "Use the appropriate immutable playlist type to validate this playlist instead."
+            )
+
+        return self

@@ -12,7 +12,7 @@ from yarl import URL
 
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints, HasEndpoints
-from musify.models.api._endpoints import RemoteModelContext
+from musify.models._context import RemoteModelContext
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
 from musify.models.exception import APIModelError

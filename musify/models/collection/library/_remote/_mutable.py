@@ -19,7 +19,7 @@ from musify.models.collection import SyncRemoteResult
 from musify.models.collection._sync import SYNC_TYPE, get_sync_message, get_sync_items
 from musify.models.collection.library import MutableLibrary
 from musify.models.collection.library._remote._base import RemoteLibrary
-from musify.models.collection.playlist import RemoteMutablePlaylist
+from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.genre import RemoteGenre
@@ -33,7 +33,7 @@ class RemoteMutableLibrary[
     TK,
     TV: RemoteTrack,
     KP,
-    VP: RemoteMutablePlaylist,
+    VP: RemotePlaylist,
     API: RemoteAPI,
     RT: RemoteArtist,
     AT: RemoteAlbum,

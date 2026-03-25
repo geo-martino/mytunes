@@ -15,7 +15,7 @@ from musify.models.api.search import SearchEndpoints, HasSearchEndpoints
 from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, \
     TrackWriteSavedEndpoints, TrackReadItemsEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
-from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from musify.models.collection.playlist import RemotePlaylist
 from musify.models.cursors import IndexCursor, UrlCursor, KeyCursor
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -131,7 +131,7 @@ class MockPlaylistSavedEndpoints(
 
 
 class MockPlaylistEndpoints(
-    PlaylistReadWriteEndpoints[SimpleURI, RemoteMutablePlaylist],
+    PlaylistReadWriteEndpoints[SimpleURI, RemotePlaylist],
     HasSavedEndpoints[MockPlaylistSavedEndpoints],
 ):
     pass

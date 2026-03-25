@@ -20,7 +20,7 @@ from musify.spotify.user import SpotifyUser
 @final
 class _SpotifySavedPlaylistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyPlaylist],
-    PlaylistReadWriteSavedEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist, SpotifyUser],
+    PlaylistReadWriteSavedEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyUser],
 ):
     __final__ = True
 
@@ -72,9 +72,9 @@ class _SpotifySavedPlaylistEndpoints(
 
 @final
 class SpotifyPlaylistEndpoints(
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
+    SpotifyEndpoints[SpotifyResourceURI, SpotifyPlaylist],
     HasSavedEndpoints[_SpotifySavedPlaylistEndpoints],
-    PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyMutablePlaylist],
+    PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyPlaylist],
 ):
     __final__ = True
 

@@ -28,14 +28,14 @@ class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
     def model(self, tags: dict[str, Any], faker: Faker) -> LocalTrack:
         uri = SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type
+            faker.pystr(22, 22), kind=LocalTrack.type
         )
         return LocalTrack(**tags, uri=uri, path=faker.file_path())
 
     @pytest.fixture
     def uri(self, faker: Faker) -> SimpleURI:
         return SimpleURI.from_id(
-            faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type
+            faker.pystr(22, 22), kind=LocalTrack.type
         )
 
     @pytest.fixture
@@ -375,7 +375,7 @@ class TestLocalTrack(UniqueKeyTester):
 
         other.name = faker.sentence()
         other.artists = faker.words()
-        other.uri = SimpleURI.from_id(faker.random_int(int(10e9), int(10e10)), kind=LocalTrack.type)
+        other.uri = SimpleURI.from_id(faker.pystr(22, 22), kind=LocalTrack.type)
 
         track.released_at = None
         other.released_at = faker.date()
