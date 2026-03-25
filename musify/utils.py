@@ -90,11 +90,12 @@ def get_base_types(
     match annotation:
         case UnionType():
             for kls in get_args(annotation):
-                bases.extend(get_base_types(kls))
+                bases.extend(get_base_types(kls, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case GenericAlias():
             bases.append(get_origin(annotation))
         case ForwardRef():
-            bases.extend(get_base_types(evaluate_forward_ref(annotation)))
+            annotation = evaluate_forward_ref(annotation)
+            bases.extend(get_base_types(annotation, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case TypeAliasType():
             ano = annotation.__value__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))

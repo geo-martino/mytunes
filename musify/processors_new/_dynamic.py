@@ -10,6 +10,7 @@ from musify.models.exception import ModelError, MusifyValidationError
 
 from musify.models.metadata import Attribute
 from musify.processors_new import Processor
+from musify.utils import get_base_types
 
 
 # noinspection PyPep8Naming,SpellCheckingInspection
@@ -136,8 +137,7 @@ class DynamicProcessorMetaclass(ModelMetaclass):
         """The processor attribute metadata on the processor field to be used when calling this processor"""
         processor_fields = cls._get_processor_fields(cls._metadata_fields)
         annotation, _ = next(iter(processor_fields.values()))
-        is_optional = get_origin(annotation) is Union and NoneType in get_args(annotation)
-        return not is_optional
+        return NoneType not in get_base_types(annotation, ignore_none=False)
 
 
 # noinspection SpellCheckingInspection,PyAbstractClass

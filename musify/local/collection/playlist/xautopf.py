@@ -15,6 +15,7 @@ from pydantic import Field, field_validator, model_validator, ConfigDict, Before
 from pydantic.alias_generators import to_pascal, to_snake
 from pydantic.fields import FieldInfo, PrivateAttr
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
+from typing_inspection.typing_objects import is_annotated
 
 from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
@@ -366,7 +367,7 @@ class _XMLBaseModel(BaseModel):
     @classmethod
     def _get_xml_field_from_field(cls, field: FieldInfo) -> _XMLField | None:
         annotation = field.rebuild_annotation()
-        if get_origin(annotation) is not Annotated:
+        if not is_annotated(get_origin(annotation)):
             return
 
         return next((meta for meta in annotation.__metadata__ if isinstance(meta, _XMLField)), None)
