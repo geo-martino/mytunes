@@ -8,6 +8,7 @@ from yarl import URL
 from musify.models.api import HasSavedEndpoints
 from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.models.api.types import _ApiURISchema, _ApiURLSchema
+from musify.models.exception import RequestError
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence
@@ -33,6 +34,9 @@ class _SpotifySavedPlaylistEndpoints(
     def _format_playlist_body(
             name: str = None, public: bool = None, collaborative: bool = None, description: str = None
     ) -> JSON:
+        if public and collaborative:
+            raise RequestError("A playlist cannot be both public and collaborative.")
+
         body: JSON = {}
         if name is not None:
             body["name"] = name

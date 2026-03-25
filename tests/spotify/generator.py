@@ -367,7 +367,7 @@ class SpotifyPayloadGenerator:
         public = self.faker.boolean()
 
         payload = {
-            "collaborative": False if public else self.faker.boolean(),
+            "collaborative": self.faker.boolean() if not public else False,
             "description": self.faker.random_element((self.faker.sentence(), None)),
             "external_urls": self.generate_external_urls(kind, playlist_id),
             "followers": self.generate_followers(),
@@ -377,7 +377,7 @@ class SpotifyPayloadGenerator:
             "name": self.faker.name(),
             "owner": owner,
             "primary_color": None,
-            "public": self.faker.boolean(),
+            "public": public,
             "snapshot_id": self.faker.pystr(32, 32),
             "type": kind,
             "uri": self.generate_uri(kind, playlist_id),
