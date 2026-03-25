@@ -5,7 +5,7 @@ from typing import Any
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
 from musify.exception import MusifyKeyError
@@ -46,7 +46,7 @@ class TestUniqueMapping:
         adapter = TypeAdapter(UniqueMapping[Any, Track])
         assert adapter.validate_python(tracks) == UniqueMapping(tracks), "Failed to validate list of tracks"
 
-        with pytest.raises(ValueError):
+        with pytest.raises(pydantic.ValidationError):
             adapter.validate_python(artists)
 
     def test_init(self, mapping: UniqueMapping, models: list[ResourceModel], faker: Faker):
@@ -65,9 +65,9 @@ class TestUniqueMapping:
     def test_validates_generic_types_when_accessing(self, tracks: list[Track], artist: Artist):
         mapping = UniqueMapping[int, Track](tracks)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert artist in mapping
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert mapping[artist]
 
     def test_container_methods(self, mapping: UniqueMapping, model: ResourceModel):
@@ -141,20 +141,20 @@ class TestMutableUniqueMapping:
     ):
         mapping = MutableUniqueMapping[int, Track](tracks)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping["key"] = track
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping[0] = artist
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             del mapping["key"]
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping.add(artist)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping.update(artists)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping.update({id(artist): artist for artist in artists})
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping.remove(artist)
 
     def test_setitem(self, model: ResourceModel):
@@ -173,7 +173,7 @@ class TestMutableUniqueMapping:
     def test_setitem_fails(self, model: ResourceModel):
         mapping = MutableUniqueMapping()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping[choice(list(model.unique_keys))] = "invalid value"
 
     def test_delitem(self, model: ResourceModel, models: list[ResourceModel]):
@@ -210,7 +210,7 @@ class TestMutableUniqueMapping:
         initial = models[2:]
         mapping = MutableUniqueMapping(initial)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             mapping.add("invalid value")
 
     def test_update(self, models: list[ResourceModel], mocker: MockerFixture):

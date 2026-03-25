@@ -3,7 +3,7 @@ from collections.abc import Collection
 
 import pytest
 from faker import Faker
-from pydantic import Json
+from pydantic import Json, ValidationError
 
 from musify.models.collection import RemoteCollection
 from musify.models.item.artist import HasArtists
@@ -88,5 +88,5 @@ class SpotifyResourceTester(UniqueKeyTester, SpotifyModelTester, metaclass=ABCMe
         additional_fields = model.model_dump(exclude={"uri"})
 
         uri = SpotifyUserURI(f"spotify:user:{faker.pystr()}")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.__class__(**additional_fields, uri=uri)

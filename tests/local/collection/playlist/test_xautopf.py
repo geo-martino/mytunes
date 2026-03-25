@@ -5,10 +5,11 @@ from random import choice
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from pydantic.alias_generators import to_pascal
 from pytest_mock import MockerFixture
 
+from musify.exception import MusifyValueError
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
@@ -452,7 +453,7 @@ class TestXMLCondition(BaseModelTester):
         assert model.value == ["1", "2", "3"]
 
     def test_validate_field_is_mapped(self, model: _XMLCondition):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.field = "NotAField"
 
         model.field = choice(tuple(model.name_field_map))
@@ -460,12 +461,12 @@ class TestXMLCondition(BaseModelTester):
     def test_validate_only_and_either_or_set(self, model: _XMLCondition):
         assert model.And is None and model.Or is None
         model.And = _XMLConditions()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.Or = _XMLConditions()
 
         model.And = None
         model.Or = _XMLConditions()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.And = _XMLConditions()
 
     def test_build_comparer(self, model: _XMLCondition):
@@ -596,7 +597,7 @@ class TestXMLLimit(BaseModelTester):
     def test_validate_limit_type_exists(self):
         model = _XMLLimit()
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.limit_type = "NotALimitType"
 
         expected = to_pascal(choice([enum for enum in LimitType]).name)
@@ -670,7 +671,7 @@ class TestXMLDisplayField(BaseModelTester):
         return _XMLDisplayField(code=self.get_valid_code(), width=100)
 
     def test_validate_code_is_mapped(self, model: _XMLDisplayField):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             _XMLDisplayField(code=9999)
 
     def test_field(self, model: _XMLDisplayField):
@@ -751,7 +752,7 @@ class TestXMLSortBy(BaseModelTester):
         return _XMLSortBy()
 
     def test_validate_field_is_mapped(self, model: _XMLCondition):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.field = 9999
 
         model.field = TestXMLDisplayField.get_valid_code()
@@ -762,12 +763,12 @@ class TestXMLSortBy(BaseModelTester):
 
     def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={"released_at": True})
-        with pytest.raises(ValueError):
+        with pytest.raises(MusifyValueError):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy, faker: Faker):
         sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): faker.boolean() for _ in range(3)})
-        with pytest.raises(ValueError):
+        with pytest.raises(MusifyValueError):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter(self, model: _XMLSortBy, faker: Faker):
@@ -792,7 +793,7 @@ class TestDefinedSort(BaseModelTester):
         return _XMLDefinedSort(id=choice(tuple(_XMLDefinedSort.fields_map)))
 
     def test_validate_id_is_mapped(self, model: _XMLDefinedSort):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.id = 9999
 
         model.id = choice(tuple(_XMLDefinedSort.fields_map))
@@ -804,17 +805,17 @@ class TestDefinedSort(BaseModelTester):
 
     def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={"released_at": True, "compilation": False})
-        with pytest.raises(ValueError, match="Field code mapping not found"):
+        with pytest.raises(MusifyValueError, match="Field code mapping not found"):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={"disc.number": True, "track.number": False})
-        with pytest.raises(ValueError, match="No sort defined"):
+        with pytest.raises(MusifyValueError, match="No sort defined"):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_single_fields(self, model: _XMLDefinedSort, faker: Faker):
         sorter = ItemSorter(sort_fields={choice(tuple(SORT_FIELDS)): faker.boolean()})
-        with pytest.raises(ValueError, match="Only use this sorter for multi-field sorts"):
+        with pytest.raises(MusifyValueError, match="Only use this sorter for multi-field sorts"):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter(self, model: _XMLDefinedSort):

@@ -1,5 +1,6 @@
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 from yarl import URL
 
 from musify.models._context import RemoteModelContext
@@ -52,7 +53,7 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
     def test_validate_mutability(self, model: SpotifyPlaylist, generator: SpotifyPayloadGenerator):
         context = RemoteModelContext(user=model.owner)
         # not collaborative and user is the owner, implies mutable
-        with pytest.raises(ValueError, match="implies that this playlist is mutable"):
+        with pytest.raises(ValidationError, match="implies that this playlist is mutable"):
             SpotifyPlaylist.model_validate(model, context=context)
 
     def test_validate_immutability(self, model: SpotifyPlaylist, generator: SpotifyPayloadGenerator):
@@ -106,5 +107,12 @@ class TestSpotifyMutablePlaylist(SpotifyResourceTester):
         model.collaborative = False
 
         # not collaborative and user is not the owner, implies immutable
-        with pytest.raises(ValueError, match="implies that this playlist is immutable"):
+        with pytest.raises(ValidationError, match="implies that this playlist is immutable"):
             SpotifyMutablePlaylist.model_validate(model, context=context)
+
+    def test_validate_collaborative(self, model: SpotifyMutablePlaylist):
+        model.public = False
+        model.collaborative = True  # should be fine
+
+        with pytest.raises(ValidationError, match="cannot be both collaborative and public"):
+            model.public = True

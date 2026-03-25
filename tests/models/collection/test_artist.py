@@ -2,6 +2,7 @@ from random import sample
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.models.collection.artist import ArtistCollection, RemoteArtistCollection
 from musify.models.cursors import PageCursor
@@ -20,13 +21,13 @@ class TestArtistCollection(NoUniqueKeyTester):
         return ArtistCollection(name=faker.word(), albums=albums, uri=uri)
 
     def test_artist_name_cannot_be_empty(self, albums: list[Album], faker: Faker):
-        with pytest.raises(ValueError, match="no artists found in albums"):
+        with pytest.raises(ValidationError, match="no artists found in albums"):
             ArtistCollection()
 
     def test_albums_must_be_from_same_artist_when_no_name_given(self, albums: list[Album], faker: Faker):
         for album in albums:
             album.artist = faker.word()
-        with pytest.raises(ValueError, match="albums are from different artists"):
+        with pytest.raises(ValidationError, match="albums are from different artists"):
             ArtistCollection(albums=albums)
 
     def test_get_artist_name_from_albums(self, albums: list[Album]):

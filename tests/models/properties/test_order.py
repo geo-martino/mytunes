@@ -1,5 +1,6 @@
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.models.properties.order import Position
 from tests.models.testers import BaseModelTester
@@ -48,10 +49,10 @@ class TestPosition(BaseModelTester):
 
     def test_number_cannot_exceed_total(self, model: Position):
         model.total = 5
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.number = model.total + 1
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Position(number=5, total=4)
 
     def test_numbers_property(self, model: Position):

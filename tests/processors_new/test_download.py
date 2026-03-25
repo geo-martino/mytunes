@@ -8,6 +8,7 @@ from urllib.parse import unquote
 
 import pytest
 from faker import Faker
+from werkzeug.routing import ValidationError
 
 from musify import MODULE_ROOT
 from musify.models.collection.playlist import Playlist
@@ -77,12 +78,12 @@ class TestItemDownloadHelper(BaseModelTester):
         return unique_tracks * 4
 
     def test_validate_urls(self):
-        with pytest.raises(ValueError, match="String should match pattern"):
+        with pytest.raises(ValidationError, match="String should match pattern"):
             ItemDownloadHelper(urls=[
                 "https://example.com/search?q={}&type=t", "https://example.com/search?q={}&limit={}"
             ])
 
-        with pytest.raises(ValueError, match="Input should be a valid URL"):
+        with pytest.raises(ValidationError, match="Input should be a valid URL"):
             ItemDownloadHelper(urls=[
                 "https://example.com/search?q={}&type=t", "not_a_valid_url_with_placeholder_{}"
             ])

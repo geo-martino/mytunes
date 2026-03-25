@@ -5,6 +5,7 @@ from random import choice, sample
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.exception import MusifyTypeError
 from musify.local.item.track import LocalTrack
@@ -33,13 +34,13 @@ class TestComparer(BaseModelTester):
         )
 
     def test_init_fails(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Comparer(condition="this cond does not exist", field="ext")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Comparer(condition="Contains", field="track_total")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Comparer(condition="Contains", field="album_name")
 
     def test_init_simple(self):

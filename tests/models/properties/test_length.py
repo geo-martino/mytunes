@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.models.properties.length import Length
 from tests.models.testers import BaseModelTester
@@ -29,9 +30,9 @@ class TestLength(BaseModelTester):
         assert float(model) == 12 * 60 + 34 + 0.123456
 
     def test_numeric_representation_conversion_fails(self, model: Length):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.root = "12:34:56:78.90"
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.root = "ab:cd"
 
     def test_timedelta_property(self, model: Length):

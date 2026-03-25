@@ -2,6 +2,7 @@ from random import sample, choice
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.local.collection.folder import Folder
 from musify.local.item.album import LocalAlbum
@@ -20,12 +21,12 @@ class TestFolder(NoUniqueKeyTester):
         return Folder(name=parent.name, tracks=tracks)
 
     def test_folder_name_cannot_be_empty(self, tracks: list[LocalTrack], faker: Faker):
-        with pytest.raises(ValueError, match="no folders found in tracks"):
+        with pytest.raises(ValidationError, match="no folders found in tracks"):
             Folder()
 
     def test_tracks_must_be_from_same_folder_when_no_name_given(self, tracks: list[LocalTrack], faker: Faker):
         assert len({track.folder for track in tracks}) > 1
-        with pytest.raises(ValueError, match="tracks are from different folders"):
+        with pytest.raises(ValidationError, match="tracks are from different folders"):
             Folder(tracks=tracks)
 
     def test_get_folder_name_from_tracks(self, track: LocalTrack, tracks: list[LocalTrack]):

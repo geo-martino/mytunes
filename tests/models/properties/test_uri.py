@@ -3,6 +3,7 @@ from typing import ClassVar
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.exception import MusifyValueError
 from musify.models import ResourceModel
@@ -94,7 +95,7 @@ class TestHasImmutableURI(UniqueKeyTester):
     def test_uri_field_is_read_only(self, model: HasImmutableURI, uri: URI):
         assert model.uri is uri
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.uri = uri
 
     def test_validate_uri_matches_type(self, model: HasImmutableURI, faker: Faker):
@@ -102,7 +103,7 @@ class TestHasImmutableURI(UniqueKeyTester):
             faker.pystr(22, 22), kind="different_type"
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             MockHasImmutableURI(uri=uri)
 
     def test_equality(self, model: HasImmutableURI, uri: URI):
@@ -127,7 +128,7 @@ class TestHasMutableURI(UniqueKeyTester):
         new_uri = uri.from_id(different_uri.id, different_uri.type)
 
         MockHasMutableURI(uris=uris)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             MockHasMutableURI(uris=[*uris, new_uri])
 
     def test_validate_uri_matches_type(self, faker: Faker):
@@ -135,10 +136,10 @@ class TestHasMutableURI(UniqueKeyTester):
             faker.pystr(22, 22), kind="different_type"
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             MockHasMutableURI(uri=uri)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             MockHasMutableURI(uris=[uri])
 
     def test_uri_on_init(self, uri: URI):

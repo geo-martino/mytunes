@@ -5,7 +5,7 @@ from typing import Any
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from musify.models import ResourceModel
 from musify.models.item.artist import Artist
@@ -43,7 +43,7 @@ class TestUniqueSequence:
         adapter = TypeAdapter(UniqueSequence[Any, Track])
         assert adapter.validate_python(tracks) == UniqueSequence(tracks), "Failed to validate list of tracks"
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             adapter.validate_python(artists)
 
     def test_init(self, sequence: UniqueSequence, models: list[ResourceModel], faker: Faker):
@@ -64,16 +64,16 @@ class TestUniqueSequence:
     def test_validates_generic_types_when_accessing(self, tracks: list[Track], artist: Artist, artists: list[Artist]):
         sequence = UniqueSequence[int, Track](tracks)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert artist in sequence
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert sequence[artist]
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert sequence.intersection(artists)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert sequence.difference(artists)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             assert sequence.outer_difference(artists)
 
     def test_container_methods(self, sequence: UniqueSequence, model: ResourceModel):
@@ -154,32 +154,32 @@ class TestMutableUniqueSequence:
     def test_validates_generic_types_when_mutating(self, tracks: list[Track], artist: Artist, artists: list[Artist]):
         sequence = MutableUniqueSequence[int, Track](tracks)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence[0] = artist
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence + artists
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence += artists
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence - artists
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence -= artists
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence | artists
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence |= artists
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence.append(artist)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence.extend(artists)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence.insert(0, artist)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence.merge(artists)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence.merge(sequence, reference=artists)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence.remove(artist)
 
     def test_setitem(self, models: list[ResourceModel]):
@@ -203,7 +203,7 @@ class TestMutableUniqueSequence:
         initial = models[:3]
         sequence = MutableUniqueSequence(initial)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             sequence[0] = "invalid value"
 
     def test_delitem(self, models: list[ResourceModel]):

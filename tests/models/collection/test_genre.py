@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.models.collection.genre import GenreCollection, RemoteGenreCollection
 from musify.models.cursors import PageCursor
@@ -19,13 +20,13 @@ class TestGenreCollection(UniqueKeyTester):
         return GenreCollection(name=faker.word())
 
     def test_genre_name_cannot_be_empty(self, tracks: list[Track], faker: Faker):
-        with pytest.raises(ValueError, match="no genres found in tracks"):
+        with pytest.raises(ValidationError, match="no genres found in tracks"):
             GenreCollection()
 
     def test_tracks_must_be_from_same_genre_when_no_name_given(self, tracks: list[Track], faker: Faker):
         for track in tracks:
             track.genres = [faker.word() for _ in range(faker.random_int(1, 3))]
-        with pytest.raises(ValueError, match="tracks are from different genres"):
+        with pytest.raises(ValidationError, match="tracks are from different genres"):
             GenreCollection(tracks=tracks)
 
     def test_get_genre_name_from_tracks(self, tracks: list[Track]):

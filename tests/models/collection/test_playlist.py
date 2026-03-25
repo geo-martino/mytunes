@@ -4,7 +4,7 @@ from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
@@ -110,7 +110,7 @@ class TestRemotePlaylist(RemoteCollectionTester):
         context = RemoteModelContext(user=model.owner)
 
         # user is the owner, implies mutable
-        with pytest.raises(ValueError, match="implies that this playlist is mutable"):
+        with pytest.raises(ValidationError, match="implies that this playlist is mutable"):
             RemotePlaylist.model_validate(model, context=context)
 
     def test_validate_immutability(self, model: RemotePlaylist, faker: Faker):
@@ -165,7 +165,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         context = RemoteModelContext(user=user)
 
         # user is not the owner, implies immutable
-        with pytest.raises(ValueError, match="implies that this playlist is immutable"):
+        with pytest.raises(ValidationError, match="implies that this playlist is immutable"):
             assert model == RemoteMutablePlaylist.model_validate(model, context=context)
 
     @pytest.fixture

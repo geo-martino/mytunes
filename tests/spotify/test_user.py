@@ -1,5 +1,6 @@
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from musify.spotify.properties.uri import SpotifyUserURI, SpotifyResourceURI
 from musify.spotify.user import SpotifyUser
@@ -25,7 +26,7 @@ class TestSpotifyUser(UniqueKeyTester, SpotifyModelTester):
         additional_fields = model.model_dump(exclude={"uri"})
 
         uri = SpotifyResourceURI(f"spotify:artist:{faker.pystr(22, 22)}")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SpotifyUser(**additional_fields, uri=uri)
 
     def test_response(self, generator: SpotifyPayloadGenerator):
