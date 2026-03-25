@@ -525,7 +525,6 @@ class TestLocalTrack(UniqueKeyTester):
             include_tags: Sequence[str],
             exclude_tags: Sequence[str],
             replace_tags: bool,
-            mocker: MockerFixture,
             faker: Faker,
     ):
         tracks, others, overlap = split_list(tracks, 2, overlap=5)

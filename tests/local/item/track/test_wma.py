@@ -168,7 +168,12 @@ class TestWMA(LocalTrackTester):
         assert model._format_to_tags(lambda x: tags, info=info) == expected
 
     def test_from_tags(
-            self, model: WMA, uri: URI, image_bytes: list[bytes], pictures: dict[str, ASFByteArrayAttribute], faker: Faker
+            self,
+            model: WMA,
+            uri: URI,
+            image_bytes: list[bytes],
+            pictures: dict[str, ASFByteArrayAttribute],
+            faker: Faker,
     ):
         sep = choice(WMA._tag_sep)
         tags = {

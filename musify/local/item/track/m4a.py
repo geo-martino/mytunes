@@ -118,6 +118,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         description="The main artist on the album.",
         alias="aART",
     )
+    @property
     def album_artist(self) -> Annotated[LocalArtist | None, TagAttribute()]:
         return super().album_artist
 
@@ -129,6 +130,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         description="Whether the album is a compilation album.",
         alias="cpil",
     )
+    @property
     def compilation(self) -> Annotated[bool | None, TagAttribute()]:
         return super().compilation
 

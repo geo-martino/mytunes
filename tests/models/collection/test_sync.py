@@ -5,8 +5,8 @@ from faker import Faker
 
 from musify import MODULE_ROOT
 # noinspection PyProtectedMember
-from musify.models.collection._sync import get_sync_items_for_add, get_sync_items_for_refresh, get_sync_items_for_sync, \
-    get_sync_items
+from musify.models.collection._sync import get_sync_items, get_sync_items_for_add, get_sync_items_for_refresh, \
+    get_sync_items_for_sync
 from musify.models.exception import RequestError
 from musify.models.item.track import RemoteTrack
 from tests.utils import SimpleURI

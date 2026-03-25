@@ -1,5 +1,4 @@
 import itertools
-import itertools
 import re
 from collections.abc import Collection, Iterator, Callable
 from random import choice
@@ -85,6 +84,7 @@ def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterat
         yield item + overlap_batch
 
     yield overlap_result
+
 
 @final
 class SimpleURI(URI):

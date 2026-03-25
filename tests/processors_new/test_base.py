@@ -3,8 +3,7 @@ from typing import final, Annotated
 
 import pytest
 
-from musify.processors_new import DynamicProcessor, processormethod
-from musify.processors_new._dynamic import ProcessorAttribute
+from musify.processors_new import DynamicProcessor, processormethod, ProcessorAttribute
 from tests.models.testers import BaseModelTester
 
 

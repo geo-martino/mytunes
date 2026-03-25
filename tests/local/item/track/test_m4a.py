@@ -139,7 +139,12 @@ class TestM4A(LocalTrackTester):
         assert model._serialize_position_tags(position, info) == [position.numbers]
 
     def test_from_tags(
-            self, model: M4A, uri: URI, image_bytes: list[bytes], pictures: dict[str, mutagen.mp4.MP4Cover], faker: Faker
+            self,
+            model: M4A,
+            uri: URI,
+            image_bytes: list[bytes],
+            pictures: dict[str, mutagen.mp4.MP4Cover],
+            faker: Faker,
     ):
         sep = choice(M4A._tag_sep)
         tags = {

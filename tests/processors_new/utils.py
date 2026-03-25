@@ -3,8 +3,7 @@ from pathlib import Path
 from random import randrange, choice
 from typing import ClassVar
 
-from musify.models import ResourceModel
-from musify.models._metaclass import makecls
+from musify.models import ResourceModel, makecls
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album

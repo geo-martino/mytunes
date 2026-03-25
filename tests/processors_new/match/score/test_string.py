@@ -51,7 +51,6 @@ class TestStringScoreReducer(BaseModelTester):
         model.reduce_factor = 0.5
         assert model._reduce_score(score=0, value="test value", other="other value") == 0
 
-
     def test_reduce_score(self, model: StringScoreReducer, faker: Faker):
         model.reduce_factor = faker.random_int(0, 99) / 100
         model.reduce_on_phrases = {"other"}

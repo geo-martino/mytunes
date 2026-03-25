@@ -121,6 +121,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         description="The main artist on the album.",
         alias="TPE2",
     )
+    @property
     def album_artist(self) -> Annotated[LocalArtist | None, TagAttribute()]:
         return super().album_artist
 
@@ -133,6 +134,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         description="Whether the album is a compilation album.",
         alias="TCMP",
     )
+    @property
     def compilation(self) -> Annotated[bool | None, TagAttribute()]:
         return super().compilation
 

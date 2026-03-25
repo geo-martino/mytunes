@@ -246,7 +246,12 @@ class TestFLAC(LocalTrackTester):
         assert model._serialize_position_tags(position, info=info) == expected
 
     def test_from_tags(
-            self, model: FLAC, uri: URI, image_bytes: list[bytes], pictures: dict[str, mutagen.flac.Picture], faker: Faker
+            self,
+            model: FLAC,
+            uri: URI,
+            image_bytes: list[bytes],
+            pictures: dict[str, mutagen.flac.Picture],
+            faker: Faker,
     ):
         sep = choice(FLAC._tag_sep)
         tags = {

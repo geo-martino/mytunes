@@ -16,7 +16,7 @@ from musify.models.item.track import Track, RemoteTrack
 from musify.models.properties.uri import HasImmutableURI, HasMutableURI
 from musify.models.remote import RemoteResource
 from musify.processors_new.match import Matcher
-from musify.processors_new.match.score import NameScorer
+from musify.processors_new.match.score.string import NameScorer
 from musify.processors_new.search import Searcher, SearchResult
 from tests.models.api.utils import MockUrlCursor
 from tests.models.testers import BaseModelTester
@@ -66,7 +66,6 @@ class SearcherTester(metaclass=ABCMeta):
 
         with patch.object(model, "_should_skip", side_effect=_random_skip) as mock_skip:
             yield mock_skip, valid, invalid
-
 
     @pytest.fixture
     def match[T](self, query_results: list[T], faker: Faker) -> T:
@@ -166,7 +165,9 @@ class TestSearcher(SearcherTester, BaseModelTester):
         assert await model._query(item) is None
         mock_query_item.assert_not_called()
 
-    async def test_query_returns_no_results(self, model: Searcher, item: ResourceModel, mock_query_item: Mock, faker: Faker):
+    async def test_query_returns_no_results(
+            self, model: Searcher, item: ResourceModel, mock_query_item: Mock, faker: Faker
+    ):
         mock_query_item.return_value = []
         assert await model._query(item) is None
 

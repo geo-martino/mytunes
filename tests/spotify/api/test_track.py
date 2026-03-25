@@ -55,6 +55,7 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
 
     @pytest.fixture
     def mock_get_many_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+        # noinspection PyUnusedLocal
         def _generate_payload(url: URL, params: dict[str, Any], *_, **__) -> dict[str, Any]:
             track_ids = params["ids"].split(",")
             return {"audio_features": [generator.generate_audio_features(track_id) for track_id in track_ids]}

@@ -156,6 +156,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         with patch.object(model, "_get_remote_uris", return_value=uris) as mock_get_uris:
             yield mock_get_uris
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def _return_length(url: Any, uris: Collection, *_, **__) -> int:
         return len(uris)

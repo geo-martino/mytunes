@@ -152,6 +152,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         description="The main artist on the album.",
         alias="WM/AlbumArtist",
     )
+    @property
     def album_artist(self) -> Annotated[LocalArtist | None, TagAttribute()]:
         return super().album_artist
 
@@ -164,6 +165,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         description="Whether the album is a compilation album.",
         alias="COMPILATION",
     )
+    @property
     def compilation(self) -> Annotated[bool | None, TagAttribute()]:
         return super().compilation
 
