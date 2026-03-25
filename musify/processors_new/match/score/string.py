@@ -3,7 +3,6 @@ from typing import Literal, Any, final, Self
 from pydantic import Field, model_validator
 
 from musify._types import LowerStrippedString
-from musify.exception import MusifyValueError
 from musify.models.exception import MusifyValidationError
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists

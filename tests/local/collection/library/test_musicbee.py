@@ -3,7 +3,6 @@ import shutil
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
-from unittest import mock
 from unittest.mock import patch, AsyncMock
 
 import pytest

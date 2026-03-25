@@ -7,11 +7,10 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from yarl import URL
 
-from musify.models.api import ReadCollectionEndpoints
 from musify.spotify import API_URL
 # noinspection PyProtectedMember
 from musify.spotify.api._artist import SpotifyArtistEndpoints
-from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
+from musify.spotify.cursors import SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI

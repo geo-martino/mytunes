@@ -13,13 +13,12 @@ from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, T
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
-from musify.exception import MusifyTypeError
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModelMetaclass
-from musify.models.exception import APIError, APIModelError, RequestError, CursorError
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
+from musify.models.exception import APIModelError, RequestError
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel, RemoteResource

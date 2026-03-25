@@ -7,7 +7,7 @@ from operator import mul
 from random import shuffle
 from typing import Annotated, final
 
-from pydantic import NonNegativeInt, Field, field_validator
+from pydantic import NonNegativeInt, Field
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
@@ -16,8 +16,8 @@ from musify.models import ResourceModel, IntEnumModel
 from musify.models.item.album import HasAlbum
 from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
-from musify.processors_new._dynamic import ProcessorAttribute
 from musify.processors_new import processormethod, DynamicProcessor
+from musify.processors_new._dynamic import ProcessorAttribute
 from musify.processors_new.sort import ItemSorter
 
 

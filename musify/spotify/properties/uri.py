@@ -4,7 +4,6 @@ from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
-from musify.exception import MusifyValueError
 from musify.models.exception import MusifyValidationError
 from musify.models.properties.uri import URI
 from musify.spotify._url import API_URL, PUBLIC_URL

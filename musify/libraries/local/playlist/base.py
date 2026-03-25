@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Self
 
 from musify.base import Result
+
 from musify.libraries.local.collection import LocalCollection
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler

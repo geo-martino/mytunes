@@ -16,7 +16,6 @@ from musify.spotify.properties.rating import HasSpotifyRating
 from musify.spotify.properties.stats import HasFollowers
 from musify.spotify.properties.uri import SpotifyUserURI
 from tests.models.testers import UniqueKeyTester, BaseModelTester
-from tests.spotify.generator import SpotifyPayloadGenerator
 
 
 class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):

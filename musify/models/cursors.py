@@ -5,13 +5,12 @@ from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Generator, Union, Annotated
 
-from aiorequestful.types import JSON
 from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath
 
 from musify._types import String
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models import abstract_property
-from musify.models.exception import RequestError, CursorError, CursorResponseError
+from musify.models.exception import CursorError, CursorResponseError
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 

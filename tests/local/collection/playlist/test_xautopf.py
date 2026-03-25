@@ -2,13 +2,12 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from random import choice
-from unittest.mock import patch
 
 import pytest
 from faker import Faker
 from pydantic import TypeAdapter
 from pydantic.alias_generators import to_pascal
-from pytest_mock import MockerFixture, mocker
+from pytest_mock import MockerFixture
 
 # noinspection PyProtectedMember
 from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \

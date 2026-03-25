@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Annotated, Any, Self, ClassVar
+from typing import Annotated, Any, Self
 
 from pydantic import Field, computed_field
 
@@ -9,7 +9,7 @@ from musify.models.collection.playlist import Playlist, RemotePlaylist
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack, HasTracks
-from musify.models.result import CountResult, TotalCountResult, LenLogFormatter, LogFormatter
+from musify.models.result import CountResult, TotalCountResult, LenLogFormatter
 
 _log_formatters = [
     LenLogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x == 0),

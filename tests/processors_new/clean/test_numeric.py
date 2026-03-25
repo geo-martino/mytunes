@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 
 import pytest
 
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models.item.album import HasAlbum, Album
 from musify.models.item.track import HasTracks, Track
 from musify.models.properties.length import HasLength

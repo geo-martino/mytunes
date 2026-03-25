@@ -8,7 +8,7 @@ from datetime import datetime
 from types import NoneType
 from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final
 
-from pydantic import Field, field_validator, TypeAdapter, model_validator, \
+from pydantic import Field, TypeAdapter, model_validator, \
     ModelWrapValidatorHandler
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
@@ -16,15 +16,15 @@ from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase
-from musify.exception import MusifyAttributeError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models import AttributeModel
 from musify.models.item.track import Track
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
-from musify.processors_new._dynamic import ProcessorAttribute
 from musify.processors_new import processormethod, DynamicProcessor
+from musify.processors_new._dynamic import ProcessorAttribute
 from musify.processors_new.time import TimeMapper
 
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({

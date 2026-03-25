@@ -3,7 +3,6 @@ from typing import final, Any, ClassVar, Annotated
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 
-from musify.exception import MusifyValueError
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
 from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute

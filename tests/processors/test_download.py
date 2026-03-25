@@ -4,17 +4,17 @@ from random import sample, randrange
 from urllib.parse import unquote
 
 import pytest
+from musify.field import Fields
 from pytest_mock import MockerFixture
+from tests.testers import PrettyPrinterTester
 
 from musify import MODULE_ROOT
-from musify.field import Fields
 from musify.libraries.collection import BasicCollection
 from musify.libraries.local.track import LocalTrack
 from musify.processors.download import ItemDownloadHelper
 from tests.conftest import LogCapturer
 from tests.libraries.local.track.utils import random_tracks
 from tests.libraries.remote.core.processors.utils import patch_input
-from tests.testers import PrettyPrinterTester
 from tests.utils import random_str
 
 

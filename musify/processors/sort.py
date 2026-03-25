@@ -9,12 +9,12 @@ from random import shuffle
 from typing import Any
 
 from aiorequestful.types import UnitSequence, UnitIterable, Number
-
 from musify.field import Field
+from musify.types import MusifyEnum
+
 from musify.models._base import MusifyResource
 from musify.processors.base import Processor
 from musify.processors.exception import SorterProcessorError
-from musify.types import MusifyEnum
 from musify.utils import flatten_nested, strip_ignore_words, to_collection, limit_value, IGNORE_WORDS_DEFAULT
 
 

@@ -1,7 +1,6 @@
 from contextlib import ExitStack
 from pathlib import Path
 from random import choice
-from unittest import mock
 from unittest.mock import patch, AsyncMock
 
 import mutagen.id3

@@ -1,8 +1,6 @@
-import math
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator
 from copy import deepcopy
 from typing import Any, final
-from unittest import mock
 from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
 import pytest
@@ -12,7 +10,6 @@ from pydantic import AliasPath, TypeAdapter
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from musify.exception import MusifyTypeError
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import RemoteCollection

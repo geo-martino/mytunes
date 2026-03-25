@@ -15,7 +15,6 @@ from pydantic import Field, PositiveInt, field_validator, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from musify._types import StrippedString, UpperSnakeCase
-from musify.exception import MusifyValueError
 from musify.models._attribute import AttributeModel
 from musify.models._base import BaseModel
 from musify.models.exception import MusifyValidationError

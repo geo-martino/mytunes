@@ -9,7 +9,7 @@ from faker import Faker
 from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
-from musify.models.api import RemoteAPI, ReadSavedEndpoints, WriteSavedEndpoints, ReadItemEndpoints, ReadItemsEndpoints
+from musify.models.api import RemoteAPI, WriteSavedEndpoints, ReadItemEndpoints, ReadItemsEndpoints
 from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.library import RemoteMutableLibrary

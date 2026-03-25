@@ -1,13 +1,12 @@
 import re
 from random import choice
 from typing import Any
-from unittest.mock import patch
 
 import pydantic
 import pytest
 from faker import Faker
 from pydantic import TypeAdapter
-from pytest_mock import MockerFixture, mocker
+from pytest_mock import MockerFixture
 
 from musify.exception import MusifyKeyError
 from musify.models import ResourceModel

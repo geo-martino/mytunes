@@ -11,12 +11,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Self, Literal
 
+from musify.base import Result
 from musify.models.album import Album
 from musify.models.artist import Artist
 from musify.models.object import Playlist
 from musify.models.track import Track
 
-from musify.base import Result
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.base import RemoteObject, RemoteItem
 from musify.libraries.remote.core.exception import RemoteError, APIError

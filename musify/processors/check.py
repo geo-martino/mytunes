@@ -12,10 +12,11 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Self
 
-from musify import PROGRAM_NAME
-from musify._types import Resource
 from musify.base import Result
 from musify.field import Fields
+
+from musify import PROGRAM_NAME
+from musify._types import Resource
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.object import RemotePlaylist

@@ -7,7 +7,6 @@ from pydantic import Field, field_validator, BeforeValidator, field_serializer, 
     validate_call
 
 from musify._types import StrippedString, to_set
-from musify.exception import MusifyTypeError
 from musify.models import ResourceModel, abstract_property
 from musify.models.properties.file import IsLocalFile, PathMapper, PathInputType
 from musify.models.result import Result, LenLogFormatter

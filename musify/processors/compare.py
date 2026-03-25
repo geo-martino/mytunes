@@ -10,8 +10,8 @@ from operator import mul
 from typing import Any
 
 from aiorequestful.types import UnitSequence
-
 from musify.field import Field
+
 from musify.models._base import MusifyResource
 from musify.processors.base import DynamicProcessor, processor
 from musify.processors.exception import ComparerError

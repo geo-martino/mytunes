@@ -4,7 +4,6 @@ from typing import ClassVar, Any, Self, final, Annotated
 from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
 from musify._types import StrippedString
-from musify.exception import MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks
 from musify.models.exception import MusifyValidationError

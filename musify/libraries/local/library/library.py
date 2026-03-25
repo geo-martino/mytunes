@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Any
 
 from aiorequestful.types import UnitCollection, UnitIterable
+from musify.base import Result
 from musify.models.object import Library, LibraryMergeType
 
-from musify.base import Result
 from musify.exception import MusifyError
 from musify.libraries.local.collection import LocalCollection, LocalFolder, LocalAlbum, LocalArtist, LocalGenres
 from musify.libraries.local.playlist import PLAYLIST_CLASSES, LocalPlaylist, load_playlist

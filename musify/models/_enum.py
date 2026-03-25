@@ -6,7 +6,6 @@ from pydantic.alias_generators import to_snake
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
-from musify.exception import MusifyValueError
 from musify.models.exception import MusifyValidationError
 
 

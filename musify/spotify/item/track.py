@@ -4,7 +4,6 @@ from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self, Any
 from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, \
     ModelWrapValidatorHandler, model_validator
 
-from musify.exception import MusifyValueError
 from musify.models import BaseModel
 from musify.models.exception import MusifyValidationError
 from musify.models.item.track import RemoteTrack
@@ -15,7 +14,7 @@ from musify.models.properties.length import Length, HasLength
 from musify.models.properties.order import Position
 from musify.models.url import HttpURL
 from musify.spotify._base import SpotifyResource, SpotifyModel
-from musify.spotify.exception import SpotifyAPIError, SpotifyError
+from musify.spotify.exception import SpotifyError
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre

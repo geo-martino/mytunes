@@ -1,6 +1,4 @@
 import inspect
-import sys
-from collections.abc import Collection, Mapping
 from typing import Any, cast, get_origin, Union
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
@@ -11,7 +9,7 @@ from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from typing_inspection.typing_objects import is_annotated
 
-from musify.exception import MusifyAttributeError, MusifyImportError
+from musify.exception import MusifyImportError
 from musify.models.exception import ModelError
 
 

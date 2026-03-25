@@ -4,7 +4,6 @@ from typing import Any, Self, overload, get_args
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
 from pydantic_core import core_schema, CoreSchema
 
-from musify.exception import MusifyValueError
 from musify.models import ResourceModel
 from musify.models.exception import MusifyValidationError
 from musify.models.mapping import MutableUniqueMapping

@@ -6,9 +6,10 @@ from pathlib import Path
 from random import randrange
 
 import pytest
-from musify.file.exception import InvalidFileType
-
 from musify.field import Fields
+from musify.file.exception import InvalidFileType
+from tests.testers import PrettyPrinterTester
+
 from musify.libraries.local.library import MusicBee, LocalLibrary
 from musify.libraries.local.library.musicbee import REQUIRED_MODULES
 from musify.libraries.local.playlist import XAutoPF
@@ -26,7 +27,6 @@ from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.local.utils import path_playlist_resources, path_playlist_all
 from tests.libraries.local.utils import path_playlist_xautopf_ra, path_playlist_xautopf_bp, path_playlist_xautopf_cm
 from tests.libraries.local.utils import path_track_all, path_track_mp3, path_track_flac, path_track_wma
-from tests.testers import PrettyPrinterTester
 from tests.utils import path_txt, path_resources, random_str
 
 

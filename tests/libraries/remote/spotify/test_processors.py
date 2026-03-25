@@ -6,10 +6,10 @@ from random import sample, choice
 from typing import Any
 
 import pytest
+from musify.field import TagFields as Tag
 
 from musify._types import Resource
 from musify.exception import MusifyEnumError
-from musify.field import TagFields as Tag
 from musify.libraries.local.collection import LocalAlbum
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core import RemoteResponse

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any
 
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models import AttributeModel
 from musify.processors_new import Processor
 

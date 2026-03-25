@@ -1,9 +1,9 @@
-from typing import Generator, Collection
-from unittest.mock import Mock, patch
+from typing import Collection
+from unittest.mock import Mock
 
 import pytest
 
-from musify.models.api import RemoteAPI, ReadSavedEndpoints
+from musify.models.api import RemoteAPI
 from musify.models.collection.library import RemoteLibrary
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album

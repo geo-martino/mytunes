@@ -6,12 +6,12 @@ from typing import Iterable, Any
 import pytest
 from musify.models.object import Playlist, Library
 from musify.models.track import Track
+from tests.testers import MusifyItemTester
 
 from musify.exception import MusifyTypeError
 from musify.models._base import MusifyResource
 from musify.models.collection import MusifyCollection
 from tests.libraries.core.collection import MusifyCollectionTester
-from tests.testers import MusifyItemTester
 
 
 class TrackTester(MusifyItemTester, metaclass=ABCMeta):

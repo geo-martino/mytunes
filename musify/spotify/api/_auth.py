@@ -10,7 +10,6 @@ from pydantic import SecretStr, Field, field_validator, PrivateAttr
 from yarl import URL
 
 from musify.models.api import RemoteAuthoriser
-from musify.models.exception import APIError
 from musify.spotify import SpotifyModel, API_URL
 from musify.spotify.exception import SpotifyAuthenticationError
 

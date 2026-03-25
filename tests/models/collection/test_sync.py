@@ -4,7 +4,6 @@ import pytest
 from faker import Faker
 
 from musify import MODULE_ROOT
-from musify.exception import MusifyValueError
 # noinspection PyProtectedMember
 from musify.models.collection._sync import get_sync_items_for_add, get_sync_items_for_refresh, get_sync_items_for_sync, \
     get_sync_items

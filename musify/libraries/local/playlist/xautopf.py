@@ -8,14 +8,15 @@ from pathlib import Path
 from typing import Any, Self
 
 from musify.base import Result
-from musify.exception import FieldError, MusifyImportError
 from musify.field import Fields, Field, TagFields
+from musify.printer import PrettyPrinter
+
+from musify.exception import FieldError, MusifyImportError
 from musify.libraries.local.playlist.base import LocalPlaylist
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.models._base import MusifyResource
 from musify.models.properties.file import File, PathMapper
-from musify.printer import PrettyPrinter
 from musify.processors.compare import Comparer
 from musify.processors.exception import SorterProcessorError
 from musify.processors.filter import FilterDefinedList, FilterComparers

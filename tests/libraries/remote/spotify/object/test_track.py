@@ -5,13 +5,13 @@ from typing import Any
 
 import pytest
 from aiorequestful.types import Number
+from tests.testers import MusifyItemTester
 
 from musify.libraries.remote.core.exception import APIError, RemoteObjectTypeError
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.object import SpotifyTrack
 from tests.libraries.remote.spotify.api.mock import SpotifyMock
 from tests.libraries.remote.spotify.utils import assert_id_attributes
-from tests.testers import MusifyItemTester
 
 
 class TestSpotifyTrack(MusifyItemTester):

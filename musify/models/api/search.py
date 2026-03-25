@@ -5,7 +5,6 @@ from typing import ClassVar, Any, Type
 from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
 from yarl import URL
 
-from musify.exception import MusifyValueError
 from musify.models import ResourceModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
 from musify.models.exception import RequestError

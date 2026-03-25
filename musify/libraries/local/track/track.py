@@ -11,13 +11,13 @@ from typing import Any, Self
 
 import mutagen
 from aiorequestful.types import UnitIterable
+from musify.field import TagMap
+from musify.field import TrackField
 from musify.file.exception import FileDoesNotExistError, UnexpectedPathError
 from musify.models.track import Track
 from yarl import URL
 
 from musify.exception import MusifyKeyError, MusifyAttributeError, MusifyTypeError, MusifyValueError
-from musify.field import TagMap
-from musify.field import TrackField
 from musify.libraries.local.base import LocalItem
 # noinspection PyProtectedMember
 from musify.libraries.local.track._tags import TagReader, TagWriter, SyncResultTrack

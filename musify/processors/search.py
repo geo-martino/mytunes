@@ -10,11 +10,11 @@ from dataclasses import dataclass, field
 from typing import Any, Self
 
 from aiorequestful.types import UnitIterable
+from musify.base import Result
+from musify.field import TagField, TagFields as Tag
 
 from musify._types import Resource
-from musify.base import Result
 from musify.exception import MusifyAttributeError
-from musify.field import TagField, TagFields as Tag
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.logger import MusifyLogger

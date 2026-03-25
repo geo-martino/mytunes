@@ -3,7 +3,6 @@ from typing import Self, Any, TYPE_CHECKING
 
 from pydantic import model_validator, ModelWrapValidatorHandler, computed_field, PositiveInt
 
-from musify.exception import MusifyValueError
 from musify.models.collection._base import RemoteCollection
 from musify.models.cursors import PageCursor
 from musify.models.exception import MusifyValidationError

@@ -6,16 +6,16 @@ from functools import reduce
 from operator import mul
 from random import shuffle
 
+from musify.field import Fields
 from musify.models._properties import HasLength
 from musify.models.track import Track
+from musify.types import MusifyEnum
 
-from musify.field import Fields
 from musify.models._base import MusifyResource
 from musify.models.properties.file import File
 from musify.processors.base import DynamicProcessor, processor
 from musify.processors.exception import LimiterProcessorError
 from musify.processors.sort import ItemSorter
-from musify.types import MusifyEnum
 
 
 class LimitType(MusifyEnum):

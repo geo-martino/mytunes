@@ -5,8 +5,8 @@ from datetime import timedelta
 from typing import Any
 
 from dateutil.relativedelta import relativedelta
-
 from musify.printer import PrettyPrinter
+
 from musify.processors.base import DynamicProcessor, processor
 
 

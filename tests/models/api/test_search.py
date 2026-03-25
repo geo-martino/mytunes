@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import patch, Mock, AsyncMock
+from unittest.mock import patch, Mock
 
 import pytest
 from aiorequestful.request import RequestHandler

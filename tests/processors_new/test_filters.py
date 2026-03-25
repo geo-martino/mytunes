@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from pathlib import Path
 from random import shuffle, choice, sample
-from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest

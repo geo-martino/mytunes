@@ -2,11 +2,11 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from tests.testers import PrettyPrinterTester
 
 from musify.libraries.local.track import LocalTrack
 from musify.processors.limit import ItemLimiter, LimitType
 from tests.libraries.local.track.utils import random_tracks
-from tests.testers import PrettyPrinterTester
 from tests.utils import random_file
 
 

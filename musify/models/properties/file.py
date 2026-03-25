@@ -9,7 +9,7 @@ from typing import Any, Iterable, Annotated, Self, Union
 import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models import abstract_property
 from musify.models._attribute import AttributeModelMetaclass
 from musify.models._base import BaseModel

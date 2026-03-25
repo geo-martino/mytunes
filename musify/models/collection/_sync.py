@@ -2,7 +2,6 @@ from typing import Literal, Collection, Annotated
 
 from pydantic import NonNegativeInt, Field
 
-from musify.exception import MusifyValueError, MusifyTypeError
 from musify.models.exception import RequestError
 from musify.models.result import LogFormatter, CountResult
 

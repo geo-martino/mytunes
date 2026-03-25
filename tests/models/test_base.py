@@ -4,7 +4,7 @@ from typing import final, ClassVar
 import pytest
 from pydantic import Field, AliasChoices
 
-from musify.exception import MusifyAttributeError, MusifyImportError
+from musify.exception import MusifyImportError
 from musify.models import BaseModel
 from musify.models.exception import ModelError
 

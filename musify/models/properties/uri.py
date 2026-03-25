@@ -10,7 +10,6 @@ from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
 from musify._types import StrippedString, to_list
-from musify.exception import MusifyValueError
 from musify.models import abstract_property, ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._base import RootModel

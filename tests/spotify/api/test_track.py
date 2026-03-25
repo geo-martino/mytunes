@@ -6,7 +6,6 @@ from unittest.mock import patch, AsyncMock, Mock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pytest_mock import MockerFixture
 from yarl import URL
 
 from musify.spotify import API_URL

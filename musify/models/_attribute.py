@@ -3,7 +3,7 @@ from typing import Any, cast, Iterable, Self
 
 from pydantic.fields import FieldInfo
 
-from musify.exception import MusifyTypeError, MusifyAttributeError
+from musify.exception import MusifyAttributeError
 from musify.models._base import ModelMetaclass, BaseModel
 from musify.models._resource import ResourceModel
 from musify.models.exception import ModelError

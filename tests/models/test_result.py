@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 from termcolor import can_colorize
 
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models.result import LogFormatter, LenLogFormatter, Result, CountResult, TotalCountResult
 from tests.models.testers import BaseModelTester
 

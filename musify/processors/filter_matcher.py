@@ -10,6 +10,7 @@ from typing import Any
 
 from musify.base import Result
 from musify.field import TagField
+
 from musify.logger import MusifyLogger
 from musify.processors.base import Filter, FilterComposite
 from musify.processors.filter import FilterComparers, FilterDefinedList

@@ -1,7 +1,6 @@
-import itertools
 import math
 from abc import ABCMeta
-from collections.abc import Generator, Iterable
+from collections.abc import Generator
 from random import choice
 from typing import Any
 from unittest.mock import Mock, patch, AsyncMock

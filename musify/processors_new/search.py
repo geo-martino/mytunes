@@ -4,7 +4,6 @@ from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator
 
-from musify.exception import MusifyValueError
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI
 from musify.models.api.search import HasSearchEndpoints

@@ -3,7 +3,6 @@ from typing import Any, cast, Annotated, ClassVar, Hashable
 
 from pydantic import Field
 
-from musify.exception import MusifyTypeError
 from musify.models._base import ModelMetaclass, BaseModel
 from musify.models.exception import ModelError
 from musify.models.metadata import UniqueAttribute

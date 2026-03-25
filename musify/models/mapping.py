@@ -4,7 +4,7 @@ from typing import Self, Any, get_args
 from pydantic import GetCoreSchemaHandler, validate_call
 from pydantic_core import core_schema, CoreSchema
 
-from musify.exception import MusifyKeyError, MusifyTypeError
+from musify.exception import MusifyKeyError
 from musify.models import ResourceModel
 from musify.models.exception import MusifyValidationError
 

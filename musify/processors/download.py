@@ -9,9 +9,9 @@ from urllib.parse import quote
 from webbrowser import open as webopen
 
 from aiorequestful.types import UnitIterable
+from musify.field import Field, Fields
 
 from musify.exception import MusifyEnumError
-from musify.field import Field, Fields
 from musify.models._base import MusifyObject, MusifyResource
 from musify.models.collection import MusifyCollection
 from musify.processors.base import InputProcessor

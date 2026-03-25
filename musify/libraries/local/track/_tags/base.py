@@ -4,8 +4,8 @@ The base processor definition for reading/manipulating tag data in an audio file
 from abc import ABCMeta
 
 import mutagen
-
 from musify.field import TagMap
+
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 

@@ -10,7 +10,7 @@ from pydantic_core import core_schema, CoreSchema
 from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
-from musify.exception import MusifyTypeError, MusifyValueError
+from musify.exception import MusifyTypeError
 from musify.models.exception import MusifyValidationError, ModelError, RequestError
 from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel

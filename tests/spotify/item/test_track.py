@@ -1,12 +1,11 @@
 import pytest
 from faker import Faker
 
-from musify.exception import MusifyValueError
 from musify.models.properties.audio import Decibels
 from musify.models.properties.length import Length
 from musify.models.properties.music import KeySignature
 from musify.spotify import API_URL
-from musify.spotify.exception import SpotifyAPIError, SpotifyError
+from musify.spotify.exception import SpotifyError
 # noinspection PyProtectedMember
 from musify.spotify.item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis, \
     _SpotifyAudioAnalysisMeta, _SpotifyAudioAnalysisTrack

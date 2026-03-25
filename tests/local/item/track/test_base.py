@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 from random import choice, sample
 from typing import Any, Sequence
-from unittest.mock import patch, AsyncMock, Mock, MagicMock
+from unittest.mock import patch, AsyncMock, Mock
 
 import mutagen
 import mutagen.wave

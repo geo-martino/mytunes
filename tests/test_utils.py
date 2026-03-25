@@ -1,10 +1,7 @@
-from copy import deepcopy
 from typing import Annotated
 
-import pytest
 from pydantic import StringConstraints
 
-from musify.exception import MusifyTypeError
 from musify.utils import flatten_nested, strip_ignore_words, get_base_types
 
 

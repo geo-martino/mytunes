@@ -5,7 +5,6 @@ from typing import Any, Self, ClassVar, Annotated
 
 from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelWrapValidatorHandler
 
-from musify.exception import MusifyValueError
 from musify.models._attribute import AttributeModel
 from musify.models.exception import MusifyValidationError
 from musify.models.metadata import TagAttribute, Attribute

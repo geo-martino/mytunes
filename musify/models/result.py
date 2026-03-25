@@ -9,7 +9,7 @@ from tabulate import tabulate
 from termcolor import colored
 
 from musify._types import StrippedString
-from musify.exception import MusifyValueError, MusifyTypeError
+from musify.exception import MusifyTypeError
 from musify.models import BaseModel
 from musify.models.metadata import Attribute
 
