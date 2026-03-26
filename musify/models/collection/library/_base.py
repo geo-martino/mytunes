@@ -28,6 +28,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         description="The name of the source of this library.",
     )
 
+    # TODO: want to set this to Filter[str], but it causes abstract class errors
     playlist_filter: Filter | None = Field(
         description="The filter to apply when loading playlists. Filters playlist by name.",
         default=None
