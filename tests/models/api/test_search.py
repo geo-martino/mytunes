@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import PositiveInt, AliasPath
+from pydantic import PositiveInt, AliasPath, AliasChoices
 from yarl import URL
 
 from musify.models import ResourceModel
@@ -62,6 +62,31 @@ class TestSearchEndpoints(EndpointsTester):
 
         with patch.object(model, "_format_query_params", side_effect=_format_query_params) as mock_params:
             yield mock_params
+
+    @pytest.fixture
+    def kind(self, faker: Faker) -> type[RemoteResource]:
+        return faker.random_element([RemoteTrack, RemoteAlbum])
+
+    def test_get_query_path_on_none(self, kind: type[RemoteResource]):
+        assert SearchEndpoints._get_query_path(None, kind) is kind.type
+
+    def test_get_query_path_on_key(self, kind: type[RemoteResource], faker: Faker):
+        key = "items_{type}s"
+        assert SearchEndpoints._get_query_path(key, kind) == f"items_{kind.type}s"
+
+    def test_get_query_path_on_path(self, kind: type[RemoteResource], faker: Faker):
+        path = AliasPath("items", "{type}s")
+        assert SearchEndpoints._get_query_path(path, kind) == AliasPath("items", f"{kind.type}s")
+
+    def test_get_query_path_on_choices(self, kind: type[RemoteResource], faker: Faker):
+        choices = AliasChoices(
+            "items_{type}s",
+            AliasPath("items", "{type}s"),
+        )
+        assert SearchEndpoints._get_query_path(choices, kind) == AliasChoices(
+            f"items_{kind.type}s",
+            AliasPath("items", f"{kind.type}s")
+        )
 
     async def test_query(
             self,

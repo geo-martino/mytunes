@@ -40,14 +40,17 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @classmethod
-    def _get_query_path[T: str | AliasPath | AliasChoices](cls, path: T | None, kind: str | Type[RT]) -> T:
+    def _get_query_path[T: str | AliasPath | AliasChoices](
+            cls, path: T | None, kind: str | ResourceModel | Type[ResourceModel]
+    ) -> T:
+        kind = cls._map_type_to_str(kind)
+
         match path:
             case None:
-                return kind.type
+                return kind
             case str() as alias:
-                return alias.format(type=kind.type)
+                return alias.format(type=kind)
             case AliasPath() as alias:
-                kind = cls._map_type_to_str(kind)
                 # noinspection PyTypeChecker
                 return AliasPath(*(str(part).format(type=kind) for part in alias.path))
             case AliasChoices() as choices:
@@ -56,7 +59,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         raise RequestError(f"Unknown query path type: {path}")
 
     @staticmethod
-    def _map_type_to_str(kind: str | Type[RT]) -> str:
+    def _map_type_to_str(kind: str | ResourceModel | Type[ResourceModel]) -> str:
         match kind:
             case str():
                 return kind
@@ -68,7 +71,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @validate_call
     async def query(
-            self, query: str, types: set[str | Type[RT]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[str | Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
         if limit is None:
