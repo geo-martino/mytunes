@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
+from inspect import isabstract
 from io import BytesIO
 from pathlib import Path
 from typing import Self, ClassVar, Any, Annotated
@@ -129,7 +130,7 @@ class ImageBase(BaseModel):
 # noinspection PyAbstractClass
 class ImageSource(ImageBase):
     def __new__(cls, *args, **kwargs):
-        if cls is ImageSource:
+        if isabstract(cls):
             raise MusifyValidationError(
                 f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
             )

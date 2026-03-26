@@ -1,4 +1,4 @@
-import contextlib
+from contextlib import suppress
 import textwrap
 from collections.abc import Sequence, Iterable
 from typing import Literal, Self, Annotated
@@ -161,7 +161,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             getter = getattr(self, f"_get_{field.lower().replace(" ", "_")}")
 
             value = None
-            with contextlib.suppress(ValidationError):  # just use the default missing value if the getter fails
+            with suppress(ValidationError):  # just use the default missing value if the getter fails
                 value = getter(item)
 
             value = self._truncate_value_if_needed(value, position)

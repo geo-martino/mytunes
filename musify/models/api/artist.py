@@ -26,8 +26,8 @@ class ArtistReadItemsEndpoints[UT: URI, RT: RemoteArtist](
     pass
 
 
-class ArtistReadCollectionEndpoints[UT: URI, RT: RemoteArtistCollection](
-    ArtistEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT]
+class ArtistReadCollectionEndpoints[UT: URI, RT: RemoteArtistCollection, IT: RemoteAlbum](
+    ArtistEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT]
 ):
     type: ClassVar[Type] = RemoteArtistCollection
     _extend_type: ClassVar[Type] = RemoteAlbum

@@ -8,7 +8,7 @@ from musify.models._metaclass import makecls
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.logger import HasLogger
-from musify.processors_new.filters import ValuesFilter
+from musify.processors_new.filters import Filter
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):
@@ -28,7 +28,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         description="The name of the source of this library.",
     )
 
-    playlist_filter: ValuesFilter[str] | None = Field(
+    playlist_filter: Filter | None = Field(
         description="The filter to apply when loading playlists. Filters playlist by name.",
         default=None
     )

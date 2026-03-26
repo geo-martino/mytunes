@@ -1,7 +1,7 @@
-import contextlib
 import itertools
 from abc import abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
+from contextlib import suppress
 from copy import copy
 from io import BytesIO
 from pathlib import Path
@@ -363,7 +363,7 @@ class LocalTrack[FT: FileType](
         adapter = TypeAdapter(URI.annotation)
         uris = []
         for value in values:
-            with contextlib.suppress(ValidationError):
+            with suppress(ValidationError):
                 uri = adapter.validate_python(value)
                 uris.append(uri)
 

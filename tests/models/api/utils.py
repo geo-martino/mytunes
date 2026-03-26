@@ -131,7 +131,7 @@ class MockPlaylistSavedEndpoints(
 
 
 class MockPlaylistEndpoints(
-    PlaylistReadWriteEndpoints[SimpleURI, RemotePlaylist],
+    PlaylistReadWriteEndpoints[SimpleURI, RemotePlaylist, RemoteTrack],
     HasSavedEndpoints[MockPlaylistSavedEndpoints],
 ):
     pass

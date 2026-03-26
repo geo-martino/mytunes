@@ -13,7 +13,7 @@ from musify.models.remote import RemoteResource
 from tests.utils import SimpleURI
 
 
-class MockRemoteResource(RemoteResource[SimpleURI], HasName):
+class MockRemoteResource(RemoteResource[SimpleURI]):
     source: ClassVar[str] = "mock"
     type: ClassVar[str] = choice((
         RemoteTrack.type,
@@ -25,9 +25,10 @@ class MockRemoteResource(RemoteResource[SimpleURI], HasName):
         return self
 
 
-class MockRemoteCollection(MockRemoteResource, RemoteCollection):
+class MockRemoteCollection(MockRemoteResource, RemoteCollection, HasName):
     type: ClassVar[str] = MockRemoteResource.type
 
+    name: str = "test"
     items: list[RemoteResource] = Field(default_factory=list)
 
     @property

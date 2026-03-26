@@ -34,6 +34,10 @@ class TestValuesFilter(FilterTester):
         values = {faker.pystr(30, 50) for _ in range(20)}
         return ValuesFilter(values=values)
 
+    def test_from_values(self, faker: Faker):
+        values = faker.words()
+        assert ValuesFilter.model_validate(values) == ValuesFilter(values=set(values))
+
     def test_equality(self, model: ValuesFilter, faker: Faker):
         assert model == deepcopy(model)
 

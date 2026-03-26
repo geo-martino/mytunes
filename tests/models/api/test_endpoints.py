@@ -6,10 +6,11 @@ from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import AliasPath, TypeAdapter
+from pydantic import AliasPath, TypeAdapter, AliasChoices
 from pytest_mock import MockerFixture
 from yarl import URL
 
+from musify.models._context import RemoteModelContext
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import RemoteCollection
@@ -20,7 +21,6 @@ from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel
-from musify.models._context import RemoteModelContext
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor
 from tests.models.utils import MockRemoteResource, MockRemoteCollection
@@ -393,40 +393,50 @@ class TestEndpoints(EndpointsTester):
         expected_cursors = [url_cursors[0].next] + [cursor.next for cursor in index_cursors[1:] if cursor.next]
         assert sorted(actual_cursors) == sorted(expected_cursors)
 
+    @pytest.fixture
+    def response_items(self, faker: Faker) -> list[dict]:
+        return [faker.pydict() for _ in range(faker.random_int(1, 10))]
+
     @staticmethod
     def assert_get_items_from_response(
-            model: Endpoints, response: dict[str, Any], path: str | AliasPath, expected: list[Any]
+            model: Endpoints, response: dict[str, Any], path: str | AliasPath | AliasChoices, expected: list[Any]
     ):
         items = list(model._get_items_from_response(response=response, path=path))
         assert items == expected
 
-    def test_get_items_from_response_on_key(self, model: Endpoints, faker: Faker):
+    def test_get_items_from_response_on_key(self, model: Endpoints, response_items: list[dict], faker: Faker):
         path = "items"
-        expected = [faker.word() for _ in range(faker.random_int(1, 10))]
-        response = {"items": expected}
+        response = {"items": response_items}
 
-        self.assert_get_items_from_response(model, response, path, expected)
+        self.assert_get_items_from_response(model, response, path, response_items)
 
-    def test_get_items_from_response_on_path(self, model: Endpoints, faker: Faker):
+    def test_get_items_from_response_on_path(self, model: Endpoints, response_items: list[dict], faker: Faker):
         path = AliasPath("data", "items")
-        expected = [{"name": faker.word()} for _ in range(faker.random_int(1, 10))]
-        response = {"data": {"items": expected}}
+        response = {"data": {"items": response_items}}
 
-        self.assert_get_items_from_response(model, response, path, expected)
+        self.assert_get_items_from_response(model, response, path, response_items)
 
-    def test_get_items_from_response_on_nested_path(self, model: Endpoints, faker: Faker):
+    def test_get_items_from_response_on_choices(self, model: Endpoints, response_items: list[dict], faker: Faker):
+        choices = AliasChoices(
+            "data",
+            AliasPath("data", "items", "unknown"),
+            AliasPath("data", "items"),  # should pass on this one
+            "unknown",
+        )
+        response = {"data": {"items": response_items}}
+        self.assert_get_items_from_response(model, response, choices, response_items)
+
+    def test_get_items_from_response_on_nested_path(self, model: Endpoints, response_items: list[dict], faker: Faker):
         path = AliasPath("data", "*", "items", "item")
-        expected = [{"name": faker.word()} for _ in range(faker.random_int(1, 10))]
-        response = {"data": [{"items": {"item": exp}} for exp in expected]}
+        response = {"data": [{"items": {"item": exp}} for exp in response_items]}
+        self.assert_get_items_from_response(model, response, path, response_items)
 
-        self.assert_get_items_from_response(model, response, path, expected)
-
-    def test_get_items_from_response_on_deeply_nested_path(self, model: Endpoints, faker: Faker):
+    def test_get_items_from_response_on_deeply_nested_path(
+            self, model: Endpoints, response_items: list[dict], faker: Faker
+    ):
         path = AliasPath("data", "*", "items", "*", "item", "*", "sub_item")
-        expected = [{"name": faker.word()} for _ in range(faker.random_int(1, 10))]
-        response = {"data": [{"items": [{"item": [{"sub_item": exp}]}]} for exp in expected]}
-
-        self.assert_get_items_from_response(model, response, path, expected)
+        response = {"data": [{"items": [{"item": [{"sub_item": exp}]}]} for exp in response_items]}
+        self.assert_get_items_from_response(model, response, path, response_items)
 
     def test_batch_values(self, uris: list[URI]):
         batches = list(Endpoints._batch_values(uris, limit=10))
@@ -492,7 +502,7 @@ class TestReadItemsEndpoints(EndpointsTester):
 
 
 class TestReadCollectionEndpoints(EndpointsTester):
-    class MockReadCollectionEndpoints(ReadCollectionEndpoints[SimpleURI, MockRemoteCollection]):
+    class MockReadCollectionEndpoints(ReadCollectionEndpoints[SimpleURI, MockRemoteCollection, MockRemoteResource]):
         _batch_limit = 26
         _extend_path = "items"
         _extend_type = "type"
@@ -565,7 +575,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
 
 
 class TestWriteCollectionEndpoints(EndpointsTester):
-    class MockWriteCollectionEndpoints(WriteCollectionEndpoints[SimpleURI, MockRemoteResource]):
+    class MockWriteCollectionEndpoints(WriteCollectionEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
         _batch_limit = 18
         _extend_path = "items"
         _extend_type = "items"

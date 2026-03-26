@@ -1,10 +1,10 @@
 from collections.abc import Sequence
-from typing import ClassVar, Type
+from typing import ClassVar, Type, TYPE_CHECKING
 
 from pydantic import validate_call, Field, PositiveInt
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints
+    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints, ReadCollectionEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
@@ -28,8 +28,8 @@ class PlaylistReadItemsEndpoints[UT: URI, RT: RemotePlaylist](
     pass
 
 
-class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistReadItemEndpoints[UT, RT], WriteCollectionEndpoints[UT, RT],
+class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
+    PlaylistReadItemEndpoints[UT, RT], WriteCollectionEndpoints[UT, RT, IT], ReadCollectionEndpoints[UT, RT, IT],
 ):
     _extend_type: ClassVar[Type] = RemoteTrack
 

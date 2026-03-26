@@ -1,11 +1,11 @@
-import contextlib
 from abc import abstractmethod
 from collections.abc import MutableMapping, Mapping
+from contextlib import suppress
 from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Generator, Union, Annotated
 
-from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath
+from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices
 
 from musify._types import String
 from musify.exception import MusifyTypeError
@@ -30,7 +30,7 @@ class PageCursor(RemoteModel):
     @model_validator(mode="before")
     @classmethod
     def _from_url[T](cls, value: T) -> T | dict[str, Any]:
-        with contextlib.suppress(ValidationError):
+        with suppress(ValidationError):
             url = TypeAdapter(HttpURL).validate_python(value)
             value = dict(url=url)
 
@@ -75,7 +75,11 @@ class PageCursor(RemoteModel):
         raise NotImplementedError
 
     @classmethod
-    def get_cursor_from_response(cls, response: Mapping[str, Any], path: str | AliasPath) -> PageCursor:
+    def get_cursor_from_response(
+            cls,
+            response: Mapping[str, Any],
+            path: str | AliasPath | AliasChoices | None = None,
+    ) -> PageCursor:
         """
         Get the cursor from the given response data at the given path.
 
@@ -102,15 +106,30 @@ class PageCursor(RemoteModel):
         else:
             adapter = TypeAdapter(Annotated[Union[*classes], Field(union_mode="left_to_right")])
 
+        return cls._create_cursor_from_response(response=response, path=path, adapter=adapter)
+
+    @classmethod
+    def _create_cursor_from_response[T: PageCursor](
+            cls,
+            response: Mapping[str, Any],
+            path: str | AliasPath | AliasChoices | None,
+            adapter: TypeAdapter[T],
+    ) -> T:
         match path:
-            case str():
+            case str() | None:
                 return adapter.validate_python(response)
+
             case AliasPath() as alias:  # attempt to find cursor in response at path if it is not at the top level
                 for key in alias.path:
-                    with contextlib.suppress(ValidationError):
+                    with suppress(ValidationError):
                         return adapter.validate_python(response)
 
                     response = response[key]
+
+            case AliasChoices() as choices:
+                for alias in choices.choices:
+                    with suppress(ValidationError, CursorResponseError):
+                        return cls._create_cursor_from_response(response=response, path=alias, adapter=adapter)
 
         raise CursorResponseError(f"Could not find cursor in response at the given path: {path}.")
 
@@ -160,14 +179,18 @@ class IterablePageCursor(PageCursor):
 
     @classmethod
     @abstractmethod
-    def sort_responses[T: dict[str, Any]](cls, responses: list[T], path: str | AliasPath) -> list[Self]:
+    def sort_responses[T: dict[str, Any]](
+            cls,
+            responses: list[T],
+            path: str | AliasPath | AliasChoices,
+    ) -> list[Self]:
         """
         Sort the given responses in-place based on the current cursor.
 
         This is used to sort the responses from concurrent requests for all pages into the correct order.
 
         :param responses: The responses to sort.
-        :param path: The path to the cursor in the response, either as a string or an alias path.
+        :param path: The path or path alias to the cursor in the response.
         :return: The sorted cursors for the responses, in the same order as the sorted responses.
         """
         raise NotImplementedError
@@ -260,7 +283,7 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
 
     @classmethod
     def sort_responses[T: dict[str, Any]](
-            cls, responses: list[T], path: str | AliasPath
+            cls, responses: list[T], path: str | AliasPath | AliasChoices,
     ) -> list[Self]:
         cursors: list[Self] = [cls.get_cursor_from_response(response, path) for response in responses]
         if not all(isinstance(cursor, cls) for cursor in cursors):

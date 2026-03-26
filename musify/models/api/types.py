@@ -1,7 +1,7 @@
-import contextlib
 import functools
 import inspect
 from collections.abc import Sequence
+from contextlib import suppress
 from typing import Any, get_args, Callable, Self, Annotated
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
@@ -12,7 +12,7 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError
 from musify.models.exception import MusifyValidationError, ModelError, RequestError
-from musify.models.properties.uri import URI, HasURI, HasImmutableURI
+from musify.models.properties.uri import URI, HasURI, HasImmutableURI, item_has_uri
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
@@ -52,7 +52,7 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
             value = kwargs.pop(param_key)
             return args[:param_idx], value, args[param_idx:]
 
-        with contextlib.suppress(IndexError):
+        with suppress(IndexError):
             value = args.pop(param_idx)
             return args[:param_idx], value, args[param_idx:]
 
@@ -103,10 +103,9 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         )
 
         def _from_model(model: HasURI) -> URL:
-            uri = model.uri
-            if uri is None:
+            if not item_has_uri(model):
                 raise MusifyValidationError("Model does not have a URI.")
-            return _from_uri(uri)
+            return _from_uri(model.uri)
 
         from_model_schema = core_schema.chain_schema(
             [
@@ -202,7 +201,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         )
 
         def _from_model(model: HasURI) -> URI:
-            if model.uri is None:
+            if not item_has_uri(model):
                 raise MusifyValidationError("Model does not have a URI.")
             return model.uri
 

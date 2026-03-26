@@ -12,7 +12,6 @@ from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
 from musify.models.exception import MusifyValidationError
 from musify.models.properties.file import IsFile, IsLocalFile
-from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
 from musify.models.remote import RemoteResource

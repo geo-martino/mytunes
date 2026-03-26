@@ -1,13 +1,16 @@
 from abc import abstractmethod
 from collections.abc import Collection, Iterator, Mapping, Iterable
+from inspect import isabstract
 from pathlib import Path
-from typing import Any, Annotated, Self
+from typing import Any, Annotated, Self, get_origin
 
 from pydantic import Field, field_validator, BeforeValidator, field_serializer, model_validator, computed_field, \
     validate_call
+from typing_inspection.typing_objects import is_annotated, is_generic
 
 from musify._types import StrippedString, to_set
-from musify.models import ResourceModel, abstract_property
+from musify.models import BaseModel, ResourceModel, abstract_property
+from musify.models.exception import MusifyValidationError
 from musify.models.properties.file import IsLocalFile, PathMapper, PathInputType
 from musify.models.result import Result, LenLogFormatter
 from musify.processors_new._base import Processor
@@ -15,8 +18,15 @@ from musify.processors_new.compare import Comparer
 
 
 # noinspection PyAbstractClass
-class Filter[T](Processor):
+class Filter[IT](Processor):
     """Base class for all filters."""
+
+    def __new__(cls, *args, **kwargs):
+        if isabstract(cls):
+            raise MusifyValidationError(
+                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
+            )
+        return super().__new__(cls)
 
     @abstract_property
     def ready(self) -> bool:
@@ -27,7 +37,7 @@ class Filter[T](Processor):
         return self.ready
 
     @abstractmethod
-    def check(self, item: T, *args, **kwargs) -> bool:
+    def check(self, item: IT, *args, **kwargs) -> bool:
         """
         Check if the filter applies to the given item.
 
@@ -36,7 +46,7 @@ class Filter[T](Processor):
         """
         raise NotImplementedError
 
-    def apply(self, items: Collection[T], *args, **kwargs) -> list[T]:
+    def apply(self, items: Collection[IT], *args, **kwargs) -> list[IT]:
         """
         Apply the filter to the given items.
 
@@ -46,13 +56,13 @@ class Filter[T](Processor):
         if not self.ready:  # always return all items if filter is not setup
             return list(items)
 
-        def _filter(item: T) -> bool:
+        def _filter(item: IT) -> bool:
             return self.check(item, *args, **kwargs)
         return list(filter(_filter, items))
 
 
 # noinspection PyAbstractClass
-class CompositeFilter[T](Filter[T], Collection[Filter[T]]):
+class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 
     @abstract_property
@@ -83,9 +93,9 @@ class CompositeFilter[T](Filter[T], Collection[Filter[T]]):
         return item in self.filters
 
 
-class ValuesFilter[T](Filter[T]):
+class ValuesFilter[IT](Filter[IT]):
     """Filter based on a defined list of values."""
-    values: Annotated[set[T], BeforeValidator(to_set)] = Field(
+    values: Annotated[set[IT], BeforeValidator(to_set)] = Field(
         description="Set of values to filter against",
         default_factory=set,
     )
@@ -94,8 +104,15 @@ class ValuesFilter[T](Filter[T]):
     def ready(self) -> bool:
         return len(self.values) > 0
 
+    @model_validator(mode="before")
+    @classmethod
+    def _from_values[T: Iterable[T]](cls, values: T) -> T | dict[str, T]:
+        if isinstance(values, (BaseModel, Mapping)) or not isinstance(values, Iterable):
+            return values
+        return {"values": values}
+
     @validate_call
-    def check(self, item: T, *_, **__) -> bool:
+    def check(self, item: IT, *_, **__) -> bool:
         return item in self.values
 
     def __iter__(self):
@@ -159,7 +176,7 @@ class PathsFilter(ValuesFilter[str]):
         return self.path_mapper.unmap(item, check_existence=False) in self.values
 
 
-class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
+class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
     include: IF = Field(
         description="Filter for items to include",
         default_factory=ValuesFilter,
@@ -174,7 +191,7 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
         return self.include, self.exclude
 
     @validate_call
-    def check(self, item: T, *_, **__) -> bool:
+    def check(self, item: IT, *_, **__) -> bool:
         match = self.include.check(item)
         if self.exclude.ready:
             match &= not self.exclude.check(item)
@@ -187,7 +204,7 @@ class IncludeExcludeFilter[T, IF: Filter, EF: Filter](CompositeFilter[T]):
         ))
 
 
-class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
+class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     comparers: Mapping[Comparer, tuple[bool, Self]] = Field(
         description=(
@@ -224,7 +241,7 @@ class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
         return len(self.comparers) > 0
 
     @validate_call
-    def check(self, item: CT, reference: CT | None = None, *_, **__) -> bool:
+    def check(self, item: IT, reference: IT | None = None, *_, **__) -> bool:
         # initial state determined by ready and match_all states
         matched = self.ready and self.match_all
 
@@ -244,10 +261,10 @@ class ComparerFilter[CT: str | ResourceModel](Filter[CT]):
         ))
 
 
-class MatchResult[T: Any](Result):
+class MatchResult[IT: Any](Result):
     """Results from :py:class:`MatchFilter` separated by individual filter results."""
     included: Annotated[
-        tuple[T, ...],
+        tuple[IT, ...],
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -259,7 +276,7 @@ class MatchResult[T: Any](Result):
         default_factory=tuple,
     )
     excluded: Annotated[
-        tuple[T, ...],
+        tuple[IT, ...],
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -271,7 +288,7 @@ class MatchResult[T: Any](Result):
         default_factory=tuple,
     )
     compared: Annotated[
-        tuple[T, ...],
+        tuple[IT, ...],
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -283,7 +300,7 @@ class MatchResult[T: Any](Result):
         default_factory=tuple,
     )
     grouped: Annotated[
-        tuple[T, ...],
+        tuple[IT, ...],
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -301,7 +318,7 @@ class MatchResult[T: Any](Result):
     )
     @property
     def combined(self) -> Annotated[
-        list[T],
+        list[IT],
         LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
         LenLogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0),
     ]:
@@ -314,12 +331,12 @@ class MatchResult[T: Any](Result):
         return dict(map(lambda key: (key, len(getattr(self, key))), self.model_fields.keys()))
 
 
-class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
+class MatchFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
     """
     Filter which matches based on include, exclude and comparer filters,
     with additional option for including a given tag grouping.
     """
-    compare: ComparerFilter[T] = Field(
+    compare: ComparerFilter[IT] = Field(
         description="Comparer filter to use when matching.",
         default_factory=ComparerFilter,
     )
@@ -332,7 +349,7 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
     )
 
     @validate_call
-    def check(self, item: T, reference: T | None = None, *_, **__) -> bool:
+    def check(self, item: IT, reference: IT | None = None, *_, **__) -> bool:
         if self.exclude.check(item, reference=reference):
             return False
 
@@ -342,10 +359,10 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
 
         return match  # cannot apply group_by logic as it depends on the full set of values
 
-    def apply(self, values: Collection[T], reference: T | None = None, *_, **__) -> list[T]:
+    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[T]:
         return self.match(values=values, reference=reference).combined
 
-    def match(self, values: Collection[T], reference: T | None = None) -> MatchResult:
+    def match(self, values: Collection[IT], reference: IT | None = None) -> MatchResult:
         """Same as :py:meth:`apply` but returns the results of each filter to a :py:class`MatchResult` object"""
         if len(values) == 0:
             return MatchResult()
@@ -366,7 +383,7 @@ class MatchFilter[T, IF: Filter, EF: Filter](IncludeExcludeFilter[T, IF, EF]):
 
         return MatchResult(included=included, excluded=excluded, compared=compared, grouped=grouped)
 
-    def _match_on_group_by(self, values: Collection[T], matched: Collection[T]) -> tuple[T, ...]:
+    def _match_on_group_by(self, values: Collection[IT], matched: Collection[IT]) -> tuple[IT, ...]:
         if not self.group_by or len(values) == len(matched):
             return ()
 

@@ -2,12 +2,12 @@ import math
 import random
 from collections.abc import Generator
 from copy import copy
-from typing import Self, final, ClassVar
+from typing import Self, final, ClassVar, Any
 from unittest.mock import patch, Mock, PropertyMock
 
 import pytest
 from faker import Faker
-from pydantic import AliasPath
+from pydantic import AliasPath, AliasChoices
 from yarl import URL
 
 from musify.models.cursors import PageCursor, IterablePageCursor, IndexCursor, KeyCursor, UrlCursor, InitialCursor
@@ -114,15 +114,29 @@ class TestPageCursor(BaseModelTester):
         model._set_param_value_to_url(key=param_key, value=str(param_value))
         assert model.url == expected
 
-    def test_get_cursor_from_response_on_key(self, model: IterablePageCursor, faker: Faker):
-        valid_data = {"url": faker.url(), "param": faker.pystr()}
-        assert model.get_cursor_from_response(valid_data, faker.pystr()) == MockPageCursor(**valid_data)
+    @pytest.fixture
+    def cursor_data(self, faker: Faker) -> dict[str, str]:
+        return {"url": faker.url(), "param": faker.pystr()}
 
-    def test_get_cursor_from_response_on_path(self, model: IterablePageCursor, faker: Faker):
+    def test_get_cursor_from_response_on_key(self, model: PageCursor, cursor_data: dict[str, Any], faker: Faker):
+        key = faker.random_element((faker.pystr(), None))  # ignores key on str or None
+        assert model.get_cursor_from_response(cursor_data, key) == MockPageCursor(**cursor_data)
+
+    def test_get_cursor_from_response_on_path(self, model: PageCursor, cursor_data: dict[str, Any], faker: Faker):
         path = AliasPath("item", "data", "nested", "items")
-        valid_data = {"url": faker.url(), "param": faker.pystr()}
-        data = faker.pydict() | {"item": {"id": faker.random_int(), "data": valid_data}}
-        assert model.get_cursor_from_response(data, path) == MockPageCursor(**valid_data)
+        data = faker.pydict() | {"item": {"id": faker.random_int(), "data": cursor_data}}
+        assert model.get_cursor_from_response(data, path) == MockPageCursor(**cursor_data)
+
+    def test_get_cursor_from_response_on_choices(self, model: PageCursor, cursor_data: dict[str, Any], faker: Faker):
+        choices = AliasChoices(
+            "item",
+            AliasPath("item", "data"),
+            AliasPath("item", "data", "nested", "items", "unknown"),
+            AliasPath("item", "data", "nested", "items"),  # should pass on this one
+            "unknown",
+        )
+        data = faker.pydict() | {"item": {"id": faker.random_int(), "data": cursor_data}}
+        assert model.get_cursor_from_response(data, choices) == MockPageCursor(**cursor_data)
 
 
 class TestIterablePageCursor(BaseModelTester):

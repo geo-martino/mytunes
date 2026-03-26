@@ -16,7 +16,6 @@ from musify.processors_new.check import Checker
 from tests.models.api.utils import MockUrlCursor
 from tests.models.testers import BaseModelTester
 from tests.models.utils import MockRemoteCollection
-from tests.processors_new.utils import MockCollection
 from tests.utils import SimpleURI
 
 
@@ -178,6 +177,7 @@ class TestChecker(BaseModelTester):
         playlist_cleared.tracks.clear()
 
         playlist.tracks.extend(tracks)
+        expected_uris = [track.uri for track in tracks]
 
         assert not playlist_cleared.tracks
         assert playlist.tracks
@@ -188,7 +188,7 @@ class TestChecker(BaseModelTester):
         await model._teardown_playlist(playlist_cleared)
 
         mock_sync_playlist.assert_not_called()
-        mock_remove_playlist.assert_called_once_with(playlist.uri.api_url, uris=playlist.tracks, show_bar=False)
+        mock_remove_playlist.assert_called_once_with(playlist.uri.api_url, uris=expected_uris, show_bar=False)
         mock_delete_playlist.assert_called_once_with(playlist.uri.api_url)
 
     async def test_restore_playlist(

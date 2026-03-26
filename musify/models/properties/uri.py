@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection
 from functools import total_ordering
+from inspect import isabstract
 from typing import ClassVar, Self, Any, Annotated, TypeIs
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator
@@ -38,7 +39,7 @@ class URI(RootModel[str]):
     )
 
     def __new__(cls, *args, **kwargs):
-        if cls is URI:
+        if isabstract(cls):
             raise MusifyValidationError(
                 f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
             )

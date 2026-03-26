@@ -1,7 +1,8 @@
 from musify.models.api.types import ApiURL, ApiURI, ApiURISequence
+from musify.models.properties.uri import HasURI
 from musify.spotify import SpotifyResource
 from musify.spotify.properties.uri import SpotifyResourceURI
 
-type SpotifyApiURL[MT: SpotifyResource] = ApiURL[SpotifyResourceURI, MT]
-type SpotifyApiURI[MT: SpotifyResource] = ApiURI[SpotifyResourceURI, MT]
-type SpotifyApiURISequence[MT: SpotifyResource] = ApiURISequence[SpotifyResourceURI, MT]
+type SpotifyApiURL[MT: HasURI] = ApiURL[SpotifyResourceURI, MT]
+type SpotifyApiURI[MT: HasURI] = ApiURI[SpotifyResourceURI, MT]
+type SpotifyApiURISequence[MT: HasURI] = ApiURISequence[SpotifyResourceURI, MT]

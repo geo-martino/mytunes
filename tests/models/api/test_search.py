@@ -1,11 +1,11 @@
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import PositiveInt
+from pydantic import PositiveInt, AliasPath
 from yarl import URL
 
 from musify.models import ResourceModel
@@ -22,7 +22,7 @@ class TestSearchEndpoints(EndpointsTester):
     # noinspection PyAbstractClass
     class MockSearchEndpoints(SearchEndpoints[SimpleURI, MockRemoteResource]):
         _query_url = URL("https://api.example.com/search")
-        _query_path = "items"
+        _query_path = AliasPath("items", "{type}s")
         _query_limit = 22
 
     @pytest.fixture
@@ -38,6 +38,17 @@ class TestSearchEndpoints(EndpointsTester):
     @pytest.fixture
     def types(self) -> set[type[RemoteResource]]:
         return {RemoteTrack, RemoteAlbum}
+
+    # noinspection PyMethodOverriding
+    @pytest.fixture
+    def mock_get(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
+        response = {
+            model._query_path.path[0]: {"tracks": [{"name": faker.name()}], "albums": [{"name": faker.name()}]}
+        }
+
+        with patch.object(RequestHandler, "get", return_value=response, new_callable=AsyncMock) as mock_get:
+            yield mock_get
+            mock_get.assert_called_once()
 
     @pytest.fixture
     def mock_query_params(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
@@ -63,10 +74,6 @@ class TestSearchEndpoints(EndpointsTester):
         query = faker.sentence()
         limit = faker.random_int(1, 50)
         expected_params = {"query": query, "types": {t.type for t in types}, "limit": limit}
-
-        mock_get.return_value = {
-            model._query_path: {"tracks": [{"name": faker.name()}], "albums": [{"name": faker.name()}]}
-        }
 
         result = await model.query(query=query, types=types, limit=limit)
 
@@ -100,8 +107,6 @@ class TestSearchEndpoints(EndpointsTester):
         limit = faker.random_int(1, 50)
         expected_query = {"query": query, "types": {RemoteTrack}, "limit": limit}
         expected_params = {"query": query, "types": {RemoteTrack.type}, "limit": limit}
-
-        mock_get.return_value = {model._query_path: {"tracks": [{"name": item.name}]}}
 
         with patch.object(
                 model, "_format_query_from_item", return_value=expected_query

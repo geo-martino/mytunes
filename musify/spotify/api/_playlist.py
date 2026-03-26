@@ -1,18 +1,21 @@
 from collections.abc import Iterable
-from typing import ClassVar, final
+from typing import ClassVar, final, TYPE_CHECKING
 
+from aiorequestful.response.exception import ResponseError
 from aiorequestful.types import JSON
-from pydantic import validate_call, PositiveInt
+from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
 from yarl import URL
 
+from musify.local.item.track import LocalTrack
 from musify.models.api import HasSavedEndpoints
 from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 from musify.models.api.types import _ApiURISchema, _ApiURLSchema
+from musify.models.cursors import PageCursor, HasPageCursor
 from musify.models.exception import RequestError
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence
-from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
+from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist, SpotifyPlaylistTrack
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
 from musify.spotify.user import SpotifyUser
@@ -78,12 +81,33 @@ class _SpotifySavedPlaylistEndpoints(
 class SpotifyPlaylistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyPlaylist],
     HasSavedEndpoints[_SpotifySavedPlaylistEndpoints],
-    PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyPlaylist],
+    PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyPlaylistTrack],
 ):
     __final__ = True
 
     _batch_limit: ClassVar[int] = 100
-    _extend_path: ClassVar[str] = "items"
+    _extend_path: ClassVar[AliasChoices] = AliasChoices(
+        "items",
+        AliasPath("items", "items")
+    )
+
+    @validate_call
+    async def get_all(
+            self, collection: PageCursor | HasPageCursor | SpotifyPlaylist, show_bar: bool = True
+    ) -> list[SpotifyPlaylistTrack]:
+        try:
+            return await super().get_all(collection, show_bar=show_bar)
+        except ResponseError as exc:
+            # WORKAROUND: Spotify returns 403 for private playlists, even if the the user is a collaborator
+            #  and has access to the playlist.
+            #  Just log a warning and return an empty list in this case, rather than raising an exception.
+            if exc.response.status == 403:
+                self.logger.warning(
+                    f"Could not retrieve tracks for playlist {collection.name!r} due to insufficient permissions."
+                )
+                return []
+
+            raise
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
@@ -92,7 +116,7 @@ class SpotifyPlaylistEndpoints(
     async def add(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],
-            uris: SpotifyApiURISequence[SpotifyTrack],
+            uris: SpotifyApiURISequence[LocalTrack | SpotifyTrack],
             limit: PositiveInt = None,
             show_bar: bool = True,
     ) -> int:
@@ -105,7 +129,7 @@ class SpotifyPlaylistEndpoints(
     async def remove(
             self,
             url: SpotifyApiURL[SpotifyMutablePlaylist],
-            uris: SpotifyApiURISequence[SpotifyTrack],
+            uris: SpotifyApiURISequence[LocalTrack | SpotifyTrack],
             limit: PositiveInt = None,
             show_bar: bool = True,
     ) -> int:

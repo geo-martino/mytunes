@@ -1,7 +1,7 @@
-import contextlib
 import functools
 from abc import abstractmethod
 from collections.abc import Mapping, Callable
+from contextlib import suppress
 from typing import Self, Any, Annotated
 
 from aiorequestful.auth import Authoriser
@@ -54,7 +54,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         if not isinstance(value, Mapping):
             return handler(value)
 
-        with contextlib.suppress(ValidationError):
+        with suppress(ValidationError):
             value = cls._create_authoriser_from_credentials(value)
 
         return handler(value)

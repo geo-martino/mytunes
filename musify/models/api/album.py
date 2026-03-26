@@ -26,8 +26,8 @@ class AlbumReadItemsEndpoints[UT: URI, RT: RemoteAlbum](
     pass
 
 
-class AlbumReadCollectionEndpoints[UT: URI, RT: RemoteAlbumCollection](
-    AlbumEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT]
+class AlbumReadCollectionEndpoints[UT: URI, RT: RemoteAlbumCollection, IT: RemoteTrack](
+    AlbumEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT]
 ):
     type: ClassVar[Type] = RemoteAlbumCollection
     _extend_type: ClassVar[Type] = RemoteTrack

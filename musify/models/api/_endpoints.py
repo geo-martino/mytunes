@@ -1,6 +1,7 @@
 import functools
 import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
+from contextlib import suppress
 from copy import copy
 from itertools import batched
 from typing import Any, ClassVar, Self, Type, Union
@@ -9,20 +10,20 @@ from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
-    PrivateAttr, model_validator, ModelWrapValidatorHandler
+    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModelMetaclass
+from musify.models._context import RemoteModelContext
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from musify.models.exception import APIModelError, RequestError, CursorResponseError, MusifyValidationError
 from musify.models.properties.logger import HasLogger
-from musify.models.properties.uri import URI
+from musify.models.properties.uri import URI, HasURI
 from musify.models.remote import RemoteModel, RemoteResource
-from musify.models._context import RemoteModelContext
 from musify.utils import get_base_types
 
 
@@ -139,7 +140,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     async def _get_all_items(
             self,
             cursor: PageCursor,
-            path: str | AliasPath,
+            path: str | AliasPath | AliasChoices,
             kind: str | Type | None = None,
             show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], PageCursor]:
@@ -178,7 +179,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     async def _get_all_items_from_cursor(
             self,
             cursor: PageCursor,
-            path: str | AliasPath,
+            path: str | AliasPath | AliasChoices,
             kind: str | Type | None = None,
             show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], PageCursor]:
@@ -192,7 +193,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     async def _get_all_items_by_pagination(
             self,
             cursor: PageCursor,
-            path: str | AliasPath,
+            path: str | AliasPath | AliasChoices,
             kind: str | Type | None = None,
             show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], PageCursor]:
@@ -234,7 +235,11 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     @validate_call
     async def _get_all_items_by_generation[T: IterablePageCursor](
-            self, cursor: T, path: str | AliasPath, kind: str | Type[RT] | None = None, show_bar: bool = True,
+            self,
+            cursor: T,
+            path: str | AliasPath | AliasChoices,
+            kind: str | Type[RT] | None = None,
+            show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], T]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
@@ -279,19 +284,37 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return await self._handler.get(page.url, log_message=log_message)
 
     @classmethod
-    def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
-        match path:
-            case str() as p:
-                sub_items = response[p]
-            case AliasPath() as p:
-                sub_items = p.search_dict_for_path(response)
-                if sub_items is PydanticUndefined:
-                    sub_items = cls._get_items_from_response_nested(response, p)
+    def _get_items_from_response(cls, response: JSON, path: str | AliasPath | AliasChoices) -> list[JSON]:
+        items = None
+        log = path
 
-        return sub_items
+        match path:
+            case str() as alias if alias in response:
+                items = response[alias]
+                log = alias
+
+            case AliasPath() as alias:
+                items = alias.search_dict_for_path(response)
+                if items is PydanticUndefined:
+                    items = cls._get_items_from_response_nested(response, alias)
+                log = ".".join(alias.path)
+
+            case AliasChoices() as choices:
+                log_parts = []
+                for alias in choices.choices:
+                    with suppress(CursorResponseError):
+                        items = cls._get_items_from_response(response, path=alias)
+                    log_parts.append(".".join(alias.path) if isinstance(alias, AliasPath) else alias)
+
+                log = " | ".join(log_parts)
+
+        if isinstance(items, list):
+            return items
+
+        raise CursorResponseError(f"Could not find items in response using the given path/s: {log}")
 
     @classmethod
-    def _get_items_from_response_nested(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
+    def _get_items_from_response_nested(cls, response: JSON, path: str | AliasPath) -> list[JSON] | None:
         path = path if isinstance(path, AliasPath) else AliasPath(path)
 
         keys = iter(path.path)
@@ -300,6 +323,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 path = AliasPath(*copy(keys))
                 response = [cls._get_items_from_response_nested(it, path) for it in response]
                 break
+
+            if key not in response:
+                return
 
             response = response[key]
 
@@ -345,7 +371,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _many_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request.",
     )
-    _many_path: ClassVar[str | AliasPath] = PrivateAttr(
+    _many_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
 
@@ -404,8 +430,8 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return base_url.update_query(ids=",".join(map(str, values)))
 
 
-class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
-    _extend_path: ClassVar[str | AliasPath] = PrivateAttr(
+class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource](Endpoints[UT, RT]):
+    _extend_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
     _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
@@ -413,7 +439,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
     )
 
     @validate_call
-    async def get_all(self, collection: PageCursor | HasPageCursor | RT, show_bar: bool = True) -> list[RT]:
+    async def get_all(self, collection: PageCursor | HasPageCursor | RT, show_bar: bool = True) -> list[IT]:
         """Get all items in the collection by paginating through its cursor. May also give a cursor directly."""
         match collection:
             case PageCursor():
@@ -439,8 +465,8 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection](Endpoints[UT, RT]):
         return list(items)
 
 
-class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
-    ReadItemEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT],
+class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
+    ReadItemEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT],
 ):
     _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request to add items to the resource.",
@@ -454,7 +480,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
     async def add(
-            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
     ) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
@@ -495,7 +521,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
     async def add_and_skip_duplicates(
-            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
         # noinspection PyArgumentList
@@ -517,7 +543,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource](
     @_ApiURLSchema.validate_call
     @_ApiURISchema.validate_call
     async def remove(
-            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
     ) -> int:
         """Remove items from the current user's saved items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
@@ -561,7 +587,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _saved_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request for saved items.",
     )
-    _saved_path: ClassVar[str | AliasPath] = PrivateAttr(
+    _saved_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of saved items in the API response. Use '*' for wildcard matching.",
     )
 

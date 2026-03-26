@@ -62,7 +62,7 @@ class RemoteLibrary[
         self.logger.info(f"Loading {self._log_name} library", header=1)
 
         await self.load_playlists()
-        # await self.load_playlist_items()  # TODO: ADD ME BACK
+        await self.load_playlist_items()  # TODO: ADD ME BACK
 
         await self.load_tracks()
 

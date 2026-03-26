@@ -1,6 +1,5 @@
 import itertools
 import math
-from _contextvars import ContextVar
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Annotated, Self, Any
@@ -20,7 +19,6 @@ from musify.models.result import Result, LenLogFormatter
 from musify.models.user import RemoteUser
 from musify.processors_new._base import InputProcessor
 from musify.processors_new.match import Matcher
-from musify.processors_new.search import SearchResult
 
 
 class CheckResult[T: HasURI](Result):
@@ -175,7 +173,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
             finally:
                 await self._teardown_playlists()
 
-            if not should_continue:  # quit check
+            if not should_continue:
                 break
 
     async def _setup_playlist[T: ResourceModel](
@@ -195,7 +193,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         self._playlists_initial[playlist.uri] = deepcopy(playlist)
         self._playlists[playlist.uri] = playlist
 
-        playlist.tracks.extend(item for item in collection.items if item_has_uri(item))
+        playlist.tracks.extend(item for item in collection.iter_items if item_has_uri(item))
         await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
         await api.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
@@ -229,8 +227,8 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
 
         # otherwise, assume playlist was created by the checker and can be deleted directly
         api: PlaylistReadWriteEndpoints = self.api.playlists
-        tracks = self._playlists[playlist.uri].tracks
-        await api.remove(playlist.uri.api_url, uris=tracks, show_bar=False)
+        uris = [track.uri for track in self._playlists[playlist.uri].tracks]
+        await api.remove(playlist.uri.api_url, uris=uris, show_bar=False)
 
         api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
         await api.delete(playlist.uri.api_url)
@@ -265,7 +263,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         options = {
             "<Name of playlist>":
                 "Print position, item name, URI, and URL from given link of items as originally added to temp playlist",
-            f"<{self.api.source} URL/URI>":
+            f"<{self.source} URL/URI>":
                 "Print position, item name, URI, and URL from given link (useful to check current status of playlist)",
             "<Return/Enter>":
                 "Once you have checked all playlist's items, continue on and check for any switches by the user",

@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from typing import ClassVar, Any, Type
 
-from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt
+from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices
 from yarl import URL
 
 from musify.models import ResourceModel
@@ -20,7 +20,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _query_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to query for resources.",
     )
-    _query_path: ClassVar[None | str | AliasPath] = PrivateAttr(
+    _query_path: ClassVar[None | str | AliasPath | AliasChoices] = PrivateAttr(
         # description=(
         #   "The path to the results in the API response. Use '*' for wildcard matching."
         #   "Use "{type}" to format the resource type"
@@ -40,16 +40,20 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @classmethod
-    def _get_query_path(cls, kind: str | Type[RT]) -> str | AliasPath:
-        match cls._query_path:
+    def _get_query_path[T: str | AliasPath | AliasChoices](cls, path: T | None, kind: str | Type[RT]) -> T:
+        match path:
             case None:
                 return kind.type
-            case str() as path:
-                return path.format(type=kind.type)
-            case AliasPath() as path:
+            case str() as alias:
+                return alias.format(type=kind.type)
+            case AliasPath() as alias:
                 kind = cls._map_type_to_str(kind)
                 # noinspection PyTypeChecker
-                return AliasPath(*(str(part).format(type=kind) for part in path.path))
+                return AliasPath(*(str(part).format(type=kind) for part in alias.path))
+            case AliasChoices() as choices:
+                return AliasChoices(*(cls._get_query_path(alias, kind) for alias in choices.choices))
+
+        raise RequestError(f"Unknown query path type: {path}")
 
     @staticmethod
     def _map_type_to_str(kind: str | Type[RT]) -> str:
@@ -82,7 +86,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         results: dict[str, list[RT]] = {}
         for kind in types:
             key = self._map_type_to_str(kind)
-            path = self._get_query_path(kind=kind)
+            path = self._get_query_path(self._query_path, kind=kind)
             items = self._get_items_from_response(response, path=path)
             results[key] = [self.__class__.create_model(it, context=self._model_context, kind=kind) for it in items]
 

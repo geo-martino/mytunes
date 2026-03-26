@@ -10,6 +10,7 @@ from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.album import SpotifyAlbumCollection
 from musify.spotify.item.album import SpotifyAlbum
+from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
@@ -37,7 +38,7 @@ class SpotifyAlbumEndpoints(
     HasSavedEndpoints[_SpotifySavedAlbumEndpoints],
     AlbumReadItemEndpoints[SpotifyResourceURI, SpotifyAlbum],
     AlbumReadItemsEndpoints[SpotifyResourceURI, SpotifyAlbum],
-    AlbumReadCollectionEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
+    AlbumReadCollectionEndpoints[SpotifyResourceURI, SpotifyAlbumCollection, SpotifyTrack],
 ):
     __final__ = True
 
