@@ -6,12 +6,12 @@ from __future__ import annotations
 from collections.abc import Iterable, Collection
 from typing import Any
 
-from musify.models._base import MusifyResource
-from musify.models.collection import MusifyCollection
+from musify.base import MusifyItem
+from musify.libraries.core.collection import MusifyCollection
 from musify.utils import to_collection
 
 
-class BasicCollection[T: MusifyResource](MusifyCollection[T]):
+class BasicCollection[T: MusifyItem](MusifyCollection[T]):
     """
     A basic implementation of MusifyCollection for storing ``items`` with a given ``name``.
 
@@ -24,8 +24,8 @@ class BasicCollection[T: MusifyResource](MusifyCollection[T]):
     @staticmethod
     def _validate_item_type(items: Any | Iterable[Any]) -> bool:
         if isinstance(items, Iterable):
-            return all(isinstance(item, MusifyResource) for item in items)
-        return isinstance(items, MusifyResource)
+            return all(isinstance(item, MusifyItem) for item in items)
+        return isinstance(items, MusifyItem)
 
     @property
     def name(self):

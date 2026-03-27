@@ -1,7 +1,6 @@
 from p1 import *
-from tests.processors_new.check import conftest
 
-playlist = conftest.playlists["<NAME OF YOUR PLAYLIST>"]  # case sensitive
+playlist = library.playlists["<NAME OF YOUR PLAYLIST>"]  # case sensitive
 album = next(album for album in library.albums if album.name == "<ALBUM NAME>")
 artist = next(artist for artist in library.artists if artist.name == "<ARTIST NAME>")
 folder = next(folder for folder in library.folders if folder.name == "<FOLDER NAME>")

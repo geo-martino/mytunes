@@ -11,11 +11,10 @@ from typing import Any, Self
 
 from aiorequestful.types import UnitCollection
 
-from musify._types import Resource
 from musify.libraries.remote.core import RemoteResponse
 from musify.libraries.remote.core.object import RemoteCollectionLoader, RemoteTrack
 from musify.libraries.remote.core.object import RemotePlaylist, RemoteAlbum, RemoteArtist
-from musify.libraries.remote.core.types import APIInputValueSingle, RemoteIDType
+from musify.libraries.remote.core.types import APIInputValueSingle, RemoteIDType, RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.base import SpotifyObject, SpotifyItem
 from musify.libraries.remote.spotify.exception import SpotifyCollectionError
@@ -133,7 +132,7 @@ class SpotifyTrack(SpotifyItem, RemoteTrack):
         is_minor: bool = self.response["audio_features"]["mode"] == 0
 
         if not key:
-            return
+            return None
         elif '/' in key:
             key_sep = key.split('/')
             return f"{key_sep[0]}{'m'*is_minor}/{key_sep[1]}{'m'*is_minor}"
@@ -221,7 +220,7 @@ class SpotifyTrack(SpotifyItem, RemoteTrack):
         id_ = api.wrangler.extract_ids(value)[0]
         self._response = {
             "href": api.wrangler.convert(
-                id_, kind=Resource.TRACK, type_in=RemoteIDType.ID, type_out=RemoteIDType.URL
+                id_, kind=RemoteObjectType.TRACK, type_in=RemoteIDType.ID, type_out=RemoteIDType.URL
             )
         }
         await self.reload(
@@ -244,9 +243,9 @@ class SpotifyTrack(SpotifyItem, RemoteTrack):
         # reload with enriched data
         response = await self.api.handler.get(self.url)
         if extend_album:
-            await self.api.get_items(response["album"], kind=Resource.ALBUM, extend=False)
+            await self.api.get_items(response["album"], kind=RemoteObjectType.ALBUM, extend=False)
         if extend_artists:
-            await self.api.get_items(response["artists"], kind=Resource.ARTIST)
+            await self.api.get_items(response["artists"], kind=RemoteObjectType.ARTIST)
         if features or analysis:
             await self.api.extend_tracks(response, features=features, analysis=analysis)
 
@@ -259,7 +258,7 @@ class SpotifyCollectionLoader[T: SpotifyObject](RemoteCollectionLoader[T], Spoti
     __slots__ = ()
 
     @classmethod
-    def _get_item_kind(cls, api: SpotifyAPI) -> Resource:
+    def _get_item_kind(cls, api: SpotifyAPI) -> RemoteObjectType:
         """Returns the :py:class:`RemoteObjectType` for the items in this collection"""
         return api.collection_item_map[cls.kind]
 
@@ -311,7 +310,7 @@ class SpotifyCollectionLoader[T: SpotifyObject](RemoteCollectionLoader[T], Spoti
 
         # find items in the response that match from the given items
         for source_item in response:
-            if cls.kind == Resource.PLAYLIST:
+            if cls.kind == RemoteObjectType.PLAYLIST:
                 source_item = source_item["track"]
 
             if source_item["uri"] in skip:
@@ -528,7 +527,7 @@ class SpotifyPlaylist(SpotifyCollectionLoader[SpotifyTrack], RemotePlaylist[Spot
 
     async def reload(self, extend_tracks: bool = False, extend_features: bool = False, *_, **__) -> None:
         self._check_for_api()
-        response = next(iter(await self.api.get_items(self.url, kind=Resource.PLAYLIST, extend=False)))
+        response = next(iter(await self.api.get_items(self.url, kind=RemoteObjectType.PLAYLIST, extend=False)))
 
         skip_checks = await self._extend_response(
             response=response, api=self.api, extend_tracks=extend_tracks, extend_features=extend_features
@@ -675,7 +674,7 @@ class SpotifyAlbum(RemoteAlbum[SpotifyTrack], SpotifyCollectionLoader[SpotifyTra
         item_kind = api.collection_item_map[cls.kind]
 
         if extend_artists:
-            await api.get_items(response["artists"], kind=Resource.ARTIST)
+            await api.get_items(response["artists"], kind=RemoteObjectType.ARTIST)
 
         if extend_tracks:
             # noinspection PyTypeChecker
@@ -692,7 +691,7 @@ class SpotifyAlbum(RemoteAlbum[SpotifyTrack], SpotifyCollectionLoader[SpotifyTra
             self, extend_artists: bool = False, extend_tracks: bool = False, extend_features: bool = False, *_, **__
     ) -> None:
         self._check_for_api()
-        response = next(iter(await self.api.get_items(self.url, kind=Resource.ALBUM, extend=False)))
+        response = next(iter(await self.api.get_items(self.url, kind=RemoteObjectType.ALBUM, extend=False)))
 
         skip_checks = await self._extend_response(
             response=response,
@@ -771,8 +770,8 @@ class SpotifyArtist(RemoteArtist[SpotifyAlbum], SpotifyCollectionLoader[SpotifyA
         ]
 
     @classmethod
-    def _get_item_kind(cls, api: SpotifyAPI) -> Resource:
-        return Resource.ALBUM
+    def _get_item_kind(cls, api: SpotifyAPI) -> RemoteObjectType:
+        return RemoteObjectType.ALBUM
 
     @classmethod
     async def _get_items(
@@ -800,7 +799,7 @@ class SpotifyArtist(RemoteArtist[SpotifyAlbum], SpotifyCollectionLoader[SpotifyA
             *_,
             **__
     ) -> bool:
-        item_kind = Resource.ALBUM
+        item_kind = RemoteObjectType.ALBUM
         item_key = item_kind.name.lower() + "s"
 
         response_items = response.get(item_key, {})

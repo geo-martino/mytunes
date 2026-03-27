@@ -2,7 +2,7 @@ from p0 import *
 
 from collections.abc import Collection
 
-from musify.models.collection import MusifyCollection
+from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.processors.search import RemoteItemSearcher
 from musify.processors.check import RemoteItemChecker

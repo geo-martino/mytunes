@@ -9,9 +9,9 @@ from typing import Any
 import mutagen
 import mutagen.asf
 import mutagen.id3
+
 from musify.field import TagMap
 from musify.file.image import open_image, get_image_bytes
-
 # noinspection PyProtectedMember
 from musify.libraries.local.track._tags import TagReader, TagWriter
 from musify.libraries.local.track.track import LocalTrack

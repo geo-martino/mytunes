@@ -1,6 +1,6 @@
 from p3 import *
 
-from musify._types import Resource
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.core.object import RemoteAlbum
 
 
@@ -15,7 +15,7 @@ async def get_albums(library: RemoteLibrary, start: date, end: date) -> list[Rem
     if not albums_need_extend:
         return albums
 
-    kind = Resource.ALBUM
+    kind = RemoteObjectType.ALBUM
     key = api.collection_item_map[kind]
 
     async with library:

@@ -11,19 +11,19 @@ from typing import Any, Self
 
 import mutagen
 from aiorequestful.types import UnitIterable
+from yarl import URL
+
+from musify.base import MusifyItem
+from musify.exception import MusifyKeyError, MusifyAttributeError, MusifyTypeError, MusifyValueError
 from musify.field import TagMap
 from musify.field import TrackField
 from musify.file.exception import FileDoesNotExistError, UnexpectedPathError
-from musify.models.track import Track
-from yarl import URL
-
-from musify.exception import MusifyKeyError, MusifyAttributeError, MusifyTypeError, MusifyValueError
+from musify.libraries.core.object import Track
 from musify.libraries.local.base import LocalItem
 # noinspection PyProtectedMember
 from musify.libraries.local.track._tags import TagReader, TagWriter, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField as Tags, LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.models._base import MusifyResource
 from musify.utils import to_collection
 
 
@@ -332,7 +332,7 @@ class LocalTrack[T: mutagen.FileType, U: TagReader, V: TagWriter](LocalItem, Tra
         try:
             return self._reader.file.info.bits_per_sample
         except AttributeError:
-            return
+            return None
 
     @property
     def sample_rate(self) -> float:
@@ -590,7 +590,7 @@ class LocalTrack[T: mutagen.FileType, U: TagReader, V: TagWriter](LocalItem, Tra
         # https://github.com/python/cpython/issues/46488
         return super().__hash__()
 
-    def __eq__(self, item: MusifyResource):
+    def __eq__(self, item: MusifyItem):
         if hasattr(item, "path"):
             return self.path == item.path
         return super().__eq__(item)

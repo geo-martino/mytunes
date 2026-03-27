@@ -11,10 +11,9 @@ from typing import Any
 from aiorequestful.types import URLInput
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core import RemoteResponse
 from musify.libraries.remote.core.exception import APIError, RemoteObjectTypeError
-from musify.libraries.remote.core.types import APIInputValueMulti, RemoteIDType
+from musify.libraries.remote.core.types import APIInputValueMulti, RemoteIDType, RemoteObjectType
 from musify.libraries.remote.spotify.api.base import SpotifyAPIBase
 from musify.utils import limit_value, to_collection
 
@@ -127,8 +126,8 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
     async def extend_items(
             self,
             response: MutableMapping[str, Any] | RemoteResponse,
-            kind: Resource | str | None = None,
-            key: Resource | None = None,
+            kind: RemoteObjectType | str | None = None,
+            key: RemoteObjectType | None = None,
             leave_bar: bool | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -245,7 +244,7 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
     async def get_items(
             self,
             values: APIInputValueMulti[RemoteResponse],
-            kind: Resource | None = None,
+            kind: RemoteObjectType | None = None,
             limit: int = 50,
             extend: bool = True,
     ) -> list[dict[str, Any]]:
@@ -294,9 +293,9 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
         url = f"{self.url}/{unit}"
         id_list = self.wrangler.extract_ids(values, kind=kind)
 
-        if kind in {Resource.USER, Resource.PLAYLIST} or len(id_list) <= 1:
+        if kind in {RemoteObjectType.USER, RemoteObjectType.PLAYLIST} or len(id_list) <= 1:
             limit = 1  # force non-batched calls
-        elif kind == Resource.ALBUM:
+        elif kind == RemoteObjectType.ALBUM:
             limit = limit_value(limit, floor=1, ceil=20)
         results = await self._get_items(
             url=url, id_list=id_list, kind=unit, key=unit if limit > 1 else None, limit=limit
@@ -332,7 +331,7 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
     async def get_user_items(
             self,
             user: str | None = None,
-            kind: Resource = Resource.PLAYLIST,
+            kind: RemoteObjectType = RemoteObjectType.PLAYLIST,
             limit: int = 50,
     ) -> list[dict[str, Any]]:
         """
@@ -351,7 +350,7 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
         # input validation
         if kind not in self.user_item_types:
             raise RemoteObjectTypeError(f"{kind.name.title()}s are not a valid user collection type", kind=kind)
-        if kind != Resource.PLAYLIST and user is not None:
+        if kind != RemoteObjectType.PLAYLIST and user is not None:
             raise RemoteObjectTypeError(
                 f"Only able to retrieve {kind.name.lower()}s from the currently authenticated user",
                 kind=kind
@@ -359,16 +358,16 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
 
         params = {"limit": limit_value(limit, floor=1, ceil=50)}
         if user is not None:
-            url = self.wrangler.convert(user, kind=Resource.USER, type_out=RemoteIDType.URL)
+            url = self.wrangler.convert(user, kind=RemoteObjectType.USER, type_out=RemoteIDType.URL)
             url = f"{url}/{kind.name.lower()}s"
             desc_qualifier = "user's"
-        elif kind == Resource.ARTIST:
+        elif kind == RemoteObjectType.ARTIST:
             url = f"{self.url}/me/following"
             desc_qualifier = "current user's followed"
             params["type"] = "artist"
         else:
             url = f"{self.url}/me/{kind.name.lower()}s"
-            desc_qualifier = "current user's" if kind == Resource.PLAYLIST else "current user's saved"
+            desc_qualifier = "current user's" if kind == RemoteObjectType.PLAYLIST else "current user's saved"
 
         desc = f"Getting {desc_qualifier} {kind.name.lower()}s"
         initial = await self.handler.get(url, params=params)
@@ -418,7 +417,7 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
         :return: API JSON responses for each item, or the original response if the input ``values`` are API responses.
         :raise RemoteObjectTypeError: Raised when the item types of the input ``values`` are not all tracks or IDs.
         """
-        tracks = await self.get_items(values=values, kind=Resource.TRACK, limit=limit)
+        tracks = await self.get_items(values=values, kind=RemoteObjectType.TRACK, limit=limit)
 
         # ensure that response are being assigned back to the original values if API response(s) given
         if isinstance(values, Mapping | RemoteResponse):
@@ -470,9 +469,9 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
         if not values:  # skip on empty
             self.handler.log("SKIP", self.url, message="No data given")
             return []
-        self.wrangler.validate_item_type(values, kind=Resource.TRACK)
+        self.wrangler.validate_item_type(values, kind=RemoteObjectType.TRACK)
 
-        id_list = self.wrangler.extract_ids(values, kind=Resource.TRACK)
+        id_list = self.wrangler.extract_ids(values, kind=RemoteObjectType.TRACK)
 
         # value list takes the form [URL, key, batched]
         config: dict[str, tuple[str, str, bool]] = {}
@@ -558,20 +557,20 @@ class SpotifyAPIItems(SpotifyAPIBase, metaclass=ABCMeta):
             raise APIError(
                 f"Given types not recognised, must be one or many of the following: {ARTIST_ALBUM_TYPES} ({types})"
             )
-        self.wrangler.validate_item_type(values, kind=Resource.ARTIST)
+        self.wrangler.validate_item_type(values, kind=RemoteObjectType.ARTIST)
 
         params = {"limit": limit_value(limit, floor=1, ceil=50)}
         if types:
             params["include_groups"] = ",".join(set(types))
 
-        key = Resource.ALBUM
+        key = RemoteObjectType.ALBUM
         results: dict[str, dict[str, Any]] = {}
 
         async def _get_result(id_: str) -> None:
             results[id_] = await self.handler.get(url=url.format(id=id_), params=params)
             await self.extend_items(results[id_], kind="artist albums", key=key, leave_bar=False)
 
-        id_list = self.wrangler.extract_ids(values, kind=Resource.ARTIST)
+        id_list = self.wrangler.extract_ids(values, kind=RemoteObjectType.ARTIST)
         await self.logger.get_asynchronous_iterator(
             map(_get_result, id_list),
             desc="Getting artist albums",

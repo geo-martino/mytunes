@@ -11,18 +11,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Self, Literal
 
-from musify.base import Result
-from musify.models.album import Album
-from musify.models.artist import Artist
-from musify.models.object import Playlist
-from musify.models.track import Track
-
+from musify.base import MusifyItem, Result
+from musify.libraries.core.collection import MusifyCollection
+from musify.libraries.core.object import Track, Album, Playlist, Artist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.base import RemoteObject, RemoteItem
 from musify.libraries.remote.core.exception import RemoteError, APIError
 from musify.libraries.remote.core.types import APIInputValueSingle
-from musify.models._base import MusifyResource
-from musify.models.collection import MusifyCollection
 from musify.utils import get_most_common_values
 
 
@@ -190,7 +185,7 @@ class RemotePlaylist[T: RemoteTrack](Playlist[T], RemoteCollectionLoader[T], met
 
     async def sync(
             self,
-            items: Iterable[MusifyResource] = (),
+            items: Iterable[MusifyItem] = (),
             kind: PLAYLIST_SYNC_KINDS = "new",
             reload: bool = True,
             dry_run: bool = True,

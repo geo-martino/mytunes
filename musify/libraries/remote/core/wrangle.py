@@ -7,10 +7,9 @@ from collections.abc import Mapping
 from aiorequestful.types import URLInput
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core import RemoteResponse
 from musify.libraries.remote.core.exception import RemoteObjectTypeError
-from musify.libraries.remote.core.types import APIInputValueSingle, APIInputValueMulti, RemoteIDType
+from musify.libraries.remote.core.types import APIInputValueSingle, APIInputValueMulti, RemoteIDType, RemoteObjectType
 
 
 class RemoteDataWrangler(metaclass=ABCMeta):
@@ -47,7 +46,7 @@ class RemoteDataWrangler(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def get_id_type(value: str, kind: Resource | None = None) -> RemoteIDType:
+    def get_id_type(value: str, kind: RemoteObjectType | None = None) -> RemoteIDType:
         """
         Determine the remote ID type of the given ``value`` and return its type.
 
@@ -67,8 +66,8 @@ class RemoteDataWrangler(metaclass=ABCMeta):
 
     @classmethod
     def get_item_type(
-            cls, values: APIInputValueMulti[RemoteResponse], kind: Resource | None = None
-    ) -> Resource:
+            cls, values: APIInputValueMulti[RemoteResponse], kind: RemoteObjectType | None = None
+    ) -> RemoteObjectType:
         """
         Determine the remote object type of ``values``.
 
@@ -107,8 +106,8 @@ class RemoteDataWrangler(metaclass=ABCMeta):
     @staticmethod
     @abstractmethod
     def _get_item_type(
-            value: APIInputValueSingle[RemoteResponse], kind: Resource | None = None
-    ) -> Resource | None:
+            value: APIInputValueSingle[RemoteResponse], kind: RemoteObjectType | None = None
+    ) -> RemoteObjectType | None:
         """
         Determine the remote object type of the given ``value`` and return its type.
 
@@ -128,7 +127,7 @@ class RemoteDataWrangler(metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def validate_item_type(cls, values: APIInputValueMulti[RemoteResponse], kind: Resource) -> None:
+    def validate_item_type(cls, values: APIInputValueMulti[RemoteResponse], kind: RemoteObjectType) -> None:
         """
         Check that the given ``values`` are a type of item given by ``kind`` or a simple ID.
 
@@ -157,7 +156,7 @@ class RemoteDataWrangler(metaclass=ABCMeta):
     def convert(
             cls,
             value: str,
-            kind: Resource | None = None,
+            kind: RemoteObjectType | None = None,
             type_in: RemoteIDType = RemoteIDType.ALL,
             type_out: RemoteIDType = RemoteIDType.ID
     ) -> str:
@@ -179,7 +178,7 @@ class RemoteDataWrangler(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def extract_ids(cls, values: APIInputValueMulti[RemoteResponse], kind: Resource | None = None) -> list[str]:
+    def extract_ids(cls, values: APIInputValueMulti[RemoteResponse], kind: RemoteObjectType | None = None) -> list[str]:
         """
         Extract a list of IDs from input ``values``.
 

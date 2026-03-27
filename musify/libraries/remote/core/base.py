@@ -8,12 +8,11 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import Any, Self
 
-from musify._types import Resource
+from musify.base import MusifyItem
 from musify.libraries.remote.core import RemoteResponse
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.exception import APIError
-from musify.libraries.remote.core.types import APIInputValueSingle
-from musify.models._base import MusifyResource
+from musify.libraries.remote.core.types import APIInputValueSingle, RemoteObjectType
 
 
 class RemoteObject[T: (RemoteAPI | None)](RemoteResponse, metaclass=ABCMeta):
@@ -47,7 +46,7 @@ class RemoteObject[T: (RemoteAPI | None)](RemoteResponse, metaclass=ABCMeta):
     # noinspection PyPropertyDefinition,PyMethodParameters
     @property
     @abstractmethod
-    def kind(cls) -> Resource:
+    def kind(cls) -> RemoteObjectType:
         raise NotImplementedError
 
     def __init__(self, response: dict[str, Any], api: T = None, skip_checks: bool = False):
@@ -121,7 +120,7 @@ class RemoteObject[T: (RemoteAPI | None)](RemoteResponse, metaclass=ABCMeta):
         return self.uri == item.uri
 
 
-class RemoteItem(RemoteObject, MusifyResource, metaclass=ABCMeta):
+class RemoteItem(RemoteObject, MusifyItem, metaclass=ABCMeta):
     """Generic base class for remote items. Extracts key data from a remote API JSON response."""
 
-    __attributes_classes__ = (RemoteObject, MusifyResource)
+    __attributes_classes__ = (RemoteObject, MusifyItem)

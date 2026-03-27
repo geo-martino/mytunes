@@ -7,9 +7,9 @@ from abc import ABCMeta
 
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core.base import RemoteObject, RemoteItem
 from musify.libraries.remote.core.exception import RemoteObjectTypeError, RemoteError
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 
 
@@ -52,7 +52,7 @@ class SpotifyObject(RemoteObject[SpotifyAPI], metaclass=ABCMeta):
 
         kind = self.__class__.__name__.removeprefix("Spotify").lower()
         if self.response.get("type") != kind:
-            kind = Resource.from_name(kind)[0]
+            kind = RemoteObjectType.from_name(kind)[0]
             raise RemoteObjectTypeError("Response type invalid", kind=kind, value=self.response.get("type"))
 
 

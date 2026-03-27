@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Self
 
 from musify.base import Result
-
+from musify.file.base import File
+from musify.file.path_mapper import PathMapper
 from musify.libraries.local.playlist.base import LocalPlaylist
 from musify.libraries.local.track import LocalTrack, load_track
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.models.properties.file import File, PathMapper
 from musify.processors.filter import FilterDefinedList
 
 
@@ -95,7 +95,7 @@ class M3U(LocalPlaylist[FilterDefinedList[str | Path | File]]):
 
             if not path_list:  # empty playlist file
                 self.clear()
-                self._original.clear()
+                self._original = []
                 return self
 
         self.matcher = FilterDefinedList(values=path_list)

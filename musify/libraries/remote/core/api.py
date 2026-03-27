@@ -17,9 +17,8 @@ from aiorequestful.response.payload import JSONPayloadHandler
 from aiorequestful.types import UnitSequence, UnitList, ImmutableJSON, JSON
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core import RemoteResponse
-from musify.libraries.remote.core.types import APIInputValueSingle, APIInputValueMulti, RemoteIDType
+from musify.libraries.remote.core.types import APIInputValueSingle, APIInputValueMulti, RemoteIDType, RemoteObjectType
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import MusifyLogger
 from musify.utils import align_string, to_collection
@@ -42,14 +41,14 @@ class RemoteAPI[A: Authoriser](metaclass=ABCMeta):
     #: Map of :py:class:`RemoteObjectType` for remote collections
     #: to the  :py:class:`RemoteObjectType` of the items they hold
     collection_item_map = {
-        Resource.PLAYLIST: Resource.TRACK,
-        Resource.ALBUM: Resource.TRACK,
-        Resource.AUDIOBOOK: Resource.CHAPTER,
-        Resource.SHOW: Resource.EPISODE,
+        RemoteObjectType.PLAYLIST: RemoteObjectType.TRACK,
+        RemoteObjectType.ALBUM: RemoteObjectType.TRACK,
+        RemoteObjectType.AUDIOBOOK: RemoteObjectType.CHAPTER,
+        RemoteObjectType.SHOW: RemoteObjectType.EPISODE,
     }
     #: A set of possible saved item types that can be retrieved for the currently authenticated user
     user_item_types = (
-            set(collection_item_map) | {Resource.TRACK, Resource.ARTIST, Resource.EPISODE}
+            set(collection_item_map) | {RemoteObjectType.TRACK, RemoteObjectType.ARTIST, RemoteObjectType.EPISODE}
     )
     #: The key to use when getting an ID from a response
     id_key = "id"
@@ -299,7 +298,7 @@ class RemoteAPI[A: Authoriser](metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def query(self, query: str, kind: Resource, limit: int = 10) -> list[dict[str, Any]]:
+    async def query(self, query: str, kind: RemoteObjectType, limit: int = 10) -> list[dict[str, Any]]:
         """
         ``GET`` - Query for items. Modify result types returned with kind parameter
 
@@ -317,8 +316,8 @@ class RemoteAPI[A: Authoriser](metaclass=ABCMeta):
     async def extend_items(
             self,
             response: MutableMapping[str, Any] | RemoteResponse,
-            kind: Resource | str | None = None,
-            key: Resource | None = None,
+            kind: RemoteObjectType | str | None = None,
+            key: RemoteObjectType | None = None,
             leave_bar: bool | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -345,7 +344,7 @@ class RemoteAPI[A: Authoriser](metaclass=ABCMeta):
     async def get_items(
             self,
             values: APIInputValueMulti[RemoteResponse],
-            kind: Resource | None = None,
+            kind: RemoteObjectType | None = None,
             limit: int = 50,
             extend: bool = True,
     ) -> list[dict[str, Any]]:
@@ -390,7 +389,7 @@ class RemoteAPI[A: Authoriser](metaclass=ABCMeta):
 
     @abstractmethod
     async def get_user_items(
-            self, user: str | None = None, kind: Resource = Resource.PLAYLIST, limit: int = 50,
+            self, user: str | None = None, kind: RemoteObjectType = RemoteObjectType.PLAYLIST, limit: int = 50,
     ) -> list[dict[str, Any]]:
         """
         ``GET`` - Get saved items for a given user.

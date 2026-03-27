@@ -4,8 +4,8 @@ Implements a :py:class:`RemoteLibrary` for Spotify.
 from collections.abc import Collection, Iterable
 from typing import Any
 
-from musify._types import Resource
 from musify.libraries.remote.core.library import RemoteLibrary
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyArtist, SpotifyPlaylist
@@ -70,7 +70,7 @@ class SpotifyLibrary(RemoteLibrary[SpotifyAPI, SpotifyPlaylist, SpotifyTrack, Sp
         # enrich on list of URIs to avoid duplicate calls for same items
         if albums:
             album_uris: set[str] = {track.response["album"]["uri"] for track in self.tracks}
-            album_responses = await self.api.get_items(album_uris, kind=Resource.ALBUM, extend=False)
+            album_responses = await self.api.get_items(album_uris, kind=RemoteObjectType.ALBUM, extend=False)
             for album in album_responses:
                 album.pop("tracks", None)
 
@@ -81,7 +81,7 @@ class SpotifyLibrary(RemoteLibrary[SpotifyAPI, SpotifyPlaylist, SpotifyTrack, Sp
 
         if artists:
             artist_uris: set[str] = {artist["uri"] for track in self.tracks for artist in track.response["artists"]}
-            artist_responses = await self.api.get_items(artist_uris, kind=Resource.ARTIST, extend=False)
+            artist_responses = await self.api.get_items(artist_uris, kind=RemoteObjectType.ARTIST, extend=False)
 
             artists = {response["uri"]: response for response in artist_responses}
             for track in self.tracks:
@@ -101,7 +101,7 @@ class SpotifyLibrary(RemoteLibrary[SpotifyAPI, SpotifyPlaylist, SpotifyTrack, Sp
             f"\33[1;95m  >\33[1;97m Enriching {len(self.albums)} {self.api.source} albums \33[0m"
         )
 
-        kind = Resource.ALBUM
+        kind = RemoteObjectType.ALBUM
         key = self.api.collection_item_map[kind]
 
         await self.logger.get_asynchronous_iterator(
@@ -137,7 +137,7 @@ class SpotifyLibrary(RemoteLibrary[SpotifyAPI, SpotifyPlaylist, SpotifyTrack, Sp
         await self.api.get_artist_albums(self.artists, types=types)
 
         if tracks:
-            kind = Resource.ALBUM
+            kind = RemoteObjectType.ALBUM
             key = self.api.collection_item_map[kind]
 
             responses_albums = [album for artist in self.artists for album in artist.albums]

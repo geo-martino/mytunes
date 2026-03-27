@@ -134,7 +134,7 @@ class TagReader[T: mutagen.FileType](TagProcessor, metaclass=ABCMeta):
         try:
             return float(values[0]) if values is not None else None
         except ValueError:
-            return
+            return None
 
     def read_key(self) -> str | None:
         """Extract key tags from file"""
@@ -165,7 +165,7 @@ class TagReader[T: mutagen.FileType](TagProcessor, metaclass=ABCMeta):
         try:
             return bool(int(values[0])) if values is not None else None
         except ValueError:
-            return
+            return None
 
     def read_comments(self) -> list[str] | None:
         """Extract comment tags from file"""
@@ -181,7 +181,7 @@ class TagReader[T: mutagen.FileType](TagProcessor, metaclass=ABCMeta):
         read_method = getattr(self, f"read_{self.uri_tag.name.lower()}")
         possible_values: tuple[str, ...] | None = to_collection(read_method())
         if not possible_values:
-            return
+            return None
 
         # WORKAROUND: for dodgy MP3 tag comments; split on null and take first value
         possible_values = tuple(val for values in possible_values for val in values.split("\x00"))
@@ -189,7 +189,7 @@ class TagReader[T: mutagen.FileType](TagProcessor, metaclass=ABCMeta):
             if uri == wrangler.unavailable_uri_dummy or wrangler.validate_id_type(uri, kind=RemoteIDType.URI):
                 return uri
 
-        return
+        return None
 
     @abstractmethod
     def read_images(self) -> ImageType:

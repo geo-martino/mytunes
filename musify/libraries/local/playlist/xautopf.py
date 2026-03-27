@@ -7,16 +7,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Self
 
-from musify.base import Result
-from musify.field import Fields, Field, TagFields
-from musify.printer import PrettyPrinter
-
+from musify.base import MusifyItem, Result
 from musify.exception import FieldError, MusifyImportError
+from musify.field import Fields, Field, TagFields
+from musify.file.base import File
+from musify.file.path_mapper import PathMapper
 from musify.libraries.local.playlist.base import LocalPlaylist
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.models._base import MusifyResource
-from musify.models.properties.file import File, PathMapper
+from musify.printer import PrettyPrinter
 from musify.processors.compare import Comparer
 from musify.processors.exception import SorterProcessorError
 from musify.processors.filter import FilterDefinedList, FilterComparers
@@ -469,7 +468,7 @@ class XMLPlaylistParser(File, PrettyPrinter):
         }
 
     def parse_exception_paths(
-            self, matcher: FilterMatcher | None, items: list[File], original: list[File | MusifyResource]
+            self, matcher: FilterMatcher | None, items: list[File], original: list[File | MusifyItem]
     ) -> None:
         """
         Parse the exception paths (i.e. include/exclude attributes) for the given ``matcher``

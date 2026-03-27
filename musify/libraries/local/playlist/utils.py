@@ -8,13 +8,12 @@ from collections.abc import Collection
 from pathlib import Path
 
 from musify.file.exception import InvalidFileType
-
+from musify.file.path_mapper import PathMapper
 from musify.libraries.local.playlist.base import LocalPlaylist
 from musify.libraries.local.playlist.m3u import M3U
 from musify.libraries.local.playlist.xautopf import XAutoPF, REQUIRED_MODULES as REQUIRED_XAUTOPF_MODULES
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.models.properties.file import PathMapper
 from musify.utils import required_modules_installed
 
 _playlist_classes = {M3U}

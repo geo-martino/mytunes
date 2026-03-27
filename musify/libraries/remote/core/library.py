@@ -6,21 +6,18 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, Iterable
 from typing import Any, Literal, Self
 
-from musify.models.object import Library, Playlist
-from musify.models.track import Track
-
-from musify._types import Resource
+from musify.base import MusifyItem
+from musify.libraries.core.object import Track, Library, Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.object import RemoteCollection, SyncResultRemotePlaylist
 from musify.libraries.remote.core.object import RemoteTrack, RemotePlaylist, RemoteArtist, RemoteAlbum
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.logger import MusifyLogger
 from musify.logger import STAT
-from musify.models._base import MusifyResource
 from musify.processors.base import Filter
 from musify.processors.filter import FilterDefinedList
 from musify.utils import align_string, get_max_width, to_collection
-from tests.processors_new.check import conftest
 
 type RestorePlaylistsType = (
         Library |
@@ -29,7 +26,7 @@ type RestorePlaylistsType = (
         Mapping[str, Iterable[str]] |
         Mapping[str, Iterable[Mapping[str, Any]]]
 )
-type SyncPlaylistsType = Library | Mapping[str, Collection[MusifyResource]] | Collection[Playlist] | None
+type SyncPlaylistsType = Library | Mapping[str, Collection[MusifyItem]] | Collection[Playlist] | None
 
 
 class RemoteLibrary[
@@ -50,7 +47,7 @@ class RemoteLibrary[
 
     @property
     def _log_min_width(self) -> int:
-        max_type_width = max(len(str(enum.name)) for enum in Resource.all())
+        max_type_width = max(len(str(enum.name)) for enum in RemoteObjectType.all())
         return len(f"USER'S {self.api.source.upper()} ") + max_type_width
 
     @property
@@ -122,7 +119,7 @@ class RemoteLibrary[
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def extend(self, __items: Iterable[MusifyResource], allow_duplicates: bool = True) -> None:
+    async def extend(self, __items: Iterable[MusifyItem], allow_duplicates: bool = True) -> None:
         self.logger.debug(f"Extend {self.api.source} tracks data: START")
 
         load_uris = []
@@ -179,14 +176,14 @@ class RemoteLibrary[
         """
         self.logger.debug(f"Load {self.api.source} playlists: START")
 
-        responses = await self.api.get_user_items(kind=Resource.PLAYLIST)
+        responses = await self.api.get_user_items(kind=RemoteObjectType.PLAYLIST)
         responses = self._filter_playlists(responses)
 
         self.logger.info(
             f"\33[1;95m  >\33[1;97m Getting {self._get_total_tracks(responses=responses)} "
             f"tracks from {len(responses)} {self.api.source} playlists \33[0m"
         )
-        await self.api.get_items(responses, kind=Resource.PLAYLIST)
+        await self.api.get_items(responses, kind=RemoteObjectType.PLAYLIST)
 
         playlists = [
             self.factory.playlist(response=r, skip_checks=False)
@@ -230,7 +227,7 @@ class RemoteLibrary[
         """
         self.logger.debug(f"Load user's saved {self.api.source} tracks: START")
 
-        responses = await self.api.get_user_items(kind=Resource.TRACK)
+        responses = await self.api.get_user_items(kind=RemoteObjectType.TRACK)
         for response in self.logger.get_synchronous_iterator(responses, desc="Processing tracks", unit="tracks"):
             track = self.factory.track(response=response, skip_checks=True)
 
@@ -277,7 +274,7 @@ class RemoteLibrary[
         """
         self.logger.debug(f"Load user's saved {self.api.source} albums: START")
 
-        responses = await self.api.get_user_items(kind=Resource.ALBUM)
+        responses = await self.api.get_user_items(kind=RemoteObjectType.ALBUM)
         for response in self.logger.get_synchronous_iterator(responses, desc="Processing albums", unit="albums"):
             album = self.factory.album(response=response, skip_checks=True)
 
@@ -288,7 +285,7 @@ class RemoteLibrary[
                 current._response = album.response
                 current.refresh(skip_checks=True)
 
-            for track in conftest.tracks:  # add tracks from this album to the user's saved tracks
+            for track in album.tracks:  # add tracks from this album to the user's saved tracks
                 if track not in self.tracks:
                     self._tracks.append(track)
 
@@ -321,7 +318,7 @@ class RemoteLibrary[
         """
         self.logger.debug(f"Load user's saved {self.api.source} artists: START")
 
-        responses = await self.api.get_user_items(kind=Resource.ARTIST)
+        responses = await self.api.get_user_items(kind=RemoteObjectType.ARTIST)
         for response in self.logger.get_synchronous_iterator(responses, desc="Processing artists", unit="artists"):
             artist = self.factory.artist(response=response, skip_checks=True)
 
@@ -408,10 +405,10 @@ class RemoteLibrary[
     @staticmethod
     def _extract_playlists_from_backup(playlists: RestorePlaylistsType) -> Mapping[str, list[str]]:
         if isinstance(playlists, Library):  # get URIs from playlists in library
-            playlists = {name: [track.uri for track in pl] for name, pl in conftest.playlists.items()}
+            playlists = {name: [track.uri for track in pl] for name, pl in playlists.playlists.items()}
         elif (
                 isinstance(playlists, Mapping)
-                and all(isinstance(v, MusifyResource) for vals in playlists.values() for v in vals)
+                and all(isinstance(v, MusifyItem) for vals in playlists.values() for v in vals)
         ):
             # get URIs from playlists in map values
             playlists = {name: [item.uri for item in pl] for name, pl in playlists.items()}
@@ -470,7 +467,7 @@ class RemoteLibrary[
             f"{f" and reloading stored playlists" if reload else ""} \33[0m"
         )
 
-        async def _sync_playlist(name: str, pl: Collection[MusifyResource]) -> tuple[str, SyncResultRemotePlaylist]:
+        async def _sync_playlist(name: str, pl: Collection[MusifyItem]) -> tuple[str, SyncResultRemotePlaylist]:
             if name not in self.playlists:  # new playlist given, create it on remote first
                 if dry_run:
                     result = SyncResultRemotePlaylist(
@@ -494,11 +491,11 @@ class RemoteLibrary[
         self.logger.debug(f"Sync {self.api.source} playlists: DONE\n")
         return results
 
-    def _extract_playlists_for_sync(self, playlists: SyncPlaylistsType) -> Mapping[str, Collection[MusifyResource]]:
+    def _extract_playlists_for_sync(self, playlists: SyncPlaylistsType) -> Mapping[str, Collection[MusifyItem]]:
         if not playlists:  # use the playlists as stored in this library object
             playlists = self.playlists
         elif isinstance(playlists, Library):  # get map of playlists from the given library
-            playlists = conftest.playlists
+            playlists = playlists.playlists
         elif isinstance(playlists, Collection) and all(isinstance(pl, Playlist) for pl in playlists):
             # reformat list to map
             playlists = {pl.name: pl for pl in playlists}

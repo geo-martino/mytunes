@@ -7,10 +7,10 @@ import inspect
 from dataclasses import dataclass
 from functools import partial
 
-from musify._types import Resource
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.base import RemoteObject
 from musify.libraries.remote.core.object import RemoteTrack, RemoteAlbum, RemotePlaylist, RemoteArtist
+from musify.libraries.remote.core.types import RemoteObjectType
 
 
 @dataclass
@@ -27,7 +27,7 @@ class RemoteObjectFactory[A: RemoteAPI, PL: RemotePlaylist, TR: RemoteTrack, AL:
     #: An optional :py:class:`RemoteAPI` object to pass to each object on instantiation
     api: A = None
 
-    def __getitem__(self, __key: Resource) -> type[RemoteObject]:
+    def __getitem__(self, __key: RemoteObjectType) -> type[RemoteObject]:
         return self.__getattribute__(__key.name.lower())
 
     def __getattribute__(self, __name: str):

@@ -3,9 +3,8 @@ Exceptions relating to remote operations.
 """
 from typing import Any
 
-from musify._types import Resource
 from musify.exception import MusifyError
-from musify.libraries.remote.core.types import RemoteIDType
+from musify.libraries.remote.core.types import RemoteIDType, RemoteObjectType
 
 
 class RemoteError(MusifyError):
@@ -44,7 +43,7 @@ class RemoteObjectTypeError(RemoteError):
     """
 
     def __init__(
-            self, message: str | None = None, kind: Resource | None = None, value: Any = None):
+            self, message: str | None = None, kind: RemoteObjectType | None = None, value: Any = None):
         self.kind = kind.name if kind else None
         formatted = f"{self.kind} | {message}" if self.kind else message
         formatted += f": {value}" if value else ""
