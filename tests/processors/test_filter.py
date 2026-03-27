@@ -4,18 +4,18 @@ from pathlib import Path
 from random import sample, shuffle, randrange, choice
 
 import pytest
-from musify.field import TagFields
-from tests.testers import PrettyPrinterTester
 
+from musify.field import TagFields
+from musify.file.path_mapper import PathStemMapper, PathMapper
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
-from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors.base import Filter
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterDefinedList, FilterComparers, FilterIncludeExclude
 from musify.processors.filter_matcher import FilterMatcher
 from tests.libraries.local.track.utils import random_tracks
 from tests.libraries.local.utils import path_track_all
+from tests.testers import PrettyPrinterTester
 from tests.utils import random_str, path_resources
 
 

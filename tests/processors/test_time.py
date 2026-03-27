@@ -2,9 +2,9 @@ from datetime import timedelta
 
 import pytest
 from dateutil.relativedelta import relativedelta
-from tests.testers import PrettyPrinterTester
 
 from musify.processors.time import TimeMapper
+from tests.testers import PrettyPrinterTester
 
 
 class TestTimeMapper(PrettyPrinterTester):

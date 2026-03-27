@@ -7,9 +7,8 @@ from collections.abc import Mapping, Callable, Collection, Iterable, MutableSequ
 from functools import partial, update_wrapper
 from typing import Any, Optional
 
-from musify.printer import PrettyPrinter
-
 from musify.logger import MusifyLogger
+from musify.printer import PrettyPrinter
 from musify.processors.exception import ProcessorLookupError
 from musify.utils import get_user_input, get_max_width, align_string
 
@@ -55,7 +54,7 @@ class InputProcessor(Processor, metaclass=ABCMeta):
 
 
 # noinspection PyPep8Naming,SpellCheckingInspection
-class processor:
+class dynamicprocessormethod:
     """
     Decorator for methods on a class decorated with the :py:func:`processor` decorator
 
@@ -84,11 +83,11 @@ class processor:
 # noinspection SpellCheckingInspection
 class DynamicProcessor(Processor, metaclass=ABCMeta):
     """
-    Base class for implementations with :py:func:`processor` methods.
+    Base class for implementations with :py:func:`dynamicprocessormethod` methods.
 
     Classes that implement this base class have a ``__processormethods__`` class attribute
     which is a list of strings of all the processor methods this class contains.
-    If a :py:func:`processor` has alternative method names, these names will be added
+    If a :py:func:`dynamicprocessormethod` has alternative method names, these names will be added
     to the class' ``__dict__`` as callable methods which point to the decorated method.
 
     Optionally, you may also define a ``_processor_method_fmt`` class method which
@@ -117,7 +116,7 @@ class DynamicProcessor(Processor, metaclass=ABCMeta):
         processor_methods = list(cls.__processormethods__)
 
         for method in cls.__dict__.copy().values():
-            if not isinstance(method, processor):
+            if not isinstance(method, dynamicprocessormethod):
                 continue
 
             processor_methods.append(method.__name__)

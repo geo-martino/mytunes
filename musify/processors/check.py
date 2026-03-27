@@ -12,19 +12,16 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Self
 
-from musify.base import Result
-from musify.field import Fields
-
 from musify import PROGRAM_NAME
-from musify._types import Resource
+from musify.base import MusifyItemSettable, Result
+from musify.field import Fields
+from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
 from musify.libraries.remote.core.object import RemotePlaylist
-from musify.libraries.remote.core.types import RemoteIDType
+from musify.libraries.remote.core.types import RemoteIDType, RemoteObjectType
 from musify.logger import MusifyLogger
 from musify.logger import REPORT
-from musify.models._base import MusifyItemSettable
-from musify.models.collection import MusifyCollection
 from musify.processors.base import InputProcessor
 from musify.processors.match import ItemMatcher
 from musify.processors.search import RemoteItemSearcher
@@ -35,7 +32,7 @@ try:
 except ImportError:
     tqdm = None
 
-ALLOW_KARAOKE_DEFAULT = RemoteItemSearcher.search_settings[Resource.TRACK].allow_karaoke
+ALLOW_KARAOKE_DEFAULT = RemoteItemSearcher.search_settings[RemoteObjectType.TRACK].allow_karaoke
 
 
 @dataclass(frozen=True)
@@ -165,7 +162,7 @@ class RemoteItemChecker(InputProcessor):
 
         response = await self.api.get_or_create_playlist(collection.name, public=False)
         await self.api.follow_playlist(response)
-        await self.api.extend_items(response=response, kind=Resource.PLAYLIST, key=Resource.TRACK)
+        await self.api.extend_items(response=response, kind=RemoteObjectType.PLAYLIST, key=RemoteObjectType.TRACK)
         playlist: RemotePlaylist = self.factory.playlist(response=response)
 
         self._playlist_originals[collection.name] = playlist
@@ -535,7 +532,7 @@ class RemoteItemChecker(InputProcessor):
 
         elif self.api.wrangler.validate_id_type(current_input):  # update URI and add item to switched list
             uri = self.api.wrangler.convert(
-                current_input, kind=Resource.TRACK, type_out=RemoteIDType.URI
+                current_input, kind=RemoteObjectType.TRACK, type_out=RemoteIDType.URI
             )
 
             self.matcher.log([name, f"Updating URI: {item.uri} -> {uri}"], pad="<")

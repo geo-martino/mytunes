@@ -9,7 +9,7 @@ from typing import Any, Self
 
 from aiorequestful.types import UnitCollection
 
-from musify.models._base import MusifyObject
+from musify.base import MusifyObject
 from musify.processors.base import Filter, FilterComposite
 from musify.processors.compare import Comparer
 

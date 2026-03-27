@@ -6,16 +6,14 @@ from functools import reduce
 from operator import mul
 from random import shuffle
 
+from musify.base import MusifyItem, HasLength
 from musify.field import Fields
-from musify.models._properties import HasLength
-from musify.models.track import Track
-from musify.types import MusifyEnum
-
-from musify.models._base import MusifyResource
-from musify.models.properties.file import File
-from musify.processors.base import DynamicProcessor, processor
+from musify.file.base import File
+from musify.libraries.core.object import Track
+from musify.processors.base import DynamicProcessor, dynamicprocessormethod
 from musify.processors.exception import LimiterProcessorError
 from musify.processors.sort import ItemSorter
+from musify.types import MusifyEnum
 
 
 class LimitType(MusifyEnum):
@@ -86,7 +84,7 @@ class ItemLimiter(DynamicProcessor):
     def __call__(self, *args, **kwargs) -> None:
         return self.limit(*args, **kwargs)
 
-    def limit[T: MusifyResource](self, items: list[T], ignore: Collection[T] = ()) -> None:
+    def limit[T: MusifyItem](self, items: list[T], ignore: Collection[T] = ()) -> None:
         """
         Limit ``items`` in-place based on set conditions.
 
@@ -115,7 +113,7 @@ class ItemLimiter(DynamicProcessor):
         else:
             items.extend(self._limit_on_numeric(items_limit))
 
-    def _limit_on_albums[T: MusifyResource](self, items: MutableSequence[T]) -> list[T]:
+    def _limit_on_albums[T: MusifyItem](self, items: MutableSequence[T]) -> list[T]:
         seen_albums = []
         result = []
 
@@ -131,7 +129,7 @@ class ItemLimiter(DynamicProcessor):
 
         return result
 
-    def _limit_on_numeric[T: MusifyResource](self, items: MutableSequence[T]) -> list[T]:
+    def _limit_on_numeric[T: MusifyItem](self, items: MutableSequence[T]) -> list[T]:
         count = 0
         result = []
 
@@ -145,7 +143,7 @@ class ItemLimiter(DynamicProcessor):
 
         return result
 
-    def _convert(self, item: MusifyResource) -> float:
+    def _convert(self, item: MusifyItem) -> float:
         """
         Convert units for item length or size and return the value.
 
@@ -168,40 +166,40 @@ class ItemLimiter(DynamicProcessor):
         else:
             raise LimiterProcessorError(f"Unrecognised LimitType: {self.kind}")
 
-    @processor
-    def _random(self, items: MutableSequence[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _random(self, items: MutableSequence[MusifyItem]) -> None:
         shuffle(items)
 
-    @processor
-    def _highest_rating(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _highest_rating(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.RATING, reverse=True)
 
-    @processor
-    def _lowest_rating(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _lowest_rating(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.RATING)
 
-    @processor
-    def _most_recently_played(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _most_recently_played(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.LAST_PLAYED, reverse=True)
 
-    @processor
-    def _least_recently_played(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _least_recently_played(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.LAST_PLAYED)
 
-    @processor
-    def _most_often_played(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _most_often_played(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.PLAY_COUNT, reverse=True)
 
-    @processor
-    def _least_often_played(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _least_often_played(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.PLAY_COUNT)
 
-    @processor
-    def _most_recently_added(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _most_recently_added(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.DATE_ADDED, reverse=True)
 
-    @processor
-    def _least_recently_added(self, items: list[MusifyResource]) -> None:
+    @dynamicprocessormethod
+    def _least_recently_added(self, items: list[MusifyItem]) -> None:
         ItemSorter.sort_by_field(items, Fields.DATE_ADDED)
 
     def as_dict(self):

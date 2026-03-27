@@ -10,17 +10,16 @@ from dataclasses import dataclass, field
 from typing import Any, Self
 
 from aiorequestful.types import UnitIterable
-from musify.base import Result
-from musify.field import TagField, TagFields as Tag
 
-from musify._types import Resource
+from musify.base import MusifyObject, MusifyItemSettable, Result
 from musify.exception import MusifyAttributeError
+from musify.field import TagField, TagFields as Tag
+from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.logger import MusifyLogger
 from musify.logger import REPORT
-from musify.models._base import MusifyObject, MusifyItemSettable
-from musify.models.collection import MusifyCollection
 from musify.processors.base import Processor
 from musify.processors.match import ItemMatcher
 from musify.utils import align_string, get_max_width
@@ -76,8 +75,8 @@ class RemoteItemSearcher(Processor):
     __slots__ = ("logger", "matcher", "factory")
 
     #: The :py:class:`SearchSettings` for each :py:class:`RemoteObjectType`
-    search_settings: dict[Resource, SearchConfig] = {
-        Resource.TRACK: SearchConfig(
+    search_settings: dict[RemoteObjectType, SearchConfig] = {
+        RemoteObjectType.TRACK: SearchConfig(
             match_fields={Tag.TITLE, Tag.ARTIST, Tag.ALBUM, Tag.LENGTH},
             search_fields_1=[Tag.NAME, Tag.ARTIST],
             search_fields_2=[Tag.NAME, Tag.ALBUM],
@@ -87,7 +86,7 @@ class RemoteItemSearcher(Processor):
             max_score=0.8,
             allow_karaoke=False,
         ),
-        Resource.ALBUM: SearchConfig(
+        RemoteObjectType.ALBUM: SearchConfig(
             match_fields={Tag.ARTIST, Tag.ALBUM, Tag.LENGTH},
             search_fields_1=[Tag.NAME, Tag.ARTIST],
             search_fields_2=[Tag.NAME],
@@ -122,7 +121,7 @@ class RemoteItemSearcher(Processor):
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     async def _get_results(
-            self, item: MusifyObject, kind: Resource, settings: SearchConfig
+            self, item: MusifyObject, kind: RemoteObjectType, settings: SearchConfig
     ) -> list[dict[str, Any]] | None:
         """Query the API to get results for the current item based on algorithm settings"""
         self.matcher.clean_tags(item)
@@ -189,7 +188,7 @@ class RemoteItemSearcher(Processor):
         self.logger.print_line(REPORT)
 
     @staticmethod
-    def _determine_remote_object_type(obj: MusifyObject) -> Resource:
+    def _determine_remote_object_type(obj: MusifyObject) -> RemoteObjectType:
         if hasattr(obj, "kind"):
             return obj.kind
         raise MusifyAttributeError(f"Given object does not specify a RemoteObjectType: {obj.__class__.__name__}")

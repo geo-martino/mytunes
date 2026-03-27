@@ -9,11 +9,11 @@ from urllib.parse import quote
 from webbrowser import open as webopen
 
 from aiorequestful.types import UnitIterable
-from musify.field import Field, Fields
 
+from musify.base import MusifyItem, MusifyObject
 from musify.exception import MusifyEnumError
-from musify.models._base import MusifyObject, MusifyResource
-from musify.models.collection import MusifyCollection
+from musify.field import Field, Fields
+from musify.libraries.core.collection import MusifyCollection
 from musify.processors.base import InputProcessor
 from musify.utils import to_collection
 
@@ -59,7 +59,7 @@ class ItemDownloadHelper(InputProcessor):
             not_queried = self._open_sites_for_items(items=items, fields=self.fields)
             self._pause(items=items, not_queried=not_queried, page=page, total=pages_total)
 
-    def _open_sites_for_items(self, items: Iterable[MusifyResource], fields: Iterable[Field]) -> list[MusifyResource]:
+    def _open_sites_for_items(self, items: Iterable[MusifyItem], fields: Iterable[Field]) -> list[MusifyItem]:
         not_queried = []
         for item in items:
             queried = self._open_sites_for_item(item=item, fields=fields)
@@ -68,7 +68,7 @@ class ItemDownloadHelper(InputProcessor):
 
         return not_queried
 
-    def _open_sites_for_item(self, item: MusifyResource, fields: Iterable[Field]) -> bool:
+    def _open_sites_for_item(self, item: MusifyItem, fields: Iterable[Field]) -> bool:
         query_parts = []
         for field in fields:
             field_name = field.name.lower()
@@ -96,7 +96,7 @@ class ItemDownloadHelper(InputProcessor):
 
         return True
 
-    def _pause(self, items: Iterable[MusifyResource], not_queried: Collection[MusifyResource], page: int, total: int):
+    def _pause(self, items: Iterable[MusifyItem], not_queried: Collection[MusifyItem], page: int, total: int):
         opened = len(self.urls) * (self.interval - len(not_queried))
         not_opened = f" - Could not open sites for {len(not_queried)} items. " if not_queried else ". "
         valid_fields = [

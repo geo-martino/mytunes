@@ -4,18 +4,17 @@ from random import sample, randrange
 from urllib.parse import unquote
 
 import pytest
-from musify.field import Fields
 from pytest_mock import MockerFixture
-from tests.testers import PrettyPrinterTester
 
 from musify import MODULE_ROOT
+from musify.field import Fields
 from musify.libraries.collection import BasicCollection
 from musify.libraries.local.track import LocalTrack
 from musify.processors.download import ItemDownloadHelper
 from tests.conftest import LogCapturer
 from tests.libraries.local.track.utils import random_tracks
 from tests.libraries.remote.core.processors.utils import patch_input
-from tests.processors_new.utils import assert_help_text
+from tests.testers import PrettyPrinterTester
 from tests.utils import random_str
 
 
@@ -116,7 +115,7 @@ class TestItemDownloadHelper(PrettyPrinterTester):
         # 3 extra for 2*r input + 1*<Fields> input
         assert len(urls) == (total + 3) * len(download_helper.urls)
 
-        assert_help_text(log_capturer, pages_total)
+        assert log_capturer.text.count("Enter one of the following") == pages_total
         assert log_capturer.text.count("Some fields were not recognised") == 1
 
     @staticmethod
@@ -152,5 +151,5 @@ class TestItemDownloadHelper(PrettyPrinterTester):
         # 3 extra for 2*r input + 1*<Fields> input
         assert len(urls) == (2 * len(test_items) - 3) * len(download_helper.urls)
 
-        assert_help_text(log_capturer, 4)
+        assert log_capturer.text.count("Enter one of the following") == 4
         assert "Some fields were not recognised" not in log_capturer.text

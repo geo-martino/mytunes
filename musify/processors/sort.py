@@ -9,12 +9,12 @@ from random import shuffle
 from typing import Any
 
 from aiorequestful.types import UnitSequence, UnitIterable, Number
-from musify.field import Field
-from musify.types import MusifyEnum
 
-from musify.models._base import MusifyResource
+from musify.base import MusifyItem
+from musify.field import Field
 from musify.processors.base import Processor
 from musify.processors.exception import SorterProcessorError
+from musify.types import MusifyEnum
 from musify.utils import flatten_nested, strip_ignore_words, to_collection, limit_value, IGNORE_WORDS_DEFAULT
 
 
@@ -60,7 +60,7 @@ class ItemSorter(Processor):
     @classmethod
     def sort_by_field(
             cls,
-            items: list[MusifyResource],
+            items: list[MusifyItem],
             field: Field | None = None,
             reverse: bool = False,
             ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
@@ -92,22 +92,22 @@ class ItemSorter(Processor):
 
         # get sort key based on value type
         if isinstance(example_value, datetime):  # key converts datetime to floats
-            def sort_key(it: MusifyResource) -> float:
+            def sort_key(it: MusifyItem) -> float:
                 """Get the sort key for timestamp tags from the given ``it``"""
                 value = it[tag_name]
                 return value.timestamp() if value is not None else 0.0
         elif isinstance(example_value, str):  # key strips ignore words from string
-            def sort_key(it: MusifyResource) -> tuple[bool, str]:
+            def sort_key(it: MusifyItem) -> tuple[bool, str]:
                 """Get the sort key for string tags from the given ``it``"""
                 not_special_start, value = strip_ignore_words(it[tag_name], words=ignore_words)
                 return not_special_start, value.casefold()
         else:
-            sort_key: Callable[[MusifyResource], object] = lambda t: t[tag_name] if t[tag_name] else 0
+            sort_key: Callable[[MusifyItem], object] = lambda t: t[tag_name] if t[tag_name] else 0
 
         items.sort(key=sort_key, reverse=reverse)
 
     @classmethod
-    def group_by_field[T: MusifyResource](cls, items: UnitIterable[T], field: Field | None = None) -> dict[Any, list[T]]:
+    def group_by_field[T: MusifyItem](cls, items: UnitIterable[T], field: Field | None = None) -> dict[Any, list[T]]:
         """
         Group items by the values of a given field.
 
@@ -155,7 +155,7 @@ class ItemSorter(Processor):
     def __call__(self, *args, **kwargs) -> None:
         return self.sort(*args, **kwargs)
 
-    def sort(self, items: list[MusifyResource]) -> None:
+    def sort(self, items: list[MusifyItem]) -> None:
         """Sorts a list of ``items`` in-place."""
         if len(items) == 0:
             return
@@ -180,7 +180,7 @@ class ItemSorter(Processor):
         return abs(value - weight_factor * (value - max_value))
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_rating(self, items: list[MusifyResource]) -> None:
+    def _shuffle_on_rating(self, items: list[MusifyItem]) -> None:
         if not all(hasattr(item, "rating") for item in items):
             raise SorterProcessorError(
                 "Cannot shuffle sort on rating as the given items do not all have a 'rating' property"
@@ -193,7 +193,7 @@ class ItemSorter(Processor):
         )
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_date_added(self, items: list[MusifyResource]) -> None:
+    def _shuffle_on_date_added(self, items: list[MusifyItem]) -> None:
         if not all(hasattr(item, "date_added") for item in items):
             raise SorterProcessorError(
                 "Cannot shuffle sort on date added as the given items do not all have a 'date_added' property"
@@ -206,7 +206,7 @@ class ItemSorter(Processor):
         )
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_artist(self, items: list[MusifyResource]) -> None:
+    def _shuffle_on_artist(self, items: list[MusifyItem]) -> None:
         if not all(hasattr(item, "artist") for item in items):
             raise SorterProcessorError(
                 "Cannot shuffle sort on artist as the given items do not all have an 'artist' property"
