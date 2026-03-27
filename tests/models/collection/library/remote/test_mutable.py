@@ -22,7 +22,6 @@ from tests.models.api.utils import MockRemoteAPI
 from tests.models.collection.library.remote.utils import MockRemoteLibrary
 from tests.models.collection.utils import assert_sync_items_result
 from tests.models.testers import BaseModelTester
-from tests.processors_new.check import conftest
 from tests.utils import SimpleURI
 
 
@@ -170,7 +169,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         remote = mock_get_all.return_value
 
         result = await model._sync_saved_items(
-            kind=kind, items_type="tracks", items=tracks, api=conftest.tracks, dry_run=False
+            kind=kind, items_type="tracks", items=tracks, api=model.api.tracks, dry_run=False
         )
 
         mock_filter_items.assert_called_once_with(tracks, items_type="tracks")
@@ -199,7 +198,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         remote = mock_get_all.return_value
 
         result = await model._sync_saved_items(
-            kind=kind, items_type="tracks", items=tracks, api=conftest.tracks, dry_run=True
+            kind=kind, items_type="tracks", items=tracks, api=model.api.tracks, dry_run=True
         )
 
         mock_filter_items.assert_called_once_with(tracks, items_type="tracks")
@@ -221,7 +220,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
         await model.sync_tracks(kind=kind, dry_run=dry_run)
         mock_sync_saved_items.assert_called_once_with(
-            kind=kind, items_type="tracks", items=model.tracks, api=conftest.tracks, dry_run=dry_run
+            kind=kind, items_type="tracks", items=model.tracks, api=model.api.tracks, dry_run=dry_run
         )
 
     async def test_sync_artists(self, model: RemoteMutableLibrary, mock_sync_saved_items: Mock, faker: Faker):
@@ -384,7 +383,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
         mock_get_many.assert_called_once_with(uris)
         mock_sync_saved_items.assert_called_once_with(
-            kind="refresh", items_type="tracks", items=tracks, api=conftest.tracks, dry_run=dry_run
+            kind="refresh", items_type="tracks", items=tracks, api=model.api.tracks, dry_run=dry_run
         )
 
     async def test_restore_artists(

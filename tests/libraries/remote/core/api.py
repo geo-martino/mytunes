@@ -9,9 +9,9 @@ import pytest
 from aiorequestful.cache.backend import ResponseCache, SQLiteCache
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
+from musify.libraries.remote.core.types import RemoteObjectType
 from tests.libraries.remote.core.utils import RemoteMock
 from tests.utils import random_str
 
@@ -59,7 +59,7 @@ class RemoteAPIFixtures(metaclass=ABCMeta):
             yield a
 
     @pytest.fixture
-    def _responses(self, object_type: Resource, api_mock: RemoteMock) -> dict[str, dict[str, Any]]:
+    def _responses(self, object_type: RemoteObjectType, api_mock: RemoteMock) -> dict[str, dict[str, Any]]:
         """Yields valid responses mapped by ID for a given ``object_type`` as a pytest.fixture."""
         source = api_mock.item_type_map[object_type]
         if len(source) > api_mock.limit_lower:
@@ -82,12 +82,12 @@ class RemoteAPIFixtures(metaclass=ABCMeta):
         return choice(list(responses.values()))
 
     @pytest.fixture
-    def extend(self, object_type: Resource, api: RemoteAPI) -> bool:
+    def extend(self, object_type: RemoteObjectType, api: RemoteAPI) -> bool:
         """For a given ``object_type``, should the API object attempt to extend the results"""
         return object_type in api.collection_item_map
 
     @pytest.fixture
-    def key(self, object_type: Resource, extend: bool, api: RemoteAPI) -> str:
+    def key(self, object_type: RemoteObjectType, extend: bool, api: RemoteAPI) -> str:
         """For a given ``object_type``, determine the key of its sub objects if ``extend`` is True. None otherwise."""
         return api.collection_item_map[object_type].name.lower() + "s" if extend else None
 

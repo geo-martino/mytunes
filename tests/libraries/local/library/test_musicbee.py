@@ -4,13 +4,13 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from musify.file.exception import FileDoesNotExistError
 
+from musify.file.exception import FileDoesNotExistError
+from musify.file.path_mapper import PathMapper
 from musify.libraries.local.library import LocalLibrary, MusicBee
 from musify.libraries.local.library.musicbee import XMLLibraryParser, REQUIRED_MODULES
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
-from musify.models.properties.file import PathMapper
 from musify.processors.filter import FilterIncludeExclude, FilterDefinedList
 from musify.utils import required_modules_installed
 from tests.libraries.local.library.testers import LocalLibraryTester
@@ -43,19 +43,19 @@ class TestMusicBee(LocalLibraryTester):
         trg_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(library_xml_filepath, trg_path)
 
-        with open(trg_path, "r") as file:
-            data = file.read().format(path_resources=str(path_resources).replace("\\", "/"))
-        with open(trg_path, "w") as file:
-            file.write(data)
+        with open(trg_path, "r") as f:
+            data = f.read().format(path_resources=str(path_resources).replace("\\", "/"))
+        with open(trg_path, "w") as f:
+            f.write(data)
 
         trg_path = tmp_library_path.joinpath(settings_xml_filename)
         trg_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(settings_xml_filepath, trg_path)
 
-        with open(trg_path, "r") as file:
-            data = file.read().format(path_resources=path_resources, sep=os.path.sep)
-        with open(trg_path, "w") as file:
-            file.write(data)
+        with open(trg_path, "r") as f:
+            data = f.read().format(path_resources=path_resources, sep=os.path.sep)
+        with open(trg_path, "w") as f:
+            f.write(data)
 
         shutil.copytree(path_playlist_resources, tmp_library_path.joinpath(MusicBee.playlists_path))
 

@@ -6,17 +6,16 @@ from pathlib import Path
 from random import randrange
 
 import pytest
+
 from musify.field import Fields
 from musify.file.exception import InvalidFileType
-from tests.testers import PrettyPrinterTester
-
+from musify.file.path_mapper import PathMapper, PathStemMapper
 from musify.libraries.local.library import MusicBee, LocalLibrary
 from musify.libraries.local.library.musicbee import REQUIRED_MODULES
 from musify.libraries.local.playlist import XAutoPF
 from musify.libraries.local.playlist.xautopf import XMLPlaylistParser
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.field import LocalTrackField
-from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors.compare import Comparer
 from musify.processors.filter import FilterComparers
 from musify.processors.limit import LimitType
@@ -27,6 +26,7 @@ from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.local.utils import path_playlist_resources, path_playlist_all
 from tests.libraries.local.utils import path_playlist_xautopf_ra, path_playlist_xautopf_bp, path_playlist_xautopf_cm
 from tests.libraries.local.utils import path_track_all, path_track_mp3, path_track_flac, path_track_wma
+from tests.testers import PrettyPrinterTester
 from tests.utils import path_txt, path_resources, random_str
 
 
@@ -633,8 +633,8 @@ async def test_playlist_paths_manual(library: LocalLibrary, source: Path, expect
 
     pl = await library.load_playlist(source)
 
-    with open(expected, "r", encoding="utf-8") as file:
-        paths_expected = [library.path_mapper.map(line.strip()) for line in file]
+    with open(expected, "r", encoding="utf-8") as f:
+        paths_expected = [library.path_mapper.map(line.strip()) for line in f]
 
     assert sorted(track.path for track in pl) == sorted(paths_expected)
     assert [track.path for track in pl] == paths_expected

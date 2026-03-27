@@ -23,7 +23,6 @@ from musify.models.item.track import RemoteTrack
 from musify.models.metadata import Attribute
 from musify.models.result import Result
 from musify.models.user import RemoteUser
-from tests.processors_new.check import conftest
 
 
 class RemoteLibrary[
@@ -94,7 +93,7 @@ class RemoteLibrary[
                 continue
 
             pl_backup = pl.model_dump(exclude={"tracks"})
-            pl_backup["tracks"] = [str(track.uri) for track in conftest.tracks]
+            pl_backup["tracks"] = [str(track.uri) for track in pl.tracks]
             playlists.append(pl_backup)
 
         return {

@@ -4,20 +4,19 @@ from copy import copy
 from urllib.parse import unquote
 
 import pytest
-from musify.field import TagFields as Tag
-from musify.models.album import Album
-from tests.testers import PrettyPrinterTester
 
-from musify._types import Resource
+from musify.base import MusifyItemSettable
+from musify.field import TagFields as Tag
 from musify.libraries.collection import BasicCollection
+from musify.libraries.core.collection import MusifyCollection
+from musify.libraries.core.object import Album
 from musify.libraries.local.collection import LocalAlbum
 from musify.libraries.local.track import LocalTrack
-from musify.models._base import MusifyItemSettable
-from musify.models.collection import MusifyCollection
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.processors.search import RemoteItemSearcher, SearchConfig
 from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.remote.core.utils import RemoteMock
-from tests.processors_new.check import conftest
+from tests.testers import PrettyPrinterTester
 
 
 class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):
@@ -78,7 +77,7 @@ class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):
             result_count=7
         )
         item = random_track()
-        results = await searcher._get_results(item=item, kind=Resource.TRACK, settings=settings)
+        results = await searcher._get_results(item=item, kind=RemoteObjectType.TRACK, settings=settings)
         requests = await api_mock.get_requests(method="GET")
         assert len(results) == settings.result_count
         assert len(requests) == 1
@@ -99,7 +98,7 @@ class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):
         item.album = "c" * 200
         api_mock.reset()  # reset for new requests checks to work correctly
 
-        results = await searcher._get_results(item=item, kind=Resource.TRACK, settings=settings)
+        results = await searcher._get_results(item=item, kind=RemoteObjectType.TRACK, settings=settings)
         requests = await api_mock.get_requests(method="GET")
         assert len(results) == settings.result_count
         assert len(requests) == 1
@@ -172,8 +171,8 @@ class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):
             self, searcher: RemoteItemSearcher, search_albums: list[Album], unmatchable_items: list[LocalTrack]
     ):
         collection = search_albums[0]
-        search_items = copy(conftest.tracks)
-        conftest.tracks.extend(unmatchable_items)
+        search_items = copy(collection.tracks)
+        collection.tracks.extend(unmatchable_items)
 
         await self.assert_search(
             searcher._search_collection_unit,

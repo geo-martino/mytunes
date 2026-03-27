@@ -8,8 +8,8 @@ from typing import Any
 import pytest
 from aiorequestful.types import Number
 
-from musify._types import Resource
 from musify.libraries.remote.core.exception import RemoteError, APIError, RemoteObjectTypeError
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.object import SpotifyAlbum, SpotifyTrack
 from tests.libraries.remote.spotify.api.mock import SpotifyMock
@@ -30,8 +30,8 @@ class TestSpotifyAlbum(SpotifyCollectionLoaderTester):
         return [SpotifyTrack(api_mock.generate_track()) for _ in range(randrange(5, 10))]
 
     @pytest.fixture
-    def item_kind(self, api: SpotifyAPI) -> Resource:
-        return api.collection_item_map[Resource.ALBUM]
+    def item_kind(self, api: SpotifyAPI) -> RemoteObjectType:
+        return api.collection_item_map[RemoteObjectType.ALBUM]
 
     @pytest.fixture
     def response_random(self, api_mock: SpotifyMock) -> dict[str, Any]:
@@ -49,7 +49,7 @@ class TestSpotifyAlbum(SpotifyCollectionLoaderTester):
             if album["tracks"]["total"] > len(album["tracks"]["items"]) > 5 and album["genres"]
             and album["artists"]
         )
-        await api.extend_items(response=response, key=Resource.TRACK)
+        await api.extend_items(response=response, key=RemoteObjectType.TRACK)
 
         return response
 
@@ -281,7 +281,7 @@ class TestSpotifyAlbum(SpotifyCollectionLoaderTester):
             api: SpotifyAPI,
             api_mock: SpotifyMock
     ):
-        kind = Resource.ALBUM
+        kind = RemoteObjectType.ALBUM
 
         result: SpotifyAlbum = await SpotifyAlbum.load(
             response_valid, api=api, items=load_items, extend_tracks=True, extend_features=True
@@ -304,13 +304,13 @@ class TestSpotifyAlbum(SpotifyCollectionLoaderTester):
     async def test_load_with_some_items_and_no_extension(
             self,
             response_valid: dict[str, Any],
-            item_kind: Resource,
+            item_kind: RemoteObjectType,
             item_key: str,
             load_items: list[SpotifyTrack],
             api: SpotifyAPI,
             api_mock: SpotifyMock
     ):
-        await api.extend_items(response_valid, kind=Resource.ALBUM, key=item_kind)
+        await api.extend_items(response_valid, kind=RemoteObjectType.ALBUM, key=item_kind)
         api_mock.reset()  # reset for new requests checks to work correctly
 
         assert len(response_valid[item_key][api.items_key]) == response_valid[item_key]["total"]

@@ -5,7 +5,7 @@ from urllib.parse import unquote
 
 import pytest
 
-from musify._types import Resource as ObjectType
+from musify.libraries.remote.core.types import RemoteObjectType as ObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from tests.conftest import LogCapturer
 from tests.libraries.remote.spotify.api.mock import SpotifyMock

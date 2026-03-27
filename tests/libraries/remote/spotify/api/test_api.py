@@ -9,8 +9,8 @@ from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core.exception import APIError
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from tests.libraries.remote.spotify.api.mock import SpotifyMock
 from tests.libraries.remote.spotify.api.testers import SpotifyAPIFixtures
@@ -116,7 +116,7 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
     ## Utilities: Formatters
     ###########################################################################
     def test_format_key(self, api: SpotifyAPI):
-        object_type = Resource.PLAYLIST
+        object_type = RemoteObjectType.PLAYLIST
         assert api._format_key(object_type) == "playlists"
         assert api._format_key("playlists") == "playlists"
         assert api._format_key("audio_feature") == "audio_features"
@@ -156,11 +156,11 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
             assert parent_key not in item
 
     @pytest.mark.parametrize("object_type", [
-        Resource.ALBUM, Resource.SHOW, Resource.AUDIOBOOK,
+        RemoteObjectType.ALBUM, RemoteObjectType.SHOW, RemoteObjectType.AUDIOBOOK,
     ], ids=idfn)
     def test_enrich_with_parent_response(
             self,
-            object_type: Resource,
+            object_type: RemoteObjectType,
             key: str,
             response: dict[str, Any],
             api: SpotifyAPI,
@@ -188,7 +188,7 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
 
         # skips on playlist responses
         api._enrich_with_parent_response(
-            response=test, key=key, parent_key=Resource.PLAYLIST, parent_response=parent_response
+            response=test, key=key, parent_key=RemoteObjectType.PLAYLIST, parent_response=parent_response
         )
         self.assert_items_not_enriched_with_parent_response(items, parent_key)
 
@@ -236,11 +236,11 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
     ## Utilities: Caching
     ###########################################################################
     @pytest.mark.parametrize("object_type", [
-        Resource.PLAYLIST, Resource.USER,
+        RemoteObjectType.PLAYLIST, RemoteObjectType.USER,
     ], ids=idfn)
     async def test_get_responses_from_cache_skips(
             self,
-            object_type: Resource,
+            object_type: RemoteObjectType,
             responses: dict[str, dict[str, Any]],
             api: SpotifyAPI,
             api_cache: SpotifyAPI,
@@ -257,17 +257,17 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
         assert await api_cache._get_responses_from_cache(method="GET", url=url, id_list=id_list) == ([], [], id_list)
 
     @pytest.mark.parametrize("object_type", [
-        Resource.TRACK,
-        Resource.ALBUM,
-        Resource.ARTIST,
-        Resource.SHOW,
-        Resource.EPISODE,
-        Resource.AUDIOBOOK,
-        Resource.CHAPTER,
+        RemoteObjectType.TRACK,
+        RemoteObjectType.ALBUM,
+        RemoteObjectType.ARTIST,
+        RemoteObjectType.SHOW,
+        RemoteObjectType.EPISODE,
+        RemoteObjectType.AUDIOBOOK,
+        RemoteObjectType.CHAPTER,
     ], ids=idfn)
     async def test_get_responses_from_cache(
             self,
-            object_type: Resource,
+            object_type: RemoteObjectType,
             responses: dict[str, dict[str, Any]],
             repository: ResponseRepository,
             api_cache: SpotifyAPI,
@@ -290,16 +290,16 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
         api_mock.assert_not_called()
 
     @pytest.mark.parametrize("object_type", [
-        Resource.TRACK,
-        Resource.ALBUM,
-        Resource.ARTIST,
-        Resource.SHOW,
-        Resource.EPISODE,
-        Resource.AUDIOBOOK,
+        RemoteObjectType.TRACK,
+        RemoteObjectType.ALBUM,
+        RemoteObjectType.ARTIST,
+        RemoteObjectType.SHOW,
+        RemoteObjectType.EPISODE,
+        RemoteObjectType.AUDIOBOOK,
     ], ids=idfn)
     async def test_cache_responses_skips_and_fails(
             self,
-            object_type: Resource,
+            object_type: RemoteObjectType,
             responses: dict[str, dict[str, Any]],
             repository: ResponseRepository,
             api: SpotifyAPI,
@@ -319,17 +319,17 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
         assert await repository.count() == 0
 
         # too many different types of responses given, should raise an error
-        other_object_type = choice([enum for enum in Resource.all() if enum != object_type])
+        other_object_type = choice([enum for enum in RemoteObjectType.all() if enum != object_type])
         responses += deepcopy(sample(api_mock.item_type_map[other_object_type], k=10))
         with pytest.raises(CacheError):
             await api_cache._cache_responses(method="GET", responses=responses)
 
     @pytest.mark.parametrize("object_type", [
-        Resource.PLAYLIST, Resource.USER,
+        RemoteObjectType.PLAYLIST, RemoteObjectType.USER,
     ], ids=idfn)
     async def test_cache_responses_skips_on_no_repository(
             self,
-            object_type: Resource,
+            object_type: RemoteObjectType,
             responses: dict[str, dict[str, Any]],
             repository: ResponseRepository,
             api_cache: SpotifyAPI,
@@ -339,17 +339,17 @@ class TestSpotifyAPI(SpotifyAPIFixtures):
         await api_cache._cache_responses(method="GET", responses=responses)
 
     @pytest.mark.parametrize("object_type", [
-        Resource.TRACK,
-        Resource.ALBUM,
-        Resource.ARTIST,
-        Resource.SHOW,
-        Resource.EPISODE,
-        Resource.AUDIOBOOK,
-        Resource.CHAPTER,
+        RemoteObjectType.TRACK,
+        RemoteObjectType.ALBUM,
+        RemoteObjectType.ARTIST,
+        RemoteObjectType.SHOW,
+        RemoteObjectType.EPISODE,
+        RemoteObjectType.AUDIOBOOK,
+        RemoteObjectType.CHAPTER,
     ], ids=idfn)
     async def test_cache_responses(
             self,
-            object_type: Resource,
+            object_type: RemoteObjectType,
             responses: dict[str, dict[str, Any]],
             repository: ResponseRepository,
             api_cache: SpotifyAPI,

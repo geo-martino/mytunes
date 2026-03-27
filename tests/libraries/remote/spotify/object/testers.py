@@ -5,7 +5,7 @@ from urllib.parse import unquote
 
 import pytest
 
-from musify._types import Resource
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.base import SpotifyItem, SpotifyObject
 from musify.libraries.remote.spotify.object import SpotifyCollectionLoader, SpotifyArtist
@@ -20,12 +20,12 @@ class SpotifyCollectionLoaderTester(RemoteCollectionTester, metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def item_kind(self, api: SpotifyAPI) -> Resource:
+    def item_kind(self, api: SpotifyAPI) -> RemoteObjectType:
         """Yields the RemoteObjectType of items in this collection as a pytest.fixture."""
         raise NotImplementedError
 
     @pytest.fixture
-    def item_key(self, item_kind: Resource) -> str:
+    def item_key(self, item_kind: RemoteObjectType) -> str:
         """Yields the key of items in this collection as a pytest.fixture."""
         return item_kind.name.lower() + "s"
 
@@ -58,7 +58,7 @@ class SpotifyCollectionLoaderTester(RemoteCollectionTester, metaclass=ABCMeta):
             response: dict[str, Any],
             result: SpotifyCollectionLoader[T],
             items: list[T],
-            kind: Resource,
+            kind: RemoteObjectType,
             key: str,
             api_mock: SpotifyMock,
     ):
@@ -67,7 +67,7 @@ class SpotifyCollectionLoaderTester(RemoteCollectionTester, metaclass=ABCMeta):
         limit = response[key]["limit"]
         input_ids = {item.id for item in items}
         response_item_ids = {
-            item[key.rstrip("s")]["id"] if kind == Resource.PLAYLIST else item["id"]
+            item[key.rstrip("s")]["id"] if kind == RemoteObjectType.PLAYLIST else item["id"]
             for item in response[key][result.api.items_key]
         }
         assert len(requests_missing) == api_mock.calculate_pages(limit=limit, total=len(response_item_ids - input_ids))

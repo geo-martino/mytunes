@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from musify._types import Resource
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.api.item import ARTIST_ALBUM_TYPES
 from musify.libraries.remote.spotify.object import SpotifyArtist
@@ -112,7 +112,7 @@ class TestSpotifyAPIArtists:
     ):
         limit = get_limit(artist_albums, api_mock.limit_max)
         results = await api.get_artist_albums(
-            values=random_id_type(id_=artist["id"], wrangler=api.wrangler, kind=Resource.ARTIST),
+            values=random_id_type(id_=artist["id"], wrangler=api.wrangler, kind=RemoteObjectType.ARTIST),
             types=artist_album_types,
             limit=limit
         )
@@ -158,7 +158,7 @@ class TestSpotifyAPIArtists:
     ):
         limit = 50
         results = await api.get_artist_albums(
-            values=random_id_types(id_list=artists, wrangler=api.wrangler, kind=Resource.ARTIST),
+            values=random_id_types(id_list=artists, wrangler=api.wrangler, kind=RemoteObjectType.ARTIST),
             types=artist_album_types,
             limit=limit,
         )

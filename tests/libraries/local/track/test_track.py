@@ -5,15 +5,15 @@ from random import choice
 
 import mutagen
 import pytest
+
+from musify.base import MusifyItem
+from musify.exception import MusifyKeyError
 from musify.file.exception import InvalidFileType, FileDoesNotExistError
 from musify.file.image import open_image
-from musify.models.track import Track
-
-from musify._types import Resource
-from musify.exception import MusifyKeyError
+from musify.libraries.core.object import Track
 from musify.libraries.local.track import LocalTrack, load_track, FLAC, M4A, MP3, WMA, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField
-from musify.models._base import MusifyResource
+from musify.libraries.remote.core.types import RemoteObjectType
 from tests.libraries.core.object import TrackTester
 from tests.libraries.local.utils import path_track_all, path_track_img, path_track_resources
 from tests.libraries.remote.spotify.utils import random_uri
@@ -204,7 +204,7 @@ class TestLocalTrack(TrackTester):
     """Run generic tests for :py:class:`LocalTrack` implementations"""
 
     @pytest.fixture
-    def item(self, track: LocalTrack) -> MusifyResource:
+    def item(self, track: LocalTrack) -> MusifyItem:
         return track
 
     @pytest.fixture
@@ -214,7 +214,7 @@ class TestLocalTrack(TrackTester):
     @pytest.fixture
     async def item_equal_properties(self, track: LocalTrack) -> LocalTrack:
         track = copy(track)
-        track.uri = random_uri(kind=Resource.TRACK)
+        track.uri = random_uri(kind=RemoteObjectType.TRACK)
         return track
 
     @pytest.fixture
@@ -222,24 +222,24 @@ class TestLocalTrack(TrackTester):
         track = copy(track)
         track.title = "new title"
         track.artist = "new artist"
-        track.uri = random_uri(kind=Resource.TRACK)
+        track.uri = random_uri(kind=RemoteObjectType.TRACK)
         track._path = tmp_path.joinpath("folder", track.path.name)
 
         return track
 
     @pytest.fixture
-    def item_modified(self, track: LocalTrack) -> MusifyResource:
+    def item_modified(self, track: LocalTrack) -> MusifyItem:
         track = copy(track)
         track.title = "new title"
         track.artist = "new artist"
-        track.uri = random_uri(kind=Resource.TRACK)
+        track.uri = random_uri(kind=RemoteObjectType.TRACK)
         return track
 
     def test_equality_on_path(self, track: LocalTrack, tmp_path: Path):
         track_equal = copy(track)
         track_equal.title = "new title"
         track_equal.artist = "new artist"
-        track_equal.uri = random_uri(kind=Resource.TRACK)
+        track_equal.uri = random_uri(kind=RemoteObjectType.TRACK)
 
         assert hash(track) == hash(track_equal)
         assert track_equal == track_equal
@@ -414,7 +414,7 @@ class TestLocalTrack(TrackTester):
         assert track.album == item_modified.album
         assert track.rating == item_modified.rating
 
-    def test_from_images(self, track: LocalTrack, tmp_path: Path):
+    def test_extract_images(self, track: LocalTrack, tmp_path: Path):
         # all tracks have an embedded image
         # images should be removed in refresh step, they should then be reloaded during extraction call
         assert not track._reader.read_images()

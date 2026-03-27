@@ -118,7 +118,7 @@ class TestUniqueSequence:
 
     @staticmethod
     def test_intersection(models: list[ResourceModel]):
-        initial, other, _ = map(tuple, split_list(models, 2))
+        initial, other = map(tuple, split_list(models, 2))
         sequence = UniqueSequence(initial)
 
         assert sequence.intersection(initial) == initial
@@ -127,7 +127,7 @@ class TestUniqueSequence:
 
     @staticmethod
     def test_difference(models: list[ResourceModel]):
-        initial, other, _ = map(tuple, split_list(models, 2))
+        initial, other = map(tuple, split_list(models, 2))
         sequence = UniqueSequence(initial)
 
         assert sequence.difference(initial) == ()
@@ -136,7 +136,7 @@ class TestUniqueSequence:
 
     @staticmethod
     def test_outer_difference(models: list[ResourceModel]):
-        initial, other, _ = map(tuple, split_list(models, 2))
+        initial, other = map(tuple, split_list(models, 2))
         sequence = UniqueSequence(initial)
 
         assert sequence.outer_difference(initial) == ()
@@ -183,7 +183,7 @@ class TestMutableUniqueSequence:
             sequence.remove(artist)
 
     def test_setitem(self, models: list[ResourceModel]):
-        initial, other, _ = split_list(models, 2)
+        initial, other = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
 
         model = choice(other)
@@ -225,7 +225,7 @@ class TestMutableUniqueSequence:
             del sequence[0]
 
     def test_mutable_dunder_methods(self, models: list[ResourceModel]):
-        initial, other, _ = split_list(models, 2)
+        initial, other = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
         original = sequence.copy()
 
@@ -268,7 +268,7 @@ class TestMutableUniqueSequence:
         assert sequence._items_mapped.keys() == expected_keys
 
     def test_extend(self, models: list[ResourceModel]):
-        initial, other, _ = split_list(models, 2)
+        initial, other = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
         original_length = len(sequence._items)
         assert all(m not in sequence for m in other)

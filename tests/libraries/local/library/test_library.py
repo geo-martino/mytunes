@@ -5,11 +5,11 @@ from random import randrange, sample
 
 import pytest
 
+from musify.base import MusifyItem
+from musify.file.path_mapper import PathMapper, PathStemMapper
 from musify.libraries.local.library import LocalLibrary
 from musify.libraries.local.playlist import PLAYLIST_CLASSES, LocalPlaylist
 from musify.libraries.local.track import LocalTrack
-from musify.models._base import MusifyResource
-from musify.models.properties.file import PathMapper, PathStemMapper
 from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 from tests.libraries.local.library.testers import LocalLibraryTester
 from tests.libraries.local.track.utils import random_track, random_tracks
@@ -34,7 +34,7 @@ class TestLocalLibrary(LocalLibraryTester):
     def collection_merge_items(self) -> Iterable[LocalTrack]:
         return random_tracks(randrange(5, 10))
 
-    def test_library(self):
+    def test_library(self) -> None:
         library = LocalLibrary()
         assert not library.library_folders
         assert len(library._track_paths) == 0
@@ -123,7 +123,7 @@ class TestLocalLibrary(LocalLibraryTester):
 
     @pytest.fixture
     def merge_playlists_updated_paths(
-            self, library: LocalLibrary, collection_merge_items: Iterable[MusifyResource], tmp_path: Path
+            self, library: LocalLibrary, collection_merge_items: Iterable[MusifyItem], tmp_path: Path
     ) -> list[LocalPlaylist]:
         """Set of new playlists with updated paths to merge with the given ``library``"""
         playlists = sample(list(library.playlists.values()), k=2)

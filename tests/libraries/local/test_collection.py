@@ -2,9 +2,9 @@ from copy import copy
 from pathlib import Path
 
 import pytest
-from musify.libraries.local.exception import LocalCollectionError
 
 from musify.libraries.local.collection import BasicLocalCollection, LocalFolder, LocalAlbum, LocalArtist, LocalGenres
+from musify.libraries.local.exception import LocalCollectionError
 from musify.libraries.local.track import LocalTrack
 from tests.libraries.local.track.testers import LocalCollectionTester
 from tests.libraries.local.track.utils import random_track, random_tracks

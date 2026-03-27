@@ -11,7 +11,7 @@ from aioresponses import CallbackResult
 from pycountry import countries, languages
 from yarl import URL
 
-from musify._types import Resource as ObjectType
+from musify.libraries.remote.core.types import RemoteObjectType as ObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 from tests.libraries.remote.core.utils import RemoteMock

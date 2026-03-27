@@ -6,15 +6,14 @@ from random import sample, choice
 from typing import Any
 
 import pytest
-from musify.field import TagFields as Tag
 
-from musify._types import Resource
 from musify.exception import MusifyEnumError
+from musify.field import TagFields as Tag
 from musify.libraries.local.collection import LocalAlbum
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core import RemoteResponse
 from musify.libraries.remote.core.exception import RemoteError, RemoteIDTypeError, RemoteObjectTypeError
-from musify.libraries.remote.core.types import RemoteIDType
+from musify.libraries.remote.core.types import RemoteIDType, RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
 from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist
@@ -42,7 +41,7 @@ def response(request, _api_mock: SpotifyMock) -> RemoteResponse:
 
 def test_get_id_type(wrangler: SpotifyDataWrangler):
     assert wrangler.get_id_type(random_id()) == RemoteIDType.ID
-    assert wrangler.get_id_type(random_str(1, RemoteIDType.ID.value - 1), kind=Resource.USER) == RemoteIDType.ID
+    assert wrangler.get_id_type(random_str(1, RemoteIDType.ID.value - 1), kind=RemoteObjectType.USER) == RemoteIDType.ID
     assert wrangler.get_id_type(random_uri()) == RemoteIDType.URI
     assert wrangler.get_id_type(random_api_url()) == RemoteIDType.URL
     assert wrangler.get_id_type(random_ext_url()) == RemoteIDType.URL_EXT
@@ -66,7 +65,7 @@ def test_validate_id_type(wrangler: SpotifyDataWrangler):
     assert not wrangler.validate_id_type(random_uri(), kind=RemoteIDType.URL_EXT)
 
 
-def test_get_item_type(wrangler: SpotifyDataWrangler, object_type: Resource):
+def test_get_item_type(wrangler: SpotifyDataWrangler, object_type: RemoteObjectType):
     # ID/URI
     assert wrangler.get_item_type(random_id(), kind=object_type) == object_type
     assert wrangler.get_item_type(random_uri(object_type)) == object_type
@@ -115,11 +114,11 @@ def test_get_item_type_fails(wrangler: SpotifyDataWrangler):
         wrangler.get_item_type([random_id(), random_id()])
 
     with pytest.raises(RemoteObjectTypeError):
-        values = [random_uri(Resource.SHOW), {"type": "track"}]
+        values = [random_uri(RemoteObjectType.SHOW), {"type": "track"}]
         wrangler.get_item_type(values)
 
     with pytest.raises(RemoteObjectTypeError):
-        values = [random_uri(Resource.SHOW), random_api_url(Resource.PLAYLIST)]
+        values = [random_uri(RemoteObjectType.SHOW), random_api_url(RemoteObjectType.PLAYLIST)]
         wrangler.get_item_type(values)
 
     with pytest.raises(RemoteObjectTypeError):
@@ -137,9 +136,9 @@ def test_get_item_type_fails(wrangler: SpotifyDataWrangler):
         wrangler.get_item_type(f"spotify:bad_type:{random_id()}")
 
 
-def test_validate_item_type(wrangler: SpotifyDataWrangler, object_type: Resource):
+def test_validate_item_type(wrangler: SpotifyDataWrangler, object_type: RemoteObjectType):
     value = choice([
-        random_id() if object_type != Resource.USER else random_str(1, RemoteIDType.ID.value - 1),
+        random_id() if object_type != RemoteObjectType.USER else random_str(1, RemoteIDType.ID.value - 1),
         random_uri(object_type),
         random_api_url(object_type) + f"/{random_str(0, 10)}",
         random_ext_url(object_type) + f"/{random_str(0, 10)}",
@@ -155,7 +154,7 @@ def test_validate_item_type(wrangler: SpotifyDataWrangler, object_type: Resource
     ]
     assert wrangler.validate_item_type(values, kind=object_type) is None
 
-    uri = random_uri(choice([k for k in Resource.all() if k != object_type]))
+    uri = random_uri(choice([k for k in RemoteObjectType.all() if k != object_type]))
     with pytest.raises(RemoteObjectTypeError):
         wrangler.validate_item_type(uri, kind=object_type)
 
@@ -172,7 +171,7 @@ def test_validate_item_type_response(wrangler: SpotifyDataWrangler, response: Re
     assert wrangler.validate_item_type(values, kind=response.kind) is None
 
 
-def test_convert(wrangler: SpotifyDataWrangler, object_type: Resource):
+def test_convert(wrangler: SpotifyDataWrangler, object_type: RemoteObjectType):
     id_ = random_id()
     expected_map = {
         RemoteIDType.ID: id_,
@@ -195,7 +194,7 @@ def test_convert_fails(wrangler: SpotifyDataWrangler):
         wrangler.convert("bad value", type_out=RemoteIDType.URI)
 
 
-def test_extract_ids(wrangler: SpotifyDataWrangler, object_type: Resource):
+def test_extract_ids(wrangler: SpotifyDataWrangler, object_type: RemoteObjectType):
     id_ = random_id()
     values = [
         id_,
@@ -268,7 +267,7 @@ class TestSpotifyItemSearcher(RemoteItemSearcherTester):
     @pytest.fixture(scope="class")
     def searcher(self, matcher: ItemMatcher, api: SpotifyAPI) -> RemoteItemSearcher:
         RemoteItemSearcher.search_settings = {
-            Resource.TRACK: SearchConfig(
+            RemoteObjectType.TRACK: SearchConfig(
                 search_fields_1=[Tag.TITLE],  # query mock always returns match on name
                 match_fields={Tag.TITLE},
                 result_count=10,
@@ -276,7 +275,7 @@ class TestSpotifyItemSearcher(RemoteItemSearcherTester):
                 min_score=0.1,
                 max_score=0.5
             ),
-            Resource.ALBUM: SearchConfig(
+            RemoteObjectType.ALBUM: SearchConfig(
                 search_fields_1=[Tag.ALBUM],  # query mock always returns match on name
                 match_fields={Tag.ALBUM},
                 result_count=5,
@@ -293,7 +292,7 @@ class TestSpotifyItemSearcher(RemoteItemSearcherTester):
             self, searcher: RemoteItemSearcher, api_mock: SpotifyMock, wrangler: SpotifyDataWrangler
     ) -> list[LocalTrack]:
         items = []
-        limit = searcher.search_settings[Resource.TRACK].result_count
+        limit = searcher.search_settings[RemoteObjectType.TRACK].result_count
 
         for remote_track in map(SpotifyTrack, sample(api_mock.tracks, k=limit)):
             local_track = random_track()
@@ -320,7 +319,7 @@ class TestSpotifyItemSearcher(RemoteItemSearcherTester):
             api_mock: SpotifyMock,
             wrangler: SpotifyDataWrangler
     ) -> list[LocalAlbum]:
-        limit = searcher.search_settings[Resource.TRACK].result_count
+        limit = searcher.search_settings[RemoteObjectType.TRACK].result_count
         albums = [album for album in api_mock.albums if 2 < album["tracks"]["total"] <= api_mock.limit_lower]
         responses = deepcopy(sample(albums, k=min(len(albums), limit)))
         assert len(responses) > 4
@@ -371,7 +370,7 @@ class TestSpotifyItemChecker(RemoteItemCheckerTester):
             if r["tracks"]["total"] > 60 or r["tracks"]["total"] <= _api_mock.limit_lower:
                 continue
 
-            await api.extend_items(response=r, kind=Resource.PLAYLIST, key=Resource.TRACK)
+            await api.extend_items(response=r, kind=RemoteObjectType.PLAYLIST, key=RemoteObjectType.TRACK)
             responses.append(r)
 
         return responses

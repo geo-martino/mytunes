@@ -5,7 +5,6 @@ from musify.models.collection.library import HasTracksAndPlaylists
 from musify.models.collection.playlist import Playlist
 from musify.models.item.track import Track
 from tests.models.testers import NoUniqueKeyTester
-from tests.processors_new.check import conftest
 
 
 class TestLibrary(NoUniqueKeyTester):
@@ -30,7 +29,7 @@ class TestLibrary(NoUniqueKeyTester):
             assert "name" in pl_backup and isinstance(pl_backup["name"], str)
             assert pl_backup["name"] == pl.name
 
-            assert "tracks" in pl_backup and len(pl_backup["tracks"]) == len(conftest.tracks)
+            assert "tracks" in pl_backup and len(pl_backup["tracks"]) == len(pl.tracks)
             assert all(isinstance(track, dict) for track in pl_backup["tracks"])
 
             assert "uri" in pl_backup and isinstance(pl_backup["uri"], str)

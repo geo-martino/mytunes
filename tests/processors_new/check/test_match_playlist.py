@@ -23,6 +23,16 @@ from tests.models.utils import MockRemoteCollection
 from tests.utils import SimpleURI, split_list
 
 
+class HasNameAndImmutableURI(HasName, HasImmutableURI):
+    type: ClassVar[str] = Track.type
+    name: str
+
+
+class HasNameAndMutableURI(HasName, HasMutableURI):
+    type: ClassVar[str] = Track.type
+    name: str
+
+
 class TestMatchWithPlaylist:
     @pytest.fixture
     def model(self, api: RemoteAPI) -> Checker:
@@ -56,36 +66,32 @@ class TestMatchWithPlaylist:
 
     @pytest.fixture
     def available_items(self, faker: Faker) -> list[HasImmutableURI]:
-        class HasNameAndURI(HasName, HasImmutableURI):
-            type: ClassVar[str] = Track.type
-            name: str
-
         return [
-            HasNameAndURI(name=faker.name(), uri=SimpleURI.create_random(Track.type))
+            HasNameAndImmutableURI(name=faker.name(), uri=SimpleURI.create_random(Track.type))
             for _ in range(faker.random_int(10, 30))
         ]
 
     @pytest.fixture
     def mutable_uri_items(self, faker: Faker) -> list[HasMutableURI]:
-        class HasNameAndURI(HasName, HasMutableURI):
-            type: ClassVar[str] = Track.type
-            name: str
-
         return [
-            HasNameAndURI(name=faker.name(), uri=SimpleURI.create_random(Track.type))
+            HasNameAndMutableURI(name=faker.name(), uri=SimpleURI.create_random(Track.type))
             for _ in range(faker.random_int(10, 30))
         ]
 
     @pytest.fixture
     def unavailable_items(self, faker: Faker) -> list[HasImmutableURI]:
         return [
-            HasImmutableURI(uri=SimpleURI.create_unavailable(Track.type))
+            HasNameAndImmutableURI(name=faker.name(), uri=SimpleURI.create_unavailable(Track.type))
             for _ in range(faker.random_int(5, 20))
         ]
 
     @pytest.fixture
     def missing_items(self, faker: Faker) -> list[HasImmutableURI]:
-        missing = [HasImmutableURI(uri=None) for _ in range(faker.random_int(5, 20))]
+        missing = [
+            HasNameAndImmutableURI(name=faker.name(), uri=None)
+            for _ in range(faker.random_int(5, 20))
+        ]
+
         for item in missing:
             item.__dict__["has_uri"] = None  # force missing URI
 

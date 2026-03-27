@@ -38,8 +38,8 @@ class LocalLibraryTester(LibraryTester, LocalCollectionTester, metaclass=ABCMeta
             assert track.title != "brand new title"
             assert track.artist != new_artist
 
-        backup: dict[str, Any] = library.json()
-        for track in backup["tracks"]:
+        backup: list[dict[str, Any]] = library.json()["tracks"]
+        for track in backup:
             track["title"] = new_title
 
         library.restore_tracks(backup)
@@ -47,10 +47,10 @@ class LocalLibraryTester(LibraryTester, LocalCollectionTester, metaclass=ABCMeta
             assert track.title == "brand new title"
             assert track.artist != new_artist
 
-        for track in backup["tracks"]:
+        for track in backup:
             track["artist"] = new_artist
 
-        library.restore_tracks({Path(track["path"]): track for track in backup["tracks"]})
+        library.restore_tracks({Path(track["path"]): track for track in backup})
         for track in library:
             assert track.title == "brand new title"
             assert track.artist == new_artist

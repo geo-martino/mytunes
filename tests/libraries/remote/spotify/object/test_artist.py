@@ -6,8 +6,8 @@ from typing import Any
 import pytest
 from yarl import URL
 
-from musify._types import Resource
 from musify.libraries.remote.core.exception import APIError, RemoteObjectTypeError
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.object import SpotifyAlbum, SpotifyArtist
 from tests.libraries.remote.spotify.api.mock import SpotifyMock
@@ -32,8 +32,8 @@ class TestSpotifyArtist(SpotifyCollectionLoaderTester):
         return list(map(SpotifyAlbum, albums))
 
     @pytest.fixture
-    def item_kind(self, *_) -> Resource:
-        return Resource.ALBUM
+    def item_kind(self, *_) -> RemoteObjectType:
+        return RemoteObjectType.ALBUM
 
     @pytest.fixture
     def response_random(self, api_mock: SpotifyMock) -> dict[str, Any]:
@@ -232,7 +232,7 @@ class TestSpotifyArtist(SpotifyCollectionLoaderTester):
             api: SpotifyAPI,
             api_mock: SpotifyMock
     ):
-        kind = Resource.ARTIST
+        kind = RemoteObjectType.ARTIST
 
         result: SpotifyArtist = await SpotifyArtist.load(
             response_valid, api=api, items=load_items, extend_albums=True, extend_tracks=True, extend_features=True
@@ -261,13 +261,13 @@ class TestSpotifyArtist(SpotifyCollectionLoaderTester):
     async def test_load_with_some_items_and_no_extension(
             self,
             response_valid: dict[str, Any],
-            item_kind: Resource,
+            item_kind: RemoteObjectType,
             item_key: str,
             load_items: list[SpotifyAlbum],
             api: SpotifyAPI,
             api_mock: SpotifyMock
     ):
-        await api.extend_items(response_valid, kind=Resource.ARTIST, key=item_kind)
+        await api.extend_items(response_valid, kind=RemoteObjectType.ARTIST, key=item_kind)
         api_mock.reset()  # reset for new requests checks to work correctly
 
         assert len(response_valid[item_key][api.items_key]) == response_valid[item_key]["total"]

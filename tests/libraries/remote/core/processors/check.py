@@ -6,18 +6,18 @@ from random import randrange, choice, sample
 
 import pytest
 from pytest_mock import MockerFixture
-from tests.testers import PrettyPrinterTester
 
-from musify._types import Resource
 from musify.libraries.collection import BasicCollection
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.remote.core.object import RemotePlaylist
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.processors.check import RemoteItemChecker
 from tests.conftest import LogCapturer
 from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.remote.core.processors.utils import patch_input
 from tests.libraries.remote.core.utils import RemoteMock
 from tests.libraries.remote.spotify.utils import random_uri, random_uris
+from tests.testers import PrettyPrinterTester
 from tests.utils import path_token, random_str
 
 
@@ -315,7 +315,7 @@ class RemoteItemCheckerTester(PrettyPrinterTester, metaclass=ABCMeta):
             log_capturer: LogCapturer,
     ):
         # anything after 'na...' will be ignored
-        uri_list = random_uris(kind=Resource.TRACK, start=5, stop=5)
+        uri_list = random_uris(kind=RemoteObjectType.TRACK, start=5, stop=5)
         # noinspection SpellCheckingInspection
         patch_input(["p", "p", "p", *uri_list, "naaaaaaa", "r"], mocker=mocker)
 
@@ -477,7 +477,7 @@ class RemoteItemCheckerTester(PrettyPrinterTester, metaclass=ABCMeta):
         # switch URIs for some collection items i.e. simulate tracks on remote playlist have been switched
         for i, item in enumerate(collection[:5]):
             collection.items[i] = random_track() | item
-            collection[i].uri = random_uri(kind=Resource.TRACK)
+            collection[i].uri = random_uri(kind=RemoteObjectType.TRACK)
 
         await checker._match_to_remote(collection.name)
 
@@ -501,7 +501,7 @@ class RemoteItemCheckerTester(PrettyPrinterTester, metaclass=ABCMeta):
         # switch URIs for some collection items i.e. simulate tracks on remote playlist have been switched
         for i, item in enumerate(collection[:5]):
             collection.items[i] = random_track() | item
-            collection[i].uri = random_uri(kind=Resource.TRACK)
+            collection[i].uri = random_uri(kind=RemoteObjectType.TRACK)
 
         # remove from collection i.e. simulate unmatchable tracks added to playlist
         for item in collection[5:8]:
@@ -535,7 +535,7 @@ class RemoteItemCheckerTester(PrettyPrinterTester, metaclass=ABCMeta):
         for i, item in items_switched.items():
             collection.items[i] = random_track() | item
             collection[i].artist = random_str()
-            collection[i].uri = random_uri(kind=Resource.TRACK)
+            collection[i].uri = random_uri(kind=RemoteObjectType.TRACK)
 
         # remove from collection i.e. simulate unmatchable tracks added to playlist
         items_missing = dict([
@@ -584,9 +584,9 @@ class RemoteItemCheckerTester(PrettyPrinterTester, metaclass=ABCMeta):
         # switch URIs for some collection items i.e. simulate tracks on remote playlist have been switched
         for i, item in enumerate(collection[:5]):
             collection.items[i] = random_track() | item
-            collection[i].uri = random_uri(kind=Resource.TRACK)
+            collection[i].uri = random_uri(kind=RemoteObjectType.TRACK)
 
-        uri_list = random_uris(kind=Resource.TRACK, start=8, stop=8)
+        uri_list = random_uris(kind=RemoteObjectType.TRACK, start=8, stop=8)
         patch_input([*uri_list, "r", "u", "u", "u", "n", "n", "n", "n", "s"], mocker=mocker)  # end on skip
         checker._skip = False
         checker._playlist_check_collections["do not run"] = collection

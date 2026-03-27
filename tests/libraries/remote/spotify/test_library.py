@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 import pytest
 
-from musify._types import Resource
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack
@@ -42,7 +42,7 @@ class TestSpotifyLibrary(RemoteLibraryTester):
         # keep all when no include or exclude settings defined
         library = SpotifyLibrary(api=api)
 
-        responses = await api.get_user_items(kind=Resource.PLAYLIST)
+        responses = await api.get_user_items(kind=RemoteObjectType.PLAYLIST)
         filtered = library._filter_playlists(responses)
         assert len(filtered) == len(api_mock.user_playlists) == len(responses)
 

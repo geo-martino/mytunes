@@ -178,7 +178,7 @@ class HasImmutableURI[UT: URI](HasURI):
     @field_validator("uri", mode="after", check_fields=True)
     @classmethod
     def _validate_uri_matches_type(cls, uri: UT | None) -> UT | None:
-        if not cls.__final__ or uri is None or not isinstance(uri, URI):
+        if uri is None or not isinstance(uri, URI):
             return uri
 
         if not uri.type == cls.type:
@@ -245,9 +245,6 @@ class HasMutableURI(HasURI):
     @field_validator("uris", mode="after", check_fields=True)
     @classmethod
     def _validate_uris_match_type[T: Collection](cls, uris: T) -> T:
-        if not cls.__final__:
-            return uris
-
         for uri in uris:
             if not uri.type == cls.type:
                 raise MusifyValidationError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")

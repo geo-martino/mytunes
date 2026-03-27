@@ -3,11 +3,11 @@ from pathlib import Path
 from random import randrange
 
 import pytest
-from musify.file.exception import InvalidFileType
 
+from musify.file.exception import InvalidFileType
+from musify.file.path_mapper import PathMapper, PathStemMapper
 from musify.libraries.local.playlist import M3U
 from musify.libraries.local.track import LocalTrack
-from musify.models.properties.file import PathMapper, PathStemMapper
 from tests.libraries.local.playlist.testers import LocalPlaylistTester
 from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.local.utils import path_playlist_m3u
@@ -28,8 +28,8 @@ class TestM3U(LocalPlaylistTester):
     @pytest.fixture(scope="class")
     def tracks_actual(self, tracks: list[LocalTrack]) -> list[LocalTrack]:
         """Yield list of all real LocalTracks present in the test playlist"""
-        with open(path_playlist_m3u, "r") as file:
-            ext = [Path(line.strip()).suffix for line in file]
+        with open(path_playlist_m3u, "r") as f:
+            ext = [Path(line.strip()).suffix for line in f]
         return sorted([track for track in tracks if track.ext in ext], key=lambda x: ext.index(x.ext))
 
     @pytest.fixture(scope="class")
@@ -157,8 +157,8 @@ class TestM3U(LocalPlaylistTester):
         assert pl.date_modified is not None
         assert pl.date_created is not None
 
-        with open(path_new, "r") as file:
-            paths = [line.strip() for line in file]
+        with open(path_new, "r") as f:
+            paths = [line.strip() for line in f]
         assert paths == [str(track.path) for track in pl.tracks]
 
         original_dt_modified = pl.date_modified
@@ -179,8 +179,8 @@ class TestM3U(LocalPlaylistTester):
             # TODO: these assertions always fail on GitHub actions but not locally, why?
             assert pl.date_modified > original_dt_modified
 
-        with open(path_new, "r") as file:
-            paths = [line.strip() for line in file]
+        with open(path_new, "r") as f:
+            paths = [line.strip() for line in f]
         assert paths == [str(track.path) for track in pl.tracks]
 
     @pytest.mark.parametrize("path", [path_playlist_m3u], indirect=["path"])
@@ -190,8 +190,8 @@ class TestM3U(LocalPlaylistTester):
         path_prefix = list(path_mapper.stem_map)[0]
 
         # ensure all paths in the file have relative paths and will therefore undergo path mapping
-        with open(path, "r") as file:
-            for line in file:
+        with open(path, "r") as f:
+            for line in f:
                 assert line.startswith(path_prefix)
 
         # ensure all loaded track path have absolute paths and will therefore undergo path mapping
@@ -223,8 +223,8 @@ class TestM3U(LocalPlaylistTester):
             assert new_dt_modified > original_dt_modified
 
         # assert file has reported path count and paths in the file have been mapped to relative paths
-        with open(path, "r") as file:
-            lines = [line.strip() for line in file]
+        with open(path, "r") as f:
+            lines = [line.strip() for line in f]
         assert len(lines) == result.final
         for line in lines:
             assert line.startswith(path_prefix)
@@ -239,6 +239,6 @@ class TestM3U(LocalPlaylistTester):
             assert pl.date_modified > new_dt_modified
             assert pl.date_created > original_dt_created
 
-        with open(pl.path, "r") as file:
-            paths = [line.strip() for line in file]
+        with open(pl.path, "r") as f:
+            paths = [line.strip() for line in f]
         assert paths == list(map(str, path_mapper.unmap_many(pl.tracks, check_existence=False)))

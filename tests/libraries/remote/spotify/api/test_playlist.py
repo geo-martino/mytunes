@@ -8,9 +8,8 @@ from aioresponses.core import RequestCall
 from yarl import URL
 
 from musify import PROGRAM_NAME
-from musify._types import Resource
 from musify.libraries.remote.core.exception import RemoteObjectTypeError, RemoteIDTypeError
-from musify.libraries.remote.core.types import RemoteIDType
+from musify.libraries.remote.core.types import RemoteIDType, RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.object import SpotifyPlaylist
 from tests.libraries.remote.core.api import RemoteAPIPlaylistTester
@@ -87,7 +86,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
     async def test_add_to_playlist_input_validation_and_skips(self, api: SpotifyAPI, api_mock: SpotifyMock):
         url = f"{api.url}/playlists/{random_id()}"
         for kind in ALL_ITEM_TYPES:
-            if kind == Resource.TRACK:
+            if kind == RemoteObjectType.TRACK:
                 continue
 
             with pytest.raises(RemoteObjectTypeError):
@@ -128,7 +127,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
         assert total > limit  # ensure ranges are valid for test to work
 
         id_list = random_id_types(
-            wrangler=api.wrangler, kind=Resource.TRACK, start=total - api_mock.limit_lower, stop=total - 1
+            wrangler=api.wrangler, kind=RemoteObjectType.TRACK, start=total - api_mock.limit_lower, stop=total - 1
         )
         assert len(id_list) < total
 
@@ -161,7 +160,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
         source = sample(playlist["tracks"]["items"], k=randrange(start=initial // 3, stop=initial // 2))
         id_list_dupes = [item["track"]["id"] for item in source]
         id_list_new = random_id_types(
-            wrangler=api.wrangler, kind=Resource.TRACK, start=api_mock.limit_lower, stop=randrange(20, 30)
+            wrangler=api.wrangler, kind=RemoteObjectType.TRACK, start=api_mock.limit_lower, stop=randrange(20, 30)
         )
 
         result = await api.add_to_playlist(playlist=playlist["uri"], items=id_list_dupes + id_list_new, limit=limit)
@@ -179,7 +178,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
     ###########################################################################
     async def test_follow_playlist(self, playlist_unique: dict[str, Any], api: SpotifyAPI, api_mock: SpotifyMock):
         result = await api.follow_playlist(
-            random_id_type(id_=playlist_unique["id"], wrangler=api.wrangler, kind=Resource.PLAYLIST)
+            random_id_type(id_=playlist_unique["id"], wrangler=api.wrangler, kind=RemoteObjectType.PLAYLIST)
         )
         assert result == URL(playlist_unique["href"] + "/followers")
 
@@ -194,7 +193,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
     ###########################################################################
     async def test_delete_playlist(self, playlist_unique: dict[str, Any], api: SpotifyAPI, api_mock: SpotifyMock):
         result = await api.delete_playlist(
-            random_id_type(id_=playlist_unique["id"], wrangler=api.wrangler, kind=Resource.PLAYLIST)
+            random_id_type(id_=playlist_unique["id"], wrangler=api.wrangler, kind=RemoteObjectType.PLAYLIST)
         )
         assert result == URL(playlist_unique["href"] + "/followers")
 
@@ -207,7 +206,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
     async def test_clear_from_playlist_input_validation_and_skips(self, api: SpotifyAPI, api_mock: SpotifyMock):
         url = f"{api.url}/playlists/{random_id()}"
         for kind in ALL_ITEM_TYPES:
-            if kind == Resource.TRACK:
+            if kind == RemoteObjectType.TRACK:
                 continue
 
             with pytest.raises(RemoteObjectTypeError):
@@ -247,7 +246,7 @@ class TestSpotifyAPIPlaylists(RemoteAPIPlaylistTester):
         assert total > limit  # ensure ranges are valid for test to work
 
         id_list = random_id_types(
-            wrangler=api.wrangler, kind=Resource.TRACK, start=total - api_mock.limit_lower, stop=total - 1
+            wrangler=api.wrangler, kind=RemoteObjectType.TRACK, start=total - api_mock.limit_lower, stop=total - 1
         )
         assert len(id_list) < total
 

@@ -4,8 +4,8 @@ import pytest
 from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.backend.base import ResponseRepository
 
-from musify._types import Resource
 from musify.libraries.remote.core.api import RemoteAPI
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.factory import SpotifyObjectFactory
 from tests.libraries.remote.core.api import RemoteAPIFixtures
@@ -26,7 +26,7 @@ class SpotifyAPIFixtures(RemoteAPIFixtures):
 
     @pytest.fixture
     async def repository(
-            self, object_type: Resource, response: dict[str, Any], api_cache: SpotifyAPI, cache: ResponseCache
+            self, object_type: RemoteObjectType, response: dict[str, Any], api_cache: SpotifyAPI, cache: ResponseCache
     ) -> ResponseRepository:
         """Yields a valid :py:class:`ResponseCache` to use throughout tests in this suite as a pytest.fixture."""
         return cache.get_repository_from_url(response[self.url_key])

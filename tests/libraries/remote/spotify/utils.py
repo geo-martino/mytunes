@@ -2,8 +2,7 @@ from collections.abc import Iterable
 from random import choice, randrange
 from typing import Any
 
-from musify._types import Resource
-from musify.libraries.remote.core.types import RemoteIDType
+from musify.libraries.remote.core.types import RemoteIDType, RemoteObjectType
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.libraries.remote.spotify.base import SpotifyObject
 from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
@@ -22,7 +21,7 @@ def random_ids(start: int = 1, stop: int = 50) -> list[str]:
     return [random_id() for _ in range(range_)]
 
 
-def random_id_type(wrangler: RemoteDataWrangler, kind: Resource, id_: str | None = None) -> str:
+def random_id_type(wrangler: RemoteDataWrangler, kind: RemoteObjectType, id_: str | None = None) -> str:
     """Convert the given ``id_`` to a random ID type"""
     type_in = RemoteIDType.ID
     type_out = choice(ALL_ID_TYPES)
@@ -31,7 +30,7 @@ def random_id_type(wrangler: RemoteDataWrangler, kind: Resource, id_: str | None
 
 def random_id_types(
         wrangler: RemoteDataWrangler,
-        kind: Resource,
+        kind: RemoteObjectType,
         id_list: Iterable[str] | None = None,
         start: int = 1,
         stop: int = 10
@@ -39,7 +38,7 @@ def random_id_types(
     """Generate list of random ID types based on input item type"""
     if id_list:
         pass
-    elif kind == Resource.USER:
+    elif kind == RemoteObjectType.USER:
         id_list = [random_str(1, RemoteIDType.ID.value - 1) for _ in range(randrange(start=start, stop=stop))]
     else:
         id_list = random_ids(start=start, stop=stop)
@@ -47,34 +46,34 @@ def random_id_types(
     return [random_id_type(id_=id_, wrangler=wrangler, kind=kind) for id_ in id_list]
 
 
-def random_uri(kind: Resource = Resource.TRACK) -> str:
+def random_uri(kind: RemoteObjectType = RemoteObjectType.TRACK) -> str:
     """Generates a valid looking random Spotify URI of item :py:class:`RemoteObjectType` ``kind``"""
     return f"{SpotifyDataWrangler.source.lower()}:{kind.name.lower()}:{random_id()}"
 
 
-def random_uris(kind: Resource = Resource.TRACK, start: int = 1, stop: int = 50) -> list[str]:
+def random_uris(kind: RemoteObjectType = RemoteObjectType.TRACK, start: int = 1, stop: int = 50) -> list[str]:
     """Generates many valid looking random Spotify URIs of item :py:class:`RemoteObjectType` ``kind``"""
     range_ = randrange(start=start, stop=stop) if start < stop else start
     return [random_uri(kind=kind) for _ in range(range_)]
 
 
-def random_api_url(kind: Resource = Resource.TRACK) -> str:
+def random_api_url(kind: RemoteObjectType = RemoteObjectType.TRACK) -> str:
     """Generates a valid looking random Spotify API URL of item :py:class:`RemoteObjectType` ``kind``"""
     return f"{SpotifyDataWrangler.url_api}/{kind.name.lower()}s/{random_id()}"
 
 
-def random_api_urls(kind: Resource = Resource.TRACK, start: int = 1, stop: int = 50) -> list[str]:
+def random_api_urls(kind: RemoteObjectType = RemoteObjectType.TRACK, start: int = 1, stop: int = 50) -> list[str]:
     """Generates many valid looking random Spotify API URLs of item :py:class:`RemoteObjectType` ``kind``"""
     range_ = randrange(start=start, stop=stop) if start < stop else start
     return [random_api_url(kind=kind) for _ in range(range_)]
 
 
-def random_ext_url(kind: Resource = Resource.TRACK) -> str:
+def random_ext_url(kind: RemoteObjectType = RemoteObjectType.TRACK) -> str:
     """Generates a valid looking random Spotify external URL of item :py:class:`RemoteObjectType` ``kind``"""
     return f"{SpotifyDataWrangler.url_ext}/{kind.name.lower()}/{random_id()}"
 
 
-def random_ext_urls(kind: Resource = Resource.TRACK, start: int = 1, stop: int = 50) -> list[str]:
+def random_ext_urls(kind: RemoteObjectType = RemoteObjectType.TRACK, start: int = 1, stop: int = 50) -> list[str]:
     """Generates many valid looking random Spotify external URLs of item :py:class:`RemoteObjectType` ``kind``"""
     range_ = randrange(start=start, stop=stop) if start < stop else start
     return [random_ext_url(kind=kind) for _ in range(range_)]

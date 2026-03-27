@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pytest
 
+from musify.file.path_mapper import PathStemMapper
 from musify.libraries.local.track import LocalTrack, FLAC, MP3, M4A, WMA
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
-from musify.models.properties.file import PathStemMapper
 from tests.libraries.local.utils import path_track_all, path_track_flac, path_track_mp3, path_track_m4a, path_track_wma
 from tests.utils import path_resources
 

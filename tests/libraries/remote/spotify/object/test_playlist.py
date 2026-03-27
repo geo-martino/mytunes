@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 
 from musify import PROGRAM_NAME
-from musify._types import Resource
 from musify.libraries.remote.core.exception import RemoteError, APIError, RemoteObjectTypeError
+from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.exception import SpotifyCollectionError
 from musify.libraries.remote.spotify.object import SpotifyPlaylist, SpotifyTrack
@@ -25,8 +25,8 @@ class TestSpotifyPlaylist(SpotifyCollectionLoaderTester, RemotePlaylistTester):
         return [SpotifyTrack(api_mock.generate_track()) for _ in range(randrange(5, 10))]
 
     @pytest.fixture
-    def item_kind(self, api: SpotifyAPI) -> Resource:
-        return api.collection_item_map[Resource.PLAYLIST]
+    def item_kind(self, api: SpotifyAPI) -> RemoteObjectType:
+        return api.collection_item_map[RemoteObjectType.PLAYLIST]
 
     @pytest.fixture
     def response_random(self, api_mock: SpotifyMock) -> dict[str, Any]:
@@ -42,7 +42,7 @@ class TestSpotifyPlaylist(SpotifyCollectionLoaderTester, RemotePlaylistTester):
             deepcopy(pl) for pl in api_mock.user_playlists
             if pl["tracks"]["total"] > 50 and len(pl["tracks"]["items"]) > 10
         )
-        await api.extend_items(response=response, key=Resource.TRACK)
+        await api.extend_items(response=response, key=RemoteObjectType.TRACK)
 
         api_mock.reset()  # reset for new requests checks to work correctly
         return response
@@ -260,7 +260,7 @@ class TestSpotifyPlaylist(SpotifyCollectionLoaderTester, RemotePlaylistTester):
             api: SpotifyAPI,
             api_mock: SpotifyMock
     ):
-        kind = Resource.PLAYLIST
+        kind = RemoteObjectType.PLAYLIST
 
         result: SpotifyPlaylist = await SpotifyPlaylist.load(
             response_valid, api=api, items=load_items, extend_tracks=True, extend_features=True
@@ -282,13 +282,13 @@ class TestSpotifyPlaylist(SpotifyCollectionLoaderTester, RemotePlaylistTester):
     async def test_load_with_some_items_and_no_extension(
             self,
             response_valid: dict[str, Any],
-            item_kind: Resource,
+            item_kind: RemoteObjectType,
             item_key: str,
             load_items: list[SpotifyTrack],
             api: SpotifyAPI,
             api_mock: SpotifyMock
     ):
-        await api.extend_items(response_valid, kind=Resource.PLAYLIST, key=item_kind)
+        await api.extend_items(response_valid, kind=RemoteObjectType.PLAYLIST, key=item_kind)
         api_mock.reset()  # reset for new requests checks to work correctly
 
         assert len(response_valid[item_key][api.items_key]) == response_valid[item_key]["total"]
@@ -332,7 +332,7 @@ class TestSpotifyPlaylist(SpotifyCollectionLoaderTester, RemotePlaylistTester):
     async def test_delete_playlist(self, response_valid: dict[str, Any], api: SpotifyAPI, api_mock: SpotifyMock):
         names = [pl["name"] for pl in api_mock.user_playlists]
         response = next(deepcopy(pl) for pl in api_mock.user_playlists if names.count(pl["name"]) == 1)
-        await api.extend_items(response=response, key=Resource.TRACK)
+        await api.extend_items(response=response, key=RemoteObjectType.TRACK)
         pl = SpotifyPlaylist(response=response, api=api)
         url = str(pl.url)
 
