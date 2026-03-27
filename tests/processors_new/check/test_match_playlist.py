@@ -1,6 +1,6 @@
 from collections.abc import Collection
 from copy import deepcopy
-from typing import Generator, ClassVar
+from typing import Generator
 from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
@@ -19,18 +19,9 @@ from musify.models.properties.uri import HasURI, HasImmutableURI, HasMutableURI
 from musify.processors_new.check import Checker, CheckResult
 from musify.processors_new.match import Matcher
 from tests.models.api.utils import MockUrlCursor
-from tests.models.utils import MockRemoteCollection
+from tests.processors_new.check.utils import HasNameAndImmutableURI, HasNameAndMutableURI
+from tests.processors_new.utils import MockCollection
 from tests.utils import SimpleURI, split_list
-
-
-class HasNameAndImmutableURI(HasName, HasImmutableURI):
-    type: ClassVar[str] = Track.type
-    name: str
-
-
-class HasNameAndMutableURI(HasName, HasMutableURI):
-    type: ClassVar[str] = Track.type
-    name: str
 
 
 class TestMatchWithPlaylist:
@@ -55,11 +46,11 @@ class TestMatchWithPlaylist:
             invalid_items: list[ResourceModel],
             faker: Faker,
     ) -> CollectionModel:
-        collection = MockRemoteCollection(
+        collection = MockCollection(
             name=playlist.name,
             cursor=MockUrlCursor(url=faker.url()),
-            uri=SimpleURI.create_random(MockRemoteCollection.type),
-            items=available_items + unavailable_items + missing_items + invalid_items
+            uri=SimpleURI.create_random(MockCollection.type),
+            all_items=available_items + unavailable_items + missing_items + invalid_items
         )
         model._collections[playlist.uri] = collection
         return collection
@@ -140,7 +131,7 @@ class TestMatchWithPlaylist:
             self,
             model: Checker,
             playlist: RemoteMutablePlaylist,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             available_items: list[HasURI],
             faker: Faker,
     ):
@@ -154,7 +145,7 @@ class TestMatchWithPlaylist:
         assert removed_duplicates
 
         initial = available_items + initial_duplicates
-        collection.items += initial_duplicates
+        collection.all_items += initial_duplicates
         current, removed = split_list(available_items, 2)
         current += current_duplicates
 
@@ -186,7 +177,7 @@ class TestMatchWithPlaylist:
     async def test_compare_with_playlist(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlist: RemoteMutablePlaylist,
             available_items: list[HasURI],
             unavailable_items: list[HasURI],
@@ -199,7 +190,7 @@ class TestMatchWithPlaylist:
         expected_unchanged, expected_removed = split_list(initial, 2)
         current = expected_unchanged + expected_added
 
-        collection.items = initial + unavailable_items + missing_items + invalid_items
+        collection.all_items = initial + unavailable_items + missing_items + invalid_items
         mock_get_playlist_items.return_value = current
 
         added, removed, unchanged, missing, invalid = await model._compare_with_playlist(playlist)
@@ -284,14 +275,14 @@ class TestMatchWithPlaylist:
     async def test_match_with_playlist_skips_on_no_changes(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlist: RemoteMutablePlaylist,
             available_items: list[HasURI],
             unavailable_items: list[HasURI],
             invalid_items: list[ResourceModel],
             mock_match_with_others: Mock,
     ):
-        collection.items = available_items + unavailable_items + invalid_items
+        collection.all_items = available_items + unavailable_items + invalid_items
         expected = CheckResult(unchanged=available_items, skipped=unavailable_items + invalid_items)
 
         result = await model._match_with_playlist(playlist)
@@ -302,7 +293,7 @@ class TestMatchWithPlaylist:
     async def test_match_with_playlist_skips_on_none_added(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlist: RemoteMutablePlaylist,
             available_items: list[HasURI],
             unavailable_items: list[HasURI],
@@ -312,7 +303,7 @@ class TestMatchWithPlaylist:
             faker: Faker,
     ):
         unchanged, removed = split_list(available_items, 2)
-        collection.items = unchanged + removed + unavailable_items + invalid_items
+        collection.all_items = unchanged + removed + unavailable_items + invalid_items
         mock_get_playlist_items.return_value = unchanged
 
         expected = CheckResult(
@@ -329,7 +320,7 @@ class TestMatchWithPlaylist:
     async def test_match_with_playlist_skips_on_no_immutable_items(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlist: RemoteMutablePlaylist,
             available_items: list[HasURI],
             unavailable_items: list[HasURI],
@@ -339,7 +330,7 @@ class TestMatchWithPlaylist:
             faker: Faker,
     ):
         unchanged, added, removed = split_list(available_items, 3)
-        collection.items = unchanged + removed + unavailable_items + invalid_items
+        collection.all_items = unchanged + removed + unavailable_items + invalid_items
         mock_get_playlist_items.return_value = unchanged + added
 
         expected = CheckResult(
@@ -356,7 +347,7 @@ class TestMatchWithPlaylist:
     async def test_match_with_playlist(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlist: RemoteMutablePlaylist,
             mutable_uri_items: list[HasMutableURI],
             unavailable_items: list[HasURI],
@@ -366,13 +357,13 @@ class TestMatchWithPlaylist:
             faker: Faker,
     ):
         unchanged, added, removed = split_list(mutable_uri_items, 3)
-        collection.items = unchanged + removed + unavailable_items + invalid_items
+        collection.all_items = unchanged + removed + unavailable_items + invalid_items
         mock_get_playlist_items.return_value = unchanged + added
 
         for item in added:
             item = deepcopy(item)
             del item.uri
-            collection.items.append(item)
+            collection.all_items.append(item)
 
         expected = CheckResult(
             changed=added,

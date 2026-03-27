@@ -137,8 +137,8 @@ class Matcher(Processor, HasLogger):
         scores.extend(scorer.score(item, other) for scorer in filter(lambda x: not x.required, scorers))
 
         if score_items_in_collections and self.score_items_in_collections and isinstance(item, CollectionModel):
-            items = list(item.iter_items) if isinstance(item, CollectionModel) else []
-            others = list(other.iter_items) if isinstance(other, CollectionModel) else []
+            items = list(item.items) if isinstance(item, CollectionModel) else []
+            others = list(other.items) if isinstance(other, CollectionModel) else []
             self._log_score_items(item, items, others)
 
             collection_scores = self._score_items(items, others)

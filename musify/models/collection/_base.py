@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Collection, Iterable, TYPE_CHECKING
+from typing import Collection, Iterable, TYPE_CHECKING, Iterator
 
 from musify.models import ResourceModel, BaseModel, abstract_property
 from musify.models.cursors import PageCursor, HasPageCursor
@@ -19,14 +19,14 @@ class CollectionModel[IT: ResourceModel](BaseModel):
         raise NotImplementedError
 
     @property
+    def items(self) -> Iterator[IT]:
+        """Iterator for the items currently stored in this collection."""
+        return iter(self._items)
+
+    @property
     def count(self) -> int:
         """The number of items currently stored in this collection."""
         return len(self._items)
-
-    @property
-    def iter_items(self) -> Iterable[IT]:
-        """Iterator for the items currently stored in this collection."""
-        return iter(self._items)
 
 
 # noinspection PyAbstractClass

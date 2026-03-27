@@ -13,7 +13,7 @@ from musify.models.collection.playlist import RemoteMutablePlaylist
 from musify.models.item.track import Track, RemoteTrack
 from musify.processors_new.check import Checker
 from tests.models.api.utils import MockUrlCursor
-from tests.models.utils import MockRemoteCollection
+from tests.processors_new.utils import MockCollection
 from tests.utils import SimpleURI
 
 
@@ -31,11 +31,11 @@ class TestPlaylistManagement:
             self, playlists: list[RemoteMutablePlaylist], tracks: list[Track], faker: Faker
     ) -> list[CollectionModel]:
         return [
-            MockRemoteCollection(
+            MockCollection(
                 name=pl.name,
                 cursor=MockUrlCursor(url=faker.url()),
-                items=faker.random_elements(tracks),
-                uri=SimpleURI.create_random(MockRemoteCollection.type),
+                all_items=faker.random_elements(tracks),
+                uri=SimpleURI.create_random(MockCollection.type),
             )
             for pl in playlists
         ]
@@ -55,25 +55,26 @@ class TestPlaylistManagement:
         return properties
 
     async def assert_create_playlist(
-            self, model: Checker, collection: MockRemoteCollection, playlists: list[RemoteMutablePlaylist]
+            self, model: Checker, collection: MockCollection, playlists: list[RemoteMutablePlaylist]
     ) -> RemoteMutablePlaylist:
         assert not model._playlists
         expected_playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())
+        expected_items = list(collection.items)
 
         await model._setup_playlist(collection)
 
-        assert list(expected_playlist.tracks) == collection.items
+        assert list(expected_playlist.tracks) == expected_items
 
         assert model._collections == {expected_playlist.uri: collection}
         assert model._collections[expected_playlist.uri] is collection
 
         assert model._playlists == {expected_playlist.uri: expected_playlist}
         assert model._playlists[expected_playlist.uri] is expected_playlist
-        assert model._playlists[expected_playlist.uri].tracks == collection.items
+        assert model._playlists[expected_playlist.uri].tracks == expected_items
 
         assert model._playlists_initial == {expected_playlist.uri: expected_playlist}
         assert model._playlists_initial[expected_playlist.uri] is not expected_playlist
-        assert model._playlists_initial[expected_playlist.uri].tracks != collection.items
+        assert model._playlists_initial[expected_playlist.uri].tracks != expected_items
 
         return expected_playlist
 
@@ -83,7 +84,7 @@ class TestPlaylistManagement:
     async def test_get_playlist(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlists: list[RemoteMutablePlaylist],
             playlist_properties: dict[str, Any],
             mock_get_playlist: Mock,
@@ -103,7 +104,7 @@ class TestPlaylistManagement:
     async def test_create_playlist(
             self,
             model: Checker,
-            collection: MockRemoteCollection,
+            collection: MockCollection,
             playlists: list[RemoteMutablePlaylist],
             playlist_properties: dict[str, Any],
             mock_get_playlist: Mock,

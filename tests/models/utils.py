@@ -29,11 +29,11 @@ class MockRemoteCollection(MockRemoteResource, RemoteCollection, HasName):
     type: ClassVar[str] = MockRemoteResource.type
 
     name: str = "test"
-    items: list = Field(default_factory=list)
+    all_items: list = Field(default_factory=list)
 
     @property
     def _items(self) -> list:
-        return self.items
+        return self.all_items
 
     async def extend(self, api: HasEndpoints) -> None:
         pass

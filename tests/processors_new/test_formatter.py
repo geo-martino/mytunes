@@ -242,7 +242,7 @@ class TestCollectionFormatter(BaseModelTester):
         mock_format.assert_called_once()
         # different order expected
         kwargs = mock_format.call_args.kwargs
-        assert kwargs["indices"] == [track.track for track in collection.iter_items]
+        assert kwargs["indices"] == [track.track for track in collection.items]
         assert kwargs["indices"] != [track.track for track in tracks]
 
     def test_format_generates_positions(

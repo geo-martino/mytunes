@@ -18,8 +18,7 @@ from musify.processors_new.formatter import CollectionFormatter
 from tests.conftest import LogCapturer
 from tests.libraries.remote.core.processors.utils import patch_input
 from tests.models.api.utils import MockUrlCursor
-from tests.models.utils import MockRemoteCollection
-from tests.processors_new.utils import assert_help_text
+from tests.processors_new.utils import assert_help_text, MockCollection
 from tests.utils import SimpleURI
 
 
@@ -39,11 +38,11 @@ class TestPausePages:
             self, model: Checker, playlists: list[RemoteMutablePlaylist], tracks: list[Track], faker: Faker
     ) -> list[CollectionModel]:
         collections = [
-            MockRemoteCollection(
+            MockCollection(
                 name=pl.name,
                 cursor=MockUrlCursor(url=faker.url()),
-                items=faker.random_elements(tracks),
-                uri=SimpleURI.create_random(MockRemoteCollection.type),
+                all_items=faker.random_elements(tracks),
+                uri=SimpleURI.create_random(MockCollection.type),
             )
             for pl in playlists
         ]
@@ -134,7 +133,7 @@ class TestPausePages:
     async def test_pages(
             self,
             model: Checker,
-            collections: list[MockRemoteCollection],
+            collections: list[MockCollection],
             pages: int,
             mock_pause: Mock,
             mock_playlist_links: Mock,
@@ -161,7 +160,7 @@ class TestPausePages:
     async def test_pause_prints_help(
             self,
             model: Checker,
-            collections: list[MockRemoteCollection],
+            collections: list[MockCollection],
             pages: int,
             mock_pause: Mock,
             mock_playlist_links: Mock,
@@ -188,7 +187,7 @@ class TestPausePages:
     async def test_pause_skips(
             self,
             model: Checker,
-            collections: list[MockRemoteCollection],
+            collections: list[MockCollection],
             pages: int,
             mock_pause: Mock,
             mock_playlist_links: Mock,
@@ -215,7 +214,7 @@ class TestPausePages:
     async def test_pause_quits(
             self,
             model: Checker,
-            collections: list[MockRemoteCollection],
+            collections: list[MockCollection],
             pages: int,
             mock_pause: Mock,
             mock_playlist_links: Mock,
@@ -242,7 +241,7 @@ class TestPausePages:
     async def test_pause_print_playlist(
             self,
             model: Checker,
-            collections: list[MockRemoteCollection],
+            collections: list[MockCollection],
             playlists: list[RemoteMutablePlaylist],
             pages: int,
             mock_get_playlist_items: Mock,

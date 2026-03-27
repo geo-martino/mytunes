@@ -191,7 +191,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         """Check the matches for the given collection and return the results."""
         collections = [
             coll for coll in collections
-            if coll.count > 0 and any(isinstance(item, HasURI) for item in coll.iter_items)
+            if coll.count > 0 and any(isinstance(item, HasURI) for item in coll.items)
         ]
         if len(collections) == 0:
             self._log_skip()
@@ -241,7 +241,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         self._playlists[playlist.uri] = playlist
         self._playlists_initial[playlist.uri] = deepcopy(playlist)
 
-        playlist.tracks.extend(item for item in collection.iter_items if isinstance(item, HasURI) and item.has_uri)
+        playlist.tracks.extend(item for item in collection.items if isinstance(item, HasURI) and item.has_uri)
         await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
         await api.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
@@ -269,7 +269,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         else:
             # otherwise, assume playlist was created by the checker and can be deleted directly
             api: PlaylistReadWriteEndpoints = self.api.playlists
-            uris = [it.uri for it in self._playlists[playlist.uri].iter_items]
+            uris = [it.uri for it in self._playlists[playlist.uri].items]
             await api.remove(playlist.uri.api_url, uris=uris, show_bar=False)
 
             api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
@@ -354,9 +354,8 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         table = self.formatter.format(playlist, indices=True) or missing_message
         self.logger.print_message(header + ":\n" + table + "\n")
 
-        api: PlaylistReadWriteEndpoints = self.api.playlists
-        items = await api.get_all(playlist)
-        if items == list(playlist.iter_items):
+        items = await self._get_current_playlist_items(playlist)
+        if items == list(playlist.items):
             return
 
         playlist = deepcopy(playlist)
@@ -426,7 +425,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
 
     def _get_initial_playlist_items[CT: HasURI](self, playlist: RemoteMutablePlaylist) -> list[CT]:
         collection = self._collections[playlist.uri]
-        return [item for item in collection.iter_items if isinstance(item, HasURI) and item.has_uri]
+        return [item for item in collection.items if isinstance(item, HasURI) and item.has_uri]
 
     async def _get_current_playlist_items[RT: RemoteResource](
             self, playlist: RemoteMutablePlaylist[Any, RT, Any, Any]
@@ -435,7 +434,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         current_items = await api.get_all(playlist.uri.api_url)
 
         # remove items that were present before checking started
-        for item in self._playlists_initial[playlist.uri].iter_items:
+        for item in self._playlists_initial[playlist.uri].items:
             if item in current_items:
                 current_items.remove(item)
 
@@ -467,11 +466,11 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
 
     def _get_missing_playlist_items[CT: HasURI](self, playlist: RemoteMutablePlaylist) -> list[CT]:
         collection = self._collections[playlist.uri]
-        return [item for item in collection.iter_items if isinstance(item, HasURI) and item.has_uri is None]
+        return [item for item in collection.items if isinstance(item, HasURI) and item.has_uri is None]
 
     def _get_invalid_collection_items[CT: ResourceModel](self, playlist: RemoteMutablePlaylist) -> list[CT]:
         collection = self._collections[playlist.uri]
-        return [item for item in collection.iter_items if not isinstance(item, HasURI) or item.has_uri is False]
+        return [item for item in collection.items if not isinstance(item, HasURI) or item.has_uri is False]
 
     ###########################################################################
     ## Match with input

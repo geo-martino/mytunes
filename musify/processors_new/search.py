@@ -260,16 +260,16 @@ class Searcher[API: _ApiT](Processor, HasAPI):
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
 
         if self._should_search_on_items_only(collection):
-            return name, await self._search_items(collection.iter_items, show_bar=show_bar)
+            return name, await self._search_items(collection.items, show_bar=show_bar)
         collection: ResourceModel | CollectionModel  # type checked in the above condition
 
         match = await self._query_and_match(collection)
         match = await self._extend_collection_items(match)
         if match is None or not isinstance(match, CollectionModel):
-            return name, await self._search_items(collection.iter_items, show_bar=show_bar)
+            return name, await self._search_items(collection.items, show_bar=show_bar)
 
-        items, skipped = self._split_items(collection.iter_items)
-        result = self._match_items(items, list(match.iter_items), skipped)
+        items, skipped = self._split_items(collection.items)
+        result = self._match_items(items, list(match.items), skipped)
         if self.keep_matching_collection_items and result.unmatched:
             result = await self._search_from_result(result, items)
 

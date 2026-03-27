@@ -459,7 +459,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
             cursor, path=self._extend_path, kind=self._extend_type, show_bar=show_bar
         )
         if isinstance(collection, RemoteCollection):
-            items = itertools.chain.from_iterable((collection.iter_items, items))
+            items = itertools.chain.from_iterable((collection.items, items))
             collection.cursor = cursor
 
         return list(items)

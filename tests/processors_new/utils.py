@@ -19,11 +19,11 @@ class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls(
         Playlist.type,
     ))
 
-    items: list = []
+    all_items: list = []
 
     @property
     def _items(self) -> list:
-        return self.items
+        return self.all_items
 
 
 def create_random_file(path: Path, size: int | None = None) -> None:

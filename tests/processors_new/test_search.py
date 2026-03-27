@@ -426,7 +426,7 @@ class TestCollectionSearcher(SearcherTester):
     @pytest.fixture
     def collections(self, tracks: list[Track], faker: Faker) -> list[CollectionModel]:
         return [
-            MockCollection(name=faker.sentence(), items=faker.random_elements(tracks))
+            MockCollection(name=faker.sentence(), all_items=faker.random_elements(tracks))
             for _ in range(faker.random_int(5, 10))
         ]
 
