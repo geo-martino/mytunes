@@ -9,6 +9,7 @@ from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.properties.name import HasName
+from tests.conftest import LogCapturer
 
 
 class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):
@@ -32,3 +33,7 @@ def create_random_file(path: Path, size: int | None = None) -> None:
     with path.open("w") as file:
         for _ in range(0, size or randrange(int(6*10e3), int(10e6))):
             file.write(choice(string.ascii_letters))
+
+
+def assert_help_text(log_capturer: LogCapturer, expected: int) -> None:
+    assert log_capturer.text.count("Enter one of the following") == expected

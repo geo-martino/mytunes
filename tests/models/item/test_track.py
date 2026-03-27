@@ -14,9 +14,7 @@ from tests.utils import SimpleURI
 class TestTrack(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Track:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=Track.type
-        )
+        uri = SimpleURI.create_random(Track.type)
         return Track(name=faker.sentence(), uri=uri)
 
     @pytest.fixture
@@ -115,7 +113,5 @@ class TestHasMutableTracks(NoUniqueKeyTester):
 class TestRemoteTrack(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteTrack:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemoteTrack.type
-        )
+        uri = SimpleURI.create_random(RemoteTrack.type)
         return RemoteTrack(name=faker.word(), uri=uri)

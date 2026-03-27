@@ -31,18 +31,14 @@ from tests.utils import split_list, SimpleURI
 class TestPlaylist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Playlist:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=Playlist.type
-        )
+        uri = SimpleURI.create_random(Playlist.type)
         return Playlist(name=faker.sentence(), uri=uri)
 
 
 class TestMutablePlaylist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> MutablePlaylist:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=MutablePlaylist.type
-        )
+        uri = SimpleURI.create_random(MutablePlaylist.type)
         return MutablePlaylist(name=faker.sentence(), uri=uri)
 
 
@@ -90,9 +86,7 @@ class TestHasMutablePlaylists(BaseModelTester):
 class TestRemotePlaylist(RemoteCollectionTester):
     @pytest.fixture
     def model(self, user: RemoteUser, cursor: PageCursor, faker: Faker) -> RemotePlaylist:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemotePlaylist.type
-        )
+        uri = SimpleURI.create_random(RemotePlaylist.type)
         return RemotePlaylist(
             name=faker.word(),
             owner=user,
@@ -103,7 +97,7 @@ class TestRemotePlaylist(RemoteCollectionTester):
     
     @pytest.fixture
     def owner(self, cursor: PageCursor, faker: Faker) -> RemoteUser:
-        uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
+        uri = SimpleURI.create_random(RemoteUser.type)
         return RemoteUser(name=faker.user_name(), uri=uri)
     
     def test_validate_mutability(self, model: RemotePlaylist, faker: Faker):
@@ -114,7 +108,7 @@ class TestRemotePlaylist(RemoteCollectionTester):
             RemotePlaylist.model_validate(model, context=context)
 
     def test_validate_immutability(self, model: RemotePlaylist, faker: Faker):
-        uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
+        uri = SimpleURI.create_random(RemoteUser.type)
         user = RemoteUser(name=faker.user_name(), uri=uri)
         context = RemoteModelContext(user=user)
 
@@ -127,9 +121,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     def model(
             self, tracks: list[RemoteTrack], owner: RemoteUser, cursor: PageCursor, faker: Faker
     ) -> RemoteMutablePlaylist:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemotePlaylist.type
-        )
+        uri = SimpleURI.create_random(RemotePlaylist.type)
         return RemoteMutablePlaylist(
             name=faker.word(),
             owner=owner,
@@ -141,7 +133,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
 
     @pytest.fixture
     def owner(self, cursor: PageCursor, faker: Faker) -> RemoteUser:
-        uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
+        uri = SimpleURI.create_random(RemoteUser.type)
         return RemoteUser(name=faker.user_name(), uri=uri)
 
     @pytest.fixture
@@ -149,8 +141,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         return [
             RemoteTrack(
                 **track.model_dump(exclude={"uri"}),
-                uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteTrack.type)
-            )
+                uri=SimpleURI.create_random(RemoteTrack.type))
             for track in tracks
         ]
 
@@ -160,7 +151,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         assert model == RemoteMutablePlaylist.model_validate(model, context=context)
 
     def test_validate_immutability(self, model: RemotePlaylist, faker: Faker):
-        uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
+        uri = SimpleURI.create_random(RemoteUser.type)
         user = RemoteUser(name=faker.user_name(), uri=uri)
         context = RemoteModelContext(user=user)
 

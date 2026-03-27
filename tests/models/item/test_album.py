@@ -9,9 +9,7 @@ from tests.utils import SimpleURI
 class TestAlbum(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Album:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=Album.type
-        )
+        uri = SimpleURI.create_random(Album.type)
         return Album(name=faker.word(), uri=uri)
 
 
@@ -29,7 +27,5 @@ class TestHasAlbums(NoUniqueKeyTester):
 class TestRemoteAlbum(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteAlbum:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemoteAlbum.type
-        )
+        uri = SimpleURI.create_random(RemoteAlbum.type)
         return RemoteAlbum(name=faker.word(), uri=uri)

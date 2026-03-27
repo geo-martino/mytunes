@@ -18,10 +18,9 @@ def playlists(playlists: list[Playlist], faker: Faker) -> list[RemotePlaylist]:
     return [
         RemotePlaylist(
             **pl.model_dump(),
-            owner=RemoteUser(name=faker.name(), uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)),
+            owner=RemoteUser(name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type)),
             cursor=MockUrlCursor(url=faker.url()),
-            uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemotePlaylist.type)
-        )
+            uri=SimpleURI.create_random(RemotePlaylist.type))
         for pl in playlists
     ]
 

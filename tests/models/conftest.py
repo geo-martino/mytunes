@@ -29,5 +29,5 @@ def models(
 
 @pytest.fixture
 def user(faker: Faker) -> RemoteUser:
-    owner_uri = SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
+    owner_uri = SimpleURI.create_random(RemoteUser.type)
     return RemoteUser(name=faker.name(), uri=owner_uri)

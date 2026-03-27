@@ -27,16 +27,12 @@ from tests.utils import assert_validator_skips, SimpleURI, split_list
 class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
     def model(self, tags: dict[str, Any], faker: Faker) -> LocalTrack:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=LocalTrack.type
-        )
+        uri = SimpleURI.create_random(LocalTrack.type)
         return LocalTrack(**tags, uri=uri, path=faker.file_path())
 
     @pytest.fixture
     def uri(self, faker: Faker) -> SimpleURI:
-        return SimpleURI.from_id(
-            faker.pystr(22, 22), kind=LocalTrack.type
-        )
+        return SimpleURI.create_random(LocalTrack.type)
 
     @pytest.fixture
     def tags(self, uri: URI, image_files: list[ImageFile]) -> dict[str, Any]:
@@ -375,7 +371,7 @@ class TestLocalTrack(UniqueKeyTester):
 
         other.name = faker.sentence()
         other.artists = faker.words()
-        other.uri = SimpleURI.from_id(faker.pystr(22, 22), kind=LocalTrack.type)
+        other.uri = SimpleURI.create_random(LocalTrack.type)
 
         track.released_at = None
         other.released_at = faker.date()
@@ -549,7 +545,7 @@ class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
     def restore_tracks(self, tracks: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
         for track in tracks:
-            track.uri = SimpleURI.from_id(faker.pystr(22, 22), kind=LocalTrack.type)
+            track.uri = SimpleURI.create_random(LocalTrack.type)
         return tracks
 
     def test_restore_tracks_on_field(self, restore_tracks: list[LocalTrack], faker: Faker):

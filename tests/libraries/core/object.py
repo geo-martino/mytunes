@@ -12,6 +12,7 @@ from musify.exception import MusifyTypeError
 from musify.models._base import MusifyResource
 from musify.models.collection import MusifyCollection
 from tests.libraries.core.collection import MusifyCollectionTester
+from tests.processors_new.check import conftest
 
 
 class TrackTester(MusifyItemTester, metaclass=ABCMeta):
@@ -107,8 +108,8 @@ class PlaylistTester(MusifyCollectionTester, metaclass=ABCMeta):
     def test_merge_dunder_methods[T: Track](playlist: Playlist[T], collection_merge_items: Iterable[T]):
         initial_count = len(playlist)
         other = deepcopy(playlist)
-        other.tracks.clear()
-        other.tracks.extend(collection_merge_items)
+        conftest.tracks.clear()
+        conftest.tracks.extend(collection_merge_items)
 
         new_pl = playlist | other
         assert len(new_pl) == initial_count + len(other)
@@ -145,29 +146,29 @@ class LibraryTester(MusifyCollectionTester, metaclass=ABCMeta):
         """Run merge playlists function on ``source`` library against ``test_values`` and assert expected results"""
         # fine-grained merge functionality is tested in the playlist tester
         # we just need to assert the playlist was modified in some way
-        original_playlists = deepcopy(library.playlists)
+        original_playlists = deepcopy(conftest.playlists)
         library.merge_playlists(test)
 
         test_names = {pl.name for pl in extend_playlists} | {pl.name for pl in new_playlists}
-        for pl in library.playlists.values():  # test unchanged playlists are unchanged
+        for pl in conftest.playlists.values():  # test unchanged playlists are unchanged
             if pl.name in test_names:
                 continue
-            assert library.playlists[pl.name].tracks == pl.tracks
+            assert conftest.tracks == conftest.tracks
 
         for pl in extend_playlists:
-            assert library.playlists[pl.name].tracks != original_playlists[pl.name].tracks
-            assert library.playlists[pl.name].tracks == pl.tracks
+            assert conftest.tracks != conftest.tracks
+            assert conftest.tracks == conftest.tracks
 
         for pl in new_playlists:
             assert pl.name not in original_playlists
-            assert library.playlists[pl.name].tracks == pl.tracks
-            assert id(library.playlists[pl.name]) != id(pl)  # deepcopy occurred
+            assert conftest.tracks == conftest.tracks
+            assert id(conftest.playlists[pl.name]) != id(pl)  # deepcopy occurred
 
     @pytest.fixture
     def merge_playlists(self, library: Library) -> list[Playlist]:
         """Set of playlists to be used in ``merge_playlists`` tests."""
         # playlist order: extend, create, unchanged
-        return deepcopy(sample(list(library.playlists.values()), k=3))
+        return deepcopy(sample(list(conftest.playlists.values()), k=3))
 
     @pytest.fixture
     def merge_playlists_extend(
@@ -176,7 +177,7 @@ class LibraryTester(MusifyCollectionTester, metaclass=ABCMeta):
         """Set of playlists that already exist in the ``library`` with extra tracks to be merged"""
         merge_playlist = merge_playlists[0]
         merge_playlist.extend(collection_merge_items)
-        assert merge_playlist.tracks != library.playlists[merge_playlist.name].tracks
+        assert conftest.tracks != conftest.tracks
 
         return [merge_playlist]
 
@@ -184,8 +185,8 @@ class LibraryTester(MusifyCollectionTester, metaclass=ABCMeta):
     def merge_playlists_new(self, library: Library, merge_playlists: list[Playlist]) -> list[Playlist]:
         """Set of new playlists to merge with the given ``library``"""
         new_playlist = merge_playlists[1]
-        library.playlists.pop(new_playlist.name)
-        assert new_playlist.name not in library.playlists
+        conftest.playlists.pop(new_playlist.name)
+        assert new_playlist.name not in conftest.playlists
 
         return [new_playlist]
 
@@ -225,8 +226,8 @@ class LibraryTester(MusifyCollectionTester, metaclass=ABCMeta):
             merge_playlists_new: list[Playlist],
     ):
         test = deepcopy(library)
-        test.playlists.clear()
-        test.playlists.update({pl.name: pl for pl in merge_playlists})
+        conftest.playlists.clear()
+        conftest.playlists.update({pl.name: pl for pl in merge_playlists})
 
         self.assert_merge_playlists(
             library=library, test=test, extend_playlists=merge_playlists_extend, new_playlists=merge_playlists_new

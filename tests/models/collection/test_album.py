@@ -16,9 +16,7 @@ class TestAlbumCollection(NoUniqueKeyTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> AlbumCollection:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=AlbumCollection.type
-        )
+        uri = SimpleURI.create_random(AlbumCollection.type)
         return AlbumCollection(name=faker.word(), uri=uri)
 
     def test_album_name_cannot_be_empty(self, tracks: list[Track], faker: Faker):
@@ -60,9 +58,7 @@ class TestAlbumCollection(NoUniqueKeyTester):
 class TestRemoteAlbumCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: PageCursor, faker: Faker) -> RemoteAlbumCollection:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemoteAlbumCollection.type
-        )
+        uri = SimpleURI.create_random(RemoteAlbumCollection.type)
         return RemoteAlbumCollection(
             name=faker.word(),
             uri=uri,

@@ -1,9 +1,11 @@
 import itertools
+import math
 import re
 from collections.abc import Collection, Iterator, Callable
 from random import choice
 from typing import Self, final
 
+from faker import Faker
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
@@ -71,7 +73,7 @@ def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterat
         # noinspection PyTypeChecker
         return map(list, itertools.batched(lst, size))
 
-    size = (len(lst) + 1) // n
+    size = math.ceil((len(lst) + 1) / n)
     batcher_left = _get_batcher()
     batcher_right = _get_batcher()
     next(batcher_right)
@@ -83,7 +85,8 @@ def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterat
         overlap_result.extend(overlap_batch)
         yield item + overlap_batch
 
-    yield overlap_result
+    if overlap:
+        yield overlap_result
 
 
 @final
@@ -102,6 +105,15 @@ class SimpleURI(URI):
     @property
     def id(self) -> str:
         return self.root.split(":")[2]
+
+    @classmethod
+    def create_random(cls, kind: str) -> Self:
+        value = Faker().pystr()
+        return cls.from_id(value=value, kind=kind)
+
+    @classmethod
+    def create_unavailable(cls, kind: str) -> Self:
+        return cls.from_id(value=cls._unavailable_id, kind=kind)
 
     @classmethod
     def from_id[T](cls, value: T, kind: str) -> T | Self:

@@ -19,8 +19,7 @@ class TestUserEndpoints(EndpointsTester):
     @pytest.fixture
     def user(self, faker: Faker) -> RemoteUser:
         return RemoteUser(
-            name=faker.name(), uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
-        )
+            name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type))
 
     async def test_context_sets_user(self, model: UserEndpoints, user: RemoteUser, mock_get: Mock):
         assert model.user is None

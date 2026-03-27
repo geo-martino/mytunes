@@ -74,10 +74,16 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         description="The value to use in the output when a field is missing.",
         default="",
     )
+
+    table_format: str = Field(
+        description="The format to use for the table.",
+        default="orgtbl",
+    )
     header: bool = Field(
         description="Whether to include the header in the output.",
         default=False,
     )
+
 
     @model_validator(mode="after")
     def _validate_widths(self) -> Self:
@@ -150,7 +156,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             headers=self.fields if self.header else (),
             colalign=self.alignments,
             maxcolwidths=self.widths,
-            tablefmt="orgtbl",
+            tablefmt=self.table_format,
             missingval=self.missing_value,
             showindex=indices if isinstance(indices, bool) else list(map(str, indices)),
         )

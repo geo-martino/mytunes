@@ -87,7 +87,7 @@ class ItemDownloadHelper(InputProcessor):
 
         for page_no, page_batch in enumerate(batched(queries, self.interval), 1):
             queried, not_queried = self._open_sites_for_queries(page_batch)
-            self._pause(queried=queried, not_queried=not_queried, page=page_no, total=pages_total)
+            self._run_pause_page(queried=queried, not_queried=not_queried, page=page_no, total=pages_total)
 
     def _open_sites_for_items[T: AttributeModel](
             self, items: Collection[T], fields: Iterable[str]
@@ -169,11 +169,11 @@ class ItemDownloadHelper(InputProcessor):
 
         return queried, not_queried
 
-    def _pause[T: AttributeModel](
+    def _run_pause_page[T: AttributeModel](
             self, queried: Collection[T], not_queried: Collection[T], page: int, total: int
     ) -> None:
         valid_fields = self._get_valid_fields_for_items(queried) | self._get_valid_fields_for_items(not_queried)
-        help_text = self._format_help_text_for_pause(not_queried=len(not_queried), valid_fields=valid_fields)
+        help_text = self._format_help_text_for_pause_page(not_queried=len(not_queried), valid_fields=valid_fields)
         self.logger.print_message("\n" + help_text)
 
         while True:
@@ -206,7 +206,7 @@ class ItemDownloadHelper(InputProcessor):
                 case inp:
                     self.logger.warning(f"Unrecognised input: {inp}. Enter 'h' to see valid options.")
 
-    def _format_help_text_for_pause(self, not_queried: int, valid_fields: Collection[str]) -> str:
+    def _format_help_text_for_pause_page(self, not_queried: int, valid_fields: Collection[str]) -> str:
         opened = len(self.urls) * (self.interval - not_queried)
         not_opened = f" - Could not open sites for {not_queried} tracks. " if not_queried else ". "
 

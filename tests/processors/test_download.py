@@ -15,6 +15,7 @@ from musify.processors.download import ItemDownloadHelper
 from tests.conftest import LogCapturer
 from tests.libraries.local.track.utils import random_tracks
 from tests.libraries.remote.core.processors.utils import patch_input
+from tests.processors_new.utils import assert_help_text
 from tests.utils import random_str
 
 
@@ -115,7 +116,7 @@ class TestItemDownloadHelper(PrettyPrinterTester):
         # 3 extra for 2*r input + 1*<Fields> input
         assert len(urls) == (total + 3) * len(download_helper.urls)
 
-        assert log_capturer.text.count("Enter one of the following") == pages_total
+        assert_help_text(log_capturer, pages_total)
         assert log_capturer.text.count("Some fields were not recognised") == 1
 
     @staticmethod
@@ -151,5 +152,5 @@ class TestItemDownloadHelper(PrettyPrinterTester):
         # 3 extra for 2*r input + 1*<Fields> input
         assert len(urls) == (2 * len(test_items) - 3) * len(download_helper.urls)
 
-        assert log_capturer.text.count("Enter one of the following") == 4
+        assert_help_text(log_capturer, 4)
         assert "Some fields were not recognised" not in log_capturer.text

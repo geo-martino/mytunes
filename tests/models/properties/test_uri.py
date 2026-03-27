@@ -31,9 +31,7 @@ class MockHasMutableURI(HasMutableURI):
 
 @pytest.fixture
 def uri(faker: Faker) -> SimpleURI:
-    return SimpleURI.from_id(
-        faker.pystr(22, 22), kind=MockHasImmutableURI.type
-    )
+    return SimpleURI.create_random(MockHasImmutableURI.type)
 
 
 @pytest.fixture
@@ -49,7 +47,7 @@ def uris(models: list[ResourceModel], faker: Faker) -> list[SimpleURI]:
         class AnotherSimpleURI(SimpleURI):
             _source = source
 
-        uris.append(AnotherSimpleURI.from_id(faker.pystr(22, 22), kind=MockHasImmutableURI.type))
+        uris.append(AnotherSimpleURI.create_random(MockHasImmutableURI.type))
         seen.add(source)
 
     return uris
@@ -99,9 +97,7 @@ class TestHasImmutableURI(UniqueKeyTester):
             model.uri = uri
 
     def test_validate_uri_matches_type(self, model: HasImmutableURI, faker: Faker):
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind="different_type"
-        )
+        uri = SimpleURI.create_random("different_type")
 
         with pytest.raises(ValidationError):
             MockHasImmutableURI(uri=uri)
@@ -132,9 +128,7 @@ class TestHasMutableURI(UniqueKeyTester):
             MockHasMutableURI(uris=[*uris, new_uri])
 
     def test_validate_uri_matches_type(self, faker: Faker):
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind="different_type"
-        )
+        uri = SimpleURI.create_random("different_type")
 
         with pytest.raises(ValidationError):
             MockHasMutableURI(uri=uri)

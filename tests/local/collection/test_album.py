@@ -9,7 +9,5 @@ from tests.utils import SimpleURI
 class TestLocalAlbumCollection(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> LocalAlbumCollection:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=LocalAlbumCollection.type
-        )
+        uri = SimpleURI.create_random(LocalAlbumCollection.type)
         return LocalAlbumCollection(name=faker.word(), uri=uri)

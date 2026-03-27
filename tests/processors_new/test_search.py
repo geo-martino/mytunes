@@ -13,7 +13,7 @@ from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
 from musify.models.item.album import Album
 from musify.models.item.track import Track, RemoteTrack
-from musify.models.properties.uri import HasImmutableURI, HasMutableURI
+from musify.models.properties.uri import HasURI
 from musify.models.remote import RemoteResource
 from musify.processors_new.match import Matcher
 from musify.processors_new.match.score.string import NameScorer
@@ -133,8 +133,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
         return [
             RemoteTrack(
                 name=faker.name(),
-                uri=SimpleURI.from_id(faker.pystr(22, 22), kind=Track.type)
-            )
+                uri=SimpleURI.create_random(Track.type))
             for _ in range(faker.random_int(5, 15))
         ]
 
@@ -316,7 +315,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
 
     def test_assign_uri_from_match_skips(self, model: Searcher, item: ResourceModel, match: RemoteTrack):
         # nothing happens because item does not have a URI field
-        assert not isinstance(item, HasImmutableURI) and not isinstance(item, HasMutableURI)
+        assert not isinstance(item, HasURI)
         model._assign_uri_from_match(item, match)
 
     def test_assign_uri_from_match(self, model: Searcher, query_results: list[RemoteTrack], match: RemoteTrack):
@@ -338,8 +337,7 @@ class TestItemSearcher(SearcherTester):
         return [
             RemoteTrack(
                 name=faker.name(),
-                uri=SimpleURI.from_id(faker.pystr(22, 22), kind=Track.type)
-            )
+                uri=SimpleURI.create_random(Track.type))
             for _ in range(faker.random_int(5, 15))
         ]
 
@@ -395,7 +393,7 @@ class TestItemSearcher(SearcherTester):
     ):
         mock_match_random, matches, matched, unmatched = mock_match_random
 
-        items_matched, items_unmatched, _ = split_list(items, 2)
+        items_matched, items_unmatched = split_list(items, 2)
         items_matches = faker.random_elements(query_results, length=len(items_matched))
 
         valid = faker.random_elements(items_unmatched)
@@ -437,7 +435,7 @@ class TestCollectionSearcher(SearcherTester):
         return [
             MockRemoteCollection(
                 name=faker.name(),
-                uri=SimpleURI.from_id(faker.pystr(22, 22), kind=MockRemoteCollection.type),
+                uri=SimpleURI.create_random(MockRemoteCollection.type),
                 cursor=MockUrlCursor(url=faker.url()),
             )
             for _ in range(faker.random_int(5, 15))

@@ -56,7 +56,7 @@ class TestItemDownloadHelper(BaseModelTester):
     @pytest.fixture
     def mock_pause(self, model: ItemDownloadHelper) -> Generator[Mock, None, None]:
         """Mock for pause functionality"""
-        with patch.object(model, "_pause") as mock_pause:
+        with patch.object(model, "_run_pause_page") as mock_pause:
             yield mock_pause
 
     @pytest.fixture
@@ -182,7 +182,7 @@ class TestItemDownloadHelper(BaseModelTester):
         pages_total = math.ceil(total / model.interval)
 
         inputs = ["r", "", "name artists", "r", "bad_tag", "r", "name bad_tag", ""] + [""] * total
-        with (patch_input(inputs), log_capturer(loggers=model.logger)):
+        with (patch_input(iter(inputs)), log_capturer(loggers=model.logger)):
             model.open_sites(unique_tracks)
 
         # 5 extra for 3*r input + 2*<Fields> input
@@ -211,7 +211,7 @@ class TestItemDownloadHelper(BaseModelTester):
         model.interval = len(unique_tracks)
 
         inputs = ["h", "artists", "h", "n name", "h", "", "h", "h"]
-        with (patch_input(inputs), log_capturer(loggers=model.logger)):
+        with (patch_input(iter(inputs)), log_capturer(loggers=model.logger)):
             model.open_sites(unique_tracks)
 
         # Extra:

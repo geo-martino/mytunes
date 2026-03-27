@@ -89,7 +89,7 @@ class TestCreateFromResponse:
             mock_validate_python: Mock,
             faker: Faker,
     ):
-        uri = SimpleURI.from_id(faker.random_int(1, 100), kind=self.MockEndpoints.type)
+        uri = SimpleURI.create_random(self.MockEndpoints.type)
 
         data = dict(name=faker.word(), uri=uri)
         result = self.MockEndpoints.create_model(data, context=context)
@@ -116,7 +116,7 @@ class TestCreateFromResponse:
         types.remove(self.MockEndpoints.type)
         expected_type = faker.random_element(types)
 
-        uri = SimpleURI.from_id(faker.random_int(1, 100), kind=expected_type)
+        uri = SimpleURI.create_random(expected_type)
 
         data = dict(name=faker.word(), uri=uri)
         result = self.MockEndpoints.create_model(data, context=context, kind=expected_type)
@@ -148,7 +148,7 @@ class TestCreateFromResponse:
             __final__ = True  # needed to force its creation from the object
             source: ClassVar[str] = "test"
 
-        uri = SimpleURI.from_id(faker.random_int(1, 100), kind=MockType.type)
+        uri = SimpleURI.create_random(MockType.type)
         mock_model_validate = mocker.spy(MockType, "model_validate")
 
         data = dict(name=faker.word(), uri=uri)

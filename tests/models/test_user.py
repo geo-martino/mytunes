@@ -9,7 +9,5 @@ from tests.utils import SimpleURI
 class TestRemoteUser(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteUser:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemoteUser.type
-        )
+        uri = SimpleURI.create_random(RemoteUser.type)
         return RemoteUser[SimpleURI](name=faker.word(), email=faker.email(), uri=uri)

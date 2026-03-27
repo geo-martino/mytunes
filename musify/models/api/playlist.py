@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import ClassVar, Type, TYPE_CHECKING
+from typing import ClassVar, Type
 
 from pydantic import validate_call, Field, PositiveInt
 

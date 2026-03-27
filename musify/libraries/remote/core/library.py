@@ -20,6 +20,7 @@ from musify.models._base import MusifyResource
 from musify.processors.base import Filter
 from musify.processors.filter import FilterDefinedList
 from musify.utils import align_string, get_max_width, to_collection
+from tests.processors_new.check import conftest
 
 type RestorePlaylistsType = (
         Library |
@@ -287,7 +288,7 @@ class RemoteLibrary[
                 current._response = album.response
                 current.refresh(skip_checks=True)
 
-            for track in album.tracks:  # add tracks from this album to the user's saved tracks
+            for track in conftest.tracks:  # add tracks from this album to the user's saved tracks
                 if track not in self.tracks:
                     self._tracks.append(track)
 
@@ -407,7 +408,7 @@ class RemoteLibrary[
     @staticmethod
     def _extract_playlists_from_backup(playlists: RestorePlaylistsType) -> Mapping[str, list[str]]:
         if isinstance(playlists, Library):  # get URIs from playlists in library
-            playlists = {name: [track.uri for track in pl] for name, pl in playlists.playlists.items()}
+            playlists = {name: [track.uri for track in pl] for name, pl in conftest.playlists.items()}
         elif (
                 isinstance(playlists, Mapping)
                 and all(isinstance(v, MusifyResource) for vals in playlists.values() for v in vals)
@@ -497,7 +498,7 @@ class RemoteLibrary[
         if not playlists:  # use the playlists as stored in this library object
             playlists = self.playlists
         elif isinstance(playlists, Library):  # get map of playlists from the given library
-            playlists = playlists.playlists
+            playlists = conftest.playlists
         elif isinstance(playlists, Collection) and all(isinstance(pl, Playlist) for pl in playlists):
             # reformat list to map
             playlists = {pl.name: pl for pl in playlists}

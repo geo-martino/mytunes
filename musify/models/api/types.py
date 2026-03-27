@@ -12,7 +12,7 @@ from yarl import URL
 
 from musify.exception import MusifyTypeError
 from musify.models.exception import MusifyValidationError, ModelError, RequestError
-from musify.models.properties.uri import URI, HasURI, HasImmutableURI, item_has_uri
+from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
@@ -103,7 +103,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         )
 
         def _from_model(model: HasURI) -> URL:
-            if not item_has_uri(model):
+            if not model.has_uri:
                 raise MusifyValidationError("Model does not have a URI.")
             return _from_uri(model.uri)
 
@@ -201,7 +201,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         )
 
         def _from_model(model: HasURI) -> URI:
-            if not item_has_uri(model):
+            if not model.has_uri:
                 raise MusifyValidationError("Model does not have a URI.")
             return model.uri
 

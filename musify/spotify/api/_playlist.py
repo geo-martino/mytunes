@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import ClassVar, final, TYPE_CHECKING
+from typing import ClassVar, final
 
 from aiorequestful.response.exception import ResponseError
 from aiorequestful.types import JSON

@@ -61,9 +61,7 @@ class TestApiURLSchema(ApiSchemaTester[URL]):
 
     @pytest.fixture
     def uri(self, faker: Faker) -> URI:
-        return SimpleURI.from_id(
-            faker.pystr(22, 22), kind=MockRemoteResource.type
-        )
+        return SimpleURI.create_random(MockRemoteResource.type)
 
     @pytest.fixture
     def expected(self, uri: URI) -> URL:
@@ -81,9 +79,7 @@ class TestApiURISchema(ApiSchemaTester[URI]):
 
     @pytest.fixture
     def uri(self, faker: Faker) -> URI:
-        return SimpleURI.from_id(
-            faker.pystr(22, 22), kind=MockRemoteResource.type
-        )
+        return SimpleURI.create_random(MockRemoteResource.type)
 
     @pytest.fixture
     def expected(self, uri: URI) -> URI:

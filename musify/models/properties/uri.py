@@ -4,8 +4,9 @@ from abc import abstractmethod
 from collections.abc import Collection
 from functools import total_ordering
 from inspect import isabstract
-from typing import ClassVar, Self, Any, Annotated, TypeIs
+from typing import ClassVar, Self, Any, Annotated, TYPE_CHECKING
 
+from propcache import cached_property
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
@@ -135,7 +136,39 @@ class URI(RootModel[str]):
         return str(self) < str(other)
 
 
-class HasImmutableURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls()):
+class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
+    # not sure how to define this in a way that works for both without causing issues with pydantic...
+    # this is either a field or property in child classes so have put this for type checking only for now
+    if TYPE_CHECKING:
+        uri: URI | None
+
+    def __new__(cls, *args, **kwargs):
+        # check for presence of uri field or property in child class
+        fields = cls.model_fields.keys() | cls.model_computed_fields.keys()
+        fields |= {name for name, method in cls.__dict__.items() if isinstance(method, property)}
+        if "uri" not in fields:
+            raise MusifyValidationError(f"{cls.__name__} must have a 'uri' field or property to be instantiated")
+
+        return super().__new__(cls)
+
+    @abstract_property
+    def has_uri(self) -> bool | None:
+        """
+        Whether this resource has a valid URI.
+
+        Returns None if existence is unknown usually because a mapping has not yet been attempted.
+        """
+        raise NotImplementedError
+
+    def __eq__(self, other: HasURI):
+        if not isinstance(other, HasURI) or (self.uri is None and other.uri is None):
+            return False
+        if self is other:
+            return True
+        return self.uri is not None and other.uri is not None and self.uri == other.uri
+
+
+class HasImmutableURI[UT: URI](HasURI):
     uri: Annotated[URI | None, UniqueAttribute()] = Field(
         description="The URI for this resource on the remote repository",
         frozen=True,
@@ -145,22 +178,24 @@ class HasImmutableURI[UT: URI](AttributeModel, ResourceModel, metaclass=makecls(
     @field_validator("uri", mode="after", check_fields=True)
     @classmethod
     def _validate_uri_matches_type(cls, uri: UT | None) -> UT | None:
-        if uri is None or not isinstance(uri, URI):
+        if not cls.__final__ or uri is None or not isinstance(uri, URI):
             return uri
 
         if not uri.type == cls.type:
             raise MusifyValidationError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
         return uri
 
-    def __eq__(self, other: HasURI):
-        if not isinstance(other, (HasImmutableURI, HasMutableURI)) or (self.uri is None and other.uri is None):
-            return super().__eq__(other)
-        if self is other:
-            return True
-        return self.uri is not None and other.uri is not None and self.uri == other.uri
+    @computed_field(
+        description="Whether this resource has a valid URI.",
+        return_type=bool,
+        repr=False,
+    )
+    @cached_property
+    def has_uri(self) -> bool:
+        return self.uri is not None and self.uri.exists
 
 
-class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
+class HasMutableURI(HasURI):
     source: Annotated[str | None, Attribute()] = Field(
         description=(
             "The type of remote repository this resource is associated with. "
@@ -210,6 +245,9 @@ class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
     @field_validator("uris", mode="after", check_fields=True)
     @classmethod
     def _validate_uris_match_type[T: Collection](cls, uris: T) -> T:
+        if not cls.__final__:
+            return uris
+
         for uri in uris:
             if not uri.type == cls.type:
                 raise MusifyValidationError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
@@ -256,27 +294,4 @@ class HasMutableURI(AttributeModel, ResourceModel, metaclass=makecls()):
 
     @property
     def has_uri(self) -> bool | None:
-        """
-        Whether this resource has a URI.
-
-        Returns None if existence is unknown usually because a mapping has not yet been attempted.
-        """
         return next((uri.exists for uri in self.uris if uri.source == self.source), None)
-
-    def __eq__(self, other: HasURI):
-        if not isinstance(other, (HasImmutableURI, HasMutableURI)) or (self.uri is None and other.uri is None):
-            return False
-        if self is other:
-            return True
-        return self.uri is not None and other.uri is not None and self.uri == other.uri
-
-
-type HasURI[UT] = HasImmutableURI[UT] | HasMutableURI
-
-
-def item_has_uri(item: Any) -> TypeIs[HasURI]:
-    """Whether the given item has a URI."""
-    return any((
-        isinstance(item, HasMutableURI) and item.has_uri,
-        isinstance(item, HasImmutableURI) and item.uri is not None,
-    ))

@@ -9,7 +9,5 @@ from tests.utils import SimpleURI
 class TestLocalGenreCollection(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> LocalGenreCollection:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=LocalGenreCollection.type
-        )
+        uri = SimpleURI.create_random(LocalGenreCollection.type)
         return LocalGenreCollection(name=faker.word(), uri=uri)

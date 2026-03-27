@@ -42,9 +42,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
 
     @pytest.fixture
     def uri(self, faker: Faker) -> URI:
-        return SimpleURI.from_id(
-            faker.pystr(22, 22), kind=MockRemoteResource.type
-        )
+        return SimpleURI.create_random(MockRemoteResource.type)
 
     @pytest.fixture
     def uris(self, faker: Faker) -> list[URI]:

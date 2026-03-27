@@ -13,7 +13,7 @@ from musify.models.collection.album import AlbumCollection
 from musify.models.exception import MusifyValidationError
 from musify.models.properties.file import IsFile, IsLocalFile
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
+from musify.models.properties.uri import HasURI
 from musify.models.remote import RemoteResource
 from musify.models.result import TotalCountResult, LenLogFormatter
 from musify.processors_new import Processor
@@ -363,7 +363,7 @@ class Searcher[API: _ApiT](Processor, HasAPI):
             self._assign_attributes_from_match(item, match)
         return match
 
-    def _pop_match_from_results[T](self, item: T, results: MutableSequence[T]) -> T | None:
+    def _pop_match_from_results[T: HasURI](self, item: T, results: MutableSequence[T]) -> T | None:
         if not results:
             return
 
@@ -375,7 +375,7 @@ class Searcher[API: _ApiT](Processor, HasAPI):
         results.remove(match)
 
         message = f"Match found: {self._get_item_log_name(match)}"
-        if item_has_uri(match):
+        if match.has_uri:
             message += f" - {match.uri}"
         self._log_debug(item, message=message)
 
@@ -386,9 +386,7 @@ class Searcher[API: _ApiT](Processor, HasAPI):
             self._assign_uri_from_match(item, match)
 
     def _assign_uri_from_match[T: ResourceModel](self, item: T, match: T) -> None:
-        if not isinstance(item, (HasImmutableURI, HasMutableURI)):
-            return
-        if not isinstance(match, (HasImmutableURI, HasMutableURI)) or not item_has_uri(match):
+        if not isinstance(item, HasURI) or not isinstance(match, HasURI) or not match.has_uri:
             return
 
         if item.uri != match.uri:
@@ -399,7 +397,7 @@ class Searcher[API: _ApiT](Processor, HasAPI):
     ## Item validators
     ###########################################################################
     def _should_skip(self, item: Any) -> bool:
-        if self.skip_if_has_uri and item_has_uri(item):
+        if self.skip_if_has_uri and isinstance(item, HasURI) and item.has_uri:
             self._log_debug(item, message=f"Skipping: already has a URI")
             return True
         return False
@@ -457,13 +455,13 @@ class Searcher[API: _ApiT](Processor, HasAPI):
     @staticmethod
     def _get_item_log_name(item: Any) -> str:
         match item:
-            case IsFile() as file if file.filename is not None:
-                return str(file.filename)
-            case IsLocalFile() as file if file.path is not None:
-                return str(file.path)
-            case HasName() as named if named.name is not None:
-                return named.name
-            case HasMutableURI() | HasImmutableURI() as uri if item_has_uri(uri):
-                return str(uri.uri)
+            case IsFile() as it if it.filename is not None:
+                return str(it.filename)
+            case IsLocalFile() as it if it.path is not None:
+                return str(it.path)
+            case HasName() as it if it.name is not None:
+                return it.name
+            case HasURI() as it if it.has_uri:
+                return str(it.uri)
 
         return str(id(item))

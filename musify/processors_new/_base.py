@@ -12,7 +12,7 @@ from termcolor import colored
 from musify.models import BaseModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasImmutableURI, HasMutableURI, item_has_uri
+from musify.models.properties.uri import HasURI
 
 
 class Processor(BaseModel):
@@ -35,10 +35,10 @@ class Processor(BaseModel):
     @staticmethod
     def _get_item_log_value(item: Any) -> str:
         match item:
-            case HasImmutableURI() | HasMutableURI() if item_has_uri(item):
-                return str(item.uri)
-            case HasName():
-                return str(item.name)
+            case HasURI() as it if it.has_uri:
+                return str(it.uri)
+            case HasName() as it:
+                return str(it.name)
             case _:
                 return "- UNKNOWN -"
 

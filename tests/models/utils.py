@@ -29,7 +29,7 @@ class MockRemoteCollection(MockRemoteResource, RemoteCollection, HasName):
     type: ClassVar[str] = MockRemoteResource.type
 
     name: str = "test"
-    items: list[RemoteResource] = Field(default_factory=list)
+    items: list = Field(default_factory=list)
 
     @property
     def _items(self) -> list:

@@ -9,9 +9,7 @@ from tests.utils import SimpleURI
 class TestArtist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Artist:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=Artist.type
-        )
+        uri = SimpleURI.create_random(Artist.type)
         return Artist(name=faker.word(), uri=uri)
 
 
@@ -42,7 +40,5 @@ class TestHasArtists(NoUniqueKeyTester):
 class TestRemoteArtist(UniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> RemoteArtist:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemoteArtist.type
-        )
+        uri = SimpleURI.create_random(RemoteArtist.type)
         return RemoteArtist(name=faker.word(), uri=uri)

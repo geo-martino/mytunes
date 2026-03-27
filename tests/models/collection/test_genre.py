@@ -58,9 +58,7 @@ class TestGenreCollection(UniqueKeyTester):
 class TestRemoteGenreCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: PageCursor, faker: Faker) -> RemoteGenreCollection:
-        uri = SimpleURI.from_id(
-            faker.pystr(22, 22), kind=RemoteGenreCollection.type
-        )
+        uri = SimpleURI.create_random(RemoteGenreCollection.type)
         return RemoteGenreCollection[SimpleURI, Any, PageCursor](
             name=faker.word(),
             uri=uri,

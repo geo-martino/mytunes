@@ -90,8 +90,7 @@ class TestRemoteAPI(BaseModelTester):
     @pytest.fixture
     def user(self, faker: Faker) -> RemoteUser:
         return RemoteUser(
-            name=faker.name(), uri=SimpleURI.from_id(faker.pystr(22, 22), kind=RemoteUser.type)
-        )
+            name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type))
 
     @pytest.fixture(autouse=True)
     def mock_handler_context(self, handler: RequestHandler) -> Generator[Mock, None, None]:

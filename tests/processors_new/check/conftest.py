@@ -1,0 +1,89 @@
+from collections.abc import Generator
+from unittest.mock import patch, Mock, AsyncMock
+
+import pytest
+from faker import Faker
+
+from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
+from musify.models.item.track import Track, RemoteTrack
+from musify.models.user import RemoteUser
+from tests.models.api.utils import MockUrlCursor
+from tests.utils import SimpleURI
+
+
+@pytest.fixture
+def tracks(tracks: list[Track], faker: Faker) -> list[RemoteTrack]:
+    return [
+        RemoteTrack(
+            **track.model_dump(),
+            uri=SimpleURI.create_random(RemoteTrack.type))
+        for track in tracks
+    ]
+
+
+@pytest.fixture
+def playlists(playlists: list[Playlist], faker: Faker) -> list[RemoteMutablePlaylist]:
+    user = RemoteUser(
+        name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type)
+    )
+    return [
+        RemoteMutablePlaylist(
+            **pl.model_dump(),
+            owner=user,
+            cursor=MockUrlCursor(url=faker.url()),
+            uri=SimpleURI.create_random(RemotePlaylist.type),
+        )
+        for pl in playlists
+    ]
+
+
+@pytest.fixture
+def playlist(playlists: list[RemoteMutablePlaylist], faker: Faker) -> RemoteMutablePlaylist:
+    return faker.random_element(playlists)
+
+
+@pytest.fixture(autouse=True)
+def mock_get_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, None]:
+    def _get_playlist(name: str, *_, **__) -> RemoteMutablePlaylist | None:
+        return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
+
+    with patch.object(
+            PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
+    ) as mock_get:
+        yield mock_get
+
+
+@pytest.fixture(autouse=True)
+def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, None]:
+    def _get_playlist(name: str, *_, **__) -> RemoteMutablePlaylist | None:
+        return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
+
+    with patch.object(
+            PlaylistReadWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
+    ) as mock_create:
+        yield mock_create
+
+
+@pytest.fixture(autouse=True)
+def mock_follow_playlist() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistReadWriteSavedEndpoints, "follow", new_callable=AsyncMock) as mock_follow:
+        yield mock_follow
+
+
+@pytest.fixture(autouse=True)
+def mock_delete_playlist() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistReadWriteSavedEndpoints, "delete", new_callable=AsyncMock) as mock_delete:
+        yield mock_delete
+
+
+@pytest.fixture(autouse=True)
+def mock_remove_playlist() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistReadWriteEndpoints, "remove", new_callable=AsyncMock) as mock_sync:
+        yield mock_sync
+
+
+@pytest.fixture(autouse=True)
+def mock_sync_playlist() -> Generator[Mock, None, None]:
+    with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync:
+        yield mock_sync

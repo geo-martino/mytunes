@@ -128,9 +128,7 @@ class LocalTrackEmbeddedImageTester(BaseModelTester, metaclass=ABCMeta):
 class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
     @pytest.fixture
     def uri(self, faker: Faker) -> SimpleURI:
-        return SimpleURI.from_id(
-            faker.pystr(22, 22), kind=LocalTrack.type
-        )
+        return SimpleURI.create_random(LocalTrack.type)
 
     @pytest.fixture
     def file(self, faker: Faker, tmp_path: Path) -> mutagen.FileType:

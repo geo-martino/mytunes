@@ -17,6 +17,7 @@ from musify.models.collection import MusifyCollection
 from musify.processors.search import RemoteItemSearcher, SearchConfig
 from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.remote.core.utils import RemoteMock
+from tests.processors_new.check import conftest
 
 
 class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):
@@ -171,8 +172,8 @@ class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):
             self, searcher: RemoteItemSearcher, search_albums: list[Album], unmatchable_items: list[LocalTrack]
     ):
         collection = search_albums[0]
-        search_items = copy(collection.tracks)
-        collection.tracks.extend(unmatchable_items)
+        search_items = copy(conftest.tracks)
+        conftest.tracks.extend(unmatchable_items)
 
         await self.assert_search(
             searcher._search_collection_unit,

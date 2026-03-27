@@ -1,3 +1,5 @@
+from tests.processors_new.check import conftestfrom tests.processors_new.check import conftest
+
 # Musify
 
 [![PyPI Version](https://img.shields.io/pypi/v/musify?logo=pypi&label=Latest%20Version)](https://pypi.org/project/musify)
@@ -213,7 +215,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
         album = await load_album(library.api)
         await load_library(library)
 
-        my_playlist = library.playlists[name]
+        my_playlist = conftest.playlists[name]
 
         # add a track to the playlist
         my_playlist.append(tracks[0])
