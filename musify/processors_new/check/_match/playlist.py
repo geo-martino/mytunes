@@ -28,6 +28,11 @@ class PlaylistMatch(CheckerMatch):
             if isinstance(item, HasMutableURI):
                 del item.uri
 
+        if not missing:
+            message = "No items changed in playlist and no items with missing matches, skipping match"
+            self._log_debug("SKIP", name, message)
+            return CheckResult(unchanged=unchanged, unavailable=unavailable)
+
         if not added:
             message = "No items added, skipping match"
             self._log_debug("SKIP", name, message)
