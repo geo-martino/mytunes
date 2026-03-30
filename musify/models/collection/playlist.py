@@ -91,7 +91,7 @@ class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
 
     @property
     def _items(self) -> tuple[TV, ...]:
-        return tuple(self.playlists.values())
+        return tuple(self.playlists.unique)
 
 
 class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):

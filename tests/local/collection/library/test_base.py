@@ -169,7 +169,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         """Assert that the given playlists were loaded into the model"""
         assert mock_load.call_count == len(playlists)
         mock_load.assert_has_calls([mock.call(pl.path) for pl in playlists], any_order=True)
-        assert model.playlists == {pl.name: pl for pl in playlists}
+        assert sorted(model.playlists.unique, key=lambda pl: pl.name) == sorted(playlists, key=lambda pl: pl.name)
 
     async def test_load(
             self,
@@ -225,9 +225,9 @@ class TestLocalLibrary(NoUniqueKeyTester):
         self.assert_playlists_loaded(model, playlists[5:], mock_load_playlist)
 
     async def test_save_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
-        model.playlists.update({pl.name: pl for pl in playlists}, extract_keys=False)
+        model.playlists.update(playlists)
         results = await model.save_playlists(dry_run=True)
-        assert results.keys() == model.playlists.keys()
+        assert list(results.keys()) == [pl.name for pl in playlists]
 
     ###########################################################################
     ## Collections

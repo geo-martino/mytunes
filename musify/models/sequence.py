@@ -52,17 +52,6 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
                 return cls(value)
         raise MusifyValidationError(f"Invalid value: {value}")
 
-    @property
-    def unique(self) -> Iterator[TV]:
-        """The unique items in this sequence"""
-        seen = set()
-        for key, value in self._items_mapped.items():
-            if key in seen:
-                continue
-
-            yield value
-            seen.add(key)
-
     def __init__(self, items: Iterable[TV] | Mapping[Any, TV] = None):
         if items is None:
             items = ()
@@ -113,6 +102,11 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
             except IndexError:
                 pass
         return self._items_mapped[index]
+
+    @property
+    def unique(self) -> Iterator[TV]:
+        """The unique items in this sequence"""
+        yield from self._items_mapped.unique
 
     def get(self, key: TK | TV, default: TV | None = None) -> TV | None:
         """Get an item by its key, returning `default` if not found."""

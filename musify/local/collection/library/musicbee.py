@@ -289,10 +289,10 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
         playlists: dict[int, dict[str, Any]] = {}
         max_playlist_id = max(list(pl_id_map.values())) if pl_id_map else 0
-        for pl_id, (name, pl) in enumerate(self.playlists.items(), max_playlist_id + 1):
-            if name in pl_id_map:
-                pl_id = pl_id_map[name]
-            persistent_id = pl_persistent_id_map.get(name)
+        for pl_id, pl in enumerate(self.playlists.unique, max_playlist_id + 1):
+            if pl.name in pl_id_map:
+                pl_id = pl_id_map[pl.name]
+            persistent_id = pl_persistent_id_map.get(pl.name)
             playlists[pl_id] = self._playlist_to_xml(pl, tracks=tracks, playlist_id=pl_id, persistent_id=persistent_id)
 
         return playlists

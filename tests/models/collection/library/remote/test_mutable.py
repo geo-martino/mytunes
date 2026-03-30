@@ -88,7 +88,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_create_playlist.assert_called_once_with(name=name, description=description, public=public)
 
         assert playlist is expected
-        assert playlist.name in model.playlists
+        assert playlist.uri in model.playlists
 
     @pytest.fixture
     def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
@@ -104,8 +104,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_semaphore: Mock,
             faker: Faker,
     ):
-        playlists = {pl.name: pl for pl in playlists}
-        model.playlists.update(playlists, extract_keys=False)
+        model.playlists.update(playlists)
 
         results = await model.sync_playlist_items()
         assert len(results) == len(playlists)

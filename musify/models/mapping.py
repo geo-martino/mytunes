@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, MutableMapping, Hashable
-from typing import Self, Any, get_args
+from typing import Self, Any, get_args, Iterator
 
 from pydantic import GetCoreSchemaHandler, validate_call
 from pydantic_core import core_schema, CoreSchema
@@ -102,6 +102,23 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
             raise MusifyKeyError(
                 f"No items found for the model with keys: {", ".join(map(str, __key.unique_keys))}"
             )
+
+    @property
+    def unique(self) -> Iterator[TV]:
+        """The unique items in this sequence"""
+        seen = set()
+        for key, value in self._items.items():
+            if key in seen or any(key in seen for key in value.unique_keys):
+                continue
+
+            yield value
+            seen.add(key)
+            seen.update(value.unique_keys)
+
+    @property
+    def count(self) -> int:
+        """The number of unique items in this sequence"""
+        return len(list(self.unique))
 
     def copy(self) -> Self:
         """Return a shallow copy of this mapping"""

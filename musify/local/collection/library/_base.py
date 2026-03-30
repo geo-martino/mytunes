@@ -299,8 +299,8 @@ class LocalLibrary(
             initial=0,
             total=len(paths)
         )
-        playlists = {pl.name: pl for pl in sorted(filter(None, await bar), key=lambda x: x.name.casefold())}
-        self.playlists.replace(playlists, extract_keys=False)
+        playlists = sorted(filter(None, await bar), key=lambda x: x.name.casefold())
+        self.playlists.replace(playlists)
 
         self._log_errors("Could not load the following playlists")
         return True
@@ -353,8 +353,8 @@ class LocalLibrary(
     def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
         source = self.tracks_load_settings.remote_source
         return {
-            name: LibraryURIsResult.from_tracks(playlist.tracks, source=source)
-            for name, playlist in self.playlists.items()
+            playlist.name: LibraryURIsResult.from_tracks(playlist.tracks, source=source)
+            for playlist in self.playlists.unique
         }
 
     async def save_playlists(self, dry_run: bool = True) -> dict[str, Result]:
@@ -368,14 +368,14 @@ class LocalLibrary(
             async with self.concurrency:
                 return pl.name, await pl.save(dry_run=dry_run)
 
-        self.logger.info(f"Saving {len(self.playlists)} playlists in {self.source} {self.type}", header=2)
+        self.logger.info(f"Saving {self.playlists.count} playlists in {self.source} {self.type}", header=2)
 
         bar = self.logger.get_asynchronous_iterator(
-            map(_save_playlist, self.playlists.values()),
+            map(_save_playlist, self.playlists.unique),
             desc="Updating playlists",
             unit="playlists",
             initial=0,
-            total=len(self.playlists)
+            total=self.playlists.count
         )
         return dict(await bar)
 

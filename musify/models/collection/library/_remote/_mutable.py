@@ -30,17 +30,15 @@ from musify.processors.filters import ComparerFilter
 
 
 class RemoteMutableLibrary[
-    TK,
-    TV: RemoteTrack,
-    KP,
-    VP: RemotePlaylist,
     API: RemoteAPI,
+    TV: RemoteTrack,
+    VP: RemotePlaylist,
     RT: RemoteArtist,
     AT: RemoteAlbum,
     GT: RemoteGenre,
     UT: RemoteUser
 ](
-    MutableLibrary[TK, TV, KP, VP], RemoteLibrary[TK, TV, KP, VP, API, RT, AT, GT, UT]
+    MutableLibrary[UT, TV, UT, VP], RemoteLibrary[API, TV, VP, RT, AT, GT, UT]
 ):
     sync_filter: ComparerFilter | None = Field(
         description=(
@@ -95,13 +93,13 @@ class RemoteMutableLibrary[
         """Create a new playlist with the given name and return it."""
         api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] = self.api
 
-        if name in self.playlists:
+        if (playlist := next((pl for pl in self.playlists.unique if pl.name == name), None)) is not None:
             self.logger.warning(f"Playlist with name {name!r} already exists in {self._log_name} library.")
-            return self.playlists[name]
+            return playlist
 
         self.logger.info(f"Creating playlist {name!r} on {self._log_name} library", header=2)
         playlist = await api.playlists.saved.create(name=name, **kwargs)
-        self.playlists.update({playlist.name: playlist}, extract_keys=False)
+        self.playlists.add(playlist)
 
         return playlist
 
@@ -132,7 +130,7 @@ class RemoteMutableLibrary[
             PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]
         ] = self.api
 
-        playlists = list(filter(lambda pl: isinstance(pl, RemoteMutablePlaylist), self.playlists.values()))
+        playlists = list(filter(lambda pl: isinstance(pl, RemoteMutablePlaylist), self.playlists.unique))
 
         message_context = get_sync_message(kind, item_type="items", from_type=f"from each {self.source} playlist")
         message = f"Synchronising {len(playlists)} playlists on {self._log_name} library: {message_context}"

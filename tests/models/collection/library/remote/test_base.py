@@ -45,7 +45,8 @@ class TestRemoteLibrary(BaseModelTester):
 
         mock_get_all.return_value = playlists
         assert await model.load_playlists()
-        self.assert_items_loaded(model.playlists.values(), mock_get_all)
+
+        self.assert_items_loaded(list(model.playlists.unique), mock_get_all)
 
     async def test_load_saved_tracks(self, model: RemoteLibrary, tracks: list[Track], mock_get_all: Mock):
         mock_get_all.return_value = tracks

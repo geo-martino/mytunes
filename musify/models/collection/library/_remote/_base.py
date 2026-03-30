@@ -26,17 +26,15 @@ from musify.models.user import RemoteUser
 
 
 class RemoteLibrary[
-    TK,
-    TV: RemoteTrack,
-    KP,
-    VP: RemotePlaylist,
     API: RemoteAPI,
+    TV: RemoteTrack,
+    VP: RemotePlaylist,
     RT: RemoteArtist,
     AT: RemoteAlbum,
     GT: RemoteGenre,
     UT: RemoteUser,
 ](
-    Library[TK, TV, KP, VP], IsRemoteService[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
+    Library[UT, TV, UT, VP], IsRemoteService[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
     @property
     def user(self) -> Annotated[UT | None, Attribute()]:
@@ -88,7 +86,7 @@ class RemoteLibrary[
     def dump(self) -> dict[str, Any]:
         names_seen = set()
         playlists = []
-        for pl in self.playlists.values():
+        for pl in self.playlists.unique:
             if pl.name in names_seen:
                 continue
 
@@ -127,9 +125,8 @@ class RemoteLibrary[
         if self.playlist_filter is not None:
             playlists: list[VP] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
 
-        playlists_mapped = {pl.name: pl for pl in sorted(playlists, key=lambda pl: pl.name.casefold())}
         # noinspection PyProtectedMember
-        self.playlists._replace(playlists_mapped, extract_keys=False)
+        self.playlists._replace(sorted(playlists, key=lambda pl: pl.name.casefold()))
 
         return True
 
@@ -143,7 +140,7 @@ class RemoteLibrary[
         """Load all playlist items for all currently loaded playlists."""
         api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
 
-        playlists = list(filter(self._should_extend, self.playlists.values()))
+        playlists = list(filter(self._should_extend, self.playlists.unique))
         if not playlists:
             return False
 
@@ -173,7 +170,7 @@ class RemoteLibrary[
         self.logger.stat(table)
 
     def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[VP]]:
-        return RemotePlaylistsResult.from_playlists(playlists=self.playlists.values())
+        return RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
 
     ###########################################################################
     ## Load - tracks
@@ -204,7 +201,7 @@ class RemoteLibrary[
         self.logger.stat(table)
 
     def _generate_track_results(self) -> RemoteTracksResult[TV]:
-        return RemoteTracksResult.from_library(self.tracks, self.playlists.values(), self.albums)
+        return RemoteTracksResult.from_library(self.tracks, self.playlists.unique, self.albums)
 
     ###########################################################################
     ## Load - artists

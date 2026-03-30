@@ -16,11 +16,9 @@ from musify.spotify.user import SpotifyUser
 class SpotifyLibrary(
     SpotifyModel,
     RemoteMutableLibrary[
-        str,
-        SpotifyTrack,
-        str,
-        SpotifyPlaylist,
         SpotifyAPI,
+        SpotifyTrack,
+        SpotifyPlaylist,
         SpotifyArtist,
         SpotifyAlbum,
         SpotifyGenre,
