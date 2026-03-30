@@ -217,13 +217,14 @@ class LocalTrack[FT: FileType](
     @classmethod
     @validate_call
     async def load_file(cls, path: str | Path) -> FT:
+        file = mutagen.File(path, options=cls.__supported_types__)
         # TODO: improve async performance?
-        async with aiofiles.open(path, mode='rb') as file:
-            try:
-                file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
-            except MutagenError:  # async load doesn't always work...
-                # fallback to loading synchronously directly through mutagen
-                file = mutagen.File(path, options=cls.__supported_types__)
+        # async with aiofiles.open(path, mode='rb') as file:
+        #     try:
+        #         file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
+        #     except MutagenError:  # async load doesn't always work...
+        #         # fallback to loading synchronously directly through mutagen
+        #         file = mutagen.File(path, options=cls.__supported_types__)
 
         if file is None:
             raise FileError(path=path, message="Failed to load file to the expected type")
