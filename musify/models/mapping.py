@@ -164,6 +164,12 @@ class MutableUniqueMapping[TK, TV: ResourceModel](UniqueMapping[TK, TV], Mutable
             if key in self._items:
                 del self._items[key]
 
+    # WORKAROUND: we shouldn't need to define this manually as it's already defined in the parent class,
+    #  but it seems to cause a recursion error when trying to call clear() from replace() without it...
+    def clear(self) -> None:
+        """Remove all items from this mapping"""
+        self._items.clear()
+
     # @validate_call  # TODO: always defaults to validating as Iterable which causes failures
     def replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True) -> None:
         """Replace all items in this mapping with another mapping or iterable of items"""

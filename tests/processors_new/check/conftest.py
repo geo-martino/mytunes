@@ -3,12 +3,18 @@ from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from faker import Faker
+from yarl import URL
 
 from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
 from musify.models.item.track import Track, RemoteTrack
+from musify.models.properties.order import Position
 from musify.models.user import RemoteUser
+from musify.processors_new.match import Matcher
+from musify.processors_new.match.score import NameScorer
 from tests.models.api.utils import MockUrlCursor
+from tests.processors_new.utils import MockCollection
 from tests.utils import SimpleURI
 
 
@@ -19,6 +25,26 @@ def tracks(tracks: list[Track], faker: Faker) -> list[RemoteTrack]:
             **track.model_dump(),
             uri=SimpleURI.create_random(RemoteTrack.type))
         for track in tracks
+    ]
+
+
+@pytest.fixture
+def collection(collections: list[CollectionModel], faker: Faker) -> CollectionModel:
+    return faker.random_element(collections)
+
+
+@pytest.fixture
+def collections(
+        playlists: list[RemoteMutablePlaylist], tracks: list[Track], faker: Faker
+) -> list[CollectionModel]:
+    return [
+        MockCollection(
+            name=pl.name,
+            cursor=MockUrlCursor(url=faker.url()),
+            all_items=faker.random_elements(tracks),
+            uri=SimpleURI.create_random(MockCollection.type),
+        )
+        for pl in playlists
     ]
 
 
@@ -41,6 +67,29 @@ def playlists(playlists: list[Playlist], faker: Faker) -> list[RemoteMutablePlay
 @pytest.fixture
 def playlist(playlists: list[RemoteMutablePlaylist], faker: Faker) -> RemoteMutablePlaylist:
     return faker.random_element(playlists)
+
+
+@pytest.fixture
+def position(faker: Faker) -> Position:
+    count = faker.random_int(1, 100)
+    total = faker.random_int(count, 101)
+    return Position(number=count, total=total)
+
+
+@pytest.fixture
+def matcher() -> Matcher:
+    return Matcher(scorers=[NameScorer()])
+
+
+@pytest.fixture(autouse=True)
+def mock_get(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, None]:
+    def _get_playlist(url: URL, *_, **__) -> RemoteMutablePlaylist | None:
+        return next((pl for pl in playlists if pl.uri.api_url == url), None)
+
+    with patch.object(
+            PlaylistReadWriteEndpoints, "get", side_effect=_get_playlist, new_callable=AsyncMock
+    ) as mock_get:
+        yield mock_get
 
 
 @pytest.fixture(autouse=True)
@@ -87,3 +136,11 @@ def mock_remove_playlist() -> Generator[Mock, None, None]:
 def mock_sync_playlist() -> Generator[Mock, None, None]:
     with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync:
         yield mock_sync
+
+
+@pytest.fixture(autouse=True)
+def mock_get_playlist_items(tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:
+    with patch.object(
+            PlaylistReadWriteEndpoints, "get_all", return_value=tracks, new_callable=AsyncMock
+    ) as mock_get_all:
+        yield mock_get_all

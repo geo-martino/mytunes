@@ -224,7 +224,7 @@ class Logger(logging.Logger):
             return position
 
         # clear closed bars
-        self._bars = [bar for bar in self._bars if bar.n < bar.total]
+        self._bars = [bar for bar in self._bars if bar.n < (bar.total or 0)]
         if self._bars:
             return abs(min(bar.pos for bar in self._bars)) + 1
 

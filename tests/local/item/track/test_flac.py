@@ -295,7 +295,7 @@ class TestFLAC(LocalTrackTester):
         assert model.images == expected_images
 
         assert model.source == uri.source
-        assert model.uris == [uri]
+        assert model.uris == {uri}
         assert model.uri == uri
 
     def test_to_tags(self, model: FLAC, uri: URI, pictures: dict[str, mutagen.flac.Picture], faker: Faker):

@@ -7,7 +7,7 @@ from pydantic import Field, validate_call, BeforeValidator
 from termcolor import colored
 
 from musify.exception import MusifyTypeError
-from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints, ReadSavedEndpoints, WriteSavedEndpoints
+from musify.models.api import RemoteAPI, IsRemoteService, HasSavedEndpoints, ReadSavedEndpoints, WriteSavedEndpoints
 from musify.models.api.album import HasAlbumEndpoints, AlbumReadSavedEndpoints, AlbumWriteSavedEndpoints, \
     AlbumReadItemsEndpoints
 from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, ArtistWriteSavedEndpoints, \
@@ -84,7 +84,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Create/Sync Playlists
     ###########################################################################
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "playlist",
         None,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -101,12 +101,11 @@ class RemoteMutableLibrary[
 
         self.logger.info(f"Creating playlist {name!r} on {self._log_name} library", header=2)
         playlist = await api.playlists.saved.create(name=name, **kwargs)
-        # noinspection PyProtectedMember
-        self.playlists._update({playlist.name: playlist}, extract_keys=False)
+        self.playlists.update({playlist.name: playlist}, extract_keys=False)
 
         return playlist
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "playlist",
         dict,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -139,12 +138,14 @@ class RemoteMutableLibrary[
         message = f"Synchronising {len(playlists)} playlists on {self._log_name} library: {message_context}"
         self.logger.info(message, header=1)
 
-        async def _sync_playlist(pl: RemoteMutablePlaylist) -> tuple[str, SyncRemoteResult]:
-            remote = await api.playlists.saved.get_or_create(pl.name)
-            remote.tracks[:] = pl.tracks
-            return pl.name, await remote.sync_items(
-                api=api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run, show_bar=False
-            )
+        async def _sync_playlist[T: RemoteMutablePlaylist](pl: T) -> tuple[str, SyncRemoteResult]:
+            async with self.concurrency:
+                remote: T = await api.playlists.saved.get_or_create(pl.name)
+                remote.tracks.replace(pl.tracks)
+
+                return pl.name, await remote.sync_items(
+                    api=api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run, show_bar=False
+                )
 
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, playlists),
@@ -158,7 +159,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Sync saved items
     ###########################################################################
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -185,7 +186,7 @@ class RemoteMutableLibrary[
             kind=kind, items_type="tracks", items=self.tracks, api=api.tracks, dry_run=dry_run
         )
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -212,7 +213,7 @@ class RemoteMutableLibrary[
             kind=kind, items_type="artists", items=self.artists, api=api.artists, dry_run=dry_run
         )
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -349,7 +350,7 @@ class RemoteMutableLibrary[
         self.log_sync_results(results)
         return results
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "playlist",
         dict,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -381,54 +382,62 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of saved tracks on the remote service after the sync.
         """
+
+        self.logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
+
+        def _restore_playlist(dump):
+            return self._restore_playlist(*dump, dry_run=dry_run)
+
+        bar = self.logger.get_asynchronous_iterator(
+            map(_restore_playlist, playlists),
+            desc="Restoring playlists",
+            unit="playlists",
+            initial=0,
+            total=len(playlists),
+        )
+        results = dict(filter(None, await bar))
+
+        await self.load_playlists()
+        return results
+
+    async def _restore_playlist(
+            self, uri: URI, dump: Mapping[str, Any], items: list[URI], dry_run: bool = False
+    ) -> tuple[str, SyncRemoteResult] | None:
         api: (
             HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] |
             HasTrackEndpoints[TrackReadItemsEndpoints]
         ) = self.api
 
-        self.logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
-
-        restored: list[VP] = []
-        results: dict[str, SyncRemoteResult] = {}
-
-        for pl_uri, pl_dump, track_uris in playlists:
+        async with self.concurrency:
             try:
-                playlist = await api.playlists.get(pl_uri)
+                playlist = await api.playlists.get(uri)
             except ResponseError as exc:
                 if not dry_run and exc.response.status == 404:
                     self.logger.warning(
-                        f"Playlist with name {pl_dump["name"]!r} does not exist on the remote service. "
+                        f"Playlist with name {dump["name"]!r} does not exist on the remote service. "
                         "Creating a new playlist."
                     )
-                    playlist = await api.playlists.saved.create(**pl_dump)
+                    playlist = await api.playlists.saved.create(**dump)
                 else:
-                    track_count = len(track_uris)
-                    results[pl_dump["name"]] = SyncRemoteResult(
+                    item_count = len(items)
+                    return dump["name"], SyncRemoteResult(
                         start=0,
-                        added=track_count,
+                        added=item_count,
                         removed=0,
                         unchanged=0,
-                        difference=track_count,
-                        final=track_count,
+                        difference=item_count,
+                        final=item_count,
                     )
-                    continue
 
             if not isinstance(playlist, RemoteMutablePlaylist):
                 self.logger.warning(f"Playlist {playlist.name!r} could not be updated as it is not writeable.")
-                continue
+                return
 
-            # noinspection PyProtectedMember
-            playlist.tracks._replace(await api.tracks.get_many(track_uris))
+            playlist.tracks.replace(await api.tracks.get_many(items))
 
-            results[playlist.name] = await playlist.sync_items(api=api, kind="refresh", dry_run=dry_run)
-            restored.append(playlist)
+            return playlist.name, await playlist.sync_items(api=api, kind="refresh", dry_run=dry_run)
 
-        # noinspection PyProtectedMember
-        self.playlists._replace({pl.name: pl for pl in restored}, extract_keys=False)
-
-        return results
-
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -465,10 +474,11 @@ class RemoteMutableLibrary[
         ] = self.api
 
         self.logger.info(f"Restoring {len(uris)} saved tracks on {self._log_name} library", header=2)
+
         self.tracks[:] = await api.tracks.get_many(uris)
         return await self.sync_tracks(kind="refresh", dry_run=dry_run)
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -505,10 +515,11 @@ class RemoteMutableLibrary[
         ] = self.api
 
         self.logger.info(f"Restoring {len(uris)} saved artists on {self._log_name} library", header=2)
+
         self.artists[:] = await api.artists.get_many(uris)
         return await self.sync_artists(kind="refresh", dry_run=dry_run)
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -545,5 +556,6 @@ class RemoteMutableLibrary[
         ] = self.api
 
         self.logger.info(f"Restoring {len(uris)} saved albums on {self._log_name} library", header=2)
+
         self.albums[:] = await api.albums.get_many(uris)
         return await self.sync_albums(kind="refresh", dry_run=dry_run)

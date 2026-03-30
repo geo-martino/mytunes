@@ -6,7 +6,7 @@ from pydantic import Field, validate_call, model_validator, field_validator
 from termcolor import colored
 
 from musify.models import ResourceModel
-from musify.models.api import RemoteAPI, HasAPI
+from musify.models.api import RemoteAPI, IsRemoteService
 from musify.models.api.search import HasSearchEndpoints
 from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
@@ -82,7 +82,7 @@ class SearchResult[T: Any](TotalCountResult):
 type _ApiT = RemoteAPI | HasSearchEndpoints
 
 
-class Searcher[API: _ApiT](Processor, HasAPI):
+class Searcher[API: _ApiT](Processor, IsRemoteService):
     api: API = Field(
         description="The API to use when searching for matches.",
     )
@@ -145,13 +145,6 @@ class Searcher[API: _ApiT](Processor, HasAPI):
     def source(self) -> str:
         """The name of the remote service that this searcher is running on."""
         return self.api.source.title()
-
-    async def __aenter__(self) -> Self:
-        await self.api.__aenter__()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
     ###########################################################################
     ## Search: items

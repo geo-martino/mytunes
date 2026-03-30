@@ -1,4 +1,4 @@
-from typing import Self, Any, final
+from typing import Self, Any, final, ClassVar
 
 from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -10,26 +10,29 @@ from musify.spotify._url import API_URL, PUBLIC_URL
 
 
 class _SpotifyURIBase(URI):
-    _source = "spotify"
+    _source: ClassVar[str] = "spotify"
+
+    @property
+    def _parts(self) -> tuple[str, str, str]:
+        return self.root.split(":")
 
     @property
     def source(self) -> str:
-        return self.root.split(":")[0]
+        return self._parts[0]
 
     @property
     def type(self) -> str:
-        return self.root.split(":")[1]
+        return self._parts[1]
 
     @property
     def id(self) -> str:
-        return self.root.split(":")[2]
+        return self._parts[2]
 
-    @field_validator("root", mode="after")
-    @classmethod
-    def _validate_uri_length(cls, uri: str) -> str:
-        if len(uri.split(":")) != 3:
-            raise MusifyValidationError("Invalid Spotify URI format. Expected format: {spotify}:{type}:{id}")
-        return uri
+    @model_validator(mode="after")
+    def _validate_uri_length(self) -> Self:
+        if len(self._parts) != 3:
+            raise MusifyValidationError("Invalid Spotify URI format. Expected format: spotify:{type}:{id}")
+        return self
 
     @classmethod
     def from_id(cls, value: Any, kind: str) -> Self:
@@ -95,7 +98,7 @@ class SpotifyResourceURI(_SpotifyURIBase):
     @classmethod
     def _validate_id_length(cls, uri: str) -> str:
         id_value = uri.split(":")[-1]
-        if len(id_value) != 22:
+        if len(id_value) != 22 and id_value != cls._unavailable_id:
             raise MusifyValidationError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
         return uri
 

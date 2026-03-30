@@ -1,5 +1,6 @@
 import itertools
 from abc import abstractmethod
+from asyncio import Semaphore
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
 from contextlib import suppress
 from copy import copy
@@ -13,7 +14,7 @@ import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from mutagen import FileType
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
-    InstanceOf, field_serializer, BeforeValidator, TypeAdapter, ValidationError
+    InstanceOf, field_serializer, BeforeValidator, TypeAdapter, ValidationError, PositiveInt
 # noinspection PyProtectedMember
 from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo
@@ -29,6 +30,7 @@ from musify.models import BaseModel, ResourceModel, makecls
 from musify.models.collection.library import Library
 from musify.models.item.track import Track, HasMutableTracks
 from musify.models.metadata import TagAttribute
+from musify.models.properties.asynch import HasAsyncOperations, SemaphoreT
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
@@ -570,6 +572,15 @@ class LocalTrack[FT: FileType](
 
 
 class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
+    concurrency: SemaphoreT = Field(
+        description=(
+            "The max concurrency of IO tasks (i.e. loading/saving) of files in this library. "
+            "Setting this too low will reduce the speed of these operations. "
+            "Setting this too high will cause these operations to hang."
+        ),
+        default=32,
+    )
+
     @validate_call
     async def save_tracks(
             self,
@@ -590,10 +601,11 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
         :return: A map of the track path to the tags that were saved.
         """
         async def _save_track(track: LocalTrack) -> tuple[Path, dict[str, Any]]:
-            file = await track.load()
-            tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
-            if tags and not dry_run:
-                await track.save(file)
+            async with self.concurrency:
+                file = await track.load()
+                tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
+                if tags and not dry_run:
+                    await track.save(file)
 
             return track.path, tags
 
@@ -612,14 +624,14 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
     def _log_save_tracks_header(self) -> None:
         message = f"Saving {len(self.tracks)} tracks"
 
-        if isinstance(self, ResourceModel) and isinstance(self.type, str):
-            message += f" in {self.type}"
-
         match self:
-            case HasName() as named:
-                message += f": {named.name!r}"
-            case Library() as library if isinstance(library.source, str):
-                message += f": {library.source!r}"
+            case Library() as lib:
+                message += f"in {lib.source} {lib.type}"
+            case ResourceModel() as resource if isinstance(resource.type, str):
+                message += f" in {resource.type}"
+
+        if isinstance(self, HasName):
+            message += f": {self.name!r}"
 
         self.logger.info(message, header=2)
 

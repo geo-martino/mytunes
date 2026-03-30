@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Any, cast, Annotated, ClassVar, Hashable
+from typing import Any, cast, Annotated, ClassVar, Hashable, Self
 
 from pydantic import Field
 
@@ -37,7 +37,7 @@ class ResourceMetaclass(ModelMetaclass):
         return unique_fields
 
     @property
-    def annotation[T: ResourceModel](cls: type[T]) -> type[T]:
+    def annotation(cls) -> Self:
         if not cls.registered_submodels:
             return cls
         return Annotated[

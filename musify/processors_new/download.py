@@ -177,9 +177,9 @@ class ItemDownloadHelper(InputProcessor):
         self.logger.print_message("\n" + help_text)
 
         while True:
-            value = self._get_user_input(f"Enter ({page}/{total})")
+            option = self._get_user_input(f"Enter ({page}/{total})")
 
-            match value.casefold():
+            match option.casefold():
                 case "":  # continue to next batch
                     break
 

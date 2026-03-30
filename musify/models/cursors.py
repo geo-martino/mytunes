@@ -376,6 +376,21 @@ class InitialCursor(_HasLimitParam):
     Special care must be taken to ensure that the API does not return a cursor of this same type for the next
     page of items, as this will cause an infinite loop when trying to get the next page of items.
     """
+
+    @classmethod
+    def from_url(cls, url: HttpURL, source: str) -> Self:
+        """Generate an appropriate initial cursor for the given URL and source."""
+        if cls.__final__:
+            raise MusifyTypeError(
+                "Cannot get an adapter for a final model, must be called on a base class with registered submodels"
+            )
+
+        # noinspection PyTypeChecker
+        classes = [kls for kls in cls.registered_submodels if kls.source == source]
+        if not classes:
+            raise MusifyTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
+
+        return TypeAdapter(Union[*classes]).validate_python(dict(url=url))
     
     @property
     def next(self) -> Self | None:

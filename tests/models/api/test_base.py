@@ -7,7 +7,7 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import ValidationError
 
-from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints, HasAPI, Endpoints
+from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints, IsRemoteService, Endpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistReadWriteSavedEndpoints, PlaylistReadSavedEndpoints
 from musify.models.api.track import HasTrackEndpoints
@@ -128,10 +128,10 @@ class TestRemoteAPI(BaseModelTester):
 
 
 class TestHasAPI(BaseModelTester):
-    class MockHasAPI(HasAPI):
+    class MockIsRemoteService(IsRemoteService):
         source: ClassVar[str] = "test"
 
-        @HasAPI._validate_api(
+        @IsRemoteService._validate_api(
             "playlist",
             False,
             (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -143,8 +143,8 @@ class TestHasAPI(BaseModelTester):
             return True
 
     @pytest.fixture
-    def model(self, api: RemoteAPI) -> HasAPI:
-        return self.MockHasAPI(api=api)
+    def model(self, api: RemoteAPI) -> IsRemoteService:
+        return self.MockIsRemoteService(api=api)
 
     async def test_validate_api_with_valid_api(self, handler: RequestHandler):
         class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]):
@@ -153,14 +153,14 @@ class TestHasAPI(BaseModelTester):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):
             pass
 
-        model = self.MockHasAPI(api=MockAPI(handler=handler))
+        model = self.MockIsRemoteService(api=MockAPI(handler=handler))
         assert await model.return_bool() is True
 
     async def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockTrackEndpoints]):
             pass
 
-        model = self.MockHasAPI(api=MockAPI(handler=handler))
+        model = self.MockIsRemoteService(api=MockAPI(handler=handler))
         assert await model.return_bool() is False
 
     async def test_validate_api_fails_on_no_write_saved_playlist_endpoints(self, handler: RequestHandler):
@@ -170,5 +170,5 @@ class TestHasAPI(BaseModelTester):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):
             pass
 
-        model = self.MockHasAPI(api=MockAPI(handler=handler))
+        model = self.MockIsRemoteService(api=MockAPI(handler=handler))
         assert await model.return_bool() is False

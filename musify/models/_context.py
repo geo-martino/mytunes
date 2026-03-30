@@ -10,3 +10,7 @@ class RemoteModelContext(BaseModel):
         description="The currently authenticated user, if available.",
         default=None,
     )
+    type: str | None = Field(
+        description="The type of the resource, if available.",
+        default=None,
+    )

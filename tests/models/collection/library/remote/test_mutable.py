@@ -1,3 +1,4 @@
+from asyncio import Semaphore
 from collections import namedtuple
 from collections.abc import Collection
 from typing import ClassVar, get_args, Generator, Any
@@ -36,6 +37,10 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def model(self, api: RemoteAPI) -> RemoteMutableLibrary:
         return self.MockRemoteMutableLibrary(api=api)
+
+    @pytest.fixture
+    def mock_semaphore(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(Semaphore, "acquire")
 
     ###########################################################################
     ## Create/sync playlists
@@ -86,9 +91,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert playlist.name in model.playlists
 
     @pytest.fixture
-    def mock_sync_items(
-            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
-    ) -> Generator[Mock, None, None]:
+    def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
         with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync_items:
             yield mock_sync_items
 
@@ -98,6 +101,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             playlists: list[RemoteMutablePlaylist],
             mock_get_or_create_playlist: Mock,
             mock_sync_items: Mock,
+            mock_semaphore: Mock,
             faker: Faker,
     ):
         playlists = {pl.name: pl for pl in playlists}
@@ -108,6 +112,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
         assert mock_get_or_create_playlist.call_count == len(playlists)
         assert mock_sync_items.call_count == len(playlists)
+        assert mock_semaphore.call_count == len(playlists)
 
     ###########################################################################
     ## Sync saved items
@@ -301,8 +306,14 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_create_playlist: Mock,
             mock_get_many: Mock,
             mock_sync_items: Mock,
+            mock_semaphore: Mock,
     ):
-        result = await model.restore_playlists(playlists_dump, dry_run=True)
+        with patch.object(
+                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
+        ) as mock_load_playlists:
+            result = await model.restore_playlists(playlists_dump, dry_run=True)
+            mock_load_playlists.assert_called_once()
+
         assert len(result) == len(playlists)
 
         mock_get_playlist, failed = mock_get_playlist
@@ -310,6 +321,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_create_playlist.assert_not_called()
         assert mock_get_many.call_count == len(playlists) - len(failed)
         assert mock_sync_items.call_count == len(playlists) - len(failed)
+        assert mock_semaphore.call_count == len(playlists)
 
     async def test_restore_playlists(
             self,
@@ -320,8 +332,14 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_create_playlist: Mock,
             mock_get_many: Mock,
             mock_sync_items: Mock,
+            mock_semaphore: Mock,
     ):
-        result = await model.restore_playlists(playlists_dump, dry_run=False)
+        with patch.object(
+                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
+        ) as mock_load_playlists:
+            result = await model.restore_playlists(playlists_dump, dry_run=False)
+            mock_load_playlists.assert_called_once()
+
         assert len(result) == len(playlists)
 
         mock_get_playlist, failed = mock_get_playlist
@@ -329,6 +347,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert mock_create_playlist.call_count == len(failed)
         assert mock_get_many.call_count == len(playlists)
         assert mock_sync_items.call_count == len(playlists)
+        assert mock_semaphore.call_count == len(playlists)
 
     ###########################################################################
     ## Restore saved items

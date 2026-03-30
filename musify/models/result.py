@@ -179,7 +179,7 @@ class Result(BaseModel):
     @classmethod
     def _get_field_value(cls, value: Any, formatters: list[LogFormatter]) -> str | None:
         values = (formatter.get_value(value) for formatter in formatters)
-        return next((v for v in values if v is not None), None)
+        return next(filter(None, values), None)
 
     @classmethod
     def _get_field_cell(cls, value: str, name: str, formatters: list[LogFormatter]) -> str:
@@ -214,7 +214,7 @@ class CountResult(Result):
     @staticmethod
     def _get_field_count(value: str, formatters: list[LogFormatter]) -> int:
         values = (formatter.get_value(value, pretty=False) for formatter in formatters)
-        return next((int(v) for v in values if v is not None and v.lstrip("-").isdigit()), 0)
+        return next((int(v) for v in filter(None, values) if v.lstrip("-").isdigit()), 0)
 
 
 class TotalCountResult(CountResult):
@@ -255,7 +255,7 @@ class TotalCountResult(CountResult):
                 continue
 
             values = (cls._get_field_count(getattr(result, field_name), formatters) for result in results)
-            total += sum(v for v in values if v is not None)
+            total += sum(filter(None, values))
 
         row.append(cls._get_total_cell(total))
         return tuple(row)

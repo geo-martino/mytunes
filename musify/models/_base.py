@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, cast, get_origin, Union
+from typing import Any, cast, get_origin, Union, Self
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
     ConfigDict, AliasGenerator, AliasChoices, AliasPath
@@ -10,7 +10,7 @@ from pydantic_core import PydanticUndefined
 from typing_inspection.typing_objects import is_annotated
 
 from musify.exception import MusifyImportError
-from musify.models.exception import ModelError
+from musify.models.exception import ModelError, MusifyValidationError
 
 
 class ModelMetaclass(PydanticModelMetaclass):
@@ -39,16 +39,18 @@ class ModelMetaclass(PydanticModelMetaclass):
 
         return cls
 
-    def _validate_all_class_vars_set(cls: type[BaseModel]) -> None:
+    def _validate_all_class_vars_set(cls) -> None:
         """Validate that all class variables defined on this model and its subclasses are set."""
-        for name in cls.__class_vars__:
-            if not hasattr(cls, name) or isinstance(getattr(cls, name), FieldInfo):
-                raise ModelError(f"{cls.__name__} must have a {name!r} class attribute defined.")
+        kls = cast('type[BaseModel]', cls)
+        for name in kls.__class_vars__:
+            if not hasattr(cls, name) or isinstance(getattr(kls, name), FieldInfo):
+                raise ModelError(f"{kls.__name__} must have a {name!r} class attribute defined.")
 
     @property
-    def required_modules_installed(cls: type[BaseModel]) -> bool:
+    def required_modules_installed(cls) -> bool:
         """Check if all required modules for this model are installed."""
-        return all(module is not None for module in cls.__required_modules__.values())
+        kls = cast('type[BaseModel]', cls)
+        return all(module is not None for module in kls.__required_modules__.values())
 
     @property
     def _metadata_fields(cls) -> dict[str, tuple[Any, list[Any]]]:
@@ -93,14 +95,14 @@ class ModelMetaclass(PydanticModelMetaclass):
         return properties
 
     @property
-    def registered_submodels[T: BaseModel](cls: type[T]) -> list[type[T]]:
+    def registered_submodels(cls) -> list[Self]:
         """Get the registered classes for all subclasses of this model."""
         if cls.__final__:
             return []
         return [kls for kls in cls.__model_registry__ if issubclass(kls, cls) and kls.required_modules_installed]
 
     @property
-    def annotation[T: BaseModel](cls: type[T]) -> type[T]:
+    def annotation(cls) -> Self:
         """Get the annotation for all subclasses of this model"""
         classes = cls.registered_submodels
         return Union[*classes] if classes else cls
@@ -128,6 +130,11 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
     def __new__(cls, *args, **kwargs):
         cls._validate_required_modules_installed()
+
+        if inspect.isabstract(cls):  # force abstract classes to throw validation error for pydantic validation
+            raise MusifyValidationError(
+                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
+            )
         return super().__new__(cls)
 
     @classmethod
@@ -190,5 +197,5 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             return field.get_default(call_default_factory=True, validated_data=data)
 
 
-class RootModel[T](PydanticRootModel[T], BaseModel):
+class RootModel[T](PydanticRootModel[T], BaseModel, metaclass=ModelMetaclass):
     __doc__ = BaseModel.__doc__

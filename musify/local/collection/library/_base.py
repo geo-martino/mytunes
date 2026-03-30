@@ -1,10 +1,12 @@
+import asyncio
 import itertools
+from asyncio import Semaphore
 from collections.abc import Generator, Iterable, Collection
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, ClassVar, final, Self
 
-from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter
+from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, PrivateAttr, PositiveInt
 from termcolor import colored
 
 from musify._types import to_set
@@ -23,6 +25,7 @@ from musify.models.properties.uri import URI
 from musify.models.result import TotalCountResult, LenLogFormatter, Result
 from musify.processors_new.filters import Filter, ValuesFilter
 from musify.processors_new.sort import ItemSorter
+from musify.utils import afilter
 
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):
@@ -123,15 +126,21 @@ class LocalLibrary(
         description="Mapper to use when mapping paths stored in the playlist files.",
         default_factory=PathMapper,
     )
-    errors: list[str] = Field(
-        description="List of errors encountered while loading the library.",
-        default_factory=list,
-    )
     tracks_load_settings: TagContext = Field(
         description="Settings to apply when loading tracks in this library.",
         default_factory=TagContext,
         validation_alias="tracks_load_context",
     )
+
+    _errors: list[str] = PrivateAttr(
+        default_factory=list
+    )
+
+    @property
+    def errors(self) -> list[str]:
+        """List of errors encountered while loading the library."""
+        return self._errors
+
 
     @field_validator("playlist_filter", mode="before", check_fields=True)
     @staticmethod
@@ -142,7 +151,76 @@ class LocalLibrary(
         names = to_set(names)
         return ValuesFilter(values=names)
 
-    def _iter_track_paths(self) -> Generator[Path, None, None]:
+    async def load(self) -> None:
+        self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
+
+        await self.load_tracks()
+        await self.load_playlists()
+
+        header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
+        results = {"TRACKS": self._generate_track_uris_results()}
+        results |= self._generate_playlist_uris_results()
+        table = LibraryURIsResult.generate_table(results=results, header=header)
+
+        self.logger.print_line(STAT)
+        self.logger.stat(table)
+
+    def _log_errors(self, message: str = "Could not load") -> None:
+        if len(self.errors) == 0:
+            return
+
+        header = colored(message, "white") + ":"
+        errors = list(map(lambda e: colored(e, "red"), sorted(set(self.errors))))
+
+        log = "\n\t- ".join([header] + errors)
+        self.logger.warning(log)
+        self.logger.print_line()
+        self.errors.clear()
+
+    ###########################################################################
+    ## Tracks
+    ###########################################################################
+    async def load_track(self, path: str | Path) -> LocalTrack | None:
+        """
+        Loads the track at the given ``path``.
+
+        Handles exceptions by logging paths which produce errors to internal list of ``errors``.
+        """
+        try:
+            async with self.concurrency:
+                self.logger.debug(f"Loading track: {path}")
+                file = await LocalTrack.load_file(path)
+
+            return self._track_adapter.validate_python(file, context=self.tracks_load_settings)
+
+        except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
+            self.logger.debug(f"Load error for track: {path} - {ex}")
+            self.errors.append(path)
+
+    @cached_property
+    def _track_adapter(self) -> TypeAdapter[LocalTrack]:
+        return TypeAdapter[LocalTrack](LocalTrack.annotation)
+
+    async def load_tracks(self) -> bool:
+        if not (paths := set(self._track_paths)):
+            return False
+
+        self.logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
+
+        bar = self.logger.get_asynchronous_iterator(
+            map(self.load_track, paths),
+            desc="Loading tracks",
+            unit="tracks",
+            initial=0,
+            total=len(paths)
+        )
+        self.tracks.replace(filter(None, await bar))
+
+        self._log_errors("Could not load the following tracks")
+        return True
+
+    @property
+    def _track_paths(self) -> Generator[Path, None, None]:
         if not self.library_folders:
             return
 
@@ -162,7 +240,62 @@ class LocalLibrary(
 
                 yield path
 
-    def _iter_playlist_paths(self) -> Generator[Path, None, None]:
+    def log_tracks(self) -> None:
+        result = self._generate_track_uris_results()
+        key = f"{self.source.upper()} TRACK URIS"
+        table = result.generate_table(results={key: result})
+
+        self.logger.stat(table)
+
+    def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
+        return LibraryURIsResult.from_tracks(self.source, self.tracks)
+
+    ###########################################################################
+    ## Playlists
+    ###########################################################################
+    async def load_playlist(self, path: str | Path) -> LocalPlaylist | None:
+        """
+        Loads the playlist at the given ``path`` and assigns optional arguments using this library's attributes.
+
+        Handles exceptions by logging paths which produce errors to internal list of ``errors``.
+        """
+        try:
+            async with self.concurrency:
+                self.logger.debug(f"Loading playlist: {path}")
+
+                playlist = self._playlist_adapter.validate_python(path)
+                playlist.path_mapper = self.path_mapper
+                return await playlist.load(self.tracks)
+
+        except (MusifyError, ValueError, FileNotFoundError) as ex:
+            self.logger.debug(f"Load error for playlist: {path} - {ex}")
+            self.errors.append(path)
+
+    @cached_property
+    def _playlist_adapter(self) -> TypeAdapter[LocalPlaylist]:
+        return TypeAdapter[LocalPlaylist](LocalPlaylist.annotation)
+
+    async def load_playlists(self) -> bool:
+        if not (paths := set(self._playlist_paths)):
+            return False
+
+        self.logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
+
+        bar = self.logger.get_asynchronous_iterator(
+            map(self.load_playlist, paths),
+            desc="Loading playlists",
+            unit="playlists",
+            initial=0,
+            total=len(paths)
+        )
+        playlists = {pl.name: pl for pl in sorted(filter(None, await bar), key=lambda x: x.name.casefold())}
+        self.playlists.replace(playlists, extract_keys=False)
+
+        self._log_errors("Could not load the following playlists")
+        return True
+
+    @property
+    def _playlist_paths(self) -> Generator[Path, None, None]:
         if self.playlist_folder is None:
             return
 
@@ -199,128 +332,6 @@ class LocalLibrary(
 
         self.logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
-    async def load(self) -> None:
-        self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
-
-        await self.load_tracks()
-        await self.load_playlists()
-
-        header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
-        results = {"TRACKS": self._generate_track_uris_results()}
-        results |= self._generate_playlist_uris_results()
-        table = LibraryURIsResult.generate_table(results=results, header=header)
-
-        self.logger.print_line(STAT)
-        self.logger.stat(table)
-
-    def _log_errors(self, message: str = "Could not load") -> None:
-        if len(self.errors) == 0:
-            return
-
-        header = colored(message, "white") + ":"
-        errors = list(map(lambda e: colored(e, "red"), sorted(set(self.errors))))
-
-        log = "\n\t- ".join([header] + errors)
-        self.logger.warning(log)
-        self.logger.print_line()
-        self.errors.clear()
-
-    ###########################################################################
-    ## Tracks
-    ###########################################################################
-    @cached_property
-    def _track_adapter(self) -> TypeAdapter[LocalTrack]:
-        return TypeAdapter[LocalTrack](LocalTrack.annotation)
-
-    async def load_track(self, path: str | Path) -> LocalTrack | None:
-        """
-        Loads the track at the given ``path``.
-
-        Handles exceptions by logging paths which produce errors to internal list of ``errors``.
-        """
-        self.logger.debug(f"Loading track: {path}")
-
-        try:
-            file = await LocalTrack.load_file(path)
-            track = self._track_adapter.validate_python(file, context=self.tracks_load_settings)
-            return track
-        except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
-            self.logger.debug(f"Load error for track: {path} - {ex}")
-            self.errors.append(path)
-
-    async def load_tracks(self) -> bool:
-        if not (paths := set(self._iter_track_paths())):
-            return False
-
-        self.logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
-
-        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        bar = self.logger.get_asynchronous_iterator(
-            map(self.load_track, paths),
-            desc="Loading tracks",
-            unit="tracks",
-            initial=0,
-            total=len(paths)
-        )
-        self.tracks[:] = filter(lambda tr: tr is not None, await bar)
-
-        self._log_errors("Could not load the following tracks")
-        return True
-
-    def log_tracks(self) -> None:
-        result = self._generate_track_uris_results()
-        key = f"{self.source.upper()} TRACK URIS"
-        table = result.generate_table(results={key: result})
-
-        self.logger.stat(table)
-
-    def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
-        return LibraryURIsResult.from_tracks(self.source, self.tracks)
-
-    ###########################################################################
-    ## Playlists
-    ###########################################################################
-    @cached_property
-    def _playlist_adapter(self) -> TypeAdapter[LocalPlaylist]:
-        return TypeAdapter[LocalPlaylist](LocalPlaylist.annotation)
-
-    async def load_playlist(self, path: str | Path) -> LocalPlaylist | None:
-        """
-        Loads the playlist at the given ``path`` and assigns optional arguments using this library's attributes.
-
-        Handles exceptions by logging paths which produce errors to internal list of ``errors``.
-        """
-        self.logger.debug(f"Loading playlist: {path}")
-
-        try:
-            playlist = self._playlist_adapter.validate_python(path)
-            playlist.path_mapper = self.path_mapper
-            return await playlist.load(self.tracks)
-        except (MusifyError, ValueError, FileNotFoundError) as ex:
-            self.logger.debug(f"Load error for playlist: {path} - {ex}")
-            self.errors.append(path)
-
-    async def load_playlists(self) -> bool:
-        if not (paths := set(self._iter_playlist_paths())):
-            return False
-
-        self.logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
-
-        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        bar = self.logger.get_asynchronous_iterator(
-            map(self.load_playlist, paths),
-            desc="Loading playlists",
-            unit="playlists",
-            initial=0,
-            total=len(paths)
-        )
-        playlists = filter(lambda pl: pl is not None, await bar)
-        playlists = {pl.name: pl for pl in sorted(playlists, key=lambda x: x.name.casefold())}
-        self.playlists.replace(playlists, extract_keys=False)
-
-        self._log_errors("Could not load the following playlists")
-        return True
-
     def log_playlists(self) -> None:
         results = self._generate_playlist_uris_results()
         header = f"{self.source.upper()} PLAYLIST URIS"
@@ -342,9 +353,10 @@ class LocalLibrary(
         :return: A map of the playlist name to the results of its sync as a :py:class:`Result` object.
         """
         async def _save_playlist(pl: LocalPlaylist) -> tuple[str, Result]:
-            return pl.name, await pl.save(dry_run=dry_run)
+            async with self.concurrency:
+                return pl.name, await pl.save(dry_run=dry_run)
 
-        self.logger.info(f"Saving {len(self.playlists)} playlists in {self.source} library", header=2)
+        self.logger.info(f"Saving {len(self.playlists)} playlists in {self.source} {self.type}", header=2)
 
         # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(
@@ -355,6 +367,17 @@ class LocalLibrary(
             total=len(self.playlists)
         )
         return dict(await bar)
+
+    def _log_save_tracks_header(self) -> None:
+        message = f"Saving {len(self.playlists)} playlists in {self.source} {self.type}"
+
+        match self:
+            case HasName() as named:
+                message += f": {named.name!r}"
+            case Library() as library if isinstance(library.source, str):
+                message += f": {library.source!r}"
+
+        self.logger.info(message, header=2)
 
     ###########################################################################
     ## Collections

@@ -7,11 +7,13 @@ from pydantic import ValidationError
 
 from musify.exception import MusifyValueError
 from musify.models import ResourceModel
+from musify.models._context import RemoteModelContext
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI, HasMutableURI, HasImmutableURI
+from musify.models.remote import RemoteModel
 from tests.models.testers import BaseModelTester, UniqueKeyTester
 from tests.utils import SimpleURI
 
@@ -57,6 +59,28 @@ class TestURI(BaseModelTester):
     @pytest.fixture
     def model(self, uri: SimpleURI) -> URI:
         return uri
+
+    def test_validate_source(self, uri: URI, faker: Faker):
+        source = faker.word()
+        while source == uri.source:
+            source = faker.word()
+
+        with pytest.raises(ValidationError):
+            SimpleURI(":".join((source, uri.type, faker.pystr())))
+
+    def test_create_unavailable_uri_on_none(self, faker: Faker):
+        kind = faker.word()
+
+        uri = SimpleURI.model_validate(None, context=RemoteModelContext(type=kind))
+        assert uri.type == kind
+        assert uri.id == SimpleURI._unavailable_id
+
+    def test_create_unavailable_uri_on_none_fails(self, faker: Faker):
+        with pytest.raises(ValidationError):  # no context given
+            SimpleURI.model_validate(None)
+
+        with pytest.raises(ValidationError):  # no type given in context
+            SimpleURI.model_validate(None, context=RemoteModelContext())
 
     def test_marks_existence(self, model: SimpleURI):
         assert model._unavailable_id not in str(model)
@@ -140,15 +164,15 @@ class TestHasMutableURI(UniqueKeyTester):
         model = MockHasMutableURI(uri=uri)
         assert model.source == uri.source
         assert model.uri is uri
-        assert model.uris == [uri]
+        assert model.uris == {uri}
 
         model = MockHasMutableURI(uris=[uri])
         assert model.source == uri.source
         assert model.uri is uri
-        assert model.uris == [uri]
+        assert model.uris == {uri}
 
     def test_get_uri(self, model: HasMutableURI, uris: list[URI]):
-        assert model.uris == uris
+        assert model.uris == set(uris)
         assert model.uri.source == model.source
         assert model.uri == next(uri for uri in uris if uri.source == model.source)
 

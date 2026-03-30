@@ -9,6 +9,10 @@ from faker import Faker
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
+from musify.models.collection.playlist import Playlist
+from musify.models.item.album import Album
+from musify.models.item.artist import Artist
+from musify.models.item.track import Track
 from musify.models.properties.uri import URI
 
 # noinspection SpellCheckingInspection
@@ -107,7 +111,9 @@ class SimpleURI(URI):
         return self.root.split(":")[2]
 
     @classmethod
-    def create_random(cls, kind: str) -> Self:
+    def create_random(cls, kind: str | None = None) -> Self:
+        if not kind:
+            kind = choice((Track.type, Album.type, Artist.type, Playlist.type))
         value = Faker().pystr()
         return cls.from_id(value=value, kind=kind)
 

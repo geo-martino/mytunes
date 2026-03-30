@@ -239,8 +239,5 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
     async def _get_remote_uris(
             self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints], show_bar: bool = True
     ) -> list[UT]:
-        # TODO: consider putting this logic in a classmethod on InitialCursor?
-        # noinspection PyTypeChecker
-        cursor_classes = [kls for kls in InitialCursor.registered_submodels if kls.source == self.source]
-        cursor = TypeAdapter(Union[*cursor_classes]).validate_python(self.uri.api_url)
-        return [track.uri for track in await api.playlists.get_all(cursor, show_bar=show_bar)]
+        playlist = await api.playlists.get(self.uri.api_url)
+        return [track.uri for track in await api.playlists.get_all(playlist, show_bar=show_bar)]

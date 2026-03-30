@@ -21,13 +21,6 @@ from musify.processors_new.compare import Comparer
 class Filter[IT](Processor):
     """Base class for all filters."""
 
-    def __new__(cls, *args, **kwargs):
-        if isabstract(cls):
-            raise MusifyValidationError(
-                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
-            )
-        return super().__new__(cls)
-
     @abstract_property
     def ready(self) -> bool:
         """Indicates if the filter is set and ready to be used."""

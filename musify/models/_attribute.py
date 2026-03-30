@@ -11,7 +11,7 @@ from musify.models.metadata import Attribute, TagAttribute
 from musify.utils import get_base_types
 
 
-class AttributeModelMetaclass(ModelMetaclass):
+class AttributeMetaclass(ModelMetaclass):
     """
     Metaclass for creating attribute models for this package.
 
@@ -76,24 +76,25 @@ class AttributeModelMetaclass(ModelMetaclass):
             if isinstance(kls, type) and issubclass(kls, AttributeModel):
                 yield kls
 
-    def get_nested_field_info(cls: type[AttributeModel], key: str) -> FieldInfo:
+    def get_nested_field_info(cls, key: str) -> FieldInfo:
         """Get field info for a given key, supporting nested keys using dot notation."""
+        kls = cast('type[AttributeModel]', cls)
         if len(key_split := key.split(".")) == 1:
-            if issubclass(cls, BaseModel) and key in cls.model_fields:
-                return cls.model_fields[key]
-            return getattr(cls, key)
+            if issubclass(kls, BaseModel) and key in kls.model_fields:
+                return kls.model_fields[key]
+            return getattr(kls, key)
 
         key_iter = iter(key_split[:-1])
         field = reduce(
-            AttributeModelMetaclass._get_tag_field_from_field_info,
+            AttributeMetaclass._get_tag_field_from_field_info,
             key_iter,
-            AttributeModelMetaclass._get_tag_field_from_field_info(cls, next(key_iter))
+            AttributeMetaclass._get_tag_field_from_field_info(kls, next(key_iter))
         )
 
-        return AttributeModelMetaclass.get_nested_field_info(field, key_split[-1])
+        return AttributeMetaclass.get_nested_field_info(field, key_split[-1])
 
     @staticmethod
-    def _get_tag_field_from_field_info(cls: AttributeModel, key: str) -> Any:
+    def _get_tag_field_from_field_info(cls: type[AttributeModel], key: str) -> Any:
         if key not in cls.model_fields:
             return getattr(cls, key)
 
@@ -101,7 +102,7 @@ class AttributeModelMetaclass(ModelMetaclass):
         return next(cls.__class__._get_nested_models(annotation), annotation)
 
 
-class AttributeModel(BaseModel, metaclass=AttributeModelMetaclass):
+class AttributeModel(BaseModel, metaclass=AttributeMetaclass):
     """
     A base class for creating attribute models in this package.
 

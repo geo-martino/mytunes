@@ -48,6 +48,8 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     __required_modules__ = {"xmltodict": xmltodict, "etree": etree}
     __supported_extensions__ = frozenset({"xml"})
 
+    source: ClassVar[str] = "local"
+
     #: The relative path of the MusicBee settings file in the ``musicbee_folder``.
     _xml_settings_path: ClassVar[Path] = Path("MusicBeeLibrarySettings.ini")
     #: The relative path of the MusicBee library file in the ``musicbee_folder``.

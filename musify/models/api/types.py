@@ -2,12 +2,12 @@ import functools
 import inspect
 from collections.abc import Sequence
 from contextlib import suppress
-from typing import Any, get_args, Callable, Self, Annotated
+from typing import Any, get_args, Callable, Self, Annotated, get_origin, Union
 
-from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter, ValidationError
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
-from typing_inspection.typing_objects import is_typevar
+from typing_inspection.typing_objects import is_typevar, is_union
 from yarl import URL
 
 from musify.exception import MusifyTypeError
@@ -15,6 +15,7 @@ from musify.models.exception import MusifyValidationError, ModelError, RequestEr
 from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
+from musify.utils import get_base_types
 
 
 class _ApiSchemaBase[UT: URI, MT: HasURI]:
@@ -149,7 +150,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return handler(core_schema.url_schema())
 
     @classmethod
-    def validate_call[T: Callable](cls, func: T) -> T:
+    def validate_call(cls, param_key: str = "url") -> Callable:
         """
         Decorator to validate and convert a URL argument for API endpoint methods.
 
@@ -160,22 +161,23 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         This should be removed once the validate_call issue is resolved:
         https://github.com/pydantic/pydantic/issues/7796
         """
-        param_key = "url"
-        param_idx = cls._get_param_position(func, param_key)
+        def decorator(func: Callable) -> Callable:
+            param_idx = cls._get_param_position(func, param_key)
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            args = list(args)
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                args = list(args)
 
-            self = args.pop(0)
-            cls_t = cls._create_type_from_model_generics(self)
-            adapter = TypeAdapter(cls_t)
+                self = args.pop(0)
+                cls_t = cls._create_type_from_model_generics(self)
+                adapter = TypeAdapter(cls_t)
 
-            args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
-            url = adapter.validate_python(value)
+                args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
+                url = adapter.validate_python(value)
 
-            return func(self, *args_prev, url, *args_next, **kwargs)
-        return wrapper
+                return func(self, *args_prev, url, *args_next, **kwargs)
+            return wrapper
+        return decorator
 
 
 type ApiURL[UT: URI, MT: HasURI] = Annotated[URL, _ApiURLSchema[UT, MT]]
@@ -245,7 +247,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return handler(core_schema.str_schema())
 
     @classmethod
-    def validate_call[T: Callable](cls, func: T) -> T:
+    def validate_call(cls, param_key: str = "uri", is_sequence: bool = False) -> Callable:
         """
         Decorator to validate and convert a URL argument for API endpoint methods.
 
@@ -256,34 +258,28 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         This should be removed once the validate_call issue is resolved:
         https://github.com/pydantic/pydantic/issues/7796
         """
-        try:
-            param_key = "uri"
+        def decorator(func: Callable) -> Callable:
             param_idx = cls._get_param_position(func, param_key)
-            is_sequence = False
-        except MusifyTypeError:
-            param_key = "uris"
-            param_idx = cls._get_param_position(func, param_key)
-            is_sequence = True
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            args = list(args)
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                args = list(args)
 
-            self = args.pop(0)
-            cls_t = cls._create_type_from_model_generics(self)
-            # noinspection PyTypeHints
-            if not is_sequence:
+                self = args.pop(0)
+                cls_t = cls._create_type_from_model_generics(self)
+                # noinspection PyTypeHints
+                if is_sequence:
+                    cls_t = Sequence[cls_t]
                 adapter = TypeAdapter(cls_t)
-            else:
-                adapter = TypeAdapter(Sequence[cls_t])
 
-            args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
+                args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
 
-            uris = adapter.validate_python(value)
+                uris = adapter.validate_python(value)
 
-            return func(self, *args_prev, uris, *args_next, **kwargs)
-        return wrapper
+                return func(self, *args_prev, uris, *args_next, **kwargs)
+            return wrapper
 
+        return decorator
 
 type ApiURI[UT: URI, MT: HasURI] = Annotated[UT, _ApiURISchema[UT, MT]]
 type ApiURISequence[UT: URI, MT: HasURI] = Sequence[ApiURI[UT, MT]]

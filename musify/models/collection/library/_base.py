@@ -7,11 +7,14 @@ from musify.models import ResourceModel
 from musify.models._metaclass import makecls
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
+from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.logger import HasLogger
 from musify.processors_new.filters import Filter
 
 
-class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], HasPlaylists[KP, VP]):
+class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
+    HasTracks[TK, TV], HasPlaylists[KP, VP],
+):
     def dump(self) -> dict[str, Any]:
         """Generate a dump of this library's state. This can be used for backup or debugging purposes."""
         return self.model_dump(mode="json", exclude_none=True)
@@ -19,7 +22,7 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](HasTracks[TK, TV], 
 
 # noinspection PyAbstractClass
 class Library[TK, TV: Track, KP, VP: Playlist](
-    ResourceModel, HasTracksAndPlaylists[TK, TV, KP, VP], HasLogger, metaclass=makecls()
+    ResourceModel, HasTracksAndPlaylists[TK, TV, KP, VP], HasAsyncOperations, HasLogger, metaclass=makecls()
 ):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"

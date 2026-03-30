@@ -129,13 +129,6 @@ class ImageBase(BaseModel):
 
 # noinspection PyAbstractClass
 class ImageSource(ImageBase):
-    def __new__(cls, *args, **kwargs):
-        if isabstract(cls):
-            raise MusifyValidationError(
-                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
-            )
-        return super().__new__(cls)
-
     @abstractmethod
     async def load(self, **kwargs) -> PILImageFile.ImageFile:
         """Load the image."""

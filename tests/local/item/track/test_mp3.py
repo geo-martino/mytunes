@@ -210,7 +210,7 @@ class TestMP3(LocalTrackTester):
         assert model.images == expected_images
 
         assert model.source == uri.source
-        assert model.uris == [uri]
+        assert model.uris == {uri}
         assert model.uri == uri
 
     def test_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):

@@ -11,10 +11,13 @@ from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Field, ValidationError, ConfigDict
 from typing_inspection.typing_objects import is_typevar
 
+from musify.models import AttributeModel
+from musify.models._context import RemoteModelContext
 from musify.models.api._endpoints import HasEndpoints, Endpoints
 from musify.models.exception import EndpointsError
 from musify.models.metadata import Attribute
 from musify.models.properties.logger import HasLogger
+from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel
 
 
@@ -74,6 +77,13 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         auth_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, RemoteAuthoriser))
         return auth_t.model_validate(credentials)
 
+    @classmethod
+    def create_uri(cls, value: Any, kind: str) -> URI:
+        """Create a URI for the source handled by this API model from the given ID and type."""
+        context = RemoteModelContext(type=kind)
+        return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
+
+
     # TODO: figure out cache
         # try:
         #     await self._setup_cache()
@@ -88,9 +98,27 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         #         repository.settings.payload_handler = self.handler.payload_handler
 
 
-class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
+class HasAPI[API: RemoteAPI](AttributeModel):
     api: Annotated[API, Attribute()] = Field(
-        description="The API client model used to interact with the remote service.."
+        description="The API client model used to interact with the remote service."
+    )
+
+    @staticmethod
+    def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:
+        if not key:
+            return api
+
+        for key in key.split("."):
+            if not hasattr(api, key):
+                raise EndpointsError(f"API does not have attribute '{key}'.")
+            api = getattr(api, key)
+
+        return api
+
+
+class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
+    api: Annotated[API, Attribute()] = Field(
+        description="The API client model used to interact with the remote service."
     )
 
     @classmethod
@@ -107,7 +135,7 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
 
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
-            def wrapper(self: HasAPI, *args, **kwargs):
+            def wrapper(self: IsRemoteService, *args, **kwargs):
                 for key, expected_type, context in expected:
                     api = cls._get_endpoints(self.api, key)
 
@@ -124,15 +152,3 @@ class HasAPI[API: RemoteAPI](RemoteModel, HasLogger):
 
             return wrapper
         return decorator
-
-    @staticmethod
-    def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:
-        if not key:
-            return api
-
-        for key in key.split("."):
-            if not hasattr(api, key):
-                raise EndpointsError(f"API does not have attribute '{key}'.")
-            api = getattr(api, key)
-
-        return api

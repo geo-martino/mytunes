@@ -2,9 +2,9 @@
 Generic utility functions and classes which can be used throughout the entire package.
 """
 import re
-from collections.abc import Iterable, MutableSequence, MutableMapping
+from collections.abc import Iterable, MutableSequence, MutableMapping, Callable, AsyncGenerator
 from types import UnionType, GenericAlias
-from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union
+from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union, AsyncIterable
 
 from typing_extensions import get_origin, evaluate_forward_ref
 from typing_inspection.typing_objects import is_annotated
@@ -63,6 +63,18 @@ def flatten_nested[T: Any](nested: MutableMapping, previous: MutableSequence[T] 
 
     return previous
 
+
+###########################################################################
+## Async
+###########################################################################
+async def afilter[T](predicate: Callable[[T], bool] | None, iterable: AsyncIterable[T]) -> AsyncGenerator[T]:
+    """Filter for asynchronous iterables"""
+    async for item in iterable:
+        if callable(predicate) and predicate(item):
+            if item:
+                yield item
+        elif item == predicate:
+            yield item
 
 ###########################################################################
 ## Misc

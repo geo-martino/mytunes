@@ -86,7 +86,7 @@ class LocalPlaylistFile[TF: Filter](
 
         start = len(self.tracks)
         ignore = [i if isinstance(i, LocalTrack) else self.tracks.get(str(i)) for i in ignore]
-        self.limiter.limit(self.tracks, ignore=[i for i in ignore if i is not None])
+        self.limiter.limit(self.tracks, ignore=tuple(filter(None, ignore)))
 
         self.logger.debug(f"{self.name!r} limited: start={start} final={len(self.tracks)} ignored={len(ignore)}")
 

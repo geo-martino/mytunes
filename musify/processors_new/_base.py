@@ -4,7 +4,7 @@ Base classes for all processors in this module. Also contains decorators for use
 import os
 import textwrap
 from collections.abc import Mapping, Iterable
-from typing import Any
+from typing import Any, ClassVar
 
 from tabulate import tabulate
 from termcolor import colored
@@ -13,6 +13,7 @@ from musify.models import BaseModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
+from musify.models.result import LogFormatter
 
 
 class Processor(BaseModel):
@@ -35,6 +36,8 @@ class Processor(BaseModel):
     @staticmethod
     def _get_item_log_value(item: Any) -> str:
         match item:
+            case str() as value:
+                return value
             case HasURI() as it if it.has_uri:
                 return str(it.uri)
             case HasName() as it:
@@ -49,13 +52,19 @@ class InputProcessor(Processor, HasLogger):
 
     Contains methods for getting user input and printing formatted options text to the terminal.
     """
+    input_formatter: ClassVar[LogFormatter] = LogFormatter(
+        colour="yellow", colour_attributes=["bold"]
+    )
 
-    def _get_user_input(self, text: str | None = None) -> str:
+    def _get_user_input(self, text: str | None = None, formatter: LogFormatter | None = None) -> str:
         """Print dialogue with optional text and get the user's input."""
         if not text:
             text = "Enter input"
 
-        log = " ".join((colored(text, "yellow"), colored("|", "white", attrs=["bold"])))
+        if formatter is None:
+            formatter = self.input_formatter
+
+        log = " ".join((formatter.get_value(text), colored("|", "white", attrs=["bold"])))
         inp = input(log + " ").strip()
 
         self.logger.debug(f"User input: {inp}")

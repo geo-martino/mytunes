@@ -4,20 +4,20 @@ from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Iterable, Annotated, Self, Union
+from typing import Any, Iterable, Annotated, Self, Union, cast
 
 import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyTypeError
 from musify.models import abstract_property
-from musify.models._attribute import AttributeModelMetaclass
+from musify.models._attribute import AttributeMetaclass
 from musify.models._base import BaseModel
 from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute
 
 
-class IsFileMetaclass(AttributeModelMetaclass):
+class IsFileMetaclass(AttributeMetaclass):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
@@ -29,14 +29,14 @@ class IsFileMetaclass(AttributeModelMetaclass):
         return cls
 
     @property
-    def annotation[T: IsFile](cls: type[T]) -> type[T]:
+    def annotation(cls) -> Self:
         # noinspection PyTypeChecker
-        classes: set[type[T]] = cls.registered_submodels
+        classes = cls.registered_submodels
         types = (Annotated[kls, Tag(ext)] for kls in classes for ext in kls.__supported_extensions__)
         return Union[*types] if classes else cls
 
     @property
-    def supported_extensions(cls: type[IsFile]) -> set[str]:
+    def supported_extensions(cls) -> set[str]:
         """The file extensions supported by this file type."""
         if cls.__final__:
             return set(cls.__supported_extensions__)
@@ -96,12 +96,15 @@ class IsWriteableFile(IsFile):
 class IsLocalFileMetaclass(IsFileMetaclass):
 
     @property
-    def annotation[T: IsLocalFile](cls: type[T]) -> type[T]:
-        if not cls.registered_submodels:
-            return cls
+    def annotation(cls) -> Self:
+        kls = cast('type[IsLocalFile]', cls)
+        if not kls.registered_submodels:
+            return kls
+
+        # noinspection PyProtectedMember
         return Annotated[
             super().annotation,
-            Field(discriminator=Discriminator(cls._get_ext_from_input)),
+            Field(discriminator=Discriminator(kls._get_ext_from_input)),
         ]
 
 

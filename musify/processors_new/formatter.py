@@ -4,7 +4,7 @@ from collections.abc import Sequence, Iterable
 from typing import Literal, Self, Annotated
 
 from pydantic import Field, model_validator, PositiveInt, BeforeValidator, validate_call, \
-    ValidationError
+    ValidationError, ConfigDict
 from tabulate import tabulate
 from termcolor import colored
 
@@ -13,13 +13,16 @@ from musify.exception import MusifyTypeError
 from musify.models import BaseModel, ResourceModel
 from musify.models.collection import CollectionModel
 from musify.models.exception import MusifyValidationError
+from musify.models.item.album import HasAlbum
+from musify.models.item.artist import HasArtists
+from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position, HasTrackPosition
 from musify.models.properties.uri import HasImmutableURI, HasMutableURI
 
 FIELDS = Literal[
-    "Name", "Length", "URI", "Public URL"
+    "Name", "Album", "Artist", "Released At", "Length", "URI", "Public URL"
 ]
 ALIGNMENTS = Literal["left", "right", "center", "decimal"]
 COLOURS = Literal[
@@ -34,6 +37,7 @@ COLOUR_ATTRIBUTES = Literal[
 
 class ModelFormatter[RT: ResourceModel](BaseModel):
     """A formatter for a BaseModel. This is used to format the model's data for output."""
+    model_config = ConfigDict(frozen=True)
 
     fields: Sequence[FIELDS] = Field(
         description="The fields of the model to include in the formatted output.",
@@ -84,7 +88,6 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         default=False,
     )
 
-
     @model_validator(mode="after")
     def _validate_widths(self) -> Self:
         self._expand_single_item_to_all_fields("widths")
@@ -95,12 +98,6 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
     def _validate_alignments(self) -> Self:
         self._expand_single_item_to_all_fields("alignments")
         self._validate_lengths_match_fields("alignments")
-        return self
-
-    @model_validator(mode="after")
-    def _validate_truncate(self) -> Self:
-        self._expand_single_item_to_all_fields("truncate")
-        self._validate_lengths_match_fields("truncate")
         return self
 
     @model_validator(mode="after")
@@ -207,8 +204,23 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
     @staticmethod
     @validate_call
+    def _get_artist(item: HasArtists) -> str | None:
+        return str(item.artist) if item.artist is not None else None
+
+    @staticmethod
+    @validate_call
+    def _get_album(item: HasAlbum) -> str | None:
+        return str(item.album.name) if item.album is not None else None
+
+    @staticmethod
+    @validate_call
     def _get_length(item: HasLength) -> str | None:
         return str(item.length) if item.length is not None else None
+
+    @staticmethod
+    @validate_call
+    def _get_released_at(item: HasReleaseDate) -> str | None:
+        return str(item.released_at) if item.released_at is not None else None
 
     @staticmethod
     @validate_call
@@ -223,11 +235,15 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
 class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
     def format(self, collection: CT, indices: bool | Sequence = False) -> str:
+        if not isinstance(collection, CollectionModel):
+            return super().format(collection, indices=indices)
+
         # noinspection PyTypeChecker
         match indices:
             case True if all(isinstance(item, HasTrackPosition) for item in collection.items):
+                # TODO: add test for case where count is less than max track number
                 # noinspection PyTypeChecker
-                total = collection.count
+                total = max(max(it.track.number or 0 for it in collection.items), collection.count)
                 # noinspection PyTypeChecker
                 indices = [
                     Position(

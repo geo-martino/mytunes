@@ -3,7 +3,7 @@ from typing import Annotated, Self, Any
 import tabulate
 
 from musify.logger import STAT
-from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints, ReadSavedEndpoints
+from musify.models.api import RemoteAPI, IsRemoteService, HasSavedEndpoints, ReadSavedEndpoints
 from musify.models.api.album import AlbumReadSavedEndpoints, HasAlbumEndpoints, AlbumReadCollectionEndpoints
 from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints
@@ -36,7 +36,7 @@ class RemoteLibrary[
     GT: RemoteGenre,
     UT: RemoteUser,
 ](
-    Library[TK, TV, KP, VP], HasAPI[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
+    Library[TK, TV, KP, VP], IsRemoteService[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
     @property
     def user(self) -> Annotated[UT | None, Attribute()]:
@@ -111,7 +111,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - playlists
     ###########################################################################
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "playlist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -122,6 +122,7 @@ class RemoteLibrary[
         api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadSavedEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} playlists", header=2)
+
         playlists = await api.playlists.saved.get_all()
         if self.playlist_filter is not None:
             playlists: list[VP] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
@@ -132,7 +133,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "playlist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -149,7 +150,8 @@ class RemoteLibrary[
         self.logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
 
         async def _extend_playlist_tracks(pl: VP) -> None:
-            items = await api.playlists.get_all(pl, show_bar=False)
+            async with self.concurrency:
+                items = await api.playlists.get_all(pl, show_bar=False)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
@@ -176,7 +178,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - tracks
     ###########################################################################
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "track",
         False,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -187,6 +189,7 @@ class RemoteLibrary[
         api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} saved tracks", header=2)
+
         tracks = await api.tracks.saved.get_all()
         # noinspection PyProtectedMember
         self.tracks._replace(tracks)
@@ -206,7 +209,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - artists
     ###########################################################################
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "artist",
         False,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -218,14 +221,14 @@ class RemoteLibrary[
         api: HasArtistEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} saved artists", header=2)
-        artists = await api.artists.saved.get_all()
 
+        artists = await api.artists.saved.get_all()
         self.artists.clear()
         self.artists.extend(artists)
 
         return True
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "artist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -242,7 +245,9 @@ class RemoteLibrary[
         self.logger.info(f"Loading albums for {len(artists)} saved artists in {self._log_name} library", header=2)
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
-            albums = await api.artists.get_all(artist, show_bar=False)
+            async with self.concurrency:
+                albums = await api.artists.get_all(artist, show_bar=False)
+
             artist.albums.clear()
             artist.albums.extend(albums)
 
@@ -270,7 +275,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - albums
     ###########################################################################
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -282,14 +287,14 @@ class RemoteLibrary[
         api: HasAlbumEndpoints[HasSavedEndpoints[ReadSavedEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} saved albums", header=2)
-        albums = await api.albums.saved.get_all()
 
+        albums = await api.albums.saved.get_all()
         self.albums.clear()
         self.albums.extend(albums)
 
         return True
 
-    @HasAPI._validate_api(
+    @IsRemoteService._validate_api(
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -306,7 +311,8 @@ class RemoteLibrary[
         self.logger.info(f"Loading tracks for {len(albums)} saved albums in {self._log_name} library", header=2)
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
-            tracks = await api.albums.get_all(album, show_bar=False)
+            async with self.concurrency:
+                tracks = await api.albums.get_all(album, show_bar=False)
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 

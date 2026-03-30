@@ -1,4 +1,5 @@
 import os
+from asyncio import Semaphore
 from collections.abc import Generator
 from pathlib import Path
 from random import choice, sample
@@ -8,6 +9,7 @@ from unittest.mock import patch, Mock
 import pytest
 from faker import Faker
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 
 from musify.local.collection.library import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist
@@ -117,6 +119,10 @@ class TestLocalLibrary(NoUniqueKeyTester):
             yield mock_load
 
     @pytest.fixture
+    def mock_semaphore(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(Semaphore, "acquire")
+
+    @pytest.fixture
     def model(
             self,
             tracks: list[LocalTrack],
@@ -136,12 +142,12 @@ class TestLocalLibrary(NoUniqueKeyTester):
     def test_gets_all_track_paths(self, model: LocalLibrary, tracks: list[LocalTrack]):
         expected = {track.path for track in tracks}
         assert expected
-        assert set(model._iter_track_paths()) == expected
+        assert set(model._track_paths) == expected
 
     def test_gets_all_playlist_paths(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         expected = {pl.path for pl in playlists}
         assert expected
-        assert set(model._iter_playlist_paths()) == expected
+        assert set(model._playlist_paths) == expected
 
     def test_gets_filtered_playlist_paths(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         all_playlist_names = [pl.name for pl in playlists]
@@ -149,7 +155,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert names != all_playlist_names
 
         model.playlist_filter = ValuesFilter(values=names)
-        assert {path.stem for path in model._iter_playlist_paths()} == names
+        assert {path.stem for path in model._playlist_paths} == names
 
     @staticmethod
     def assert_tracks_loaded(model: LocalLibrary, tracks: list[LocalTrack], mock_load: Mock) -> None:
@@ -171,7 +177,8 @@ class TestLocalLibrary(NoUniqueKeyTester):
             tracks: list[LocalTrack],
             mock_load_track: Mock,
             playlists: list[LocalPlaylist],
-            mock_load_playlist: Mock
+            mock_load_playlist: Mock,
+            mock_semaphore: Mock,
     ):
         await model.load()
         self.assert_tracks_loaded(model, tracks, mock_load_track)
@@ -180,10 +187,12 @@ class TestLocalLibrary(NoUniqueKeyTester):
     ###########################################################################
     ## Tracks
     ###########################################################################
-    async def test_load_track_logs_error_safely(self, model: LocalLibrary, faker: Faker):
+    async def test_load_track(self, model: LocalLibrary, mock_semaphore: Mock, faker: Faker):
         path = faker.file_path(extension="m3u")
+
         await model.load_track(path)
         assert model.errors == [path]
+        mock_semaphore.assert_called_once()
 
     async def test_load_tracks(
             self, model: LocalLibrary, tracks: list[LocalTrack], mock_load_track: Mock,
@@ -198,10 +207,12 @@ class TestLocalLibrary(NoUniqueKeyTester):
     ###########################################################################
     ## Playlists
     ###########################################################################
-    async def test_load_playlist_logs_error_safely(self, model: LocalLibrary, faker: Faker):
+    async def test_load_playlist(self, model: LocalLibrary, mock_semaphore: Mock, faker: Faker):
         path = faker.file_path(extension="mp3")
+
         await model.load_playlist(path)
         assert model.errors == [path]
+        mock_semaphore.assert_called_once()
 
     async def test_load_playlists(
             self, model: LocalLibrary, playlists: list[LocalPlaylist], mock_load_playlist: Mock,

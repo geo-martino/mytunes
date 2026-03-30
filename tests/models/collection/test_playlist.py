@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture
 from musify import MODULE_ROOT
 from musify.models._context import RemoteModelContext
 from musify.models.api import RemoteAPI, WriteCollectionEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints
 # noinspection PyProtectedMember
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
@@ -179,9 +179,19 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         return [SimpleURI.from_id(i, kind=RemoteTrack.type) for i in range(faker.random_int(1, 10))]
 
     @pytest.fixture(autouse=True)
-    def mock_get_remote_uris(self, model: RemoteMutablePlaylist, uris: list[URI]) -> Generator[Mock, None, None]:
-        with patch.object(model, "_get_remote_uris", return_value=uris) as mock_get_uris:
-            yield mock_get_uris
+    def mock_get_playlist_items(
+            self, model: RemoteMutablePlaylist, uris: list[URI], faker: Faker
+    ) -> Generator[Mock, None, None]:
+        tracks = [RemoteTrack(uri=uri, name=faker.sentence()) for uri in uris]
+        with (
+            patch.object(
+                PlaylistReadWriteEndpoints, "get", return_value=model, new_callable=AsyncMock
+            ),
+            patch.object(
+                PlaylistReadWriteEndpoints, "get_all", return_value=tracks, new_callable=AsyncMock
+            ) as mock_get_all
+        ):
+            yield mock_get_all
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -207,7 +217,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             model: RemoteMutablePlaylist,
             tracks: list[RemoteTrack],
             api: HasPlaylistEndpoints,
-            mock_get_remote_uris: Mock,
+            mock_get_playlist_items: Mock,
             mock_get_sync_items: Mock,
             mock_add: Mock,
             mock_remove: Mock,
@@ -217,7 +227,8 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
 
         initial = [track.uri for track in tracks]
         add, remove, unchanged = mock_get_sync_items.return_value
-        remote = mock_get_remote_uris.return_value
+        remote = mock_get_playlist_items.return_value
+        remote_uris = [item.uri for item in remote]
         show_bar = faker.boolean()
 
         assert model.tracks == tracks
@@ -225,8 +236,8 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         result = await model.sync_items(api, kind=kind, dry_run=False, show_bar=show_bar)
         assert_sync_items_result(result, remote, add, remove, unchanged)
 
-        mock_get_remote_uris.assert_called_once_with(api, show_bar=show_bar)
-        mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote)
+        mock_get_playlist_items.assert_called_once_with(model, show_bar=show_bar)
+        mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
 
         mock_add.assert_called_once_with(model.uri.api_url, uris=add, show_bar=show_bar)
         mock_remove.assert_called_once_with(model.uri.api_url, uris=remove, show_bar=show_bar)
@@ -236,7 +247,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             model: RemoteMutablePlaylist,
             tracks: list[RemoteTrack],
             api: HasPlaylistEndpoints,
-            mock_get_remote_uris: Mock,
+            mock_get_playlist_items: Mock,
             mock_get_sync_items: Mock,
             mock_add: Mock,
             mock_remove: Mock,
@@ -246,7 +257,8 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
 
         initial = [track.uri for track in tracks]
         add, remove, unchanged = mock_get_sync_items.return_value
-        remote = mock_get_remote_uris.return_value
+        remote = mock_get_playlist_items.return_value
+        remote_uris = [item.uri for item in remote]
         show_bar = faker.boolean()
 
         assert model.tracks == tracks
@@ -254,8 +266,8 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         result = await model.sync_items(api, kind=kind, dry_run=True, show_bar=show_bar)
         assert_sync_items_result(result, remote, add, remove, unchanged)
 
-        mock_get_remote_uris.assert_called_once_with(api, show_bar=show_bar)
-        mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote)
+        mock_get_playlist_items.assert_called_once_with(model, show_bar=show_bar)
+        mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
 
         mock_add.assert_not_called()
         mock_remove.assert_not_called()

@@ -115,25 +115,24 @@ class DynamicProcessorMetaclass(ModelMetaclass):
             )
 
     @property
-    def processor_field_name(cls: type[DynamicProcessor]) -> str:
+    def processor_field_name(cls) -> str:
         """The processor method name to be used when calling this processor"""
         processor_fields = cls._get_processor_fields(cls._metadata_fields)
         return next(iter(processor_fields.keys()))
 
     @property
-    def processor_attribute(cls: type[DynamicProcessor]) -> ProcessorAttribute:
+    def processor_attribute(cls) -> ProcessorAttribute:
         """The processor attribute metadata on the processor field to be used when calling this processor"""
         processor_fields = cls._get_processor_fields(cls._metadata_fields)
         _, metadata = next(iter(processor_fields.values()))
         return next(iter(metadata))
 
-    def get_clean_processor_name(cls: type[DynamicProcessor], value: str | None) -> str:
+    def get_clean_processor_name(cls, value: str | None) -> str:
         """The processor attribute metadata on the processor field to be used when calling this processor"""
-        # noinspection PyUnresolvedReferences
         return cls.processor_attribute.cleaner(value) if value else None
 
     @property
-    def processor_required(cls: type[DynamicProcessor]) -> bool:
+    def processor_required(cls) -> bool:
         """The processor attribute metadata on the processor field to be used when calling this processor"""
         processor_fields = cls._get_processor_fields(cls._metadata_fields)
         annotation, _ = next(iter(processor_fields.values()))

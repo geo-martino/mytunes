@@ -45,7 +45,7 @@ class SpotifyTrackEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call
+    @_ApiURISchema.validate_call()
     async def get_audio_features(self, uri: SpotifyApiURI[SpotifyTrack]) -> SpotifyAudioFeatures:
         """Get the audio features for a given track"""
         url = API_URL.joinpath("audio-features", uri.id)
@@ -54,7 +54,7 @@ class SpotifyTrackEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def get_many_audio_features(
             self, uris: SpotifyApiURISequence[SpotifyTrack], limit: PositiveInt = 100
     ) -> list[SpotifyAudioFeatures]:
@@ -72,7 +72,7 @@ class SpotifyTrackEndpoints(
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call
+    @_ApiURISchema.validate_call()
     async def get_audio_analysis(self, uri: SpotifyApiURI[SpotifyTrack]) -> SpotifyAudioAnalysis:
         """Get the audio analysis for a given track"""
         url = API_URL.joinpath("audio-analysis", uri.id)

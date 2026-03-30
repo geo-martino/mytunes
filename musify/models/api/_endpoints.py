@@ -4,18 +4,18 @@ from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from contextlib import suppress
 from copy import copy
 from itertools import batched
-from typing import Any, ClassVar, Self, Type, Union
+from typing import Any, ClassVar, Self, Type, Union, cast
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
-    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
+    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices, ValidationError
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
 from musify.models import ResourceModel
-from musify.models._attribute import AttributeModelMetaclass
+from musify.models._attribute import AttributeMetaclass
 from musify.models._context import RemoteModelContext
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
@@ -27,15 +27,16 @@ from musify.models.remote import RemoteModel, RemoteResource
 from musify.utils import get_base_types
 
 
-class EndpointsMetaclass(AttributeModelMetaclass):
+class EndpointsMetaclass(AttributeMetaclass):
     def create_model[T: RemoteResource](
-            cls: type[Endpoints],
+            cls,
             value: Any,
             context: RemoteModelContext,
             kind: str | type[T] = None,
     ) -> T:
         """Create an instance of the resource type handled by this API model from the given value."""
-        if not cls.__final__:
+        kls = cast('type[Endpoints]', cls)
+        if not kls.__final__:
             raise APIModelError("Can only create resources from final API models.")
 
         if isinstance(kind, type) and issubclass(kind, RemoteResource) and kind.__final__:
@@ -43,20 +44,20 @@ class EndpointsMetaclass(AttributeModelMetaclass):
             return kind.model_validate(value, context=context)
 
         if kind is None:
-            kind = cls.type
+            kind = kls.type
 
         # noinspection PyTypeChecker
-        source_classes = [kls for kls in RemoteResource.registered_submodels if kls.source == cls.source]
+        source_classes = [klass for klass in RemoteResource.registered_submodels if klass.source == kls.source]
         if not source_classes:
-            raise APIModelError(f"No registered resource models found for source {cls.source!r}.")
+            raise APIModelError(f"No registered resource models found for source {kls.source!r}.")
 
         if isinstance(kind, str):
-            type_classes = [kls for kls in source_classes if kls.type == kind]
+            type_classes = [klass for klass in source_classes if klass.type == kind]
         else:
-            type_classes = [kls for kls in source_classes if issubclass(kls, kind)]
+            type_classes = [klass for klass in source_classes if issubclass(klass, kind)]
             kind = kind.__name__
         if not type_classes:
-            raise APIModelError(f"Could not find a registered {cls.source!r} model for type {kind!r}.")
+            raise APIModelError(f"Could not find a registered {kls.source!r} model for type {kind!r}.")
 
         return TypeAdapter(Union[*type_classes]).validate_python(value, context=context)
 
@@ -119,7 +120,8 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     @property
     def _model_context(self) -> RemoteModelContext:
-        return RemoteModelContext(user=self.user)
+        kind = self._get_type_value(self.type)
+        return RemoteModelContext(user=self.user, type=kind)
 
     async def __aenter__(self) -> Self:
         if self._handler.closed:
@@ -134,6 +136,12 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     def _batch_values(values: Iterable, limit: int) -> batched:
         """Batch the given values into sublists of the given size."""
         return itertools.batched(map(str, values), limit)
+
+    @classmethod
+    def create_uri(cls, value: Any) -> URI:
+        """Create a URI for the resource type handled by this API model from the given ID."""
+        context = RemoteModelContext(type=cls.type)
+        return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
     # noinspection PyArgumentList
     @validate_call
@@ -332,7 +340,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         if isinstance(response, Sequence) and all(isinstance(it, list) for it in response):  # flatten
             response = list(itertools.chain.from_iterable(response))
         return response
-    
+
     @staticmethod
     def _get_type_value(t: Any) -> str:
         match t:
@@ -349,7 +357,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call()
     async def get(self, url: ApiURL[UT, RT]) -> RT:
         """
         Get a resource from the API using the given ID, URL, URI, or resource.
@@ -377,7 +385,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def get_many(
             self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
     ) -> list[RT]:
@@ -477,8 +485,8 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
-    @_ApiURISchema.validate_call
+    @_ApiURLSchema.validate_call()
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
     ) -> int:
@@ -518,8 +526,8 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
-    @_ApiURISchema.validate_call
+    @_ApiURLSchema.validate_call()
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_and_skip_duplicates(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
     ) -> int:
@@ -540,8 +548,8 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
-    @_ApiURISchema.validate_call
+    @_ApiURLSchema.validate_call()
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
     ) -> int:
@@ -617,7 +625,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
@@ -654,7 +662,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
         """Remote items from the current user's saved items for this endpoint resource type."""
         item_type = self._get_type_value(self.type)

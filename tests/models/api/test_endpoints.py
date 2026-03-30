@@ -14,7 +14,7 @@ from musify.models._context import RemoteModelContext
 from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
 from musify.models.collection import RemoteCollection
-from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
+from musify.models.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from musify.models.exception import APIModelError
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist

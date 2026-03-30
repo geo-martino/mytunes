@@ -1,4 +1,5 @@
 from argparse import Namespace
+from asyncio import Semaphore
 from collections.abc import Generator
 from datetime import date
 from pathlib import Path
@@ -225,7 +226,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert model.comments == tags["comments"]
 
         assert model.source == uri.source
-        assert model.uris == [uri]
+        assert model.uris == {uri}
         assert model.uri == uri
 
         # only sets the first image of each image type
@@ -471,6 +472,10 @@ class TestLocalTrack(UniqueKeyTester):
         with patch.object(LocalTrack, "save") as mock_save:
             yield mock_save
 
+    @pytest.fixture
+    def mock_semaphore(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(Semaphore, "acquire")
+
     async def test_save_tracks_dry_run(
             self,
             tracks: list[LocalTrack],
@@ -481,6 +486,7 @@ class TestLocalTrack(UniqueKeyTester):
             mock_load: Mock,
             mock_update: tuple[Mock, list[dict[str, Any]]],
             mock_save: Mock,
+            mock_semaphore: Mock,
     ):
         model = HasLocalTracks(tracks=tracks)
         mock_update, expected = mock_update
@@ -492,6 +498,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(t in results.values() for t in expected)
 
         mock_save.assert_not_called()
+        assert mock_semaphore.call_count == len(tracks)
 
     async def test_save_tracks(
             self,
@@ -503,6 +510,7 @@ class TestLocalTrack(UniqueKeyTester):
             mock_load: Mock,
             mock_update: tuple[Mock, list[dict[str, Any]]],
             mock_save: Mock,
+            mock_semaphore: Mock,
     ):
         model = HasLocalTracks(tracks=tracks)
         mock_update, expected_tags = mock_update
@@ -514,6 +522,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(t in results.values() for t in expected_tags)
 
         assert mock_save.call_count == sum(1 for t in expected_tags if t)
+        assert mock_semaphore.call_count == len(tracks)
 
     def test_merge_tracks(
             self,

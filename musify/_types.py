@@ -26,6 +26,9 @@ type UpperSnakeCase = Annotated[
 type ListWithValues[T] = Annotated[list[T], MinLen(1)]
 
 
+
+
+
 def to_set(value: Any) -> set[Any] | None:
     """Converts a value to a set."""
     match value:

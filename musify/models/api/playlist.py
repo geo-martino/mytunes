@@ -76,14 +76,14 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUse
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call()
     async def follow(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Add an existing playlist to the current user's library."""
         await self._handler.put(url)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call()
     async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Modify details about a playlist in the current user's library."""
         if not kwargs:
@@ -93,7 +93,7 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUse
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call
+    @_ApiURLSchema.validate_call()
     async def delete(self, url: ApiURL[UT, RT]) -> None:
         """Delete the playlist from the current user's library."""
         await self._handler.delete(url)

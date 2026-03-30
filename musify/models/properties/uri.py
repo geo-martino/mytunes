@@ -2,19 +2,22 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Collection
-from functools import total_ordering
+from copy import copy
+from functools import total_ordering, cached_property
 from inspect import isabstract
-from typing import ClassVar, Self, Any, Annotated, TYPE_CHECKING
+from typing import ClassVar, Self, Any, Annotated, TYPE_CHECKING, cast, Union
 
-from propcache import cached_property
-from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, TypeAdapter
+# noinspection PyProtectedMember
+from pydantic.root_model import _RootModelMetaclass
+from pydantic_core.core_schema import ValidatorFunctionWrapHandler, ValidationInfo
 from yarl import URL
 
-from musify._types import StrippedString, to_list
+from musify._types import StrippedString, to_list, to_set
+from musify.exception import MusifyTypeError
 from musify.models import abstract_property, ResourceModel
 from musify.models._attribute import AttributeModel
-from musify.models._base import RootModel
+from musify.models._base import RootModel, ModelMetaclass, BaseModel
 from musify.models._metaclass import makecls
 from musify.models.exception import MusifyValidationError
 from musify.models.metadata import UniqueAttribute, Attribute
@@ -39,12 +42,15 @@ class URI(RootModel[str]):
         default="unavailable",
     )
 
-    def __new__(cls, *args, **kwargs):
-        if isabstract(cls):
-            raise MusifyValidationError(
-                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
-            )
-        return super().__new__(cls)
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_unavailable[T](cls, value: T, info: ValidationInfo) -> T | str:
+        from musify.models._context import RemoteModelContext  # avoid circular import
+
+        # create an unavailable URI is the value is None
+        if value is not None or not isinstance(context := info.context, RemoteModelContext) or not context.type:
+            return value
+        return cls.from_id(cls._unavailable_id, kind=context.type).root
 
     # noinspection PyNestedDecorators
     @model_validator(mode="after")
@@ -110,6 +116,22 @@ class URI(RootModel[str]):
         """Whether this URI relates to a resource which actually exists in the remote repository."""
         return self.id != self._unavailable_id
 
+    @classmethod
+    def get_adapter_for_source(cls, source: str) -> TypeAdapter[URI]:
+        """Generate a type adapter for the registered URI submodels of a given source."""
+        kls = cast('type[BaseModel]', cls)
+        if kls.__final__:
+            raise MusifyTypeError(
+                "Cannot get an adapter for a final model, must be called on a base class with registered submodels"
+            )
+
+        # noinspection PyTypeChecker
+        classes = [klass for klass in kls.registered_submodels if klass._source == source]
+        if not classes:
+            raise MusifyTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
+
+        return TypeAdapter(Union[*classes])
+
     def __str__(self) -> str:
         return str(self.root)
 
@@ -169,7 +191,7 @@ class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
 
 
 class HasImmutableURI[UT: URI](HasURI):
-    uri: Annotated[URI | None, UniqueAttribute()] = Field(
+    uri: Annotated[URI, UniqueAttribute()] = Field(
         description="The URI for this resource on the remote repository",
         frozen=True,
         default=None,
@@ -204,9 +226,9 @@ class HasMutableURI(HasURI):
         ),
         default=None,
     )
-    uris: Annotated[list[URI], BeforeValidator(to_list)] = Field(
-        description="A list of URIs that represent this resource.",
-        default_factory=list,
+    uris: Annotated[set[URI], BeforeValidator(to_set)] = Field(
+        description="A set of URIs that represent this resource.",
+        default_factory=set,
     )
 
     def __init__(self, **data):
@@ -220,9 +242,9 @@ class HasMutableURI(HasURI):
 
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
-        if self.source is None and len(set(uri.source for uri in self.uris)) == 1:
+        if self.source is None and len(set(source := uri.source for uri in self.uris)) == 1:
             # noinspection PyTypeChecker
-            self.source = self.uris[0].source
+            self.source = source
         return self
 
     # noinspection PyNestedDecorators
@@ -260,7 +282,7 @@ class HasMutableURI(HasURI):
         return next((uri for uri in self.uris if uri.source == self.source and uri.exists), None)
 
     @uri.setter
-    def uri(self, value: URI):
+    def uri(self, value: URI | None):
         if not isinstance(value, URI):
             raise MusifyValidationError("URI must be a URI instance")
 
@@ -269,13 +291,11 @@ class HasMutableURI(HasURI):
         elif value.source != self.source:
             raise MusifyValidationError(f"Cannot set URI from {value.source} to {self.source}")
 
-        for idx, existing in enumerate(self.uris):  # replace matching source URI in-place at same position
+        for existing in copy(self.uris):
             if existing.source == value.source:
                 self.uris.remove(existing)
-                self.uris.insert(idx, value)
-                return
 
-        self.uris.append(value)
+        self.uris.add(value)
         if hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 
@@ -284,8 +304,11 @@ class HasMutableURI(HasURI):
         if self.has_uri is None:
             return
 
-        idx = next(i for i, uri in enumerate(self.uris) if uri.source == self.source)
-        del self.uris[idx]
+        uri = self.uri
+        if uri is None:
+            uri = next(uri for uri in self.uris if uri.source == self.source)
+
+        self.uris.remove(uri)
         if hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 

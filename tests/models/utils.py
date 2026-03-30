@@ -14,7 +14,7 @@ from tests.utils import SimpleURI
 
 
 class MockRemoteResource(RemoteResource[SimpleURI]):
-    source: ClassVar[str] = "mock"
+    source: ClassVar[str] = "remote"
     type: ClassVar[str] = choice((
         RemoteTrack.type,
         RemoteAlbum.type,
