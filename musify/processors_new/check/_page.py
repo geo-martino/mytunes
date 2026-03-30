@@ -11,6 +11,7 @@ from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints
 from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints, PlaylistReadWriteEndpoints, HasPlaylistEndpoints
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
+from musify.models.cursors import InitialCursor
 from musify.models.exception import MusifyValidationError
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.name import HasName
@@ -163,7 +164,8 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             uris = [item.uri for item in collection.items if isinstance(item, HasURI) and item.has_uri]
             await api.add(playlist.uri.api_url, uris=uris, show_bar=False)
 
-            playlist.cursor.total = len(uris)  # should help force an extension
+            # should help force an extension
+            playlist.cursor = InitialCursor.from_url(playlist.cursor.url, source=playlist.source)
             await playlist.extend(self.api)  # refresh playlist items with just added URIs
 
             await api_saved.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
@@ -304,7 +306,8 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
                     await self._print_playlist_items(playlist)
 
                 case _:
-                    self.logger.warning(f"Unrecognised input: {option}. Enter 'h' for valid options.")
+                    message = f"Unrecognised input: {option}. Enter 'h' for valid options."
+                    self.logger.warning(colored(message, "red"))
 
     def _print_playlist_links(self):
         header = colored("Created playlists", "blue", attrs=["bold"])

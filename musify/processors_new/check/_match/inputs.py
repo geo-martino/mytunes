@@ -138,7 +138,8 @@ class InputMatch(CheckerMatch, InputProcessor):
                     break
 
                 case _:
-                    self.logger.warning(f"Unrecognised input: {option}. Enter 'h' for valid options.")
+                    message = f"Unrecognised input: {option}. Enter 'h' for valid options."
+                    self.logger.warning(colored(message, "red"))
 
             option = None
 
@@ -168,7 +169,8 @@ class InputMatch(CheckerMatch, InputProcessor):
             return True
 
         name = self.page.get_playlist_name(uri)
-        self.logger.warning(f"No match found for this item in the playlist: {name!r}")
+        message = f"No match found for this item in the playlist: {name!r}"
+        self.logger.warning(colored(message, "red"))
         return False
 
     @classmethod
