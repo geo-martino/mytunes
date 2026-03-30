@@ -302,6 +302,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
                 case name if (playlist := self._get_playlist_by_name(name)) is not None:
                     await self._print_playlist_items(playlist)
 
+                case _:
+                    self.logger.warning(f"Unrecognised input: {option}. Enter 'h' for valid options.")
+
     def _print_playlist_links(self):
         header = colored("Created playlists", "blue", attrs=["bold"])
         rows = (f"{playlist.name} - {playlist.uri.public_url}" for playlist in self._playlists.values())

@@ -138,9 +138,7 @@ class InputMatch(CheckerMatch, InputProcessor):
                     break
 
                 case _:
-                    self.logger.warning(
-                        f"Invalid URI/URL/ID for {self.page.source}, please try again or enter 'h' for options"
-                    )
+                    self.logger.warning(f"Unrecognised input: {option}. Enter 'h' for valid options.")
 
             option = None
 
