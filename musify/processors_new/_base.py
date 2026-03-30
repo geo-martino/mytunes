@@ -70,6 +70,10 @@ class InputProcessor(Processor, HasLogger):
         self.logger.debug(f"User input: {inp}")
         return inp
 
+    def _log_unrecognised_input(self, text: str, help_key: str = "h") -> None:
+        message = f"Unrecognised input: {text!r}. Enter {help_key!r} for valid options."
+        self.logger.warning(colored(message, "red"))
+
     @staticmethod
     def _format_help_text(options: Mapping[str, str], header: str | None = None) -> str:
         """Format help text with a given mapping of options. Add an option header to include before options."""

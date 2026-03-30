@@ -305,15 +305,14 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
                 case name if (playlist := self._get_playlist_by_name(name)) is not None:
                     await self._print_playlist_items(playlist)
 
-                case _:
-                    message = f"Unrecognised input: {option}. Enter 'h' for valid options."
-                    self.logger.warning(colored(message, "red"))
+                case opt:
+                    self._log_unrecognised_input(opt)
 
     def _print_playlist_links(self):
         header = colored("Created playlists", "blue", attrs=["bold"])
         rows = (f"{playlist.name} - {playlist.uri.public_url}" for playlist in self._playlists.values())
-        playlists = "\n".join(self.logger.generate_message(row, header=3) for row in rows)
-        self.logger.print_message(header + ":\n" + playlists + "\n")
+        rows = (self.logger.generate_message(row, header=3) for row in sorted(rows))
+        self.logger.print_message(header + ":\n" + "\n".join(rows) + "\n")
 
     def _get_playlist_by_name(self, name: str) -> RemoteMutablePlaylist | None:
         for playlist in self._playlists.values():

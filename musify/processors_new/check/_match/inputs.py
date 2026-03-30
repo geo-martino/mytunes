@@ -137,9 +137,8 @@ class InputMatch(CheckerMatch, InputProcessor):
                     item.uri = input_uri
                     break
 
-                case _:
-                    message = f"Unrecognised input: {option}. Enter 'h' for valid options."
-                    self.logger.warning(colored(message, "red"))
+                case opt:
+                    self._log_unrecognised_input(opt)
 
             option = None
 

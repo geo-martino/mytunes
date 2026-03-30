@@ -190,21 +190,21 @@ class ItemDownloadHelper(InputProcessor):
                     self._open_sites_for_items(queried, fields=self.fields)
 
                 # open sites for fields in input for all items
-                case inp if not inp.startswith("n ") and (
-                    filtered_fields := self._get_filtered_fields_from_input(inp, valid_fields=valid_fields)
+                case opt if not opt.startswith("n ") and (
+                    filtered_fields := self._get_filtered_fields_from_input(opt, valid_fields=valid_fields)
                 ):
                     self._open_sites_for_items(queried, fields=filtered_fields)
 
                 # open sites for fields in input but only for items which sites could not be opened for
-                case inp if inp.startswith("n ") and (
+                case opt if opt.startswith("n ") and (
                     filtered_fields := self._get_filtered_fields_from_input(
-                        inp.lstrip("n").strip(), valid_fields=valid_fields
+                        opt.lstrip("n").strip(), valid_fields=valid_fields
                     )
                 ):
                     self._open_sites_for_items(not_queried, fields=filtered_fields)
 
-                case inp:
-                    self.logger.warning(f"Unrecognised input: {inp}. Enter 'h' to see valid options.")
+                case opt:
+                    self._log_unrecognised_input(opt)
 
     def _format_help_text_for_pause_page(self, not_queried: int, valid_fields: Collection[str]) -> str:
         opened = len(self.urls) * (self.interval - not_queried)
