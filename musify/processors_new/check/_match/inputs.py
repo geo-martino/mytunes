@@ -66,6 +66,10 @@ class InputMatch(CheckerMatch, InputProcessor):
             "n": f"Leave item with no URI. ({PROGRAM_NAME} will still attempt to find this item at the next run)",
             "na": "Same as 'n' option but apply to all items in this playlist in addition to this item",
             "r": "Recheck playlist for all items in the collection",
+            "ra": (
+                "Same as 'r' option but also check for all other items in this playlist. "
+                "If a match for an item cannot be found, stop and prompt the user again."
+            ),
             "p": "Print all info for the current item",
             "s": "Skip checking process for all current playlists",
             "q": "Skip checking process for all current playlists and quit check",
@@ -103,19 +107,19 @@ class InputMatch(CheckerMatch, InputProcessor):
                     self.logger.print_message(info)
 
                 case "u":
-                    item.uri = self._create_uri(None, kind=item.type)
+                    self._set_unavailable_uri(item)
                     break
 
                 case "ua":
-                    item.uri = self._create_uri(None, kind=item.type)
+                    self._set_unavailable_uri(item)
                     return option
 
                 case "n":
-                    del item.uri
+                    self._drop_uri(item)
                     break
 
                 case "na":
-                    del item.uri
+                    self._drop_uri(item)
                     return option
 
                 case "r":
@@ -139,6 +143,15 @@ class InputMatch(CheckerMatch, InputProcessor):
                     )
 
             option = None
+
+    def _set_unavailable_uri(self, item: HasMutableURI) -> None:
+        item.uri = self._create_uri(None, kind=item.type)
+        messages = [f"Marking {item.type} as unavailable", f"URI={item.uri}"]
+        self._log_debug("INPUT", item, messages=messages, pad="<")
+
+    def _drop_uri(self, item: HasMutableURI) -> None:
+        del item.uri
+        self._log_debug("INPUT", item, messages=f"Marking {item.type} as missing", pad="<")
 
     def _create_uri(self, value: str | None, kind: str) -> URI | None:
         with suppress(ValidationError):
