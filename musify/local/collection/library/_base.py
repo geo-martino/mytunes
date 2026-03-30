@@ -394,12 +394,14 @@ class LocalLibrary(
             """Return path of a track relative to the library folders of this library"""
             for folder in self.library_folders:
                 if track.path.is_relative_to(folder):
+                    print("RELATIVE", folder, track.path.relative_to(folder))
                     return track.path.relative_to(folder).parent
 
             raise MusifyValueError(f"Track path is not relative to any library folders: {track.path}")
 
         groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
+            print("FOLDER", path, len(group))
             if not path.name:
                 continue
 
@@ -442,6 +444,7 @@ class LocalLibrary(
                 if artist.name.casefold() == name.casefold()
             )
             albums = sorted(self.albums(group), key=lambda album: album.name)
+            print("ARTIST ALBUM", len(albums), [a.name for a in albums])
             yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
     def genres(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalGenreCollection, None, None]:
