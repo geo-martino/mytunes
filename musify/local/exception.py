@@ -17,7 +17,7 @@ class FileError(MusifyError, OSError):
     :param message: Explanation of the error.
     """
     def __init__(self, path: str | Path | None = None, message: str | None = None):
-        self.path = Path(path)
+        self.path = Path(path) if path is not None else None
         self.message = message
         formatted = f"{path} | {message}" if path else message
         super().__init__(formatted)

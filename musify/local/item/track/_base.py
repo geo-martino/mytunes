@@ -150,7 +150,7 @@ class LocalTrack[FT: FileType](
                 return file
 
             if self.path is None:
-                raise FileError(self.path, "Path is not set and no loaded file was given, cannot load image.")
+                raise FileError(message="Path is not set and no loaded file was given, cannot load image.")
             return await LocalTrack.load_file(self.path)
 
         async def _get_tag_value(self, file: FT = None) -> Any:
