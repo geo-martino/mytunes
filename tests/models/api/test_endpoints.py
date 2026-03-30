@@ -1,9 +1,11 @@
 from collections.abc import Callable, Generator
 from copy import deepcopy
+from io import BytesIO
 from typing import Any, final, ClassVar
 from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
 import pytest
+from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import AliasPath, TypeAdapter, AliasChoices
@@ -19,6 +21,7 @@ from musify.models.exception import APIModelError
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.image import ImageURL, ImageFile
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
@@ -443,6 +446,74 @@ class TestEndpoints(EndpointsTester):
         for batch in batches[:-1]:
             assert len(batch) == 10
         assert len(batches[-1]) == len(uris) % 10 if len(uris) % 10 != 0 else 10
+
+    @pytest.fixture
+    def expected_image_data(self, image_object: PILImageFile.ImageFile) -> bytes:
+        data = BytesIO()
+        image_object.save(data, format=image_object.format)
+        return data.getvalue()
+
+    @pytest.fixture
+    def expected_image_mime(self, image_object: PILImageFile.ImageFile) -> str:
+        return Image.MIME[image_object.format]
+
+    async def test_get_image_data_from_bytes(
+            self,
+            model: Endpoints,
+            expected_image_data: bytes,
+            expected_image_mime: str,
+            faker: Faker,
+    ):
+        data, mime = await model._get_image_data(expected_image_data)
+        assert data == expected_image_data
+        assert mime == expected_image_mime
+
+    async def test_get_image_data_from_image_object(
+            self,
+            model: Endpoints,
+            image_object: PILImageFile.ImageFile,
+            expected_image_data: bytes,
+            expected_image_mime: str,
+            faker: Faker
+    ):
+        data, mime = await model._get_image_data(image_object)
+        assert data == expected_image_data
+        assert mime == expected_image_mime
+
+    async def test_get_image_data_from_image_url(
+            self,
+            model: Endpoints,
+            image_object: PILImageFile.ImageFile,
+            expected_image_data: bytes,
+            expected_image_mime: str,
+            faker: Faker,
+    ):
+        image_url = ImageURL(url=faker.url())
+
+        with patch.object(ImageURL, "load", return_value=image_object, new_callable=AsyncMock) as mock_load:
+            data, mime = await model._get_image_data(image_url)
+            mock_load.assert_called_once_with(model._handler.session)
+
+        assert data == expected_image_data
+        assert mime == expected_image_mime
+
+    async def test_get_image_data_from_image_file(
+            self,
+            model: Endpoints,
+            image_object: PILImageFile.ImageFile,
+            expected_image_data: bytes,
+            expected_image_mime: str,
+            faker: Faker,
+    ):
+        image_url = ImageFile(path=faker.file_path())
+
+        with patch.object(ImageFile, "load", return_value=image_object, new_callable=AsyncMock) as mock_load:
+            data, mime = await model._get_image_data(image_url)
+            mock_load.assert_called_once()
+
+        assert data == expected_image_data
+        assert mime == expected_image_mime
+
 
 
 class TestReadItemEndpoints(EndpointsTester):

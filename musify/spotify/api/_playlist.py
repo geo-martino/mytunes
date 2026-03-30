@@ -1,8 +1,10 @@
 from collections.abc import Iterable
+from io import BytesIO
 from typing import ClassVar, final
 
 from aiorequestful.response.exception import ResponseError
 from aiorequestful.types import JSON
+from PIL import Image, ImageFile as PILImageFile
 from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
 from yarl import URL
 
@@ -12,6 +14,7 @@ from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadW
 from musify.models.api.types import _ApiURISchema, _ApiURLSchema
 from musify.models.cursors import PageCursor, HasPageCursor
 from musify.models.exception import RequestError
+from musify.models.properties.image import ImageSource, PILImageFileT, ImageURL
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence
@@ -66,9 +69,31 @@ class _SpotifySavedPlaylistEndpoints(
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
     @_ApiURLSchema.validate_call()
-    async def modify(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
-        body = self._format_playlist_body(**kwargs)
-        return await super().modify(**body)
+    async def modify(
+            self,
+            url: SpotifyApiURL[SpotifyPlaylist],
+            image: bytes | ImageSource | PILImageFileT | None = None,
+            **kwargs
+    ) -> None:
+        if kwargs:
+            body = self._format_playlist_body(**kwargs)
+            await super().modify(**body)
+
+        if image is not None:
+            await self._modify_image(url, image=image)
+
+    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
+    # https://github.com/pydantic/pydantic/issues/7796
+    @_ApiURLSchema.validate_call()
+    async def _modify_image(
+            self, url: SpotifyApiURL[SpotifyPlaylist], image: bytes | ImageSource | PILImageFileT
+    ) -> None:
+        """Replace the image used to represent a specific playlist."""
+        data, mime = await self._get_image_data(image)
+        if not url.path.endswith("/images"):
+            url = url.joinpath("images")
+
+        await self._handler.put(url, data=data, headers={"Content-Type": mime})
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796

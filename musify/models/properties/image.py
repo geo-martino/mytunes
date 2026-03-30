@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+import os
 from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
 from http import HTTPMethod
-from inspect import isabstract
 from io import BytesIO
 from pathlib import Path
-from typing import Self, ClassVar, Any, Annotated
+from typing import Self, ClassVar, Any, Annotated, IO
 
 import aiofiles
 import aiohttp
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, PositiveInt, field_validator, model_validator
+from pydantic import Field, PositiveInt, field_validator, model_validator, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.functional_validators import ModelWrapValidatorHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema, core_schema
 
 from musify._types import StrippedString, UpperSnakeCase
 from musify.models._attribute import AttributeModel
@@ -24,11 +26,66 @@ from musify.models.properties.file import IsLocalFile
 from musify.models.url import HttpURL
 
 
+class _ImageFileSchema:
+    # noinspection PyUnusedLocal
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        cast_path_schema = core_schema.chain_schema(
+            [
+                core_schema.no_info_plain_validator_function(cls._validate_path),
+                core_schema.no_info_plain_validator_function(cls._construct),
+            ]
+        )
+        python_schema = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(PILImageFile.ImageFile),
+                cast_path_schema,
+            ]
+        )
+
+        # noinspection PyProtectedMember
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.str_schema(),
+            python_schema=python_schema,
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x.filename, when_used="json")
+        )
+
+    @staticmethod
+    def _validate_path(path: str | os.PathLike) -> Path:
+        if not isinstance(path, (str, os.PathLike)):
+            raise MusifyValidationError("Value is not path like")
+
+        path = Path(path)
+        if not path.is_file():
+            raise MusifyValidationError(f"{str(path)!r} is not a file")
+        return path
+
+    @staticmethod
+    def _construct(value: Any) -> PILImageFile.ImageFile:
+        match value:
+            case str() | Path():
+                return PILImageFile.ImageFile(value)
+            case bytes() | IO():
+                return PILImageFile.ImageFile(value)
+            case _:
+                raise MusifyValidationError(f"Unrecognized value type: {value}")
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.str_schema())
+
+
+PILImageFileT = Annotated[PILImageFile.ImageFile, _ImageFileSchema]
+
+
 class ImageBase(BaseModel):
     """Represents an image."""
     # noinspection PyTypeChecker
     __type_map: ClassVar[Mapping[str, mutagen.id3.PictureType]] = {
         name: enum for name, enum in vars(mutagen.id3.PictureType).items()
+        if isinstance(enum, mutagen.id3.PictureType)
         if isinstance(enum, mutagen.id3.PictureType)
     }
 
@@ -62,7 +119,7 @@ class ImageBase(BaseModel):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
-    def _from_image_data(cls, image: PILImageFile.ImageFile, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _from_image_data(cls, image: PILImageFileT, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(image, PILImageFile.ImageFile):
             return handler(image)
 
@@ -108,7 +165,7 @@ class ImageBase(BaseModel):
             )
         return value
 
-    def update_attributes(self, image: PILImageFile.ImageFile) -> None:
+    def update_attributes(self, image: PILImageFileT) -> None:
         """Update the image attributes based on the loaded image."""
         self.mime = Image.MIME[image.format]
         self.height = image.height
@@ -130,7 +187,7 @@ class ImageBase(BaseModel):
 # noinspection PyAbstractClass
 class ImageSource(ImageBase):
     @abstractmethod
-    async def load(self, **kwargs) -> PILImageFile.ImageFile:
+    async def load(self, **kwargs) -> PILImageFileT:
         """Load the image."""
         raise NotImplementedError
 
@@ -147,7 +204,7 @@ class ImageFile(ImageSource, IsLocalFile):
             return super().__eq__(other)
         return self.path == other.path and self.type == other.type
 
-    async def load(self) -> PILImageFile.ImageFile:
+    async def load(self) -> PILImageFileT:
         # TODO: improve async performance?
         async with aiofiles.open(self.path, mode='rb') as file:
             img = Image.open(BytesIO(await file.read()))
@@ -186,14 +243,14 @@ class ImageURL(ImageSource):
             return super().__eq__(other)
         return self.url == other.url and self.type == other.type
 
-    async def load(self, session: aiohttp.ClientSession = None, **__) -> PILImageFile.ImageFile:
+    async def load(self, session: aiohttp.ClientSession = None, **__) -> PILImageFileT:
         """Load the image from the URL."""
         close_session = False
         if session is None:
             close_session = True
             session = aiohttp.ClientSession()
 
-        async with session.request(method=HTTPMethod.GET, url=self.url) as response:
+        async with session.get(self.url) as response:
             image_bytes = await response.read()
 
         if close_session:
@@ -224,9 +281,9 @@ class HasImages(AttributeModel):
         default_type = ImageBase.model_fields["type"].default
         return {image.get("type", default_type): image for image in images}
 
-    async def load_images(self, update_attributes: bool = True, **kwargs) -> dict[str, PILImageFile.ImageFile]:
+    async def load_images(self, update_attributes: bool = True, **kwargs) -> dict[str, PILImageFileT]:
         """Return the stored images, loading any images from the URLs if available."""
-        images: dict[str, PILImageFile.ImageFile] = {}
+        images: dict[str, PILImageFileT] = {}
         for kind, image in self.images.items():
             img = await image.load(**kwargs)
             images[kind] = img

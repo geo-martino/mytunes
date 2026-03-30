@@ -34,7 +34,7 @@ from musify.models.properties.asynch import HasAsyncOperations, SemaphoreT
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from musify.models.properties.image import FileEmbeddedImage, ImageSource
+from musify.models.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
@@ -52,7 +52,7 @@ class TagContext(BaseModel):
         default="comments",
         validation_alias=AliasChoices("field", "tag"),
     )
-    loaded_images: Mapping[str, InstanceOf[PILImageFile.ImageFile]] = Field(
+    loaded_images: Mapping[str, PILImageFileT] = Field(
         description="The image properties and their loaded images.",
         default_factory=dict,
         validation_alias="images",

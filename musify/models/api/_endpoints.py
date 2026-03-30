@@ -3,9 +3,11 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from contextlib import suppress
 from copy import copy
+from io import BytesIO
 from itertools import batched
 from typing import Any, ClassVar, Self, Type, Union, cast
 
+from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
@@ -21,6 +23,7 @@ from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURI
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from musify.models.exception import APIModelError, RequestError, CursorResponseError, MusifyValidationError
+from musify.models.properties.image import ImageSource, PILImageFileT, ImageURL
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI, HasURI
 from musify.models.remote import RemoteModel, RemoteResource
@@ -352,6 +355,30 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 return t.type.rstrip("s")
             case _:
                 return "item"
+
+    async def _get_image_data(self, image: bytes | ImageSource | PILImageFileT) -> tuple[bytes, str]:
+        data = None
+
+        match image:
+            case ImageURL() as img:
+                img = await img.load(self._handler.session)
+            case ImageSource() as img:
+                img = await img.load()
+            case PILImageFile.ImageFile() as img:
+                img = img
+            case bytes() as value:
+                data = value
+                img = Image.open(BytesIO(data))
+            case _:
+                raise RequestError("Unknown image format.")
+
+        mime = Image.MIME[img.format]
+        if data is None:
+            data = BytesIO()
+            img.save(data, format=img.format)
+            data = data.getvalue()
+
+        return data, mime
 
 
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
