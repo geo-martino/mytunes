@@ -57,14 +57,15 @@ class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
         self._log_start(collections)
 
         total = len(collections)
+        page_total = math.ceil(total / self.interval)
         bar = self.logger.get_synchronous_iterator(
             iter(collections), total=total, desc="Creating playlists", unit="playlists"
         )
 
         results: dict[str, CheckResult[T]] = {}
-        for n in range(1, math.ceil(total / self.interval) + 1):
+        for n in range(1, page_total + 1):
             try:
-                results |= await self._check_page(bar, n=n, total=total)
+                results |= await self._check_page(bar, n=n, total=page_total)
             except KeyboardInterrupt:
                 self.logger.error("User triggered exit with KeyboardInterrupt")
                 break
