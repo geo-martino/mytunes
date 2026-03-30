@@ -401,12 +401,10 @@ class LocalLibrary(
 
         groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
-            group = list(group)
-            print("FOLDER", path, len(group))
             if not path.name:
                 continue
 
-            tracks = sorted(tracks, key=lambda track: track.filename)
+            group = sorted(group, key=lambda track: track.filename)
             yield Folder(name=path.name, tracks=group)
 
     def albums(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalAlbumCollection, None, None]:
@@ -425,8 +423,8 @@ class LocalLibrary(
                 track.album for track in group
                 if track.album and track.album.name.casefold() == name.casefold()
             )
-            tracks = sorted(tracks, key=lambda track: track.track or 0)
-            yield LocalAlbumCollection(**album.model_dump(), tracks=tracks)
+            group = sorted(group, key=lambda track: track.track or 0)
+            yield LocalAlbumCollection(**album.model_dump(), tracks=group)
 
     def artists(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalArtistCollection, None, None]:
         """Dynamically generate a set of artist collections from the tracks in this library"""
@@ -446,6 +444,8 @@ class LocalLibrary(
             )
             albums = sorted(self.albums(group), key=lambda album: album.name)
             print("ARTIST ALBUM", len(albums), [a.name for a in albums])
+            for album in albums:
+                print("HMM", album.artists)
             yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
     def genres(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalGenreCollection, None, None]:
@@ -464,5 +464,5 @@ class LocalLibrary(
                 genre for track in group for genre in track.genres
                 if genre.name.casefold() == name.casefold()
             )
-            tracks = sorted(tracks, key=lambda track: track.track or 0)
-            yield LocalGenreCollection(**genre.model_dump(), tracks=tracks)
+            group = sorted(group, key=lambda track: track.track or 0)
+            yield LocalGenreCollection(**genre.model_dump(), tracks=group)
