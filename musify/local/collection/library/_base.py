@@ -371,17 +371,6 @@ class LocalLibrary(
         )
         return dict(await bar)
 
-    def _log_save_tracks_header(self) -> None:
-        message = f"Saving {len(self.playlists)} playlists in {self.source} {self.type}"
-
-        match self:
-            case HasName() as named:
-                message += f": {named.name!r}"
-            case Library() as library if isinstance(library.source, str):
-                message += f": {library.source!r}"
-
-        self.logger.info(message, header=2)
-
     ###########################################################################
     ## Collections
     ###########################################################################
@@ -414,10 +403,14 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.album.name if track.album else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="album")
         for name, group in grouped.items():
+            print("ALBUM", name, len(group))
             if name is None:
                 continue
 
-            album = next(track.album for track in group if track.album and track.album.name.casefold() == name)
+            album = next(
+                track.album for track in group
+                if track.album and track.album.name.casefold() == name.casefold()
+            )
             tracks = sorted(tracks, key=lambda track: track.track or 0)
             yield LocalAlbumCollection(**album.model_dump(), tracks=tracks)
 
@@ -429,10 +422,14 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.artists[0].name if track.artists else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="artists")
         for name, group in grouped.items():
+            print("ARTIST", name, len(group))
             if name is None:
                 continue
 
-            artist = next(artist for track in group for artist in track.artists if artist.name.casefold() == name)
+            artist = next(
+                artist for track in group for artist in track.artists
+                if artist.name.casefold() == name.casefold()
+            )
             albums = sorted(self.albums(group), key=lambda album: album.name)
             yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
@@ -444,9 +441,13 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.genre)
         grouped = ItemSorter.group_by_field(items=tracks, field="genres")
         for name, group in grouped.items():
+            print("GENRE", name, len(group))
             if name is None:
                 continue
 
-            genre = next(genre for track in group for genre in track.genres if genre.name.casefold() == name)
+            genre = next(
+                genre for track in group for genre in track.genres
+                if genre.name.casefold() == name.casefold()
+            )
             tracks = sorted(tracks, key=lambda track: track.track or 0)
             yield LocalGenreCollection(**genre.model_dump(), tracks=tracks)
