@@ -400,7 +400,7 @@ class LocalLibrary(
 
         groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
-            if not path:
+            if not path.name:
                 continue
 
             tracks = sorted(tracks, key=lambda track: track.filename)
