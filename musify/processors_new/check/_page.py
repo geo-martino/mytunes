@@ -180,23 +180,23 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         self.logger.extra(message, header=3)
 
         await self.logger.get_asynchronous_iterator(
-            map(self._teardown_playlist, self._playlists_initial.values()),
+            map(self._teardown_playlist, self._playlists.values()),
             desc="Restoring/deleting",
             unit="playlists",
-            total=len(self._playlists_initial),
+            total=len(self._playlists),
         )
 
     async def _teardown_playlist(self, playlist: RemoteMutablePlaylist) -> None:
+        initial = self._playlists_initial[playlist.uri]
         async with self.concurrency:
-            if playlist.count != 0:
+            if initial.count != 0:
                 # playlist existed before the check and should be returned to its original state
-                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
+                await initial.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
             else:
-                # otherwise, assume playlist was created by the checker and can be deleted directly
-                api: PlaylistReadWriteEndpoints = self.api.playlists
-                uris = [it.uri for it in self._playlists[playlist.uri].items]
-                await api.remove(playlist.uri.api_url, uris=uris, show_bar=False)
+                # assume playlist was created by the checker and can be deleted directly
+                playlist.tracks.clear()
+                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
                 api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
                 await api.delete(playlist.uri.api_url)
