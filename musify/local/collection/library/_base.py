@@ -33,7 +33,7 @@ from musify.utils import afilter
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     """Stores the results of the URIs on loaded tracks in a local library."""
-    source: str = Field(
+    source: str | None = Field(
         description="The remote library source these URIs are associated with.",
     )
     available: Annotated[
@@ -80,25 +80,31 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     )
 
     @classmethod
-    def from_tracks(cls, source: str, tracks: Iterable[T]) -> Self:
+    def from_tracks(cls, tracks: Iterable[T], source: str | None = None) -> Self:
         """Create a result from the given tracks."""
         return cls(
             source=source,
-            available=filter(lambda x: cls._is_available(source, x), tracks),
-            missing=filter(lambda x: cls._is_missing(source, x), tracks),
-            unavailable=filter(lambda x: cls._is_unavailable(source, x), tracks),
+            available=filter(lambda x: cls._is_available(x, source), tracks),
+            missing=filter(lambda x: cls._is_missing(x, source), tracks),
+            unavailable=filter(lambda x: cls._is_unavailable(x, source), tracks),
         )
 
     @staticmethod
-    def _is_available(source: str, track: T) -> bool:
+    def _is_available(track: T, source: str | None = None) -> bool:
+        if source is None:
+            return track.has_uri is True
         return any(uri.source == source and uri.exists for uri in track.uris)
 
     @staticmethod
-    def _is_missing(source: str, track: T) -> bool:
+    def _is_missing(track: T, source: str | None = None) -> bool:
+        if source is None:
+            return track.has_uri is None
         return all(uri.source != source for uri in track.uris)
 
     @staticmethod
-    def _is_unavailable(source: str, track: T) -> bool:
+    def _is_unavailable(track: T, source: str | None = None) -> bool:
+        if source is None:
+            return track.has_uri is False
         return any(uri.source == source and not uri.exists for uri in track.uris)
 
 
@@ -252,7 +258,8 @@ class LocalLibrary(
         self.logger.stat(table)
 
     def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
-        return LibraryURIsResult.from_tracks(self.source, self.tracks)
+        source = self.tracks_load_settings.remote_source
+        return LibraryURIsResult.from_tracks(self.tracks, source=source)
 
     ###########################################################################
     ## Playlists
@@ -344,8 +351,9 @@ class LocalLibrary(
         self.logger.stat(table)
 
     def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
+        source = self.tracks_load_settings.remote_source
         return {
-            name: LibraryURIsResult.from_tracks(self.source, playlist.tracks)
+            name: LibraryURIsResult.from_tracks(playlist.tracks, source=source)
             for name, playlist in self.playlists.items()
         }
 
