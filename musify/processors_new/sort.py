@@ -20,7 +20,7 @@ from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.processors_new._base import Processor
-from musify.utils import flatten_nested, strip_ignore_words, IGNORE_WORDS_DEFAULT
+from musify.utils import flatten_nested, strip_ignore_words
 
 _SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,
@@ -85,7 +85,7 @@ class ItemSorter(Processor):
     )
     ignore_words: set[str] | Sequence[str] = Field(
         description="The words to ignore at the beginning of a string when sorting string values.",
-        default=IGNORE_WORDS_DEFAULT,
+        default={"The", "A"},
     )
 
     @field_validator("sort_fields", mode="before", check_fields=True)
@@ -109,7 +109,7 @@ class ItemSorter(Processor):
             items: MutableSequence[ResourceModel],
             field: _SORT_FIELDS_TYPE | None = None,
             reverse: bool = False,
-            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
+            ignore_words: Iterable[str] = ()
     ) -> None:
         """
         Sort items by the values of a given field.
@@ -160,7 +160,7 @@ class ItemSorter(Processor):
             cls,
             items: Collection[T],
             field: _SORT_FIELDS_TYPE,
-            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT,
+            ignore_words: Iterable[str] = (),
     ) -> dict[Any, list[T]]:
         """
         Group items by the values of a given field.
@@ -178,7 +178,8 @@ class ItemSorter(Processor):
                 case str() | HasName():
                     if isinstance(val, HasName):
                         val = val.name
-                    _, _, val = strip_ignore_words(val, words=ignore_words, strip_special_chars=False)
+                    if ignore_words:
+                        _, _, val = strip_ignore_words(val, words=ignore_words, strip_special_chars=False)
                     val = val.casefold()
                 case _:
                     pass

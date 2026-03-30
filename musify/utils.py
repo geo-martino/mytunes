@@ -9,16 +9,12 @@ from typing import Any, TypeVar, get_args, TypeAliasType, ForwardRef, Union, Asy
 from typing_extensions import get_origin, evaluate_forward_ref
 from typing_inspection.typing_objects import is_annotated
 
+
 ###########################################################################
 ## String
 ###########################################################################
-IGNORE_WORDS_DEFAULT = frozenset({"The", "A"})
-
-
 def strip_ignore_words(
-        value: str,
-        words: Iterable[str] | None = IGNORE_WORDS_DEFAULT,
-        strip_special_chars: bool = True,
+        value: str, words: Iterable[str] | None = (), strip_special_chars: bool = True,
 ) -> tuple[bool, bool, str]:
     """
     Remove ignorable words from the beginning of a string.
