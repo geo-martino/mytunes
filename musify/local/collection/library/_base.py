@@ -445,7 +445,8 @@ class LocalLibrary(
             albums = sorted(self.albums(group), key=lambda album: album.name)
             print("ARTIST ALBUM", len(albums), [a.name for a in albums])
             for album in albums:
-                print("HMM", album.artists)
+                if not any(artist.name == a.name for a in album.artists):
+                    album.artists.append(artist)
             yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
     def genres(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalGenreCollection, None, None]:
