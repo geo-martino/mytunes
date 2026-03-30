@@ -401,6 +401,7 @@ class LocalLibrary(
 
         groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
+            group = list(group)
             print("FOLDER", path, len(group))
             if not path.name:
                 continue
