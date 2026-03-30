@@ -10,7 +10,7 @@ from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoi
 from musify.models.exception import RequestError
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
-from musify.processors_new.clean.string import NameCleaner
+from musify.processors.clean.string import NameCleaner
 
 
 # noinspection PyAbstractClass

@@ -26,8 +26,8 @@ from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
 from musify.models.properties.uri import URI
 from musify.models.result import TotalCountResult, LenLogFormatter, Result
-from musify.processors_new.filters import Filter, ValuesFilter
-from musify.processors_new.sort import ItemSorter
+from musify.processors.filters import Filter, ValuesFilter
+from musify.processors.sort import ItemSorter
 from musify.utils import afilter
 
 

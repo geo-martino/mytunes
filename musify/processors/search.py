@@ -1,339 +1,463 @@
-"""
-Processor operations that search for and match given items with remote items.
+import textwrap
+from collections.abc import Sequence, MutableSequence, Collection, Mapping, Iterable
+from typing import Self, Any, Annotated
 
-Searches for matches on remote APIs, matches the item to the best matching result from the query,
-and assigns the ID of the matched object back to the item.
-"""
-import logging
-from collections.abc import Mapping, Sequence, Iterable, Collection, Awaitable
-from dataclasses import dataclass, field
-from typing import Any, Self
+from pydantic import Field, validate_call, model_validator, field_validator
+from termcolor import colored
 
-from aiorequestful.types import UnitIterable
-
-from musify.base import MusifyObject, MusifyItemSettable, Result
-from musify.exception import MusifyAttributeError
-from musify.field import TagField, TagFields as Tag
-from musify.libraries.core.collection import MusifyCollection
-from musify.libraries.remote.core.api import RemoteAPI
-from musify.libraries.remote.core.factory import RemoteObjectFactory
-from musify.libraries.remote.core.types import RemoteObjectType
-from musify.logger import MusifyLogger
-from musify.logger import REPORT
-from musify.processors.base import Processor
-from musify.processors.match import ItemMatcher
-from musify.utils import align_string, get_max_width
+from musify.models import ResourceModel
+from musify.models.api import RemoteAPI, IsRemoteService
+from musify.models.api.search import HasSearchEndpoints
+from musify.models.collection import CollectionModel, RemoteCollection
+from musify.models.collection.album import AlbumCollection
+from musify.models.exception import MusifyValidationError
+from musify.models.properties.asynch import HasAsyncOperations
+from musify.models.properties.file import IsFile, IsLocalFile
+from musify.models.properties.name import HasName
+from musify.models.properties.uri import HasURI
+from musify.models.remote import RemoteResource
+from musify.models.result import TotalCountResult, LenLogFormatter
+from musify.processors import Processor
+from musify.processors.match import Matcher
 
 
-@dataclass(frozen=True)
-class ItemSearchResult[T: MusifyItemSettable](Result):
+class SearchResult[T: Any](TotalCountResult):
     """Stores the results of the searching process."""
-    #: Sequence of Items for which matches were found from the search.
-    matched: Sequence[T] = field(default=tuple())
-    #: Sequence of Items for which matches were not found from the search.
-    unmatched: Sequence[T] = field(default=tuple())
-    #: Sequence of Items which were skipped during the search.
-    skipped: Sequence[T] = field(default=tuple())
-
-
-@dataclass(frozen=True)
-class SearchConfig:
-    """Key settings related to a search algorithm."""
-    #: The fields to match results on.
-    match_fields: TagField | Iterable[TagField]
-    #: A sequence of the tag names to use as search fields in the 1st pass.
-    search_fields_1: Sequence[TagField] = (Tag.NAME,)
-    #: If no results are found from the tag names in ``search_fields_1`` on the 1st pass,
-    #: an optional sequence of the tag names to use as search fields in the 2nd pass.
-    search_fields_2: Iterable[TagField] = ()
-    #: If no results are found from the tag names in ``search_fields_2`` on the 2nd pass,
-    #: an optional sequence of the tag names to use as search fields in the 3rd pass.
-    search_fields_3: Iterable[TagField] = ()
-
-    #: The number of the results to request when querying the API.
-    result_count: int = 10
-    #: The minimum acceptable score for an item to be considered a match.
-    min_score: float = 0.1
-    #: The maximum score for an item to be considered a perfect match.
-    #: After this score is reached by an item, any other items are disregarded as potential matches.
-    max_score: float = 0.8
-    #: When True, items determined to be karaoke are allowed when matching added items.
-    #: Skip karaoke results otherwise.
-    allow_karaoke: bool = False
-
-
-class RemoteItemSearcher(Processor):
-    """
-    Searches for remote matches for a list of item collections.
-
-    :param matcher: The :py:class:`ItemMatcher` to use when comparing any changes made by the user in remote playlists
-        during the checking operation
-    :param object_factory: The :py:class:`RemoteObjectFactory` to use when creating new remote objects.
-        This must have a :py:class:`RemoteAPI` assigned for this processor to work as expected.
-    """
-
-    __slots__ = ("logger", "matcher", "factory")
-
-    #: The :py:class:`SearchSettings` for each :py:class:`RemoteObjectType`
-    search_settings: dict[RemoteObjectType, SearchConfig] = {
-        RemoteObjectType.TRACK: SearchConfig(
-            match_fields={Tag.TITLE, Tag.ARTIST, Tag.ALBUM, Tag.LENGTH},
-            search_fields_1=[Tag.NAME, Tag.ARTIST],
-            search_fields_2=[Tag.NAME, Tag.ALBUM],
-            search_fields_3=[Tag.NAME],
-            result_count=10,
-            min_score=0.1,
-            max_score=0.8,
-            allow_karaoke=False,
+    matches: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(condition=lambda x: False),  # never log this attribute
+    ] = Field(
+        description=(
+            "The matches from the API that were found in the search. This will match the items in the `matched` "
+            "attribute so that the corresponding items can be easily mapped together."
         ),
-        RemoteObjectType.ALBUM: SearchConfig(
-            match_fields={Tag.ARTIST, Tag.ALBUM, Tag.LENGTH},
-            search_fields_1=[Tag.NAME, Tag.ARTIST],
-            search_fields_2=[Tag.NAME],
-            result_count=5,
-            min_score=0.1,
-            max_score=0.7,
-            allow_karaoke=False,
-        )
-    }
+        default_factory=tuple
+    )
+    matched: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
+    ] = Field(
+        description=(
+            "The given items which were matched during the search. This will match the items in the `matches` "
+            "attribute so that the corresponding items can be easily mapped together."
+        ),
+        default_factory=tuple
+    )
+    unmatched: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
+    ] = Field(
+        description="The items for which matches were not found from the search.",
+        default_factory=tuple
+    )
+    skipped: Annotated[
+        tuple[T, ...],
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
+    ] = Field(
+        description="The items which were skipped during the search.",
+        default_factory=tuple
+    )
 
-    @property
-    def api(self) -> RemoteAPI:
-        """The :py:class:`RemoteAPI` to call"""
-        return self.factory.api
-
-    def __init__(self, matcher: ItemMatcher, object_factory: RemoteObjectFactory):
-        # noinspection PyTypeChecker
-        #: The :py:class:`MusifyLogger` for this  object
-        self.logger: MusifyLogger = logging.getLogger(__name__)
-
-        #: The :py:class:`ItemMatcher` to use when comparing any changes made by the user in remote playlists
-        #: during the checking operation
-        self.matcher = matcher
-        #: The :py:class:`RemoteObjectFactory` to use when creating new remote objects.
-        self.factory = object_factory
-
-    async def __aenter__(self) -> Self:
-        await self.api.__aenter__()
+    @model_validator(mode="after")
+    def _validate_matches_are_equal(self) -> Self:
+        if len(self.matches) != len(self.matched):
+            raise MusifyValidationError("The number of matches must be equal to the number of matched items.")
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.api.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def _get_results(
-            self, item: MusifyObject, kind: RemoteObjectType, settings: SearchConfig
-    ) -> list[dict[str, Any]] | None:
-        """Query the API to get results for the current item based on algorithm settings"""
-        self.matcher.clean_tags(item)
+type _ApiT = RemoteAPI | HasSearchEndpoints
 
-        async def execute_query(keys: Iterable[TagField]) -> tuple[list[dict[str, Any]], str]:
-            """Generate and execute the query against the API for the given item's cleaned ``keys``"""
-            attributes = [item.clean_tags.get(key) for key in keys]
-            q = " ".join(str(attr) for attr in attributes if attr)
-            return await self.api.query(q, kind=kind, limit=settings.result_count), q
 
-        results, query = await execute_query(settings.search_fields_1)
-        if not results and settings.search_fields_2:
-            results, query = await execute_query(settings.search_fields_2)
-        if not results and settings.search_fields_3:
-            results, query = await execute_query(settings.search_fields_3)
+class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
+    api: API = Field(
+        description="The API to use when searching for matches.",
+    )
+    matcher: Matcher | None = Field(
+        description="The matcher to use for confirming closest matches returned by the API",
+        default=None,
+    )
 
-        if results:
-            self.matcher.log([item.name, f"Query: {query}", f"{len(results)} results"])
-            return results
-        self.matcher.log([item.name, f"Query: {query}", "Match failed: No results."], pad="<")
+    skip_if_has_uri: bool = Field(
+        description="Skip searching for matches if the item already has a URI assigned.",
+        default=True,
+    )
 
-    def _log_results(self, results: Mapping[str, ItemSearchResult]) -> None:
-        """Logs the final results of the ItemSearcher"""
+    assign_uri: bool = Field(
+        description=(
+            "Whether to assign the URI of the match to the given items. "
+            "This also applies to the items within a collection if the given item is a collection."
+        ),
+        default=True,
+    )
+
+    items_only_on_collections: bool = Field(
+        description=(
+            "Whether to always search for collections by searching for the items individually instead of the "
+            "collection as a whole. "
+            "In case of the latter, items will be matched to the items in the matched collection. "
+            "This overrides all other settings related to searching for collections if set to True."
+        ),
+        default=False,
+    )
+    compilation_albums_as_tracks_only: bool = Field(
+        description=(
+            "Whether to always search for compilation albums by searching for the individual tracks instead of the "
+            "album as a whole. "
+            "In case of the latter, tracks will be matched to the tracks in the matched album."
+        ),
+        default=False,
+    )
+    keep_matching_collection_items: bool = Field(
+        description=(
+            "If matching a collection and there are still unmatched items, searching for matches "
+            "for the outstanding items individually. "
+            "This only applies if the collection has been searched for as a whole with items matched "
+            "to that result first."
+        ),
+        default=False,
+    )
+
+    @field_validator("api", mode="after", check_fields=True)
+    @classmethod
+    def _validate_api_has_necessary_endpoints(cls, api: _ApiT) -> _ApiT:
+        if not isinstance(api, RemoteAPI):
+            raise MusifyValidationError(f"API must be an instance of RemoteAPI, got {type(api)}")
+        if not isinstance(api, HasSearchEndpoints):
+            raise MusifyValidationError(f"API does not support search endpoints")
+
+        return api
+
+    @property
+    def source(self) -> str:
+        """The name of the remote service that this searcher is running on."""
+        return self.api.source.title()
+
+    ###########################################################################
+    ## Search: items
+    ###########################################################################
+    @validate_call
+    async def search_item[T: ResourceModel](self, item: T) -> T | None:
+        """Search for matches for the given item and return the matching result if found"""
+        self._log_start([item], default_type="item")
+        return await self._query_and_match(item)
+
+    @validate_call
+    async def search_items[T: ResourceModel](self, items: Sequence[T]) -> SearchResult[T]:
+        """Search for matches for the given items and return the results."""
+        if len(items) == 0:
+            self._log_skip("No items to search.")
+            return SearchResult()
+
+        self._log_start(items, default_type="items")
+        return await self._search_items(items, show_bar=True)
+
+    async def _search_items[T: ResourceModel](self, items: Iterable[T], show_bar: bool = True) -> SearchResult[T]:
+        matches = []
+        matched = []
+        unmatched = []
+
+        async def _search_and_match_item(item: T) -> None:
+            match = await self._query_and_match(item)
+            if match is not None:
+                matched.append(item)
+                matches.append(match)
+            else:
+                unmatched.append(item)
+
+        items, skipped = self._split_items(items)
+
+        unit = self._get_unit(items, default_type="items")
+        await self.logger.get_asynchronous_iterator(
+            map(_search_and_match_item, items),
+            desc="Searching",
+            unit=unit,
+            initial=0,
+            total=len(items),
+            disable=not show_bar,
+        )
+
+        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
+
+    def _match_items[T: ResourceModel](
+            self, items: Iterable[T], results: Iterable[T], skipped: Iterable[T] = ()
+    ) -> SearchResult[T]:
+        results = list(results)
+        if not results:
+            return SearchResult(unmatched=tuple(items), skipped=tuple(skipped))
+
+        matched = []
+        matches = []
+        unmatched = []
+
+        for item in items:
+            match = self._match_item(item, results)
+            if match is not None:
+                matched.append(item)
+                matches.append(match)
+            else:
+                unmatched.append(item)
+
+        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
+
+    ###########################################################################
+    ## Search: collections
+    ###########################################################################
+    @validate_call
+    async def search_collection[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T]:
+        """Search for matches for the given collection and return the results."""
+        self._log_start([collection], default_type="collection")
+        _, result = await self._search_collection(collection, show_bar=True)
+        return result
+
+    @validate_call
+    async def search_collections[T: ResourceModel](
+            self, collections: Sequence[CollectionModel]
+    ) -> dict[str, SearchResult[T]]:
+        """Search for matches for the given collection and return the results per collection."""
+        if len(collections) == 0 or sum(collection.count for collection in collections) == 0:
+            self._log_skip("No collections or items to search.")
+            return {}
+
+        self._log_start(collections, default_type="collections")
+
+        async def _search_collection(collection: CollectionModel[T]) -> tuple[str, SearchResult[T]]:
+            return await self._search_collection(collection, show_bar=False)
+
+        unit = self._get_unit(collections, default_type="collections")
+        bar = self.logger.get_asynchronous_iterator(
+            map(_search_collection, collections),
+            desc="Searching",
+            unit=unit,
+            initial=0,
+            total=len(collections),
+        )
+        return dict(await bar)
+
+    async def _search_collection[T: ResourceModel](
+            self, collection: CollectionModel[T], show_bar: bool = True
+    ) -> tuple[str, SearchResult[T]]:
+        name = collection.name if isinstance(collection, HasName) else str(id(collection))
+
+        if self._should_search_on_items_only(collection):
+            return name, await self._search_items(collection.items, show_bar=show_bar)
+        collection: ResourceModel | CollectionModel  # type checked in the above condition
+
+        match = await self._query_and_match(collection)
+        match = await self._extend_collection_items(match)
+        if match is None or not isinstance(match, CollectionModel):
+            return name, await self._search_items(collection.items, show_bar=show_bar)
+
+        items, skipped = self._split_items(collection.items)
+        result = self._match_items(items, list(match.items), skipped)
+        if self.keep_matching_collection_items and result.unmatched:
+            result = await self._search_from_result(result, items)
+
+        return name, result
+
+    async def _search_from_result[T: ResourceModel](self, result: SearchResult[T], items: Iterable[T]) -> SearchResult[T]:
+        # attempt to search for the unmatched items from the given search result
+        # we pop items from the result lists as we go to match the same order as the given items
+        # for consistency in ordering
+        result_matches = list(result.matches)
+        result_matched = list(result.matched)
+
+        matches = []
+        matched = []
+        unmatched = []
+
+        async def _search_and_match_item(item: Any) -> None:
+            if item in result_matched:
+                matches.append(result_matches.pop(0))
+                matched.append(result_matched.pop(0))
+
+            match = await self._query_and_match(item)
+            if match is not None:
+                matched.append(item)
+                matches.append(match)
+            else:
+                unmatched.append(item)
+
+        unit = self._get_unit(items, default_type="items")
+        await self.logger.get_asynchronous_iterator(
+            map(_search_and_match_item, result.unmatched),
+            desc="Searching",
+            unit=unit,
+            initial=0,
+            total=len(result.unmatched),
+        )
+
+        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped)
+
+    async def _extend_collection_items[T: RemoteResource | RemoteCollection](self, collection: T) -> T:
+        message = "Cannot extend items in collection: valid endpoints not configured for this resource type"
+        if not isinstance(collection, RemoteCollection):
+            try:
+                collection = await collection.reload(self.api)
+            except AttributeError:
+                self._log_debug(collection, message=message)
+                return collection
+
+            if not isinstance(collection, RemoteCollection):
+                message = "API did not return a collection when trying to extend items in collection"
+                self._log_debug(collection, message=message)
+                return collection
+
+        try:
+            await collection.extend(self.api)
+        except AttributeError:
+            self._log_debug(collection, message=message)
+
+        return collection
+
+    ###########################################################################
+    ## Query and match utilities
+    ###########################################################################
+    async def _query(self, item: ResourceModel) -> list[RemoteResource] | None:
+        if self._should_skip(item):
+            return
+
+        async with self.concurrency:
+            results = await self.api.search.query_item(item)
+
+        if not results:
+            self._log_debug(item, message="No results found")
+            return None
+
+        self._log_debug(item, message=f"Found {len(results)} results")
+        return results
+
+    async def _query_and_match(self, item: ResourceModel) -> RemoteResource | None:
+        results = await self._query(item)
+        return self._match_item(item, results) if results else None
+
+    def _split_items(self, items: Iterable[Any]) -> tuple[list[Any], list[Any]]:
+        valid = []
+        invalid = []
+        for item in items:
+            invalid.append(item) if self._should_skip(item) else valid.append(item)
+
+        return valid, invalid
+
+    def _match_item[T: RemoteResource](self, item: ResourceModel, results: MutableSequence[T]) -> T | None:
+        match = self._pop_match_from_results(item, results)
+        if match is not None:
+            self._assign_attributes_from_match(item, match)
+        return match
+
+    def _pop_match_from_results[T: HasURI](self, item: T, results: MutableSequence[T]) -> T | None:
         if not results:
             return
 
-        max_width = get_max_width(results)
+        match = self.matcher.match(item, results) if self.matcher is not None else results[0]
+        if match is None:
+            self._log_debug(item, message="No match found")
+            return
 
-        total_matched = 0
-        total_unmatched = 0
-        total_skipped = 0
-        total_all = 0
+        results.remove(match)
 
-        for name, result in results.items():
-            matched = len(result.matched)
-            unmatched = len(result.unmatched)
-            skipped = len(result.skipped)
-            total = matched + unmatched + skipped
+        message = f"Match found: {self._get_item_log_name(match)}"
+        if match.has_uri:
+            message += f" - {match.uri}"
+        self._log_debug(item, message=message)
 
-            total_matched += matched
-            total_unmatched += unmatched
-            total_skipped += skipped
-            total_all += total
+        return match
 
-            colour1 = "\33[92m" if matched > 0 else "\33[94m"
-            colour2 = "\33[92m" if unmatched == 0 else "\33[91m"
-            colour3 = "\33[92m" if skipped == 0 else "\33[93m"
+    def _assign_attributes_from_match[T: ResourceModel](self, item: T, match: T) -> None:
+        if self.assign_uri:
+            self._assign_uri_from_match(item, match)
 
-            self.logger.report(
-                f"\33[1m{align_string(name, max_width=max_width)} \33[0m|"
-                f"{colour1}{matched:>6} matched \33[0m| "
-                f"{colour2}{unmatched:>6} unmatched \33[0m| "
-                f"{colour3}{skipped:>6} skipped \33[0m| "
-                f"\33[97m{total:>6} total \33[0m"
-            )
+    def _assign_uri_from_match[T: ResourceModel](self, item: T, match: T) -> None:
+        if not isinstance(item, HasURI) or not isinstance(match, HasURI) or not match.has_uri:
+            return
 
-        self.logger.report(
-            f"\33[1;96m{'TOTALS':<{max_width}} \33[0m|"
-            f"\33[92m{total_matched:>6} matched \33[0m| "
-            f"\33[91m{total_unmatched:>6} unmatched \33[0m| "
-            f"\33[93m{total_skipped:>6} skipped \33[0m| "
-            f"\33[97m{total_all:>6} total \33[0m"
-        )
-        self.logger.print_line(REPORT)
+        if item.uri != match.uri:
+            self._log_debug(item, f"Setting URI: {match.uri}")
+            item.uri = match.uri
+
+    ###########################################################################
+    ## Item validators
+    ###########################################################################
+    def _should_skip(self, item: Any) -> bool:
+        if self.skip_if_has_uri and isinstance(item, HasURI) and item.has_uri:
+            self._log_debug(item, message=f"Skipping: already has a URI")
+            return True
+        return False
+
+    def _should_search_on_items_only(self, item: CollectionModel) -> bool:
+        message = "Searching as items only"
+        if self.items_only_on_collections:
+            reason = "set to search for collections as items only"
+            self._log_debug(item, message=f"{message}: {reason}")
+            return True
+
+        match item:
+            case AlbumCollection() as coll if self.compilation_albums_as_tracks_only and coll.compilation:
+                reason = "is compilation album + set to search for compilation albums as tracks only"
+                self._log_debug(item, message=f"{message}: {reason}")
+                return True
+            case _ if not isinstance(item, ResourceModel):
+                self._log_debug(item, message=f"{message}: not a resource which can be searched for directly")
+                return True
+
+        return False
+
+    ###########################################################################
+    ## Logging
+    ###########################################################################
+    def log_results(self, results: Mapping[str, SearchResult]) -> None:
+        """Log the given search results"""
+        header = f"{self.source.upper()} SEARCH RESULTS"
+        table = SearchResult.generate_table(results=results, header=header)
+        self.logger.report(table)
+
+    def _log_start(self, items: Collection, default_type: str) -> None:
+        types = {f"{it.type.rstrip("s")}s" for it in items if isinstance(it, ResourceModel)}
+        log_type = ", ".join(sorted(types)) if types else default_type
+        message = f"Searching for matches on {self.source} for {len(items)} {log_type}"
+        self.logger.info(message, header=1)
+
+    def _log_skip(self, message: str) -> None:
+        self.logger.extra(colored(message, "yellow"))
+
+    def _log_debug(self, item: Any, message: str) -> None:
+        name = self._get_item_log_name(item)
+        name = textwrap.shorten(name, 30, placeholder="...")
+        self.logger.debug(f"{name} | {message}")
 
     @staticmethod
-    def _determine_remote_object_type(obj: MusifyObject) -> RemoteObjectType:
-        if hasattr(obj, "kind"):
-            return obj.kind
-        raise MusifyAttributeError(f"Given object does not specify a RemoteObjectType: {obj.__class__.__name__}")
+    def _get_unit(items: Iterable, default_type: str) -> str:
+        unit = default_type
+        types = {it.type for it in items if isinstance(it, ResourceModel)}
+        if len(types) == 1:
+            unit = types.pop()
 
-    def __call__[T: MusifyItemSettable](
-            self, collections: Collection[MusifyCollection[T]]
-    ) -> Awaitable[dict[str, ItemSearchResult[T]]]:
-        return self.search(collections)
+        return unit
 
-    async def search[T: MusifyItemSettable](
-            self, collections: Collection[MusifyCollection[T]]
-    ) -> dict[str, ItemSearchResult[T]]:
-        """
-        Searches for remote matches for the given list of item collections.
+    @staticmethod
+    def _get_item_log_name(item: Any) -> str:
+        match item:
+            case IsFile() as it if it.filename is not None:
+                return str(it.filename)
+            case IsLocalFile() as it if it.path is not None:
+                return str(it.path)
+            case HasName() as it if it.name is not None:
+                return it.name
+            case HasURI() as it if it.has_uri:
+                return str(it.uri)
 
-        :return: Map of the collection's name to its :py:class:`ItemSearchResult` object.
-        """
-        self.logger.debug("Searching: START")
-        if not [item for c in collections for item in c.items if item.has_uri is None]:
-            self.logger.debug("\33[93mNo items to search. \33[0m")
-            return {}
-
-        kinds = {coll.__class__.__name__ for coll in collections}
-        kind = kinds.pop() if len(kinds) == 1 else "collection"
-        self.logger.info(
-            f"\33[1;95m ->\33[1;97m "
-            f"Searching for matches on {self.api.source} for {len(collections)} {kind}s\33[0m"
-        )
-
-        async def _get_result(coll: MusifyCollection[T]) -> tuple[str, ItemSearchResult]:
-            return coll.name, await self._search_collection(coll)
-
-        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
-        bar = self.logger.get_synchronous_iterator(collections, desc="Searching",  unit=f"{kind}s")
-        search_results = dict([await _get_result(coll) for coll in bar])
-
-        self.logger.print_line()
-        self._log_results(search_results)
-        self.logger.debug("Searching: DONE\n")
-        return search_results
-
-    async def _search_collection[T: MusifyItemSettable](self, collection: MusifyCollection) -> ItemSearchResult[T]:
-        kind = collection.__class__.__name__
-
-        skipped = tuple(item for item in collection if item.has_uri is not None)
-        if len(skipped) == len(collection):
-            self.matcher.log([collection.name, "Skipping search, no items to search"], pad='<')
-
-        if getattr(collection, "compilation", True) is False:
-            self.matcher.log([collection.name, "Searching for collection as a unit"], pad='>')
-            await self._search_collection_unit(collection=collection)
-
-            missing = [item for item in collection.items if item.has_uri is None]
-            if missing:
-                self.matcher.log(
-                    [collection.name, f"Searching for {len(missing)} unmatched items in this {kind}"]
-                )
-                await self._search_items(collection=collection)
-        else:
-            self.matcher.log([collection.name, "Searching for distinct items in collection"], pad='>')
-            await self._search_items(collection=collection)
-
-        return ItemSearchResult(
-            matched=tuple(item for item in collection if item.has_uri and item not in skipped),
-            unmatched=tuple(item for item in collection if item.has_uri is None and item not in skipped),
-            skipped=skipped
-        )
-
-    async def _get_item_match[T: MusifyItemSettable](
-            self, item: T, match_on: UnitIterable[TagField] | None = None, results: Iterable[T] = None
-    ) -> tuple[T, T | None]:
-        kind = self._determine_remote_object_type(item)
-        search_config = self.search_settings[kind]
-
-        if results is None:
-            responses = await self._get_results(item, kind=kind, settings=search_config)
-            # noinspection PyTypeChecker
-            results: Iterable[T] = map(self.factory[kind], responses or ())
-
-        result = self.matcher(
-            item,
-            results=results,
-            match_on=match_on if match_on is not None else search_config.match_fields,
-            min_score=search_config.min_score,
-            max_score=search_config.max_score,
-            allow_karaoke=search_config.allow_karaoke,
-        ) if results else None
-
-        return item, result
-
-    async def _search_items[T: MusifyItemSettable](self, collection: Iterable[T], **kwargs) -> None:
-        """
-        Search for matches on individual items in an item collection that have ``None`` on ``has_uri`` attribute.
-        kwargs are not required and are passed on to self._get_item_match.
-        """
-        async def _match(item: T) -> None:
-            if item.has_uri is not None:
-                return
-
-            item, match = await self._get_item_match(item, **kwargs)
-            if match and match.has_uri:
-                item.uri = match.uri
-
-        await self.logger.get_asynchronous_iterator(map(_match, collection), disable=True)
-
-    async def _search_collection_unit[T: MusifyItemSettable](self, collection: MusifyCollection[T]) -> None:
-        """
-        Search for matches on an entire collection as a whole
-        i.e. search for just the collection and not its distinct items.
-        """
-        if all(item.has_uri for item in collection):
-            return
-
-        kind = self._determine_remote_object_type(collection)
-        search_config = self.search_settings[kind]
-
-        responses = await self._get_results(collection, kind=kind, settings=search_config)
-        key = self.api.collection_item_map[kind]
-        await self.logger.get_asynchronous_iterator(
-            (self.api.extend_items(response, kind=kind, key=key, leave_bar=False) for response in responses),
-            disable=True
-        )
-
-        # noinspection PyProtectedMember,PyTypeChecker
-        # order to prioritise results that are closer to the item count of the input collection
-        results: list[T] = sorted(map(self.factory[kind], responses), key=lambda x: abs(x._total - len(collection)))
-
-        result = self.matcher(
-            collection,
-            results=results,
-            match_on=search_config.match_fields,
-            min_score=search_config.min_score,
-            max_score=search_config.max_score,
-            allow_karaoke=search_config.allow_karaoke,
-        )
-
-        if not result:
-            return
-
-        # check all items in the collection have been matched
-        # get matches on those that are still missing matches
-        await self._search_items(collection, match_on=[Tag.TITLE], results=result.items)
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "matcher": self.matcher,
-            "remote_source": self.factory.api.source,
-        }
+        return str(id(item))

@@ -1,64 +1,136 @@
 """
 Processor that converts representations of time units to python time objects.
 """
-from datetime import timedelta
-from typing import Any
+import re
+from datetime import timedelta, datetime, date
+from typing import Any, Annotated, Self, final
 
 from dateutil.relativedelta import relativedelta
+from pydantic import field_validator, Field, model_validator, ModelWrapValidatorHandler
+from pydantic.alias_generators import to_snake
 
-from musify.printer import PrettyPrinter
-from musify.processors.base import DynamicProcessor, dynamicprocessormethod
+from musify._types import LowerSnakeCase
+from musify.processors import DynamicProcessor, processormethod
+from musify.processors._dynamic import ProcessorAttribute
 
 
-class TimeMapper(DynamicProcessor, PrettyPrinter):
-    """Map of time character representation to it unit conversion from seconds"""
+@final
+class TimeMapper(DynamicProcessor):
+    """Map of time character representation to enable simple to use time delta conversion."""
+    __final__ = True
 
-    __slots__ = ()
+    unit: Annotated[
+        LowerSnakeCase,
+        ProcessorAttribute(cleaner=lambda x: to_snake(x).replace(" ", "_").strip("_")),
+    ] = Field(
+        description="The time unit to add/subtract.",
+    )
+    amount: Annotated[int, Field(gt=0)] = Field(
+        description="The amount of the given unit to add/subtract.",
+    )
+    add: bool = Field(
+        description="When true, add the time delta to the given datetime, otherwise subtract it.",
+        default=False
+    )
 
+    # noinspection PyNestedDecorators
+    @model_validator(mode="wrap")
     @classmethod
-    def _processor_method_fmt(cls, name: str) -> str:
-        return name.casefold().strip()[0] if not name.startswith("min") else name
+    def _from_key(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
+            return handler(value)
 
-    def __init__(self, func: str):
-        super().__init__()
-        self._set_processor_name(func)
+        data = dict(
+            unit=cls._extract_unit_from_key(value),
+            amount=cls._extract_amount_from_key(value),
+            add=cls._extract_sign_from_key(value),
+        )
+        return handler(data)
 
-    def __call__(self, *args, **kwargs) -> timedelta | relativedelta:
-        return self.map(*args, **kwargs)
+    # noinspection PyNestedDecorators
+    @field_validator("unit", mode="before", check_fields=True)
+    @staticmethod
+    def _extract_unit_from_key(value: str) -> str:
+        if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
+            return value
+        return re.match(r"^[-+]?\d+(\D+)$", value).group(1)
 
-    def map(self, value: Any):
-        """Run the mapping function"""
-        return super().__call__(value)
+    # noinspection PyNestedDecorators
+    @field_validator("amount", mode="before", check_fields=True)
+    @staticmethod
+    def _extract_amount_from_key(value: str) -> str:
+        if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
+            return value
+        return re.match(r"^[-+]?(\d+)\D+$", value).group(1)
 
-    @dynamicprocessormethod
-    def seconds(self, value: Any) -> timedelta:
-        """Map given ``value`` in seconds to :py:class:`timedelta`"""
-        return timedelta(seconds=int(value))
+    # noinspection PyNestedDecorators
+    @field_validator("add", mode="before", check_fields=True)
+    @staticmethod
+    def _extract_sign_from_key[T: str](value: T) -> T | bool:
+        if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
+            return value
+        return value.startswith("+")
 
-    @dynamicprocessormethod("min")
-    def minutes(self, value: Any) -> timedelta:
-        """Map given ``value`` in minutes to :py:class:`timedelta`"""
-        return timedelta(minutes=int(value))
+    @model_validator(mode="after")
+    def _map_processor_value(self) -> Any:
+        field_name: str = self.__class__.processor_field_name
+        method_name: str = self._processor_method_name
 
-    @dynamicprocessormethod
-    def hours(self, value: Any) -> timedelta:
-        """Map given ``value`` in hours to :py:class:`timedelta`"""
-        return timedelta(hours=int(value))
+        field_value = getattr(self, field_name)
+        clean_value = self.__class__.get_clean_processor_name(method_name)
+        if clean_value != field_value:
+            setattr(self, field_name, clean_value)
 
-    @dynamicprocessormethod
-    def days(self, value: Any) -> timedelta:
-        """Map given ``value`` in days to :py:class:`timedelta`"""
-        return timedelta(days=int(value))
+        return self
 
-    @dynamicprocessormethod
-    def weeks(self, value: Any) -> timedelta:
-        """Map given ``value`` in weeks to :py:class:`timedelta`"""
-        return timedelta(weeks=int(value))
+    @property
+    def key(self) -> str:
+        """A string representation of the timedelta."""
+        return f"{'+' if self.add else '-'}{self.amount}{self.unit}"
 
-    @dynamicprocessormethod
-    def months(self, value: Any) -> relativedelta:
-        """Map given ``value`` in months to :py:class:`timedelta`"""
-        return relativedelta(months=int(value))
+    # noinspection PyTypeChecker
+    @key.setter
+    def key(self, value: str) -> None:
+        self.unit = value
+        self.amount = value
+        self.add = value
 
-    def as_dict(self) -> dict[str, Any]:
-        return {"function": self._processor_name}
+    def __str__(self) -> str:
+        return str(self.key)
+
+    def __hash__(self) -> int:
+        return hash(self.key)
+
+    def apply[T: date | datetime](self, value: T) -> T:
+        """Apply the time delta to the given date or datetime."""
+        return self._processor_method(value)
+
+    @processormethod("s", "sec", "secs", "second")
+    def _seconds[T: date | datetime](self, value: T) -> T:
+        delta = timedelta(seconds=self.amount)
+        return value + delta if self.add else value - delta
+
+    @processormethod("m", "min", "mins", "minute")
+    def _minutes[T: date | datetime](self, value: T) -> T:
+        delta = timedelta(minutes=self.amount)
+        return value + delta if self.add else value - delta
+
+    @processormethod("h", "hr", "hrs", "hour")
+    def _hours[T: date | datetime](self, value: T) -> T:
+        delta = timedelta(hours=self.amount)
+        return value + delta if self.add else value - delta
+
+    @processormethod("d", "day", "days")
+    def _days[T: date | datetime](self, value: T) -> T:
+        delta = timedelta(days=self.amount)
+        return value + delta if self.add else value - delta
+
+    @processormethod("w", "wk", "wks", "week")
+    def _weeks[T: date | datetime](self, value: T) -> T:
+        delta = relativedelta(weeks=self.amount)
+        return value + delta if self.add else value - delta
+
+    @processormethod("mon", "mons", "mth", "mths", "month")
+    def _months[T: date | datetime](self, value: T) -> T:
+        delta = relativedelta(months=self.amount)
+        return value + delta if self.add else value - delta

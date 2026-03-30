@@ -9,7 +9,7 @@ from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutable
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.logger import HasLogger
-from musify.processors_new.filters import Filter
+from musify.processors.filters import Filter
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](

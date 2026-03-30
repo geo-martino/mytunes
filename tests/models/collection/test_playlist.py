@@ -19,8 +19,8 @@ from musify.models.cursors import PageCursor
 from musify.models.item.track import RemoteTrack, Track
 from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
-from musify.processors_new.compare import Comparer
-from musify.processors_new.filters import ComparerFilter
+from musify.processors.compare import Comparer
+from musify.processors.filters import ComparerFilter
 from tests.models.api.utils import MockRemoteAPI
 from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.collection.utils import assert_sync_items_result

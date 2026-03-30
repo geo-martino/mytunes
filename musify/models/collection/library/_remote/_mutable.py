@@ -26,7 +26,7 @@ from musify.models.item.genre import RemoteGenre
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import HasURI, URI
 from musify.models.user import RemoteUser
-from musify.processors_new.filters import ComparerFilter
+from musify.processors.filters import ComparerFilter
 
 
 class RemoteMutableLibrary[

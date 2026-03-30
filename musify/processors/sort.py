@@ -1,29 +1,48 @@
 """
 Processor that sorts the given collection of items based on given configuration.
 """
-import random
-from collections.abc import Callable, Mapping, MutableMapping, Sequence, Iterable
+from collections.abc import MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence
 from copy import copy
 from datetime import datetime
-from random import shuffle
-from typing import Any
+from random import random, randrange, shuffle, uniform
+from typing import Any, Literal, Annotated, Mapping
 
-from aiorequestful.types import UnitSequence, UnitIterable, Number
+from aiorequestful.types import Number
+from pydantic import Field, field_validator, field_serializer
 
-from musify.base import MusifyItem
-from musify.field import Field
-from musify.processors.base import Processor
-from musify.processors.exception import SorterProcessorError
-from musify.types import MusifyEnum
-from musify.utils import flatten_nested, strip_ignore_words, to_collection, limit_value, IGNORE_WORDS_DEFAULT
+from musify.exception import MusifyValueError, MusifyAttributeError
+from musify.models import ResourceModel, IntEnumModel, AttributeModel
+from musify.models.item.artist import HasArtists
+from musify.models.item.track import Track
+from musify.models.properties.audio import IsAudioFile
+from musify.models.properties.date import HasAddedDate, HasPlayedDate
+from musify.models.properties.file import IsLocalFile
+from musify.models.properties.name import HasName
+from musify.models.properties.rating import HasRating
+from musify.processors._base import Processor
+from musify.utils import flatten_nested, strip_ignore_words
+
+_SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
+    Track,
+    IsLocalFile,
+    IsAudioFile,
+    HasAddedDate,
+    HasPlayedDate,
+})
+_SORT_FIELDS_MAP = {
+    field: cls for cls in _SORT_TAG_TYPES for field in cls.__tag_attributes__
+}
+SORT_FIELDS = frozenset(_SORT_FIELDS_MAP)
+_SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 
 
-class ShuffleMode(MusifyEnum):
+class ShuffleMode(IntEnumModel):
     """Represents the possible shuffle modes to use when shuffling items using :py:class:`ItemSorter`."""
-    RANDOM = 0
-    HIGHER_RATING = 1
-    RECENT_ADDED = 2
-    DIFFERENT_ARTIST = 3
+    NONE = 0
+    RANDOM = 1
+    HIGHER_RATING = 2
+    RECENT_ADDED = 3
+    DIFFERENT_ARTIST = 4
 
 
 class ItemSorter(Processor):
@@ -43,33 +62,60 @@ class ItemSorter(Processor):
     When ``shuffle_mode`` == ``DIFFERENT_ARTIST``:
         * A ``shuffle_weight`` of 1 will group the tracks by artist, shuffling artists randomly.
         * A ``shuffle_weight`` of -1 will shuffle the items randomly.
-
-    :param fields: Fields to sort by. If defined, this value will always take priority over any shuffle settings
-        i.e. shuffle settings will be ignored.
-    :param shuffle_mode: The mode to use for shuffling. Only used when no ``fields`` are given.
-        WARNING: Currently only ``RANDOM`` shuffle mode has been implemented.
-        Any other given value will default to ``RANDOM`` shuffling.
-    :param shuffle_weight: The weights (between -1 and 1) to apply to certain shuffling modes.
-        This value will automatically be limited to within the valid range -1 and 1.
-        Only used when no ``fields`` are given and shuffle_mode is not None or ``RANDOM``.
-    :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
     """
+    sort_fields: Mapping[_SORT_FIELDS_TYPE, bool] = Field(
+        description=(
+            "Fields to sort by. If defined, this value will always take priority over any shuffle settings "
+            "i.e. shuffle settings will be ignored."
+        ),
+        default_factory=tuple,
+        validation_alias="fields",
+    )
+    shuffle_mode: ShuffleMode | None = Field(
+        description="The mode to use for shuffling. Only used when no ``fields`` are given.",
+        default=None,
+    )
+    shuffle_weight: Annotated[float, Field(ge=-1.0, le=1.0)] = Field(
+        description=(
+            "The weights (between -1 and 1) to apply to certain shuffling modes. "
+            "This value will automatically be limited to within the valid range -1 and 1. "
+            "Only used when no ``fields`` are given and shuffle_mode is not None or ``RANDOM``."
+        ),
+        default=0.0,
+    )
+    ignore_words: set[str] | Sequence[str] = Field(
+        description="The words to ignore at the beginning of a string when sorting string values.",
+        default={"The", "A"},
+    )
 
-    __slots__ = ("sort_fields", "shuffle_mode", "shuffle_weight", "ignore_words")
+    @field_validator("sort_fields", mode="before", check_fields=True)
+    @staticmethod
+    def _map_fields(fields: str | Iterable[str] | Mapping[str, bool]) -> Mapping[str, bool]:
+        if not fields:
+            fields = {}
+        if isinstance(fields, str):
+            fields = (fields,)
+        if isinstance(fields, Iterable) and not isinstance(fields, Mapping):
+            fields = {field: False for field in fields}
+        return fields
+
+    @field_serializer("sort_fields", check_fields=True)
+    def _map_fields_values(self, fields: Mapping[str | None, bool]) -> Mapping[str | None, str]:
+        return {field: "desc" if rev else "asc" for field, rev in fields.items()}
 
     @classmethod
     def sort_by_field(
             cls,
-            items: list[MusifyItem],
-            field: Field | None = None,
+            items: MutableSequence[ResourceModel],
+            field: _SORT_FIELDS_TYPE | None = None,
             reverse: bool = False,
-            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
+            ignore_words: Iterable[str] = ()
     ) -> None:
         """
         Sort items by the values of a given field.
 
         :param items: List of items to sort
-        :param field: Tag or property to sort on. If None and reverse is True, reverse the order of the list.
+        :param field: Tag or property to sort on. If None and reverse is True, reverse the order of the sequence.
         :param reverse: If true, reverse the order of the sort.
         :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
         """
@@ -78,186 +124,183 @@ class ItemSorter(Processor):
                 items.reverse()
             return
 
-        tag_name = field.map(field)[0].name.lower()
+        sort_key = cls._get_sort_key_by_type(items, field=field, ignore_words=ignore_words)
+        items[:] = sorted(items, key=sort_key, reverse=reverse)
 
-        # attempt to find an example value to determine the value type for this sort
-        example_value = None
-        for item in items:
-            example_value = item[tag_name]
-            if example_value is not None:
-                break
-        if example_value is None:
-            # if no example value found, all values are None and so no sort can happen safely. Skip
-            return
+    @staticmethod
+    def _get_sort_key_by_type(
+            items: Collection[ResourceModel], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
+    ) -> Any:
+        try:  # attempt to find an example value to determine the value type for this sort
+            value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
+        except StopIteration:  # if no example value found, all values are None and so no sort can happen safely. Skip
+            raise MusifyValueError(f"No value set for {field} in {items}")
 
-        # get sort key based on value type
-        if isinstance(example_value, datetime):  # key converts datetime to floats
-            def sort_key(it: MusifyItem) -> float:
-                """Get the sort key for timestamp tags from the given ``it``"""
-                value = it[tag_name]
-                return value.timestamp() if value is not None else 0.0
-        elif isinstance(example_value, str):  # key strips ignore words from string
-            def sort_key(it: MusifyItem) -> tuple[bool, str]:
-                """Get the sort key for string tags from the given ``it``"""
-                not_special_start, value = strip_ignore_words(it[tag_name], words=ignore_words)
-                return not_special_start, value.casefold()
-        else:
-            sort_key: Callable[[MusifyItem], object] = lambda t: t[tag_name] if t[tag_name] else 0
+        match value:  # get sort key based on value type
+            case str() | HasName():  # key gets name and strips ignore words from string
+                def _sort_key(item: ResourceModel) -> tuple[bool, str]:
+                    if (val := getattr(item, field)) is not None and isinstance(val, HasName):
+                        val = val.name
 
-        items.sort(key=sort_key, reverse=reverse)
+                    not_special_start, _, val = strip_ignore_words(val, words=ignore_words)
+                    return not_special_start, val.casefold()
+            case datetime():  # key converts datetime to floats
+                def _sort_key(item: ResourceModel) -> float:
+                    field_value = getattr(item, field)
+                    return field_value.timestamp() if field_value is not None else 0.0
+            case _:
+                def _sort_key(item: ResourceModel) -> Any:
+                    val = getattr(item, field, None)
+                    return val if val else 0
+
+        return _sort_key
 
     @classmethod
-    def group_by_field[T: MusifyItem](cls, items: UnitIterable[T], field: Field | None = None) -> dict[Any, list[T]]:
+    def group_by_field[T: ResourceModel](
+            cls,
+            items: Collection[T],
+            field: _SORT_FIELDS_TYPE,
+            ignore_words: Iterable[str] = (),
+    ) -> dict[Any, list[T]]:
         """
         Group items by the values of a given field.
 
         :param items: List of items to sort.
-        :param field: Tag or property to group by. None returns map of ``{None: <items>}``.
+        :param field: Tag or property to group by.
+        :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
         :return: Map of grouped items.
         """
-        if field is None:  # group by None
-            return {None: to_collection(items, list)}
+        grouped: dict[Any, list[T]] = {}
 
-        tag_name = field.map(field)[0].name.lower()
+        def get_value(val: Any) -> Any:
+            """Get the value to group by from the given value ``val``"""
+            match val:
+                case str() | HasName():
+                    if isinstance(val, HasName):
+                        val = val.name
+                    if ignore_words:
+                        _, _, val = strip_ignore_words(val, words=ignore_words, strip_special_chars=False)
+                    val = val.casefold()
+                case _:
+                    pass
 
-        def group(v: Any) -> None:
+            return val
+
+        def group(it: Any, val: Any) -> None:
             """Group items by the given value ``v``"""
-            if grouped.get(v) is None:
-                grouped[v] = []
-            grouped[v].append(item)
+            if isinstance(val, list):
+                for v in val:
+                    group(it=it, val=get_value(v))
+                return
 
-        grouped: dict[Any | None, list[T]] = {}
-        for item in items:  # produce map of grouped values
-            value = to_collection(item[tag_name])
-            if isinstance(value, Iterable):
-                for val in value:
-                    group(val)
-            else:
-                group(value)
+            if grouped.get(val) is None:
+                grouped[val] = []
+            grouped[val].append(it)
+
+        for item in items:
+            value = get_value(getattr(item, field))
+            group(item, val=value)
 
         return grouped
 
-    def __init__(
-            self,
-            fields: UnitSequence[Field | None] | Mapping[Field | None, bool] = (),
-            shuffle_mode: ShuffleMode | None = None,
-            shuffle_weight: float = 0.0,
-            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
-    ):
-        fields = to_collection(fields, list) if isinstance(fields, Field) else fields
-        self.sort_fields: dict[Field | None, bool] = {field: False for field in fields} \
-            if isinstance(fields, Sequence) else fields
-
-        self.shuffle_mode = shuffle_mode
-        self.shuffle_weight = limit_value(shuffle_weight, floor=-1, ceil=1)
-        self.ignore_words = ignore_words
-
-    def __call__(self, *args, **kwargs) -> None:
-        return self.sort(*args, **kwargs)
-
-    def sort(self, items: list[MusifyItem]) -> None:
-        """Sorts a list of ``items`` in-place."""
+    def sort[T: ResourceModel](self, items: MutableSequence[T]) -> None:
+        """Sorts a sequence of ``items`` in-place."""
         if len(items) == 0:
             return
 
-        if self.sort_fields:
-            items_nested = self._sort_by_fields(
-                {None: items}, fields=self.sort_fields, ignore_words=self.ignore_words
+        match self.shuffle_mode:
+            case _ if self.sort_fields:
+                items_nested = self._sort_by_fields(items, fields=iter(self.sort_fields.items()))
+                items[:] = flatten_nested(items_nested)
+            case ShuffleMode.RANDOM:
+                shuffle(items)
+            case ShuffleMode.HIGHER_RATING:
+                self._shuffle_on_rating(items)
+            case ShuffleMode.RECENT_ADDED:
+                self._shuffle_on_added_at(items)
+            case ShuffleMode.DIFFERENT_ARTIST:
+                self._shuffle_on_artist(items)
+
+    def _sort_by_fields[T: ResourceModel](
+            self,
+            groups: MutableSequence[T] | MutableMapping[Any, T],
+            fields: Iterator[tuple[_SORT_FIELDS_TYPE, bool]],
+    ) -> MutableSequence[T] | MutableMapping[Any, T]:
+        """
+        Sort items by the given fields recursively in the order given.
+
+        :param groups: Map of items grouped by the last sort value.
+        :param fields: Iterator of fields to sort by and whether to reverse the sort for that field.
+        :return: Map of grouped and sorted items.
+        """
+        try:
+            field, reverse = next(fields)
+        except StopIteration:  # recursive sorting complete
+            return groups
+
+        if not isinstance(groups, Mapping):
+            groups = {None: groups}
+
+        for key, items in groups.items():  # sort each group and recurse through each field for each group
+            self.sort_by_field(items=items, field=field, reverse=reverse, ignore_words=self.ignore_words)
+            items_grouped = self.group_by_field(items, field=field, ignore_words=self.ignore_words)
+            # noinspection PyTypeChecker
+            groups[key] = self._sort_by_fields(items_grouped, fields=copy(fields))
+
+        if set(groups) == {None}:
+            groups = {None: groups}
+
+        return groups
+
+    # noinspection PyUnresolvedReferences
+    def _shuffle_on_rating(self, items: MutableSequence[HasRating]) -> None:
+        if not all(isinstance(item, HasRating) for item in items):
+            raise MusifyAttributeError(
+                f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
+                "as they do not all have a rating."
             )
-            items.clear()
-            items.extend(flatten_nested(items_nested))
-        elif self.shuffle_mode == ShuffleMode.RANDOM:
-            shuffle(items)
-        elif self.shuffle_mode == ShuffleMode.HIGHER_RATING:
-            self._shuffle_on_rating(items)
-        elif self.shuffle_mode == ShuffleMode.RECENT_ADDED:
-            self._shuffle_on_date_added(items)
-        elif self.shuffle_mode == ShuffleMode.DIFFERENT_ARTIST:
-            self._shuffle_on_artist(items)
+
+        max_value = max(item.rating for item in items)
+
+        def _sort_key(item: HasRating) -> float:
+            return self._get_weighted_shuffle_value(item.rating, max_value)
+
+        items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
+
+    # noinspection PyUnresolvedReferences
+    def _shuffle_on_added_at(self, items: MutableSequence[HasAddedDate]) -> None:
+        if not all(isinstance(item, HasAddedDate) for item in items):
+            raise MusifyAttributeError(
+                f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
+                "as they do not all have an added at date."
+            )
+
+        max_value = max(item.added_at.timestamp() for item in items)
+
+        def _sort_key(item: HasAddedDate) -> float:
+            return self._get_weighted_shuffle_value(item.added_at.timestamp(), max_value)
+
+        items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
 
     def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
-        weight_factor = random.uniform(-1, 1) * self.shuffle_weight
-        return abs(value - weight_factor * (value - max_value))
+        weight_factor = uniform(-1, 1) * self.shuffle_weight
+        return abs(float(value) - weight_factor * (float(value) - float(max_value)))
 
     # noinspection PyUnresolvedReferences
-    def _shuffle_on_rating(self, items: list[MusifyItem]) -> None:
-        if not all(hasattr(item, "rating") for item in items):
-            raise SorterProcessorError(
-                "Cannot shuffle sort on rating as the given items do not all have a 'rating' property"
-            )
-
-        max_value: float = max(item.rating for item in items)
-        items.sort(
-            key=lambda item: self._get_weighted_shuffle_value(item.rating, max_value),
-            reverse=self.shuffle_weight >= 0
-        )
-
-    # noinspection PyUnresolvedReferences
-    def _shuffle_on_date_added(self, items: list[MusifyItem]) -> None:
-        if not all(hasattr(item, "date_added") for item in items):
-            raise SorterProcessorError(
-                "Cannot shuffle sort on date added as the given items do not all have a 'date_added' property"
-            )
-
-        max_value: float = max(item.date_added.timestamp() for item in items)
-        items.sort(
-            key=lambda item: self._get_weighted_shuffle_value(item.date_added.timestamp(), max_value),
-            reverse=self.shuffle_weight >= 0
-        )
-
-    # noinspection PyUnresolvedReferences
-    def _shuffle_on_artist(self, items: list[MusifyItem]) -> None:
-        if not all(hasattr(item, "artist") for item in items):
-            raise SorterProcessorError(
-                "Cannot shuffle sort on artist as the given items do not all have an 'artist' property"
+    def _shuffle_on_artist(self, items: MutableSequence[HasArtists]) -> None:
+        if not all(isinstance(item, HasArtists) for item in items):
+            raise MusifyAttributeError(
+                f"The given items cannot be limited on {self.shuffle_mode.name.lower()} "
+                "as they do not all have an artist."
             )
 
         shuffle_weight = (self.shuffle_weight + 1) / 2
         artists: list[str] = list({item.artist for item in items})
         shuffle(artists)
 
-        def sort_key(artist: str) -> int:
-            """Get sort key for a given ``artist``"""
-            return artists.index(artist) if random.random() <= shuffle_weight else random.randrange(0, len(artists))
+        def _sort_key(item: HasArtists) -> int:
+            artist = item.artist
+            return artists.index(artist) if random() <= shuffle_weight else randrange(0, len(artists))
 
         shuffle(items)
-        items.sort(key=lambda item: sort_key(item.artist))
-
-    @classmethod
-    def _sort_by_fields(
-            cls,
-            items_grouped: MutableMapping, fields: MutableMapping[Field | None, bool],
-            ignore_words: Iterable[str] = IGNORE_WORDS_DEFAULT
-    ) -> MutableMapping:
-        """
-        Sort items by the given fields recursively in the order given.
-
-        :param items_grouped: Map of items grouped by the last sort value.
-        :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
-        :return: Map of grouped and sorted items.
-        """
-        field, reverse = next(iter(fields.items()), (None, None))
-        if field is None:  # sorting complete
-            return items_grouped
-
-        fields = copy(fields)
-        fields.pop(field)
-
-        # sort each group and recurse through each field for each group
-        for i, (key, items) in enumerate(items_grouped.items(), 1):
-            cls.sort_by_field(items=items, field=field, reverse=reverse, ignore_words=ignore_words)
-            groups = cls.group_by_field(items, field=field)
-            items_grouped[key] = cls._sort_by_fields(groups, fields=fields, ignore_words=ignore_words)
-
-        return items_grouped
-
-    def as_dict(self):
-        fields = None
-        if isinstance(self.sort_fields, Mapping):
-            fields = {field.name.lower(): "desc" if r else "asc" for field, r in self.sort_fields.items()}
-
-        return {
-            "sort_fields": fields,
-            "shuffle_mode": self.shuffle_mode,
-            "shuffle_weight": self.shuffle_weight
-        }
+        items[:] = sorted(items, key=_sort_key)

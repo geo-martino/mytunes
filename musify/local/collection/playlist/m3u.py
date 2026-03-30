@@ -9,7 +9,7 @@ from pydantic import Field, TypeAdapter, NonNegativeInt
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models.result import LogFormatter, CountResult
-from musify.processors_new.filters import PathsFilter
+from musify.processors.filters import PathsFilter
 
 
 class SyncM3UResult(CountResult):

@@ -17,10 +17,10 @@ from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XM
 from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
-from musify.processors_new.compare import Comparer
-from musify.processors_new.filters import ComparerFilter, PathsFilter, MatchFilter
-from musify.processors_new.limit import LimitType, ItemLimiter
-from musify.processors_new.sort import ShuffleMode, ItemSorter, SORT_FIELDS
+from musify.processors.compare import Comparer
+from musify.processors.filters import ComparerFilter, PathsFilter, MatchFilter
+from musify.processors.limit import LimitType, ItemLimiter
+from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.models.testers import BaseModelTester
 

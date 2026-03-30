@@ -25,10 +25,10 @@ from musify.models import BaseModel
 from musify.models.exception import MusifyValidationError
 from musify.models.result import LogFormatter, CountResult
 from musify.models.sequence import MutableUniqueSequence
-from musify.processors_new.compare import Comparer
-from musify.processors_new.filters import MatchFilter, PathsFilter, ComparerFilter, MatchResult
-from musify.processors_new.limit import ItemLimiter
-from musify.processors_new.sort import ItemSorter
+from musify.processors.compare import Comparer
+from musify.processors.filters import MatchFilter, PathsFilter, ComparerFilter, MatchResult
+from musify.processors.limit import ItemLimiter
+from musify.processors.sort import ItemSorter
 
 try:
     import xmltodict
