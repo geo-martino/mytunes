@@ -12,7 +12,7 @@ import aiofiles
 import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from mutagen import FileType
+from mutagen import FileType, MutagenError
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
     InstanceOf, field_serializer, BeforeValidator, TypeAdapter, ValidationError, PositiveInt
 # noinspection PyProtectedMember
@@ -78,7 +78,7 @@ class LocalTrack[FT: FileType](
     Track[LocalArtist, LocalAlbum, LocalGenre],
     metaclass=makecls(),
 ):
-    __supported_types__: ClassVar[Sequence[type[mutagen.FileType]]]
+    __supported_types__: ClassVar[Sequence[type[mutagen.FileType]] | None] = None
 
     # override to apply file tag metadata and alias
     name: Annotated[StrippedString, TagAttribute()] = Field(
@@ -219,13 +219,13 @@ class LocalTrack[FT: FileType](
     async def load_file(cls, path: str | Path) -> FT:
         # TODO: improve async performance?
         async with aiofiles.open(path, mode='rb') as file:
-            file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
+            try:
+                file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
+            except MutagenError:  # async load doesn't always work...
+                # fallback to loading synchronously directly through mutagen
+                file = mutagen.File(path, options=cls.__supported_types__)
 
-        if file is None:  # async load doesn't always work...
-            # fallback to loading synchronously directly through mutagen
-            file = mutagen.File(path, options=cls.__supported_types__)
-
-        if file is None or not any(isinstance(file, kls) for kls in cls.__supported_types__):
+        if file is None:
             raise FileError(path=path, message="Failed to load file to the expected type")
 
         file.filename = str(path)
