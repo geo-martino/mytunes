@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterable
 from collections.abc import MutableMapping
 from copy import deepcopy
@@ -163,6 +164,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             uris = [item.uri for item in collection.items if isinstance(item, HasURI) and item.has_uri]
             await api.add(playlist.uri.api_url, uris=uris, show_bar=False)
 
+            playlist.cursor.total = sys.maxsize  # should help force an extension
             await playlist.extend(self.api)  # refresh playlist items with just added URIs
 
             await api_saved.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
