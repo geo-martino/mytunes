@@ -400,6 +400,9 @@ class LocalLibrary(
 
         groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
         for path, group in groups:
+            if not path:
+                continue
+
             tracks = sorted(tracks, key=lambda track: track.filename)
             yield Folder(name=path.name, tracks=group)
 
