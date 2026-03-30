@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import Field, NonNegativeInt, validate_call
 
+from musify._types import Number
 from musify.models import AttributeModel
 from musify.models.collection import CollectionModel
 from musify.models.item.album import HasAlbum
@@ -11,7 +12,7 @@ from musify.models.properties.length import HasLength, Length
 from musify.processors.clean._base import TagCleaner
 
 
-class NumericCleaner[IT: AttributeModel](TagCleaner[IT, int | float]):
+class NumericCleaner[IT: AttributeModel](TagCleaner[IT, Number]):
     round_to_nearest: NonNegativeInt = Field(
         description="Round the value to nearest integer.",
         default=0,
@@ -22,7 +23,7 @@ class NumericCleaner[IT: AttributeModel](TagCleaner[IT, int | float]):
         return item is None or isinstance(item, int | float)
 
     @validate_call
-    def clean(self, item: int | float | IT | None) -> int | float:
+    def clean(self, item: Number | IT | None) -> Number:
         if item is None:
             return 0
 
@@ -34,7 +35,7 @@ class NumericCleaner[IT: AttributeModel](TagCleaner[IT, int | float]):
         return value
 
     @classmethod
-    def _get_item_value(cls, item: Any) -> int | float:
+    def _get_item_value(cls, item: Any) -> Number:
         match item:
             case int() | float():
                 return item
@@ -56,7 +57,7 @@ class LengthCleaner(NumericCleaner[HasLength]):
                 return super().can_clean(item)
 
     @classmethod
-    def _get_item_value(cls, item: int | float | Length | HasLength | None) -> int | float:
+    def _get_item_value(cls, item: Number | Length | HasLength | None) -> Number:
         match item:
             case int() | float():
                 length = item

@@ -6,13 +6,13 @@ from typing import ClassVar, Iterable, Any, Self
 
 from pydantic import PrivateAttr, ValidationError
 
-from musify._types import String
+from musify._types import String, Number
 from musify.models._attribute import AttributeModel
 from musify.models._base import RootModel
 
 
 @total_ordering
-class NumberModel[T: int | float](RootModel[T]):
+class NumberModel[T: Number](RootModel[T]):
     def __int__(self):
         return int(self.root)
 

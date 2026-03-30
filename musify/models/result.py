@@ -102,7 +102,7 @@ class LenLogFormatter(LogFormatter[int]):
 @dataclass(config=ConfigDict(frozen=True))
 class MapLogFormatter[T](LogFormatter[T]):
     """Metadata for logging a value which should be mapped when logger."""
-    value: str = Field(
+    value: str | Callable[[T], str] = Field(
         description="The value to log if the condition is met.",
     )
 
@@ -110,10 +110,11 @@ class MapLogFormatter[T](LogFormatter[T]):
         if value is None or not self.condition(value):
             return None
 
+        value = self.value if isinstance(self.value, str) else self.value(value)
         if not pretty:
-            return self.value
+            return value
 
-        value = self._align_value(self.value)
+        value = self._align_value(value)
         return colored(value, color=self.colour, attrs=self.colour_attributes)
 
 

@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture
 from musify import MODULE_ROOT
 from musify.models._context import RemoteModelContext
 from musify.models.api import RemoteAPI, WriteCollectionEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 # noinspection PyProtectedMember
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
@@ -162,6 +162,25 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     @pytest.fixture
     def api(self) -> RemoteAPI:
         return MockRemoteAPI()
+
+    @pytest.fixture
+    def mock_modify(self) -> Generator[Mock, None, None]:
+        with patch.object(PlaylistReadWriteSavedEndpoints, "modify", new_callable=AsyncMock) as mock_modify:
+            yield mock_modify
+
+    async def test_sync_properties_dry_run(
+            self, model: RemoteMutablePlaylist, api: HasPlaylistEndpoints, mock_modify: Mock, faker: Faker
+    ):
+        result = await model.sync_properties(api=api, dry_run=True)
+        assert result == dict(name=model.name, description=model.description, public=model.public)
+        mock_modify.assert_not_called()
+
+    async def test_sync_properties(
+            self, model: RemoteMutablePlaylist, api: HasPlaylistEndpoints, mock_modify: Mock, faker: Faker
+    ):
+        result = await model.sync_properties(api=api)
+        assert result == dict(name=model.name, description=model.description, public=model.public)
+        mock_modify.assert_called_once_with(model.uri.api_url, **result)
 
     @pytest.fixture(autouse=True)
     def mock_get_sync_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:

@@ -141,9 +141,12 @@ class RemoteMutableLibrary[
                 remote: T = await api.playlists.saved.get_or_create(pl.name)
                 remote.tracks.replace(pl.tracks)
 
-                return pl.name, await remote.sync_items(
+                properties = await remote.sync_properties(api, dry_run=dry_run)
+                result = await remote.sync_items(
                     api=api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run, show_bar=False
                 )
+
+                return pl.name, result.model_copy(update=dict(properties=properties))
 
         bar = self.logger.get_asynchronous_iterator(
             map(_sync_playlist, playlists),

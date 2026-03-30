@@ -1,13 +1,17 @@
+from abc import abstractmethod
 from collections.abc import Sequence
 from typing import ClassVar, Type
 
+from aiorequestful.types import JSON
 from pydantic import validate_call, Field, PositiveInt
+from pydantic.json_schema import JsonSchemaValue
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
     ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints, ReadCollectionEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
+from musify.models.properties.image import ImageSource, PILImageFileT
 from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 
@@ -57,6 +61,7 @@ class PlaylistReadSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
         return [playlists_mapped[name] for name in names if name in playlists_mapped]
 
 
+# noinspection PyAbstractClass
 class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
     PlaylistReadSavedEndpoints[UT, RT, OT],
 ):
@@ -67,7 +72,8 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUse
             self._handler.log("SKIP", self._saved_read_url, message="No playlist data given to create")
             return None
 
-        response = await self._handler.post(self._saved_read_url, json=kwargs)
+        body = await self._format_playlist_body(**kwargs)
+        response = await self._handler.post(self._saved_read_url, json=body)
         playlist = self.__class__.create_model(response, context=self._model_context)
 
         message = f"Created playlist: {playlist.name!r} -> {playlist.uri.api_url}"
@@ -89,7 +95,14 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUse
         if not kwargs:
             self._handler.log("SKIP", url, message="No playlist data given to modify")
             return
-        await self._handler.put(url, json=kwargs)
+
+        body = await self._format_playlist_body(**kwargs)
+        await self._handler.put(url, json=body)
+
+    @classmethod
+    async def _format_playlist_body(cls, **kwargs) -> JsonSchemaValue:
+        """Format the playlist body for playlist endpoints."""
+        return kwargs
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796

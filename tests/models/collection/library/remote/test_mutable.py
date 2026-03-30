@@ -91,6 +91,11 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert playlist.uri in model.playlists
 
     @pytest.fixture
+    def mock_sync_properties(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+        with patch.object(RemoteMutablePlaylist, "sync_properties", new_callable=AsyncMock) as mock_sync_props:
+            yield mock_sync_props
+
+    @pytest.fixture
     def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
         with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync_items:
             yield mock_sync_items
@@ -100,6 +105,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             playlists: list[RemoteMutablePlaylist],
             mock_get_or_create_playlist: Mock,
+            mock_sync_properties: Mock,
             mock_sync_items: Mock,
             mock_semaphore: Mock,
             faker: Faker,
@@ -110,6 +116,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert len(results) == len(playlists)
 
         assert mock_get_or_create_playlist.call_count == len(playlists)
+        assert mock_sync_properties.call_count == len(playlists)
         assert mock_sync_items.call_count == len(playlists)
         assert mock_semaphore.call_count == len(playlists)
 

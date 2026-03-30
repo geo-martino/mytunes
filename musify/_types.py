@@ -25,8 +25,7 @@ type UpperSnakeCase = Annotated[
 ]
 type ListWithValues[T] = Annotated[list[T], MinLen(1)]
 
-
-
+type Number = int | float
 
 
 def to_set(value: Any) -> set[Any] | None:

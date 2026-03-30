@@ -2,6 +2,7 @@ from typing import Literal, final
 
 from pydantic import Field, PositiveInt, PositiveFloat
 
+from musify._types import Number
 from musify.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
 from musify.processors.match.score._base import Scorer
@@ -11,7 +12,7 @@ from musify.processors.match.score._base import Scorer
 class NumericScorer[CT: NumericCleaner](Scorer[CT]):
 
     @staticmethod
-    def _calculate_difference_score[T: int | float](value: T, other: T | None, max_range: T = None) -> float:
+    def _calculate_difference_score[T: Number](value: T, other: T | None, max_range: T = None) -> float:
         if not value or not other:
             return 0
         if max_range is None:

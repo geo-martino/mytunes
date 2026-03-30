@@ -7,9 +7,9 @@ from datetime import datetime
 from random import random, randrange, shuffle, uniform
 from typing import Any, Literal, Annotated, Mapping
 
-from aiorequestful.types import Number
 from pydantic import Field, field_validator, field_serializer
 
+from musify._types import Number
 from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.models import ResourceModel, IntEnumModel, AttributeModel
 from musify.models.item.artist import HasArtists

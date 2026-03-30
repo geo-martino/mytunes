@@ -13,6 +13,7 @@ from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices, ValidationError
+from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
@@ -286,7 +287,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         return tuple(items), cursors[-1]
 
-    async def _get_page(self, page: PageCursor, item_type: str) -> JSON:
+    async def _get_page(self, page: PageCursor, item_type: str) -> JsonSchemaValue:
         """Thin wrapper for sending a get request from a page cursor while also formatting a log message"""
         log_message = None
         if isinstance(page, IndexCursor):
@@ -547,7 +548,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         return len(uris)
 
     @staticmethod
-    def _generate_append_batch_body(values: Iterable[str]) -> JSON:
+    def _generate_append_batch_body(values: Iterable[str]) -> JsonSchemaValue:
         """Generate a request body for the API endpoint for append batched requests."""
         return {"uris": list(map(str, values))}
 
@@ -610,7 +611,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         return len(uris)
 
     @staticmethod
-    def _generate_remove_batch_body(values: Iterable[str]) -> JSON:
+    def _generate_remove_batch_body(values: Iterable[str]) -> JsonSchemaValue:
         """Generate a request body for the API endpoint for remove batched requests."""
         return {"uris": list(map(str, values))}
 
@@ -683,7 +684,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return len(uris)
 
     @staticmethod
-    def _generate_add_batch_body(values: Iterable[str]) -> JSON:
+    def _generate_add_batch_body(values: Iterable[str]) -> JsonSchemaValue:
         """Generate a request body for the API endpoint for batched requests."""
         return {"ids": list(map(str, values))}
 
@@ -720,7 +721,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return len(uris)
 
     @staticmethod
-    def _generate_remove_batch_body(values: Iterable[str]) -> JSON:
+    def _generate_remove_batch_body(values: Iterable[str]) -> JsonSchemaValue:
         """Generate a request body for the API endpoint for batched requests."""
         return {"ids": list(map(str, values))}
 

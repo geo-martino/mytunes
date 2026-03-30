@@ -15,7 +15,7 @@ from pydantic.fields import FieldInfo
 from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
-from musify._types import LowerSnakeCase
+from musify._types import LowerSnakeCase, Number
 from musify.exception import MusifyTypeError
 from musify.models import AttributeModel
 from musify.models.item.track import Track
@@ -266,13 +266,13 @@ class Comparer(DynamicProcessor):
         return not self._is(actual=actual, expected=expected)
 
     @processormethod("greater_than", "in_the_last")
-    def _is_after[T: int | float](self, actual: T | None, expected: T | None) -> bool:
+    def _is_after[T: Number](self, actual: T | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual > expected
 
     @processormethod("less_than", "not_in_the_last")
-    def _is_before[T: int | float](self, actual: T | None, expected: T | None) -> bool:
+    def _is_before[T: Number](self, actual: T | None, expected: T | None) -> bool:
         if actual is None or expected is None:
             return False
         return actual < expected
@@ -286,13 +286,13 @@ class Comparer(DynamicProcessor):
         return not self._is_in(actual=actual, expected=expected)
 
     @processormethod
-    def _in_range[T: int | float](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
+    def _in_range[T: Number](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
         if actual is None or expected is None or expected[0] is None or expected[1] is None:
             return False
         return expected[0] <= actual <= expected[1]
 
     @processormethod
-    def _not_in_range[T: int | float](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
+    def _not_in_range[T: Number](self, actual: T | None, expected: tuple[T, T] | None) -> bool:
         return not self._in_range(actual=actual, expected=expected)
 
     @processormethod

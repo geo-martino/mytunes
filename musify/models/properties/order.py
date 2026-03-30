@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import Any, Self, ClassVar, Annotated
 
+from aiorequestful.types import Number
 from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelWrapValidatorHandler
 
 from musify.models._attribute import AttributeModel
@@ -32,7 +33,7 @@ class Position(AttributeModel):
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
-    def _from_number(cls, value: int | float, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _from_number(cls, value: Number, handler: ModelWrapValidatorHandler[Self]) -> Self:
         if not isinstance(value, int | float):
             return handler(value)
 

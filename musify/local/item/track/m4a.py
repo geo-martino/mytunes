@@ -8,7 +8,7 @@ from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_
     computed_field
 from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
 
-from musify._types import StrippedString
+from musify._types import StrippedString, Number
 from musify.local.exception import FileError
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
@@ -199,7 +199,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return self._join_split_tags(value)
 
     @field_serializer("bpm", mode="plain", when_used="unless-none")
-    def _serialize_bpm[T: int | float](self, value: T, info: FieldSerializationInfo) -> T | list[int] | None:
+    def _serialize_bpm[T: Number](self, value: T, info: FieldSerializationInfo) -> T | list[int] | None:
         if not info.by_alias:  # not serializing to tag IDs
             return value
         if not isinstance(value, int | float):

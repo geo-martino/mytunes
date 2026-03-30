@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import Field
 
+from musify._types import Number
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.processors import Processor
@@ -19,7 +20,7 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
     cleaner: C = Field(
         description="The cleaner to use for cleaning the tag value before scoring.",
     )
-    weight: int | float = Field(
+    weight: Number = Field(
         description="The weight to be applied to the score.",
         default=1,
     )
@@ -39,7 +40,7 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         """Check whether the item is scorable by this scorer."""
         return self.cleaner.can_clean(item)
 
-    def score[T: HasName](self, item: T, other: T | None = None) -> int | float:
+    def score[T: HasName](self, item: T, other: T | None = None) -> Number:
         """Scores the similarity between the source and other attributes."""
         item_val = self.cleaner.clean(item)
         other_val = self.cleaner.clean(other) if other is not None else None
@@ -50,7 +51,7 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         return score
 
     @abstractmethod
-    def _calculate_score[T: Any](self, value: T, other: T | None) -> int | float:
+    def _calculate_score[T: Any](self, value: T, other: T | None) -> Number:
         """Scores the similarity between the value and other value without applying the weight."""
         raise NotImplementedError
 

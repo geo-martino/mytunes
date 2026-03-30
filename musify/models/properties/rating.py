@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from aiorequestful.types import Number
 from pydantic import NonNegativeFloat, Field
 
 from musify.models._attribute import AttributeModel
@@ -9,7 +10,7 @@ from musify.models.metadata import Attribute
 from musify.models.properties import NumberModel
 
 
-class Rating[T: int | float](NumberModel[T]):
+class Rating[T: Number](NumberModel[T]):
     pass
 
 

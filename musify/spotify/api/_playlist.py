@@ -6,6 +6,7 @@ from aiorequestful.response.exception import ResponseError
 from aiorequestful.types import JSON
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
+from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from musify.local.item.track import LocalTrack
@@ -35,15 +36,15 @@ class _SpotifySavedPlaylistEndpoints(
     _saved_limit: ClassVar[int] = 50
     _saved_path: ClassVar[str] = "items"
 
-    @staticmethod
+    @classmethod
     @validate_call
     def _format_playlist_body(
-            name: str = None, public: bool = None, collaborative: bool = None, description: str = None
-    ) -> JSON:
+            cls, name: str = None, public: bool = None, collaborative: bool = None, description: str = None
+    ) -> JsonSchemaValue:
         if public and collaborative:
             raise RequestError("A playlist cannot be both public and collaborative.")
 
-        body: JSON = {}
+        body: JsonSchemaValue = {}
         if name is not None:
             body["name"] = name
         if public is not None:
@@ -54,11 +55,6 @@ class _SpotifySavedPlaylistEndpoints(
             body["description"] = description
 
         return body
-
-    @validate_call
-    async def create(self, name: str, **kwargs) -> SpotifyPlaylist:
-        body = self._format_playlist_body(name=name, **kwargs)
-        return await super().create(**body)
 
     # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
     # https://github.com/pydantic/pydantic/issues/7796
@@ -75,20 +71,17 @@ class _SpotifySavedPlaylistEndpoints(
             image: bytes | ImageSource | PILImageFileT | None = None,
             **kwargs
     ) -> None:
-        if kwargs:
-            body = self._format_playlist_body(**kwargs)
-            await super().modify(**body)
+        if not kwargs and not image:
+            self._handler.log("SKIP", url, message="No playlist data given to modify")
 
+        if kwargs:
+            await super().modify(**kwargs)
         if image is not None:
             await self._modify_image(url, image=image)
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
     async def _modify_image(
             self, url: SpotifyApiURL[SpotifyPlaylist], image: bytes | ImageSource | PILImageFileT
     ) -> None:
-        """Replace the image used to represent a specific playlist."""
         data, mime = await self._get_image_data(image)
         if not url.path.endswith("/images"):
             url = url.joinpath("images")
@@ -161,5 +154,5 @@ class SpotifyPlaylistEndpoints(
         return await super().remove(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
 
     @staticmethod
-    def _generate_remove_batch_body(values: Iterable[str]) -> JSON:
+    def _generate_remove_batch_body(values: Iterable[str]) -> JsonSchemaValue:
         return {"items": [{"uri": str(uri)} for uri in values]}

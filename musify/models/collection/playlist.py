@@ -5,12 +5,14 @@ from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union
 
 from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, computed_field, PositiveInt, model_validator
-from pydantic_core.core_schema import ValidationInfo
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import ValidationInfo, JsonSchema
 
 from musify._types import StrippedString
 from musify.models import ResourceModel
 from musify.models._context import RemoteModelContext
 from musify.models._metaclass import makecls
+from musify.models.api import HasSavedEndpoints
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items
@@ -27,7 +29,8 @@ from musify.models.user import RemoteUser
 from musify.processors.filters import ComparerFilter
 
 if TYPE_CHECKING:
-    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints
+    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints, \
+    PlaylistReadWriteSavedEndpoints
 
 
 class Playlist[TK, TV: Track](
@@ -188,6 +191,33 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             )
 
         return self
+
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
+    async def sync_properties(
+            self,
+            api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]],
+            dry_run: bool = False,
+    ) -> JsonSchemaValue:
+        """
+        Synchronise the current playlist's properties with the remote service.
+        This may include the name, description and other properties depending on the remote service.
+
+        :param api: The API to use for synchronisation.
+        :param dry_run: Run function, but do not modify the remote playlists at all.
+        :return: The properties synchronised.
+        """
+        body = self._get_properties_body()
+        if not dry_run:
+            await api.playlists.saved.modify(self.uri.api_url, **body)
+
+        return body
+
+    def _get_properties_body(self) -> JsonSchemaValue:
+        return dict(
+            name=self.name,
+            description=self.description,
+            public=self.public,
+        )
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def sync_items(

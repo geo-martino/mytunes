@@ -1,9 +1,11 @@
 from typing import Literal, Collection, Annotated
 
 from pydantic import NonNegativeInt, Field
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import JsonSchema
 
 from musify.models.exception import RequestError
-from musify.models.result import LogFormatter, CountResult
+from musify.models.result import LogFormatter, CountResult, MapLogFormatter
 
 
 class SyncRemoteResult(CountResult):
@@ -63,6 +65,18 @@ class SyncRemoteResult(CountResult):
         LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
     ] = Field(
         description="The total number of items in the resource after the sync."
+    )
+    properties: Annotated[
+        JsonSchemaValue,
+        MapLogFormatter(
+            value=lambda x: ", ".join(x.keys()),
+            colour="blue",
+            condition=lambda x: len(x) > 0,
+            include_name_in_log=False
+        ),
+    ] = Field(
+        description="The modified properties of the sync operation, if any.",
+        default_factory=dict,
     )
 
 

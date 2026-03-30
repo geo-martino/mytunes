@@ -2,6 +2,7 @@ from collections.abc import MutableMapping
 from typing import final, Any, ClassVar, Annotated, Self, Literal
 
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
+from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
 from musify.models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
@@ -124,3 +125,9 @@ class SpotifyMutablePlaylist(
             )
 
         return self
+
+    def _get_properties_body(self) -> JsonSchemaValue:
+        body = super()._get_properties_body()
+        body["collaborative"] = self.collaborative
+        body["image"] = next(iter(self.images.values()), None)
+        return body

@@ -2,6 +2,7 @@ from typing import ClassVar, final, Literal, Type, Any
 
 from aiorequestful.types import JSON
 from pydantic import AliasPath, validate_call
+from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from musify.models.api import HasSavedEndpoints
@@ -31,7 +32,7 @@ class _SpotifyArtistEndpoints(
         return item
 
     @classmethod
-    def _get_items_from_response(cls, response: JSON, path: str | AliasPath) -> list[JSON]:
+    def _get_items_from_response(cls, response: JsonSchemaValue, path: str | AliasPath) -> list[JsonSchemaValue]:
         return list(map(cls._add_albums_cursor_to_item, super()._get_items_from_response(response, path=path)))
 
 

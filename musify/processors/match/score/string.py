@@ -2,7 +2,7 @@ from typing import Literal, Any, final, Self
 
 from pydantic import Field, model_validator
 
-from musify._types import LowerStrippedString
+from musify._types import LowerStrippedString, Number
 from musify.models.exception import MusifyValidationError
 from musify.models.item.album import HasAlbum
 from musify.models.item.artist import HasArtists
@@ -43,7 +43,7 @@ class StringScoreReducer[CT: StringCleaner](StringScorer[CT]):
             )
         return self
 
-    def _reduce_score(self, score: int | float, value: str, other: str | None) -> float:
+    def _reduce_score(self, score: Number, value: str, other: str | None) -> float:
         if not value or not other:
             return score
         if not score or self.reduce_factor == 1 or not self.reduce_on_phrases:
@@ -92,7 +92,7 @@ class KaraokeScorer(StringScorer[NameCleaner]):
             AlbumCleaner.can_clean(item),
         ))
 
-    def score[T: HasName](self, item: T, other: T | None = None) -> int | float:
+    def score[T: HasName](self, item: T, other: T | None = None) -> Number:
         scores = [
             self._calculate_score(item, item) if isinstance(item, HasName) else False,
             self._calculate_score(item, item.artist) if isinstance(item, HasArtists) else False,
@@ -173,7 +173,7 @@ class AlbumScorer(StringScoreReducer[AlbumCleaner]):
     type: Literal["album"] = "album"
     cleaner: AlbumCleaner = AlbumCleaner()
 
-    def _calculate_score(self, value: str, other: str) -> int | float:
+    def _calculate_score(self, value: str, other: str) -> Number:
         if not value or not other:
             return 0
 

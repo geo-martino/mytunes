@@ -8,6 +8,7 @@ from typing import Annotated
 
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
 
+from musify._types import Number
 from musify.models import AttributeModel
 from musify.models.metadata import Attribute
 from musify.models.properties._core import NumberModel
@@ -18,7 +19,7 @@ class Length(NumberModel[NonNegativeInt | NonNegativeFloat]):
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @staticmethod
-    def _convert_numeric_representation_to_number[T: str](value: T) -> T | int | float:
+    def _convert_numeric_representation_to_number[T: str](value: T) -> T | Number:
         if not isinstance(value, str):
             return value
         if re.match(r"^\d+(\.\d+)?$", value):  # already a number
