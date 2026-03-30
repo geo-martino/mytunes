@@ -382,6 +382,7 @@ class LocalLibrary(
     ###########################################################################
     ## Collections
     ###########################################################################
+    # TODO: test me better...
     def folders(self, tracks: Collection[LocalTrack] = None) -> Generator[Folder, None, None]:
         """
         Dynamically generate a set of folder collections from the tracks in this library.
@@ -394,7 +395,6 @@ class LocalLibrary(
             """Return path of a track relative to the library folders of this library"""
             for folder in self.library_folders:
                 if track.path.is_relative_to(folder):
-                    print("RELATIVE", folder, track.path.relative_to(folder))
                     return track.path.relative_to(folder).parent
 
             raise MusifyValueError(f"Track path is not relative to any library folders: {track.path}")
@@ -415,7 +415,6 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.album.name if track.album else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="album")
         for name, group in grouped.items():
-            print("ALBUM", name, len(group))
             if name is None:
                 continue
 
@@ -423,6 +422,7 @@ class LocalLibrary(
                 track.album for track in group
                 if track.album and track.album.name.casefold() == name.casefold()
             )
+
             group = sorted(group, key=lambda track: track.track or 0)
             yield LocalAlbumCollection(**album.model_dump(), tracks=group)
 
@@ -434,7 +434,6 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.artists[0].name if track.artists else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="artists")
         for name, group in grouped.items():
-            print("ARTIST", name, len(group))
             if name is None:
                 continue
 
@@ -442,11 +441,12 @@ class LocalLibrary(
                 artist for track in group for artist in track.artists
                 if artist.name.casefold() == name.casefold()
             )
-            albums = sorted(self.albums(group), key=lambda album: album.name)
-            print("ARTIST ALBUM", len(albums), [a.name for a in albums])
+
+            albums = sorted(self.albums(group), key=lambda alb: alb.name)
             for album in albums:
-                if not any(artist.name == a.name for a in album.artists):
+                if not any(artist.name == art.name for art in album.artists):
                     album.artists.append(artist)
+
             yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
     def genres(self, tracks: Collection[LocalTrack] = None) -> Generator[LocalGenreCollection, None, None]:
@@ -457,7 +457,6 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.genre)
         grouped = ItemSorter.group_by_field(items=tracks, field="genres")
         for name, group in grouped.items():
-            print("GENRE", name, len(group))
             if name is None:
                 continue
 
@@ -465,5 +464,6 @@ class LocalLibrary(
                 genre for track in group for genre in track.genres
                 if genre.name.casefold() == name.casefold()
             )
+
             group = sorted(group, key=lambda track: track.track or 0)
             yield LocalGenreCollection(**genre.model_dump(), tracks=group)
