@@ -3,12 +3,12 @@ from random import sample
 from urllib.parse import unquote
 
 import pytest
+from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 
 from musify.libraries.remote.core.types import RemoteObjectType
 from musify.libraries.remote.spotify.api import SpotifyAPI
 from musify.libraries.remote.spotify.library import SpotifyLibrary
 from musify.libraries.remote.spotify.object import SpotifyTrack
-from musify.processors.filter import FilterDefinedList, FilterIncludeExclude
 from tests.libraries.remote.core.library import RemoteLibraryTester
 from tests.libraries.remote.spotify.api.mock import SpotifyMock
 

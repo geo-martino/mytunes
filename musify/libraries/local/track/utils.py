@@ -7,6 +7,7 @@ and a utility function for loading the appropriate :py:class:`LocalTrack` type f
 from pathlib import Path
 
 from musify.file.exception import InvalidFileType
+
 from musify.libraries.local.track import LocalTrack
 from musify.libraries.local.track.flac import FLAC
 from musify.libraries.local.track.m4a import M4A

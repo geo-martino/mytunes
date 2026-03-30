@@ -5,9 +5,8 @@ Placed here separately to avoid circular import logic issues.
 from abc import ABCMeta, abstractmethod
 from typing import Any
 
-from yarl import URL
-
 from musify.base import MusifyObject
+from yarl import URL
 
 
 class RemoteResponse(MusifyObject, metaclass=ABCMeta):

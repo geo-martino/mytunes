@@ -1,13 +1,12 @@
-from pydantic import Field
-
-from musify.models import AttributeModel
-
 from asyncio import Semaphore
 from typing import Annotated, Any
 
+from pydantic import Field
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
+
+from musify.models import AttributeModel
 
 
 class _SemaphoreSchema:

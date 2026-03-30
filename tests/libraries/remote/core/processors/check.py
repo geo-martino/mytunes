@@ -6,6 +6,7 @@ from random import randrange, choice, sample
 
 import pytest
 from pytest_mock import MockerFixture
+from tests.testers import PrettyPrinterTester
 
 from musify.libraries.collection import BasicCollection
 from musify.libraries.local.track import LocalTrack
@@ -17,7 +18,6 @@ from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.remote.core.processors.utils import patch_input
 from tests.libraries.remote.core.utils import RemoteMock
 from tests.libraries.remote.spotify.utils import random_uri, random_uris
-from tests.testers import PrettyPrinterTester
 from tests.utils import path_token, random_str
 
 

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated, TYPE_CHECKING, Self, Union
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self
 
-from pydantic import Field, validate_call, BeforeValidator, TypeAdapter, computed_field, PositiveInt, model_validator
+from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import ValidationInfo, JsonSchema
+from pydantic_core.core_schema import ValidationInfo
 
 from musify._types import StrippedString
 from musify.models import ResourceModel
@@ -16,7 +16,7 @@ from musify.models.api import HasSavedEndpoints
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items
-from musify.models.cursors import PageCursor, InitialCursor
+from musify.models.cursors import PageCursor
 from musify.models.exception import MusifyValidationError
 from musify.models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from musify.models.mapping import UniqueMapping, MutableUniqueMapping

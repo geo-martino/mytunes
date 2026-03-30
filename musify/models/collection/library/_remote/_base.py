@@ -27,14 +27,14 @@ from musify.models.user import RemoteUser
 
 class RemoteLibrary[
     API: RemoteAPI,
-    TV: RemoteTrack,
-    VP: RemotePlaylist,
+    TT: RemoteTrack,
+    PT: RemotePlaylist,
     RT: RemoteArtist,
     AT: RemoteAlbum,
     GT: RemoteGenre,
     UT: RemoteUser,
 ](
-    Library[UT, TV, UT, VP], IsRemoteService[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
+    Library[UT, TT, UT, PT], IsRemoteService[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
     @property
     def user(self) -> Annotated[UT | None, Attribute()]:
@@ -123,7 +123,7 @@ class RemoteLibrary[
 
         playlists = await api.playlists.saved.get_all()
         if self.playlist_filter is not None:
-            playlists: list[VP] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
+            playlists: list[PT] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
 
         # noinspection PyProtectedMember
         self.playlists._replace(sorted(playlists, key=lambda pl: pl.name.casefold()))
@@ -146,7 +146,7 @@ class RemoteLibrary[
 
         self.logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
 
-        async def _extend_playlist_tracks(pl: VP) -> None:
+        async def _extend_playlist_tracks(pl: PT) -> None:
             async with self.concurrency:
                 items = await api.playlists.get_all(pl, show_bar=False)
             # noinspection PyProtectedMember
@@ -169,7 +169,7 @@ class RemoteLibrary[
 
         self.logger.stat(table)
 
-    def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[VP]]:
+    def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[PT]]:
         return RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
 
     ###########################################################################
@@ -200,7 +200,7 @@ class RemoteLibrary[
 
         self.logger.stat(table)
 
-    def _generate_track_results(self) -> RemoteTracksResult[TV]:
+    def _generate_track_results(self) -> RemoteTracksResult[TT]:
         return RemoteTracksResult.from_library(self.tracks, self.playlists.unique, self.albums)
 
     ###########################################################################

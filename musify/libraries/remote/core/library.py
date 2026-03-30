@@ -7,6 +7,9 @@ from collections.abc import Collection, Mapping, Iterable
 from typing import Any, Literal, Self
 
 from musify.base import MusifyItem
+from musify.processors.base import Filter
+from musify.processors.filter import FilterDefinedList
+
 from musify.libraries.core.object import Track, Library, Playlist
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.factory import RemoteObjectFactory
@@ -15,8 +18,6 @@ from musify.libraries.remote.core.object import RemoteTrack, RemotePlaylist, Rem
 from musify.libraries.remote.core.types import RemoteObjectType
 from musify.logger import MusifyLogger
 from musify.logger import STAT
-from musify.processors.base import Filter
-from musify.processors.filter import FilterDefinedList
 from musify.utils import align_string, get_max_width, to_collection
 
 type RestorePlaylistsType = (

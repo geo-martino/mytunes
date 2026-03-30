@@ -1,6 +1,5 @@
 import itertools
 from abc import abstractmethod
-from asyncio import Semaphore
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
 from contextlib import suppress
 from copy import copy
@@ -8,13 +7,12 @@ from io import BytesIO
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar, Annotated
 
-import aiofiles
 import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from mutagen import FileType, MutagenError
+from mutagen import FileType
 from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
-    InstanceOf, field_serializer, BeforeValidator, TypeAdapter, ValidationError, PositiveInt
+    field_serializer, BeforeValidator, TypeAdapter, ValidationError
 # noinspection PyProtectedMember
 from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo
@@ -30,7 +28,7 @@ from musify.models import BaseModel, ResourceModel, makecls
 from musify.models.collection.library import Library
 from musify.models.item.track import Track, HasMutableTracks
 from musify.models.metadata import TagAttribute
-from musify.models.properties.asynch import HasAsyncOperations, SemaphoreT
+from musify.models.properties.asynch import SemaphoreT
 from musify.models.properties.audio import IsAudioFile
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile

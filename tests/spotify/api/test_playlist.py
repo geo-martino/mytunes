@@ -1,18 +1,13 @@
 from collections.abc import Generator
-from contextlib import contextmanager, asynccontextmanager
 from io import BytesIO
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import Mock, patch
 
 import pytest
 from PIL import Image, ImageFile as PILImageFile
-from aiohttp import ClientSession, ClientResponse
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from yarl import URL
 
 from musify.models.exception import RequestError
-from musify.models.properties.image import ImageURL, ImageFile
-from musify.spotify import API_URL
 # noinspection PyProtectedMember
 from musify.spotify.api._playlist import _SpotifySavedPlaylistEndpoints
 from musify.spotify.collection.playlist import SpotifyPlaylist

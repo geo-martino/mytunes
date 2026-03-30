@@ -12,7 +12,7 @@ from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
-    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices, ValidationError
+    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticUndefined
 from yarl import URL

@@ -13,7 +13,6 @@ from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI, HasMutableURI, HasImmutableURI
-from musify.models.remote import RemoteModel
 from tests.models.testers import BaseModelTester, UniqueKeyTester
 from tests.utils import SimpleURI
 

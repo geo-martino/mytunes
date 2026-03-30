@@ -9,6 +9,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Self
 
 from musify.base import MusifyItem
+
 from musify.libraries.remote.core import RemoteResponse
 from musify.libraries.remote.core.api import RemoteAPI
 from musify.libraries.remote.core.exception import APIError

@@ -1,6 +1,4 @@
-import asyncio
 import itertools
-from asyncio import Semaphore
 from collections.abc import Generator, Iterable, Collection
 from functools import cached_property
 from pathlib import Path
@@ -8,8 +6,7 @@ from typing import Annotated, ClassVar, final, Self
 
 import tabulate
 from mutagen import MutagenError
-from mutagen.mp3 import HeaderNotFoundError
-from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, PrivateAttr, PositiveInt
+from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, PrivateAttr
 from termcolor import colored
 
 from musify._types import to_set
@@ -28,7 +25,6 @@ from musify.models.properties.uri import URI
 from musify.models.result import TotalCountResult, LenLogFormatter, Result
 from musify.processors.filters import Filter, ValuesFilter
 from musify.processors.sort import ItemSorter
-from musify.utils import afilter
 
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):

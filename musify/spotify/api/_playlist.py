@@ -1,10 +1,7 @@
 from collections.abc import Iterable
-from io import BytesIO
 from typing import ClassVar, final
 
 from aiorequestful.response.exception import ResponseError
-from aiorequestful.types import JSON
-from PIL import Image, ImageFile as PILImageFile
 from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
@@ -15,7 +12,7 @@ from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadW
 from musify.models.api.types import _ApiURISchema, _ApiURLSchema
 from musify.models.cursors import PageCursor, HasPageCursor
 from musify.models.exception import RequestError
-from musify.models.properties.image import ImageSource, PILImageFileT, ImageURL
+from musify.models.properties.image import ImageSource, PILImageFileT
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence

@@ -1,8 +1,6 @@
-from abc import abstractmethod
 from collections.abc import Sequence
 from typing import ClassVar, Type
 
-from aiorequestful.types import JSON
 from pydantic import validate_call, Field, PositiveInt
 from pydantic.json_schema import JsonSchemaValue
 
@@ -11,7 +9,6 @@ from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItems
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
-from musify.models.properties.image import ImageSource, PILImageFileT
 from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
 

@@ -4,20 +4,18 @@ from abc import abstractmethod
 from collections.abc import Collection
 from copy import copy
 from functools import total_ordering, cached_property
-from inspect import isabstract
 from typing import ClassVar, Self, Any, Annotated, TYPE_CHECKING, cast, Union
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, TypeAdapter
 # noinspection PyProtectedMember
-from pydantic.root_model import _RootModelMetaclass
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler, ValidationInfo
 from yarl import URL
 
-from musify._types import StrippedString, to_list, to_set
+from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
 from musify.models import abstract_property, ResourceModel
 from musify.models._attribute import AttributeModel
-from musify.models._base import RootModel, ModelMetaclass, BaseModel
+from musify.models._base import RootModel, BaseModel
 from musify.models._metaclass import makecls
 from musify.models.exception import MusifyValidationError
 from musify.models.metadata import UniqueAttribute, Attribute

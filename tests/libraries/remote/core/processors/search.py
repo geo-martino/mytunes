@@ -4,9 +4,10 @@ from copy import copy
 from urllib.parse import unquote
 
 import pytest
-
 from musify.base import MusifyItemSettable
 from musify.field import TagFields as Tag
+from tests.testers import PrettyPrinterTester
+
 from musify.libraries.collection import BasicCollection
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Album
@@ -16,7 +17,6 @@ from musify.libraries.remote.core.types import RemoteObjectType
 from musify.processors.search import RemoteItemSearcher, SearchConfig
 from tests.libraries.local.track.utils import random_track, random_tracks
 from tests.libraries.remote.core.utils import RemoteMock
-from tests.testers import PrettyPrinterTester
 
 
 class RemoteItemSearcherTester(PrettyPrinterTester, metaclass=ABCMeta):

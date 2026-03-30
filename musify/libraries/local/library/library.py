@@ -10,10 +10,12 @@ from pathlib import Path
 from typing import Any
 
 from aiorequestful.types import UnitCollection, UnitIterable
-
 from musify.base import Result
-from musify.exception import MusifyError
 from musify.file.path_mapper import PathMapper, PathStemMapper
+from musify.processors.base import Filter
+from musify.processors.filter import FilterDefinedList
+
+from musify.exception import MusifyError
 from musify.libraries.core.object import Library, LibraryMergeType
 from musify.libraries.local.collection import LocalCollection, LocalFolder, LocalAlbum, LocalArtist, LocalGenres
 from musify.libraries.local.playlist import PLAYLIST_CLASSES, LocalPlaylist, load_playlist
@@ -21,8 +23,6 @@ from musify.libraries.local.track import TRACK_CLASSES, LocalTrack, load_track
 from musify.libraries.local.track.field import LocalTrackField
 from musify.libraries.remote.core.wrangle import RemoteDataWrangler
 from musify.logger import STAT
-from musify.processors.base import Filter
-from musify.processors.filter import FilterDefinedList
 from musify.processors.sort import ItemSorter
 from musify.utils import align_string, get_max_width, to_collection, classproperty
 

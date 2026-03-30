@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Collection, Iterable, TYPE_CHECKING, Iterator
+from typing import Collection, TYPE_CHECKING, Iterator
 
 from musify.models import ResourceModel, BaseModel, abstract_property
 from musify.models.cursors import PageCursor, HasPageCursor

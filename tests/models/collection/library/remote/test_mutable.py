@@ -8,6 +8,7 @@ import pytest
 from aiorequestful.response.exception import ResponseError
 from faker import Faker
 from pytest_mock import MockerFixture
+from yarl import URL
 
 from musify import MODULE_ROOT
 from musify.models.api import RemoteAPI, WriteSavedEndpoints, ReadItemEndpoints, ReadItemsEndpoints
@@ -43,82 +44,93 @@ class TestRemoteMutableLibrary(BaseModelTester):
         return mocker.spy(Semaphore, "acquire")
 
     ###########################################################################
-    ## Create/sync playlists
+    ## Add saved items
     ###########################################################################
-    @pytest.fixture
-    def mock_create_playlist(
-            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
-    ) -> Generator[Mock, None, None]:
-        def _get_playlist(name: str, *_, **__) -> RemotePlaylist:
-            return next(pl for pl in playlists if str(pl.name) == name)
-
-        with patch.object(
-            PlaylistReadWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
-        ) as mock_create:
-            yield mock_create
+    @staticmethod
+    def _return_length(uris: Collection, *_, **__) -> int:
+        return len(uris)
 
     @pytest.fixture
-    def mock_get_or_create_playlist(
-            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
-    ) -> Generator[Mock, None, None]:
-        def _get_playlist(name: str, *_, **__) -> RemotePlaylist:
-            return next(pl for pl in playlists if str(pl.name) == name)
-
+    def mock_add_many(self) -> Generator[Mock, None, None]:
         with patch.object(
-            PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
-        ) as mock_get_or_create:
-            yield mock_get_or_create
+                WriteSavedEndpoints, "add_many", side_effect=self._return_length, new_callable=AsyncMock
+        ) as mock_add:
+            yield mock_add
 
-    async def test_create_playlist(
+    @pytest.fixture
+    def mock_get_many(self) -> Generator[Mock, None, None]:
+        with patch.object(ReadItemsEndpoints, "get_many", new_callable=AsyncMock) as mock_get:
+            yield mock_get
+
+    async def test_add_saved_items_from_resources(
             self,
             model: RemoteMutableLibrary,
-            playlists: list[RemoteMutablePlaylist],
-            mock_create_playlist: Mock,
-            faker: Faker
+            tracks: list[RemoteTrack],
+            mock_add_many: Mock,
+            mock_get_many: Mock,
     ):
-        expected = faker.random_element(playlists)
-        model.playlists.remove(expected)
-        assert expected.name not in model.playlists
+        mock_get_many.return_value = tracks
 
-        name = expected.name
-        description = expected.description
-        public = expected.public
+        result = await model._add_saved_items(items=tracks, items_type="tracks", api=model.api.tracks)
+        assert result == tracks
 
-        playlist = await model.create_playlist(name=name, description=description, public=public)
-        mock_create_playlist.assert_called_once_with(name=name, description=description, public=public)
-
-        assert playlist is expected
-        assert playlist.uri in model.playlists
-
-    @pytest.fixture
-    def mock_sync_properties(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
-        with patch.object(RemoteMutablePlaylist, "sync_properties", new_callable=AsyncMock) as mock_sync_props:
-            yield mock_sync_props
-
-    @pytest.fixture
-    def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
-        with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync_items:
-            yield mock_sync_items
-
-    async def test_sync_playlists(
+    async def test_add_saved_items_from_uris(
             self,
             model: RemoteMutableLibrary,
-            playlists: list[RemoteMutablePlaylist],
-            mock_get_or_create_playlist: Mock,
-            mock_sync_properties: Mock,
-            mock_sync_items: Mock,
-            mock_semaphore: Mock,
-            faker: Faker,
+            tracks: list[RemoteTrack],
+            mock_add_many: Mock,
+            mock_get_many: Mock,
     ):
-        model.playlists.update(playlists)
+        mock_get_many.return_value = tracks
+        uris = [track.uri for track in tracks]
 
-        results = await model.sync_playlist_items()
-        assert len(results) == len(playlists)
+        result = await model._add_saved_items(items=uris, items_type="tracks", api=model.api.tracks)
+        assert result == tracks
 
-        assert mock_get_or_create_playlist.call_count == len(playlists)
-        assert mock_sync_properties.call_count == len(playlists)
-        assert mock_sync_items.call_count == len(playlists)
-        assert mock_semaphore.call_count == len(playlists)
+    async def test_add_tracks(
+            self,
+            model: RemoteMutableLibrary,
+            tracks: list[RemoteTrack],
+            mock_add_many: Mock,
+            mock_get_many: Mock,
+    ):
+        mock_get_many.return_value = tracks
+
+        model.tracks.clear()
+        uris = [track.uri for track in tracks]
+
+        await model.add_tracks(uris)
+        assert model.tracks == tracks
+
+    async def test_add_artists(
+            self,
+            model: RemoteMutableLibrary,
+            artists: list[RemoteArtist],
+            mock_add_many: Mock,
+            mock_get_many: Mock,
+    ):
+        mock_get_many.return_value = artists
+
+        model.tracks.clear()
+        uris = [artist.uri for artist in artists]
+
+        await model.add_artists(uris)
+        assert model.artists == artists
+
+    async def test_add_albums(
+            self,
+            model: RemoteMutableLibrary,
+            albums: list[RemoteAlbum],
+            mock_add_many: Mock,
+            mock_get_many: Mock,
+    ):
+        mock_get_many.return_value = albums
+
+        model.tracks.clear()
+        uris = [album.uri for album in albums]
+
+        await model.add_albums(uris)
+        assert model.albums == albums
 
     ###########################################################################
     ## Sync saved items
@@ -137,17 +149,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
         target = f"{MODULE_ROOT}.models.collection.library._remote._mutable.get_sync_items"
         with patch(target, return_value=(add, remove, unchanged)) as mock_get_items:
             yield mock_get_items
-
-    @staticmethod
-    def _return_length(uris: Collection, *_, **__) -> int:
-        return len(uris)
-
-    @pytest.fixture
-    def mock_add_many(self) -> Generator[Mock, None, None]:
-        with patch.object(
-                WriteSavedEndpoints, "add_many", side_effect=self._return_length, new_callable=AsyncMock
-        ) as mock_add:
-            yield mock_add
 
     @pytest.fixture
     def mock_remove_many(self) -> Generator[Mock, None, None]:
@@ -253,105 +254,80 @@ class TestRemoteMutableLibrary(BaseModelTester):
         )
 
     ###########################################################################
-    ## Restore playlists
+    ## Create/sync playlists
     ###########################################################################
-    def test_extract_playlists_from_backup(
+    @pytest.fixture
+    def mock_create_playlist(
+            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
+    ) -> Generator[Mock, None, None]:
+        def _get_playlist(name: str, *_, **__) -> RemotePlaylist:
+            return next(pl for pl in playlists if str(pl.name) == name)
+
+        with patch.object(
+            PlaylistReadWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
+        ) as mock_create:
+            yield mock_create
+
+    @pytest.fixture
+    def mock_get_or_create_playlist(
+            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
+    ) -> Generator[Mock, None, None]:
+        def _get_playlist(name: str, *_, **__) -> RemotePlaylist:
+            return next(pl for pl in playlists if str(pl.name) == name)
+
+        with patch.object(
+            PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
+        ) as mock_get_or_create:
+            yield mock_get_or_create
+
+    async def test_create_playlist(
             self,
             model: RemoteMutableLibrary,
-            playlists: list[Playlist],
+            playlists: list[RemoteMutablePlaylist],
+            mock_create_playlist: Mock,
             faker: Faker
     ):
-        dump = {faker.uuid4(): {"uri": pl.uri, "tracks": [{"uri": tr.uri} for tr in pl.tracks]} for pl in playlists}
-        expected = tuple((pl["uri"], pl, tuple(tr["uri"] for tr in pl["tracks"])) for pl in dump.values())
+        expected = faker.random_element(playlists)
+        model.playlists.remove(expected)
+        assert expected.name not in model.playlists
 
-        assert model._extract_playlists_from_backup(dump) == expected
-        assert model._extract_playlists_from_backup({"playlists": dump}) == expected
-        assert model._extract_playlists_from_backup(dump.values()) == expected
-        assert model._extract_playlists_from_backup({"playlists": dump.values()}) == expected
+        name = expected.name
+        description = expected.description
+        public = expected.public
 
-    @pytest.fixture
-    def playlists_dump(self, playlists: list[Playlist]) -> list[dict[str, Any]]:
-        return [
-            {"name": pl.name, "uri": pl.uri, "tracks": [{"uri": str(tr.uri) for tr in pl.tracks}]}
-            for pl in playlists
-        ]
+        playlist = await model.create_playlist(name=name, description=description, public=public)
+        mock_create_playlist.assert_called_once_with(name=name, description=description, public=public)
 
-    @pytest.fixture
-    def mock_get_playlist(
-            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist], faker: Faker
-    ) -> Generator[tuple[Mock, list[str]], None, None]:
-        failed: list[str] = []
-        response = namedtuple("ClientResponse", ["status"])
-
-        def _get_playlist_or_raise_error(uri: str, *_, **__) -> RemotePlaylist:
-            playlist = next(pl for pl in playlists if str(pl.uri) == uri)
-            if faker.boolean():  # randomly decide whether the playlist 'exists' or not
-                return playlist
-
-            failed.append(uri)
-            # noinspection PyTypeChecker
-            raise ResponseError(response=response(status=404))
-
-        with patch.object(
-                ReadItemEndpoints, "get", side_effect=_get_playlist_or_raise_error, new_callable=AsyncMock
-        ) as mock_get:
-            yield mock_get, failed
-            assert mock_get.call_count == len(playlists)
+        assert playlist is expected
+        assert playlist.uri in model.playlists
 
     @pytest.fixture
-    def mock_get_many(self) -> Generator[Mock, None, None]:
-        with patch.object(ReadItemsEndpoints, "get_many", new_callable=AsyncMock) as mock_get:
-            yield mock_get
+    def mock_sync_properties(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+        with patch.object(RemoteMutablePlaylist, "sync_properties", new_callable=AsyncMock) as mock_sync_props:
+            yield mock_sync_props
 
-    async def test_restore_playlists_dry_run(
+    @pytest.fixture
+    def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+        with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync_items:
+            yield mock_sync_items
+
+    async def test_sync_playlists(
             self,
             model: RemoteMutableLibrary,
-            playlists: list[RemotePlaylist],
-            playlists_dump: list[dict[str, Any]],
-            mock_get_playlist: tuple[Mock, list[str]],
-            mock_create_playlist: Mock,
-            mock_get_many: Mock,
+            playlists: list[RemoteMutablePlaylist],
+            mock_get_or_create_playlist: Mock,
+            mock_sync_properties: Mock,
             mock_sync_items: Mock,
             mock_semaphore: Mock,
+            faker: Faker,
     ):
-        with patch.object(
-                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
-        ) as mock_load_playlists:
-            result = await model.restore_playlists(playlists_dump, dry_run=True)
-            mock_load_playlists.assert_called_once()
+        model.playlists.update(playlists)
 
-        assert len(result) == len(playlists)
+        results = await model.sync_playlist_items()
+        assert len(results) == len(playlists)
 
-        mock_get_playlist, failed = mock_get_playlist
-
-        mock_create_playlist.assert_not_called()
-        assert mock_get_many.call_count == len(playlists) - len(failed)
-        assert mock_sync_items.call_count == len(playlists) - len(failed)
-        assert mock_semaphore.call_count == len(playlists)
-
-    async def test_restore_playlists(
-            self,
-            model: RemoteMutableLibrary,
-            playlists: list[RemotePlaylist],
-            playlists_dump: list[dict[str, Any]],
-            mock_get_playlist: tuple[Mock, list[str]],
-            mock_create_playlist: Mock,
-            mock_get_many: Mock,
-            mock_sync_items: Mock,
-            mock_semaphore: Mock,
-    ):
-        with patch.object(
-                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
-        ) as mock_load_playlists:
-            result = await model.restore_playlists(playlists_dump, dry_run=False)
-            mock_load_playlists.assert_called_once()
-
-        assert len(result) == len(playlists)
-
-        mock_get_playlist, failed = mock_get_playlist
-
-        assert mock_create_playlist.call_count == len(failed)
-        assert mock_get_many.call_count == len(playlists)
+        assert mock_get_or_create_playlist.call_count == len(playlists)
+        assert mock_sync_properties.call_count == len(playlists)
         assert mock_sync_items.call_count == len(playlists)
         assert mock_semaphore.call_count == len(playlists)
 
@@ -464,3 +440,101 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_sync_saved_items.assert_called_once_with(
             kind="refresh", items_type="albums", items=albums, api=model.api.albums,  dry_run=dry_run
         )
+
+    ###########################################################################
+    ## Restore playlists
+    ###########################################################################
+    def test_extract_playlists_from_backup(
+            self,
+            model: RemoteMutableLibrary,
+            playlists: list[Playlist],
+            faker: Faker
+    ):
+        dump = {faker.uuid4(): {"uri": pl.uri, "tracks": [{"uri": tr.uri} for tr in pl.tracks]} for pl in playlists}
+        expected = tuple((pl["uri"], pl, tuple(tr["uri"] for tr in pl["tracks"])) for pl in dump.values())
+
+        assert model._extract_playlists_from_backup(dump) == expected
+        assert model._extract_playlists_from_backup({"playlists": dump}) == expected
+        assert model._extract_playlists_from_backup(dump.values()) == expected
+        assert model._extract_playlists_from_backup({"playlists": dump.values()}) == expected
+
+    @pytest.fixture
+    def playlists_dump(self, playlists: list[Playlist]) -> list[dict[str, Any]]:
+        return [
+            {"name": pl.name, "uri": pl.uri, "tracks": [{"uri": str(tr.uri) for tr in pl.tracks}]}
+            for pl in playlists
+        ]
+
+    @pytest.fixture
+    def mock_get_playlist(
+            self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist], faker: Faker
+    ) -> Generator[tuple[Mock, list[URL]], None, None]:
+        failed: list[URL] = []
+        response = namedtuple("ClientResponse", ["status"])
+
+        def _get_playlist_or_raise_error(url: URL, *_, **__) -> RemotePlaylist:
+            playlist = next(pl for pl in playlists if str(pl.uri.api_url) == str(url))
+            if faker.boolean():  # randomly decide whether the playlist 'exists' or not
+                return playlist
+
+            failed.append(url)
+            # noinspection PyTypeChecker
+            raise ResponseError(response=response(status=404))
+
+        with patch.object(
+                ReadItemEndpoints, "get", side_effect=_get_playlist_or_raise_error, new_callable=AsyncMock
+        ) as mock_get:
+            yield mock_get, failed
+            assert mock_get.call_count == len(playlists)
+
+    async def test_restore_playlists_dry_run(
+            self,
+            model: RemoteMutableLibrary,
+            playlists: list[RemotePlaylist],
+            playlists_dump: list[dict[str, Any]],
+            mock_get_playlist: tuple[Mock, list[URL]],
+            mock_create_playlist: Mock,
+            mock_get_many: Mock,
+            mock_sync_items: Mock,
+            mock_semaphore: Mock,
+    ):
+        with patch.object(
+                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
+        ) as mock_load_playlists:
+            result = await model.restore_playlists(playlists_dump, dry_run=True)
+            mock_load_playlists.assert_called_once()
+
+        assert len(result) == len(playlists)
+
+        mock_get_playlist, failed = mock_get_playlist
+
+        mock_create_playlist.assert_not_called()
+        assert mock_get_many.call_count == len(playlists) - len(failed)
+        assert mock_sync_items.call_count == len(playlists) - len(failed)
+        assert mock_semaphore.call_count == len(playlists)
+
+    async def test_restore_playlists(
+            self,
+            model: RemoteMutableLibrary,
+            playlists: list[RemotePlaylist],
+            playlists_dump: list[dict[str, Any]],
+            mock_get_playlist: tuple[Mock, list[URL]],
+            mock_create_playlist: Mock,
+            mock_get_many: Mock,
+            mock_sync_items: Mock,
+            mock_semaphore: Mock,
+    ):
+        with patch.object(
+                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
+        ) as mock_load_playlists:
+            result = await model.restore_playlists(playlists_dump, dry_run=False)
+            mock_load_playlists.assert_called_once()
+
+        assert len(result) == len(playlists)
+
+        mock_get_playlist, failed = mock_get_playlist
+
+        assert mock_create_playlist.call_count == len(failed)
+        assert mock_get_many.call_count == len(playlists)
+        assert mock_sync_items.call_count == len(playlists)
+        assert mock_semaphore.call_count == len(playlists)

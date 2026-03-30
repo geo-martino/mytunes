@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
-from http import HTTPMethod
 from io import BytesIO
 from pathlib import Path
 from typing import Self, ClassVar, Any, Annotated, IO

@@ -4,7 +4,6 @@ from typing import get_args
 from unittest.mock import patch, Mock
 
 import pytest
-from docutils.parsers.rst.directives import length_units
 from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture

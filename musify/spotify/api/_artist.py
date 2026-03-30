@@ -1,6 +1,5 @@
 from typing import ClassVar, final, Literal, Type, Any
 
-from aiorequestful.types import JSON
 from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL

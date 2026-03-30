@@ -4,13 +4,13 @@ from random import sample
 from typing import Iterable, Any
 
 import pytest
-
 from musify.base import MusifyItem
+from tests.testers import MusifyItemTester
+
 from musify.exception import MusifyTypeError
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Playlist, Track, Library
 from tests.libraries.core.collection import MusifyCollectionTester
-from tests.testers import MusifyItemTester
 
 
 class TrackTester(MusifyItemTester, metaclass=ABCMeta):

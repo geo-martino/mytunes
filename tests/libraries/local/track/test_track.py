@@ -5,11 +5,11 @@ from random import choice
 
 import mutagen
 import pytest
-
 from musify.base import MusifyItem
-from musify.exception import MusifyKeyError
 from musify.file.exception import InvalidFileType, FileDoesNotExistError
 from musify.file.image import open_image
+
+from musify.exception import MusifyKeyError
 from musify.libraries.core.object import Track
 from musify.libraries.local.track import LocalTrack, load_track, FLAC, M4A, MP3, WMA, SyncResultTrack
 from musify.libraries.local.track.field import LocalTrackField

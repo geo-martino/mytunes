@@ -13,9 +13,9 @@ from pathlib import Path
 from typing import Any, Self
 
 from aiorequestful.types import UnitCollection, UnitIterable
-
 from musify.field import Fields, TagField, TagFields
 from musify.file.exception import UnexpectedPathError
+
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.core.object import Track, Library, Folder, Album, Artist, Genre
 from musify.libraries.local.base import LocalItem

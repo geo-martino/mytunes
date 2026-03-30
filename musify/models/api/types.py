@@ -2,20 +2,18 @@ import functools
 import inspect
 from collections.abc import Sequence
 from contextlib import suppress
-from typing import Any, get_args, Callable, Self, Annotated, get_origin, Union
+from typing import Any, get_args, Callable, Self, Annotated
 
-from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter, ValidationError
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
-from typing_inspection.typing_objects import is_typevar, is_union
+from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
-from musify.exception import MusifyTypeError
 from musify.models.exception import MusifyValidationError, ModelError, RequestError
 from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
-from musify.utils import get_base_types
 
 
 class _ApiSchemaBase[UT: URI, MT: HasURI]:

@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Any, SupportsIndex, Self
 
 from aiorequestful.types import UnitSequence
-from yarl import URL
-
 from musify.base import MusifyObject, MusifyItem, HasLength
-from musify.exception import MusifyTypeError, MusifyKeyError, MusifyAttributeError
 from musify.field import Field
 from musify.file.base import File
+from yarl import URL
+
+from musify.exception import MusifyTypeError, MusifyKeyError, MusifyAttributeError
 from musify.libraries.remote.core import RemoteResponse
 from musify.processors.sort import ShuffleMode, ItemSorter
 

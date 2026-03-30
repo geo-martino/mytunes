@@ -3,15 +3,15 @@ from collections.abc import Iterable
 from copy import deepcopy
 
 import pytest
-
 from musify.base import MusifyItem
+from musify.printer import PrettyPrinter
+from tests.testers import PrettyPrinterTester
+
 from musify.exception import MusifyTypeError
 from musify.libraries.collection import BasicCollection
 from musify.libraries.core.collection import MusifyCollection
 from musify.libraries.remote.core.library import RemoteLibrary
 from musify.libraries.remote.core.object import RemoteCollectionLoader
-from musify.printer import PrettyPrinter
-from tests.testers import PrettyPrinterTester
 
 
 class MusifyCollectionTester(PrettyPrinterTester, metaclass=ABCMeta):

@@ -3,7 +3,6 @@ from typing import Annotated
 from pydantic import Field
 
 from musify.exception import MusifyValueError
-from musify.models import ResourceModel
 from musify.models.properties.uri import HasURI
 from musify.models.result import Result, LenLogFormatter
 

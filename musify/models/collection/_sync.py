@@ -2,7 +2,6 @@ from typing import Literal, Collection, Annotated
 
 from pydantic import NonNegativeInt, Field
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import JsonSchema
 
 from musify.models.exception import RequestError
 from musify.models.result import LogFormatter, CountResult, MapLogFormatter
