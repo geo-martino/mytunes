@@ -62,13 +62,13 @@ class StringScoreReducer[CT: StringCleaner](StringScorer[CT]):
 
 
 @final
-class KaraokeScorer(StringScorer):
+class KaraokeScorer(StringScorer[NameCleaner]):
     """Score an item by checking whether its metadata indicates it is a karaoke track."""
     __final__ = True
 
-    type: Literal["karaoke"] = "karaoke"
+    type: Literal["is_karaoke"] = "is_karaoke"
+    cleaner: NameCleaner = NameCleaner()
 
-    cleaner: None = None
     karaoke_phrases: set[LowerStrippedString] = Field(
         description=(
             "A set of phrases which, if found in the metadata of a track, "
@@ -94,50 +94,23 @@ class KaraokeScorer(StringScorer):
 
     def score[T: HasName](self, item: T, other: T | None = None) -> int | float:
         scores = [
-            self._calculate_score_for_name(item),
-            self._calculate_score_for_artist(item),
-            self._calculate_score_for_album(item)
+            self._calculate_score(item, item) if isinstance(item, HasName) else False,
+            self._calculate_score(item, item.artist) if isinstance(item, HasArtists) else False,
+            self._calculate_score(item, item.album) if isinstance(item, HasAlbum) else False,
         ]
 
         score = all(not is_karaoke for is_karaoke in scores) if self.prefer_not_karaoke else any(scores)
         return score * self.weight
 
-    def _calculate_score(self, value: str | None, other: str | None = None) -> bool:
-        if value is None:
+    def _calculate_score(self, item: Any, other: str | HasName | None) -> bool:
+        if other is None:
             return False
 
-        is_karaoke = any(phrase in value.casefold() for phrase in self.karaoke_phrases)
+        other = self.cleaner.clean(other)
+        is_karaoke = any(phrase in other.casefold().split() for phrase in self.karaoke_phrases)
+
+        self._log_score(item=item, result=str(is_karaoke), item_val=other)
         return is_karaoke
-
-    def _calculate_score_for_name(self, item: HasName) -> bool:
-        if not isinstance(item, HasName):
-            return False
-
-        value = item.name
-        score = self._calculate_score(value)
-
-        self._log_score(item=item, result=score, item_val=value)
-        return score
-
-    def _calculate_score_for_artist(self, item: HasArtists) -> bool:
-        if not isinstance(item, HasName) or not isinstance(item, HasArtists):
-            return False
-
-        value = item.artist
-        score = self._calculate_score(value)
-
-        self._log_score(item=item, result=score, item_val=value)
-        return score
-
-    def _calculate_score_for_album(self, item: HasName | HasAlbum) -> bool:
-        if not not isinstance(item, HasName) or not isinstance(item, HasAlbum) or item.album is None:
-            return False
-
-        value = item.album.name
-        score = self._calculate_score(value)
-
-        self._log_score(item=item, result=score, item_val=value)
-        return score
 
 
 @final

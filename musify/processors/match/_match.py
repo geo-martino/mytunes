@@ -102,12 +102,14 @@ class Matcher(Processor, HasLogger):
 
     def _log_scorers(self, scorers: list[Scorer], item: Any, others: Collection) -> None:
         """Log the scorers being used for a given item and other item."""
-        required = [scorer for scorer in scorers if scorer.required]
-        optional = [scorer for scorer in scorers if not scorer.required]
+        required = [scorer for scorer in scorers if scorer.required_score > 0]
+        optional = [scorer for scorer in scorers if scorer.required_score == 0]
         messages = [
             f"ITEMS: {len(others)}",
-            f"REQUIRED: {", ".join(scorer.type for scorer in required)}" if required else "No required scorers",
-            f"OPTIONAL: {", ".join(scorer.type for scorer in optional)}" if optional else "No optional scorers",
+            f"REQUIRED: {", ".join(f"{scorer.type}>={scorer.required_score}" for scorer in required)}"
+            if required else "No required scorers",
+            f"OPTIONAL: {", ".join(scorer.type for scorer in optional)}"
+            if optional else "No optional scorers",
         ]
         log = self._format_item_message(method="START", item=item, messages=messages, pad=">")
 
@@ -124,17 +126,17 @@ class Matcher(Processor, HasLogger):
         weight = sum(scorer.weight for scorer in scorers)
 
         # apply required scorers first to allow for early stopping if they fail
-        for scorer in filter(lambda x: x.required, scorers):
+        for scorer in filter(lambda x: x.required_score > 0, scorers):
             score = scorer.score(item, other)
-            if score < self.max_score:
-                message = ["REQUIRED SCORER FAILED".ljust(25), f"{scorer.type}={score:.2f} < {self.max_score:.2f}"]
+            if score < scorer.required_score:
+                message = ["SCORER FAILED".ljust(25), f"{scorer.type}={score:.2f} < {scorer.required_score:.2f}"]
                 log = self._format_item_message(method="SKIP", item=item, messages=message, pad="<")
                 self.logger.debug(log)
                 return 0
 
             scores.append(score)
 
-        scores.extend(scorer.score(item, other) for scorer in filter(lambda x: not x.required, scorers))
+        scores.extend(scorer.score(item, other) for scorer in filter(lambda x: x.required_score == 0, scorers))
 
         if score_items_in_collections and self.score_items_in_collections and isinstance(item, CollectionModel):
             items = list(item.items) if isinstance(item, CollectionModel) else []

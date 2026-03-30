@@ -145,11 +145,12 @@ class TestMatcher(BaseModelTester):
         other.name = "complete-and-utter-nonsense"
 
         scorers = model.get_scorers_for_item(track)
-        assert all(not scorer.required for scorer in scorers if isinstance(scorer, NameScorer))
+        assert all(not scorer.required_score for scorer in scorers if isinstance(scorer, NameScorer))
         assert model.score(track, other, scorers=scorers) == 0.8  # name doesn't match but still returns score
 
-        scorers.append(NameScorer(required=True))
-        assert model.score(track, other, scorers=scorers) == 0  # name doesn't match and is required, so returns 0
+        # name doesn't pass required_score threshold, so returns 0
+        scorers.append(NameScorer(required_score=0.5))
+        assert model.score(track, other, scorers=scorers) == 0
 
     def test_score_items_if_configured(self, model: Matcher, albums: list[AlbumCollection], mocker: MockerFixture):
         album_1 = albums.pop()

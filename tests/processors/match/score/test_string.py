@@ -76,14 +76,14 @@ class TestKaraokeScorer(StringScorerTester):
     # noinspection PyMethodOverriding
     @staticmethod
     def test_calculate_score_returns_on_missing_values(model: KaraokeScorer, faker: Faker):
-        assert model._calculate_score(None) is False
-        assert model._calculate_score("") is False
+        assert model._calculate_score(None, None) is False
+        assert model._calculate_score(None, "") is False
 
     def test_calculate_score(self, model: KaraokeScorer):
         model.karaoke_phrases = {"karaoke", "backing", "instrumental"}
 
-        assert model._calculate_score("test value") is False
-        assert model._calculate_score(f"test {choice(list(model.karaoke_phrases))}") is True
+        assert model._calculate_score(None, "test value") is False
+        assert model._calculate_score(None, f"test {choice(list(model.karaoke_phrases))}") is True
 
     def test_score_on_prefer_not_karaoke(self, model: KaraokeScorer, track: Track):
         model.karaoke_phrases = {"karaoke", "backing", "instrumental"}

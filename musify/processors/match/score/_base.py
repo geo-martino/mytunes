@@ -23,13 +23,16 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         description="The weight to be applied to the score.",
         default=1,
     )
-    required: bool = Field(
+    required_score: float = Field(
         description=(
-            "Whether this scorer is required for a match. "
-            "If True, the score must be above the max score threshold for a match "
-            "regardless of the aggregate score with other scorer."
+            "The minimum required score for this scorer to pass. "
+            "The score for this scorer must be above this max score threshold for a match "
+            "regardless of the aggregate score with other scorers. "
+            "If the score is not above this threshold, no other scorers will be applied."
         ),
-        default=False,
+        default=0,
+        ge=0,
+        le=1,
     )
 
     def can_score(self, item: Any) -> bool:
@@ -64,7 +67,7 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         item_val = self._clean_log_value(item_val)
         other_val = self._clean_log_value(other_val)
 
-        messages = [f"{self.type:>14}={result:<10}"]
+        messages = [f"{self.type:>14}={result:<5}"]
         if not other_val:
             messages.append(item_val)
         else:
