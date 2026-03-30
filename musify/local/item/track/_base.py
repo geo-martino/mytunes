@@ -19,7 +19,7 @@ from pydantic import field_validator, model_validator, validate_call, AliasChoic
 from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo
 
-from musify._types import StrippedString
+from musify._types import StrippedString, to_list
 from musify.exception import MusifyTypeError, MusifyValueError
 from musify.local._base import LocalModel
 from musify.local.exception import FileError
@@ -78,6 +78,8 @@ class LocalTrack[FT: FileType](
     Track[LocalArtist, LocalAlbum, LocalGenre],
     metaclass=makecls(),
 ):
+    __supported_types__: ClassVar[Sequence[type[mutagen.FileType]]]
+
     # override to apply file tag metadata and alias
     name: Annotated[StrippedString, TagAttribute()] = Field(
         description="The name of this track.",
@@ -144,11 +146,11 @@ class LocalTrack[FT: FileType](
         async def _get_file(self, file: FT = None) -> FT:
             if isinstance(file, mutagen.FileType):
                 if self.path is not None and Path(file.filename or "") != self.path:
-                    raise FileError("Given file does not match the path of this image.")
+                    raise FileError(self.path, "Given file does not match the path of this image.")
                 return file
 
             if self.path is None:
-                raise FileError("Path is not set and no loaded file was given, cannot load image.")
+                raise FileError(self.path, "Path is not set and no loaded file was given, cannot load image.")
             return await LocalTrack.load_file(self.path)
 
         async def _get_tag_value(self, file: FT = None) -> Any:
@@ -192,8 +194,9 @@ class LocalTrack[FT: FileType](
 
     @Track.album_artist.setter
     def album_artist(self, value: Any) -> None:
-        value = self._extract_first_value_from_single_sequence(value)
-        super(Track, type(self)).album_artist.fset(self, value)
+        value = to_list(value)
+        for val in reversed(value):
+            super(Track, type(self)).album_artist.fset(self, val)
 
     @Track.compilation.setter
     def compilation(self, value: Any) -> None:
@@ -216,9 +219,16 @@ class LocalTrack[FT: FileType](
     async def load_file(cls, path: str | Path) -> FT:
         # TODO: improve async performance?
         async with aiofiles.open(path, mode='rb') as file:
-            file = mutagen.File(BytesIO(await file.read()))
-            file.filename = str(path)
+            file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
 
+        if file is None:  # async load doesn't always work...
+            # fallback to loading synchronously directly through mutagen
+            file = mutagen.File(path, options=cls.__supported_types__)
+
+        if file is None or not any(isinstance(file, kls) for kls in cls.__supported_types__):
+            raise FileError(path=path, message="Failed to load file to the expected type")
+
+        file.filename = str(path)
         return file
 
     @classmethod
@@ -417,7 +427,7 @@ class LocalTrack[FT: FileType](
             return []
         if missing_images := set(context.loaded_images) - set(self.images or ()):
             # noinspection PyUnboundLocalVariable
-            raise FileError(f"Some image types are missing from the loaded images: {", ".join(missing_images)}")
+            raise FileError(self.path, f"Some image types are missing from the loaded images: {", ".join(missing_images)}")
 
         return [
             self.EmbeddedImage.from_image_model(model).build(context.loaded_images[kind])

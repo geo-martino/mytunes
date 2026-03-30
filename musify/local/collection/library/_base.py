@@ -6,6 +6,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, ClassVar, final, Self
 
+import tabulate
 from mutagen import MutagenError
 from mutagen.mp3 import HeaderNotFoundError
 from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, PrivateAttr, PositiveInt
@@ -160,8 +161,9 @@ class LocalLibrary(
         await self.load_playlists()
 
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
-        results = {"TRACKS": self._generate_track_uris_results()}
-        results |= self._generate_playlist_uris_results()
+        results: dict[str, LibraryURIsResult | None] = self._generate_playlist_uris_results()
+        results[tabulate.SEPARATING_LINE] = None
+        results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
         self.logger.print_line(STAT)

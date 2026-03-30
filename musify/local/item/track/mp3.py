@@ -28,6 +28,7 @@ from musify.models.properties.rating import Rating
 class MP3(LocalTrack[mutagen.mp3.MP3]):
     __final__ = True
     __supported_extensions__ = frozenset({"mp3"})
+    __supported_types__ = (mutagen.mp3.MP3,)
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.id3.APIC]):
         alias: ClassVar[str] = "APIC"

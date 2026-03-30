@@ -25,6 +25,7 @@ from musify.utils import get_base_types
 class FLAC(LocalTrack[mutagen.flac.FLAC]):
     __final__ = True
     __supported_extensions__ = frozenset({"flac"})
+    __supported_types__ = (mutagen.flac.FLAC,)
 
     model_config = ConfigDict(
         # catches fields like albumartist etc.

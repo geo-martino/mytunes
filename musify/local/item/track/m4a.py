@@ -26,6 +26,7 @@ from musify.models.properties.order import Position
 class M4A(LocalTrack[mutagen.mp4.MP4]):
     __final__ = True
     __supported_extensions__ = frozenset({"m4a"})
+    __supported_types__ = (mutagen.mp4.MP4,)
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp4.MP4Cover]):
         alias: ClassVar[str] = "covr"
@@ -53,7 +54,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
                     image_format = mutagen.mp4.AtomDataType.JPEG
                 case _:
                     name = self.__class__.__name__
-                    raise FileError(f"Unrecognised image format for {name} cover image: {image.format}")
+                    raise FileError(self.path, f"Unrecognised image format for {name} cover image: {image.format}")
 
             return mutagen.mp4.MP4Cover(data, imageformat=image_format)
 

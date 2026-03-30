@@ -66,6 +66,7 @@ class HasAlbum[AT: Album](AttributeModel):
         default=None,
     )
 
+    # TODO: test me
     @computed_field(
         description="The main artist on the album.",
     )
@@ -85,6 +86,7 @@ class HasAlbum[AT: Album](AttributeModel):
 
         self.album.artists = [value, *(self.album.artists or ())]
 
+    # TODO: test me
     @computed_field(
         description="Whether the album is a compilation album.",
     )
