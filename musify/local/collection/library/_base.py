@@ -197,7 +197,7 @@ class LocalLibrary(
 
             return self._track_adapter.validate_python(file, context=self.tracks_load_settings)
 
-        except (MusifyError, MutagenError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
+        except (MusifyError, MutagenError, ValueError, OSError) as ex:
             self.logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
 
