@@ -148,7 +148,6 @@ class InputMatch(CheckerMatch, InputProcessor):
     def _match_item_with_playlist(self, item: HasMutableURI, uri: URI) -> bool:
         items = self.page.get_stored_playlist_items(uri)
 
-        # TODO: add test for this
         # don't match with items that have already been matched
         matched = self.get_valid_items(self.page.get_collection_items(uri))
         items = [it for it in items if it not in matched]
@@ -163,7 +162,6 @@ class InputMatch(CheckerMatch, InputProcessor):
 
     @classmethod
     def _configure_formatter_for_items(cls, items: Iterable) -> LogFormatter:
-        # TODO: widths aren't working here...
         width = min(
             max(len(item.name) if isinstance(item, HasName) else 0 for item in items),
             cls.input_formatter.max_width or sys.maxsize,

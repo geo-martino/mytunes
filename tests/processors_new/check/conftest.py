@@ -127,9 +127,15 @@ def mock_delete_playlist() -> Generator[Mock, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def mock_remove_playlist() -> Generator[Mock, None, None]:
-    with patch.object(PlaylistReadWriteEndpoints, "remove", new_callable=AsyncMock) as mock_sync:
-        yield mock_sync
+def mock_add() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistReadWriteEndpoints, "add", new_callable=AsyncMock) as mock_add:
+        yield mock_add
+
+
+@pytest.fixture(autouse=True)
+def mock_remove() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistReadWriteEndpoints, "remove", new_callable=AsyncMock) as mock_remove:
+        yield mock_remove
 
 
 @pytest.fixture(autouse=True)

@@ -97,8 +97,6 @@ class TestCheckerPause:
 
         assert_help_text(log_capturer, expected_help)
 
-        # assert mock_match.call_count == expected_pages  # TODO: add once implemented
-
     ###########################################################################
     ## Tests
     ###########################################################################

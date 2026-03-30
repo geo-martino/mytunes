@@ -18,8 +18,8 @@ from tests.conftest import LogCapturer
 from tests.libraries.remote.core.processors.utils import patch_input
 from tests.models.testers import BaseModelTester
 from tests.processors_new.check.match.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
-from tests.processors_new.utils import assert_help_text
-from tests.utils import SimpleURI
+from tests.processors_new.utils import assert_help_text, MockCollection
+from tests.utils import SimpleURI, split_list
 
 
 class TestInputMatch(BaseModelTester):
@@ -107,18 +107,27 @@ class TestInputMatch(BaseModelTester):
             self,
             model: InputMatch,
             playlist: RemoteMutablePlaylist,
+            collection: MockCollection,
+            available_items: list[HasNameAndImmutableURI],
             missing_items: list[HasNameAndMutableURI],
             mock_match_item_with_others: Mock,
             faker: Faker,
     ):
+        matched, unmatched = split_list(available_items, 2)
+        collection.all_items = matched
+        playlist.tracks.replace(available_items)
+
         item = faker.random_element(missing_items)
 
         match = deepcopy(item)
-        match.uri = SimpleURI.create_random(kind=match.type)
+        match.uri = SimpleURI.create_random(kind=item.type)
         playlist.tracks.append(match)
 
+        # should only try to match on items which haven't already been matched to items in the collection
+        expected_items = unmatched + [match]
+
         assert model._match_item_with_playlist(item, playlist.uri)
-        mock_match_item_with_others.assert_called_once_with(item, playlist.tracks, "INPUT")
+        mock_match_item_with_others.assert_called_once_with(item, expected_items, "INPUT")
 
     def test_match_item_with_playlist_skips(
             self,

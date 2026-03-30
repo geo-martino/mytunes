@@ -611,7 +611,6 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
 
         self._log_save_tracks_header()
 
-        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(
             map(_save_track, self.tracks),
             desc="Updating tracks",

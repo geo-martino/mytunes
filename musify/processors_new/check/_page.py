@@ -12,6 +12,7 @@ from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints, Playlist
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from musify.models.exception import MusifyValidationError
+from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.uri import HasURI, URI
@@ -27,7 +28,7 @@ type _ApiT = RemoteAPI | HasPlaylistEndpoints[
 ]
 
 
-class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API]):
+class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncOperations):
     position: Position = Field(
         description="The current position of this page in the check process."
     )
@@ -140,23 +141,31 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API]):
             raise
 
     async def _setup_playlist(self, collection: CollectionModel) -> RemoteMutablePlaylist | None:
-        api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
+        api: PlaylistReadWriteEndpoints = self.api.playlists
+        api_saved: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
 
-        if self.use_existing_playlists:
-            playlist: RemoteMutablePlaylist = await api.get_or_create(name=name, **self.additional_properties)
-        else:
-            playlist: RemoteMutablePlaylist = await api.create(name=name, **self.additional_properties)
+        async with self.concurrency:
+            if self.use_existing_playlists:
+                playlist: RemoteMutablePlaylist = await api_saved.get_or_create(name=name, **self.additional_properties)
+            else:
+                playlist: RemoteMutablePlaylist = await api_saved.create(name=name, **self.additional_properties)
 
-        self._collections[playlist.uri] = collection
-        self._playlists[playlist.uri] = playlist
-        self._playlists_initial[playlist.uri] = deepcopy(playlist)
+            self._collections[playlist.uri] = collection
+            self._playlists[playlist.uri] = playlist
+            self._playlists_initial[playlist.uri] = deepcopy(playlist)
 
-        # TODO: This causes errors elsewhere when trying to clean up, think about this...
-        playlist.tracks.extend(item for item in collection.items if isinstance(item, HasURI) and item.has_uri)
-        await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
+            # empty the playlist
+            playlist.tracks.clear()
+            await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
-        await api.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
+            # add all new uris
+            uris = [item.uri for item in collection.items if isinstance(item, HasURI) and item.has_uri]
+            await api.add(playlist.uri.api_url, uris=uris, show_bar=False)
+
+            await playlist.extend(self.api)  # refresh playlist items with just added URIs
+
+            await api_saved.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
 
     async def teardown_playlists(self) -> None:
         """
@@ -178,18 +187,19 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API]):
         )
 
     async def _teardown_playlist(self, playlist: RemoteMutablePlaylist) -> None:
-        if playlist.count != 0:
-            # playlist existed before the check and should be returned to its original state
-            await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
+        async with self.concurrency:
+            if playlist.count != 0:
+                # playlist existed before the check and should be returned to its original state
+                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
-        else:
-            # otherwise, assume playlist was created by the checker and can be deleted directly
-            api: PlaylistReadWriteEndpoints = self.api.playlists
-            uris = [it.uri for it in self._playlists[playlist.uri].items if it.uri is not None]
-            await api.remove(playlist.uri.api_url, uris=uris, show_bar=False)
+            else:
+                # otherwise, assume playlist was created by the checker and can be deleted directly
+                api: PlaylistReadWriteEndpoints = self.api.playlists
+                uris = [it.uri for it in self._playlists[playlist.uri].items]
+                await api.remove(playlist.uri.api_url, uris=uris, show_bar=False)
 
-            api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
-            await api.delete(playlist.uri.api_url)
+                api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
+                await api.delete(playlist.uri.api_url)
 
         del self._collections[playlist.uri]
         del self._playlists[playlist.uri]

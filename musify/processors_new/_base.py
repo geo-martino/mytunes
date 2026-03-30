@@ -64,7 +64,7 @@ class InputProcessor(Processor, HasLogger):
         if formatter is None:
             formatter = self.input_formatter
 
-        log = " ".join((formatter.get_value(text), colored("|", "white", attrs=["bold"])))
+        log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
         inp = input(log + " ").strip()
 
         self.logger.debug(f"User input: {inp}")

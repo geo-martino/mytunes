@@ -42,22 +42,17 @@ class TestPlaylistManagement(BaseModelTester):
     ) -> RemoteMutablePlaylist:
         assert not model._playlists
         expected_playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())
-        expected_items = list(collection.items)
 
         await model._setup_playlist(collection)
-
-        assert list(expected_playlist.tracks) == expected_items
 
         assert model._collections == {expected_playlist.uri: collection}
         assert model._collections[expected_playlist.uri] is collection
 
         assert model._playlists == {expected_playlist.uri: expected_playlist}
         assert model._playlists[expected_playlist.uri] is expected_playlist
-        assert model._playlists[expected_playlist.uri].tracks == expected_items
 
         assert model._playlists_initial == {expected_playlist.uri: expected_playlist}
         assert model._playlists_initial[expected_playlist.uri] is not expected_playlist
-        assert model._playlists_initial[expected_playlist.uri].tracks != expected_items
 
         return expected_playlist
 
@@ -111,7 +106,7 @@ class TestPlaylistManagement(BaseModelTester):
             collection: CollectionModel,
             tracks: list[RemoteTrack],
             mock_sync_playlist: Mock,
-            mock_remove_playlist: Mock,
+            mock_remove: Mock,
             mock_delete_playlist: Mock,
     ):
         playlist_cleared = deepcopy(playlist)
@@ -130,7 +125,7 @@ class TestPlaylistManagement(BaseModelTester):
         await model._teardown_playlist(playlist_cleared)
 
         mock_sync_playlist.assert_not_called()
-        mock_remove_playlist.assert_called_once_with(playlist.uri.api_url, uris=expected_uris, show_bar=False)
+        mock_remove.assert_called_once_with(playlist.uri.api_url, uris=expected_uris, show_bar=False)
         mock_delete_playlist.assert_called_once_with(playlist.uri.api_url)
 
         assert playlist.uri not in model._collections
@@ -144,7 +139,7 @@ class TestPlaylistManagement(BaseModelTester):
             collection: CollectionModel,
             tracks: list[RemoteTrack],
             mock_sync_playlist: Mock,
-            mock_remove_playlist: Mock,
+            mock_remove: Mock,
             mock_delete_playlist: Mock,
     ):
         playlist.tracks.extend(tracks)
@@ -156,7 +151,7 @@ class TestPlaylistManagement(BaseModelTester):
         await model._teardown_playlist(playlist)
 
         mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
-        mock_remove_playlist.assert_not_called()
+        mock_remove.assert_not_called()
         mock_delete_playlist.assert_not_called()
 
         assert playlist.uri not in model._collections

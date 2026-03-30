@@ -6,6 +6,8 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, ClassVar, final, Self
 
+from mutagen import MutagenError
+from mutagen.mp3 import HeaderNotFoundError
 from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, PrivateAttr, PositiveInt
 from termcolor import colored
 
@@ -193,7 +195,7 @@ class LocalLibrary(
 
             return self._track_adapter.validate_python(file, context=self.tracks_load_settings)
 
-        except (MusifyError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
+        except (MusifyError, MutagenError, ValueError, OSError, RuntimeError) as ex:  # TODO: drop RuntimeError?
             self.logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
 
@@ -358,7 +360,6 @@ class LocalLibrary(
 
         self.logger.info(f"Saving {len(self.playlists)} playlists in {self.source} {self.type}", header=2)
 
-        # WARNING: making this run asynchronously will break tqdm; bar will get stuck after 1-2 ticks
         bar = self.logger.get_asynchronous_iterator(
             map(_save_playlist, self.playlists.values()),
             desc="Updating playlists",

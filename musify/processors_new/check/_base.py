@@ -9,6 +9,7 @@ from termcolor import colored
 from musify.models import ResourceModel
 from musify.models.api import HasAPI
 from musify.models.collection import CollectionModel
+from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.order import Position
 from musify.models.properties.uri import HasURI
 from musify.models.user import RemoteUser
@@ -22,7 +23,7 @@ from musify.processors_new.match import Matcher
 from musify.processors_new.match.score.string import NameScorer
 
 
-class Checker[API: _ApiT](InputProcessor, HasAPI):
+class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
     api: API = Field(
         description="The API to use for checking matches.",
     )
@@ -79,7 +80,8 @@ class Checker[API: _ApiT](InputProcessor, HasAPI):
         page = CheckerPage(
             position=Position(number=n, total=total, zero_fill=True),
             api=self.api,
-            collections=itertools.islice(collections, self.interval)
+            collections=itertools.islice(collections, self.interval),
+            concurrency=self.concurrency,
         )
 
         results: dict[str, CheckResult[T]] = {}

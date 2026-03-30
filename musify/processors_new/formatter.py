@@ -1,6 +1,6 @@
 from contextlib import suppress
 import textwrap
-from collections.abc import Sequence, Iterable
+from collections.abc import Sequence, Iterable, Collection
 from typing import Literal, Self, Annotated
 
 from pydantic import Field, model_validator, PositiveInt, BeforeValidator, validate_call, \
@@ -125,7 +125,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         if len(value) != 1 or len(self.fields) == 1:
             return
 
-        setattr(self, name, list(value) * len(self.fields))
+        self.__dict__[name] = list(value) * len(self.fields)
 
     def _validate_lengths_match_fields(self, name: str) -> None:
         value = getattr(self, name)
@@ -238,27 +238,29 @@ class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
         if not isinstance(collection, CollectionModel):
             return super().format(collection, indices=indices)
 
-        # noinspection PyTypeChecker
-        match indices:
-            case True if all(isinstance(item, HasTrackPosition) for item in collection.items):
-                # TODO: add test for case where count is less than max track number
-                # noinspection PyTypeChecker
-                total = max(max(it.track.number or 0 for it in collection.items), collection.count)
-                # noinspection PyTypeChecker
-                indices = [
-                    Position(
-                        number=item.track.number if item.track and item.track.number else i,
-                        total=total,
-                        zero_fill=True
-                    )
-                    for i, item in enumerate(collection.items, 1)
-                ]
-            case True:
-                # noinspection PyTypeChecker
-                total: int = collection.count
-                indices = [Position(number=i, total=total, zero_fill=True) for i in range(1, total + 1)]
-            case _:
-                indices = False
+        items = list(collection.items)
+        indices = self._get_indices_from_positions(items) if indices is True else False
 
-        # noinspection PyTypeChecker
-        return super().format(collection.items, indices=indices)
+        return super().format(items, indices=indices)
+
+    @staticmethod
+    def _get_indices_from_positions(items: Collection[HasTrackPosition]) -> list[Position]:
+        positions = [item.track for item in items if isinstance(item, HasTrackPosition) and item.track is not None]
+        if not positions:
+            total = len(items)
+            return [Position(number=i, total=total, zero_fill=True) for i in range(1, total + 1)]
+
+        total = max(
+            max(i.number or 0 for i in positions),
+            max(i.total or 0 for i in positions),
+            len(items),
+        )
+
+        return [
+            Position(
+                number=i.number if i.number else i,
+                total=i.total or total,
+                zero_fill=True
+            )
+            for i in positions
+        ]

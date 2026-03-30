@@ -28,17 +28,6 @@ class TestLogFormatter:
         formatter = LogFormatter(width=faker.random_int(len(value) + 5), alignment="centre")
         assert formatter.get_value(value) == f"{value:^{formatter.width}}"
 
-    def test_alignment_skips(self, faker: Faker):
-        value = faker.word()
-
-        formatter = LogFormatter(width=faker.random_int(len(value) + 5), alignment=None)
-        assert formatter.get_value(value) == value
-
-        alignment = faker.random_element(["left", "right", "centre"])
-        # noinspection PyTypeChecker
-        formatter = LogFormatter(width=None, alignment=alignment)
-        assert formatter.get_value(value) == value
-
     def test_truncate(self, faker: Faker):
         value = faker.sentence()
 

@@ -4,6 +4,7 @@ from typing import get_args
 from unittest.mock import patch, Mock
 
 import pytest
+from docutils.parsers.rst.directives import length_units
 from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -120,10 +121,12 @@ class TestModelFormatter(BaseModelTester):
             mock_tabulate: Mock,
             faker: Faker,
     ):
-        model.header = True
-        model.alignments = [faker.random_element(("left", "right", "center", "decimal")) for _ in model.fields]
-        model.widths = [faker.random_int() for _ in model.fields]
-        model.missing_value = faker.word()
+        model = model.model_copy(update=dict(
+            header=True,
+            alignments=[faker.random_element(("left", "right", "center", "decimal")) for _ in model.fields],
+            widths=[faker.random_int() for _ in model.fields],
+            missing_value=faker.word(),
+        ))
 
         model.format(tracks, indices=False)
         mock_tabulate.assert_called_once()
@@ -161,8 +164,10 @@ class TestModelFormatter(BaseModelTester):
             mock_tabulate: Mock,
             faker: Faker,
     ):
-        model.widths = 5
-        model.truncate = True
+        model = model.model_copy(update=dict(
+            widths=[5] * len(model.fields),
+            truncate=[True] * len(model.fields)
+        ))
         assert any(len(str(val)) > model.widths[0] for row in values for val in row)  # will truncate some values
 
         model.format(tracks)
@@ -185,8 +190,10 @@ class TestModelFormatter(BaseModelTester):
             mock_tabulate: Mock,
             faker: Faker,
     ):
-        model.colours = [faker.random_element(get_args(COLOURS)) for _ in model.fields]
-        model.colour_attributes = [faker.random_element(get_args(COLOUR_ATTRIBUTES)) for _ in model.fields]
+        model = model.model_copy(update=dict(
+            colours=[faker.random_element(get_args(COLOURS)) for _ in model.fields],
+            colour_attributes=[faker.random_element(get_args(COLOUR_ATTRIBUTES)) for _ in model.fields]
+        ))
 
         def _to_str(v, *_, **__) -> str:
             return str(v)
@@ -204,10 +211,12 @@ class TestModelFormatter(BaseModelTester):
     def test_full_format(
             self, model: ModelFormatter, tracks: list[Track], faker: Faker,
     ):
-        model.header = True
-        model.alignments = [faker.random_element(("left", "right", "center", "decimal")) for _ in model.fields]
-        model.widths = [faker.random_int() for _ in model.fields]
-        model.missing_value = faker.word()
+        model = model.model_copy(update=dict(
+            header=True,
+            alignments=[faker.random_element(("left", "right", "center", "decimal")) for _ in model.fields],
+            widths=[faker.random_int() for _ in model.fields],
+            missing_value=faker.word(),
+        ))
 
         indices = list(range(1, len(tracks) + 1))
         if faker.boolean():
@@ -225,8 +234,12 @@ class TestCollectionFormatter(BaseModelTester):
             fields=get_args(FIELDS),
         )
 
+    @pytest.fixture
+    def mock_format(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(ModelFormatter, "format")
+
     def test_format_uses_current_positions(
-            self, model: CollectionFormatter, tracks: list[Track], mocker: MockerFixture, faker: Faker
+            self, model: CollectionFormatter, tracks: list[Track], mock_format: Mock, faker: Faker
     ):
         collection = HasTracks(tracks=tracks)
         total = len(tracks)
@@ -234,8 +247,6 @@ class TestCollectionFormatter(BaseModelTester):
         random.shuffle(tracks)
         for i, track in enumerate(tracks, 1):
             track.track = Position(number=i, total=total)
-
-        mock_format = mocker.spy(ModelFormatter, "format")
 
         model.format(collection, indices=True)
 
@@ -246,12 +257,49 @@ class TestCollectionFormatter(BaseModelTester):
         assert kwargs["indices"] != [track.track for track in tracks]
 
     def test_format_generates_positions(
-            self, model: CollectionFormatter, artists: list[Artist], mocker: MockerFixture, faker: Faker
+            self, model: CollectionFormatter, artists: list[Artist], mock_format: Mock, faker: Faker
     ):
         collection = HasArtists(artists=artists)
         expected = [Position(number=i, total=len(artists), zero_fill=True) for i in range(1, len(artists) + 1)]
 
-        mock_format = mocker.spy(ModelFormatter, "format")
+        model.format(collection, indices=True)
+
+        mock_format.assert_called_once()
+        kwargs = mock_format.call_args.kwargs
+        assert kwargs["indices"] == expected
+
+    def test_format_uses_count_as_total(
+            self, model: CollectionFormatter, tracks: list[Track], mock_format: Mock, faker: Faker
+    ):
+        total = len(tracks)
+        random.shuffle(tracks)
+        for i, track in enumerate(tracks, 1):
+            track.track = Position(number=i, total=None)
+
+        collection = HasTracks(tracks=tracks)
+        expected = [Position(number=it.track.number, total=total, zero_fill=True) for it in collection.items]
+
+        model.format(collection, indices=True)
+
+        mock_format.assert_called_once()
+        kwargs = mock_format.call_args.kwargs
+        assert kwargs["indices"] == expected
+
+    def test_format_gets_valid_total_from_invalid_positions(
+            self, model: CollectionFormatter, tracks: list[Track], mock_format: Mock, faker: Faker
+    ):
+        total = len(tracks)
+        random.shuffle(tracks)
+        for i, track in enumerate(tracks, 1):
+            track_total = faker.random_element((None, total, i))
+            track.track = Position(number=i, total=track_total)
+
+        if not any(track.track.total == total for track in tracks):
+            tracks[-1].track.total = total
+
+        collection_tracks = faker.random_elements(tracks, length=len(tracks) // 3, unique=True)
+        collection = HasTracks(tracks=sorted(collection_tracks, key=lambda it: it.track.number))
+        expected = [Position(number=it.track.number, total=total, zero_fill=True) for it in collection.items]
 
         model.format(collection, indices=True)
 

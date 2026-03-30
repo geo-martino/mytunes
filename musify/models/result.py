@@ -21,9 +21,9 @@ class LogFormatter[T](Attribute):
         description="The alignment width for the field's value in logs.",
         default=None,
     )
-    alignment: Literal["left", "right", "centre"] | None = Field(
+    alignment: Literal["left", "right", "centre"] = Field(
         description="The alignment for the field's value in logs.",
-        default=None,
+        default="left",
     )
     max_width: PositiveInt | None = Field(
         description=(

@@ -11,6 +11,7 @@ from musify.models.api.search import HasSearchEndpoints
 from musify.models.collection import CollectionModel, RemoteCollection
 from musify.models.collection.album import AlbumCollection
 from musify.models.exception import MusifyValidationError
+from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.file import IsFile, IsLocalFile
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI
@@ -82,7 +83,7 @@ class SearchResult[T: Any](TotalCountResult):
 type _ApiT = RemoteAPI | HasSearchEndpoints
 
 
-class Searcher[API: _ApiT](Processor, IsRemoteService):
+class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
     api: API = Field(
         description="The API to use when searching for matches.",
     )
@@ -330,7 +331,9 @@ class Searcher[API: _ApiT](Processor, IsRemoteService):
         if self._should_skip(item):
             return
 
-        results = await self.api.search.query_item(item)
+        async with self.concurrency:
+            results = await self.api.search.query_item(item)
+
         if not results:
             self._log_debug(item, message="No results found")
             return None
