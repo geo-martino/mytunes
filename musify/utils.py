@@ -15,7 +15,11 @@ from typing_inspection.typing_objects import is_annotated
 IGNORE_WORDS_DEFAULT = frozenset({"The", "A"})
 
 
-def strip_ignore_words(value: str, words: Iterable[str] | None = IGNORE_WORDS_DEFAULT) -> tuple[bool, bool, str]:
+def strip_ignore_words(
+        value: str,
+        words: Iterable[str] | None = IGNORE_WORDS_DEFAULT,
+        strip_special_chars: bool = True,
+) -> tuple[bool, bool, str]:
     """
     Remove ignorable words from the beginning of a string.
 
@@ -29,7 +33,8 @@ def strip_ignore_words(value: str, words: Iterable[str] | None = IGNORE_WORDS_DE
 
     special_chars = list('!"£$%^&*()_+-=…')
     special_start = any(value.startswith(c) for c in special_chars)
-    value = re.sub(r"^\W+", "", value).strip()
+    if strip_special_chars:
+        value = re.sub(r"^\W+", "", value).strip()
 
     if not words:
         return not special_start, True, value

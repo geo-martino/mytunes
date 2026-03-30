@@ -178,7 +178,7 @@ class ItemSorter(Processor):
                 case str() | HasName():
                     if isinstance(val, HasName):
                         val = val.name
-                    _, _, val = strip_ignore_words(val, words=ignore_words)
+                    _, _, val = strip_ignore_words(val, words=ignore_words, strip_special_chars=False)
                     val = val.casefold()
                 case _:
                     pass

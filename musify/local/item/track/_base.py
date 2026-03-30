@@ -217,8 +217,11 @@ class LocalTrack[FT: FileType](
     @classmethod
     @validate_call
     async def load_file(cls, path: str | Path) -> FT:
-        file = mutagen.File(path, options=cls.__supported_types__)
-        # TODO: improve async performance?
+        # TODO: improve async performance here.
+        #  synchronous loads through mutagen are much faster than async loads,
+        #  possibly because mutagen only loads the header and not the whole audio file.
+        #  Can we implement an async load for just the file header?
+
         # async with aiofiles.open(path, mode='rb') as file:
         #     try:
         #         file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
@@ -226,10 +229,11 @@ class LocalTrack[FT: FileType](
         #         # fallback to loading synchronously directly through mutagen
         #         file = mutagen.File(path, options=cls.__supported_types__)
 
+        file = mutagen.File(path, options=cls.__supported_types__)
         if file is None:
             raise FileError(path=path, message="Failed to load file to the expected type")
 
-        file.filename = str(path)
+        file.filename = str(path)  # this is needed when loading from bytes as path is not passed to mutagen
         return file
 
     @classmethod
