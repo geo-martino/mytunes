@@ -73,6 +73,10 @@ class Matcher(Processor, HasLogger):
 
         other = None
         for other in others:
+            other_value = self._get_item_log_value(other)
+            log = self._format_item_message(method="ITEM", item=item, messages=other_value, pad="-")
+            self.logger.debug(log)
+
             score = self.score(item=item, other=other, scorers=scorers)
             if score > self.min_score and score > best_score:
                 best_match = other
@@ -81,7 +85,7 @@ class Matcher(Processor, HasLogger):
             if score >= self.max_score:  # break early if a good enough match is found
                 break
 
-            messages = [self._get_item_log_value(other), f"SCORE={score:.2f}"]
+            messages = [other_value, f"SCORE={score:.2f}"]
             log = self._format_item_message(method="SUM", item=item, messages=messages, pad="-")
             self.logger.debug(log)
 
