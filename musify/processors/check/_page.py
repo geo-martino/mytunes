@@ -207,9 +207,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
 
             else:
                 # assume playlist was created by the checker and can be deleted directly
-                playlist.tracks.clear()
-                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
-
                 api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
                 await api.delete(playlist.uri.api_url)
 
