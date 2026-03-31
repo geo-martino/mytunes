@@ -3,6 +3,8 @@ from collections.abc import MutableMapping
 from copy import deepcopy
 from typing import Self, Any
 
+from aiorequestful.exception import HTTPError
+from aiorequestful.response.exception import ResponseError
 from pydantic import Field, field_validator, PrivateAttr
 from termcolor import colored
 
@@ -119,7 +121,12 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         return properties
 
     async def __aenter__(self) -> Self:
-        await self.setup_playlists()
+        try:
+            await self.setup_playlists()
+        except (MusifyError, HTTPError):
+            if self._playlists:
+                await self.teardown_playlists()
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
