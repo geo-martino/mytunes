@@ -195,6 +195,8 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
 
     async def _teardown_playlist(self, playlist: RemoteMutablePlaylist) -> None:
         initial = self._playlists_initial[playlist.uri]
+        print("TEARING INITIAL", initial.name, initial.uri, initial.count)
+        print("TEARING CURRENT", playlist.name, playlist.uri, playlist.count)
         async with self.concurrency:
             if initial.count != 0:
                 # playlist existed before the check and should be returned to its original state
