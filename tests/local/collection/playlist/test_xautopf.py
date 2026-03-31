@@ -18,7 +18,9 @@ from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer
-from musify.processors.filters import ComparerFilter, PathsFilter, MatchFilter
+from musify.processors.filters.match import MatchFilter
+from musify.processors.filters.values import PathsFilter
+from musify.processors.filters.compare import ComparerFilter
 from musify.processors.limit import LimitType, ItemLimiter
 from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from tests.local.collection.playlist.testers import LocalPlaylistTester

@@ -30,15 +30,15 @@ class TestSpotifySavedPlaylistEndpoints(EndpointsTester):
         public = faker.boolean()
         collaborative = faker.boolean() if not public else False
 
-        assert model._format_playlist_body(name=name) == {"name": name}
-        assert model._format_playlist_body(description=description) == {"description": description}
+        assert await model._format_playlist_body(name=name) == {"name": name}
+        assert await model._format_playlist_body(description=description) == {"description": description}
 
-        assert model._format_playlist_body(collaborative=collaborative, public=public) == {
+        assert await model._format_playlist_body(collaborative=collaborative, public=public) == {
             "collaborative": collaborative,
             "public": public,
         }
 
-        assert model._format_playlist_body(
+        assert await model._format_playlist_body(
             name=name, description=description, collaborative=collaborative, public=public
         ) == {
             "name": name,
@@ -49,7 +49,7 @@ class TestSpotifySavedPlaylistEndpoints(EndpointsTester):
 
     async def test_format_body_params_fails(self, model: _SpotifySavedPlaylistEndpoints):
         with pytest.raises(RequestError, match="cannot be both public and collaborative"):
-            model._format_playlist_body(public=True, collaborative=True)
+            await model._format_playlist_body(public=True, collaborative=True)
 
     @pytest.fixture
     def mock_put(self, handler: RequestHandler) -> Generator[Mock, None, None]:

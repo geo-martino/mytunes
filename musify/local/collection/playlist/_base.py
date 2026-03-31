@@ -15,7 +15,8 @@ from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteab
 from musify.models.properties.uri import URI
 from musify.models.result import Result
 from musify.models.sequence import MutableUniqueSequence
-from musify.processors.filters import Filter, MatchFilter
+from musify.processors.filters import Filter
+from musify.processors.filters.match import MatchFilter
 from musify.processors.limit import ItemLimiter
 from musify.processors.sort import ItemSorter
 

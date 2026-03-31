@@ -27,7 +27,7 @@ from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
 from musify.models.sequence import UniqueSequence
 from musify.models.user import RemoteUser
-from musify.processors.filters import ComparerFilter
+from musify.processors.filters.compare import ComparerFilter
 
 if TYPE_CHECKING:
     from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, \

@@ -26,7 +26,9 @@ from musify.models.exception import MusifyValidationError
 from musify.models.result import LogFormatter, CountResult
 from musify.models.sequence import MutableUniqueSequence
 from musify.processors.compare import Comparer
-from musify.processors.filters import MatchFilter, PathsFilter, ComparerFilter, MatchResult
+from musify.processors.filters.compare import ComparerFilter
+from musify.processors.filters.match import MatchFilter, MatchResult
+from musify.processors.filters.values import PathsFilter
 from musify.processors.limit import ItemLimiter
 from musify.processors.sort import ItemSorter
 
