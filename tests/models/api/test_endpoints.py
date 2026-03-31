@@ -494,7 +494,10 @@ class TestEndpoints(EndpointsTester):
         with patch.object(ClientSession, "get", side_effect=CallbackResult.from_response(expected_image_data)):
             data, mime = await model._get_image_data(image_url)
 
-        assert data == expected_image_data
+        # Image changes bytes once opened, just confirm properties here
+        image = Image.open(BytesIO(data))
+        assert image.height == image_object.height
+        assert image.width == image_object.width
         assert mime == expected_image_mime
 
     async def test_get_image_data_from_image_file(

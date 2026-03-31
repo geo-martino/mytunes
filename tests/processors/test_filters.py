@@ -308,7 +308,8 @@ class TestMatcherFilter(FilterTester):
     def tracks_include(self, tracks: list[LocalTrack], tracks_name: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
         """Sample the list of tracks to test and set the path to be included for all these tracks"""
         include_paths = [f"{self.library_folder}/include/{faker.file_name(extension="mp3")}" for _ in range(20)]
-        tracks_include = sample([track for track in tracks if track not in tracks_name], 7)
+        tracks_unique = [track for track in tracks if track not in tracks_name]
+        tracks_include = list(faker.random_elements(tracks_unique, length=7, unique=True))
         tracks_include.sort(key=lambda tr: tracks.index(tr))
 
         for i, track in enumerate(tracks_include):

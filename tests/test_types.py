@@ -17,10 +17,10 @@ def test_get_base_types_basic():
 def test_get_base_types_union():
     # noinspection PyTypeHints
     type annotation = str | int | float | bool | None
-    expected = (str, int, float, bool, type(None))
+    expected = (str, int, float, bool)
 
-    assert get_base_types(annotation) == expected
-    assert get_base_types(str | int | float | bool | None) == expected
+    assert get_base_types(annotation, ignore_none=False) == tuple(list(expected) + [type(None)])
+    assert get_base_types(str | int | float | bool | None, ignore_none=True) == expected
 
 
 def test_get_base_types_generic():

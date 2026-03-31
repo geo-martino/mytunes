@@ -255,7 +255,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     ###########################################################################
     ## Pagination
     ###########################################################################
-
     def _format_help_text_for_pause_page(self) -> str:
         header = colored(
             f"Temporary playlists created on {self._log_library_name}. " +

@@ -43,9 +43,10 @@ def tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     for _ in range(faker.random_int(30, 50)):
         cls = choice(classes)
         extension = choice(tuple(cls.supported_extensions))
+        file_path = faker.file_path(absolute=False, extension=extension, depth=faker.random_int(1, 5))
         track = cls.model_validate(dict(
-            name=faker.sentence(nb_words=faker.random_int(1, 5)),
-            path=tmp_path.joinpath(faker.file_path(absolute=False, extension=extension)),
+            name=faker.sentence(nb_words=faker.random_int(5, 10)),
+            path=tmp_path.joinpath(file_path),
         ))
         tracks.append(track)
 

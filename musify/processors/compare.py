@@ -91,15 +91,15 @@ class Comparer(DynamicProcessor):
     def _field_type(self) -> type:
         # noinspection PyArgumentList
         if self.field is None:
-            field_type = NoneType
-        elif isinstance(field := _COMPARISON_FIELDS_MAP[self.field].get_nested_field_info(self.field), FieldInfo):
-            field_type = field.annotation
-        elif isinstance(field, property):
-            field_type = get_type_hints(field.fget, include_extras=True)["return"]
-        else:
-            field_type = field
+            return self._extract_type_from_annotation(NoneType)
 
-        return self._extract_type_from_annotation(field_type)
+        match _COMPARISON_FIELDS_MAP[self.field].get_field_info(self.field):
+            case FieldInfo() as field:
+                annotation = field.annotation
+            case property() as prop:
+                annotation = get_type_hints(prop.fget, include_extras=True)["return"]
+
+        return self._extract_type_from_annotation(annotation)
 
     @property
     def _actual_type(self) -> type:

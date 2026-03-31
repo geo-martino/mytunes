@@ -27,7 +27,7 @@ def models(
     return [*tracks, *artists, *albums, *playlists]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def user(faker: Faker) -> RemoteUser:
     owner_uri = SimpleURI.create_random(RemoteUser.type)
     return RemoteUser(name=faker.name(), uri=owner_uri)

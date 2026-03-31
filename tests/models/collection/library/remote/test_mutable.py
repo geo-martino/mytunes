@@ -142,9 +142,9 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture(autouse=True)
     def mock_get_sync_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:
         initial = [track.uri for track in tracks]
-        add = faker.random_elements(initial)
-        remove = faker.random_elements(initial, length=faker.random_int(0, len(add)))
-        unchanged = faker.random_elements(initial)
+        add = faker.random_elements(initial, unique=True)
+        remove = faker.random_elements(initial, length=faker.random_int(0, len(add)), unique=True)
+        unchanged = faker.random_elements(initial, unique=True)
 
         target = f"{MODULE_ROOT}.models.collection.library._remote._mutable.get_sync_items"
         with patch(target, return_value=(add, remove, unchanged)) as mock_get_items:

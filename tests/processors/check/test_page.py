@@ -185,7 +185,7 @@ class TestPlaylistManagement(BaseModelTester):
             mock_teardown_playlist: Mock,
             faker: Faker,
     ):
-        for pl in faker.random_elements(playlists):
+        for pl in faker.random_elements(playlists, unique=True):
             pl.tracks.clear()
 
         model._collections = {pl.uri: coll for pl, coll in zip(playlists, collections)}
@@ -247,7 +247,7 @@ class TestPlaylistManagement(BaseModelTester):
             mock_get_playlist_items: Mock,
             faker: Faker,
     ):
-        initial = faker.random_elements(tracks, unique=True, length=len(tracks) // 2)
+        initial = faker.random_elements(tracks, length=len(tracks) // 2, unique=True)
         playlist.tracks.replace(initial)
         model._playlists[playlist.uri] = playlist
 

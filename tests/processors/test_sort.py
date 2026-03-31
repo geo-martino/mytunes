@@ -159,12 +159,14 @@ class TestItemSorter(BaseModelTester):
         ItemSorter().sort(tracks)
         assert tracks == tracks_original
 
+        model = ItemSorter(shuffle_mode=ShuffleMode.RANDOM)
         ItemSorter(shuffle_mode=ShuffleMode.RANDOM).sort(tracks)
         assert tracks != tracks_original
 
         # shuffle settings ignored when ``fields`` are defined
-        ItemSorter(fields="name", shuffle_mode=ShuffleMode.RANDOM).sort(tracks)
-        assert tracks == sorted(tracks, key=self._sort_key_for_name())
+        model = ItemSorter(fields="name", shuffle_mode=ShuffleMode.RANDOM)
+        model.sort(tracks)
+        assert tracks == sorted(tracks, key=self._sort_key_for_name(model.ignore_words))
 
     def test_shuffle_rating(self, tracks: list[LocalTrack]):
         assert tracks != sorted(tracks, key=lambda t: t.rating or 0, reverse=True)

@@ -446,7 +446,7 @@ class SpotifyPayloadGenerator:
             "images": self.generate_images(),
             "is_externally_hosted": self.faker.null_boolean(),
             "languages": map(str.lower, self.generate_countries()),
-            "media_type": self.faker.choice(("audio", "video", "mixed")),
+            "media_type": self.faker.random_element(("audio", "video", "mixed")),
             "name": self.faker.name(),
             "publisher": self.faker.company(),
             "type": kind,

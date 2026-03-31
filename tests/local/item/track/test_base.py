@@ -368,7 +368,8 @@ class TestLocalTrack(UniqueKeyTester):
 
     @pytest.fixture
     def merge_tracks(self, tracks: list[LocalTrack], faker: Faker) -> tuple[LocalTrack, LocalTrack]:
-        track, other = faker.random_elements(tracks, length=2)
+        track, other = faker.random_elements(tracks, length=2, unique=True)
+        assert track is not other
 
         other.name = faker.sentence()
         other.artists = faker.words()
@@ -455,7 +456,7 @@ class TestLocalTrack(UniqueKeyTester):
         expected = []
 
         def _random_tags(*_, **__) -> dict[str, Any]:
-            expected_tags = dict(faker.random_elements(list(tags.items())))
+            expected_tags = dict(faker.random_elements(list(tags.items()), unique=True))
             expected.append(expected_tags)
             return expected_tags
 

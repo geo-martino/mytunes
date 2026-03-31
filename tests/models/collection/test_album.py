@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 from musify.models.collection.album import AlbumCollection, RemoteAlbumCollection
 from musify.models.cursors import PageCursor
+from musify.models.item.album import Album
 from musify.models.item.track import Track
 from tests.models.collection.testers import RemoteCollectionTester
 from tests.models.testers import NoUniqueKeyTester
@@ -30,29 +31,29 @@ class TestAlbumCollection(NoUniqueKeyTester):
             AlbumCollection(tracks=tracks)
 
     def test_get_album_name_from_tracks(self, tracks: list[Track]):
-        name = "Test Album"
+        album = Album(name="Test Album")
         for track in tracks:
-            track.album = name
+            track.album = album
 
-        album = AlbumCollection(tracks=tracks)
-        assert album.name == name
+        collection = AlbumCollection(tracks=tracks)
+        assert collection.name == album.name
 
     def test_filter_tracks_on_album_name(self, tracks: list[Track]):
-        name = "Test Album"
+        album = Album(name="Test Album")
         expected = sample(tracks, k=len(tracks) // 2)
         for track in expected:
-            track.album = name
+            track.album = album
 
-        album = AlbumCollection(name=name, tracks=tracks)
-        assert sorted(album.tracks) == sorted(expected)
+        collection = AlbumCollection(**album.model_dump(), tracks=tracks)
+        assert sorted(collection.tracks) == sorted(expected)
 
     def test_items_count(self, tracks: list[Track]):
-        name = "Test Album"
+        album = Album(name="Test Album")
         for track in tracks:
-            track.album = name
+            track.album = album
 
-        model = AlbumCollection(name=name, tracks=tracks)
-        assert model.count == len(tracks)
+        collection = AlbumCollection(**album.model_dump(), tracks=tracks)
+        assert collection.count == len(tracks)
 
 
 class TestRemoteAlbumCollection(RemoteCollectionTester):

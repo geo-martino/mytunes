@@ -30,6 +30,6 @@ def local_tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     return tracks
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def api() -> RemoteAPI:
     return MockRemoteAPI()

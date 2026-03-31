@@ -70,7 +70,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         expected = math.ceil(len(uris) / limit)
 
         def _return_items(*_, **__) -> dict[str, list[dict[str, Any]]]:
-            return {items_key: list(faker.random_elements(items, length=limit))}
+            return {items_key: list(faker.random_elements(items, length=limit, unique=True))}
 
         with patch.object(RequestHandler, "get", side_effect=_return_items) as mock_get:
             yield mock_get

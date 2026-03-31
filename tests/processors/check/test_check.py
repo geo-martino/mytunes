@@ -107,7 +107,10 @@ class TestChecker(BaseModelTester):
     ):
         # force playlist matches to always return valid result
         def _return_valid_playlist_match(items, *args, **kwargs) -> CheckResult:
-            return CheckResult(changed=faker.random_elements(items), unchanged=faker.random_elements(items))
+            return CheckResult(
+                changed=faker.random_elements(items, unique=True),
+                unchanged=faker.random_elements(items, unique=True)
+            )
 
         with patch.object(PlaylistMatch, "match", side_effect=_return_valid_playlist_match) as mock_match_playlist:
             await model.check(collections)

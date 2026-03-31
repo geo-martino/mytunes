@@ -2,7 +2,6 @@ import itertools
 import math
 from collections.abc import Generator
 from copy import copy
-from random import randrange, choice
 from unittest.mock import patch, Mock
 from urllib.parse import unquote
 
@@ -36,7 +35,7 @@ class TestItemDownloadHelper(BaseModelTester):
             "https://www.google.com/search?q={}%20mp3",
         ]
         return ItemDownloadHelper(
-            urls=faker.random_elements(sites, length=randrange(2, len(sites))),
+            urls=faker.random_elements(sites, length=faker.random_int(2, len(sites)), unique=True),
             fields=["name", "artists"],
             interval=faker.random_int(1, 5),
             unique_only=False,
@@ -67,8 +66,8 @@ class TestItemDownloadHelper(BaseModelTester):
         tracks = list(map(copy, tracks[:10]))
 
         for track in tracks:
-            track.artists = faker.random_elements(artists, length=faker.random_int(1, 3))
-            track.album = choice(albums)
+            track.artists = faker.random_elements(artists, length=faker.random_int(1, 3), unique=True)
+            track.album = faker.random_element(albums)
 
         return tracks
 
@@ -133,7 +132,7 @@ class TestItemDownloadHelper(BaseModelTester):
             mock_pause: Mock,
     ):
         for track in tracks:
-            track.artists = faker.random_elements(artists, length=faker.random_int(0, 3))
+            track.artists = faker.random_elements(artists, length=faker.random_int(0, 3), unique=True)
 
         model.open_sites(tracks)
 
@@ -203,7 +202,7 @@ class TestItemDownloadHelper(BaseModelTester):
             log_capturer: LogCapturer
     ):
         # force a few poison apples
-        for item in faker.random_elements(unique_tracks, length=3):
+        for item in faker.random_elements(unique_tracks, length=3, unique=True):
             item.artist = None
             item.album = None
 

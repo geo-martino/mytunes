@@ -1,9 +1,11 @@
+import inspect
 from functools import reduce
-from typing import Any, cast, Iterable, Self
+from typing import Any, cast, Iterable, Self, get_type_hints
 
 from pydantic.fields import FieldInfo
+from typing_inspection.typing_objects import is_annotated
 
-from musify.exception import MusifyAttributeError
+from musify.exception import MusifyAttributeError, MusifyTypeError
 from musify.models._base import ModelMetaclass, BaseModel
 from musify.models._resource import ResourceModel
 from musify.models.exception import ModelError
@@ -76,13 +78,11 @@ class AttributeMetaclass(ModelMetaclass):
             if isinstance(kls, type) and issubclass(kls, AttributeModel):
                 yield kls
 
-    def get_nested_field_info(cls, key: str) -> FieldInfo:
-        """Get field info for a given key, supporting nested keys using dot notation."""
+    def get_field_info(cls, key: str) -> FieldInfo | property:
+        """Get field for a given key, supporting nested keys using dot notation."""
         kls = cast('type[AttributeModel]', cls)
         if len(key_split := key.split(".")) == 1:
-            if issubclass(kls, BaseModel) and key in kls.model_fields:
-                return kls.model_fields[key]
-            return getattr(kls, key)
+            return AttributeMetaclass._get_field_info_from_model(kls, key)
 
         key_iter = iter(key_split[:-1])
         field = reduce(
@@ -91,15 +91,31 @@ class AttributeMetaclass(ModelMetaclass):
             AttributeMetaclass._get_tag_field_from_field_info(kls, next(key_iter))
         )
 
-        return AttributeMetaclass.get_nested_field_info(field, key_split[-1])
+        return AttributeMetaclass.get_field_info(field, key_split[-1])
 
-    @staticmethod
-    def _get_tag_field_from_field_info(cls: type[AttributeModel], key: str) -> Any:
-        if key not in cls.model_fields:
+    def _get_field_info_from_model(cls, key: str) -> FieldInfo:
+        kls = cast('type[AttributeModel]', cls)
+        match kls:
+            case type() if issubclass(kls, BaseModel) and key in kls.model_fields:
+                return kls.model_fields[key]
+            case property():
+                return AttributeMetaclass._get_tag_field_from_property(kls, key)
+            case _:
+                return getattr(kls, key)
+
+    def _get_tag_field_from_field_info(cls, key: str) -> Any:
+        kls = cast('type[AttributeModel]', cls)
+        if key not in kls.model_fields:
             return getattr(cls, key)
 
-        annotation = cls.model_fields[key].annotation
-        return next(cls.__class__._get_nested_models(annotation), annotation)
+        annotation = kls.model_fields[key].annotation
+        return next(kls.__class__._get_nested_models(annotation), annotation)
+
+    @classmethod
+    def _get_tag_field_from_property(mcs, prop: property, key: str) -> Any:
+        annotation = get_type_hints(prop.fget, include_extras=True)["return"]
+        kls = next(mcs._get_nested_models(annotation), annotation)
+        return mcs.get_field_info(kls, key)
 
 
 class AttributeModel(BaseModel, metaclass=AttributeMetaclass):

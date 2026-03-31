@@ -220,7 +220,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     ):
         mock_match_random, matches, matched, unmatched = mock_match_random
 
-        valid = faker.random_elements(items)
+        valid = faker.random_elements(items, unique=True)
         invalid = [item for item in items if item not in valid]
 
         assert model._match_items(items, [], skipped=invalid) == SearchResult(
@@ -394,9 +394,9 @@ class TestItemSearcher(SearcherTester):
         mock_match_random, matches, matched, unmatched = mock_match_random
 
         items_matched, items_unmatched = split_list(items, 2)
-        items_matches = faker.random_elements(query_results, length=len(items_matched))
+        items_matches = faker.random_elements(query_results, length=len(items_matched), unique=True)
 
-        valid = faker.random_elements(items_unmatched)
+        valid = faker.random_elements(items_unmatched, unique=True)
         invalid = [item for item in items if item not in valid]
 
         result_to_search = SearchResult(

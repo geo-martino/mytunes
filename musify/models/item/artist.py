@@ -2,6 +2,7 @@ from typing import ClassVar, TYPE_CHECKING, Self, Annotated
 
 from pydantic import Field, field_validator
 
+from musify._types import to_list
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
@@ -48,7 +49,7 @@ class HasArtists[RT: Artist](HasSeparableTags):
 
         if isinstance(value, str):
             value = self._separate_tags(value)
-        self.artists = value
+        self.artists = to_list(value)
 
 
 class RemoteArtist[UT: URI, GT: RemoteGenre](Artist[GT], RemoteResource[UT], metaclass=makecls()):

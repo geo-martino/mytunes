@@ -160,14 +160,14 @@ class TestLocalLibrary(NoUniqueKeyTester):
     @staticmethod
     def assert_tracks_loaded(model: LocalLibrary, tracks: list[LocalTrack], mock_load: Mock) -> None:
         """Assert that the given tracks were loaded into the model"""
-        assert mock_load.call_count == len(tracks)
+        assert mock_load.call_count == len(set(track.path for track in tracks))
         mock_load.assert_has_calls([mock.call(track.path) for track in tracks], any_order=True)
         assert sorted(model.tracks, key=lambda x: x.path) == sorted(tracks, key=lambda x: x.path)
 
     @staticmethod
-    def assert_playlists_loaded(model: LocalLibrary, playlists: list[Playlist], mock_load: Mock) -> None:
+    def assert_playlists_loaded(model: LocalLibrary, playlists: list[LocalPlaylist], mock_load: Mock) -> None:
         """Assert that the given playlists were loaded into the model"""
-        assert mock_load.call_count == len(playlists)
+        assert mock_load.call_count == len(set(pl.path for pl in playlists))
         mock_load.assert_has_calls([mock.call(pl.path) for pl in playlists], any_order=True)
         assert sorted(model.playlists.unique, key=lambda pl: pl.name) == sorted(playlists, key=lambda pl: pl.name)
 

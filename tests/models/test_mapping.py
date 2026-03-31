@@ -120,11 +120,11 @@ class TestUniqueMapping:
         assert len(mapping) == len(models)
 
     def test_replace(self, models: list[ResourceModel], faker: Faker):
-        initial = faker.random_elements(models)
+        initial = faker.random_elements(models, unique=True)
         mapping = UniqueMapping(initial)
         assert all(key in mapping._items for model in initial for key in model.unique_keys)
 
-        new = faker.random_elements(models)
+        new = faker.random_elements(models, unique=True)
         mapping._replace(new)
         assert all(key in mapping._items for model in new for key in model.unique_keys)
 
