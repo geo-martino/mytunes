@@ -126,6 +126,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         except (MusifyError, HTTPError):
             if self._playlists:
                 await self.teardown_playlists()
+            raise
 
         return self
 
