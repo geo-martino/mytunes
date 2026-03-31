@@ -6,6 +6,7 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
+from musify.exception import MusifyError
 from musify.models.api import RemoteAPI
 from musify.models.api.playlist import PlaylistReadWriteEndpoints
 from musify.models.collection import CollectionModel
@@ -123,7 +124,7 @@ class TestPlaylistManagement(BaseModelTester):
 
         assert not playlist_cleared.tracks
 
-        mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
+        mock_sync_playlist.assert_not_called()
         mock_delete_playlist.assert_called_once_with(playlist.uri.api_url)
 
         assert playlist.uri not in model._collections
@@ -155,6 +156,20 @@ class TestPlaylistManagement(BaseModelTester):
         assert playlist.uri not in model._collections
         assert playlist.uri not in model._playlists
         assert playlist.uri not in model._playlists_initial
+
+    async def test_setup_playlists_fails(
+            self,
+            model: CheckerPage,
+            playlists: list[RemoteMutablePlaylist],
+            collections: list[CollectionModel],
+            mocker: MockerFixture,
+    ):
+        mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
+
+        with patch.object(model, "_setup_playlist", side_effect=MusifyError):
+            with pytest.raises(MusifyError):
+                await model.setup_playlists()
+            mock_teardown_playlists.assert_called_once()
 
     @pytest.fixture
     def mock_teardown_playlist(self, model: CheckerPage, mocker: MockerFixture) -> Mock:

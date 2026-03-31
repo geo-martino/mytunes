@@ -186,7 +186,9 @@ class Logger(logging.Logger):
         self._bars.append(bar)
         return bar
 
-    def get_asynchronous_iterator[T](self, tasks: Iterable[Awaitable[T]], **kwargs) -> Future[list[T]]:
+    def get_asynchronous_iterator[T](
+            self, tasks: Iterable[Awaitable[T]], **kwargs
+    ) -> Awaitable[list[T]] | Future[list[T]]:
         """
         Return an appropriately configured asynchronous tqdm progress bar if installed.
         If not, gather the given awaitable objects from ``tasks`` and return a coroutine.
@@ -196,7 +198,6 @@ class Logger(logging.Logger):
         """
         if tqdm is None:
             return asyncio.gather(*tasks)
-        # noinspection PyTypeChecker
         return tqdm.gather(*tasks, **self._get_tqdm_kwargs(**kwargs))
 
     def _get_tqdm_kwargs(self, **kwargs) -> dict[str, Any]:
