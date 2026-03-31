@@ -14,7 +14,7 @@ from musify.processors.download.sites.exception import StoreTypeError
 
 
 @final
-class SevenDigitalStore(AudioStore[Literal["jackett"]]):
+class JackettStore(AudioStore[Literal["jackett"]]):
     __final__ = True
 
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (Track, Artist, Album)

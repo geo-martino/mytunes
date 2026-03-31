@@ -22,7 +22,7 @@ class QobuzStore(AudioStore[Literal["qobuz"]], HasLocale):
 
     def _format_query_path_for_item(self, item: Union[_accepted_types], query: str) -> str:
         item_type = item.type.rstrip("s") + "s"
-        lc = self.locale.split(".").replace("_", "-").lower()
+        lc = self.locale.split(".")[0].replace("_", "-").lower()
         return f"{lc}/search/{item_type}/{query}"
 
     def _format_query_params_for_item(

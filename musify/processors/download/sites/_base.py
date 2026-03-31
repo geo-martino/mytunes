@@ -1,7 +1,7 @@
 import locale as locale_module
 from abc import abstractmethod
 from collections.abc import Sequence, Iterable, Collection, Mapping
-from typing import ClassVar, Literal, Any, Union
+from typing import ClassVar, Literal, Any, Union, get_args
 from urllib.parse import quote
 
 from pydantic import Field, PrivateAttr, AliasChoices, field_validator, validate_call
@@ -19,6 +19,14 @@ class AudioStore[T: str](BaseModel):
     """Formats the url for an online store for querying and purchasing audio files."""
 
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (ResourceModel,)
+
+    def __init__(self, /, **data: Any) -> None:
+        if not self.__final__:
+            super().__init__(**data)
+            return
+
+        name = next(iter(get_args(self.__class__.model_fields["name"].annotation)))
+        super().__init__(name=name, **data)
 
     name: T = Field(
         description="The name of the download store",

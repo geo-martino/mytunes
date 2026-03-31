@@ -14,6 +14,7 @@ from musify.processors.download.sites import AudioStore
 from musify.processors.download.sites._base import HasLocale
 from musify.processors.download.sites.exception import StoreError
 from tests.models.testers import BaseModelTester
+from tests.processors.download.utils import assert_value_in_url, assert_value_not_in_url
 
 
 class TestAudioStore(BaseModelTester):
@@ -55,10 +56,8 @@ class TestAudioStore(BaseModelTester):
         track.artists = [artist]
 
         result = model.format_search_url(track, fields=["name", "artists"])
-        query_values = [unquote(value) for value in result.query.values()]
-
-        assert any(track.name in value for value in query_values)
-        assert any(artist.name in value for value in query_values)
+        assert_value_in_url(result, track.name)
+        assert_value_in_url(result, artist.name)
 
     @patch.multiple(
         AudioStore,
@@ -77,16 +76,14 @@ class TestAudioStore(BaseModelTester):
         track.artists = artists
 
         result = model.format_search_url(track, fields=["name", "artists"])
-        query_values = [unquote(value) for value in result.query.values()]
-
-        assert any(track.name in value for value in query_values)
-        assert any(track.artists[0].name in value for value in query_values)
+        assert_value_in_url(result, track.name)
+        assert_value_in_url(result, track.artists[0].name)
 
         # only ever takes the first field when the singular name of a field is given
         # and many values are available for that field
         # e.g. only ever takes the first artist when multiple artists are present
         # and the requested field is just 'artist' not 'artists'
-        assert all(track.artist not in value for value in query_values)
+        assert_value_not_in_url(result, track.artist)
 
     @patch.multiple(
         AudioStore,
@@ -106,12 +103,8 @@ class TestAudioStore(BaseModelTester):
         track.artists = artists
 
         result = model.format_search_url(track, fields=["name", "artists"])
-        query_values = [unquote(value) for value in result.query.values()]
-
-        name = model.cleaner.clean(track.name)
-        assert any(name in unquote(value) for value in query_values)
-        artist_name = model.cleaner.clean(track.artists[0].name)
-        assert any(artist_name in unquote(value) for value in query_values)
+        assert_value_in_url(result, model.cleaner.clean(track.name))
+        assert_value_in_url(result, model.cleaner.clean(track.artists[0].name))
 
 
 class TestHasLocale(BaseModelTester):

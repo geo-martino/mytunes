@@ -1,6 +1,8 @@
 from collections.abc import Collection, Sequence
 from typing import Literal, ClassVar, Union, final
+from unittest import case
 
+from pycountry import countries
 from pydantic import Field
 from yarl import URL
 
@@ -25,8 +27,17 @@ class SevenDigitalStore(AudioStore[Literal["7digital"]], HasLocale):
 
     @property
     def _base_url(self) -> URL:
-        lc = self.locale.split(".")  # TODO: fix this
-        return URL.build(scheme="https", host=f"{lc}.7digital.com")
+        country = self.locale.split(".")[0].split("_")[-1]
+        country = self._map_country(country)
+        return URL.build(scheme="https", host=f"{country}.7digital.com")
+
+    @staticmethod
+    def _map_country(country: str) -> str:
+        match country.casefold():
+            case "gb":
+                return "uk"
+            case _:
+                return country
 
     def _format_query_path_for_item(self, item: Union[_accepted_types], query: str) -> str:
         match item:
