@@ -136,15 +136,17 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     ###########################################################################
     async def setup_playlists(self) -> None:
         """Set up the playlists for the given collections and store their state."""
-        bar = self.logger.get_asynchronous_iterator(
-            map(self._setup_playlist, self.collections), disable=True,
-        )
+        tasks = [asyncio.create_task(task) for task in map(self._setup_playlist, self.collections)]
+        bar = self.logger.get_asynchronous_iterator(tasks, disable=True)
 
         try:
             await bar
         except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
-            asyncio.get_running_loop().stop()
+            for task in tasks:
+                print(task.cancel())
+                print(task.cancelling())
+                print(task.cancelled())
             await self.teardown_playlists()
             raise
 

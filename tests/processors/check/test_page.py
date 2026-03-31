@@ -3,6 +3,7 @@ from typing import Generator, Sequence, Any
 from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
+from aiorequestful.exception import HTTPError
 from faker import Faker
 from pytest_mock import MockerFixture
 
@@ -163,12 +164,21 @@ class TestPlaylistManagement(BaseModelTester):
             playlists: list[RemoteMutablePlaylist],
             collections: list[CollectionModel],
             mocker: MockerFixture,
+            faker: Faker,
     ):
         mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
 
-        with patch.object(model, "_setup_playlist", side_effect=MusifyError):
-            with pytest.raises(MusifyError):
+        def _random_exception(*_, **__):
+            if faker.boolean():
+                return
+
+            exc = faker.random_element((MusifyError, HTTPError))
+            raise exc()
+
+        with patch.object(model, "_setup_playlist", side_effect=_random_exception) as mock_setup_playlist:
+            with pytest.raises((MusifyError, HTTPError)):
                 await model.setup_playlists()
+            print(len(list(collections)), mock_setup_playlist.call_count)
             mock_teardown_playlists.assert_called_once()
 
     @pytest.fixture
