@@ -37,23 +37,20 @@ class TestPlaylistManagement(BaseModelTester):
         return properties
 
     async def assert_create_playlist(
-            self, model: CheckerPage, collection: MockCollection, playlists: list[RemoteMutablePlaylist]
-    ) -> RemoteMutablePlaylist:
+            self, model: CheckerPage, collection: MockCollection, playlist: RemoteMutablePlaylist
+    ) -> None:
         assert not model._playlists
-        expected_playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())
 
         await model._setup_playlist(collection)
 
-        assert model._collections == {expected_playlist.uri: collection}
-        assert model._collections[expected_playlist.uri] is collection
+        assert model._collections == {playlist.uri: collection}
+        assert model._collections[playlist.uri] is collection
 
-        assert model._playlists == {expected_playlist.uri: expected_playlist}
-        assert model._playlists[expected_playlist.uri] is expected_playlist
+        assert model._playlists == {playlist.uri: playlist}
+        assert model._playlists[playlist.uri] is playlist
 
-        assert model._playlists_initial == {expected_playlist.uri: expected_playlist}
-        assert model._playlists_initial[expected_playlist.uri] is not expected_playlist
-
-        return expected_playlist
+        assert model._playlists_initial == {playlist.uri: playlist}
+        assert model._playlists_initial[playlist.uri] is not playlist
 
     ###########################################################################
     ## Tests
@@ -63,6 +60,7 @@ class TestPlaylistManagement(BaseModelTester):
             model: CheckerPage,
             collection: MockCollection,
             playlists: list[RemoteMutablePlaylist],
+            tracks: list[RemoteTrack],
             playlist_properties: dict[str, Any],
             mock_get_playlist: Mock,
             mock_create_playlist: Mock,
@@ -71,7 +69,9 @@ class TestPlaylistManagement(BaseModelTester):
     ) -> None:
         model.use_existing_playlists = True
 
-        playlist = await self.assert_create_playlist(model, playlists=playlists, collection=collection)
+        playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())
+        playlist.tracks.replace(tracks)
+        await self.assert_create_playlist(model, playlist=playlist, collection=collection)
 
         mock_get_playlist.assert_called_once_with(name=collection.name, **playlist_properties)
         mock_create_playlist.assert_not_called()
@@ -91,11 +91,12 @@ class TestPlaylistManagement(BaseModelTester):
     ) -> None:
         model.use_existing_playlists = False
 
-        playlist = await self.assert_create_playlist(model, playlists=playlists, collection=collection)
+        playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())
+        await self.assert_create_playlist(model, playlist=playlist, collection=collection)
 
         mock_get_playlist.assert_not_called()
         mock_create_playlist.assert_called_once_with(name=collection.name, **playlist_properties)
-        mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
+        mock_sync_playlist.assert_not_called()  # playlist was created so no need to empty it
         mock_follow_playlist.assert_called_once_with(playlist.uri.api_url)
 
     async def test_delete_playlist(
