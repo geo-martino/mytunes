@@ -109,10 +109,6 @@ class TestLocalTrack(UniqueKeyTester):
             assert result is file
             assert result.filename == str(path)
 
-    @pytest.mark.skip(reason="Not implemented yet")
-    def test_get_tag_id(self):
-        pass  # TODO
-
     ###########################################################################
     ## Validators/Serializers
     ###########################################################################

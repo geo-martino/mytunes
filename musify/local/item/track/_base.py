@@ -236,16 +236,16 @@ class LocalTrack[FT: FileType](
 
     @classmethod
     def _get_tag_id(cls, name: str) -> str | None:
-        field: FieldInfo | ComputedFieldInfo = cls.model_fields.get(name, cls.model_computed_fields.get(name))
-        tag_id = None
-        if isinstance(field, FieldInfo) and isinstance(field.serialization_alias, str):
-            tag_id = field.serialization_alias
-        elif isinstance(field.alias, str):
-            tag_id = field.alias
-        elif isinstance(field, FieldInfo) and isinstance(field.validation_alias, str):
-            tag_id = field.validation_alias
-        elif isinstance(field, FieldInfo) and isinstance(field.validation_alias, AliasChoices):
-            tag_id = next(iter(field.validation_alias.choices))
+        tag_id = name
+        match cls.model_fields.get(name, cls.model_computed_fields.get(name)):
+            case FieldInfo() as field if isinstance(field.serialization_alias, str):
+                tag_id = field.serialization_alias
+            case FieldInfo() | ComputedFieldInfo() as field if isinstance(field.alias, str):
+                tag_id = field.alias
+            case FieldInfo() as field if isinstance(field.validation_alias, str):
+                tag_id = field.validation_alias
+            case FieldInfo() as field if isinstance(field.validation_alias, AliasChoices):
+                tag_id = next(iter(field.validation_alias.choices))
 
         return tag_id
 

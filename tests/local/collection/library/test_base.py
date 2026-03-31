@@ -232,6 +232,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
     ###########################################################################
     ## Collections
     ###########################################################################
+    # TODO: expand these. These all failed in production immediately
     def test_collections(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks[:] = tracks
 

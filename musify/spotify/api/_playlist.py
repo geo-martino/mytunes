@@ -35,7 +35,7 @@ class _SpotifySavedPlaylistEndpoints(
 
     @classmethod
     @validate_call
-    def _format_playlist_body(
+    async def _format_playlist_body(
             cls, name: str = None, public: bool = None, collaborative: bool = None, description: str = None
     ) -> JsonSchemaValue:
         if public and collaborative:

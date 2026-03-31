@@ -166,9 +166,6 @@ class TestIterablePageCursor(BaseModelTester):
         # just check that it doesn't iter when no next page is available
         assert not list(model.iter_pages)
 
-    def test_sort_responses(self, faker: Faker):
-        pass  # TODO: write me
-
 
 class TestIndexCursor(BaseModelTester):
     @pytest.fixture

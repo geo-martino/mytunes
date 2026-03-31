@@ -378,7 +378,6 @@ class LocalLibrary(
     ###########################################################################
     ## Collections
     ###########################################################################
-    # TODO: test me better...
     def folders(self, tracks: Collection[LocalTrack] = None) -> Generator[Folder, None, None]:
         """
         Dynamically generate a set of folder collections from the tracks in this library.
