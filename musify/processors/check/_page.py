@@ -144,7 +144,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             await bar
         except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
-            await asyncio.get_event_loop().shutdown_asyncgens()
+            asyncio.get_running_loop().stop()
             await self.teardown_playlists()
             raise
 
