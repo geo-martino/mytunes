@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterable
 from collections.abc import MutableMapping
 from copy import deepcopy
@@ -135,12 +136,15 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     ###########################################################################
     async def setup_playlists(self) -> None:
         """Set up the playlists for the given collections and store their state."""
+        bar = self.logger.get_asynchronous_iterator(
+            map(self._setup_playlist, self.collections), disable=True,
+        )
+
         try:
-            await self.logger.get_asynchronous_iterator(
-                map(self._setup_playlist, self.collections), disable=True,
-            )
+            await bar
         except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
+            bar.cancel()
             await self.teardown_playlists()
             raise
 
