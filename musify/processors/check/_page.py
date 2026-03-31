@@ -121,21 +121,14 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         return properties
 
     async def __aenter__(self) -> Self:
-        try:
-            await self.setup_playlists()
-        except (MusifyError, HTTPError):
-            if self._playlists:
-                await self.teardown_playlists()
-            raise
-
+        await self.setup_playlists()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # TODO: test this once rate limit is up
         print("EXITING PAGE", self.position, exc_type, exc_val, exc_tb)
         print("COUNTS", len(self._collections), len(self._playlists), len(self._playlists_initial),)
-        if self._playlists:
-            await self.teardown_playlists()
+        await self.teardown_playlists()
 
     ###########################################################################
     ## Playlist setup/teardown
@@ -146,10 +139,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             await self.logger.get_asynchronous_iterator(
                 map(self._setup_playlist, self.collections), disable=True,
             )
-        except MusifyError:
+        except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
-            if self._playlists:
-                await self.teardown_playlists()
+            await self.teardown_playlists()
             raise
 
     async def _setup_playlist(self, collection: CollectionModel) -> RemoteMutablePlaylist | None:
@@ -187,6 +179,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         Teardown the playlists used for checking by deleting any created by this process
         and restoring any that were not.
         """
+        if not self._playlists:
+            self.logger.extra("No playlists were created, skipping teardown")
+
         # assume all originally empty playlists were temp playlists and delete them, restore the others
         delete_count = sum(pl.count == 0 for pl in self._playlists_initial.values())
         restore_count = sum(pl.count > 0 for pl in self._playlists_initial.values())
