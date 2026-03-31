@@ -137,10 +137,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     async def setup_playlists(self) -> None:
         """Set up the playlists for the given collections and store their state."""
         tasks = [asyncio.create_task(task) for task in map(self._setup_playlist, self.collections)]
-        bar = self.logger.get_asynchronous_iterator(tasks, disable=True)
 
         try:
-            await bar
+            await self.logger.get_asynchronous_iterator(tasks, disable=True)
         except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
             for task in tasks:
@@ -193,16 +192,12 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         message = f"Deleting {delete_count} temporary playlists and restoring {restore_count} playlists"
         self.logger.extra(message, header=3)
 
-        while self._playlists:
-            try:
-                await self.logger.get_asynchronous_iterator(
-                    map(self._teardown_playlist, self._playlists.values()),
-                    desc="Restoring/deleting",
-                    unit="playlists",
-                    total=len(self._playlists),
-                )
-            except (MusifyError, HTTPError):
-                pass
+        await self.logger.get_asynchronous_iterator(
+            map(self._teardown_playlist, self._playlists.values()),
+            desc="Restoring/deleting",
+            unit="playlists",
+            total=len(self._playlists),
+        )
 
     async def _teardown_playlist(self, playlist: RemoteMutablePlaylist) -> None:
         initial = self._playlists_initial[playlist.uri]
