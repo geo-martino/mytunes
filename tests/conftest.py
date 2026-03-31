@@ -1,18 +1,19 @@
 import logging
 from collections import defaultdict
-from collections.abc import Collection
+from collections.abc import Collection, Generator
 from copy import copy
 from io import BytesIO
 from pathlib import Path
 from random import choice, sample
 from types import MethodType
+from unittest.mock import patch
 
 import mutagen.id3
 import pytest
 from PIL import Image, ImageFile as PILImageFile
 # noinspection PyProtectedMember
 from _pytest.logging import LogCaptureHandler, _remove_ansi_escape_sequences
-from aioresponses import aioresponses, CallbackResult
+from aiohttp import ClientSession
 from faker import Faker
 
 from musify.models.collection.playlist import Playlist, MutablePlaylist
@@ -28,12 +29,6 @@ from tests.utils import GENRES
 def faker() -> Faker:
     """Sets up and yields a basic Faker object for fake data"""
     return Faker()
-
-
-@pytest.fixture(scope="session")
-def mock_response():
-    with aioresponses() as m:
-        yield m
 
 
 @pytest.fixture
@@ -162,7 +157,7 @@ def image_files(image_types: set[str], faker: Faker, tmp_path: Path) -> list[Pat
 
 
 @pytest.fixture
-def image_urls(image_types: set[str], faker: Faker, mock_response: aioresponses) -> list[ImageURL]:
+def image_urls(image_types: set[str], faker: Faker) -> Generator[list[ImageURL], None, None]:
     image_urls: list[ImageURL] = []
 
     for _ in range(faker.random_int(3, 5)):
@@ -171,7 +166,6 @@ def image_urls(image_types: set[str], faker: Faker, mock_response: aioresponses)
         img = Image.open(BytesIO(image_bytes))
         url = faker.url()
 
-        mock_response.get(url, repeat=True, callback=lambda *_, **__: CallbackResult(method="GET", body=image_bytes),)
         image_url = ImageURL(
             url=url,
             type=choice(list(image_types)),
@@ -181,7 +175,11 @@ def image_urls(image_types: set[str], faker: Faker, mock_response: aioresponses)
         )
         image_urls.append(image_url)
 
-    return image_urls
+    with (
+            patch.object(ClientSession, "get") as mock_get,
+            patch.object(ClientSession, "close") as mock_close,
+    ):
+        yield image_urls
 
 
 # This is a fork of the pytest-lazy-fixture package

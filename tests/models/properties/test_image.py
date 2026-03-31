@@ -1,17 +1,20 @@
+from collections.abc import Callable
 from contextlib import ExitStack
 from pathlib import Path
 from random import choice
+from typing import Union, Optional, Self, Any
 from unittest.mock import patch, AsyncMock
 
 import mutagen.id3
 import pytest
 from PIL.ImageFile import ImageFile as PILImageFile
-from aioresponses import aioresponses, CallbackResult
+from aiohttp import ClientSession
 from faker import Faker
 
 from musify.exception import MusifyValueError
 from musify.models.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
 from tests.models.testers import BaseModelTester
+from tests.utils import CallbackResult
 
 
 class TestImageBase(BaseModelTester):
@@ -156,16 +159,12 @@ class TestImageURL(BaseModelTester):
             self,
             model: ImageURL,
             image_bytes: list[bytes],
-            image_objects: list[PILImageFile],
-            mock_response: aioresponses
+            image_objects: list[PILImageFile]
     ):
         img_bytes, img_obj = choice(list(zip(image_bytes, image_objects)))
-        mock_response.get(
-            model.url,
-            callback=lambda *_, **__: CallbackResult(method="GET", body=img_bytes),
-        )
 
-        assert await model.load() == img_obj
+        with patch.object(ClientSession, "get", side_effect=CallbackResult.from_response(img_bytes)):
+            assert await model.load() == img_obj
 
 
 class TestHasImages(BaseModelTester):

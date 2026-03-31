@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
 import pytest
 from PIL import Image, ImageFile as PILImageFile
+from aiohttp import ClientResponse, ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import AliasPath, TypeAdapter, AliasChoices
@@ -27,7 +28,7 @@ from musify.models.remote import RemoteModel
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor
 from tests.models.utils import MockRemoteResource, MockRemoteCollection
-from tests.utils import SimpleURI
+from tests.utils import SimpleURI, CallbackResult
 
 
 class TestCreateFromResponse:
@@ -490,9 +491,8 @@ class TestEndpoints(EndpointsTester):
     ):
         image_url = ImageURL(url=faker.url())
 
-        with patch.object(ImageURL, "load", return_value=image_object, new_callable=AsyncMock) as mock_load:
+        with patch.object(ClientSession, "get", side_effect=CallbackResult.from_response(expected_image_data)):
             data, mime = await model._get_image_data(image_url)
-            mock_load.assert_called_once_with(model._handler.session)
 
         assert data == expected_image_data
         assert mime == expected_image_mime

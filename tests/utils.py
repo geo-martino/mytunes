@@ -3,7 +3,7 @@ import math
 import re
 from collections.abc import Collection, Iterator, Callable
 from random import choice
-from typing import Self, final
+from typing import Self, final, Any
 
 from faker import Faker
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -58,6 +58,29 @@ GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
     "Vispop",
     "Wonky Pop"
 ))
+
+
+class CallbackResult:
+    def __init__(self, method: str = "GET", status: int = 200, body: str | bytes = ''):
+        self.method = method
+        self.status = status
+        self.body = body
+
+    async def read(self) -> bytes:
+        return self.body
+
+    def __await__(self):
+        return self
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    @classmethod
+    def from_response(cls, body: str | bytes) -> Callable[[Any], Self]:
+        return lambda *_, **__: CallbackResult(body=body)
 
 
 def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterator[list[T]]:
