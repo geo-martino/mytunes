@@ -13,7 +13,7 @@ from yarl import URL
 
 from musify._types import StrippedString, to_set
 from musify.exception import MusifyTypeError
-from musify.models import abstract_property, ResourceModel
+from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._base import RootModel, BaseModel
 from musify.models._metaclass import makecls

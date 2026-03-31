@@ -92,7 +92,7 @@ class InputMatch(CheckerMatch, InputProcessor):
                 option = self._get_user_input(name, formatter=formatter)
 
             match option.casefold():
-                case "h":
+                case "h":  # print help text
                     help_text = self._format_help_text_for_match_with_input()
                     self.logger.print_message("\n" + help_text)
 
@@ -134,6 +134,7 @@ class InputMatch(CheckerMatch, InputProcessor):
                         return option
 
                 case value if (input_uri := self._create_uri(value, kind=item.type)) is not None:
+                    # set uri from input
                     item.uri = input_uri
                     break
 

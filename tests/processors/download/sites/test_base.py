@@ -1,6 +1,5 @@
 import locale
 from unittest.mock import patch, Mock, PropertyMock
-from urllib.parse import unquote
 
 import pytest
 from faker import Faker
@@ -10,9 +9,9 @@ from yarl import URL
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.processors.clean.string import NameCleaner
-from musify.processors.download.sites import AudioStore
-from musify.processors.download.sites._base import HasLocale
-from musify.processors.download.sites.exception import StoreError
+from musify.processors.download.stores import AudioStore
+from musify.processors.download.stores._base import HasLocale, GeneralAudioStore
+from musify.processors.download.stores.exception import StoreError
 from tests.models.testers import BaseModelTester
 from tests.processors.download.utils import assert_value_in_url, assert_value_not_in_url
 
@@ -119,3 +118,16 @@ class TestHasLocale(BaseModelTester):
     def test_validate_from_locale_alias_fails(self):
         with pytest.raises(ValidationError):
             HasLocale(locale="unknown")
+
+
+class TestGeneralAudioStore(BaseModelTester):
+    @pytest.fixture
+    def model(self):
+        return GeneralAudioStore(url="https://example.com/search?q={}&type=t")
+
+    def test_validate_urls(self):
+        with pytest.raises(ValidationError, match="String should match pattern"):
+            GeneralAudioStore(url="https://example.com/search?q={}&limit={}")
+
+        with pytest.raises(ValidationError, match="Input should be a valid URL"):
+            GeneralAudioStore(url="not_a_valid_url_with_placeholder_{}")

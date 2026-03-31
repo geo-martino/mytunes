@@ -8,6 +8,7 @@ from pydantic import Field, AliasChoices, model_validator, field_serializer, mod
     ModelWrapValidatorHandler, NonNegativeFloat, ConfigDict
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
+from musify._types import get_base_types
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
@@ -18,7 +19,6 @@ from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.rating import Rating
-from musify._types import get_base_types
 
 
 @final

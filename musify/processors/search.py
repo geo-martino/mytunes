@@ -427,8 +427,8 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
 
     def _log_start(self, items: Collection, default_type: str) -> None:
         types = {f"{it.type.rstrip("s")}s" for it in items if isinstance(it, ResourceModel)}
-        log_type = ", ".join(sorted(types)) if types else default_type
-        message = f"Searching for matches on {self.source} for {len(items)} {log_type}"
+        types = self.logger.format_list_to_string(types) if types else default_type
+        message = f"Searching for matches on {self.source} for {len(items)} {types}"
         self.logger.info(message, header=1)
 
     def _log_skip(self, message: str) -> None:

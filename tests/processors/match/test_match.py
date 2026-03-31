@@ -17,7 +17,7 @@ from musify.models.properties.name import HasName
 from musify.processors.match import Matcher
 from musify.processors.match.score import Scorer
 from musify.processors.match.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
-from musify.processors.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer, KaraokeScorer
+from musify.processors.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
 from tests.models.testers import BaseModelTester
 
 

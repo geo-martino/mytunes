@@ -9,7 +9,6 @@ from pydantic import Field, NonNegativeInt, model_validator, ValidationError, Ty
 
 from musify._types import String
 from musify.exception import MusifyTypeError
-from musify.models import abstract_property
 from musify.models.exception import CursorError, CursorResponseError
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL

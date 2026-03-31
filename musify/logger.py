@@ -171,6 +171,18 @@ class Logger(logging.Logger):
         parts = [header, message, hidden]
         return " ".join(part for part in parts if part).strip()
 
+    @staticmethod
+    def format_list_to_string(values: Iterable[Any]) -> str:
+        """Format the given ``values`` as a list of strings for logging."""
+        values = list(map(str, values))
+        value_str = ", ".join(values[:-1])
+        if value_str:
+            value_str = " & ".join([value_str, values[-1]])
+        else:
+            value_str = values[0]
+
+        return value_str
+
     def get_synchronous_iterator[T: Any](
             self, iterable: Iterable[T] | None = None, total: T | int | None = None, **kwargs
     ) -> ProgressBarType[T]:

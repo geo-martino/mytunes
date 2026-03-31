@@ -127,19 +127,12 @@ class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
         self.logger.report(table)
 
     def _log_start(self, collections: Sequence[CollectionModel]) -> None:
-        collection_types = sorted({
-            collection.type.rstrip("s") + "s" for collection in collections if isinstance(collection, ResourceModel)
-        })
-
-        collection_types_str = ", ".join(collection_types[:-1])
-        if collection_types_str:
-            collection_types_str = " & ".join([collection_types_str, collection_types[-1]])
-        else:
-            collection_types_str = collection_types[0]
+        types = sorted({f"{it.type.rstrip("s")}s" for it in collections if isinstance(it, ResourceModel)})
+        types = self.logger.format_list_to_string(types)
 
         username = self.user.name if self.user is not None else "the current user"
         message = (
-            f"Checking items in {len(collections)} {collection_types_str} by creating "
+            f"Checking items in {len(collections)} {types} by creating "
             f"temporary {self.source} playlists for {username}"
         )
         self.logger.info(message, header=1)

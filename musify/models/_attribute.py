@@ -1,16 +1,14 @@
-import inspect
 from functools import reduce
 from typing import Any, cast, Iterable, Self, get_type_hints
 
 from pydantic.fields import FieldInfo
-from typing_inspection.typing_objects import is_annotated
 
-from musify.exception import MusifyAttributeError, MusifyTypeError
+from musify._types import get_base_types
+from musify.exception import MusifyAttributeError
 from musify.models._base import ModelMetaclass, BaseModel
 from musify.models._resource import ResourceModel
 from musify.models.exception import ModelError
 from musify.models.metadata import Attribute, TagAttribute
-from musify._types import get_base_types
 
 
 class AttributeMetaclass(ModelMetaclass):

@@ -1,4 +1,4 @@
-from random import choice, sample
+from random import sample
 from typing import Any
 from urllib.parse import unquote
 
@@ -7,7 +7,7 @@ from yarl import URL
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
-from musify.processors.download.sites import AudioStore
+from musify.processors.download.stores import AudioStore
 from tests.utils import GENRES
 
 

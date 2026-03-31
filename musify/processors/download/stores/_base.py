@@ -1,21 +1,34 @@
 import locale as locale_module
 from abc import abstractmethod
 from collections.abc import Sequence, Iterable, Collection, Mapping
-from typing import ClassVar, Literal, Any, Union, get_args
+from typing import ClassVar, Literal, Any, Union, get_args, Annotated, final, Self
 from urllib.parse import quote
 
-from pydantic import Field, PrivateAttr, AliasChoices, field_validator, validate_call
+from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter, \
+    HttpUrl
 from yarl import URL
 
-from musify._types import StrippedString, String
-from musify.models import BaseModel, abstract_property, ResourceModel
+from musify._types import StrippedString
+from musify.models import BaseModel, ResourceModel
+from musify.models._base import ModelMetaclass
 from musify.models.properties.name import HasName
 from musify.processors.clean.string import NameCleaner
-from musify.processors.download.sites.exception import StoreTypeError, StoreError
+from musify.processors.download.stores.exception import StoreError
+
+
+class AudioStoreMetaclass(ModelMetaclass):
+    @property
+    def annotation(cls) -> Self:
+        if not cls.registered_submodels:
+            return cls
+        return Annotated[
+            super().annotation,
+            Field(discriminator="name"),
+        ]
 
 
 # noinspection PyAbstractClass
-class AudioStore[T: str](BaseModel):
+class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
     """Formats the url for an online store for querying and purchasing audio files."""
 
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (ResourceModel,)
@@ -30,7 +43,6 @@ class AudioStore[T: str](BaseModel):
 
     name: T = Field(
         description="The name of the download store",
-        validation_alias=AliasChoices("store", "type"),
     )
     fields: Sequence[StrippedString] = Field(
         description="The fields to take from an item for use as the query string when opening sites.",
@@ -123,7 +135,7 @@ class AudioStore[T: str](BaseModel):
         raise NotImplementedError
 
 
-class HasLocale(BaseModel):
+class HasLocale(BaseModel, metaclass=AudioStoreMetaclass):
     locale: Literal[*list(locale_module.locale_alias.values())] = Field(
         description="The locale of the store to access.",
         default_factory=lambda: locale_module.getdefaultlocale()[0],
@@ -135,3 +147,48 @@ class HasLocale(BaseModel):
         if not isinstance(lc, str) or lc not in list(locale_module.locale_alias.keys()):
             return lc
         return locale_module.normalize(lc)
+
+
+@final
+class GeneralAudioStore(AudioStore[Literal["general"]]):
+    __final__ = True
+
+    url: Annotated[StrippedString, StringConstraints(pattern=r"^[^{}]*\{\}[^{}]*$")] = Field(
+        description=(
+            "The template URL to open queries for. "
+            "The given site should contain exactly 1 '{}' placeholder into which the processor can place "
+            "a query for the item being searched. e.g. *bandcamp.com/search?q={}&item_type=t*"
+        ),
+    )
+
+    @field_validator("url", mode="after", check_fields=True)
+    @classmethod
+    def _validate_url(cls, url: str) -> str:
+        TypeAdapter(HttpUrl).validate_python(url.format(""))
+        return url
+
+    @validate_call
+    def format_search_url(self, item: ResourceModel, fields: Sequence[str] = ()) -> URL:
+        """Format the search URL for the given item"""
+        if not fields:
+            fields = self.fields
+        if not fields:
+            raise StoreError("No fields provided")
+
+        query = self._format_query_for_item(item, fields=fields) + f" {self.additional_query}"
+        return URL(self.url.format(query)).extend_query(self.additional_params)
+
+    # ignored
+    @property
+    def _base_url(self) -> URL:
+        return URL(self.url)
+
+    # ignored
+    def _format_query_path_for_item(self, item: ResourceModel, query: str) -> str:
+        return super()._format_query_path_for_item(item, query=query)
+
+    # ignored
+    def _format_query_params_for_item(
+            self, item: ResourceModel, query: str, fields: Collection[str]
+    ) -> dict[str, str]:
+        return super()._format_query_params_for_item(item, query=query, fields=fields)

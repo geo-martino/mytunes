@@ -1,8 +1,6 @@
-from collections.abc import Callable
 from contextlib import ExitStack
 from pathlib import Path
 from random import choice
-from typing import Union, Optional, Self, Any
 from unittest.mock import patch, AsyncMock
 
 import mutagen.id3

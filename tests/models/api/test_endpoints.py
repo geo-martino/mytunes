@@ -6,7 +6,7 @@ from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
 import pytest
 from PIL import Image, ImageFile as PILImageFile
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import AliasPath, TypeAdapter, AliasChoices

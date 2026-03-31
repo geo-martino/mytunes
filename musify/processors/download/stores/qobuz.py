@@ -7,7 +7,7 @@ from musify.models import ResourceModel
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
-from musify.processors.download.sites._base import AudioStore, HasLocale
+from musify.processors.download.stores._base import AudioStore, HasLocale
 
 
 @final
@@ -21,7 +21,7 @@ class QobuzStore(AudioStore[Literal["qobuz"]], HasLocale):
         return URL.build(scheme="https", host="www.qobuz.com")
 
     def _format_query_path_for_item(self, item: Union[_accepted_types], query: str) -> str:
-        item_type = item.type.rstrip("s") + "s"
+        item_type = f"{item.type.rstrip("s")}s"
         lc = self.locale.split(".")[0].replace("_", "-").lower()
         return f"{lc}/search/{item_type}/{query}"
 

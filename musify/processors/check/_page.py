@@ -5,7 +5,6 @@ from copy import deepcopy
 from typing import Self, Any
 
 from aiorequestful.exception import HTTPError
-from aiorequestful.response.exception import ResponseError
 from pydantic import Field, field_validator, PrivateAttr
 from termcolor import colored
 
@@ -298,10 +297,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
                 case "h":  # print help text
                     self.logger.print_message("\n" + help_text)
 
-                case "s":  # skip
+                case "s":
                     raise SkipPage()
 
-                case "q":  # quit
+                case "q":
                     raise QuitImmediately()
 
                 case "l":

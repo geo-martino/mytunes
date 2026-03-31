@@ -10,7 +10,6 @@ import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
 
 from musify.exception import MusifyTypeError
-from musify.models import abstract_property
 from musify.models._attribute import AttributeMetaclass
 from musify.models._base import BaseModel
 from musify.models.exception import MusifyValidationError

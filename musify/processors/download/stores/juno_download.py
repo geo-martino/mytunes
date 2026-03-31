@@ -5,10 +5,9 @@ from yarl import URL
 
 from musify.models import ResourceModel
 from musify.models.item.album import Album
-from musify.models.item.artist import Artist
 from musify.models.item.track import Track
-from musify.processors.download.sites._base import AudioStore, HasLocale
-from musify.processors.download.sites.exception import StoreTypeError
+from musify.processors.download.stores._base import AudioStore
+from musify.processors.download.stores.exception import StoreTypeError
 
 
 @final

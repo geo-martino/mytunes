@@ -235,7 +235,7 @@ class LocalLibrary(
         folders = self.library_folders
         folder_message = "folder" if len(folders) == 1 else "folders"
         message = f"Scanning {len(folders)} {self.source} library {folder_message} for tracks with extensions:"
-        self.logger.info(message, header=2, hidden=", ".join(sorted(extensions)))
+        self.logger.info(message, header=2, hidden=self.logger.format_list_to_string(extensions))
 
         for folder in folders:
             for path in folder.rglob(f"[!.]*"):
@@ -320,7 +320,7 @@ class LocalLibrary(
 
         folder_message = "folder" if len(folders) == 1 else "folders"
         message = f"Scanning {len(folders)} {self.source} library {folder_message} for playlists with extensions:"
-        self.logger.info(message, header=2, hidden=", ".join(sorted(extensions)))
+        self.logger.info(message, header=2, hidden=self.logger.format_list_to_string(extensions))
 
         total = 0
         filtered = 0

@@ -5,9 +5,8 @@ import pytest
 from faker import Faker
 
 from musify.exception import MusifyTypeError
-from musify.models.collection.album import AlbumCollection
 from musify.models.item.album import HasAlbum, Album
-from musify.models.item.track import HasTracks, Track
+from musify.models.item.track import Track
 from musify.models.properties.length import HasLength
 from musify.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
