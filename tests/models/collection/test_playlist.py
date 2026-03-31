@@ -47,10 +47,6 @@ class TestHasPlaylists(BaseModelTester):
     def model(self, playlists: list[Playlist]) -> HasPlaylists:
         return HasPlaylists(playlists=playlists)
 
-    def test_items_count(self, playlists: list[Playlist]):
-        model = HasPlaylists(playlists=playlists)
-        assert model.count == len(playlists)
-
 
 class TestHasMutablePlaylists(BaseModelTester):
     @pytest.fixture

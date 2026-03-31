@@ -36,9 +36,9 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         le=1,
     )
 
-    def can_score(self, item: Any) -> bool:
+    def can_score(self, item: Any, skip_on_exact_type: bool = False) -> bool:
         """Check whether the item is scorable by this scorer."""
-        return self.cleaner.can_clean(item)
+        return self.cleaner.can_clean(item, skip_on_exact_type=skip_on_exact_type)
 
     def score[T: HasName](self, item: T, other: T | None = None) -> Number:
         """Scores the similarity between the source and other attributes."""

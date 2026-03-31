@@ -14,6 +14,7 @@ from musify.models.item.track import Track, HasTracks
 from musify.models.properties.order import Position
 from musify.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from tests.models.testers import BaseModelTester
+from tests.processors.utils import MockCollection
 
 
 class TestModelFormatter(BaseModelTester):
@@ -240,7 +241,7 @@ class TestCollectionFormatter(BaseModelTester):
     def test_format_uses_current_positions(
             self, model: CollectionFormatter, tracks: list[Track], mock_format: Mock, faker: Faker
     ):
-        collection = HasTracks(tracks=tracks)
+        collection = MockCollection(name=faker.name(), all_items=tracks)
         total = len(tracks)
 
         random.shuffle(tracks)
@@ -258,7 +259,7 @@ class TestCollectionFormatter(BaseModelTester):
     def test_format_generates_positions(
             self, model: CollectionFormatter, artists: list[Artist], mock_format: Mock, faker: Faker
     ):
-        collection = HasArtists(artists=artists)
+        collection = MockCollection(name=faker.name(), all_items=artists)
         expected = [Position(number=i, total=len(artists), zero_fill=True) for i in range(1, len(artists) + 1)]
 
         model.format(collection, indices=True)
@@ -275,7 +276,7 @@ class TestCollectionFormatter(BaseModelTester):
         for i, track in enumerate(tracks, 1):
             track.track = Position(number=i, total=None)
 
-        collection = HasTracks(tracks=tracks)
+        collection = MockCollection(name=faker.name(), all_items=tracks)
         expected = [Position(number=it.track.number, total=total, zero_fill=True) for it in collection.items]
 
         model.format(collection, indices=True)
@@ -297,7 +298,8 @@ class TestCollectionFormatter(BaseModelTester):
             tracks[-1].track.total = total
 
         collection_tracks = faker.random_elements(tracks, length=len(tracks) // 3, unique=True)
-        collection = HasTracks(tracks=sorted(collection_tracks, key=lambda it: it.track.number))
+        collection_tracks = sorted(collection_tracks, key=lambda it: it.track.number)
+        collection = MockCollection(name=faker.name(), all_items=collection_tracks)
         expected = [Position(number=it.track.number, total=total, zero_fill=True) for it in collection.items]
 
         model.format(collection, indices=True)

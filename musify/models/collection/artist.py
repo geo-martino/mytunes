@@ -3,7 +3,7 @@ from typing import Any, Self, TYPE_CHECKING
 
 from pydantic import model_validator, ModelWrapValidatorHandler
 
-from musify.models.collection._base import RemoteCollection
+from musify.models.collection._base import RemoteCollection, CollectionModel
 from musify.models.collection.album import AlbumCollection
 from musify.models.cursors import PageCursor
 from musify.models.exception import MusifyValidationError
@@ -17,11 +17,11 @@ if TYPE_CHECKING:
     from musify.models.api.artist import HasArtistEndpoints, ArtistReadCollectionEndpoints
 
 
-class ArtistCollection[AT: Album, GT: Genre](Artist[GT], HasAlbums[AT]):
+class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], HasAlbums[AT]):
     """Represents a collection of artists and their properties."""
+
     @property
     def _items(self) -> list[AT]:
-        # mro doesn't always use get albums, overriding to ensure albums are returned
         return self.albums
 
     @property

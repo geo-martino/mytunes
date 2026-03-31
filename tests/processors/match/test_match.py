@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from copy import copy
 from random import sample, choice
 from unittest.mock import patch
@@ -15,8 +16,8 @@ from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.processors.match import Matcher
 from musify.processors.match.score import Scorer
-from musify.processors.match.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer
-from musify.processors.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
+from musify.processors.match.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
+from musify.processors.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer, KaraokeScorer
 from tests.models.testers import BaseModelTester
 
 
@@ -32,8 +33,10 @@ class TestMatcher(BaseModelTester):
             NameScorer(),
             ArtistScorer(scale_on_many_artists=False),
             AlbumScorer(),
+            # KaraokeScorer(),  # complicates tests if added
             LengthScorer(),
-            ReleaseYearScorer()
+            ReleaseYearScorer(),
+            TotalItemsScorer(),
         ]
 
     @pytest.fixture
@@ -52,6 +55,10 @@ class TestMatcher(BaseModelTester):
         return tracks
 
     @pytest.fixture
+    def track(self, tracks: list[Track], faker: Faker) -> Track:
+        return faker.random_element(tracks)
+
+    @pytest.fixture
     def albums(
             self, tracks: list[Track], artists: list[Artist], albums: list[Album], faker: Faker
     ) -> list[AlbumCollection]:
@@ -67,6 +74,13 @@ class TestMatcher(BaseModelTester):
             album_collections.append(collection)
 
         return album_collections
+
+    @pytest.fixture
+    def album(self, albums: list[Album], faker: Faker) -> Album:
+        return faker.random_element(albums)
+
+    def get_expected_scorers_from_classes(self, model: Matcher, classes: Collection[type[Scorer]]) -> list[Scorer]:
+        return [scorer for scorer in model.scorers if scorer.__class__ in classes]
 
     def test_get_scorers_for_item_strings(self, model: Matcher):
         assert all(isinstance(scorer, StringScorer) for scorer in model.get_scorers_for_item("string"))
@@ -87,26 +101,35 @@ class TestMatcher(BaseModelTester):
         assert all(isinstance(scorer, LengthScorer) for scorer in model.get_scorers_for_item(HasLength()))
         assert all(isinstance(scorer, ReleaseYearScorer) for scorer in model.get_scorers_for_item(HasReleaseDate()))
 
-    def test_get_scorers_for_item_complex(
-            self, model: Matcher, track: Track, artist: Artist, album: Album, faker: Faker
-    ):
-        assert model.get_scorers_for_item(track) == [
-            scorer for scorer in model.scorers if scorer.__class__ in (
-                NameScorer, ArtistScorer, AlbumScorer, LengthScorer, ReleaseYearScorer
-            )
-        ]
+    def test_get_scorers_for_track(self, model: Matcher, track: Track):
+        track.released_at = None
 
-        assert model.get_scorers_for_item(artist) == [
-            scorer for scorer in model.scorers if scorer.__class__ in (
-                NameScorer, ArtistScorer
-            )
-        ]
+        expected_classes = (NameScorer, ArtistScorer, AlbumScorer, LengthScorer)
+        expected = self.get_expected_scorers_from_classes(model, expected_classes)
 
-        assert model.get_scorers_for_item(album) == [
-            scorer for scorer in model.scorers if scorer.__class__ in (
-                NameScorer, ArtistScorer, AlbumScorer, LengthScorer, ReleaseYearScorer
-            )
-        ]
+        assert model.get_scorers_for_item(track) == expected
+
+    def test_get_scorers_for_artist(self, model: Matcher, artist: Artist):
+        assert any(isinstance(scorer, NameScorer) for scorer in model.scorers)
+        assert any(isinstance(scorer, ArtistScorer) for scorer in model.scorers)
+
+        # both name and artist scorers present, should only select name scorer
+        expected_classes = (NameScorer,)
+        expected = self.get_expected_scorers_from_classes(model, expected_classes)
+
+        assert model.get_scorers_for_item(artist) == expected
+
+    def test_get_scorers_for_album(self, model: Matcher, album: Album):
+        album.length = None
+
+        assert any(isinstance(scorer, NameScorer) for scorer in model.scorers)
+        assert any(isinstance(scorer, AlbumScorer) for scorer in model.scorers)
+
+        # both name and album scorers present, should only select name scorer
+        expected_classes = (NameScorer, ArtistScorer, ReleaseYearScorer, TotalItemsScorer)
+        expected = self.get_expected_scorers_from_classes(model, expected_classes)
+
+        assert model.get_scorers_for_item(album) == expected
 
     def test_match(self, model: Matcher, tracks: list[Track]):
         track = tracks.pop()

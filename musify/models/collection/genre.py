@@ -3,20 +3,26 @@ from typing import Any, Self, TYPE_CHECKING
 
 from pydantic import model_validator, ModelWrapValidatorHandler
 
-from musify.models.collection._base import RemoteCollection
+from musify.models.collection._base import RemoteCollection, CollectionModel
 from musify.models.cursors import PageCursor
 from musify.models.exception import MusifyValidationError
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import URI
+from musify.models.sequence import UniqueSequence
 
 if TYPE_CHECKING:
     from musify.models.api.genre import HasGenreEndpoints, GenreReadCollectionEndpoints
 
 
-class GenreCollection[TK, TV: Track](HasTracks[TK, TV], Genre, HasLength):
+class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Genre, HasLength):
     """Represents a genre collection and its properties."""
+
+    @property
+    def _items(self) -> UniqueSequence[TK, TV]:
+        return self.tracks
+
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod

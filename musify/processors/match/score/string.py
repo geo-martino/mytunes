@@ -85,11 +85,11 @@ class KaraokeScorer(StringScorer[NameCleaner]):
         default=True,
     )
 
-    def can_score(self, item: Any) -> bool:
+    def can_score(self, item: Any, skip_on_exact_type: bool = False) -> bool:
         return any((
-            NameCleaner.can_clean(item),
-            ArtistCleaner.can_clean(item),
-            AlbumCleaner.can_clean(item),
+            NameCleaner.can_clean(item, skip_on_exact_type=skip_on_exact_type),
+            ArtistCleaner.can_clean(item, skip_on_exact_type=skip_on_exact_type),
+            AlbumCleaner.can_clean(item, skip_on_exact_type=skip_on_exact_type),
         ))
 
     def score[T: HasName](self, item: T, other: T | None = None) -> Number:

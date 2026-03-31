@@ -38,8 +38,8 @@ class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):
     )
 
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
-        return item is None or isinstance(item, str)
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
+        return isinstance(item, str)
 
     @validate_call
     def clean(self, item: str | IT | None) -> str:
@@ -76,7 +76,7 @@ class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):
 
 class NameCleaner(StringCleaner[HasName]):
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
             case HasName():
                 return super().can_clean(item.name)
@@ -94,8 +94,10 @@ class NameCleaner(StringCleaner[HasName]):
 
 class ArtistCleaner(StringCleaner[HasArtists]):
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
+            case Artist() if skip_on_exact_type:
+                return False
             case Artist():
                 return super().can_clean(item.name)
             case HasArtists():
@@ -130,8 +132,10 @@ class ArtistCleaner(StringCleaner[HasArtists]):
 
 class AlbumCleaner(StringCleaner[HasAlbum]):
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
+            case Album() if skip_on_exact_type:
+                return False
             case Album():
                 return super().can_clean(item.name)
             case HasAlbum():

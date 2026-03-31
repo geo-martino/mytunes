@@ -5,6 +5,7 @@ from pydantic import Field
 
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
+from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.asynch import HasAsyncOperations
@@ -13,8 +14,12 @@ from musify.processors.filters import Filter
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
-    HasTracks[TK, TV], HasPlaylists[KP, VP],
+    CollectionModel[TV], HasTracks[TK, TV], HasPlaylists[KP, VP],
 ):
+    @property
+    def _items(self) -> list[TV]:
+        return list(self.tracks) + [it for pl in self.playlists.unique for it in pl.items]
+
     def dump(self) -> dict[str, Any]:
         """Generate a dump of this library's state. This can be used for backup or debugging purposes."""
         return self.model_dump(mode="json", exclude_none=True)

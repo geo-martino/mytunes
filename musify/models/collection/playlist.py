@@ -9,7 +9,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
 from musify._types import StrippedString
-from musify.models import ResourceModel
+from musify.models import ResourceModel, AttributeModel
 from musify.models._context import RemoteModelContext
 from musify.models._metaclass import makecls
 from musify.models.api import HasSavedEndpoints
@@ -25,16 +25,17 @@ from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
+from musify.models.sequence import UniqueSequence
 from musify.models.user import RemoteUser
 from musify.processors.filters import ComparerFilter
 
 if TYPE_CHECKING:
-    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, PlaylistReadWriteEndpoints, \
-    PlaylistReadWriteSavedEndpoints
+    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, \
+        PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
 
 
 class Playlist[TK, TV: Track](
-    HasTracks[TK, TV], HasName, HasLength, HasImages, ResourceModel, metaclass=makecls()
+    CollectionModel[TV], HasTracks[TK, TV], HasName, HasLength, HasImages, ResourceModel, metaclass=makecls()
 ):
     """Represents a playlist collection and its properties."""
     type: ClassVar[str] = "playlist"
@@ -43,6 +44,10 @@ class Playlist[TK, TV: Track](
         description="The description of the playlist.",
         default=None,
     )
+
+    @property
+    def _items(self) -> UniqueSequence[TK, TV]:
+        return self.tracks
 
 
 class MutablePlaylist[TK, TV: Track](HasMutableTracks[TK, TV], Playlist[TK, TV]):
@@ -84,17 +89,13 @@ type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
 ]
 
 
-class HasPlaylists[TK, TV: Playlist](CollectionModel[TV]):
+class HasPlaylists[TK, TV: Playlist](AttributeModel):
     """A mixin class to add a `playlists` field to a model."""
     playlists: Annotated[UniqueMapping[TK, TV], Attribute()] = Field(
         description="The playlists in this collection",
         default_factory=UniqueMapping[TK, TV],
         frozen=True,
     )
-
-    @property
-    def _items(self) -> tuple[TV, ...]:
-        return tuple(self.playlists.unique)
 
 
 class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):

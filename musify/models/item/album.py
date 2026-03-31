@@ -5,7 +5,6 @@ from pydantic import Field, field_validator, computed_field
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._metaclass import makecls
-from musify.models.collection import CollectionModel
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.metadata import TagAttribute, Attribute
@@ -102,15 +101,11 @@ class HasAlbum[AT: Album](AttributeModel):
         self.album.compilation = value
 
 
-class HasAlbums[AT: Album](CollectionModel[AT], HasSeparableTags):
+class HasAlbums[AT: Album](HasSeparableTags):
     albums: Annotated[list[AT], Attribute()] = Field(
         description="The albums associated with this resource.",
         default_factory=list,
     )
-
-    @property
-    def _items(self) -> list[AT]:
-        return self.albums
 
     # noinspection PyNestedDecorators
     @field_validator("albums", mode="before", check_fields=True)

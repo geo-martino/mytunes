@@ -19,8 +19,8 @@ class NumericCleaner[IT: AttributeModel](TagCleaner[IT, Number]):
     )
 
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
-        return item is None or isinstance(item, int | float)
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
+        return isinstance(item, int | float)
 
     @validate_call
     def clean(self, item: Number | IT | None) -> Number:
@@ -47,8 +47,10 @@ class NumericCleaner[IT: AttributeModel](TagCleaner[IT, Number]):
 
 class LengthCleaner(NumericCleaner[HasLength]):
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
+            case Length() if skip_on_exact_type:
+                return False
             case Length():
                 return True
             case HasLength():
@@ -73,8 +75,10 @@ class LengthCleaner(NumericCleaner[HasLength]):
 
 class ReleaseYearCleaner(NumericCleaner[HasAlbum | HasReleaseDate]):
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
+            case SparseDate() if skip_on_exact_type:
+                return False
             case SparseDate():
                 return super().can_clean(item.year)
             case HasReleaseDate():
@@ -101,7 +105,7 @@ class ReleaseYearCleaner(NumericCleaner[HasAlbum | HasReleaseDate]):
 
 class TotalItemsCleaner(NumericCleaner[CollectionModel]):
     @classmethod
-    def can_clean(cls, item: Any) -> bool:
+    def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
             case CollectionModel():
                 return super().can_clean(item.count)

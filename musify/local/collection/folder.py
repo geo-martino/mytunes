@@ -11,6 +11,7 @@ from musify.models.metadata import Attribute
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
+from musify.models.sequence import UniqueSequence
 
 
 @final
@@ -25,6 +26,10 @@ class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasNa
         default=None,
         alias="folder",
     )
+
+    @property
+    def _items(self) -> UniqueSequence[URI, TT]:
+        return self.tracks
 
     # noinspection PyNestedDecorators
     @model_validator(mode="wrap")

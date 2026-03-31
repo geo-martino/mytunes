@@ -4,7 +4,6 @@ from pydantic import Field, field_validator
 
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
-from musify.models.collection import CollectionModel
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.metadata import Attribute
 from musify.models.properties import HasSeparableTags
@@ -22,15 +21,11 @@ class Artist[GT: Genre](HasGenres[GT], HasName, HasRating, ResourceModel, metacl
     type: ClassVar[str] = "artist"
 
 
-class HasArtists[RT: Artist](CollectionModel[RT], HasSeparableTags):
+class HasArtists[RT: Artist](HasSeparableTags):
     artists: Annotated[list[RT], Attribute()] = Field(
         description="The artists associated with this resource.",
         default_factory=list,
     )
-
-    @property
-    def _items(self) -> list[RT]:
-        return self.artists
 
     # noinspection PyNestedDecorators
     @field_validator("artists", mode="before", check_fields=True)

@@ -5,7 +5,6 @@ from pydantic import Field, model_validator, PositiveInt, computed_field, Positi
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._metaclass import makecls
-from musify.models.collection import CollectionModel
 from musify.models.item.album import HasAlbum, Album, RemoteAlbum
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
@@ -104,17 +103,13 @@ class Track[RT: Artist, AT: Album, GT: Genre](
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
 
 
-class HasTracks[TK, TV: Track](CollectionModel[TV], AttributeModel):
+class HasTracks[TK, TV: Track](AttributeModel):
     """A mixin class to add a `tracks` field to a model."""
     tracks: Annotated[UniqueSequence[TK, TV], Attribute()] = Field(
         description="The tracks in this collection",
         default_factory=UniqueSequence[TK, TV],
         frozen=True,
     )
-
-    @property
-    def _items(self) -> UniqueSequence[TK, TV]:
-        return self.tracks
 
     @computed_field(description="The total number of tracks in this sequence")
     @property
@@ -139,10 +134,6 @@ class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
         default_factory=MutableUniqueSequence[TK, TV],
         frozen=True,
     )
-
-    @property
-    def _items(self) -> MutableUniqueSequence[TK, TV]:
-        return self.tracks
 
 
 class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](

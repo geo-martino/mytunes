@@ -2,14 +2,17 @@ from abc import ABCMeta
 from unittest.mock import patch, Mock
 
 import pytest
+from faker import Faker
 
 from musify.exception import MusifyTypeError
+from musify.models.collection.album import AlbumCollection
 from musify.models.item.album import HasAlbum, Album
 from musify.models.item.track import HasTracks, Track
 from musify.models.properties.length import HasLength
 from musify.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
 from tests.models.testers import BaseModelTester
+from tests.processors.utils import MockCollection
 
 
 class NumericCleanerTester(BaseModelTester, metaclass=ABCMeta):
@@ -95,8 +98,8 @@ class TestTotalItemsCleaner(NumericCleanerTester):
     def model(self) -> TotalItemsCleaner:
         return TotalItemsCleaner()
 
-    def test_get_item_value(self, model: TotalItemsCleaner, tracks: list[Track]):
-        item = HasTracks(tracks=tracks)
+    def test_get_item_value(self, model: TotalItemsCleaner, tracks: list[Track], faker: Faker):
+        item = MockCollection(name=faker.name(), all_items=tracks)
 
         assert model._get_item_value(item) == item.count == len(tracks)
-        assert model._get_item_value(item.tracks) == item.count == len(tracks)
+        assert model._get_item_value(list(item.items)) == item.count == len(tracks)

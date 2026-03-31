@@ -9,7 +9,8 @@ from musify.models.collection import CollectionModel
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.name import HasName
 from musify.processors import Processor
-from musify.processors.match.score import Scorer
+from musify.processors.match.score import Scorer, NameScorer
+from musify.processors.match.score.string import StringScorer
 
 
 class Matcher(Processor, HasLogger):
@@ -49,7 +50,16 @@ class Matcher(Processor, HasLogger):
 
     def get_scorers_for_item(self, item: Any) -> list[Scorer]:
         """Get the scorers that can score the given item."""
-        return [scorer for scorer in self.scorers if scorer.can_score(item)]
+        has_name_scorer = any(isinstance(scorer, NameScorer) for scorer in self.scorers)
+        string_scorers = [
+            scorer for scorer in self.scorers
+            if isinstance(scorer, StringScorer) and scorer.can_score(item, skip_on_exact_type=has_name_scorer)
+        ]
+        other_scorers = [
+            scorer for scorer in self.scorers
+            if not isinstance(scorer, StringScorer) and scorer.can_score(item)
+        ]
+        return string_scorers + other_scorers
 
     def match[T: AttributeModel | HasName](self, item: T, others: Collection[T]) -> T | None:
         """Matches the given item to the most similar other item."""
