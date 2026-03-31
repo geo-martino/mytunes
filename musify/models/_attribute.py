@@ -8,7 +8,7 @@ from musify.models._base import ModelMetaclass, BaseModel
 from musify.models._resource import ResourceModel
 from musify.models.exception import ModelError
 from musify.models.metadata import Attribute, TagAttribute
-from musify.utils import get_base_types
+from musify._types import get_base_types
 
 
 class AttributeMetaclass(ModelMetaclass):

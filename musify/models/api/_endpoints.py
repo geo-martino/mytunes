@@ -28,7 +28,7 @@ from musify.models.properties.image import ImageSource, PILImageFileT, ImageURL
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI, HasURI
 from musify.models.remote import RemoteModel, RemoteResource
-from musify.utils import get_base_types
+from musify._types import get_base_types
 
 
 class EndpointsMetaclass(AttributeMetaclass):
@@ -383,9 +383,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
 
 class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get(self, url: ApiURL[UT, RT]) -> RT:
         """
         Get a resource from the API using the given ID, URL, URI, or resource.
@@ -411,9 +409,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def get_many(
             self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
     ) -> list[RT]:
@@ -511,9 +507,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         # description="The type of the items in the collection."
     )
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
@@ -552,9 +546,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         """Generate a request body for the API endpoint for append batched requests."""
         return {"uris": list(map(str, values))}
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_and_skip_duplicates(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
@@ -574,9 +566,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         # noinspection PyArgumentList
         return await self.add(url, uris_unique, limit=limit)
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
@@ -651,9 +641,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # description="The maximum number of items that can be sent in each request to add items to the resource.",
     )
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
         """Add items to the current user's saved items for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
@@ -688,9 +676,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         """Generate a request body for the API endpoint for batched requests."""
         return {"ids": list(map(str, values))}
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
         """Remote items from the current user's saved items for this endpoint resource type."""
         item_type = self._get_type_value(self.type)

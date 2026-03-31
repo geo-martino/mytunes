@@ -9,7 +9,7 @@ from musify.models._base import ModelMetaclass
 from musify.models.exception import ModelError, MusifyValidationError
 from musify.models.metadata import Attribute
 from musify.processors import Processor
-from musify.utils import get_base_types
+from musify._types import get_base_types
 
 
 # noinspection PyPep8Naming,SpellCheckingInspection

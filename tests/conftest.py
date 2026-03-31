@@ -15,8 +15,6 @@ from _pytest.logging import LogCaptureHandler, _remove_ansi_escape_sequences
 from aioresponses import aioresponses, CallbackResult
 from faker import Faker
 
-# noinspection PyProtectedMember
-from musify._types import to_list
 from musify.models.collection.playlist import Playlist, MutablePlaylist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
@@ -430,7 +428,7 @@ class LogCapturer(LogCaptureHandler):
         if level is not None:
             self._level = level
         if loggers is not None:
-            self._loggers = to_list(loggers)
+            self._loggers = [loggers] if isinstance(loggers, logging.Logger) else loggers
         return self
 
     def __enter__(self):

@@ -247,11 +247,11 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     @classmethod
     def validate_call(cls, param_key: str = "uri", is_sequence: bool = False) -> Callable:
         """
-        Decorator to validate and convert a URL argument for API endpoint methods.
+        Decorator to validate and convert a URI argument for API endpoint methods.
 
         WORKAROUND: Since Pydantic does not yet support generic types in validate_call,
         this decorator extracts the generic types from the decorated method's class and uses a TypeAdapter
-        to validate and convert the URL argument to a URL using ApiURL's core schema.
+        to validate and convert the URI argument to a URI using URI base model.
 
         This should be removed once the validate_call issue is resolved:
         https://github.com/pydantic/pydantic/issues/7796

@@ -10,7 +10,6 @@ from musify.local.item.album import LocalAlbum
 from musify.local.item.track import LocalTrack
 from musify.models.properties.order import Position
 from musify.processors.sort import ItemSorter, ShuffleMode
-from musify.utils import strip_ignore_words
 from tests.models.testers import BaseModelTester
 
 
@@ -48,22 +47,20 @@ class TestItemSorter(BaseModelTester):
     @staticmethod
     def _sort_key_for_name(ignore_words: Iterable[str] = ()) -> Callable[[LocalTrack], tuple[bool, str]]:
         def _sort_key(track: LocalTrack) -> tuple[bool, str]:
-            if ignore_words:
-                not_special_start, _, value = strip_ignore_words(track.name, words=ignore_words)
-            else:
-                not_special_start, _, value = strip_ignore_words(track.name)
-            return not_special_start, value.casefold()
+            value = track.name
+            special_start = ItemSorter._special_start(value)
+            value = ItemSorter._strip_words(value, words=ignore_words)
+            return not special_start, value.casefold()
 
         return _sort_key
 
     @staticmethod
     def _sort_key_for_album(ignore_words: Iterable[str] = ()) -> Callable[[LocalTrack], tuple[bool, str]]:
         def _sort_key(track: LocalTrack) -> tuple[bool, str]:
-            if ignore_words:
-                not_special_start, _, value = strip_ignore_words(track.album.name, words=ignore_words)
-            else:
-                not_special_start, _, value = strip_ignore_words(track.album.name)
-            return not_special_start, value.casefold()
+            value = track.album.name
+            special_start = ItemSorter._special_start(value)
+            value = ItemSorter._strip_words(value, words=ignore_words)
+            return not special_start, value.casefold()
 
         return _sort_key
 
@@ -132,6 +129,30 @@ class TestItemSorter(BaseModelTester):
         groups = ItemSorter.group_by_field(tracks_with_ignore_words, "album", ignore_words=self.ignore_words)
         assert groups.keys() == expected
         assert sum(map(len, groups.values())) == len(tracks_with_ignore_words)
+
+    def test_strip_words(self):
+        # strip special
+        assert ItemSorter._strip_words("!special1", ["special"]) == "special1"
+        assert ItemSorter._strip_words("*%2I am very special!", ["very", "i"]) == "2I am very special!"
+
+        # marks as special as needed and strips words
+        assert ItemSorter._strip_words("I am a string", ["i"]) == "am a string"
+        assert ItemSorter._strip_words("*%I   am very special!", ["am", "i"]) == "am very special!"
+
+        # skip strip special chars
+        name = "(help) me please"
+        assert ItemSorter._strip_words(name, ["help"], strip_special_chars=False) == name
+        assert ItemSorter._strip_words(name, ["help"], strip_special_chars=True) == "me please"
+
+    def test_flatten_groups(self):
+        # flattens non-nested
+        assert ItemSorter._flatten_groups({"a": 1, "b": 2, "c": 3}) == [1, 2, 3]
+        assert ItemSorter._flatten_groups({"a": 1, "b": [2, 3, 4], "c": 5}) == [1, 2, 3, 4, 5]
+
+        # flattens nested
+        nested_map = {"a": 1, "b": [2, 3, 4], "c": {"sub1": 5, "sub2": [6], "sub3": {"deep": [7, 8]}}}
+        assert ItemSorter._flatten_groups(nested_map) == [1, 2, 3, 4, 5, 6, 7, 8]
+        assert ItemSorter._flatten_groups(nested_map, ["a", "b"]) == ["a", "b", 1, 2, 3, 4, 5, 6, 7, 8]
 
     def test_shuffle_random(self, tracks: list[LocalTrack]):
         tracks_original = tracks.copy()

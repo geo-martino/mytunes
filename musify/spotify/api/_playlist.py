@@ -53,15 +53,11 @@ class _SpotifySavedPlaylistEndpoints(
 
         return body
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def follow(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         return await super().follow(url.joinpath("followers"))
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(
             self,
             url: SpotifyApiURL[SpotifyPlaylist],
@@ -85,9 +81,7 @@ class _SpotifySavedPlaylistEndpoints(
 
         await self._handler.put(url, data=data, headers={"Content-Type": mime})
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def delete(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
         return await super().delete(url.joinpath("followers"))
 
@@ -113,7 +107,7 @@ class SpotifyPlaylistEndpoints(
         try:
             return await super().get_all(collection, show_bar=show_bar)
         except ResponseError as exc:
-            # WORKAROUND: Spotify returns 403 for private playlists, even if the the user is a collaborator
+            # WORKAROUND: Spotify returns 403 for private playlists, even if the user is a collaborator
             #  and has access to the playlist.
             #  Just log a warning and return an empty list in this case, rather than raising an exception.
             if exc.response.status == 403:
@@ -124,9 +118,7 @@ class SpotifyPlaylistEndpoints(
 
             raise
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add(
             self,
@@ -137,9 +129,7 @@ class SpotifyPlaylistEndpoints(
     ) -> int:
         return await super().add(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove(
             self,

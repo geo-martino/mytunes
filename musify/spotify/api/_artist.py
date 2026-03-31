@@ -67,9 +67,7 @@ class SpotifyArtistEndpoints(
 
     _extend_path: ClassVar[str] = "items"
 
-    # WORKAROUND: Replace decorator with validate_call when this issue is resolved:
-    # https://github.com/pydantic/pydantic/issues/7796
-    @_ApiURLSchema.validate_call()
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get(self, url: ApiURL[SpotifyResourceURI, SpotifyArtist]) -> SpotifyArtistCollection:
         response = await self._handler.get(url)
         self._add_albums_cursor_to_item(response)

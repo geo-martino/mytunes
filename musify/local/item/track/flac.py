@@ -18,7 +18,7 @@ from musify.models.properties.music import KeySignature
 from musify.models.properties.name import HasName
 from musify.models.properties.order import Position
 from musify.models.properties.rating import Rating
-from musify.utils import get_base_types
+from musify._types import get_base_types
 
 
 @final

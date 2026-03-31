@@ -1,6 +1,7 @@
 """
 Processor that sorts the given collection of items based on given configuration.
 """
+import re
 from collections.abc import MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence
 from copy import copy
 from datetime import datetime
@@ -20,7 +21,6 @@ from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.processors._base import Processor
-from musify.utils import flatten_nested, strip_ignore_words
 
 _SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,
@@ -127,9 +127,9 @@ class ItemSorter(Processor):
         sort_key = cls._get_sort_key_by_type(items, field=field, ignore_words=ignore_words)
         items[:] = sorted(items, key=sort_key, reverse=reverse)
 
-    @staticmethod
+    @classmethod
     def _get_sort_key_by_type(
-            items: Collection[ResourceModel], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
+            cls, items: Collection[ResourceModel], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
     ) -> Any:
         try:  # attempt to find an example value to determine the value type for this sort
             value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
@@ -142,8 +142,10 @@ class ItemSorter(Processor):
                     if (val := getattr(item, field)) is not None and isinstance(val, HasName):
                         val = val.name
 
-                    not_special_start, _, val = strip_ignore_words(val, words=ignore_words)
-                    return not_special_start, val.casefold()
+                    special_start = cls._special_start(val)
+                    val = cls._strip_words(val, words=ignore_words).casefold()
+
+                    return not special_start, val.casefold()
             case datetime():  # key converts datetime to floats
                 def _sort_key(item: ResourceModel) -> float:
                     field_value = getattr(item, field)
@@ -154,6 +156,35 @@ class ItemSorter(Processor):
                     return val if val else 0
 
         return _sort_key
+
+    @staticmethod
+    def _special_start(value: str) -> bool:
+        return re.match(r"^[\W_]", value) is not None
+
+    @staticmethod
+    def _strip_words(value: str, words: Iterable[str] | None = (), strip_special_chars: bool = True) -> str:
+        """
+        Remove the first ignorable word found from the beginning of a string.
+
+        Useful for sorting collections strings with ignorable start words and/or special characters.
+        Only removes the first word it finds at the start of the string.
+        """
+        if not value or not words:
+            return value
+
+        if strip_special_chars:
+            value = re.sub(r"^\W+", "", value).strip()
+
+        stripped_value = value
+        for word in words:
+            stripped_value = re.sub(rf"^{word}[\s\W_]", "", value, flags=re.I).strip()
+            if stripped_value != value:
+                break
+
+        if strip_special_chars:
+            stripped_value = re.sub(r"^\W+", "", stripped_value).strip()
+
+        return stripped_value
 
     @classmethod
     def group_by_field[T: ResourceModel](
@@ -179,7 +210,7 @@ class ItemSorter(Processor):
                     if isinstance(val, HasName):
                         val = val.name
                     if ignore_words:
-                        _, _, val = strip_ignore_words(val, words=ignore_words, strip_special_chars=False)
+                        val = cls._strip_words(val, words=ignore_words, strip_special_chars=False)
                     val = val.casefold()
                 case _:
                     pass
@@ -211,7 +242,7 @@ class ItemSorter(Processor):
         match self.shuffle_mode:
             case _ if self.sort_fields:
                 items_nested = self._sort_by_fields(items, fields=iter(self.sort_fields.items()))
-                items[:] = flatten_nested(items_nested)
+                items[:] = self._flatten_groups(items_nested)
             case ShuffleMode.RANDOM:
                 shuffle(items)
             case ShuffleMode.HIGHER_RATING:
@@ -251,6 +282,22 @@ class ItemSorter(Processor):
             groups = {None: groups}
 
         return groups
+
+    @classmethod
+    def _flatten_groups[T: Any](cls, nested: MutableMapping, previous: MutableSequence[T] | None = None) -> list[T]:
+        """Flatten the final layers of the values of a nested map to a single list"""
+        if previous is None:
+            previous = []
+
+        if isinstance(nested, MutableMapping):
+            for key, value in nested.items():
+                cls._flatten_groups(value, previous=previous)
+        elif isinstance(nested, (list, set, tuple)):
+            previous.extend(nested)
+        else:
+            previous.append(nested)
+
+        return previous
 
     # noinspection PyUnresolvedReferences
     def _shuffle_on_rating(self, items: MutableSequence[HasRating]) -> None:
