@@ -46,32 +46,38 @@ class IsFileMetaclass(AttributeMetaclass):
 # noinspection PyAbstractClass
 class IsFile(BaseModel, metaclass=IsFileMetaclass):
     """Attributes and operations for a file on some system."""
-    @abstract_property
+    @property
+    @abstractmethod
     def folder(self) -> Annotated[str, Attribute()]:
         """The name of the parent folder of the file."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def filename(self) -> Annotated[str, Attribute()]:
         """The filename without extension."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def ext(self) -> Annotated[str, Attribute()]:
         """The file extension in lowercase."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def size(self) -> Annotated[int | None, Attribute()]:
         """The size of the file in bytes."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def created_at(self) -> Annotated[datetime | None, Attribute()]:
         """The date that the file was created."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def modified_at(self) -> Annotated[datetime | None, Attribute()]:
         """The date that the file was last modified."""
         raise NotImplementedError

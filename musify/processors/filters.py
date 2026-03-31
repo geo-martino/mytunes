@@ -21,7 +21,8 @@ from musify.processors.compare import Comparer
 class Filter[IT](Processor):
     """Base class for all filters."""
 
-    @abstract_property
+    @property
+    @abstractmethod
     def ready(self) -> bool:
         """Indicates if the filter is set and ready to be used."""
         raise NotImplementedError
@@ -58,7 +59,8 @@ class Filter[IT](Processor):
 class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 
-    @abstract_property
+    @property
+    @abstractmethod
     def filters(self) -> Collection[Filter]:
         """All filters configured."""
         raise NotImplementedError

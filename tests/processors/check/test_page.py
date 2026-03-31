@@ -176,9 +176,9 @@ class TestPlaylistManagement(BaseModelTester):
             raise exc()
 
         with patch.object(model, "_setup_playlist", side_effect=_random_exception) as mock_setup_playlist:
+            # noinspection PyTypeChecker
             with pytest.raises((MusifyError, HTTPError)):
                 await model.setup_playlists()
-            print(len(list(collections)), mock_setup_playlist.call_count)
             mock_teardown_playlists.assert_called_once()
 
     @pytest.fixture

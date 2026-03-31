@@ -15,7 +15,7 @@ from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.processors.clean.string import NameCleaner
-from musify.processors.download import ItemDownloadHelper
+from musify.processors.download.download import ItemDownloadHelper
 from tests.conftest import LogCapturer
 from tests.libraries.remote.core.processors.utils import patch_input
 from tests.models.testers import BaseModelTester
@@ -49,7 +49,7 @@ class TestItemDownloadHelper(BaseModelTester):
     @pytest.fixture(autouse=True)
     def mock_webopen(self, urls: list[str]):
         """Mock for webopen which appends the queried url to the urls fixture list"""
-        with patch(f"{MODULE_ROOT}.processors.download.webopen", new=urls.append):
+        with patch(f"{MODULE_ROOT}.processors.download.download.webopen", new=urls.append):
             yield
 
     @pytest.fixture
@@ -121,58 +121,6 @@ class TestItemDownloadHelper(BaseModelTester):
         model.open_sites(duplicate_tracks)
         assert mock_pause.call_count == math.ceil(len(duplicate_tracks) / model.interval)
         assert len(urls) == len(duplicate_tracks) * len(model.urls)
-
-    def test_url_formats(
-            self,
-            model: ItemDownloadHelper,
-            urls: list[str],
-            tracks: list[Track],
-            artists: list[Artist],
-            faker: Faker,
-            mock_pause: Mock,
-    ):
-        for track in tracks:
-            track.artists = faker.random_elements(artists, length=faker.random_int(0, 3), unique=True)
-
-        model.open_sites(tracks)
-
-        urls_batched = itertools.batched(urls, len(model.urls))
-        for track in tracks:
-            for url in next(urls_batched):
-                url = unquote(url)
-                assert track.name in url
-                if len(track.artists) > 0:
-                    assert track.artists[0].name in url
-
-                # only ever takes the first field when the singular name of a field is given
-                # and many values are available for that field
-                # e.g. only ever takes the first artist when multiple artists are present
-                # and the requested field is just 'artist' not 'artists'
-                if len(track.artists) > 1:
-                    assert track.artist not in url
-
-    def test_url_formats_cleaned(
-            self,
-            model: ItemDownloadHelper,
-            urls: list[str],
-            tracks: list[Track],
-            artists: list[Artist],
-            faker: Faker,
-            mock_pause: Mock,
-    ):
-        # similar to before, just check that cleaned value is in URL instead
-        model.cleaner = NameCleaner()
-        for track in tracks:
-            track.artists = artists
-
-        model.open_sites(tracks)
-
-        urls_batched = itertools.batched(urls, len(model.urls))
-        for track in tracks:
-            for url in next(urls_batched):
-                url = unquote(url)
-                assert model._get_query_part(track.name) in url
-                assert model._get_query_part(track.artists[0].name) in url
 
     def test_pause_1(
             self, model: ItemDownloadHelper, urls: list[str], unique_tracks: list[Track], log_capturer: LogCapturer

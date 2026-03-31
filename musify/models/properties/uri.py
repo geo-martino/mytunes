@@ -62,17 +62,20 @@ class URI(RootModel[str]):
             )
         return self
 
-    @abstract_property
+    @property
+    @abstractmethod
     def source(self) -> str:
         """The remote repository that this URI is from."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def type(self) -> str:
         """The type of resource this URI represents."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def id(self) -> str:
         """The unique identifier for this URI."""
         raise NotImplementedError
@@ -83,7 +86,8 @@ class URI(RootModel[str]):
         """Construct a URI from an ID value and resource type."""
         raise NotImplementedError
 
-    @abstract_property
+    @property
+    @abstractmethod
     def api_url(self) -> HttpURL:
         """The URL of the API endpoint for this remote resource."""
         raise NotImplementedError
@@ -96,7 +100,8 @@ class URI(RootModel[str]):
         """Construct a URI from an API endpoint URL."""
         pass
 
-    @abstract_property
+    @property
+    @abstractmethod
     def public_url(self) -> HttpURL:
         """The public URL for this remote resource."""
         raise NotImplementedError
@@ -171,7 +176,8 @@ class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
 
         return super().__new__(cls)
 
-    @abstract_property
+    @property
+    @abstractmethod
     def has_uri(self) -> bool | None:
         """
         Whether this resource has a valid URI.

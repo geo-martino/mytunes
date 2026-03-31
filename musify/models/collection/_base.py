@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 # noinspection PyAbstractClass
 class CollectionModel[IT: ResourceModel](BaseModel):
     """Defines a common base models for attributes made of common collection properties."""
-    @abstract_property
+    @property
+    @abstractmethod
     def _items(self) -> Collection:
         """The items in this collection."""
         raise NotImplementedError

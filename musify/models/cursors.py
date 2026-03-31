@@ -69,7 +69,8 @@ class PageCursor(RemoteModel):
         if url != self.url:  # only set if different to avoid validation loops
             self.url = url
 
-    @abstract_property
+    @property
+    @abstractmethod
     def next(self) -> Self | None:
         """The cursor for the next page of items, if any."""
         raise NotImplementedError
@@ -148,7 +149,8 @@ class HasPageCursor[CT: PageCursor](RemoteModel):
 
 class ReversiblePageCursor(PageCursor):
     """A page cursor that can be reversed to produce the previous cursor."""
-    @abstract_property
+    @property
+    @abstractmethod
     def previous(self) -> Self | None:
         """The cursor for the previous page of items, if any."""
         raise NotImplementedError

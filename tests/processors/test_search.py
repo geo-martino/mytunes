@@ -394,8 +394,9 @@ class TestItemSearcher(SearcherTester):
         mock_match_random, matches, matched, unmatched = mock_match_random
 
         items_matched, items_unmatched = split_list(items, 2)
-        matches_total = min(len(query_results), len(items_matched))
-        items_matches = faker.random_elements(query_results, length=matches_total, unique=True)
+        if len(items_matched) < len(query_results):
+            items_matched = items_matched[:len(query_results)]
+        items_matches = faker.random_elements(query_results, length=len(items_matched), unique=True)
 
         valid = faker.random_elements(items_unmatched, unique=True)
         invalid = [item for item in items if item not in valid]

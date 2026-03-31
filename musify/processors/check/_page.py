@@ -126,9 +126,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        # TODO: test this once rate limit is up
-        print("EXITING PAGE", self.position, exc_type, exc_val, exc_tb)
-        print("COUNTS", len(self._collections), len(self._playlists), len(self._playlists_initial),)
         await self.teardown_playlists()
 
     ###########################################################################
