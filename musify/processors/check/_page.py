@@ -160,8 +160,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             self._playlists_initial[playlist.uri] = deepcopy(playlist)
 
             # empty the playlist
-            playlist.tracks.clear()
-            await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
+            if playlist.count:
+                playlist.tracks.clear()
+                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
             # add all new uris
             uris = [item.uri for item in collection.items if isinstance(item, HasURI) and item.has_uri]
