@@ -370,11 +370,6 @@ class LocalTrack[FT: FileType](
         if context.remote_source and context.remote_source != self.source:
             self.source = context.remote_source
 
-        # TODO: we import all available URIs here to ensure they show up in the annotation
-        #  This isn't great...
-        # noinspection PyUnusedImports
-        from musify.spotify.properties.uri import SpotifyResourceURI
-
         adapter = TypeAdapter(URI.annotation)
         uris = []
         for value in values:

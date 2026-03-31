@@ -15,6 +15,7 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
 from musify.exception import MusifyValueError
+from musify.local.item import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.track import LocalTrack, TagContext, HasLocalTracks
 from musify.models.properties.file import IsLocalFile
@@ -112,6 +113,21 @@ class TestLocalTrack(UniqueKeyTester):
     ###########################################################################
     ## Validators/Serializers
     ###########################################################################
+    def test_set_computed_fields(self, album: LocalAlbum, artist: LocalArtist, faker: Faker):
+        album_artist = artist
+        compilation = faker.boolean()
+
+        track = LocalTrack(
+            name=faker.name(),
+            path=faker.file_path(),
+            album=album,
+            album_artist=album_artist,
+            compilation=compilation,
+        )
+
+        assert track.album.artists == [album_artist]
+        assert track.compilation == compilation
+
     # noinspection PyCallingNonCallable
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType, tags: dict[str, Any]):
         assert file.filename
