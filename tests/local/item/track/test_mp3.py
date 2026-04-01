@@ -77,7 +77,7 @@ class TestMP3(LocalTrackTester):
         expected["COMM"] = [expected.pop(key) for key in list(expected) if key.startswith("COMM")]
 
         # noinspection PyCallingNonCallable
-        assert MP3._merge_suffixed_tags(data, lambda x: x) == expected
+        assert MP3._merge_suffixed_tags(data) == expected
 
     def test_format_to_tags(self, model: MP3, uri: URI, pictures: dict[str, mutagen.id3.APIC], faker: Faker):
         tags = {

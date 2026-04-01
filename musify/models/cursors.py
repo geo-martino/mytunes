@@ -14,6 +14,9 @@ from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
 
+_HTTP_ADAPTER = TypeAdapter(HttpURL)
+
+
 # noinspection PyAbstractClass
 @total_ordering
 class PageCursor(RemoteModel):
@@ -31,7 +34,7 @@ class PageCursor(RemoteModel):
     @classmethod
     def _from_url[T](cls, value: T) -> T | dict[str, Any]:
         with suppress(ValidationError):
-            url = TypeAdapter(HttpURL).validate_python(value)
+            url = _HTTP_ADAPTER.validate_python(value)
             value = dict(url=url)
 
         return value

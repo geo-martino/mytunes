@@ -1,13 +1,14 @@
 import asyncio
 from collections import Counter
 from collections.abc import Sequence, Collection
+from functools import cached_property
 from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
 from pydantic import Field, TypeAdapter, NonNegativeInt
 
 from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack
+from musify.local.item.track import LocalTrack, LOCAL_TRACK_ADAPTER
 from musify.models.result import LogFormatter, CountResult
 from musify.processors.filters.values import PathFilter
 
@@ -93,11 +94,11 @@ class M3U(LocalPlaylist[PathFilter]):
     """For reading and writing data from M3U playlist format."""
     __final__ = True
     __supported_extensions__ = frozenset({"m3u"})
-    
+
     @staticmethod
     async def _load_track(path: str | Path) -> LocalTrack:
         file = await LocalTrack.load_file(path)
-        return TypeAdapter(LocalTrack.annotation).validate_python(file)
+        return LOCAL_TRACK_ADAPTER.validate_python(file)
 
     async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
         """

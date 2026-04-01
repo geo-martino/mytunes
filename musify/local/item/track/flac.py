@@ -115,11 +115,11 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return data
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _merge_position_values(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _merge_position_values[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping):
-            return handler(data)
+            return data
 
         for name, field in cls.model_fields.items():
             if not isinstance(field.validation_alias, AliasChoices) or isinstance(data.get(name, None), Position):
@@ -144,7 +144,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             if values:
                 data[name] = tuple(values)
 
-        return handler(data)
+        return data
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:

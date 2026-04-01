@@ -333,14 +333,13 @@ class _XMLBaseModel(BaseModel):
         alias_generator=lambda name: to_pascal(name.lstrip("@#")),
     )
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _clean_keys(cls, data: Mapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _clean_keys[T](cls, data: T | Mapping[str, Any]) -> T | Mapping[str, Any]:
         if not isinstance(data, Mapping):
-            return handler(data)
+            return data
 
-        data = {key.lstrip("@#"): val for key, val in data.items()}
-        return handler(data)
+        return {key.lstrip("@#"): val for key, val in data.items()}
 
     def model_dump_xml(self) -> dict[str, Any]:
         """Dump the model to a dict suitable for XML serialization."""
@@ -513,20 +512,20 @@ class _XMLCondition(_XMLBaseModel):
         value = next(iter(self.value), None)
         return isinstance(value, str) and value in self.reference_values
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _merge_values(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _merge_values[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping):
-            return handler(data)
+            return data
 
         data = deepcopy(data)
         key = "value"
         if sum(k.lstrip("@").casefold().startswith(key) for k in data) == 1:
             data[key] = next((data.pop(k) for k in tuple(data) if k.lstrip("@").casefold().startswith(key)))
-            return handler(data)
+            return data
 
         data[key] = [data.pop(k) for k in tuple(data) if k.lstrip("@").casefold().startswith(key)]
-        return handler(data)
+        return data
 
     @field_validator("field", mode="before", check_fields=True)
     @classmethod
@@ -634,6 +633,9 @@ class _XMLConditions(_XMLBaseModel):
         return self
 
 
+_XML_LIMIT_TYPE_ADAPTER = TypeAdapter(ItemLimiter.model_fields["kind"].annotation)
+
+
 class _XMLLimit(_XMLBaseModel):
     filter_duplicates: Annotated[bool, _XMLAttributeField()] = Field(default=False)
     enabled: Annotated[bool, _XMLAttributeField()] = Field(default=False)
@@ -644,7 +646,7 @@ class _XMLLimit(_XMLBaseModel):
     @field_validator("type", mode="before", check_fields=True)
     @classmethod
     def _validate_limit_type_exists(cls, kind: str) -> str:
-        TypeAdapter(ItemLimiter.model_fields["kind"].annotation).validate_python(kind)
+        _XML_LIMIT_TYPE_ADAPTER.validate_python(kind)
         return kind
 
     @property
@@ -986,15 +988,13 @@ class _XMLRoot(_XMLBaseModel):
 
     smart_playlist: Annotated[_XMLSmartPlaylist, _XMLElementField()] = Field(default_factory=_XMLSmartPlaylist)
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def parse_xml(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def parse_xml[T](cls, data: T | str) -> T | dict[str, Any]:
         """Parse the given XML string."""
-        if not isinstance(value, str):
-            return handler(value)
-
-        xml = xmltodict.parse(value, attr_prefix="")
-        return handler(xml)
+        if not isinstance(data, str):
+            return data
+        return xmltodict.parse(data, attr_prefix="")
 
     def unparse_xml(self) -> str:
         """Dump the model to an XML string."""

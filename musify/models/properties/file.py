@@ -120,23 +120,19 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _map_path(cls, path: str | Path, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(path, str | Path):
-            return handler(path)
+    def _map_path[T](cls, data: T | str | Path) -> T | dict[str, Any]:
+        if not isinstance(data, str | Path):
+            return data
+        return dict(path=Path(data))
 
-        data = dict(path=Path(path))
-        return handler(data)
-
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_mutagen(cls, file: mutagen.FileType, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(file, mutagen.FileType):
-            return handler(file)
-
-        tags = cls._extract_tags_from_mutagen(file)
-        return handler(tags)
+    def _from_mutagen[T](cls, data: T | mutagen.FileType) -> T | dict[str, Any]:
+        if not isinstance(data, mutagen.FileType):
+            return data
+        return cls._extract_tags_from_mutagen(data)
 
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:

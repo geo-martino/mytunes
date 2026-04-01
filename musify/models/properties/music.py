@@ -23,14 +23,16 @@ class KeySignature(BaseModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_key(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, str):
-            return handler(value)
+    def _from_key[T](cls, data: T | str) -> T | dict[str, Any]:
+        if not isinstance(data, str):
+            return data
 
-        data = dict(root=cls._extract_root_index_from_key(value), mode=cls._extract_mode_index_from_key(value))
-        return handler(data)
+        return dict(
+            root=cls._extract_root_index_from_key(data),
+            mode=cls._extract_mode_index_from_key(data)
+        )
 
     # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)

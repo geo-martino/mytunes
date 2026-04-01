@@ -52,19 +52,23 @@ class LocalPlaylistFile[TF: Filter](
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _extract_name_from_path(
-            cls, data: str | Path | MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        if isinstance(data, str | Path):
-            data = dict(path=Path(data))
+    def _from_path[T](cls, data: T | str | Path) -> T | dict[str, Any]:
+        if not isinstance(data, str | Path):
+            return data
+        return dict(path=Path(data))
+
+    # noinspection PyNestedDecorators
+    @model_validator(mode="before")
+    @classmethod
+    def _extract_name_from_path[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping) or "name" in data or (path := data.get("path")) is None:
-            return handler(data)
+            return data
 
         path = Path(path)
         data["name"] = path.stem
-        return handler(data)
+        return data
 
     def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
         match self.matcher:

@@ -93,10 +93,10 @@ class URI(RootModel[str]):
         raise NotImplementedError
 
     # noinspection PyNestedDecorators
-    @field_validator("root", mode="wrap", check_fields=True)
+    @field_validator("root", mode="before", check_fields=True)
     @classmethod
     @abstractmethod
-    def from_api_url(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
+    def from_api_url[T](cls, value: T) -> T | str:
         """Construct a URI from an API endpoint URL."""
         pass
 
@@ -107,10 +107,10 @@ class URI(RootModel[str]):
         raise NotImplementedError
 
     # noinspection PyNestedDecorators
-    @field_validator("root", mode="wrap", check_fields=True)
+    @field_validator("root", mode="before", check_fields=True)
     @classmethod
     @abstractmethod
-    def from_public_url(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Self:
+    def from_public_url[T](cls, value: T) -> T | str:
         """Construct a URI from a public URL."""
         pass
 

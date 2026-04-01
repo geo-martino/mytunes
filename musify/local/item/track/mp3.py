@@ -150,14 +150,11 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return getattr(mutagen.id3, tag_id)
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _merge_suffixed_tags(
-            cls, file: mutagen.mp3.MP3 | MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        data = cls._extract_tags_from_mutagen(file) if isinstance(file, mutagen.mp3.MP3) else file
+    def _merge_suffixed_tags[T](cls, data: T | MutableMapping[str, Any]) -> T | dict[str, Any]:
         if not isinstance(data, MutableMapping):
-            return handler(data)
+            return data
 
         for key in list(data):
             key_prefix = key.split(":")[0]
@@ -173,7 +170,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
             data[key_prefix].append(data.pop(key))
 
-        return handler(data)
+        return data
 
     # noinspection PyNestedDecorators
     @model_serializer(mode="wrap")

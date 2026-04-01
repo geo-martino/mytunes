@@ -110,6 +110,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             name: {key: value} for name, info in cls.model_fields.items()
             if any(issubclass(kls, Endpoints) for kls in get_base_types(info.annotation))
         }
+
         self = handler(data)
         self._handler = value
         return self
@@ -739,6 +740,9 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         return {"uris": list(map(str, values))}
 
 
+_INITIAL_CURSOR_ADAPTER = TypeAdapter[InitialCursor](InitialCursor.annotation)
+
+
 class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _read_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user's saved items.",
@@ -758,8 +762,7 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         # we don't know what type of pagination will be used for saved items
         # just get a cursor which returns a url to begin pagination and figure it out later
-        adapter = TypeAdapter(InitialCursor.annotation)
-        cursor = adapter.validate_python(dict(url=self._read_url, limit=limit))
+        cursor = _INITIAL_CURSOR_ADAPTER.validate_python(dict(url=self._read_url, limit=limit))
 
         # noinspection PyArgumentList
         items, *_ = await self._get_all_items(cursor, path=self._read_path, kind=self.type, show_bar=show_bar)

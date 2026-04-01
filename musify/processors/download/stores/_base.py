@@ -150,6 +150,8 @@ class HasLocale(BaseModel, metaclass=AudioStoreMetaclass):
         return locale_module.normalize(lc)
 
 
+_HTTP_ADAPTER = TypeAdapter(HttpUrl)
+
 @final
 class GeneralAudioStore(AudioStore[Literal["general"]]):
     __final__ = True
@@ -165,7 +167,7 @@ class GeneralAudioStore(AudioStore[Literal["general"]]):
     @field_validator("url", mode="after", check_fields=True)
     @classmethod
     def _validate_url(cls, url: str) -> str:
-        TypeAdapter(HttpUrl).validate_python(url.format(""))
+        _HTTP_ADAPTER.validate_python(url.format(""))
         return url
 
     @validate_call

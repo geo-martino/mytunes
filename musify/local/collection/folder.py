@@ -31,19 +31,18 @@ class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasNa
     def _items(self) -> UniqueSequence[URI, TT]:
         return self.tracks
 
-    # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _get_name_from_tracks(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _get_name_from_tracks[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping):
-            return handler(data)
+            return data
         if isinstance(name := data.get(key := "name"), str) and name.strip():
-            return handler(data)
+            return data
 
         if not isinstance(tracks := data.get("tracks", []), Sequence):
-            return handler(data)
+            return data
         if not all(isinstance(track, LocalTrack) for track in tracks):
-            return handler(data)
+            return data
 
         names = {track.folder for track in tracks}
         if len(names) == 0:  # This shouldn't happen, but just in case
@@ -54,23 +53,20 @@ class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasNa
             )
 
         data[key] = names.pop()
-        return handler(data)
+        return data
 
-    # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _filter_tracks_on_folder_name(
-            cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
+    def _filter_tracks_on_folder_name[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping):
-            return handler(data)
+            return data
         if not isinstance(tracks := data.get(key := "tracks"), Sequence):
-            return handler(data)
+            return data
         if not isinstance(name := data.get("name"), str) or not name.strip():
-            return handler(data)
+            return data
 
         data[key] = [track for track in tracks if track.folder == name]
-        return handler(data)
+        return data
 
     # noinspection PyNestedDecorators
     @model_validator(mode="after")

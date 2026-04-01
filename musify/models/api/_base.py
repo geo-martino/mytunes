@@ -43,6 +43,7 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
 
 # noinspection PyAbstractClass
 class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
+    # WORKAROUND: these need to be wrap validators to ensure they execute before model handlers on parent classes
     @model_validator(mode="wrap")
     @classmethod
     def _from_authoriser[T](cls, value: T | RemoteAuthoriser, handler: ModelWrapValidatorHandler[Self]) -> Self:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Self, Annotated
+from typing import Self, Annotated, Any
 
 from pydantic import Field, model_validator, ModelWrapValidatorHandler
 
@@ -15,14 +15,13 @@ class HasName(AttributeModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_name(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, str):
-            return handler(value)
+    def _from_name[T](cls, data: T | str) -> T | dict[str, Any]:
+        if not isinstance(data, str):
+            return data
 
-        data = dict(name=value)
-        return handler(data)
+        return dict(name=data)
 
     def __lt__(self, other: Self):
         return self.name < other.name

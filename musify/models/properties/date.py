@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import date, datetime
 from typing import Annotated, Any, Self
 
@@ -7,6 +8,9 @@ from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegati
 
 from musify.models._attribute import AttributeModel
 from musify.models.metadata import TagAttribute, Attribute
+
+
+_DATA_ADAPTER = TypeAdapter[date](date)
 
 
 class SparseDate(AttributeModel):
@@ -33,26 +37,23 @@ class SparseDate(AttributeModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_date(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        try:
-            dt = TypeAdapter(date).validate_python(value)
-            data = dict(year=dt.year, month=dt.month, day=dt.day)
-            return handler(data)
-        except ValueError:
-            return handler(value)
+    def _from_date[T](cls, data: T | Any) -> T | dict[str, Any]:
+        with suppress(ValueError):
+            dt = _DATA_ADAPTER.validate_python(data)
+            return dict(year=dt.year, month=dt.month, day=dt.day)
+        return data
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_string(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, str):
-            return handler(value)
+    def _from_string[T](cls, data: T | str) -> T | dict[str, Any]:
+        if not isinstance(data, str):
+            return data
 
-        value = iter(value.split("-"))
-        data = dict(year=next(value, None), month=next(value, None), day=next(value, None))
-        return handler(data)
+        value = iter(data.split("-"))
+        return dict(year=next(value, None), month=next(value, None), day=next(value, None))
 
     @property
     def date(self) -> date | None:

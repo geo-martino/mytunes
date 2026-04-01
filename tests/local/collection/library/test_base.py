@@ -88,6 +88,8 @@ class TestLocalLibrary(NoUniqueKeyTester):
         # noinspection PyTypeChecker
         extensions = tuple(LocalPlaylist.supported_extensions)
 
+        adapter = TypeAdapter(LocalPlaylist.annotation)
+
         for _ in range(faker.random_int(10, 20)):
             # need to ensure unique names for tests to work as expected
             path_relative: Path | None = None
@@ -99,7 +101,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
                 ))
             path = choice(library_folders).joinpath(playlist_folder).joinpath(path_relative)
 
-            playlist = TypeAdapter(LocalPlaylist.annotation).validate_python(dict(path=path))
+            playlist = adapter.validate_python(dict(path=path))
             playlist.path.parent.mkdir(parents=True, exist_ok=True)
             playlist.path.touch()
 

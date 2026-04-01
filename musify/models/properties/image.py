@@ -135,7 +135,7 @@ class ImageBase(BaseModel):
 
         img = Image.open(BytesIO(value))
         obj = handler(img)
-        del img
+        del img  # ensure memory is recovered, could probably delete this?
         return obj
 
     # noinspection PyNestedDecorators

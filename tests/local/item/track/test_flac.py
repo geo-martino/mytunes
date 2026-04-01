@@ -124,7 +124,7 @@ class TestFLAC(LocalTrackTester):
             "album": ["72 Seasons"],
             "albumartist": ["Metallica"],
         }
-        result = FLAC._merge_position_values(tags, lambda x: x)
+        result = FLAC._merge_position_values(tags)
 
         assert "track" not in result
         assert "disc" not in result
@@ -142,7 +142,7 @@ class TestFLAC(LocalTrackTester):
             "discnumber": 2,
             "disctotal": 5,
         }
-        result = FLAC._merge_position_values(tags, lambda x: x)
+        result = FLAC._merge_position_values(tags)
 
         assert result["track"] == ("3", "10")
         assert result["disc"] == ("2", "5")
@@ -160,7 +160,7 @@ class TestFLAC(LocalTrackTester):
             "disctotal": ["5/15"],
             "path": "/music/Metallica/72 Seasons/04 Sleepwalk My Life Away.flac",
         }
-        result = FLAC._merge_position_values(tags, lambda x: x)
+        result = FLAC._merge_position_values(tags)
 
         assert result["track"] == ("3", "20")
         assert result["disc"] == ("2", "15")

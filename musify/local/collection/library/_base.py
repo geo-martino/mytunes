@@ -16,8 +16,8 @@ from musify.local.collection.album import LocalAlbumCollection
 from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
-from musify.local.collection.playlist import LocalPlaylist
-from musify.local.item.track import LocalTrack, HasLocalTracks, TagContext
+from musify.local.collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
+from musify.local.item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary
 from musify.models.properties.file import PathMapper
@@ -197,15 +197,11 @@ class LocalLibrary(
                 self.logger.debug(f"Loading track: {path}")
                 file = await LocalTrack.load_file(path)
 
-            return self._track_adapter.validate_python(file, context=self.tracks_load_settings)
+            return LOCAL_TRACK_ADAPTER.validate_python(file, context=self.tracks_load_settings)
 
         except (MusifyError, MutagenError, ValueError, OSError) as ex:
             self.logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
-
-    @cached_property
-    def _track_adapter(self) -> TypeAdapter[LocalTrack]:
-        return TypeAdapter[LocalTrack](LocalTrack.annotation)
 
     async def load_tracks(self) -> bool:
         if not (paths := set(self._track_paths)):
@@ -270,17 +266,13 @@ class LocalLibrary(
             async with self.concurrency:
                 self.logger.debug(f"Loading playlist: {path}")
 
-                playlist = self._playlist_adapter.validate_python(path)
+                playlist = LOCAL_PLAYLIST_ADAPTER.validate_python(path)
                 playlist.path_mapper = self.path_mapper
                 return await playlist.load(self.tracks)
 
         except (MusifyError, ValueError, FileNotFoundError) as ex:
             self.logger.debug(f"Load error for playlist: {path} - {ex}")
             self.errors.append(path)
-
-    @cached_property
-    def _playlist_adapter(self) -> TypeAdapter[LocalPlaylist]:
-        return TypeAdapter[LocalPlaylist](LocalPlaylist.annotation)
 
     async def load_playlists(self) -> bool:
         if not (paths := set(self._playlist_paths)):

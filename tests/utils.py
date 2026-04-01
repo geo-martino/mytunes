@@ -154,22 +154,21 @@ class SimpleURI(URI):
         return URL.build(scheme="https", host="api.example.com", path=f"/{self.type}/{self.id}")
 
     @classmethod
-    def from_api_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
-        return cls.from_public_url(value, handler)
+    def from_api_url[T](cls, value: T) -> T | str:
+        return cls.from_public_url(value)
 
     @property
     def public_url(self) -> URL:
         return URL.build(scheme="https", host="example.com", path=f"/{self.type}/{self.id}")
 
     @classmethod
-    def from_public_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
+    def from_public_url[T](cls, value: T) -> T | str:
         if isinstance(value, str) and re.match(r"^https://(api.)?example\.com", value):
             value = URL(value)
         if not isinstance(value, URL):
             return value
 
-        uri = ":".join((cls._source, *value.path.lstrip("/").split("/")[-2:]))
-        return handler(uri)
+        return ":".join((cls._source, *value.path.lstrip("/").split("/")[-2:]))
 
 
 def assert_validator_skips[T](func: Callable[[T], T], value: T):

@@ -81,14 +81,14 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         """The path to the MusicBee library file."""
         return self.musicbee_folder.joinpath(self._xml_library_path)
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _add_library_path(cls, data: MutableMapping[str, Any], handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def _add_library_path[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping) or (key := "musicbee_folder") not in data:
-            return handler(data)
+            return data
 
         data["path"] = Path(data[key]).joinpath(cls._xml_library_path)
-        return handler(data)
+        return data
 
     @model_validator(mode="after")
     def _validate_settings_file_exists(self) -> Self:

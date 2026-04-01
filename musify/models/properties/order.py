@@ -31,36 +31,33 @@ class Position(AttributeModel):
     )
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_number(cls, value: Number, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, int | float):
-            return handler(value)
+    def _from_number[T](cls, data: T | Number) -> T | dict[str, Any]:
+        if not isinstance(data, int | float):
+            return data
 
-        data = dict(number=int(value))
-        return handler(data)
+        return dict(number=int(data))
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_numbers(cls, value: tuple | list, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, tuple | list):
-            return handler(value)
+    def _from_numbers[T](cls, data: T | tuple | list) -> T | dict[str, Any]:
+        if not isinstance(data, tuple | list):
+            return data
 
-        numbers = iter(value)
-        data = dict(number=next(numbers, None), total=next(numbers, None))
-        return handler(data)
+        numbers = iter(data)
+        return dict(number=next(numbers, None), total=next(numbers, None))
 
     # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _from_string(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, str):
-            return handler(value)
+    def _from_strin[T](cls, data: T | str) -> T | dict[str, Any]:
+        if not isinstance(data, str):
+            return data
 
-        numbers = iter(value.split(cls.sep))
-        data = dict(number=next(numbers), total=next(numbers, None))
-        return handler(data)
+        numbers = iter(data.split(cls.sep))
+        return dict(number=next(numbers), total=next(numbers, None))
 
     @model_validator(mode="after")
     def _validate_position_is_less_than_total(self) -> Self:

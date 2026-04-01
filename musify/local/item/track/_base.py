@@ -3,6 +3,7 @@ from abc import abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Iterable, Sequence
 from contextlib import suppress
 from copy import copy
+from functools import cached_property
 from io import BytesIO
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar, Annotated
@@ -89,6 +90,10 @@ class LocalTrack[FT: FileType](
         default=None,
     )
 
+    @cached_property
+    def _uri_adapter(self) -> TypeAdapter[URI]:
+        return TypeAdapter(URI.annotation)
+
     @model_validator(mode="wrap")
     @classmethod
     def _set_computed_fields(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
@@ -119,7 +124,7 @@ class LocalTrack[FT: FileType](
 
             img = Image.open(BytesIO(img_bytes))
             obj = handler(img)
-            del img
+            del img  # ensure memory is recovered, could probably delete this?
 
             img_type = cls.get_id3_type_from_tag(value)
             if img_type:
@@ -370,11 +375,10 @@ class LocalTrack[FT: FileType](
         if context.remote_source and context.remote_source != self.source:
             self.source = context.remote_source
 
-        adapter = TypeAdapter(URI.annotation)
         uris = []
         for value in values:
             with suppress(ValidationError):
-                uri = adapter.validate_python(value)
+                uri = self._uri_adapter.validate_python(value)
                 uris.append(uri)
 
         if values != self.uris:
@@ -704,7 +708,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
             track.pop("uri", None)
             track.pop("uris", None)
 
-        return list(map(TypeAdapter(LocalTrack.annotation).validate_python, tracks))
+        adapter = TypeAdapter[LocalTrack](LocalTrack.annotation)
+        return list(map(adapter.validate_python, tracks))
 
     @validate_call
     def restore_tracks(

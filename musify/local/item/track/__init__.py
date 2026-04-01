@@ -1,3 +1,5 @@
+from pydantic import TypeAdapter
+
 from ._base import LocalTrack, HasLocalTracks, TagContext
 
 __all__ = [
@@ -10,3 +12,5 @@ from .flac import FLAC
 from .m4a import M4A
 from .mp3 import MP3
 from .wma import WMA
+
+LOCAL_TRACK_ADAPTER = TypeAdapter[LocalTrack](LocalTrack.annotation)

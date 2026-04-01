@@ -33,19 +33,17 @@ class TimeMapper(DynamicProcessor):
         default=False
     )
 
-    # noinspection PyNestedDecorators
-    @model_validator(mode="wrap")
-    @classmethod
-    def _from_key(cls, value: str, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, str) or not re.match(r"^[-+]?\d+\D+$", value):
-            return handler(value)
+    @model_validator(mode="before")
+    def _from_key[T](cls, data: T | str) -> T | dict[str, Any]:
+        if not isinstance(data, str) or not re.match(r"^[-+]?\d+\D+$", data):
+            return data
 
         data = dict(
-            unit=cls._extract_unit_from_key(value),
-            amount=cls._extract_amount_from_key(value),
-            add=cls._extract_sign_from_key(value),
+            unit=cls._extract_unit_from_key(data),
+            amount=cls._extract_amount_from_key(data),
+            add=cls._extract_sign_from_key(data),
         )
-        return handler(data)
+        return data
 
     # noinspection PyNestedDecorators
     @field_validator("unit", mode="before", check_fields=True)

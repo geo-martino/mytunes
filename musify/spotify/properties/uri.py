@@ -45,24 +45,24 @@ class _SpotifyURIBase(URI):
         return API_URL.joinpath(path)
 
     @classmethod
-    def from_api_url[T](cls, value: T, handler: ValidatorFunctionWrapHandler) -> T | Self:
+    def from_api_url[T](cls, value: T) -> T | str:
         if not isinstance(value, str | URL):
-            return handler(value)
+            return value
 
         if isinstance(value, str):
             if not value.startswith(str(API_URL)):
-                return handler(value)
+                return value
             value = URL(value)
 
         if value.host != API_URL.host:
-            return handler(value)
+            return value
 
         path_parts = value.path.strip("/").split("/")
         if len(path_parts) < 3:
-            return handler(value)
+            return value
 
         version, kind, id_value, *_ = path_parts
-        return handler(":".join((cls._source, kind.rstrip("s"), str(id_value))))
+        return ":".join((cls._source, kind.rstrip("s"), str(id_value)))
 
     @property
     def public_url(self) -> URL:
@@ -70,24 +70,24 @@ class _SpotifyURIBase(URI):
         return URL.build(scheme=API_URL.scheme, host="open.spotify.com", path=path)
 
     @classmethod
-    def from_public_url[T](cls, value: T | str | URL, handler: ValidatorFunctionWrapHandler) -> T | Self:
+    def from_public_url[T](cls, value: T) -> T | str:
         if not isinstance(value, str | URL):
-            return handler(value)
+            return value
 
         if isinstance(value, str):
             if not value.startswith(str(PUBLIC_URL)):
-                return handler(value)
+                return value
             value = URL(value)
 
         if value.host != PUBLIC_URL.host:
-            return handler(value)
+            return value
 
         path_parts = value.path.strip("/").split("/")
         if len(path_parts) < 2:
-            return handler(value)
+            return value
 
         kind, id_value, *_ = path_parts
-        return handler(":".join((cls._source, kind, str(id_value))))
+        return ":".join((cls._source, kind, str(id_value)))
 
 
 @final

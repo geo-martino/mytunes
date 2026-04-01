@@ -126,71 +126,56 @@ class Comparer(DynamicProcessor):
 
         return annotation_type
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_null(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model: Comparer = handler(value)
-        if model.expected is None:
-            return model
+    @model_validator(mode="after")
+    def _convert_expected_to_null(self) -> Self:
+        if self.expected is None:
+            return self
 
-        annotation = get_type_hints(model._processor_method.func, include_extras=True)
+        annotation = get_type_hints(self._processor_method.func, include_extras=True)
         if "expected" not in annotation:  # doesn't take an expected value
-            model.expected = None
+            self.expected = None
 
-        return model
+        return self
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_type(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model: Self = handler(value)
+    @model_validator(mode="after")
+    def _convert_expected_to_type(self) -> Self:
         # noinspection PyTypeChecker
-        model._convert_expected_value(model._expected_type)
-        return model
+        self._convert_expected_value(self._expected_type)
+        return self
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_exact_field_type(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model: Self = handler(value)
-        if is_typevar(model._actual_type) and is_typevar(model._expected_type):  # expected is same type as actual
+    @model_validator(mode="after")
+    def _convert_expected_to_exact_field_type(self) -> Self:
+        if is_typevar(self._actual_type) and is_typevar(self._expected_type):  # expected is same type as actual
             # noinspection PyTypeChecker
-            model._convert_expected_value(model._field_type)
+            self._convert_expected_value(self._field_type)
+        return self
 
-        return model
-
-    @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_generic_when_actual_is_sequence(
-            cls, value: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        model: Self = handler(value)
-        if is_typevar(model._expected_type) and model._field_type is str:
+    @model_validator(mode="after")
+    def _convert_expected_to_generic_when_actual_is_sequence(self) -> Self:
+        if is_typevar(self._expected_type) and self._field_type is str:
             # noinspection PyTypeChecker
-            model._convert_expected_value(model._field_type)
+            self._convert_expected_value(self._field_type)
         elif (
-                is_typevar(model._expected_type)
-                and get_origin(model._actual_type) is Sequence
-                and is_typevar(next(iter(get_args(model._actual_type))))
-                and (expected_type := next(iter(get_args(model._field_type)), None)) is not None
+                is_typevar(self._expected_type)
+                and get_origin(self._actual_type) is Sequence
+                and is_typevar(next(iter(get_args(self._actual_type))))
+                and (expected_type := next(iter(get_args(self._field_type)), None)) is not None
         ):
-            model._convert_expected_value(expected_type)
+            self._convert_expected_value(expected_type)
 
-        return model
+        return self
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _convert_expected_to_sequence_when_actual_is_generic(
-            cls, value: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        model: Self = handler(value)
+    @model_validator(mode="after")
+    def _convert_expected_to_sequence_when_actual_is_generic(self) -> Self:
         if (
-                  is_typevar(model._actual_type)
-                  and get_origin(model._expected_type) in (Sequence, set)
-                  and is_typevar(next(iter(get_args(model._expected_type)), None))
+                  is_typevar(self._actual_type)
+                  and get_origin(self._expected_type) in (Sequence, set)
+                  and is_typevar(next(iter(get_args(self._expected_type)), None))
         ):
-            expected_type = set[model._field_type]
-            model._convert_expected_value(expected_type)
+            expected_type = set[self._field_type]
+            self._convert_expected_value(expected_type)
 
-        return model
+        return self
 
     def _convert_expected_value(self, expected_type: type) -> None:
         if self.expected is None or is_typevar(expected_type):
