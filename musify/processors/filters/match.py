@@ -1,5 +1,5 @@
 from collections.abc import Collection
-from typing import Any, Annotated
+from typing import Any, Annotated, final
 
 from pydantic import Field, computed_field, validate_call
 
@@ -80,11 +80,14 @@ class MatchResult[IT: Any](Result):
         return dict(map(lambda key: (key, len(getattr(self, key))), self.model_fields.keys()))
 
 
+@final
 class MatchFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
     """
     Filter which matches based on include, exclude and comparer filters,
     with additional option for including a given tag grouping.
     """
+    __final__ = True
+
     compare: ComparerFilter[IT] = Field(
         description="Comparer filter to use when matching.",
         default_factory=ComparerFilter,

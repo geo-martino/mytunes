@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 
 from musify.processors.filters.composite import IncludeExcludeFilter
-from musify.processors.filters.values import ValuesFilter
+from musify.processors.filters.values import ValueFilter
 from tests.processors.filters.testers import FilterTester
 
 
@@ -16,8 +16,8 @@ class TestIncludeExcludeFilter(FilterTester):
         exclude_values = {faker.pystr(30, 50) for _ in range(20)} - include_values
 
         return IncludeExcludeFilter(
-            include=ValuesFilter(values=include_values),
-            exclude=ValuesFilter(values=set(list(include_values)[:10] + list(exclude_values))),
+            include=ValueFilter(values=include_values),
+            exclude=ValueFilter(values=set(list(include_values)[:10] + list(exclude_values))),
         )
 
     def test_equality(self, model: IncludeExcludeFilter, faker: Faker):
@@ -38,7 +38,7 @@ class TestIncludeExcludeFilter(FilterTester):
         value = next(value for value in model.exclude.values)
         assert not model.check(value)
 
-        model.exclude = ValuesFilter()
+        model.exclude = ValueFilter()
         value = next(value for value in model.include.values)
         assert model.check(value)
 

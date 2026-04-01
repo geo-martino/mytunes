@@ -136,7 +136,7 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
     @classmethod
     def _validate_api_has_necessary_endpoints(cls, api: _ApiT) -> _ApiT:
         if not isinstance(api, RemoteAPI):
-            raise MusifyValidationError(f"API must be an instance of RemoteAPI, got {type(api)}")
+            raise MusifyValidationError(f"API must be an instance of RemoteAPI, got {type(api).__name__!r}")
         if not isinstance(api, HasSearchEndpoints):
             raise MusifyValidationError(f"API does not support search endpoints")
 

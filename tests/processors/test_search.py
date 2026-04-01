@@ -394,7 +394,7 @@ class TestItemSearcher(SearcherTester):
         mock_match_random, matches, matched, unmatched = mock_match_random
 
         items_matched, items_unmatched = split_list(items, 2)
-        if len(items_matched) < len(query_results):
+        if len(query_results) < len(items_matched):
             items_matched = items_matched[:len(query_results)]
         items_matches = faker.random_elements(query_results, length=len(items_matched), unique=True)
 

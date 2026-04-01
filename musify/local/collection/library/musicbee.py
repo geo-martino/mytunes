@@ -526,7 +526,7 @@ class XMLLibraryParser(BaseModel):
                     self._unparse_dict(element=array_element, data=item)
             else:
                 raise XMLReaderError(
-                    self.source, f"Unexpected value type: {value} ({type(value)})"
+                    self.source, f"Unexpected value type: {value} ({type(value).__name__})"
                 )
 
     def unparse(self, data: Mapping[str, Any]) -> str:

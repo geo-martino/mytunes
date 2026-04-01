@@ -35,6 +35,6 @@ class BandcampStore(AudioStore[Literal["bandcamp"]]):
             case Album():
                 item_type = "a"
             case _:
-                raise StoreTypeError(f"Unrecognised item type: {type(item)}")
+                raise StoreTypeError(f"Unrecognised item type: {type(item).__name__!r}")
 
         return {"q": query, "item_type": item_type}

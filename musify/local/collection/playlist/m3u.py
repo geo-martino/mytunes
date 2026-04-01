@@ -9,7 +9,7 @@ from pydantic import Field, TypeAdapter, NonNegativeInt
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack
 from musify.models.result import LogFormatter, CountResult
-from musify.processors.filters.values import PathsFilter
+from musify.processors.filters.values import PathFilter
 
 
 class SyncM3UResult(CountResult):
@@ -89,7 +89,7 @@ class SyncM3UResult(CountResult):
 
 
 @final_decorator
-class M3U(LocalPlaylist[PathsFilter]):
+class M3U(LocalPlaylist[PathFilter]):
     """For reading and writing data from M3U playlist format."""
     __final__ = True
     __supported_extensions__ = frozenset({"m3u"})
@@ -118,7 +118,7 @@ class M3U(LocalPlaylist[PathsFilter]):
                 self._original.clear()
                 return self
 
-        self.matcher = PathsFilter(values=set(paths), path_mapper=self.path_mapper)
+        self.matcher = PathFilter(values=set(paths), path_mapper=self.path_mapper)
         paths = self.path_mapper.map_many(paths, check_existence=not bool(tracks))
 
         if tracks:  # match paths from given tracks using the matcher

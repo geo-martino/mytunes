@@ -54,7 +54,7 @@ class URI(RootModel[str]):
     @model_validator(mode="after")
     def _validate_source(self) -> Self:
         if not isinstance(self.root, str):
-            raise MusifyValidationError(f"URI root must be a string, got {type(self.root)}")
+            raise MusifyValidationError(f"URI root must be a string, got {type(self.root).__name__!r}")
 
         if self.source != self._source:
             raise MusifyValidationError(

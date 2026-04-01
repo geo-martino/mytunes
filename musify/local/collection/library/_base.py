@@ -24,7 +24,7 @@ from musify.models.properties.file import PathMapper
 from musify.models.properties.uri import URI
 from musify.models.result import TotalCountResult, LenLogFormatter, Result
 from musify.processors.filters import Filter
-from musify.processors.filters.values import ValuesFilter
+from musify.processors.filters.values import ValueFilter
 from musify.processors.sort import ItemSorter
 
 
@@ -149,12 +149,12 @@ class LocalLibrary(
 
     @field_validator("playlist_filter", mode="before", check_fields=True)
     @staticmethod
-    def _convert_playlist_names_to_filter[T: str | Iterable[str]](names: T) -> T | ValuesFilter[str]:
+    def _convert_playlist_names_to_filter[T: str | Iterable[str]](names: T) -> T | ValueFilter[str]:
         if not names or isinstance(names, Filter):
             return names
 
         names = to_set(names)
-        return ValuesFilter(values=names)
+        return ValueFilter(values=names)
 
     async def load(self) -> None:
         self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)

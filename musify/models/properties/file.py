@@ -157,7 +157,9 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
             case IsLocalFile():
                 path = value.path
             case _:
-                raise MusifyTypeError(f"Cannot discern discriminator value. Unrecognised value type: {type(value)}")
+                raise MusifyTypeError(
+                    f"Cannot discern discriminator value. Unrecognised value type: {type(value).__name__!r}"
+                )
 
         # noinspection PyUnboundLocalVariable
         return path.suffix.lstrip(".").casefold()

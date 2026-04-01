@@ -32,6 +32,6 @@ class JunoDownloadStore(AudioStore[Literal["juno"]]):
             case Album():
                 item_type = "releases"
             case _:
-                raise StoreTypeError(f"Unrecognised item type: {type(item)}")
+                raise StoreTypeError(f"Unrecognised item type: {type(item).__name__!r}")
 
         return {"q[all][0]": query, "list_view": item_type}

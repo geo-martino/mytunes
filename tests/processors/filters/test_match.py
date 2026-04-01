@@ -11,7 +11,7 @@ from musify.models.properties.date import SparseDate
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.filters.match import MatchFilter
-from musify.processors.filters.values import PathsFilter
+from musify.processors.filters.values import PathFilter
 from tests.processors.filters.testers import FilterTester
 
 
@@ -36,8 +36,8 @@ class TestMatcherFilter(FilterTester):
             faker: Faker
     ) -> MatchFilter:
         return MatchFilter(
-            include=PathsFilter(values=tracks_include),
-            exclude=PathsFilter(values=tracks_exclude),
+            include=PathFilter(values=tracks_include),
+            exclude=PathFilter(values=tracks_exclude),
             compare=ComparerFilter(comparers=comparers, match_all=False),
         )
 
@@ -157,7 +157,7 @@ class TestMatcherFilter(FilterTester):
     ):
         tracks_include = tracks_include.copy() + [tracks_name[0]]
         matcher = MatchFilter(
-            include=PathsFilter(values=tracks_include),
+            include=PathFilter(values=tracks_include),
             group_by="name"
         )
 
@@ -175,7 +175,7 @@ class TestMatcherFilter(FilterTester):
     ):
         tracks_include = tracks_include.copy() + [tracks_released_at[0]]
         matcher = MatchFilter(
-            include=PathsFilter(values=tracks_include),
+            include=PathFilter(values=tracks_include),
             group_by="released_at"
         )
 

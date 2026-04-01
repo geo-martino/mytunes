@@ -28,7 +28,7 @@ from musify.models.sequence import MutableUniqueSequence
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.filters.match import MatchFilter, MatchResult
-from musify.processors.filters.values import PathsFilter
+from musify.processors.filters.values import PathFilter
 from musify.processors.limit import ItemLimiter
 from musify.processors.sort import ItemSorter
 
@@ -37,7 +37,7 @@ try:
 except ImportError:
     xmltodict = None
 
-AutoMatcher = MatchFilter[LocalTrack, PathsFilter, PathsFilter]
+AutoMatcher = MatchFilter[LocalTrack, PathFilter, PathFilter]
 
 
 @final
@@ -931,8 +931,8 @@ class _XMLSmartPlaylist(_XMLBaseModel):
     @property
     def matcher(self) -> AutoMatcher:
         """Build the matcher for this configuration."""
-        include = PathsFilter(values=self.source.exceptions_include or set())
-        exclude = PathsFilter(values=self.source.exceptions or set())
+        include = PathFilter(values=self.source.exceptions_include or set())
+        exclude = PathFilter(values=self.source.exceptions or set())
 
         # grouping by track is equivalent to no grouping
         group_by = self.group_by or "track"

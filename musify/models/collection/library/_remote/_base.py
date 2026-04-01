@@ -123,7 +123,7 @@ class RemoteLibrary[
 
         playlists = await api.playlists.saved.get_all()
         if self.playlist_filter is not None:
-            playlists: list[PT] = [pl for pl in playlists if self.playlist_filter.check(pl.name)]
+            playlists: list[PT] = self.playlist_filter.apply(playlists)
 
         # noinspection PyProtectedMember
         self.playlists._replace(sorted(playlists, key=lambda pl: pl.name.casefold()))

@@ -1,11 +1,11 @@
 from abc import abstractmethod
 from collections.abc import Collection, Iterator
-from typing import Any
+from typing import Any, final
 
 from pydantic import Field, validate_call
 
 from musify.processors.filters._base import Filter
-from musify.processors.filters.values import ValuesFilter
+from musify.processors.filters.values import ValueFilter
 
 
 class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
@@ -40,14 +40,17 @@ class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
         return item in self.filters
 
 
+@final
 class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
+    __final__ = True
+
     include: IF = Field(
         description="Filter for items to include",
-        default_factory=ValuesFilter,
+        default_factory=ValueFilter,
     )
     exclude: EF = Field(
         description="Filter for items to exclude",
-        default_factory=ValuesFilter,
+        default_factory=ValueFilter,
     )
 
     @property

@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping
-from typing import Self, Any
+from typing import Self, Any, final
 
 from pydantic import Field, field_validator, field_serializer, validate_call
 
@@ -8,8 +8,11 @@ from musify.processors.compare import Comparer
 from musify.processors.filters._base import Filter
 
 
+@final
 class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
+    __final__ = True
+
     comparers: Mapping[Comparer, tuple[bool, Self]] = Field(
         description=(
             "Comparers to filter against. Mapped to additional filters where the first boolean indicates "

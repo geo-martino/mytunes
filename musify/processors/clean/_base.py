@@ -29,4 +29,4 @@ class TagCleaner[IT: AttributeModel, VT: Any](Processor):
     @abstractmethod
     def _get_item_value(cls, item: IT | None) -> VT:
         """Get the value from the given item."""
-        raise MusifyTypeError(f"Cannot clean item of type {type(item)} with {cls.__name__}")
+        raise MusifyTypeError(f"Cannot clean item of type {type(item).__name__!r} with {cls.__name__}")

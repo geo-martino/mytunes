@@ -63,7 +63,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if not args:
-            raise ModelError(f"Must define generic types for {type(source)}")
+            raise ModelError(f"Must define generic types for {type(source).__name__!r}")
 
         uri_t: UT = args[0]
         model_t: type[MT] = args[1]
@@ -186,7 +186,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if not args:
-            raise ModelError(f"Must define generic types for {type(source)}")
+            raise ModelError(f"Must define generic types for {type(source).__name__!r}")
 
         uri_t: UT = args[0]
         model_t: type[MT] = args[1]

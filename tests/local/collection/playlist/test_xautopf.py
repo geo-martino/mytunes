@@ -19,7 +19,7 @@ from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer
 from musify.processors.filters.match import MatchFilter
-from musify.processors.filters.values import PathsFilter
+from musify.processors.filters.values import PathFilter
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.limit import LimitType, ItemLimiter
 from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
@@ -58,14 +58,14 @@ class TestSyncXAutoPFResult(BaseModelTester):
             compare=ComparerFilter(
                 comparers=Comparer(field="path", condition="IsIn", expected={tr.path for tr in tracks[:20]})
             ),
-            include=PathsFilter(values=tracks[10:25]),
-            exclude=PathsFilter(values=tracks[18:22]),
+            include=PathFilter(values=tracks[10:25]),
+            exclude=PathFilter(values=tracks[18:22]),
         )
         initial_xml.smart_playlist.parse_matcher(initial_matcher)
 
         final_matcher = deepcopy(initial_matcher)
-        final_matcher.include = PathsFilter(values=tracks[10:13])
-        final_matcher.exclude = PathsFilter(values=tracks[18:20])
+        final_matcher.include = PathFilter(values=tracks[10:13])
+        final_matcher.exclude = PathFilter(values=tracks[18:20])
         final_xml.smart_playlist.parse_matcher(final_matcher)
 
         limiter = final_xml.smart_playlist.source.limit
@@ -281,8 +281,8 @@ class TestXAutoPF(LocalPlaylistTester):
             compare=ComparerFilter(
                 comparers=Comparer(field="path", condition="IsIn", expected={tr.path for tr in tracks_compared})
             ),
-            include=PathsFilter(values=tracks_included, path_mapper=path_mapper),
-            exclude=PathsFilter(values=tracks_excluded, path_mapper=path_mapper),
+            include=PathFilter(values=tracks_included, path_mapper=path_mapper),
+            exclude=PathFilter(values=tracks_excluded, path_mapper=path_mapper),
         )
 
     @pytest.fixture
@@ -863,8 +863,8 @@ class TestXMLSource(BaseModelTester):
     def test_parse_matcher(self, model: _XMLSource):
         matcher = MatchFilter(
             compare=ComparerFilter[LocalTrack](),
-            include=PathsFilter(values={"a", "b", "c"}),
-            exclude=PathsFilter(values={"1", "2", "3"}),
+            include=PathFilter(values={"a", "b", "c"}),
+            exclude=PathFilter(values={"1", "2", "3"}),
             group_by="album",
         )
 
@@ -979,8 +979,8 @@ class TestXMLSmartPlaylist(BaseModelTester):
     def test_parse_matcher(self, model: _XMLSmartPlaylist, mocker: MockerFixture):
         matcher = MatchFilter(
             compare=ComparerFilter[LocalTrack](),
-            include=PathsFilter(values={"a", "b", "c"}),
-            exclude=PathsFilter(values={"1", "2", "3"}),
+            include=PathFilter(values={"a", "b", "c"}),
+            exclude=PathFilter(values={"1", "2", "3"}),
             group_by="album",
         )
 

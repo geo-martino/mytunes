@@ -46,7 +46,7 @@ class SevenDigitalStore(AudioStore[Literal["7digital"]], HasLocale):
             case Album():
                 item_type = "release"
             case _:
-                raise StoreTypeError(f"Unrecognised item type: {type(item)}")
+                raise StoreTypeError(f"Unrecognised item type: {type(item).__name__!r}")
 
         return f"search/{item_type}"
 

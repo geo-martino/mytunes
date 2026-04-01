@@ -110,7 +110,7 @@ class RemoteMutableLibrary[
                     # noinspection PyTypeChecker
                     uris.append(it.uri)
                 case _:
-                    raise MusifyTypeError(f"Unrecognised URI type: {type(item)}")
+                    raise MusifyTypeError(f"Unrecognised URI type: {type(item).__name__!r}")
 
         message = f"Adding {len(items)} {items_type} to {self._log_name} library"
         self.logger.info(message, header=1)

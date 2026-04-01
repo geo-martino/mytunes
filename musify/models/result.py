@@ -96,7 +96,7 @@ class LenLogFormatter(LogFormatter[int]):
             case Collection() if not isinstance(value, str):
                 return len(value)
             case _:
-                raise MusifyTypeError(f"Value must be an int or a collection, got {type(value)}")
+                raise MusifyTypeError(f"Value must be an int or a collection, got {type(value).__name__!r}")
 
 
 @dataclass(config=ConfigDict(frozen=True))

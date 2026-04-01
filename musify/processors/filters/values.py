@@ -1,16 +1,18 @@
 from pathlib import Path
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Self, final
 
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
 
 from musify._types import to_set, StrippedString
+from musify.exception import MusifyTypeError
 from musify.models import BaseModel
 from musify.models.properties.file import PathMapper, IsLocalFile, PathInputType
+from musify.models.properties.name import HasName
 from musify.processors.filters._base import Filter
 
 
-class ValuesFilter[IT](Filter[IT]):
+class ValueFilter[IT](Filter[IT]):
     """Filter based on a defined list of values."""
     values: Annotated[set[IT], BeforeValidator(to_set)] = Field(
         description="Set of values to filter against",
@@ -45,8 +47,41 @@ class ValuesFilter[IT](Filter[IT]):
         return isinstance(other, self.__class__) and self.values == other.values
 
 
-class PathsFilter(ValuesFilter[str]):
-    """Filter based on a defined list of values."""
+@final
+class NameFilter(ValueFilter[str]):
+    """Filter based on a defined list of name values."""
+    __final__ = True
+
+    values: Annotated[set[StrippedString], BeforeValidator(to_set)] = Field(
+        description="Set of names to filter against.",
+        default_factory=set,
+    )
+
+    @field_validator("values", mode="before", check_fields=True)
+    @classmethod
+    def _extract_values_from_models(cls, values: Iterable[Any]) -> Iterator[str]:
+        return map(cls._extract_value_from_model, values)
+
+    @staticmethod
+    def _extract_value_from_model(item: Any) -> str:
+        match item:
+            case str():
+                return item
+            case HasName() if item.name is not None:
+                return item.name
+            case _:
+                raise MusifyTypeError(f"Unrecognised name type: {type(item).__name__!r}")
+
+    @validate_call
+    def check(self, item: str | HasName, *_, **__) -> bool:
+        return self._extract_value_from_model(item) in self.values
+
+
+@final
+class PathFilter(ValueFilter[str]):
+    """Filter based on a defined list of path values."""
+    __final__ = True
+
     values: Annotated[set[StrippedString], BeforeValidator(to_set)] = Field(
         description="Set of paths to filter against. These will be stored as un-mapped paths if a PathMapper is set.",
         default_factory=set,
@@ -70,7 +105,7 @@ class PathsFilter(ValuesFilter[str]):
 
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
-    def _extract_values_from_files(values: Iterable[Any]) -> Iterator[str]:
+    def _extract_values_from_models(values: Iterable[Any]) -> Iterator[str]:
         return (str(value.path) if isinstance(value, IsLocalFile) else value for value in values)
 
     @field_validator("values", mode="before", check_fields=True)

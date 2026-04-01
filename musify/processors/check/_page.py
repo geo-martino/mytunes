@@ -84,7 +84,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     @classmethod
     def _validate_api_has_necessary_endpoints(cls, api: _ApiT) -> _ApiT:
         if not isinstance(api, RemoteAPI):
-            raise MusifyValidationError(f"API must be an instance of RemoteAPI, got {type(api)}")
+            raise MusifyValidationError(f"API must be an instance of RemoteAPI, got {type(api).__name__!r}")
         if not isinstance(api, HasPlaylistEndpoints):
             raise MusifyValidationError(f"API does not support playlist endpoints")
         if not isinstance(api.playlists, PlaylistReadWriteEndpoints):

@@ -11,6 +11,8 @@ from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.logger import HasLogger
 from musify.processors.filters import Filter
+from musify.processors.filters.composite import CompositeFilter, IncludeExcludeFilter
+from musify.processors.filters.values import NameFilter
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
@@ -36,8 +38,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         description="The name of the source of this library.",
     )
 
-    # TODO: want to set this to Filter[str], but it causes abstract class errors
-    playlist_filter: Filter | None = Field(
+    playlist_filter: NameFilter | IncludeExcludeFilter[VP, NameFilter, NameFilter] | None = Field(
         description="The filter to apply when loading playlists. Filters playlist by name.",
         default=None
     )
