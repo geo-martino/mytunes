@@ -16,7 +16,6 @@ from musify.models.properties._core import NumberModel
 
 @total_ordering
 class Length(NumberModel[NonNegativeInt | NonNegativeFloat]):
-    # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @staticmethod
     def _convert_numeric_representation_to_number[T: str](value: T) -> T | Number:

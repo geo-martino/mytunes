@@ -36,7 +36,6 @@ class SparseDate(AttributeModel):
         le=31,
     )
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_date[T](cls, data: T | Any) -> T | dict[str, Any]:
@@ -45,7 +44,6 @@ class SparseDate(AttributeModel):
             return dict(year=dt.year, month=dt.month, day=dt.day)
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_string[T](cls, data: T | str) -> T | dict[str, Any]:

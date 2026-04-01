@@ -212,7 +212,6 @@ class TestHasMutableURI(UniqueKeyTester):
         del model.uri
         assert uri not in model.uris
 
-    # noinspection PyTestUnpassedFixture
     def test_has_uri(self, model: HasMutableURI, uris: list[URI]):
         assert model.uri.exists
         assert model.has_uri is True

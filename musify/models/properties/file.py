@@ -29,7 +29,6 @@ class IsFileMetaclass(AttributeMetaclass):
 
     @property
     def annotation(cls) -> Self:
-        # noinspection PyTypeChecker
         classes = cls.registered_submodels
         types = (Annotated[kls, Tag(ext)] for kls in classes for ext in kls.__supported_extensions__)
         return Union[*types] if classes else cls
@@ -119,7 +118,6 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
         description="The path to the file on the local filesystem."
     )
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _map_path[T](cls, data: T | str | Path) -> T | dict[str, Any]:
@@ -157,7 +155,6 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
                     f"Cannot discern discriminator value. Unrecognised value type: {type(value).__name__!r}"
                 )
 
-        # noinspection PyUnboundLocalVariable
         return path.suffix.lstrip(".").casefold()
 
     @property
@@ -274,7 +271,6 @@ class PathStemMapper(PathMapper):
         """
         return dict(list(item[::-1]) for item in self.stem_map.items())
 
-    # noinspection PyNestedDecorators
     @field_validator("available_paths", mode="before", check_fields=True)
     @staticmethod
     def _map_available_paths_from_iterable(value: Iterable[str | PurePath]) -> dict[str, str]:
@@ -285,7 +281,6 @@ class PathStemMapper(PathMapper):
 
         return {path.casefold(): path for path in map(str, value)}
 
-    # noinspection PyNestedDecorators
     @field_validator("stem_map", mode="before", check_fields=True)
     @staticmethod
     def _map_stem_map_from_iterable[T: str | Path](value: Iterable[tuple[T, T]] | Mapping[T, T]) -> dict[str, str]:

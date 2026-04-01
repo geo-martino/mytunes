@@ -265,8 +265,8 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
                 self = args.pop(0)
                 cls_t = cls._create_type_from_model_generics(self)
-                # noinspection PyTypeHints
                 if is_sequence:
+                    # noinspection PyTypeHints
                     cls_t = Sequence[cls_t]
                 adapter = TypeAdapter(cls_t)
 

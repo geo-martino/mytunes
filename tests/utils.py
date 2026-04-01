@@ -19,7 +19,6 @@ from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI
 
-# noinspection SpellCheckingInspection
 GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
     "Adult Contemporary",
     "Arab Pop",
@@ -37,10 +36,8 @@ GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
     "Iranian Pop",
     "Jangle Pop",
     "Latin Ballad",
-    "Levenslied",
     "Louisiana Swamp Pop",
     "Mexican Pop",
-    "Motorpop",
     "New Romanticism",
     "Orchestral Pop",
     "Pop Rap",
@@ -51,7 +48,6 @@ GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
     "Psychedelic Pop",
     "Schlager",
     "Soft Rock",
-    "Sophisti-Pop",
     "Space Age Pop",
     "Sunshine Pop",
     "Surf Pop",
@@ -59,7 +55,6 @@ GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
     "Teen Pop",
     "Traditional Pop Music",
     "Turkish Pop",
-    "Vispop",
     "Wonky Pop"
 ))
 
@@ -166,7 +161,6 @@ def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterat
     next(batcher_right)
 
     overlap_result = []
-    # noinspection PyTypeChecker
     for item in batcher_left:
         overlap_batch = next(batcher_right, [])[:overlap]
         overlap_result.extend(overlap_batch)

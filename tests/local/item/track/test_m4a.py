@@ -119,24 +119,24 @@ class TestM4A(LocalTrackTester):
     def test_serialize_bpm_skips(self, model: M4A, faker: Faker):
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_bpm(None, info) is None
+        assert model._serialize_bpm(None, info=info) is None
 
     def test_serialize_bpm(self, model: M4A, faker: Faker):
         bpm = faker.random_int(6000, 15000) / 100
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_bpm(bpm, info) == [int(bpm)]
+        assert model._serialize_bpm(bpm, info=info) == [int(bpm)]
 
     def test_serialize_position_tags_skips(self, model: M4A):
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags((), info) is None
+        assert model._serialize_position_tags((), info=info) is None
 
     def test_serialize_position_tags(self, model: M4A):
         position = Position(number=1, total=2, zero_fill=3)
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(position, info) == [position.numbers]
+        assert model._serialize_position_tags(position, info=info) == [position.numbers]
 
     def test_from_tags(
             self,

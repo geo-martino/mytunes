@@ -45,7 +45,6 @@ class TimeMapper(DynamicProcessor):
         )
         return data
 
-    # noinspection PyNestedDecorators
     @field_validator("unit", mode="before", check_fields=True)
     @staticmethod
     def _extract_unit_from_key(value: str) -> str:
@@ -53,7 +52,6 @@ class TimeMapper(DynamicProcessor):
             return value
         return re.match(r"^[-+]?\d+(\D+)$", value).group(1)
 
-    # noinspection PyNestedDecorators
     @field_validator("amount", mode="before", check_fields=True)
     @staticmethod
     def _extract_amount_from_key(value: str) -> str:
@@ -61,7 +59,6 @@ class TimeMapper(DynamicProcessor):
             return value
         return re.match(r"^[-+]?(\d+)\D+$", value).group(1)
 
-    # noinspection PyNestedDecorators
     @field_validator("add", mode="before", check_fields=True)
     @staticmethod
     def _extract_sign_from_key[T: str](value: T) -> T | bool:

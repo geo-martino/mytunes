@@ -51,7 +51,6 @@ class LocalPlaylistFile[TF: Filter](
         default_factory=PathMapper,
     )
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _extract_name_from_path[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
@@ -62,7 +61,6 @@ class LocalPlaylistFile[TF: Filter](
         data["name"] = path.stem
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_path[T](cls, data: T | str | Path) -> T | dict[str, Any]:

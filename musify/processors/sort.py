@@ -6,7 +6,7 @@ from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collect
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
-from typing import Any, Literal, Annotated
+from typing import Any, Literal, Annotated, SupportsFloat
 
 from pydantic import Field, field_validator, field_serializer
 
@@ -299,7 +299,6 @@ class ItemSorter(Processor):
 
         return previous
 
-    # noinspection PyUnresolvedReferences
     def _shuffle_on_rating(self, items: MutableSequence[HasRating]) -> None:
         if not all(isinstance(item, HasRating) for item in items):
             raise MusifyAttributeError(
@@ -314,7 +313,6 @@ class ItemSorter(Processor):
 
         items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
 
-    # noinspection PyUnresolvedReferences
     def _shuffle_on_added_at(self, items: MutableSequence[HasAddedDate]) -> None:
         if not all(isinstance(item, HasAddedDate) for item in items):
             raise MusifyAttributeError(
@@ -329,11 +327,10 @@ class ItemSorter(Processor):
 
         items[:] = sorted(items, key=_sort_key, reverse=self.shuffle_weight >= 0)
 
-    def _get_weighted_shuffle_value(self, value: Number, max_value: Number) -> float:
+    def _get_weighted_shuffle_value(self, value: SupportsFloat, max_value: SupportsFloat) -> float:
         weight_factor = uniform(-1, 1) * self.shuffle_weight
         return abs(float(value) - weight_factor * (float(value) - float(max_value)))
 
-    # noinspection PyUnresolvedReferences
     def _shuffle_on_artist(self, items: MutableSequence[HasArtists]) -> None:
         if not all(isinstance(item, HasArtists) for item in items):
             raise MusifyAttributeError(

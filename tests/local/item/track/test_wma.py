@@ -121,7 +121,7 @@ class TestWMA(LocalTrackTester):
     def test_serialize_position_tags_skips(self, model: WMA):
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags((), info) is None
+        assert model._serialize_position_tags((), info=info) is None
 
     def test_serialize_position_tags(self, model: WMA):
         info = Namespace(field_name="track", by_alias=True, context=None, mode="python")

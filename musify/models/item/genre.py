@@ -31,7 +31,6 @@ class HasGenres[GT: Genre](HasSeparableTags):
         default_factory=list,
     )
 
-    # noinspection PyNestedDecorators
     @field_validator("genres", mode="before", check_fields=True)
     @classmethod
     def _from_string[T: str](cls, value: T) -> T | list[str]:

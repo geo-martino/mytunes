@@ -68,7 +68,6 @@ class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasNa
         data[key] = [track for track in tracks if track.folder == name]
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="after")
     def _check_tracks_are_from_same_folder(self) -> Self:
         if not self.tracks:

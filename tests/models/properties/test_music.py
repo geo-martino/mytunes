@@ -8,7 +8,6 @@ from tests.models.testers import BaseModelTester
 class TestKeySignature(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> KeySignature:
-        # noinspection PyProtectedMember
         return KeySignature(
             root=faker.random_int(min=0, max=len(KeySignature._root_notes) - 1),
             mode=faker.boolean(),

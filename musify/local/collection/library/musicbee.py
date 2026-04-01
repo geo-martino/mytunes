@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
-from aiorequestful.types import Number
 from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, ModelWrapValidatorHandler, BeforeValidator, \
     FilePath
 
@@ -329,7 +328,6 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         return persistent_id.upper()
 
 
-# noinspection PyProtectedMember
 class XMLLibraryParser(BaseModel):
     """Parses MusicBee XML files to and from iTunes style XML."""
     __required_modules__ = {"xmltodict": xmltodict, "etree": etree}
@@ -514,7 +512,7 @@ class XMLLibraryParser(BaseModel):
                     etree.SubElement(sub_element, "string").text = self.to_xml_path(value)
                 else:
                     etree.SubElement(sub_element, "string").text = str(value)
-            elif isinstance(value, Number):
+            elif isinstance(value, int | float):
                 etree.SubElement(sub_element, "integer").text = str(value)
             elif isinstance(value, datetime):
                 etree.SubElement(sub_element, "date").text = self.to_xml_timestamp(value)

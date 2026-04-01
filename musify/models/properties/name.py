@@ -14,7 +14,6 @@ class HasName(AttributeModel):
         description="The name of this resource."
     )
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_name[T](cls, data: T | str) -> T | dict[str, Any]:

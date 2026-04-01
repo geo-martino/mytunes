@@ -42,7 +42,6 @@ class _ImageFileSchema:
             ]
         )
 
-        # noinspection PyProtectedMember
         return core_schema.json_or_python_schema(
             json_schema=core_schema.str_schema(),
             python_schema=python_schema,
@@ -81,7 +80,6 @@ PILImageFileT = Annotated[PILImageFile.ImageFile, _ImageFileSchema]
 
 class ImageBase(BaseModel):
     """Represents an image."""
-    # noinspection PyTypeChecker
     __type_map: ClassVar[Mapping[str, mutagen.id3.PictureType]] = {
         name: enum for name, enum in vars(mutagen.id3.PictureType).items()
         if isinstance(enum, mutagen.id3.PictureType)
@@ -115,7 +113,6 @@ class ImageBase(BaseModel):
         name = str(self.type).upper().replace(" ", "_")
         return self.__type_map[name]
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
     def _from_image_data(cls, image: PILImageFileT, handler: ModelWrapValidatorHandler[Self]) -> Self:
@@ -126,7 +123,6 @@ class ImageBase(BaseModel):
         obj.update_attributes(image)
         return obj
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="wrap")
     @classmethod
     def _from_image_bytes(cls, value: bytes | bytearray, handler: ModelWrapValidatorHandler[Self]) -> Self:
@@ -138,7 +134,6 @@ class ImageBase(BaseModel):
         del img  # ensure memory is recovered, could probably delete this?
         return obj
 
-    # noinspection PyNestedDecorators
     @field_validator("type", mode="before")
     @classmethod
     def _get_type_from_number(cls, value: str | int) -> str:
@@ -154,7 +149,6 @@ class ImageBase(BaseModel):
 
         return types[value]
 
-    # noinspection PyNestedDecorators
     @field_validator("type", mode="after")
     @classmethod
     def _validate_id3_type(cls, value: str) -> str:

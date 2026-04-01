@@ -30,7 +30,6 @@ class Position(AttributeModel):
         default=False,
     )
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_number[T](cls, data: T | Number) -> T | dict[str, Any]:
@@ -39,7 +38,6 @@ class Position(AttributeModel):
 
         return dict(number=int(data))
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_numbers[T](cls, data: T | tuple | list) -> T | dict[str, Any]:
@@ -49,7 +47,6 @@ class Position(AttributeModel):
         numbers = iter(data)
         return dict(number=next(numbers, None), total=next(numbers, None))
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_strin[T](cls, data: T | str) -> T | dict[str, Any]:

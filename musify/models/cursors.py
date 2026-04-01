@@ -393,7 +393,7 @@ class InitialCursor(_HasLimitParam):
             )
 
         # noinspection PyTypeChecker
-        classes = [kls for kls in cls.registered_submodels if kls.source == source]
+        classes = [kls for kls in cls.regis§tered_submodels if kls.source == source]
         if not classes:
             raise MusifyTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 

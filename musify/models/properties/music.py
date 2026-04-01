@@ -22,7 +22,6 @@ class KeySignature(BaseModel):
         description="The mode of this track.",
     )
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _from_key[T](cls, data: T | str) -> T | dict[str, Any]:
@@ -34,7 +33,6 @@ class KeySignature(BaseModel):
             mode=cls._extract_mode_index_from_key(data)
         )
 
-    # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @classmethod
     def _extract_root_index_from_key[T: str](cls, value: T) -> T | int:
@@ -49,7 +47,6 @@ class KeySignature(BaseModel):
             root_notes = [note.split("/")[-1] for note in cls._root_notes]
             return root_notes.index(value_split[-1])
 
-    # noinspection PyNestedDecorators
     @field_validator("mode", mode="before", check_fields=True)
     @staticmethod
     def _extract_mode_index_from_key[T: str](value: T) -> T | int:

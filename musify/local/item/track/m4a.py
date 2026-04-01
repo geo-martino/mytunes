@@ -139,7 +139,6 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     def compilation(self, value: bool | None) -> None:
         super(type(self), type(self)).compilation.fset(self, value)
 
-    # noinspection PyNestedDecorators
     @field_validator("key", mode="before")
     @classmethod
     def _deserialize_free_form_field[T](cls, value: T) -> T | str:
@@ -151,7 +150,6 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
 
         return value[:].decode()
 
-    # noinspection PyNestedDecorators
     @field_validator("genres", mode="before")
     @classmethod
     def _deserialize_free_form_fields[T:  Iterable](cls, value: T) -> T | list[str]:

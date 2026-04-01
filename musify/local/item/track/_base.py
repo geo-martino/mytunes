@@ -114,7 +114,6 @@ class LocalTrack[FT: FileType](
     class EmbeddedImage[TT](FileEmbeddedImage):
         alias: ClassVar[str | AliasChoices] = "images"
 
-        # noinspection PyNestedDecorators
         @model_validator(mode="wrap")
         @classmethod
         def _from_tag_value(cls, value: TT, handler: ModelWrapValidatorHandler[Self]) -> Self:
@@ -214,7 +213,6 @@ class LocalTrack[FT: FileType](
     async def from_path(cls, path: str | Path) -> Self:
         file = await cls.load_file(path)
         # some subclasses need to access the file obj on construction so just pass the file obj
-        # noinspection PyArgumentList
         return cls.model_validate(file)
 
     @classmethod
@@ -269,7 +267,6 @@ class LocalTrack[FT: FileType](
         data = dict(file.tags) | super()._extract_tags_from_mutagen(file)
         return data
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "bpm", "key", "uri", "rating",
         mode="before", check_fields=True
@@ -280,7 +277,6 @@ class LocalTrack[FT: FileType](
             value = value[0]
         return value
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
         mode="before", check_fields=True
@@ -291,7 +287,6 @@ class LocalTrack[FT: FileType](
             value = value[0]
         return value
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
         mode="before", check_fields=True
@@ -306,7 +301,6 @@ class LocalTrack[FT: FileType](
             case _:
                 return value
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "genres", "comments",
         mode="before", check_fields=True
@@ -391,7 +385,6 @@ class LocalTrack[FT: FileType](
         if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
             values.extend(self.uris)
 
-    # noinspection PyNestedDecorators
     @field_validator("images", mode="before")
     @classmethod
     def _map_images[T](cls, images: Iterable) -> T | dict[str, ImageSource]:

@@ -38,7 +38,6 @@ async def library() -> LocalLibrary:
     return library
 
 
-# noinspection PyTestUnpassedFixture, SpellCheckingInspection
 @pytest.mark.manual
 @pytest.mark.skipif(
     "not config.getoption('-m') and not config.getoption('-k')",

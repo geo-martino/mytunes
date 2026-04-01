@@ -10,5 +10,4 @@ class HasLogger(BaseModel):
 
     @cached_property
     def logger(self) -> Logger:
-        # noinspection PyTypeChecker
         return logging.getLogger(__name__)

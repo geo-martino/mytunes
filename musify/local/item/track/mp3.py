@@ -149,7 +149,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         tag_id = cls._get_tag_id(info.field_name)
         return getattr(mutagen.id3, tag_id)
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _merge_suffixed_tags[T](cls, data: T | mutagen.mp3.MP3 | MutableMapping[str, Any]) -> T | dict[str, Any]:
@@ -174,7 +173,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         return data
 
-    # noinspection PyNestedDecorators
     @model_serializer(mode="wrap")
     def _format_to_tags(
             self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
@@ -206,7 +204,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         return data
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
         mode="before"
@@ -221,7 +218,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         return str(value)
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "artists", "genres", "comments",
         mode="before"
@@ -235,14 +231,12 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         return list(map(cls._deserialize_text_frame, value))
 
-    # noinspection PyNestedDecorators
     @field_validator("rating", mode="before")
     @classmethod
     def _deserialize_rating_frame[T](cls, value: T) -> T | str:
         value = cls._extract_first_value_from_single_sequence(value)
         if not isinstance(value, mutagen.id3.POPM):
             return value
-
         # noinspection PyUnresolvedReferences
         return value.rating
 
@@ -270,7 +264,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         # noinspection PyArgumentList
         return self._serialize_text_frame(value, info=info)
 
-    # noinspection PyNestedDecorators
     @field_serializer(
         "name", "track", "disc", "bpm", "key", "released_at",
         mode="plain", when_used="unless-none"

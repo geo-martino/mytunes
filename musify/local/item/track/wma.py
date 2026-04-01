@@ -175,7 +175,6 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         value = self._deserialize_unicode_attribute(value)
         super(type(self), type(self)).compilation.fset(self, value)
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
         mode="before"
@@ -190,7 +189,6 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
 
         return value.value
 
-    # noinspection PyNestedDecorators
     @field_validator(
         "artists", "genres", "comments",
         mode="before"
@@ -225,7 +223,6 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         # noinspection PyArgumentList
         return self._serialize_unicode_attributes(value, info=info)
 
-    # noinspection PyNestedDecorators
     @field_serializer(
         "name", "disc", "bpm", "key", "released_at", "uri",
         mode="plain", when_used="unless-none",
@@ -241,7 +238,6 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         value = self._join_split_tags(value)
         return mutagen.asf.ASFUnicodeAttribute(value)
 
-    # noinspection PyNestedDecorators
     @field_serializer("comments", mode="plain", when_used="unless-none")
     def _serialize_unicode_attributes[T](self, value: T, info: FieldSerializationInfo) -> T | str:
         if not isinstance(value, tuple | list):

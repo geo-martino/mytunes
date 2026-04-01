@@ -7,8 +7,7 @@ from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Any, Annotated, TYPE_CHECKING, cast, Union
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, TypeAdapter
-# noinspection PyProtectedMember
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler, ValidationInfo
+from pydantic_core.core_schema import ValidationInfo
 from yarl import URL
 
 from musify._types import StrippedString, to_set
@@ -50,7 +49,6 @@ class URI(RootModel[str]):
             return value
         return cls.from_id(cls._unavailable_id, kind=context.type).root
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="after")
     def _validate_source(self) -> Self:
         if not isinstance(self.root, str):
@@ -92,7 +90,6 @@ class URI(RootModel[str]):
         """The URL of the API endpoint for this remote resource."""
         raise NotImplementedError
 
-    # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @classmethod
     @abstractmethod
@@ -106,7 +103,6 @@ class URI(RootModel[str]):
         """The public URL for this remote resource."""
         raise NotImplementedError
 
-    # noinspection PyNestedDecorators
     @field_validator("root", mode="before", check_fields=True)
     @classmethod
     @abstractmethod
@@ -248,11 +244,9 @@ class HasMutableURI(HasURI):
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
         if self.source is None and len(set(source := uri.source for uri in self.uris)) == 1:
-            # noinspection PyTypeChecker
             self.__dict__["source"] = source
         return self
 
-    # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @staticmethod
     def _validate_uris_from_unique_sources[T: Collection](uris: T) -> T:
@@ -268,7 +262,6 @@ class HasMutableURI(HasURI):
             raise MusifyValidationError(f"Duplicate URIs found from sources: {', '.join(duplicates)}")
         return uris
 
-    # noinspection PyNestedDecorators
     @field_validator("uris", mode="after", check_fields=True)
     @classmethod
     def _validate_uris_match_type[T: Collection](cls, uris: T) -> T:

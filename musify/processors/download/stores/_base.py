@@ -145,12 +145,13 @@ class HasLocale(BaseModel, metaclass=AudioStoreMetaclass):
     @field_validator("locale", mode="before", check_fields=True)
     @classmethod
     def _validate_locale_from_alias[T](cls, lc: T | str) -> T | str:
-        if not isinstance(lc, str) or lc not in list(locale_module.locale_alias.keys()):
+        if not isinstance(lc, str) or lc.casefold() not in list(locale_module.locale_alias.keys()):
             return lc
         return locale_module.normalize(lc)
 
 
 _HTTP_ADAPTER = TypeAdapter(HttpUrl)
+
 
 @final
 class GeneralAudioStore(AudioStore[Literal["general"]]):

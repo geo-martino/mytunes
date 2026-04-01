@@ -27,7 +27,6 @@ class TestStoreManager(BaseModelTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> StoreManager:
-        # noinspection SpellCheckingInspection
         stores = [
             BandcampStore(),
             SevenDigitalStore(locale="en_gb", audio_types=(2, 9)),

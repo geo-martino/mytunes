@@ -29,7 +29,6 @@ class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], Ha
         """The tracks on the albums by this artist."""
         return [track for album in self.albums if isinstance(album, AlbumCollection) for track in album.tracks]
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _get_name_from_albums[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
@@ -54,7 +53,6 @@ class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], Ha
         data[key] = names.pop()
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _filter_albums_on_artist_name[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
@@ -68,7 +66,6 @@ class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], Ha
         data[key] = [album for album in albums if any(artist.name == name for artist in album.artists)]
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="after")
     def _check_albums_are_from_same_artist(self) -> Self:
         if not self.albums:
@@ -91,5 +88,4 @@ class RemoteArtistCollection[UT: URI, AT: RemoteAlbum, GT: RemoteGenre, CT: Page
 ):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasArtistEndpoints[ArtistReadCollectionEndpoints]) -> None:
-        # noinspection PyProtectedMember
         self.albums[:] = await api.artists.get_all(self)

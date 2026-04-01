@@ -161,8 +161,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
     # TODO: migrate this to aiorequestful v2
-    # noinspection PyArgumentList
-    @validate_call
     async def _get_all_items(
             self,
             cursor: PageCursor,
@@ -202,7 +200,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return items, cursor
 
     # TODO: migrate this to aiorequestful v2
-    # noinspection PyArgumentList
     async def _get_all_items_from_cursor(
             self,
             cursor: PageCursor,
@@ -217,7 +214,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 return await self._get_all_items_by_pagination(cursor, path=path, kind=kind, show_bar=show_bar)
 
     # TODO: migrate this to aiorequestful v2
-    @validate_call
     async def _get_all_items_by_pagination(
             self,
             cursor: PageCursor,
@@ -256,7 +252,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
-                # noinspection PyArgumentList
                 response_items, cursor = await self._get_all_items_by_generation(
                     cursor, path=path, kind=kind, show_bar=show_bar
                 )
@@ -268,7 +263,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return tuple(items), cursor
 
     # TODO: migrate this to aiorequestful v2
-    @validate_call
     async def _get_all_items_by_generation[T: IterablePageCursor](
             self,
             cursor: T,
@@ -630,7 +624,6 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
             case _:
                 raise RequestError("Expected a collection or page cursor.")
 
-        # noinspection PyArgumentList
         items, cursor = await self._get_all_items(
             cursor, path=self._extend_path, kind=self._extend_type, show_bar=show_bar
         )
@@ -696,7 +689,6 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
-        # noinspection PyArgumentList
         collection = await self.get(url)
         # noinspection PyArgumentList
         items = await self.get_all(collection)
@@ -707,7 +699,6 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             if uri not in uris_unique and uri not in uris_current:
                 uris_unique.append(uri)
 
-        # noinspection PyArgumentList
         return await self.add(url, uris_unique, limit=limit)
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
@@ -774,7 +765,6 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # just get a cursor which returns a url to begin pagination and figure it out later
         cursor = _INITIAL_CURSOR_ADAPTER.validate_python(dict(url=self._read_url, limit=limit))
 
-        # noinspection PyArgumentList
         items, *_ = await self._get_all_items(cursor, path=self._read_path, kind=self.type, show_bar=show_bar)
         return list(items)
 

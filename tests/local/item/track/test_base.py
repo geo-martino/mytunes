@@ -4,6 +4,7 @@ from collections.abc import Generator, Sequence
 from datetime import date
 from pathlib import Path
 from random import choice, sample
+from typing import Any
 from unittest.mock import patch, AsyncMock, Mock
 
 import mutagen
@@ -127,7 +128,6 @@ class TestLocalTrack(UniqueKeyTester):
         assert track.album.artists == [album_artist]
         assert track.compilation == compilation
 
-    # noinspection PyCallingNonCallable
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType, tags: dict[str, Any]):
         assert file.filename
 
@@ -303,7 +303,6 @@ class TestLocalTrack(UniqueKeyTester):
         assert not LocalTrack._clear_tag(file, tag_id=tag_id)
         assert tag_id not in file.tags
 
-    # noinspection PyTestUnpassedFixture
     def test_to_selected_tags(self, model: LocalTrack):
         tags = model.to_tags(include={"name", "album", "album_artist", "compilation"}, exclude={"name"})
         assert "title" not in tags
@@ -321,7 +320,7 @@ class TestLocalTrack(UniqueKeyTester):
         with pytest.raises(MusifyValueError):
             model.to_tags(exclude={"name", "does not exist"})
 
-    # noinspection PyTypeChecker,PyTestUnpassedFixture
+    # noinspection PyTypeChecker
     def test_to_tags_contains_no_properties(self, model: LocalTrack):
         tags = model.to_tags()
         assert "title" in tags

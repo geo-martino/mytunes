@@ -411,7 +411,6 @@ class _XMLBaseModel(BaseModel):
 class _XMLCondition(_XMLBaseModel):
     reference_values: ClassVar[set[Any]] = {"[playing track]"}
 
-    # noinspection SpellCheckingInspection
     #: Map of MusicBee name to field name
     name_field_map: ClassVar[Mapping[str, str]] = {
         "None": None,
@@ -453,7 +452,6 @@ class _XMLCondition(_XMLBaseModel):
     #: Map of field name to MusicBee name
     field_name_map: ClassVar[Mapping[str, str]] = {field: name for name, field in name_field_map.items()}
 
-    # noinspection SpellCheckingInspection
     #: Map of MusicBee name to field code
     name_code_map: ClassVar[Mapping[str, int]] = {
         "None": 0,

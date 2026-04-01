@@ -109,5 +109,6 @@ markers = [
     "slow: marks test as slow (deselect with '-m \"not slow\"')",
     "manual: marks tests to be run only when manually directed to by the developer",
 ]
+filterwarnings = "ignore::UserWarning"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"

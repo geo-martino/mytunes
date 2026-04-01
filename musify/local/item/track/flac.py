@@ -108,13 +108,11 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
-        # noinspection PyCallingNonCallable
         data = super()._extract_tags_from_mutagen(file)
         data |= dict(images=file.pictures)
         data.pop("source", None)  # clashes with HasMutableURI field
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _merge_position_values[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:

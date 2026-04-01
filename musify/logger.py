@@ -213,7 +213,6 @@ class Logger(logging.Logger):
         return tqdm.gather(*tasks, **self._get_tqdm_kwargs(**kwargs))
 
     def _get_tqdm_kwargs(self, **kwargs) -> dict[str, Any]:
-        # noinspection SpellCheckingInspection
         preset_keys = ("leave", "disable", "file", "ncols", "colour", "smoothing")
 
         try:

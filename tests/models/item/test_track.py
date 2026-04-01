@@ -27,7 +27,6 @@ class TestTrack(NoUniqueKeyTester):
 
         return tracks
 
-    # noinspection PyUnresolvedReferences
     def test_set_track_total_from_album(self, tracks: list[Track], faker: Faker):
         # does not attempt to set track.total when not available
         track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
@@ -47,7 +46,6 @@ class TestTrack(NoUniqueKeyTester):
         assert track.track.number == 5
         assert track.track.total == album.track_total
 
-    # noinspection PyUnresolvedReferences
     def test_set_disc_total_from_album(self, tracks: list[Track], faker: Faker):
         # does not attempt to set disc.total when not available
         track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))

@@ -12,7 +12,7 @@ from musify.processors import Processor
 from musify._types import get_base_types
 
 
-# noinspection PyPep8Naming,SpellCheckingInspection
+# noinspection PyPep8Naming
 class processormethod:
     """
     Decorator for methods on a class decorated with the :py:func:`processormethod` decorator
@@ -139,7 +139,7 @@ class DynamicProcessorMetaclass(ModelMetaclass):
         return NoneType not in get_base_types(annotation, ignore_none=False)
 
 
-# noinspection SpellCheckingInspection,PyAbstractClass
+# noinspection PyAbstractClass
 class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
     """
     Base class for implementations with :py:func:`processormethod` decorated methods.

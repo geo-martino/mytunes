@@ -8,7 +8,6 @@ import pytest
 from faker import Faker
 
 from musify.exception import MusifyTypeError
-# noinspection PyProtectedMember
 from musify.models.properties.file import IsLocalFile, PathMapper, PathStemMapper
 from tests.models.testers import BaseModelTester
 
@@ -112,17 +111,16 @@ class TestPathStemMapper(TestPathMapper):
         available_paths = {path.casefold(): path for path in available_paths}
         return PathStemMapper(stem_map=stem_map, available_paths=available_paths)
 
-    # noinspection PyTypeChecker
     def test_map_available_paths_from_iterable(self, model: PathStemMapper, faker: Faker):
         paths = list(map(str, _generate_file_paths(faker, "windows")))
 
         model.available_paths = paths[0]
         assert model.available_paths == {paths[0].casefold(): paths[0]}
 
+        # noinspection PyTypeChecker
         model.available_paths = paths
         assert model.available_paths == {path.casefold(): path for path in paths}
 
-    # noinspection PyTypeChecker
     def test_map_stem_map_from_iterable(self, model: PathStemMapper, faker: Faker):
         paths = list(
             tuple(map(str, item))

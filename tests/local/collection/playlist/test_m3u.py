@@ -115,7 +115,6 @@ class TestM3U(LocalPlaylistTester):
         assert model.tracks == tracks_on_disk + tracks_in_memory
         assert not model._original
 
-    # noinspection PyTestUnpassedFixture
     async def test_load_from_file_with_no_given_tracks(
             self, model: M3U, path: Path, tracks_on_disk: list[LocalTrack], tracks_in_memory: list[LocalTrack]
     ):

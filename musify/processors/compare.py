@@ -89,7 +89,6 @@ class Comparer(DynamicProcessor):
 
     @property
     def _field_type(self) -> type:
-        # noinspection PyArgumentList
         if self.field is None:
             return self._extract_type_from_annotation(NoneType)
 
@@ -139,21 +138,18 @@ class Comparer(DynamicProcessor):
 
     @model_validator(mode="after")
     def _convert_expected_to_type(self) -> Self:
-        # noinspection PyTypeChecker
         self._convert_expected_value(self._expected_type)
         return self
 
     @model_validator(mode="after")
     def _convert_expected_to_exact_field_type(self) -> Self:
         if is_typevar(self._actual_type) and is_typevar(self._expected_type):  # expected is same type as actual
-            # noinspection PyTypeChecker
             self._convert_expected_value(self._field_type)
         return self
 
     @model_validator(mode="after")
     def _convert_expected_to_generic_when_actual_is_sequence(self) -> Self:
         if is_typevar(self._expected_type) and self._field_type is str:
-            # noinspection PyTypeChecker
             self._convert_expected_value(self._field_type)
         elif (
                 is_typevar(self._expected_type)

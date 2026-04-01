@@ -9,7 +9,6 @@ from musify.models.api import RemoteAPI
 from tests.models.api.utils import MockRemoteAPI
 
 
-# noinspection PyTypeChecker
 @pytest.fixture
 def local_tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
     """

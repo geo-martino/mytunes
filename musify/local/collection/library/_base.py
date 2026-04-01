@@ -307,7 +307,6 @@ class LocalLibrary(
             }
             folders = {folder for folder in folders if folder.is_dir()}
 
-        # noinspection PyTypeChecker
         extensions: set[str] = LocalPlaylist.supported_extensions
 
         folder_message = "folder" if len(folders) == 1 else "folders"

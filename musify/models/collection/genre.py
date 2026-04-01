@@ -23,7 +23,6 @@ class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Gen
     def _items(self) -> UniqueSequence[TK, TV]:
         return self.tracks
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _get_name_from_tracks[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
@@ -48,7 +47,6 @@ class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Gen
         data[key] = names.pop()
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def _filter_tracks_on_genre_name[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
@@ -62,7 +60,6 @@ class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Gen
         data[key] = [track for track in tracks if any(genre.name == name for genre in track.genres)]
         return data
 
-    # noinspection PyNestedDecorators
     @model_validator(mode="after")
     def _check_tracks_are_from_same_genre(self) -> Self:
         if not self.tracks:

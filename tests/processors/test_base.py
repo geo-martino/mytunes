@@ -25,7 +25,6 @@ def test_dynamic_processor_method_decorator():
     assert test_2() == 2
 
 
-# noinspection PyMissingOrEmptyDocstring
 @final
 class MockDynamicProcessor(DynamicProcessor):
     __final__ = True

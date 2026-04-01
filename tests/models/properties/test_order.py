@@ -11,14 +11,12 @@ class TestPosition(BaseModelTester):
     def model(self) -> Position:
         return Position()
 
-    # noinspection PyTestUnpassedFixture
     def test_from_number(self, model: Position, faker: Faker):
         number = faker.random_int(1, 10)
         model = model.model_validate(number)
         assert model.number == number
         assert model.total is None
 
-    # noinspection PyTestUnpassedFixture
     def test_from_numbers(self, model: Position):
         number = (10,)
         model = model.model_validate(number)
@@ -30,7 +28,6 @@ class TestPosition(BaseModelTester):
         assert model.number == 10
         assert model.total == 20
 
-    # noinspection PyTestUnpassedFixture
     def test_from_string(self, model: Position, faker: Faker):
         numbers = "10"
         model = model.model_validate(numbers)

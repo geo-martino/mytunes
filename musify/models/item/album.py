@@ -105,7 +105,6 @@ class HasAlbums[AT: Album](HasSeparableTags):
         default_factory=list,
     )
 
-    # noinspection PyNestedDecorators
     @field_validator("albums", mode="before", check_fields=True)
     @classmethod
     def _from_string[T: str](cls, value: T) -> T | list[str]:
