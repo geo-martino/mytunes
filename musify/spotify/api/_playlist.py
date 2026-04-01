@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from typing import ClassVar, final
 
+from aiohttp import ClientResponse
 from aiorequestful.response.exception import ResponseError
 from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
@@ -117,7 +118,7 @@ class SpotifyPlaylistEndpoints(
             # WORKAROUND: Spotify returns 403 for private playlists, even if the user is a collaborator
             #  and has access to the playlist.
             #  Just log a warning and return an empty list in this case, rather than raising an exception.
-            if exc.response.status == 403:
+            if isinstance(exc.response, ClientResponse) and exc.response.status == 403:
                 self.logger.warning(
                     f"Could not retrieve tracks for playlist {collection.name!r} due to insufficient permissions."
                 )

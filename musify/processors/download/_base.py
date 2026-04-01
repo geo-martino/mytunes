@@ -136,7 +136,8 @@ class StoreManager(InputProcessor):
                     break
 
                 case "h":  # print help text
-                    self.logger.print_message("\n" + self._format_help_text_for_pause_page(valid_fields))
+                    help_text = self._format_help_text_for_pause_page(valid_fields)
+                    self.logger.print_message("\n" + help_text)
 
                 case "r":  # re-open all sites
                     self._format_and_open_sites_for_items(items, fields=self.fields)

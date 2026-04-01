@@ -33,14 +33,6 @@ class _SpotifySavedAlbumEndpoints(
     _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
     _write_limit: ClassVar[int] = 40
 
-    @staticmethod
-    def _generate_add_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
-        return {"params": {"uris": ",".join(map(str, values))}}
-
-    @staticmethod
-    def _generate_remove_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
-        return {"params": {"uris": ",".join(map(str, values))}}
-
 
 @final
 class SpotifyAlbumEndpoints(

@@ -131,16 +131,13 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     ###########################################################################
     ## Playlist setup/teardown
     ###########################################################################
+    # TODO: test me
     async def setup_playlists(self) -> None:
         """Set up the playlists for the given collections and store their state."""
         tasks = [asyncio.create_task(task) for task in map(self._setup_playlist, self.collections)]
 
         try:
             await self.logger.get_asynchronous_iterator(tasks, disable=True)
-
-            # ensure the playlist appears in the user's library
-            api_saved: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
-            await api_saved.add_many(list(self._playlists.keys()))
         except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
             for task in tasks:
@@ -171,6 +168,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             # add all new uris
             uris = [item.uri for item in collection.items if isinstance(item, HasURI) and item.has_uri]
             await api.add(playlist.uri.api_url, uris=uris, show_bar=False)
+
+            # WORKAROUND: it seems some APIs need some time between adding and getting items
+            await asyncio.sleep(0.8)
 
             # should help force an extension
             playlist.cursor = InitialCursor.from_url(playlist.cursor.url, source=playlist.source)
@@ -273,13 +273,15 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     ###########################################################################
     ## Pagination
     ###########################################################################
-    def _format_help_text_for_pause_page(self) -> str:
-        header = colored(
-            f"Temporary playlists created on {self._log_library_name}. " +
-            f"You may now check the items in each playlist on {self.source}.",
-            "blue",
-            attrs=["bold"],
-        )
+    def _format_help_text_for_pause_page(self, count: int | None = None) -> str:
+        header = None
+        if count is not None:
+            header = colored(
+                f"{count} temporary playlists created on {self._log_library_name}. " +
+                f"You may now check the items in each playlist on {self.source}.",
+                "blue",
+                attrs=["bold"],
+            )
 
         options = {
             "<Name of playlist>":
@@ -300,7 +302,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         Pause the check process and prompt the user to check and modify the created playlists
         on the remote service before continuing if they wish to.
         """
-        help_text = self._format_help_text_for_pause_page()
+        help_text = self._format_help_text_for_pause_page(len(self._playlists))
         self.logger.print_message("\n" + help_text)
 
         while True:
@@ -311,6 +313,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
                     break
 
                 case "h":  # print help text
+                    help_text = self._format_help_text_for_pause_page()
                     self.logger.print_message("\n" + help_text)
 
                 case "s":
