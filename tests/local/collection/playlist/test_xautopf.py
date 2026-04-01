@@ -2,6 +2,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from random import choice
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -19,7 +20,7 @@ from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer
 from musify.processors.filters.match import MatchFilter
-from musify.processors.filters.values import PathFilter
+from musify.processors.filters.values import PathFilter, ValueFilter
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.limit import LimitType, ItemLimiter
 from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
@@ -972,7 +973,7 @@ class TestXMLSmartPlaylist(BaseModelTester):
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 
     def test_parse_matcher_with_no_group_by(self, model: _XMLSmartPlaylist):
-        matcher = MatchFilter(group_by=None)
+        matcher = MatchFilter[LocalTrack, PathFilter, PathFilter](group_by=None)
         model.parse_matcher(matcher)
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 

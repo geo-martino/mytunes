@@ -14,7 +14,7 @@ class TestLibrary(NoUniqueKeyTester):
 
     def test_items_count(self, tracks: list[Track], playlists: list[Playlist]):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
-        assert library.count == len(tracks) + sum(pl.count for pl in playlists)
+        assert library.count == len(tracks)
 
     def test_dump(self, model: HasTracksAndPlaylists, playlists: list[Playlist], tracks: list[Track]):
         model = model.__class__(playlists=playlists, tracks=tracks)

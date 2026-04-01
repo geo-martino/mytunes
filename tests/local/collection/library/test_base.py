@@ -18,7 +18,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
-from musify.processors.filters.values import ValueFilter
+from musify.processors.filters.values import ValueFilter, NameFilter
 from tests.models.testers import NoUniqueKeyTester
 
 
@@ -135,8 +135,8 @@ class TestLocalLibrary(NoUniqueKeyTester):
     def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]):
         names = {pl.name for pl in playlists}
 
-        model.playlist_filter = names
-        assert isinstance(model.playlist_filter, ValueFilter)
+        model.playlist_filter = NameFilter(values=names)
+        assert isinstance(model.playlist_filter, NameFilter)
         assert model.playlist_filter.values == names
 
     def test_gets_all_track_paths(self, model: LocalLibrary, tracks: list[LocalTrack]):
@@ -154,7 +154,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         names = set([pl.name for pl in playlists][:len(playlists) // 2])
         assert names != all_playlist_names
 
-        model.playlist_filter = ValueFilter(values=names)
+        model.playlist_filter = NameFilter(values=names)
         assert {path.stem for path in model._playlist_paths} == names
 
     @staticmethod

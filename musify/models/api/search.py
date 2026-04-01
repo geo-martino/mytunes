@@ -48,8 +48,8 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         match path:
             case None:
                 return kind
-            case str() as alias:
-                return alias.format(type=kind)
+            case str() as key:
+                return key.format(type=kind)
             case AliasPath() as alias:
                 # noinspection PyTypeChecker
                 return AliasPath(*(str(part).format(type=kind) for part in alias.path))

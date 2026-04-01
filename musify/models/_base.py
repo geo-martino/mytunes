@@ -198,4 +198,4 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
 
 class RootModel[T](PydanticRootModel[T], BaseModel, metaclass=ModelMetaclass):
-    __doc__ = BaseModel.__doc__
+    pass

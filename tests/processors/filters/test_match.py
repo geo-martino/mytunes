@@ -130,8 +130,9 @@ class TestMatcherFilter(FilterTester):
         assert not model.check(choice(tracks_exclude))
 
     def test_apply_empty(self, tracks_include: list[LocalTrack], tracks_exclude: list[LocalTrack]):
-        assert MatchFilter().apply(values=tracks_include) == tracks_include
-        assert MatchFilter().apply(values=tracks_exclude) == tracks_exclude
+        matcher = MatchFilter[LocalTrack, PathFilter, PathFilter]()
+        assert matcher.apply(values=tracks_include) == tracks_include
+        assert matcher.apply(values=tracks_exclude) == tracks_exclude
 
     def test_match(
             self,
@@ -156,7 +157,7 @@ class TestMatcherFilter(FilterTester):
             tracks_name: list[LocalTrack],
     ):
         tracks_include = tracks_include.copy() + [tracks_name[0]]
-        matcher = MatchFilter(
+        matcher = MatchFilter[LocalTrack, PathFilter, PathFilter](
             include=PathFilter(values=tracks_include),
             group_by="name"
         )
@@ -174,7 +175,7 @@ class TestMatcherFilter(FilterTester):
             tracks_released_at: list[LocalTrack],
     ):
         tracks_include = tracks_include.copy() + [tracks_released_at[0]]
-        matcher = MatchFilter(
+        matcher = MatchFilter[LocalTrack, PathFilter, PathFilter](
             include=PathFilter(values=tracks_include),
             group_by="released_at"
         )

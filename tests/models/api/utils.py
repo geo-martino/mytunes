@@ -2,6 +2,7 @@ from typing import ClassVar, final, Any
 from unittest.mock import patch, Mock
 
 from aiorequestful.auth import Authoriser
+from aiorequestful.cache.backend import ResponseCache
 from pydantic import PositiveInt
 
 from musify.models import ResourceModel
@@ -147,3 +148,6 @@ class MockRemoteAPI(
     HasPlaylistEndpoints[MockPlaylistEndpoints],
 ):
     source: ClassVar[str] = MockRemoteAuthoriser.source
+
+    async def _setup_cache(self, cache: ResponseCache) -> None:
+        pass

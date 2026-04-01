@@ -10,9 +10,10 @@ from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pytest_mock import MockerFixture
+from yarl import URL
 
 from musify.models.api import Endpoints
-from musify.models.properties.uri import URI
+from musify.models.properties.uri import URI, HasImmutableURI
 from tests.models.api.utils import MockIndexCursor
 from tests.models.testers import BaseModelTester
 from tests.models.utils import MockRemoteResource
@@ -41,12 +42,16 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         return RequestHandler(connector=lambda: ClientSession())
 
     @pytest.fixture
+    def total(self, faker: Faker) -> int:
+        return faker.random_int(100, 200)
+
+    @pytest.fixture
     def uri(self, faker: Faker) -> URI:
         return SimpleURI.create_random(MockRemoteResource.type)
 
     @pytest.fixture
-    def uris(self, faker: Faker) -> list[URI]:
-        return [SimpleURI.from_id(i, kind=MockRemoteResource.type) for i in range(faker.random_int(50, 100))]
+    def uris(self, total: int, faker: Faker) -> list[URI]:
+        return [SimpleURI.from_id(i, kind=MockRemoteResource.type) for i in range(total)]
 
     @pytest.fixture
     def limit(self, faker: Faker) -> int:
@@ -69,8 +74,10 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
     ) -> Generator[Mock, None, None]:
         expected = math.ceil(len(uris) / limit)
 
-        def _return_items(*_, **__) -> dict[str, list[dict[str, Any]]]:
-            return {items_key: list(faker.random_elements(items, length=limit, unique=True))}
+        def _return_items(url: URL, **__) -> dict[str, list[dict[str, Any]]]:
+            batch_uris = url.query["ids"].split(",")
+            batch = [it for it in items if it["uri"] in batch_uris]
+            return {items_key: batch}
 
         with patch.object(RequestHandler, "get", side_effect=_return_items) as mock_get:
             yield mock_get
@@ -114,12 +121,8 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             yield mock_batch_values
 
     @pytest.fixture
-    def items(self, total: int, faker: Faker) -> list[dict[str, Any]]:
-        return [{"name": faker.word()} for _ in range(total)]
-
-    @pytest.fixture
-    def total(self, faker: Faker) -> int:
-        return faker.random_int(100, 200)
+    def items(self, uris: list[URI], faker: Faker) -> list[dict[str, Any]]:
+        return [{"name": faker.word(), "uri": uri} for uri in uris]
 
     @pytest.fixture
     def items_key(self) -> str:

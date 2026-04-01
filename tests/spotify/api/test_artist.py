@@ -10,6 +10,7 @@ from yarl import URL
 from musify.spotify import API_URL
 # noinspection PyProtectedMember
 from musify.spotify.api._artist import SpotifyArtistEndpoints
+from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.cursors import SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
@@ -46,7 +47,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
     async def test_get(self, model: SpotifyArtistEndpoints, uri: SpotifyResourceURI, mock_get: Mock):
         model = await model.get(uri)
         mock_get.assert_called_with(API_URL.joinpath("artists", uri.id))
-        assert isinstance(model, SpotifyArtist)
+        assert isinstance(model, SpotifyArtistCollection)
         assert model.uri == uri
 
     @pytest.fixture

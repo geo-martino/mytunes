@@ -6,6 +6,8 @@ from typing import Self, Any, Annotated
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
+from aiorequestful.cache.exception import CacheError
+from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, ModelWrapValidatorHandler, InstanceOf, Field, ValidationError, ConfigDict
@@ -26,7 +28,10 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
     model_config = ConfigDict(extra="forbid")
 
     cache: InstanceOf[ResponseCache] | None = Field(
-        description="A cache for storing responses. If not provided, the authoriser will not use caching.",
+        description=(
+            "The cache to use for storing and retrieving responses instead of requesting from the API. "
+            "If not provided, the authoriser will not use caching."
+        ),
         default=None,
     )
 
@@ -36,6 +41,7 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
         raise NotImplementedError
 
 
+# noinspection PyAbstractClass
 class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
     @model_validator(mode="wrap")
     @classmethod
@@ -83,19 +89,31 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         context = RemoteModelContext(type=kind)
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
+    # TODO: drop this on aiorequestful v2
+    @abstractmethod
+    async def _setup_cache(self, cache: ResponseCache) -> None:
+        """Set up the repositories and repository getter on the self.handler.session's cache."""
+        raise NotImplementedError
 
-    # TODO: figure out cache
-        # try:
-        #     await self._setup_cache()
-        # except CacheError:
-        #     pass
-        #
-        # session = handler.session
-        # if isinstance(session, CachedSession):
-        #     for repository in session.cache.values():
-        #         # all repositories must use the same payload handler as the request handler
-        #         # for it to function correctly
-        #         repository.settings.payload_handler = self.handler.payload_handler
+    async def __aenter__(self) -> Self:
+        await super().__aenter__()
+
+        handler = self._handler
+        session = handler.session
+
+        if isinstance(session, CachedSession):
+            cache = session.cache
+            try:
+                await self._setup_cache(cache)
+            except CacheError:
+                pass
+
+            for repository in cache.values():
+                # all repositories must use the same payload handler as the request handler
+                # for it to function correctly
+                repository.settings.payload_handler = handler.payload_handler
+
+        return self
 
 
 class HasAPI[API: RemoteAPI](AttributeModel):

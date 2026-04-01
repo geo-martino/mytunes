@@ -9,8 +9,12 @@ from typing import Any, ClassVar, Self, Type, Union, cast
 
 from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.auth import Authoriser
+from aiorequestful.cache.backend.base import ResponseRepository
+from aiorequestful.cache.exception import CacheError
+from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
+from numpy.lib._datasource import Repository
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
@@ -32,6 +36,7 @@ from musify.models.remote import RemoteModel, RemoteResource
 
 
 class EndpointsMetaclass(AttributeMetaclass):
+    # TODO: migrate this to aiorequestful v2?
     def create_model[T: RemoteResource](
             cls,
             value: Any,
@@ -73,6 +78,13 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     _bar_threshold: ClassVar[int] = PrivateAttr(
         # description="The minimum number of pages required to show a progress bar when paginating through items.",
         default=5,
+    )
+    # TODO: drop this on aiorequestful v2
+    _id_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
+        # description="The path to the ID of an item in the API response.",
+    )
+    _url_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
+        # description="The path to the href of an item in the API response.",
     )
 
     _handler: InstanceOf[RequestHandler[Authoriser, JSON]] = PrivateAttr(
@@ -147,6 +159,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         context = RemoteModelContext(type=cls.type)
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
+    # TODO: migrate this to aiorequestful v2
     # noinspection PyArgumentList
     @validate_call
     async def _get_all_items(
@@ -187,6 +200,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         return items, cursor
 
+    # TODO: migrate this to aiorequestful v2
     # noinspection PyArgumentList
     async def _get_all_items_from_cursor(
             self,
@@ -201,6 +215,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             case _:
                 return await self._get_all_items_by_pagination(cursor, path=path, kind=kind, show_bar=show_bar)
 
+    # TODO: migrate this to aiorequestful v2
     @validate_call
     async def _get_all_items_by_pagination(
             self,
@@ -223,6 +238,8 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             response = await self._get_page(cursor, item_type=item_type)
 
             response_items = self._get_items_from_response(response=response, path=path)
+            await self._cache_responses(response_items)
+
             items.extend(
                 self.__class__.create_model(it, context=self._model_context, kind=kind) for it in response_items
             )
@@ -245,6 +262,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         return tuple(items), cursor
 
+    # TODO: migrate this to aiorequestful v2
     @validate_call
     async def _get_all_items_by_generation[T: IterablePageCursor](
             self,
@@ -279,14 +297,19 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         )
 
         cursors = cursor.sort_responses(responses, path=path)
+        response_items = [
+            item for response in responses
+            for item in self._get_items_from_response(response=response, path=path)
+        ]
+        await self._cache_responses(response_items)
         items: list[RT] = [
             self.__class__.create_model(item, context=self._model_context, kind=kind)
-            for response in responses
-            for item in self._get_items_from_response(response=response, path=path)
+            for item in response_items
         ]
 
         return tuple(items), cursors[-1]
 
+    # TODO: migrate this to aiorequestful v2
     async def _get_page(self, page: PageCursor, item_type: str) -> JsonSchemaValue:
         """Thin wrapper for sending a get request from a page cursor while also formatting a log message"""
         log_message = None
@@ -295,15 +318,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         return await self._handler.get(page.url, log_message=log_message)
 
+    # TODO: migrate this to aiorequestful v2
     @classmethod
     def _get_items_from_response(cls, response: JSON, path: str | AliasPath | AliasChoices) -> list[JSON]:
         items = None
         log = path
 
         match path:
-            case str() as alias if alias in response:
-                items = response[alias]
-                log = alias
+            case str() as key if key in response:
+                items = response[key]
+                log = key
 
             case AliasPath() as alias:
                 items = alias.search_dict_for_path(response)
@@ -325,6 +349,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         raise CursorResponseError(f"Could not find items in response using the given path/s: {log}")
 
+    # TODO: migrate this to aiorequestful v2
     @classmethod
     def _get_items_from_response_nested(cls, response: JSON, path: str | AliasPath) -> list[JSON] | None:
         path = path if isinstance(path, AliasPath) else AliasPath(path)
@@ -345,6 +370,103 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             response = list(itertools.chain.from_iterable(response))
         return response
 
+    # TODO: migrate this to aiorequestful v2
+    def _get_cache_repository(self, url: URL | Sequence[URL]) -> ResponseRepository | None:
+        session = self._handler.session
+        if not isinstance(session, CachedSession):
+            self._handler.log("CACHE", url, message="Cache not configured, skipping...")
+            return
+
+        repository = session.cache.get_repository_from_url(url=url)
+        if repository is None:
+            self._handler.log("CACHE", url, message="No repository for this endpoint, skipping...")
+            return
+
+        return repository
+
+    # TODO: migrate this to aiorequestful v2
+    async def _get_responses_from_cache[T: str](
+            self, url: URL, values: Collection[T]
+    ) -> dict[str, JsonSchemaValue | None]:
+        """
+        Attempt to find the given ``values`` in the cache of the request handler and return results.
+
+        :param url: The base API URL endpoint for the required requests.
+        :param values: List of IDs to append to the given URL.
+        :return: Map of ID to its cached result if found, None otherwise.
+        """
+        if (repository := self._get_cache_repository(url)) is None:
+            return {value: None for value in values}
+
+        async def _get_response(value: T) -> tuple[T, JsonSchemaValue | None]:
+            return value, await repository.get_response(("GET", value))
+
+        bar = self.logger.get_asynchronous_iterator(map(_get_response, values), disable=True)
+        results = dict(await bar)
+
+        retrieved_count = sum(result is not None for result in results.values())
+        messages = [
+            f"Retrieved {retrieved_count:>6} cached responses",
+            f"{len(results) - retrieved_count:>6} not found in cache"
+        ]
+        self._handler.log(method="CACHE", url=url, messages=messages)
+
+        return results
+
+    # TODO: migrate this to aiorequestful v2
+    async def _cache_responses(self, responses: Collection[JsonSchemaValue]) -> None:
+        """Persist ``responses`` for a given ``url`` to the cache."""
+        urls = set()
+        for response in responses:
+            url = self._get_value_from_response(response, self._url_path)
+            if url is None:
+                continue
+
+            url = url.replace(self._get_value_from_response(response, self._id_path), "")
+            urls.add(url)
+
+        if not urls:
+            return
+        if len(urls) != 1:
+            raise CacheError(
+                "Too many different types of results given. Given results must relate to the same repository type."
+            )
+
+        url = urls.pop()
+        if (repository := self._get_cache_repository(url)) is None:
+            return
+
+        responses_map = {}
+        for response in responses:
+            id_value = self._get_value_from_response(response, path=self._id_path)
+            if id_value is None:
+                continue
+
+            responses_map[("GET", id_value)] = response
+
+        message = f"Caching {len(responses_map)} responses to {repository.settings.name!r} repository"
+        self._handler.log(method="CACHE", url=url, message=message)
+        await repository.save_responses(responses_map)
+
+    # TODO: migrate this to aiorequestful v2
+    @classmethod
+    def _get_value_from_response(cls, response: JSON, path: str | AliasPath | AliasChoices) -> Any | None:
+        match path:
+            case str() as key:
+                return response.get(key)
+
+            case AliasPath() as alias:
+                return alias.search_dict_for_path(response)
+
+            case AliasChoices() as choices:
+                choices = iter(choices.choices)
+                value = None
+                while (choice := next(choices, None)) is not None and value is not None:
+                    value = cls._get_value_from_response(response, path=choice)
+
+                return value
+
+    # TODO: migrate this to aiorequestful v2
     @staticmethod
     def _get_type_value(t: Any) -> str:
         match t:
@@ -435,6 +557,14 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         if limit is None:
             limit = self._many_limit
 
+        # TODO: drop this on aiorequestful v2
+        cache_responses = await self._get_responses_from_cache(self._many_url, uris)
+        cache_items = [
+            self.__class__.create_model(response, context=self._model_context)
+            for response in cache_responses.values() if response is not None
+        ]
+        uncached_uris = [uri for uri, response in cache_responses.items() if response is None]
+
         async def _get_items(batch: Collection) -> Iterator[RT]:
             url = self._generate_batch_url(self._many_url, batch)
             message = f"Getting {len(batch):>6} {item_type}s"
@@ -443,7 +573,7 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             response_items = self._get_items_from_response(response=response, path=self._many_path)
             return (self.__class__.create_model(it, context=self._model_context) for it in response_items)
 
-        batches = list(self._batch_values(uris, limit))
+        batches = list(self._batch_values(uncached_uris, limit))
         bar = self.logger.get_asynchronous_iterator(
             map(_get_items, batches),
             desc=f"Getting {item_type}s",
@@ -452,7 +582,10 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             total=len(batches),
             disable=not show_bar or len(batches) < self._bar_threshold,
         )
-        items = [item for batch in await bar for item in batch]
+
+        # TODO: amend this on aiorequestful v2
+        items = cache_items + [item for batch in await bar for item in batch]
+        items.sort(key=lambda it: uris.index(it.uri.id))
 
         return items
 
@@ -713,6 +846,10 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
 
 class HasEndpoints(RemoteModel):
+    @property
+    def _handler(self) -> RequestHandler:
+        return next(getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys())
+
     @model_validator(mode="wrap")
     @classmethod
     def _from_handler[T](cls, value: T | RequestHandler, handler: ModelWrapValidatorHandler[Self]) -> Self:

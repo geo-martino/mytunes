@@ -46,11 +46,11 @@ class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
 
     include: IF = Field(
         description="Filter for items to include",
-        default_factory=ValueFilter,
+        default=(),
     )
     exclude: EF = Field(
         description="Filter for items to exclude",
-        default_factory=ValueFilter,
+        default=(),
     )
 
     @property

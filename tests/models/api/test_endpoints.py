@@ -23,7 +23,7 @@ from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.image import ImageURL, ImageFile
-from musify.models.properties.uri import URI
+from musify.models.properties.uri import URI, HasImmutableURI
 from musify.models.remote import RemoteModel
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor
@@ -35,6 +35,9 @@ class TestCreateFromResponse:
     @final
     class MockEndpoints(Endpoints[SimpleURI, MockRemoteResource]):
         __final__ = True
+        _id_path: ClassVar[str] = "id"
+        _url_path: ClassVar[str] = "href"
+
         source = MockRemoteResource.source
         type = MockRemoteResource.type
 
@@ -70,6 +73,9 @@ class TestCreateFromResponse:
         @final
         class MockEndpointsTest(Endpoints[SimpleURI, MockRemoteResource]):
             __final__ = True
+            _id_path: ClassVar[str] = "id"
+            _url_path: ClassVar[str] = "href"
+
             source = "unknown_source"
             type = MockRemoteResource.type
 
@@ -80,6 +86,9 @@ class TestCreateFromResponse:
         @final
         class MockEndpointsTest(Endpoints[SimpleURI, MockRemoteResource]):
             __final__ = True
+            _id_path: ClassVar[str] = "id"
+            _url_path: ClassVar[str] = "href"
+
             source = MockRemoteResource.source
             type = "unknown_type"
 
@@ -165,9 +174,13 @@ class TestCreateFromResponse:
 
 
 class TestEndpoints(EndpointsTester):
+    class MockEndpoints(Endpoints[SimpleURI, MockRemoteResource]):
+        _id_path: ClassVar[str] = "id"
+        _url_path: ClassVar[str] = "href"
+
     @pytest.fixture
     def model(self, handler: RequestHandler) -> Endpoints:
-        return Endpoints[SimpleURI, MockRemoteResource](
+        return self.MockEndpoints(
             handler=handler,
         )
 
@@ -554,12 +567,19 @@ class TestReadItemsEndpoints(EndpointsTester):
             uris: list[URI],
             limit: int,
             items: list[dict[str, Any]],
+            mock_create_model: Mock,
             mock_get_batched: Mock,
             mock_batch_values: Mock,
             converter: Callable[[URI], Any],
     ):
-        await model.get_many(list(map(converter, uris)), limit=limit)
+        # need to ensure the models get created to enable sorting by ID
+        mock_create_model.side_effect = lambda x, *_, **__: MockRemoteResource.model_validate(x)
+
+        results = await model.get_many(list(map(converter, uris)), limit=limit)
         mock_batch_values.assert_called_once_with(uris, limit)
+
+        # guarantees same output order as input order
+        assert [result.uri.id for result in results] == [uri.id for uri in uris]
 
     async def test_get_many_uses_default_limit(
             self, model: ReadItemsEndpoints, uris: list[URI], mock_batch_values_empty: Mock,

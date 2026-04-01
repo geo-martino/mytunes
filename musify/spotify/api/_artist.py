@@ -27,7 +27,7 @@ class _SpotifyArtistEndpoints(
     @staticmethod
     def _add_albums_cursor_to_item[T: dict[str, Any]](item: T) -> T:
         url = URL(item["href"]).joinpath("albums")
-        item["albums"] = SpotifyInitialCursor(url=url).model_dump()
+        item["albums"] = SpotifyInitialCursor(url=url).model_dump(mode="json")
         return item
 
     @classmethod

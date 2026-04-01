@@ -20,7 +20,7 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
 ):
     @property
     def _items(self) -> list[TV]:
-        return list(self.tracks) + [it for pl in self.playlists.unique for it in pl.items]
+        return list(self.tracks)
 
     def dump(self) -> dict[str, Any]:
         """Generate a dump of this library's state. This can be used for backup or debugging purposes."""
