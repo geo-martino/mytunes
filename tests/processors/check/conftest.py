@@ -5,7 +5,8 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints, \
+    PlaylistWriteSavedEndpoints
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
 from musify.models.cursors import InitialCursor
@@ -110,21 +111,21 @@ def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mo
         return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
 
     with patch.object(
-            PlaylistReadWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
+            PlaylistWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
     ) as mock_create:
         yield mock_create
 
 
 @pytest.fixture(autouse=True)
-def mock_follow_playlist() -> Generator[Mock, None, None]:
-    with patch.object(PlaylistReadWriteSavedEndpoints, "follow", new_callable=AsyncMock) as mock_follow:
-        yield mock_follow
+def mock_add_playlists() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistWriteSavedEndpoints, "add_many", new_callable=AsyncMock) as mock_add:
+        yield mock_add
 
 
 @pytest.fixture(autouse=True)
-def mock_delete_playlist() -> Generator[Mock, None, None]:
-    with patch.object(PlaylistReadWriteSavedEndpoints, "delete", new_callable=AsyncMock) as mock_delete:
-        yield mock_delete
+def mock_remove_playlists() -> Generator[Mock, None, None]:
+    with patch.object(PlaylistWriteSavedEndpoints, "remove_many", new_callable=AsyncMock) as mock_remove:
+        yield mock_remove
 
 
 @pytest.fixture(autouse=True)

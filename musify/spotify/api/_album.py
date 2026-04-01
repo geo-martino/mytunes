@@ -1,6 +1,8 @@
-from typing import ClassVar, final, Type
+from collections.abc import Iterable
+from typing import ClassVar, final, Type, Any
 
 from pydantic import AliasPath
+from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from musify.models.api import HasSavedEndpoints
@@ -24,12 +26,20 @@ class _SpotifySavedAlbumEndpoints(
 
     type: ClassVar[Type] = SpotifyAlbumCollection  # override to force creation of collections from responses
 
-    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/albums")
-    _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/library")
-    _saved_limit: ClassVar[int] = 50
-    _saved_path: ClassVar[AliasPath] = AliasPath("items", "*", "album")
+    _read_url: ClassVar[URL] = API_URL.joinpath("me/albums")
+    _read_limit: ClassVar[int] = 50
+    _read_path: ClassVar[AliasPath] = AliasPath("items", "*", "album")
 
-    _batch_limit: ClassVar[int] = 50
+    _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
+    _write_limit: ClassVar[int] = 40
+
+    @staticmethod
+    def _generate_add_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
+        return {"params": {"uris": ",".join(map(str, values))}}
+
+    @staticmethod
+    def _generate_remove_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
+        return {"params": {"uris": ",".join(map(str, values))}}
 
 
 @final

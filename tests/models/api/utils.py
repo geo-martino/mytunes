@@ -4,6 +4,7 @@ from unittest.mock import patch, Mock
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
 from pydantic import PositiveInt
+from yarl import URL
 
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints

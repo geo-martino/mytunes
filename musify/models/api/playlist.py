@@ -1,11 +1,13 @@
 from collections.abc import Sequence
 from typing import ClassVar, Type
 
-from pydantic import validate_call, Field, PositiveInt
+from pydantic import validate_call, Field, PositiveInt, PrivateAttr
 from pydantic.json_schema import JsonSchemaValue
+from yarl import URL
 
 from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints, ReadCollectionEndpoints
+    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints, ReadCollectionEndpoints, \
+    WriteSavedEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
@@ -58,29 +60,37 @@ class PlaylistReadSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
         return [playlists_mapped[name] for name in names if name in playlists_mapped]
 
 
-# noinspection PyAbstractClass
-class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
-    PlaylistReadSavedEndpoints[UT, RT, OT],
+class PlaylistWriteSavedEndpoints[UT: URI, RT: RemotePlaylist](
+    PlaylistEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
 ):
+    _create_url: ClassVar[URL] = PrivateAttr(
+        # description="The API endpoint to create a playlist for the current user.",
+    )
+
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    async def add(self, url: ApiURL[UT, RT], **kwargs) -> None:
+        """Add an existing playlist to the current user's library."""
+        await self._handler.put(url)
+
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    async def remove(self, url: ApiURL[UT, RT]) -> None:
+        """Delete the playlist from the current user's library."""
+        await self._handler.delete(url)
+
     @validate_call
     async def create(self, **kwargs) -> RT | None:
         """Create a playlist in the current user's library."""
         if not kwargs:
-            self._handler.log("SKIP", self._saved_read_url, message="No playlist data given to create")
+            self._handler.log("SKIP", self._create_url, message="No playlist data given to create")
             return None
 
         body = await self._format_playlist_body(**kwargs)
-        response = await self._handler.post(self._saved_read_url, json=body)
+        response = await self._handler.post(self._create_url, json=body)
         playlist = self.__class__.create_model(response, context=self._model_context)
 
         message = f"Created playlist: {playlist.name!r} -> {playlist.uri.api_url}"
-        self._handler.log("DONE", self._saved_read_url, message=message)
+        self._handler.log("DONE", self._create_url, message=message)
         return playlist
-
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def follow(self, url: ApiURL[UT, RT], **kwargs) -> None:
-        """Add an existing playlist to the current user's library."""
-        await self._handler.put(url)
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:
@@ -97,11 +107,11 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUse
         """Format the playlist body for playlist endpoints."""
         return kwargs
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def delete(self, url: ApiURL[UT, RT]) -> None:
-        """Delete the playlist from the current user's library."""
-        await self._handler.delete(url)
 
+# noinspection PyAbstractClass
+class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
+    PlaylistReadSavedEndpoints[UT, RT, OT], PlaylistWriteSavedEndpoints[UT, RT]
+):
     @validate_call
     async def get_or_create(self, name: str, **kwargs) -> RT:
         """Get the playlist if it exists in the current user's library or create a new one."""

@@ -597,7 +597,6 @@ class TestReadItemsEndpoints(EndpointsTester):
 
 class TestReadCollectionEndpoints(EndpointsTester):
     class MockReadCollectionEndpoints(ReadCollectionEndpoints[SimpleURI, MockRemoteCollection, MockRemoteResource]):
-        _batch_limit = 26
         _extend_path = "items"
         _extend_type = "type"
 
@@ -670,7 +669,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
 
 class TestWriteCollectionEndpoints(EndpointsTester):
     class MockWriteCollectionEndpoints(WriteCollectionEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
-        _batch_limit = 18
+        _write_limit = 18
         _extend_path = "items"
         _extend_type = "items"
         _remove_path = "items"
@@ -707,7 +706,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.add(uri.api_url, uris)
-        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
+        mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_add_and_skip_duplicates(
@@ -763,14 +762,14 @@ class TestWriteCollectionEndpoints(EndpointsTester):
             self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.remove(uri.api_url, uris)
-        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
+        mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)
 
 
 class TestReadSavedEndpoints(EndpointsTester):
     class MockReadSavedEndpoints(ReadSavedEndpoints[SimpleURI, MockRemoteResource]):
-        _saved_read_url = URL("https://api.example.com/me")
-        _saved_path = "items"
-        _saved_limit = 15
+        _read_url = URL("https://api.example.com/me")
+        _read_path = "items"
+        _read_limit = 15
 
         source = MockRemoteResource.source
         type = MockRemoteResource.type
@@ -796,11 +795,11 @@ class TestReadSavedEndpoints(EndpointsTester):
         await model.get_all(limit=limit, show_bar=show_bar)
 
         mock_validate_cursor.assert_called_once_with(dict(
-            url=self.MockReadSavedEndpoints._saved_read_url, limit=limit
+            url=self.MockReadSavedEndpoints._read_url, limit=limit
         ))
         mock_get_all_items.assert_called_once_with(
             mock_validate_cursor.return_value,
-            path=self.MockReadSavedEndpoints._saved_path,
+            path=self.MockReadSavedEndpoints._read_path,
             kind=self.MockReadSavedEndpoints.type,
             show_bar=show_bar,
         )
@@ -808,17 +807,17 @@ class TestReadSavedEndpoints(EndpointsTester):
     async def test_get_all_uses_default_limit(self, model: ReadSavedEndpoints, mock_validate_cursor: Mock):
         await model.get_all()
         mock_validate_cursor.assert_called_once_with(dict(
-            url=self.MockReadSavedEndpoints._saved_read_url, limit=model._saved_limit
+            url=self.MockReadSavedEndpoints._read_url, limit=model._read_limit
         ))
 
 
 class TestWriteSavedEndpoints(EndpointsTester):
     class MockWriteSavedEndpoints(WriteSavedEndpoints[SimpleURI, MockRemoteResource]):
-        _saved_write_url = URL("https://api.example.com/me")
-        _saved_path = "items"
+        _write_url = URL("https://api.example.com/me")
+        _read_path = "items"
         _saved_limit = 12
 
-        _batch_limit = 72
+        _write_limit = 72
 
     @pytest.fixture
     def model(self, handler: RequestHandler) -> WriteSavedEndpoints:
@@ -842,7 +841,7 @@ class TestWriteSavedEndpoints(EndpointsTester):
             self, model: WriteSavedEndpoints, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.add_many(uris)
-        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
+        mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)
 
     async def test_remove_many(
             self,
@@ -862,4 +861,4 @@ class TestWriteSavedEndpoints(EndpointsTester):
             self, model: WriteSavedEndpoints, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.remove_many(uris)
-        mock_batch_values_empty.assert_called_once_with(uris, model._batch_limit)
+        mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)

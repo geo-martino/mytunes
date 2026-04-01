@@ -22,12 +22,12 @@ class _SpotifySavedTrackEndpoints(
 ):
     __final__ = True
 
-    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/tracks")
-    _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/library")
-    _saved_limit: ClassVar[int] = 50
-    _saved_path: ClassVar[AliasPath] = AliasPath("items", "*", "track")
+    _read_url: ClassVar[URL] = API_URL.joinpath("me/tracks")
+    _read_limit: ClassVar[int] = 50
+    _read_path: ClassVar[AliasPath] = AliasPath("items", "*", "track")
 
-    _batch_limit: ClassVar[int] = 50
+    _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
+    _write_limit: ClassVar[int] = 40
 
 
 @final

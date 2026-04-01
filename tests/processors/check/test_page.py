@@ -68,7 +68,6 @@ class TestPlaylistManagement(BaseModelTester):
             mock_get_playlist: Mock,
             mock_create_playlist: Mock,
             mock_sync_playlist: Mock,
-            mock_follow_playlist: Mock,
     ) -> None:
         model.use_existing_playlists = True
 
@@ -79,7 +78,6 @@ class TestPlaylistManagement(BaseModelTester):
         mock_get_playlist.assert_called_once_with(name=collection.name, **playlist_properties)
         mock_create_playlist.assert_not_called()
         mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
-        mock_follow_playlist.assert_called_once_with(playlist.uri.api_url)
 
     async def test_create_playlist(
             self,
@@ -90,7 +88,6 @@ class TestPlaylistManagement(BaseModelTester):
             mock_get_playlist: Mock,
             mock_create_playlist: Mock,
             mock_sync_playlist: Mock,
-            mock_follow_playlist: Mock,
     ) -> None:
         model.use_existing_playlists = False
 
@@ -100,38 +97,27 @@ class TestPlaylistManagement(BaseModelTester):
         mock_get_playlist.assert_not_called()
         mock_create_playlist.assert_called_once_with(name=collection.name, **playlist_properties)
         mock_sync_playlist.assert_not_called()  # playlist was created so no need to empty it
-        mock_follow_playlist.assert_called_once_with(playlist.uri.api_url)
 
-    async def test_delete_playlist(
+    async def test_delete_playlists(
             self,
             model: CheckerPage,
-            playlist: RemoteMutablePlaylist,
-            collection: CollectionModel,
+            playlists: list[RemoteMutablePlaylist],
+            collections: list[CollectionModel],
             tracks: list[RemoteTrack],
-            mock_sync_playlist: Mock,
-            mock_delete_playlist: Mock,
+            mock_remove_playlists: Mock,
     ):
-        playlist_cleared = deepcopy(playlist)
-        playlist_cleared.tracks.clear()
-        playlist.tracks.extend(tracks)
+        model._collections = {pl.uri: coll for pl, coll in zip(playlists, collections)}
+        model._playlists = {pl.uri: pl for pl in playlists}
+        model._playlists_initial = {pl.uri: pl for pl in playlists}
 
-        assert not playlist_cleared.tracks
-        assert playlist.tracks
+        await model._delete_playlists(playlists)
 
-        model._collections[playlist.uri] = collection
-        model._playlists[playlist.uri] = playlist
-        model._playlists_initial[playlist.uri] = playlist_cleared
+        mock_remove_playlists.assert_called_once()
+        assert set(mock_remove_playlists.call_args.args[0]) == {pl.uri for pl in playlists}
 
-        await model._teardown_playlist(playlist)
-
-        assert not playlist_cleared.tracks
-
-        mock_sync_playlist.assert_not_called()
-        mock_delete_playlist.assert_called_once_with(playlist.uri.api_url)
-
-        assert playlist.uri not in model._collections
-        assert playlist.uri not in model._playlists
-        assert playlist.uri not in model._playlists_initial
+        assert not model._collections
+        assert not model._playlists
+        assert not model._playlists_initial
 
     async def test_restore_playlist(
             self,
@@ -140,7 +126,6 @@ class TestPlaylistManagement(BaseModelTester):
             collection: CollectionModel,
             tracks: list[RemoteTrack],
             mock_sync_playlist: Mock,
-            mock_delete_playlist: Mock,
     ):
         playlist_cleared = deepcopy(playlist)
         playlist_cleared.tracks.clear()
@@ -150,10 +135,9 @@ class TestPlaylistManagement(BaseModelTester):
         model._playlists[playlist.uri] = playlist_cleared
         model._playlists_initial[playlist.uri] = playlist
 
-        await model._teardown_playlist(playlist)
+        await model._restore_playlist(playlist)
 
         mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
-        mock_delete_playlist.assert_not_called()
 
         assert playlist.uri not in model._collections
         assert playlist.uri not in model._playlists
@@ -183,14 +167,19 @@ class TestPlaylistManagement(BaseModelTester):
             mock_teardown_playlists.assert_called_once()
 
     @pytest.fixture
-    def mock_teardown_playlist(self, model: CheckerPage, mocker: MockerFixture) -> Mock:
-        return mocker.spy(model, "_teardown_playlist")
+    def mock_delete_playlists(self, model: CheckerPage, mocker: MockerFixture) -> Mock:
+        return mocker.spy(model, "_delete_playlists")
+
+    @pytest.fixture
+    def mock_restore_playlist(self, model: CheckerPage, mocker: MockerFixture) -> Mock:
+        return mocker.spy(model, "_restore_playlist")
 
     async def test_teardown_playlists_skips(
             self,
             model: CheckerPage,
             playlists: list[RemoteMutablePlaylist],
-            mock_teardown_playlist: Mock,
+            mock_delete_playlists: Mock,
+            mock_restore_playlist: Mock,
     ):
         assert not model._collections
         assert not model._playlists
@@ -202,14 +191,16 @@ class TestPlaylistManagement(BaseModelTester):
         assert not model._playlists
         assert not model._playlists_initial
 
-        mock_teardown_playlist.assert_not_called()
+        mock_delete_playlists.assert_not_called()
+        mock_restore_playlist.assert_not_called()
 
     async def test_teardown_playlists(
             self,
             model: CheckerPage,
             playlists: list[RemoteMutablePlaylist],
             collections: list[CollectionModel],
-            mock_teardown_playlist: Mock,
+            mock_delete_playlists: Mock,
+            mock_restore_playlist: Mock,
             faker: Faker,
     ):
         for pl in faker.random_elements(playlists, unique=True):
@@ -219,13 +210,17 @@ class TestPlaylistManagement(BaseModelTester):
         model._playlists = {pl.uri: pl for pl in playlists}
         model._playlists_initial = {pl.uri: pl for pl in playlists}
 
+        expected_delete = [pl for pl in playlists if pl.count == 0]
+        expected_restore = [pl for pl in playlists if pl.count > 0]
+
         await model.teardown_playlists()
 
         assert not model._collections
         assert not model._playlists
         assert not model._playlists_initial
 
-        assert mock_teardown_playlist.call_count == len(playlists)
+        mock_delete_playlists.assert_called_once_with(expected_delete)
+        assert mock_restore_playlist.call_count == len(expected_restore)
 
     ###########################################################################
     ## State getters

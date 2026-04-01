@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Iterable
+from collections.abc import Iterable, Collection
 from collections.abc import MutableMapping
 from copy import deepcopy
 from typing import Self, Any
@@ -10,7 +10,8 @@ from termcolor import colored
 
 from musify.exception import MusifyError
 from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints
-from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints, PlaylistReadWriteEndpoints, HasPlaylistEndpoints
+from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints, PlaylistReadWriteEndpoints, \
+    HasPlaylistEndpoints, PlaylistWriteSavedEndpoints
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from musify.models.cursors import InitialCursor
@@ -136,6 +137,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
 
         try:
             await self.logger.get_asynchronous_iterator(tasks, disable=True)
+
+            # ensure the playlist appears in the user's library
+            api_saved: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
+            await api_saved.add_many(list(self._playlists.keys()))
         except (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
             for task in tasks:
@@ -171,8 +176,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             playlist.cursor = InitialCursor.from_url(playlist.cursor.url, source=playlist.source)
             await playlist.extend(self.api)  # refresh playlist items with just added URIs
 
-            await api_saved.follow(playlist.uri.api_url)  # ensure the playlist appears in the user's library
-
     async def teardown_playlists(self) -> None:
         """
         Teardown the playlists used for checking by deleting any created by this process
@@ -181,33 +184,46 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         if not self._playlists:
             self.logger.extra("No playlists were created, skipping teardown")
 
-        # assume all originally empty playlists were temp playlists and delete them, restore the others
-        delete_count = sum(pl.count == 0 for pl in self._playlists_initial.values())
-        restore_count = sum(pl.count > 0 for pl in self._playlists_initial.values())
+        # all initially empty playlists were temp playlists - delete them, restore the others
+        delete = [pl for pl in self._playlists_initial.values() if pl.count == 0]
+        restore = [pl for pl in self._playlists_initial.values() if pl.count > 0]
 
-        message = f"Deleting {delete_count} temporary playlists and restoring {restore_count} playlists"
+        if delete:
+            await self._delete_playlists(delete)
+
+        if restore:
+            message = f"Restoring {len(restore)} playlists"
+            self.logger.extra(message, header=3)
+
+            await self.logger.get_asynchronous_iterator(
+                map(self._restore_playlist, restore),
+                desc="Restoring/deleting",
+                unit="playlists",
+                total=len(self._playlists),
+            )
+
+    async def _delete_playlists(self, playlists: Collection[RemoteMutablePlaylist]) -> None:
+        message = f"Deleting {len(playlists)} temporary playlists"
         self.logger.extra(message, header=3)
 
-        await self.logger.get_asynchronous_iterator(
-            map(self._teardown_playlist, self._playlists.values()),
-            desc="Restoring/deleting",
-            unit="playlists",
-            total=len(self._playlists),
-        )
+        for playlist in playlists:
+            print("DELETE PLAYLIST", playlist.name, playlist.uri, playlist.count)
 
-    async def _teardown_playlist(self, playlist: RemoteMutablePlaylist) -> None:
-        initial = self._playlists_initial[playlist.uri]
-        print("TEARING INITIAL", initial.name, initial.uri, initial.count)
-        print("TEARING CURRENT", playlist.name, playlist.uri, playlist.count)
+        self.logger.extra(message, header=3)
+        uris = {pl.uri for pl in playlists}
+        api: PlaylistWriteSavedEndpoints = self.api.playlists.saved
+        await api.remove_many(list(uris))
+
+        for uri in uris:
+            del self._collections[uri]
+            del self._playlists[uri]
+            del self._playlists_initial[uri]
+
+    async def _restore_playlist(self, playlist: RemoteMutablePlaylist) -> None:
+        print("RESTORING PLAYLIST", playlist.name, playlist.uri, playlist.count)
         async with self.concurrency:
-            if initial.count != 0:
-                # playlist existed before the check and should be returned to its original state
-                await initial.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
-
-            else:
-                # assume playlist was created by the checker and can be deleted directly
-                api: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
-                await api.delete(playlist.uri.api_url)
+            # playlist existed before the check and should be returned to its original state
+            await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
 
         del self._collections[playlist.uri]
         del self._playlists[playlist.uri]

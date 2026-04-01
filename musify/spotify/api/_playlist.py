@@ -15,7 +15,7 @@ from musify.models.exception import RequestError
 from musify.models.properties.image import ImageSource, PILImageFileT
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
-from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence
+from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence, SpotifyApiURI
 from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist, SpotifyPlaylistTrack
 from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
@@ -29,33 +29,24 @@ class _SpotifySavedPlaylistEndpoints(
 ):
     __final__ = True
 
-    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
-    _saved_limit: ClassVar[int] = 50
-    _saved_path: ClassVar[str] = "items"
+    _create_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
 
-    @classmethod
-    @validate_call
-    async def _format_playlist_body(
-            cls, name: str = None, public: bool = None, collaborative: bool = None, description: str = None
-    ) -> JsonSchemaValue:
-        if public and collaborative:
-            raise RequestError("A playlist cannot be both public and collaborative.")
+    _read_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
+    _read_limit: ClassVar[int] = 50
+    _read_path: ClassVar[str] = "items"
 
-        body: JsonSchemaValue = {}
-        if name is not None:
-            body["name"] = name
-        if public is not None:
-            body["public"] = public
-        if collaborative is not None:
-            body["collaborative"] = collaborative
-        if description is not None:
-            body["description"] = description
+    _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
+    _write_limit: ClassVar[int] = 40
 
-        return body
+    @_ApiURISchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    async def add(self, uri: SpotifyApiURI[SpotifyPlaylist], **kwargs) -> None:
+        url = self._write_url.with_query(dict(uris=uri))
+        return await super().add(url)
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def follow(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
-        return await super().follow(url.joinpath("followers"))
+    @_ApiURISchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    async def remove(self, uri: SpotifyApiURI[SpotifyPlaylist], **kwargs) -> None:
+        url = self._write_url.with_query(dict(uris=uri))
+        return await super().remove(url)
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(
@@ -81,9 +72,25 @@ class _SpotifySavedPlaylistEndpoints(
 
         await self._handler.put(url, data=data, headers={"Content-Type": mime})
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def delete(self, url: SpotifyApiURL[SpotifyPlaylist], **kwargs) -> None:
-        return await super().delete(url.joinpath("followers"))
+    @classmethod
+    @validate_call
+    async def _format_playlist_body(
+            cls, name: str = None, public: bool = None, collaborative: bool = None, description: str = None
+    ) -> JsonSchemaValue:
+        if public and collaborative:
+            raise RequestError("A playlist cannot be both public and collaborative.")
+
+        body: JsonSchemaValue = {}
+        if name is not None:
+            body["name"] = name
+        if public is not None:
+            body["public"] = public
+        if collaborative is not None:
+            body["collaborative"] = collaborative
+        if description is not None:
+            body["description"] = description
+
+        return body
 
 
 @final
@@ -94,7 +101,7 @@ class SpotifyPlaylistEndpoints(
 ):
     __final__ = True
 
-    _batch_limit: ClassVar[int] = 100
+    _write_limit: ClassVar[int] = 100
     _extend_path: ClassVar[AliasChoices] = AliasChoices(
         "items",
         AliasPath("items", "items")

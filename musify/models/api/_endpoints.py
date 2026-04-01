@@ -633,8 +633,8 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
 class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
     ReadItemEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT],
 ):
-    _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request to add items to the resource.",
+    _write_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request for writing items.",
     )
     _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
         # description="The type of the items in the collection."
@@ -654,7 +654,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             return 0
 
         if limit is None:
-            limit = self._batch_limit
+            limit = self._write_limit
 
         async def _post_items(batch: Collection) -> None:
             body = self._generate_append_batch_body(batch)
@@ -713,7 +713,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             return 0
 
         if limit is None:
-            limit = self._batch_limit
+            limit = self._write_limit
 
         async def _delete_items(batch: Collection) -> None:
             body = self._generate_remove_batch_body(batch)
@@ -740,13 +740,13 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
 
 
 class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _saved_read_url: ClassVar[URL] = PrivateAttr(
+    _read_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to get the current user's saved items.",
     )
-    _saved_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request for saved items.",
+    _read_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request for reading saved items.",
     )
-    _saved_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
+    _read_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of saved items in the API response. Use '*' for wildcard matching.",
     )
 
@@ -754,24 +754,24 @@ class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     async def get_all(self, limit: PositiveInt | None = None, show_bar: bool = True) -> list[RT]:
         """Get the current user's saved items for this endpoint resource type."""
         if limit is None:
-            limit = self._saved_limit
+            limit = self._read_limit
 
         # we don't know what type of pagination will be used for saved items
         # just get a cursor which returns a url to begin pagination and figure it out later
         adapter = TypeAdapter(InitialCursor.annotation)
-        cursor = adapter.validate_python(dict(url=self._saved_read_url, limit=limit))
+        cursor = adapter.validate_python(dict(url=self._read_url, limit=limit))
 
         # noinspection PyArgumentList
-        items, *_ = await self._get_all_items(cursor, path=self._saved_path, kind=self.type, show_bar=show_bar)
+        items, *_ = await self._get_all_items(cursor, path=self._read_path, kind=self.type, show_bar=show_bar)
         return list(items)
 
 
 class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _saved_write_url: ClassVar[URL] = PrivateAttr(
+    _write_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to modify the current user's saved items.",
     )
-    _batch_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request to add items to the resource.",
+    _write_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request for writing saved items.",
     )
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
@@ -780,16 +780,16 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         item_type = self._get_type_value(self.type)
 
         if not uris:
-            self._handler.log("SKIP", self._saved_write_url, message=f"No {item_type}s given to add")
+            self._handler.log("SKIP", self._write_url, message=f"No {item_type}s given to add")
             return 0
 
         if limit is None:
-            limit = self._batch_limit
+            limit = self._write_limit
 
         async def _post_items(batch: Collection) -> None:
-            body = self._generate_add_batch_body(batch)
+            kwargs = self._generate_add_batch_kwargs(batch)
             message = f"Adding {len(batch):>6} {item_type}s"
-            await self._handler.put(self._saved_write_url, json=body, log_message=message)
+            await self._handler.put(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
         await self.logger.get_asynchronous_iterator(
@@ -801,13 +801,13 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             disable=not show_bar or len(batches) < self._bar_threshold,
         )
 
-        self._handler.log("DONE", self._saved_write_url, message=f"Added {len(uris):>6} {item_type}s")
+        self._handler.log("DONE", self._write_url, message=f"Added {len(uris):>6} {item_type}s")
         return len(uris)
 
     @staticmethod
-    def _generate_add_batch_body(values: Iterable[str]) -> JsonSchemaValue:
+    def _generate_add_batch_kwargs(values: Iterable[Any]) -> dict[str, JsonSchemaValue]:
         """Generate a request body for the API endpoint for batched requests."""
-        return {"ids": list(map(str, values))}
+        return {"json": {"ids": list(map(str, values))}}
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
@@ -815,16 +815,16 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         item_type = self._get_type_value(self.type)
 
         if not uris:
-            self._handler.log("SKIP", self._saved_write_url, message=f"No {item_type}s given to remove")
+            self._handler.log("SKIP", self._write_url, message=f"No {item_type}s given to remove")
             return 0
 
         if limit is None:
-            limit = self._batch_limit
+            limit = self._write_limit
 
         async def _delete_items(batch: Collection) -> None:
-            body = self._generate_remove_batch_body(batch)
+            kwargs = self._generate_remove_batch_kwargs(batch)
             message = f"Removing {len(batch):>6} {item_type}s"
-            await self._handler.delete(self._saved_write_url, json=body, log_message=message)
+            await self._handler.delete(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
         await self.logger.get_asynchronous_iterator(
@@ -836,13 +836,13 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             disable=not show_bar or len(batches) < self._bar_threshold,
         )
 
-        self._handler.log("DONE", self._saved_write_url, message=f"Removed {len(uris):>6} {item_type}s")
+        self._handler.log("DONE", self._write_url, message=f"Removed {len(uris):>6} {item_type}s")
         return len(uris)
 
     @staticmethod
-    def _generate_remove_batch_body(values: Iterable[str]) -> JsonSchemaValue:
+    def _generate_remove_batch_kwargs(values: Iterable[Any]) -> dict[str, JsonSchemaValue]:
         """Generate a request body for the API endpoint for batched requests."""
-        return {"ids": list(map(str, values))}
+        return {"json": {"ids": list(map(str, values))}}
 
 
 class HasEndpoints(RemoteModel):

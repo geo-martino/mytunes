@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import ClassVar, final, Literal, Type, Any
 
 from pydantic import AliasPath, validate_call
@@ -43,12 +44,20 @@ class _SpotifySavedArtistEndpoints(
 ):
     __final__ = True
 
-    _saved_read_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
-    _saved_write_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
-    _saved_limit: ClassVar[int] = 50
-    _saved_path: ClassVar[AliasPath] = AliasPath("artists", "items")
+    _read_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
+    _read_limit: ClassVar[int] = 50
+    _read_path: ClassVar[AliasPath] = AliasPath("artists", "items")
 
-    _batch_limit: ClassVar[int] = 50
+    _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
+    _write_limit: ClassVar[int] = 40
+
+    @staticmethod
+    def _generate_add_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
+        return {"params": {"uris": ",".join(map(str, values))}}
+
+    @staticmethod
+    def _generate_remove_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
+        return {"params": {"uris": ",".join(map(str, values))}}
 
 
 @final
