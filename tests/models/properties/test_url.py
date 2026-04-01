@@ -8,7 +8,7 @@ from musify.models.url import HttpURL
 
 
 class TestURLSchema:
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter[HttpURL]:
         return TypeAdapter(HttpURL)
 

@@ -21,7 +21,7 @@ class TestUniqueSequence:
         assert sequence._items
         return sequence
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter:
         return TypeAdapter(UniqueSequence)
 

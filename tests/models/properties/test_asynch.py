@@ -7,7 +7,7 @@ from musify.models.properties.asynch import SemaphoreT
 
 
 class TestSemaphoreSchema:
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter[SemaphoreT]:
         return TypeAdapter(SemaphoreT)
 

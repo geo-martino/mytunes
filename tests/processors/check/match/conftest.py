@@ -24,6 +24,9 @@ from tests.processors.utils import MockCollection
 from tests.utils import SimpleURI
 
 
+CheckerPage.wait_after_add = 0
+
+
 @pytest.fixture
 def page(position: Position, collections: Collection[CollectionModel], api: RemoteAPI) -> CheckerPage:
     return CheckerPage(position=position, api=api, collections=collections)

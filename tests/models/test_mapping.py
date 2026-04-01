@@ -22,7 +22,7 @@ class TestUniqueMapping:
         assert mapping._items
         return mapping
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter:
         return TypeAdapter(UniqueMapping)
 

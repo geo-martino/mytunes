@@ -2,10 +2,10 @@ import asyncio
 from collections.abc import Iterable, Collection
 from collections.abc import MutableMapping
 from copy import deepcopy
-from typing import Self, Any
+from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
-from pydantic import Field, field_validator, PrivateAttr
+from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
 from termcolor import colored
 
 from musify.exception import MusifyError
@@ -33,6 +33,9 @@ type _ApiT = RemoteAPI | HasPlaylistEndpoints[
 
 
 class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncOperations):
+    #: The time to wait after adding tracks to a playlist on setup.
+    wait_after_add: ClassVar[PositiveFloat] = 0.8
+
     position: Position = Field(
         description="The current position of this page in the check process."
     )
@@ -170,7 +173,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             await api.add(playlist.uri.api_url, uris=uris, show_bar=False)
 
             # WORKAROUND: it seems some APIs need some time between adding and getting items
-            await asyncio.sleep(0.8)
+            await asyncio.sleep(self.wait_after_add)
 
             # should help force an extension
             playlist.cursor = InitialCursor.from_url(playlist.cursor.url, source=playlist.source)

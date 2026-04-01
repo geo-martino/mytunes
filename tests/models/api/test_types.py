@@ -55,15 +55,15 @@ class ApiSchemaTester[T](metaclass=ABCMeta):
 
 
 class TestApiURLSchema(ApiSchemaTester[URL]):
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter:
         return TypeAdapter(_ApiURLSchema[SimpleURI, MockRemoteResource])
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def uri(self, faker: Faker) -> URI:
         return SimpleURI.create_random(MockRemoteResource.type)
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def expected(self, uri: URI) -> URL:
         return uri.api_url
 
@@ -73,15 +73,15 @@ class TestApiURLSchema(ApiSchemaTester[URL]):
 
 
 class TestApiURISchema(ApiSchemaTester[URI]):
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter:
         return TypeAdapter(_ApiURISchema[SimpleURI, MockRemoteResource])
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def uri(self, faker: Faker) -> URI:
         return SimpleURI.create_random(MockRemoteResource.type)
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def expected(self, uri: URI) -> URI:
         return uri
 
