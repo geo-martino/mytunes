@@ -91,7 +91,7 @@ class RemoteLibrary[
                 continue
 
             pl_backup = pl.model_dump(exclude={"tracks"})
-            pl_backup["tracks"] = [str(track.uri) for track in pl.tracks]
+            pl_backup["tracks"] = [str(track.uri) for track in pl.tracks.unique]
             playlists.append(pl_backup)
 
         return {

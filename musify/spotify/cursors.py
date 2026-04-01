@@ -8,6 +8,7 @@ from musify.models.metadata import Attribute
 from musify.spotify import SpotifyModel
 
 
+# noinspection PyAbstractClass
 class SpotifyPageCursor(PageCursor, SpotifyModel):
     pass
 

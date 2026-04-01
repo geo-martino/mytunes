@@ -1,4 +1,4 @@
-from collections.abc import
+from collections.abc import Collection
 from typing import Literal, Annotated
 
 from pydantic import NonNegativeInt, Field

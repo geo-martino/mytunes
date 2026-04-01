@@ -161,6 +161,7 @@ class URI(RootModel[str]):
         return str(self) < str(other)
 
 
+# noinspection PyAbstractClass
 class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
     # not sure how to define this in a way that works for both without causing issues with pydantic...
     # this is either a field or property in child classes so have put this for type checking only for now

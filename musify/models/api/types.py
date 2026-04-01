@@ -279,5 +279,6 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
         return decorator
 
+
 type ApiURI[UT: URI, MT: HasURI] = Annotated[UT, _ApiURISchema[UT, MT]]
 type ApiURISequence[UT: URI, MT: HasURI] = Sequence[ApiURI[UT, MT]]

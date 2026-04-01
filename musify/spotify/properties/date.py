@@ -10,7 +10,7 @@ from musify.models.properties.date import HasAddedDate
 class HasSpotifyAddedDate(HasAddedDate):
     @model_validator(mode="after")
     def _set_added_at_from_items(self) -> Self:
-        if not isinstance(self, RemoteCollection) or self.count == 0 or not self.has_all_items :
+        if not isinstance(self, RemoteCollection) or self.count == 0 or not self.has_all_items:
             return self
         if not all(isinstance(item, HasAddedDate) and item.added_at is not None for item in self._items):
             return self

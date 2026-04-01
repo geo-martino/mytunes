@@ -147,7 +147,6 @@ class LocalLibrary(
         """List of errors encountered while loading the library."""
         return self._errors
 
-
     @field_validator("playlist_filter", mode="before", check_fields=True)
     @staticmethod
     def _convert_playlist_names_to_filter[T: str | Iterable[str]](names: T) -> T | ValuesFilter[str]:

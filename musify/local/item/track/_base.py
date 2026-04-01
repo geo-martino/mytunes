@@ -425,7 +425,10 @@ class LocalTrack[FT: FileType](
             return []
         if missing_images := set(context.loaded_images) - set(self.images or ()):
             # noinspection PyUnboundLocalVariable
-            raise FileError(self.path, f"Some image types are missing from the loaded images: {", ".join(missing_images)}")
+            raise FileError(
+                self.path,
+                f"Some image types are missing from the loaded images: {", ".join(missing_images)}"
+            )
 
         return [
             self.EmbeddedImage.from_image_model(model).build(context.loaded_images[kind])

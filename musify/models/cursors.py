@@ -14,6 +14,7 @@ from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
 
+# noinspection PyAbstractClass
 @total_ordering
 class PageCursor(RemoteModel):
     """A page cursor for paginated API responses."""
@@ -146,6 +147,7 @@ class HasPageCursor[CT: PageCursor](RemoteModel):
     )
 
 
+# noinspection PyAbstractClass
 class ReversiblePageCursor(PageCursor):
     """A page cursor that can be reversed to produce the previous cursor."""
     @property
@@ -197,6 +199,7 @@ class IterablePageCursor(PageCursor):
         raise NotImplementedError
 
 
+# noinspection PyAbstractClass
 class _HasLimitParam(PageCursor):
     _limit_param_key: ClassVar[str] = "limit"
 

@@ -25,8 +25,8 @@ class GenreReadItemsEndpoints[UT: URI, RT: RemoteGenre](
     pass
 
 
-class GenreReadCollectionEndpoints[UT: URI, RT: RemoteGenreCollection](
-    GenreEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT]
+class GenreReadCollectionEndpoints[UT: URI, RT: RemoteGenreCollection, IT: RemoteGenre](
+    GenreEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT]
 ):
     type: ClassVar[Type] = RemoteGenreCollection
 

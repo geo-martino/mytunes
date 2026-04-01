@@ -31,11 +31,11 @@ class AudioStoreMetaclass(ModelMetaclass):
 # noinspection PyAbstractClass
 class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
     """Formats the url for an online store for querying and purchasing audio files."""
+    __final__ = False  # WORKAROUND: for typing on __init__
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (ResourceModel,)
 
     def __init__(self, /, **data: Any) -> None:
-        if not is_final(self):
-            print(data, self.__final__)
+        if not self.__final__:
             super().__init__(**data)
             return
 
