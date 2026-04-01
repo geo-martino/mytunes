@@ -15,11 +15,10 @@ from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
 from tests.conftest import LogCapturer
-from tests.libraries.remote.core.processors.utils import patch_input
 from tests.models.testers import BaseModelTester
 from tests.processors.check.match.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
 from tests.processors.utils import assert_help_text, MockCollection
-from tests.utils import SimpleURI, split_list
+from tests.utils import SimpleURI, split_list, patch_input
 
 
 class TestInputMatch(BaseModelTester):

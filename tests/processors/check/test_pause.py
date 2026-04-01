@@ -15,8 +15,8 @@ from musify.models.item.track import RemoteTrack
 from musify.processors.check import Checker
 from musify.processors.check._page import CheckerPage
 from tests.conftest import LogCapturer
-from tests.libraries.remote.core.processors.utils import patch_input
 from tests.processors.utils import MockCollection, assert_help_text
+from tests.utils import patch_input
 
 
 class TestCheckerPause:

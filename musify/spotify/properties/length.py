@@ -19,5 +19,5 @@ class HasSpotifyLength(HasLength):
 
         length = Length(sum(float(item.length) for item in self._items))
         if length != self.length:
-            self.length = length
+            self.__dict__["length"] = length
         return self

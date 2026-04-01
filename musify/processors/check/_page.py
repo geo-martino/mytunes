@@ -209,9 +209,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         message = f"Deleting {len(playlists)} temporary playlists"
         self.logger.extra(message, header=3)
 
-        for playlist in playlists:
-            print("DELETE PLAYLIST", playlist.name, playlist.uri, playlist.count)
-
         self.logger.extra(message, header=3)
         uris = {pl.uri for pl in playlists}
         api: PlaylistWriteSavedEndpoints = self.api.playlists.saved
@@ -223,7 +220,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             del self._playlists_initial[uri]
 
     async def _restore_playlist(self, playlist: RemoteMutablePlaylist) -> None:
-        print("RESTORING PLAYLIST", playlist.name, playlist.uri, playlist.count)
         async with self.concurrency:
             # playlist existed before the check and should be returned to its original state
             await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)

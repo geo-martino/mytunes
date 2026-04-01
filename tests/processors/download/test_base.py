@@ -19,8 +19,8 @@ from musify.processors.download.stores.juno_download import JunoDownloadStore
 from musify.processors.download.stores.qobuz import QobuzStore
 from musify.processors.download.stores.seven_digital import SevenDigitalStore
 from tests.conftest import LogCapturer
-from tests.libraries.remote.core.processors.utils import patch_input
 from tests.models.testers import BaseModelTester
+from tests.utils import patch_input
 
 
 class TestStoreManager(BaseModelTester):

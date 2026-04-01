@@ -183,7 +183,7 @@ def test_copy(logger: Logger):
 
 
 def test_logger_set():
-    assert logging.getLevelName("INFO_EXTRA") == EXTRA
+    assert logging.getLevelName("EXTRA") == EXTRA
     assert logging.getLevelName("REPORT") == REPORT
     assert logging.getLevelName("STAT") == STAT
 

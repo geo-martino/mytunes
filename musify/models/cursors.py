@@ -70,7 +70,7 @@ class PageCursor(RemoteModel):
             url = self.url.update_query({key: value})
 
         if url != self.url:  # only set if different to avoid validation loops
-            self.url = url
+            self.__dict__["url"] = url
 
     @property
     @abstractmethod
@@ -284,7 +284,7 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
             yield cursor
             cursor = cursor.next
 
-    def reset(self, offset: NonNegativeInt, **kwargs) -> None:
+    def reset(self, offset: NonNegativeInt = 0) -> None:
         """Resets the cursor to the given offset. Handles negative offsets safely by setting the offset to 0."""
         self.offset = max(0, offset)
 

@@ -194,6 +194,6 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
         field_value = getattr(self, field_name)
         clean_value = self.__class__.get_clean_processor_name(field_value)
         if clean_value != field_value:
-            setattr(self, field_name, clean_value)
+            self.__dict__[field_name] = clean_value
 
         return self

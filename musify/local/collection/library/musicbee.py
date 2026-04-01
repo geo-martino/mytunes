@@ -109,7 +109,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
         path = self.musicbee_folder.joinpath(self.playlist_folder)
         if path.is_dir():
-            self.playlist_folder = path
+            self.__dict__["playlist_folder"] = path
 
         return self
 

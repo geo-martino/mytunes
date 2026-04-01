@@ -25,7 +25,7 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
 
     tracks: Annotated[UniqueSequence[str, SpotifyTrack], Attribute()] = Field(
         description="The tracks on this album.",
-        default_factory=list,
+        default_factory=UniqueSequence[str, SpotifyTrack],
         validation_alias=AliasPath("tracks", "items")
     )
 
@@ -41,14 +41,14 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
     def _set_album_data_to_tracks(self) -> Self:
         for track in self.tracks:
             if track.album is None:
-                track.album = SpotifyAlbum(**self.model_dump())
+                track.__dict__["album"] = SpotifyAlbum(**self.model_dump())
 
             if track.released_at != self.released_at:
-                track.released_at = self.released_at
+                track.__dict__["released_at"] = self.released_at
             if track.track is not None and track.track.total != self.track_total:
-                track.track.total = self.track_total
+                track.track.__dict__["total"] = self.track_total
             if track.disc is not None and track.disc.total != self.disc_total:
-                track.disc.total = self.disc_total
+                track.disc.__dict__["total"] = self.disc_total
 
         return self
 

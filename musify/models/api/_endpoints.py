@@ -236,7 +236,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
         while cursor.next is not None:
             cursor: PageCursor = cursor.next
-            response = await self._get_page(cursor, item_type=item_type)
+            response = await self._get_page(cursor, item_type=item_type, path=path)
 
             response_items = self._get_items_from_response(response=response, path=path)
             await self._cache_responses(response_items)
@@ -246,6 +246,8 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             )
 
             cursor = cursor.get_cursor_from_response(response=response, path=path)
+            print("IMTES", len(items))
+            print("CURSOR", cursor)
 
             if cursor.next == cursor:
                 raise CursorResponseError(
@@ -258,9 +260,11 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 response_items, cursor = await self._get_all_items_by_generation(
                     cursor, path=path, kind=kind, show_bar=show_bar
                 )
+                print("GEN", len(response_items))
                 items.extend(response_items)
                 break
 
+        print("FINL", len(items))
         return tuple(items), cursor
 
     # TODO: migrate this to aiorequestful v2
@@ -289,13 +293,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         desc_type = f"{collection_type} {item_type}" if item_type != collection_type else collection_type
 
         responses: list[JSON] = await self.logger.get_asynchronous_iterator(
-            map(functools.partial(self._get_page, item_type=item_type), cursors),
+            map(functools.partial(self._get_page, item_type=item_type, path=path), cursors),
             desc=f"Getting {desc_type}s",
             unit="pages",
             initial=0,
             total=len(cursors),
             disable=not show_bar or len(cursors) < self._bar_threshold,
         )
+
+        print("COUNTS", [len(self._get_items_from_response(response=res, path=path)) for res in responses])
+        print("COUNTS", sum([len(self._get_items_from_response(response=res, path=path)) for res in responses]))
 
         cursors = cursor.sort_responses(responses, path=path)
         response_items = [
@@ -311,13 +318,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return tuple(items), cursors[-1]
 
     # TODO: migrate this to aiorequestful v2
-    async def _get_page(self, page: PageCursor, item_type: str) -> JsonSchemaValue:
+    async def _get_page(self, page: PageCursor, item_type: str, path) -> JsonSchemaValue:
         """Thin wrapper for sending a get request from a page cursor while also formatting a log message"""
         log_message = None
         if isinstance(page, IndexCursor):
             log_message = f"{page.offset:>6}/{page.total:<6} {item_type}s"
 
-        return await self._handler.get(page.url, log_message=log_message)
+        p = await self._handler.get(page.url, log_message=log_message)
+        print("IMTES", len(self._get_items_from_response(response=p, path=path)))
+        print("CURSOR", page.get_cursor_from_response(response=p, path=path))
+        return p
 
     # TODO: migrate this to aiorequestful v2
     @classmethod

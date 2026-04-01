@@ -18,5 +18,5 @@ class HasSpotifyAddedDate(HasAddedDate):
         # assume the first added item is the date this collection was added
         added_at: datetime = min(item.added_at for item in self._items)
         if added_at != self.added_at:
-            self.added_at = added_at
+            self.__dict__["added_at"] = added_at
         return self

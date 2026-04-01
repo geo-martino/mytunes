@@ -81,7 +81,7 @@ class Comparer(DynamicProcessor):
             return self
 
         try:
-            self.expected = TimeMapper.model_validate(self.expected)
+            self.__dict__["expected"] = TimeMapper.model_validate(self.expected)
         except ValueError:
             pass
 
@@ -133,7 +133,7 @@ class Comparer(DynamicProcessor):
 
         annotation = get_type_hints(self._processor_method.func, include_extras=True)
         if "expected" not in annotation:  # doesn't take an expected value
-            self.expected = None
+            self.__dict__["expected"] = None
 
         return self
 
@@ -197,7 +197,7 @@ class Comparer(DynamicProcessor):
 
         # need to explicitly compare types in this way as isinstance(False, int) is True
         if type(value) != type(self.expected) or value != self.expected:
-            self.expected = value
+            self.__dict__["expected"] = value
 
     def __call__(self, *args, **kwargs) -> bool:
         return self.compare(*args, **kwargs)

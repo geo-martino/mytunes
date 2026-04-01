@@ -90,7 +90,7 @@ class SpotifyTrack(
             return self
 
         if set(self.album.images) ^ set(self.images or {}):
-            self.images = self.album.images | (self.images or {})
+            self.__dict__["images"] = self.album.images | (self.images or {})
         return self
 
     @field_validator("length", mode="before", check_fields=True)

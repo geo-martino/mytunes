@@ -249,7 +249,7 @@ class HasMutableURI(HasURI):
     def _set_source_from_uri(self) -> Self:
         if self.source is None and len(set(source := uri.source for uri in self.uris)) == 1:
             # noinspection PyTypeChecker
-            self.source = source
+            self.__dict__["source"] = source
         return self
 
     # noinspection PyNestedDecorators

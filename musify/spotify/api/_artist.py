@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import ClassVar, final, Literal, Type, Any
+from typing import ClassVar, final, Literal, Type, Any, get_args
 
 from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
@@ -13,10 +13,14 @@ from musify.models.cursors import PageCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
-from musify.spotify.cursors import SpotifyInitialCursor
+from musify.spotify.cursors import SpotifyInitialCursor, SpotifyIndexCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI
+
+
+_ALBUM_TYPE = Literal["album", "single", "compilation", "appears_on"]
+_ALL_ALBUM_TYPES = get_args(_ALBUM_TYPE)
 
 
 class _SpotifyArtistEndpoints(
@@ -78,15 +82,26 @@ class SpotifyArtistEndpoints(
     async def get_all(
             self,
             collection: SpotifyArtistCollection | PageCursor,
-            types: set[Literal["album", "single", "compilation", "appears_on"]] | None = None,
+            types: set[_ALBUM_TYPE] = _ALL_ALBUM_TYPES,
             show_bar: bool = True,
-    ) -> list[SpotifyArtist]:
-        query = {"include_groups": ",".join(types)} if types else {}
-        match collection:
-            case PageCursor() as cursor:
-                pass
-            case SpotifyArtistCollection() as artist:
-                cursor = artist.cursor
+    ) -> list[SpotifyAlbum]:
+        albums: list[SpotifyAlbum] = []
 
-        cursor.url = cursor.url.update_query(query)
-        return await super().get_all(collection, show_bar=show_bar)
+        # TODO: test me after rate limit
+        for album_type in types:
+            match collection:
+                case PageCursor() as cursor:
+                    pass
+                case SpotifyArtistCollection() as artist:
+                    cursor = SpotifyInitialCursor(url=artist.cursor.url)
+
+            if isinstance(cursor, SpotifyIndexCursor):
+                cursor.reset()
+
+            cursor = SpotifyInitialCursor(url=cursor.url.without_query_params())
+
+            query = {"include_groups": album_type}
+            cursor.url = cursor.url.update_query(query)
+            albums.extend(await super().get_all(cursor, show_bar=show_bar))
+
+        return albums

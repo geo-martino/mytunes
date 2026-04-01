@@ -383,7 +383,7 @@ class LocalTrack[FT: FileType](
                 uris.append(uri)
 
         if values != self.uris:
-            self.uris = uris
+            self.__dict__["uris"] = set(uris)
         return self
 
     def _extend_with_uris(self, values: MutableSequence[Any], info: FieldSerializationInfo) -> None:

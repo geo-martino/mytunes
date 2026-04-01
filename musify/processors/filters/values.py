@@ -120,7 +120,7 @@ class PathFilter(ValueFilter[str]):
 
         values = set(self.path_mapper.unmap_many(self.values, check_existence=False))
         if values != self.values:
-            self.values = values
+            self.__dict__["values"] = values
         return self
 
     @validate_call
