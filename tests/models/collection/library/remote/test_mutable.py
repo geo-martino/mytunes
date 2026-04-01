@@ -1,7 +1,7 @@
 from asyncio import Semaphore
 from collections import namedtuple
-from collections.abc import Collection
-from typing import ClassVar, get_args, Generator, Any
+from collections.abc import Collection, Generator
+from typing import ClassVar, get_args, Any
 from unittest.mock import patch, AsyncMock, Mock
 
 import pytest

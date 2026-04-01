@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterable
 from copy import deepcopy
 from random import sample
-from typing import Iterable, Any
+from typing import Any
 
 import pytest
 from musify.base import MusifyItem

@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter, \
     HttpUrl
+from typing_inspection.typing_objects import is_final
 from yarl import URL
 
 from musify._types import StrippedString
@@ -30,11 +31,11 @@ class AudioStoreMetaclass(ModelMetaclass):
 # noinspection PyAbstractClass
 class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
     """Formats the url for an online store for querying and purchasing audio files."""
-
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (ResourceModel,)
 
     def __init__(self, /, **data: Any) -> None:
-        if not self.__final__:
+        if not is_final(self):
+            print(data, self.__final__)
             super().__init__(**data)
             return
 

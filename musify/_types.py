@@ -105,6 +105,7 @@ def get_base_types(
             ano = annotation.__value__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case _ if is_annotated(get_origin(annotation)):
+            # noinspection PyUnresolvedReferences
             ano = annotation.__origin__
             bases.extend(get_base_types(ano, ignore_none=ignore_none, resolve_generics=resolve_generics))
         case _:

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from functools import total_ordering
-from typing import ClassVar, Iterable, Any, Self
+from typing import ClassVar, Any, Self
 
 from pydantic import PrivateAttr, ValidationError
 

@@ -1,4 +1,5 @@
-from typing import Any, Annotated, Collection
+from collections.abc import Collection
+from typing import Any, Annotated
 
 from pydantic import Field, computed_field, validate_call
 

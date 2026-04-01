@@ -1,10 +1,10 @@
 import os
 from abc import abstractmethod
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Iterable, Mapping, MutableMapping
 from datetime import datetime
 from os import sep
 from pathlib import Path, PurePath
-from typing import Any, Iterable, Annotated, Self, Union, cast
+from typing import Any, Annotated, Self, Union, cast
 
 import mutagen
 from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator

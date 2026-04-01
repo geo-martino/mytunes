@@ -1,9 +1,9 @@
 from abc import abstractmethod
-from collections.abc import MutableMapping, Mapping
+from collections.abc import MutableMapping, Mapping, Generator
 from contextlib import suppress
 from copy import deepcopy
 from functools import total_ordering
-from typing import ClassVar, Any, Self, Generator, Union, Annotated
+from typing import ClassVar, Any, Self, Union, Annotated
 
 from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices
 

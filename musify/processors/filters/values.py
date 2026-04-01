@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Annotated, Iterable, Mapping, Any, Iterator, Self
+from collections.abc import Iterable
+from typing import Annotated
 
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
 

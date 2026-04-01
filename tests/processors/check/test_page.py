@@ -1,5 +1,6 @@
+from collections.abc import Generator, Sequence
 from copy import deepcopy
-from typing import Generator, Sequence, Any
+from typing import Any
 from unittest.mock import Mock, patch, AsyncMock
 
 import pytest

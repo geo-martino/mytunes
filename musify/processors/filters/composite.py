@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Collection, Iterator, Any
+from collections.abc import Collection, Iterator
+from typing import Any
 
 from pydantic import Field, validate_call
 

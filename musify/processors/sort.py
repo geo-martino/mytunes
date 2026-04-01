@@ -2,11 +2,11 @@
 Processor that sorts the given collection of items based on given configuration.
 """
 import re
-from collections.abc import MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence
+from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
-from typing import Any, Literal, Annotated, Mapping
+from typing import Any, Literal, Annotated
 
 from pydantic import Field, field_validator, field_serializer
 

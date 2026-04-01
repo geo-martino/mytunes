@@ -1,4 +1,5 @@
-from typing import Literal, Collection, Annotated
+from collections.abc import
+from typing import Literal, Annotated
 
 from pydantic import NonNegativeInt, Field
 from pydantic.json_schema import JsonSchemaValue

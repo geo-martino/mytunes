@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from functools import reduce
-from typing import Any, cast, Iterable, Self, get_type_hints
+from typing import Any, cast, Self, get_type_hints
 
 from pydantic.fields import FieldInfo
 

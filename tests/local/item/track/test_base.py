@@ -1,10 +1,9 @@
 from argparse import Namespace
 from asyncio import Semaphore
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from datetime import date
 from pathlib import Path
 from random import choice, sample
-from typing import Any, Sequence
 from unittest.mock import patch, AsyncMock, Mock
 
 import mutagen

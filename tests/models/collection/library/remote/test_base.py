@@ -1,4 +1,4 @@
-from typing import Collection
+from collections.abc import Collection
 from unittest.mock import Mock
 
 import pytest

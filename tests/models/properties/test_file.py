@@ -13,21 +13,23 @@ from musify.models.properties.file import IsLocalFile, PathMapper, PathStemMappe
 from tests.models.testers import BaseModelTester
 
 
+SYSTEM_TYPES = Literal["linux", "windows"]
+
 def _generate_file_paths(
-        faker: Faker, system: Literal["linux", "windows"] = None, count: int = 20
+        faker: Faker, system: SYSTEM_TYPES = None, count: int = 20
 ) -> Iterator[PurePath]:
     if system is None:
-        system: Literal["linux", "windows"] = "linux" if isinstance(Path.home(), PosixPath) else "windows"
+        system: SYSTEM_TYPES = "linux" if isinstance(Path.home(), PosixPath) else "windows"
 
     path_iter = (faker.file_path(depth=4, category="audio", file_system_rule=system) for _ in range(count))
     return map(PurePosixPath, path_iter) if system == "linux" else map(PureWindowsPath, path_iter)
 
 
 def _generate_directory_paths(
-        faker: Faker, system: Literal["linux", "windows"] = None, count: int = 20
+        faker: Faker, system: SYSTEM_TYPES = None, count: int = 20
 ) -> Iterator[PurePath]:
     if system is None:
-        system: Literal["linux", "windows"] = "linux" if isinstance(Path.home(), PosixPath) else "windows"
+        system: SYSTEM_TYPES = "linux" if isinstance(Path.home(), PosixPath) else "windows"
 
     return (path.parent for path in _generate_file_paths(faker, system=system, count=count))
 

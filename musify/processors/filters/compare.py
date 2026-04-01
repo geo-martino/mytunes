@@ -1,4 +1,5 @@
-from typing import Mapping, Self, Iterable, Any
+from collections.abc import Iterable, Mapping
+from typing import Self, Any
 
 from pydantic import Field, field_validator, field_serializer, validate_call
 
