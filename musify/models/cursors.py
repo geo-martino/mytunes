@@ -269,7 +269,7 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
     def next(self) -> Self | None:
         """The cursor for the next page of items, if any."""
         next_offset = self.offset + self.limit
-        if self.total == 0 or next_offset > self.total:
+        if self.total == 0 or next_offset >= self.total:
             return None
 
         url = self.url.update_query(limit=self.limit, offset=next_offset)

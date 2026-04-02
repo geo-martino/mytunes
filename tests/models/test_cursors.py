@@ -171,7 +171,7 @@ class TestIndexCursor(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> IndexCursor:
         offset = faker.random_int()
-        limit = faker.random_int(1, offset // 5)
+        limit = faker.random_int(1, offset // 5) if offset / 5 > 1 else 1
         total = offset + limit * 5
 
         return IndexCursor(url=faker.url(), offset=offset, limit=limit, total=total)
@@ -240,7 +240,7 @@ class TestIndexCursor(BaseModelTester):
 
     def test_iter_pages(self, model: IndexCursor):
         pages = math.ceil((model.total - model.offset) / model.limit)
-        expected_offsets = [model.offset + (model.limit * i) for i in range(1, pages + 1)]
+        expected_offsets = [model.offset + (model.limit * i) for i in range(1, pages)]
         expected_urls = [model.url.update_query(offset=offset) for offset in expected_offsets]
 
         result = list(model.iter_pages)

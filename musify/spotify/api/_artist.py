@@ -83,23 +83,12 @@ class SpotifyArtistEndpoints(
             types: set[_ALBUM_TYPE] = _ALL_ALBUM_TYPES,
             show_bar: bool = True,
     ) -> list[SpotifyAlbum]:
-        albums: list[SpotifyAlbum] = []
+        match collection:
+            case PageCursor() as cursor:
+                pass
+            case SpotifyArtistCollection() as artist:
+                cursor = artist.cursor
 
-        # TODO: test me after rate limit
-        for album_type in types:
-            match collection:
-                case PageCursor() as cursor:
-                    pass
-                case SpotifyArtistCollection() as artist:
-                    cursor = SpotifyInitialCursor(url=artist.cursor.url)
-
-            if isinstance(cursor, SpotifyIndexCursor):
-                cursor.reset()
-
-            cursor = SpotifyInitialCursor(url=cursor.url.without_query_params())
-
-            query = {"include_groups": album_type}
-            cursor.url = cursor.url.update_query(query)
-            albums.extend(await super().get_all(cursor, show_bar=show_bar))
-
-        return albums
+        query = {"include_groups": ",".join(map(str, types))}
+        cursor.url = cursor.url.update_query(query)
+        return await super().get_all(cursor, show_bar=show_bar)

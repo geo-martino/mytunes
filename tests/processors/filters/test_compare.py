@@ -100,16 +100,19 @@ class TestComparerFilter(FilterTester):
         model.match_all = False
 
         comparer_1_sub = MagicMock()
+        comparer_1_sub.combine_all = True
         comparer_1_sub.check.return_value = True
-        model.comparers[comparers[0]] = (True, comparer_1_sub)
+        model.comparers[comparers[0]] = comparer_1_sub
 
         comparer_2_sub = MagicMock()
+        comparer_2_sub.combine_all = False
         comparer_2_sub.check.return_value = False
-        model.comparers[comparers[1]] = (False, comparer_2_sub)
+        model.comparers[comparers[1]] = comparer_2_sub
 
         comparer_3_sub = MagicMock()
+        comparer_3_sub.combine_all = True
         comparer_3_sub.check.return_value = False
-        model.comparers[comparers[2]] = (True, comparer_3_sub)
+        model.comparers[comparers[2]] = comparer_3_sub
 
         track.name = "track name"
         track.released_at = SparseDate(year=2025, month=1, day=1)

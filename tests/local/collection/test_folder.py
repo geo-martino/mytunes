@@ -43,6 +43,9 @@ class TestFolder(NoUniqueKeyTester):
         for track in expected:
             track.path = parent.joinpath(track.path.name)
 
+        # add any other tracks present that have the same folder name
+        expected.extend(track for track in tracks if track not in expected and track.folder == parent.name)
+
         album = Folder(name=parent.name, tracks=tracks)
         assert sorted(album.tracks) == sorted(expected)
 

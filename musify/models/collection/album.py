@@ -82,6 +82,10 @@ class RemoteAlbumCollection[UT: URI, TT: RemoteTrack, RT: RemoteArtist, GT: Remo
     def track_total(self) -> PositiveInt | None:
         return self.cursor.total
 
+    def _clear(self) -> None:
+        # noinspection PyProtectedMember
+        self.tracks._replace(())
+
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasAlbumEndpoints[AlbumReadCollectionEndpoints]) -> None:
         # noinspection PyProtectedMember

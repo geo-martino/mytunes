@@ -330,9 +330,9 @@ class TestXAutoPF(LocalPlaylistTester):
         assert not model.tracks
         assert model.description == xml.smart_playlist.source.description
 
-        assert model.matcher == xml.smart_playlist.create_matcher(path_mapper=model.path_mapper)
-        assert model.limiter == xml.smart_playlist.source.limit.create_limiter()
-        assert model.sorter == xml.smart_playlist.create_sorter()
+        assert model.matcher == xml.smart_playlist.build_matcher(path_mapper=model.path_mapper)
+        assert model.limiter == xml.smart_playlist.source.limit.build_limiter()
+        assert model.sorter == xml.smart_playlist.build_sorter()
 
         mock_match = mocker.spy(model, "_match_tracks")
         mock_limit = mocker.spy(model, "_limit_tracks")
@@ -459,22 +459,22 @@ class TestXMLCondition(BaseModelTester):
         model.field = choice(tuple(model.name_field_map))
 
     def test_validate_only_and_either_or_set(self, model: _XMLCondition):
-        assert model.And is None and model.Or is None
-        model.And = _XMLConditions()
+        assert model.and_conditions is None and model.or_conditions is None
+        model.and_conditions = _XMLConditions()
         with pytest.raises(ValidationError):
-            model.Or = _XMLConditions()
+            model.or_conditions = _XMLConditions()
 
-        model.And = None
-        model.Or = _XMLConditions()
+        model.and_conditions = None
+        model.or_conditions = _XMLConditions()
         with pytest.raises(ValidationError):
-            model.And = _XMLConditions()
+            model.and_conditions = _XMLConditions()
 
     def test_build_comparer(self, model: _XMLCondition):
         model.field = "TrackNo"
         model.comparison = "IsIn"
         model.value = ["a", "b", "c"]
 
-        comparer = model.comparer
+        comparer = model.build_comparer()
         assert comparer == Comparer(
             field="track.number",
             condition="IsIn",
@@ -495,27 +495,29 @@ class TestXMLCondition(BaseModelTester):
         assert model.value == ["an album"]
 
     def test_parse_sub_comparers(self, model: _XMLCondition):
-        assert model.And is None and model.Or is None
-        comparers = ComparerFilter()
+        assert model.and_conditions is None and model.or_conditions is None
+        comparers = ComparerFilter(combine_all=True)
 
         # comparers aren't ready
-        model.Or = _XMLConditions()
-        model.parse_sub_comparers(combine=True, comparers=comparers)
-        assert model.And is None and model.Or is None
-        assert model.Or is None
+        model.or_conditions = _XMLConditions()
+        model.parse_sub_comparers(comparers=comparers)
+        assert model.and_conditions is None and model.or_conditions is None
+        assert model.or_conditions is None
 
         comparer = Comparer(
             field="album.artist",
             condition="ends_with",
             expected="an album",
         )
-        comparers = ComparerFilter(comparers=comparer)
-        model.Or = _XMLConditions()
+        model.or_conditions = _XMLConditions()
 
-        model.parse_sub_comparers(combine=True, comparers=comparers)
-        assert model.And is not None and model.Or is None
-        model.parse_sub_comparers(combine=False, comparers=comparers)
-        assert model.And is None and model.Or is not None
+        comparers = ComparerFilter(comparers=comparer, combine_all=True)
+        model.parse_sub_comparers(comparers=comparers)
+        assert model.and_conditions is not None and model.or_conditions is None
+
+        comparers = ComparerFilter(comparers=comparer, combine_all=False)
+        model.parse_sub_comparers(comparers=comparers)
+        assert model.and_conditions is None and model.or_conditions is not None
 
     def test_parse_xml(self, adapter: TypeAdapter[_XMLCondition]):
         xml = {"@Comparison": "InRange", "@Field": "TrackNo", "@Value1": "10", "@Value2": "20"}
@@ -528,48 +530,51 @@ class TestXMLConditions(BaseModelTester):
     def model(self) -> _XMLConditions:
         return _XMLConditions()
 
-    def test_build_comparers(self, model: _XMLConditions):
+    def test_build_comparers(self, model: _XMLConditions, faker: Faker):
         condition1 = _XMLCondition(
             field="TrackNo",
             comparison="IsIn",
             value=["a", "b", "c"],
-            And=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])]),
+            and_conditions=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])]),
         )
         condition2 = _XMLCondition(
             field="Album Artist",
             comparison="EndsWith",
             value=["an album"],
-            Or=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])])
+            or_conditions=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])])
         )
 
         model.condition = [condition1, condition2]
         model.combine_method = choice(("All", "Any"))
+        combine_all = faker.boolean()
 
-        assert model.comparers == ComparerFilter[LocalTrack](
+        expected = ComparerFilter[LocalTrack](
             comparers={
-                condition1.comparer: (True, condition1.And.comparers),
-                condition2.comparer: (False, condition2.Or.comparers),
+                condition1.build_comparer(): condition1.and_conditions.build_filter(True),
+                condition2.build_comparer(): condition2.or_conditions.build_filter(False),
             },
             match_all=model.combine_method == "All",
+            combine_all=combine_all,
         )
+        assert model.build_filter(combine_all) == expected
 
     def test_parse_comparers(self, model: _XMLConditions, faker: Faker):
         condition1 = _XMLCondition()
         condition1.field = "TrackNo"
         condition1.comparison = "IsIn"
         condition1.value = ["a", "b", "c"]
-        condition1.And = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["1", "2", "3"])])
+        condition1.and_conditions = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["1", "2", "3"])])
 
         condition2 = _XMLCondition()
         condition2.field = "Album Artist"
         condition2.comparison = "EndsWith"
         condition2.value = "an album"
-        condition2.Or = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["4", "5", "6"])])
+        condition2.or_conditions = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["4", "5", "6"])])
 
-        comparers = ComparerFilter[LocalTrack](
+        comparers = ComparerFilter(
             comparers={
-                condition1.comparer: (True, condition1.And.comparers),
-                condition2.comparer: (False, condition2.Or.comparers),
+                condition1.build_comparer(): condition1.and_conditions.build_filter(True),
+                condition2.build_comparer(): condition2.or_conditions.build_filter(False),
             },
             match_all=faker.boolean(),
         )
@@ -610,14 +615,14 @@ class TestXMLLimit(BaseModelTester):
         model.type = "Minutes"
         model.selected_by = "MostRecentlyAdded"
 
-        limiter = model.create_limiter()
+        limiter = model.build_limiter()
         assert limiter.limit_by == 25
         assert limiter.kind == LimitType.MINUTES
         assert limiter.sorted_by == "most_recently_added"
         assert limiter.allowance == 1.25
 
         model.enabled = False
-        assert model.create_limiter() is None
+        assert model.build_limiter() is None
 
     def test_parse_limiter(self, model: _XMLLimit):
         limiter = ItemLimiter(
@@ -867,7 +872,7 @@ class TestXMLSource(BaseModelTester):
         )
 
         model.parse_matcher(matcher)
-        assert model.conditions.comparers == ComparerFilter[LocalTrack]()
+        assert model.conditions.build_filter() == ComparerFilter[LocalTrack]()
         assert model.exceptions_include == {"a", "b", "c"}
         assert model.exceptions == {"1", "2", "3"}
 
@@ -955,15 +960,20 @@ class TestXMLSmartPlaylist(BaseModelTester):
         model.source.exceptions_include = {"a", "b", "c"}
         model.source.exceptions = {"1", "2", "3"}
 
-        matcher = model.create_matcher()
-        assert matcher.compare == model.source.conditions.comparers
+        from rich import print
+        print()
+        print(model.build_matcher().compare)
+        print(model.source.conditions.build_filter())
+
+        matcher = model.build_matcher()
+        assert matcher.compare == model.source.conditions.build_filter()
         assert matcher.include.values == model.source.exceptions_include
         assert matcher.exclude.values == model.source.exceptions
         assert matcher.group_by == model.group_by
 
     def test_build_matcher_drops_group_by_on_tracks(self, model: _XMLSmartPlaylist):
         model.group_by = "track"
-        matcher = model.create_matcher()
+        matcher = model.build_matcher()
         assert matcher.group_by is None
 
     def test_parse_matcher_when_none(self, model: _XMLSmartPlaylist):
@@ -978,7 +988,7 @@ class TestXMLSmartPlaylist(BaseModelTester):
 
     def test_parse_matcher(self, model: _XMLSmartPlaylist, mocker: MockerFixture):
         matcher = GroupFilter(
-            compare=ComparerFilter[LocalTrack](),
+            compare=ComparerFilter(),
             include=PathFilter(values={"a", "b", "c"}),
             exclude=PathFilter(values={"1", "2", "3"}),
             group_by="album",
@@ -996,7 +1006,7 @@ class TestXMLSmartPlaylist(BaseModelTester):
         model.shuffle_same_artist_weight = faker.random_int(-10, 10) / 10
         model.source.sort_by = _XMLDefinedSort(id=choice(tuple(_XMLDefinedSort.fields_map.keys())))
 
-        sorter = model.create_sorter()
+        sorter = model.build_sorter()
         assert sorter.sort_fields == model.source.sort_by.sort_fields
         assert sorter.shuffle_mode == ShuffleMode.RECENT_ADDED
         assert sorter.shuffle_weight == model.shuffle_same_artist_weight

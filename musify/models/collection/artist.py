@@ -86,6 +86,9 @@ class RemoteArtistCollection[UT: URI, AT: RemoteAlbum, GT: RemoteGenre, CT: Page
     RemoteArtist[UT, GT],
     RemoteCollection[UT, AT, CT],
 ):
+    def _clear(self) -> None:
+        self.albums.clear()
+
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasArtistEndpoints[ArtistReadCollectionEndpoints]) -> None:
         self.albums[:] = await api.artists.get_all(self)

@@ -137,7 +137,7 @@ class SyncXAutoPFResult(SavePlaylistResult):
             start_included=len(initial_xml.smart_playlist.source.exceptions_include or ()),
             start_excluded=len(initial_xml.smart_playlist.source.exceptions or ()),
             start_compared=len(
-                initial_xml.smart_playlist.source.conditions.comparers.apply(initial_tracks, reference=reference)
+                initial_xml.smart_playlist.source.conditions.build_filter().apply(initial_tracks, reference=reference)
             ),
             start_limit=(
                 initial_xml.smart_playlist.source.limit.count
@@ -151,7 +151,7 @@ class SyncXAutoPFResult(SavePlaylistResult):
             final_included=len(final_xml.smart_playlist.source.exceptions_include or ()),
             final_excluded=len(final_xml.smart_playlist.source.exceptions or ()),
             final_compared=len(
-                final_xml.smart_playlist.source.conditions.comparers.apply(final_tracks, reference=reference)
+                final_xml.smart_playlist.source.conditions.build_filter().apply(final_tracks, reference=reference)
             ),
             final_limit=(
                 final_xml.smart_playlist.source.limit.count
@@ -207,9 +207,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
         self.description = self._xml.smart_playlist.source.description
 
-        self.matcher: AutoMatcher = self._xml.smart_playlist.create_matcher(path_mapper=self.path_mapper)
-        self.limiter = self._xml.smart_playlist.source.limit.create_limiter()
-        self.sorter = self._xml.smart_playlist.create_sorter()
+        self.matcher: AutoMatcher = self._xml.smart_playlist.build_matcher(path_mapper=self.path_mapper)
+        self.limiter = self._xml.smart_playlist.source.limit.build_limiter()
+        self.sorter = self._xml.smart_playlist.build_sorter()
 
         reference = self._get_reference_for_last_played_track(list(tracks))
         match_result = self._match_tracks(tracks=tracks, reference=reference)
@@ -502,8 +502,14 @@ class _XMLCondition(_XMLBaseModel):
     value: Annotated[list[str], _XMLAttributeField(), BeforeValidator(to_list)] = Field(default_factory=list)
 
     # need to make field names title case as they are python keywords
-    And: Annotated[_XMLConditions | None, _XMLElementField()] = Field(default=None)
-    Or: Annotated[_XMLConditions | None, _XMLElementField()] = Field(default=None)
+    and_conditions: Annotated[_XMLConditions | None, _XMLElementField()] = Field(
+        default=None,
+        alias="And",
+    )
+    or_conditions: Annotated[_XMLConditions | None, _XMLElementField()] = Field(
+        default=None,
+        alias="Or",
+    )
 
     @property
     def reference_required(self) -> bool:
@@ -535,7 +541,7 @@ class _XMLCondition(_XMLBaseModel):
 
     @model_validator(mode="after")
     def _validate_only_and_either_or_set(self) -> Self:
-        if self.And is not None and self.Or is not None:
+        if self.and_conditions is not None and self.or_conditions is not None:
             raise MusifyValidationError("Condition can only have either 'And' or 'Or' set, not both.")
         return self
 
@@ -549,8 +555,7 @@ class _XMLCondition(_XMLBaseModel):
         model.parse_comparer(comparer)
         return model
 
-    @property
-    def comparer(self) -> Comparer:
+    def build_comparer(self) -> Comparer:
         """Build the comparer for this configuration."""
         value = self.value[0] if len(self.value) == 1 else self.value
         return Comparer(
@@ -571,19 +576,19 @@ class _XMLCondition(_XMLBaseModel):
         self.value[:] = sorted(to_list(comparer.expected)) or []
         return self
 
-    def parse_sub_comparers(self, combine: bool, comparers: ComparerFilter) -> Self:
+    def parse_sub_comparers(self, comparers: ComparerFilter) -> Self:
         """Parse the given comparers into this model's sub-comparers."""
-        self.And = None
-        self.Or = None
+        self.and_conditions = None
+        self.or_conditions = None
 
         if not comparers.ready:
             return self
 
         sub = _XMLConditions.model_validate(comparers)
-        if combine:
-            self.And = sub
+        if comparers.combine_all:
+            self.and_conditions = sub
         else:
-            self.Or = sub
+            self.or_conditions = sub
 
         return self
 
@@ -596,21 +601,23 @@ class _XMLConditions(_XMLBaseModel):
         BeforeValidator(to_list)
     ] = Field(default_factory=_XMLCondition)
 
-    @property
-    def comparers(self) -> ComparerFilter:
+    def build_filter(self, combine: bool | None = None) -> ComparerFilter[LocalTrack]:
         """Build the comparer filter for this configuration."""
-        comparers: dict[Comparer, tuple[bool, ComparerFilter]] = {}
+        filters: dict[Comparer, ComparerFilter[LocalTrack]] = {}
         for condition in self.condition:
-            if condition.And:
-                value = (True, condition.And.comparers)
-            elif condition.Or:
-                value = (False, condition.Or.comparers)
+            comparer = condition.build_comparer()
+            if condition.and_conditions:
+                sub_comparers = condition.and_conditions.build_filter(True)
+            elif condition.or_conditions:
+                sub_comparers = condition.or_conditions.build_filter(False)
             else:
-                value = (False, ComparerFilter[LocalTrack]())
+                sub_comparers = ComparerFilter[LocalTrack]()
 
-            comparers[condition.comparer] = value
+            filters[comparer] = sub_comparers
 
-        return ComparerFilter[LocalTrack](comparers=comparers, match_all=self.combine_method == "All")
+        return ComparerFilter[LocalTrack](
+            comparers=filters, match_all=self.combine_method == "All", combine_all=combine
+        )
 
     @model_validator(mode="wrap")
     @classmethod
@@ -626,8 +633,8 @@ class _XMLConditions(_XMLBaseModel):
         """Parse the given ``comparers`` into this model."""
         self.combine_method = "All" if comparers.match_all else "Any"
         self.condition[:] = [
-            _XMLCondition.model_validate(comparer).parse_sub_comparers(combine=sub_combine, comparers=sub_comparer)
-            for comparer, (sub_combine, sub_comparer) in comparers.comparers.items()
+            _XMLCondition.model_validate(comparer).parse_sub_comparers(comparers=sub_comparer)
+            for comparer, sub_comparer in comparers.comparers.items()
         ]
         return self
 
@@ -648,7 +655,7 @@ class _XMLLimit(_XMLBaseModel):
         _XML_LIMIT_TYPE_ADAPTER.validate_python(kind)
         return kind
 
-    def create_limiter(self) -> ItemLimiter | None:
+    def build_limiter(self) -> ItemLimiter | None:
         """Build the limiter for this configuration."""
         if not self.enabled:
             return
@@ -928,7 +935,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
 
     source: Annotated[_XMLSource, _XMLElementField()] = Field(default_factory=_XMLSource)
 
-    def create_matcher(self, path_mapper: PathMapper | None = None) -> AutoMatcher:
+    def build_matcher(self, path_mapper: PathMapper | None = None) -> AutoMatcher:
         """Build the matcher for this configuration."""
         include = PathFilter(values=self.source.exceptions_include or set(), path_mapper=path_mapper)
         exclude = PathFilter(values=self.source.exceptions or set(), path_mapper=path_mapper)
@@ -939,7 +946,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
             group_by = None
 
         return AutoMatcher(
-            compare=self.source.conditions.comparers,
+            compare=self.source.conditions.build_filter(),
             include=include,
             exclude=exclude,
             group_by=group_by,
@@ -957,7 +964,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
         self.group_by = matcher.group_by or group_by_default
         return self
 
-    def create_sorter(self) -> ItemSorter:
+    def build_sorter(self) -> ItemSorter:
         """Build the sorter for this configuration."""
         return ItemSorter(
             sort_fields=self.source.sort_by.sort_fields if self.source.sort_by is not None else {},

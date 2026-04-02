@@ -217,8 +217,8 @@ class TestEndpoints(EndpointsTester):
 
         assert len(set(cursor.offset for cursor in cursors)) == len(cursors)
         assert len(set(cursor.url for cursor in cursors)) == len(cursors)
-        assert cursors[-1].offset + cursors[-1].limit > initial_cursor.total
-        assert cursors[-2].offset + cursors[-2].limit <= initial_cursor.total
+        assert cursors[-1].offset + cursors[-1].limit >= initial_cursor.total
+        assert cursors[-2].offset + cursors[-2].limit < initial_cursor.total
         assert cursors[-1].next is None
 
         return cursors

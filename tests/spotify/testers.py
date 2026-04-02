@@ -76,8 +76,6 @@ class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def assert_has_all_items(model: RemoteCollection, items: Collection, total: int):
-
-        print(len(items), total, model.count)
         if len(items) == total:
             assert model.has_all_items
         else:

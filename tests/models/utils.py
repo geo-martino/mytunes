@@ -35,5 +35,8 @@ class MockRemoteCollection(MockRemoteResource, RemoteCollection, HasName):
     def _items(self) -> list:
         return self.all_items
 
+    def _clear(self) -> None:
+        self.all_items.clear()
+
     async def extend(self, api: HasEndpoints) -> None:
         pass

@@ -3,7 +3,7 @@ from collections.abc import Collection, Iterator
 from typing import TYPE_CHECKING
 
 from musify.models import ResourceModel, BaseModel
-from musify.models.cursors import PageCursor, HasPageCursor
+from musify.models.cursors import PageCursor, HasPageCursor, InitialCursor
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 
@@ -41,6 +41,18 @@ class RemoteCollection[UT: URI, IT: RemoteResource, CT: PageCursor](
         if self.cursor.total is None:
             return None
         return self.count == self.cursor.total
+
+    @abstractmethod
+    def _clear(self) -> None:
+        """Clear the items in this collection."""
+        raise NotImplementedError
+
+    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
+    async def reload_items(self, api: HasEndpoints) -> None:
+        """Replace all items in this collection by reloading all pages of items using the provided API."""
+        self.cursor = InitialCursor.from_url(self.cursor.url, source=self.source)
+        self._clear()
+        await self.extend(api)
 
     @abstractmethod
     async def extend(self, api: HasEndpoints) -> None:

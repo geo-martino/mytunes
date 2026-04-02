@@ -80,6 +80,10 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
     RemoteGenre[UT],
     RemoteCollection[UT, TT,  CT],
 ):
+    def _clear(self) -> None:
+        # noinspection PyProtectedMember
+        self.tracks._replace(())
+
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasGenreEndpoints[GenreReadCollectionEndpoints]) -> None:
         # noinspection PyProtectedMember

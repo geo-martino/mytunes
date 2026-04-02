@@ -148,6 +148,10 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
     def item_total(self) -> PositiveInt | None:
         return self.cursor.total
 
+    def _clear(self) -> None:
+        # noinspection PyProtectedMember
+        self.tracks._replace(())
+
     @staticmethod
     def _get_context_user(info: ValidationInfo) -> OT | None:
         if not (context := info.context) or not isinstance(context, RemoteModelContext) or context.user is None:
