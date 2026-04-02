@@ -9,6 +9,7 @@ from pydantic import Field, NonNegativeInt
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.collection.playlist._result import SortResult, LoadPlaylistResult, SavePlaylistResult
 from musify.local.item.track import LocalTrack, LOCAL_TRACK_ADAPTER
+from musify.models.properties.file import PathInputType
 from musify.models.properties.uri import URI
 from musify.models.result import LogFormatter, CountResult
 from musify.models.sequence import MutableUniqueSequence
@@ -112,41 +113,43 @@ class M3U(LocalPlaylist[PathFilter]):
             from scratch according to its settings.
         :return: Self
         """
-        print("m3U", len(tracks))
-        for tr in tracks[:10]:
-            print("m3U", tr.path)
+        print(len(tracks), self.path.is_file())
+        if not self.path.is_file():  # just use the given tracks against the current settings
+            return self._load_from_tracks(tracks)
 
-        paths: list[str] = []
-        if self.path.is_file():  # load from file
-            with open(self.path, "r", encoding="utf-8") as file:
-                paths = [line.strip() for line in file]
+        with open(self.path, "r", encoding="utf-8") as file:
+            paths = [line.strip() for line in file]
 
-            if not paths:  # clear on empty playlist file
-                self.tracks.clear()
-                self._original.clear()
-                return LoadPlaylistResult()
+        if not paths:  # clear on empty playlist file
+            self.tracks.clear()
+            self._original.clear()
+            return LoadPlaylistResult()
 
-        print("m3U", "raw", list(paths)[:5])
-        self.matcher = PathFilter(values=set(paths), path_mapper=self.path_mapper)
-        print("m3U", "matcher", list(self.matcher.values)[:5])
-        print("m3U", "matcher", list(self.matcher.paths)[:5])
-        paths = self.path_mapper.map_many(paths, check_existence=not tracks)
-        print("m3U", "mapped", list(paths)[:5])
+        self.matcher: PathFilter = PathFilter(values=set(paths), path_mapper=self.path_mapper)
 
-        if tracks:  # match paths from given tracks using the matcher
-            match_result = self._match_tracks(tracks)
-            tracks = MutableUniqueSequence(match_result.combined)
-        else:  # use the paths in the matcher to load tracks from scratch
+        if not tracks:  # load the tracks from the paths in file
             # TODO: support m3u playlists with duplicate paths?
-            tracks = MutableUniqueSequence(await asyncio.gather(*map(self._load_track, set(paths))))
-            match_result = IncludeExcludeResult(included=tuple(tracks))
+            bar = self.logger.get_asynchronous_iterator(
+                map(self._load_track, self.matcher.paths_valid), disable=True
+            )
+            tracks = MutableUniqueSequence(await bar)
 
-        limit_result = self._limit_tracks(tracks=tracks, ignore=paths)
-        sort_result = self._sort_tracks(tracks=tracks, paths=list(map(Path, paths)))
+        result = self._load_from_tracks(tracks, paths=paths)
+        self._original = self.tracks.copy()
+
+        return result
+
+    def _load_from_tracks(
+            self, tracks: Collection[LocalTrack], paths: Sequence[PathInputType] = ()
+    ) -> LoadPlaylistResult:
+        paths = self.path_mapper.map_many_to_paths(paths, check_existence=False)
+
+        match_result = self._match_tracks(tracks)
+        limit_result = self._limit_tracks(tracks=match_result.combined, ignore=paths)
+        sort_result = self._sort_tracks(tracks=limit_result.limited, paths=paths)
 
         result = LoadPlaylistResult.from_results(match=match_result, limit=limit_result, sort=sort_result)
         self.tracks.replace(result.tracks)
-        self._original = self.tracks.copy() if self.path.is_file() else []
 
         return result
 

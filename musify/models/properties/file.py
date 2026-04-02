@@ -211,7 +211,11 @@ class PathMapper(BaseModel):
     def map_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
         """Run :py:meth:`map` operation on many ``values`` only returning those values that are not None or empty."""
         paths = [self.map(value=value, check_existence=check_existence) for value in values]
-        return [path for path in paths if path]
+        return list(filter(None, paths))
+
+    def map_many_to_paths(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[Path]:
+        """Run :py:meth:`map` operation on many ``values`` only returning those values that are not None or empty."""
+        return list(map(Path, self.map_many(values, check_existence=check_existence)))
 
     def unmap(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """
@@ -233,7 +237,11 @@ class PathMapper(BaseModel):
     def unmap_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
         """Run :py:meth:`unmap` operation on many ``values`` only returning those values that are not None or empty."""
         paths = [self.unmap(value=value, check_existence=check_existence) for value in values]
-        return [path for path in paths if path]
+        return list(filter(None, paths))
+
+    def unmap_many_to_paths(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[Path]:
+        """Run :py:meth:`unmap` operation on many ``values`` only returning those values that are not None or empty."""
+        return list(map(Path, self.unmap_many(values, check_existence=check_existence)))
 
 
 class PathStemMapper(PathMapper):

@@ -46,12 +46,15 @@ class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult, SortResult):
 
     @classmethod
     def from_results(
-            cls, match: CompositeResult[LocalTrack], limit: LimitResult, sort: SortResult
+            cls,
+            match: CompositeResult[LocalTrack] | None = None,
+            limit: LimitResult | None = None,
+            sort: SortResult | None = None,
     ) -> LoadPlaylistResult:
         """Create the result by combining the results from the various playlist load stages."""
-        match = {key: val for key, val in match.__dict__.items() if not key.startswith("_")}
-        limit = {key: val for key, val in limit.__dict__.items() if not key.startswith("_")}
-        sort = {key: val for key, val in sort.__dict__.items() if not key.startswith("_")}
+        match = {key: val for key, val in (match.__dict__ or {}).items() if not key.startswith("_")}
+        limit = {key: val for key, val in (limit.__dict__ or {}).items() if not key.startswith("_")}
+        sort = {key: val for key, val in (sort.__dict__ or {}).items() if not key.startswith("_")}
         return cls(**match, **limit, **sort)
 
 

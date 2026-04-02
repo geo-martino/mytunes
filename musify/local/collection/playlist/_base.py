@@ -75,14 +75,12 @@ class LocalPlaylistFile[TF: Filter](
     ) -> CompositeResult[LocalTrack]:
         match self.matcher:
             case None:
-                return IncludeExcludeResult()
+                return IncludeExcludeResult(included=tuple(tracks))
             case CompositeFilter():
-                result = self.matcher.match(tracks, reference=reference)
+                return self.matcher.match(tracks, reference=reference)
             case _:
                 include = self.matcher.apply(tracks, reference=reference)
-                result = IncludeExcludeResult(included=tuple(include))
-
-        return result
+                return IncludeExcludeResult(included=tuple(include))
 
     def _limit_tracks(
             self, tracks: Sequence[LocalTrack], ignore: Collection[str | Path | LocalTrack]

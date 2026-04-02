@@ -105,6 +105,14 @@ class PathFilter(ValueFilter[str]):
     def paths(self, value: set[Path]) -> None:
         self.values = set(map(str, value))
 
+    @property
+    def paths_valid(self) -> set[Path]:
+        """Get the values as Path objects, only returning those that exist."""
+        paths = self.values
+        if self.path_mapper is not None:
+            paths = filter(None, self.path_mapper.map_many(paths, check_existence=True))
+        return set(map(Path, paths))
+
     @field_validator("values", mode="before", check_fields=True)
     @staticmethod
     def _extract_values_from_models(values: Iterable[Any]) -> Iterator[str]:
@@ -127,4 +135,5 @@ class PathFilter(ValueFilter[str]):
 
     @validate_call
     def check(self, item: PathInputType, *_, **__) -> bool:
+        print("UNMAPPED", self.path_mapper.unmap(item, check_existence=False))
         return self.path_mapper.unmap(item, check_existence=False) in self.values
