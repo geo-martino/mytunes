@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from collections.abc import Collection, MutableMapping
+from collections.abc import Collection, MutableMapping, MutableSequence, Sequence
 from pathlib import Path
 from typing import Self, Any, Annotated
 
@@ -7,16 +7,18 @@ import mutagen
 from pydantic import Field, model_validator, PrivateAttr
 
 from musify.local.collection._base import LocalCollection
+from musify.local.collection.playlist._result import LimitResult, SortResult, LoadPlaylistResult, SavePlaylistResult
 from musify.local.item.track import LocalTrack, HasLocalTracks
 from musify.models import makecls
 from musify.models.collection.playlist import MutablePlaylist
 from musify.models.metadata import UniqueAttribute
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.properties.uri import URI
-from musify.models.result import Result
-from musify.models.sequence import MutableUniqueSequence
+from musify.models.result import Result, LenLogFormatter
+from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 from musify.processors.filters import Filter
-from musify.processors.filters.match import MatchFilter
+from musify.processors.filters.composite import GroupResult, GroupFilter, CompositeFilter, CompositeResult, \
+    IncludeExcludeResult
 from musify.processors.limit import ItemLimiter
 from musify.processors.sort import ItemSorter
 
@@ -68,37 +70,45 @@ class LocalPlaylistFile[TF: Filter](
             return data
         return dict(path=Path(data))
 
-    def _match_tracks(self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None) -> None:
+    def _match_tracks(
+            self, tracks: Collection[LocalTrack] = (), reference: LocalTrack | None = None
+    ) -> CompositeResult[LocalTrack]:
         match self.matcher:
             case None:
-                return
-            case MatchFilter():
+                return IncludeExcludeResult()
+            case CompositeFilter():
                 result = self.matcher.match(tracks, reference=reference)
-                lengths = ' '.join(f"{k}={v}" for k, v in result.lengths.items())
-                tracks = result.combined
-                self.logger.debug(f"{self.name!r} matched: {lengths} combined={len(tracks)}")
             case _:
-                tracks = self.matcher.apply(tracks, reference=reference)
-                self.logger.debug(f"{self.name!r} matched: {len(tracks)}")
+                include = self.matcher.apply(tracks, reference=reference)
+                result = IncludeExcludeResult(included=tuple(include))
 
-        self.tracks[:] = tracks
+        return result
 
-    def _limit_tracks(self, ignore: Collection[str | Path | LocalTrack]) -> None:
-        if self.limiter is None or not self.tracks:
-            return
+    def _limit_tracks(
+            self, tracks: Sequence[LocalTrack], ignore: Collection[str | Path | LocalTrack]
+    ) -> LimitResult:
+        if self.limiter is None or not tracks:
+            return LimitResult(limited=tuple(tracks))
 
-        start = len(self.tracks)
-        ignore = [i if isinstance(i, LocalTrack) else self.tracks.get(str(i)) for i in ignore]
-        self.limiter.limit(self.tracks, ignore=tuple(filter(None, ignore)))
+        tracks_unique = UniqueSequence(tracks)
+        ignore = [i if isinstance(i, LocalTrack) else tracks_unique.get(i) for i in ignore]
+        ignore = tuple(filter(None, ignore))
 
-        self.logger.debug(f"{self.name!r} limited: start={start} final={len(self.tracks)} ignored={len(ignore)}")
+        if not isinstance(tracks, MutableSequence):
+            tracks = list(tracks)
+        self.limiter.limit(tracks, ignore=ignore)
 
-    def _sort_tracks(self) -> None:
-        if self.sorter is None or not self.tracks:
-            return
+        return LimitResult(limited=tuple(tracks), limit_ignored=tuple(ignore))
 
-        self.sorter.sort(self.tracks)
-        self.logger.debug(f"{self.name!r} sorted: {len(self.tracks)}")
+    def _sort_tracks(self, tracks: Sequence[LocalTrack]) -> SortResult:
+        if self.sorter is None or not tracks:
+            return SortResult(sorted=tuple(tracks))
+
+        if not isinstance(tracks, MutableSequence):
+            tracks = list(tracks)
+        self.sorter.sort(tracks)
+
+        return SortResult(sorted=tuple(tracks))
 
     async def rename(self) -> None:
         """Rename the playlist file to match the name of the playlist."""
@@ -112,7 +122,7 @@ class LocalPlaylistFile[TF: Filter](
 # noinspection PyAbstractClass
 class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteableFile):
     @abstractmethod
-    async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
+    async def load(self, tracks: Collection[LocalTrack] = ()) -> LoadPlaylistResult:
         """
         Read the playlist file and update the tracks in this playlist instance.
 
@@ -122,7 +132,7 @@ class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteab
         raise NotImplementedError
 
     @abstractmethod
-    async def save(self, dry_run: bool = True, *args, **kwargs) -> Result:
+    async def save(self, dry_run: bool = True, *args, **kwargs) -> SavePlaylistResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
 

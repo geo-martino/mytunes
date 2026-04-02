@@ -14,12 +14,13 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
+from musify.local.item import LocalAlbum
 from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
-from musify.processors.filters.match import MatchFilter
+from musify.processors.filters.composite import GroupFilter
 from musify.processors.filters.values import PathFilter
 from musify.processors.limit import LimitType, ItemLimiter
 from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
@@ -230,15 +231,16 @@ class TestXAutoPF(LocalPlaylistTester):
     async def model(self, path_mapper: PathMapper, faker: Faker, tmp_path: Path) -> XAutoPF:
         path = tmp_path.joinpath(faker.file_path(absolute=False, extension="xautopf"))
         playlist = XAutoPF(path=path, path_mapper=path_mapper)
-        return await playlist.load()
+        await playlist.load()
+        return playlist
 
     @pytest.fixture
     async def model_with_tracks(
             self, model: XAutoPF, tracks: list[LocalTrack], tracks_summed: list[LocalTrack]
     ) -> XAutoPF:
         """A model with tracks already loaded for testing purposes."""
-        model._original[:] = tracks
-        model.tracks[:] = tracks_summed
+        model._original.replace(tracks)
+        model.tracks.replace(tracks_summed)
         return model
 
     @pytest.fixture
@@ -276,8 +278,8 @@ class TestXAutoPF(LocalPlaylistTester):
             tracks_included: list[LocalTrack],
             tracks_excluded: list[LocalTrack],
             path_mapper: PathMapper
-    ) -> MatchFilter:
-        return MatchFilter(
+    ) -> GroupFilter:
+        return GroupFilter(
             compare=ComparerFilter(
                 comparers=Comparer(field="path", condition="IsIn", expected={tr.path for tr in tracks_compared})
             ),
@@ -307,7 +309,7 @@ class TestXAutoPF(LocalPlaylistTester):
         limit = model.limiter.limit_by
         tracks_expected = sorted(tracks, key=lambda t: t.added_at, reverse=True)[:limit]
 
-        await model.load(tracks)
+        result = await model.load(tracks)
         assert model.tracks == tracks_expected
 
         # add duplicates and apply deduplication
@@ -341,11 +343,11 @@ class TestXAutoPF(LocalPlaylistTester):
         mock_sort = mocker.spy(model, "_sort_tracks")
 
         reference = model._get_reference_for_last_played_track(tracks.copy())
-        await model.load(tracks)
+        result = await model.load(tracks)
 
         mock_match.assert_called_once_with(tracks=tracks, reference=reference)
-        mock_limit.assert_called_once_with(ignore=model.matcher.exclude.values)
-        mock_sort.assert_called_once_with()
+        mock_limit.assert_called_once_with(tracks=result.combined, ignore=model.matcher.exclude.values)
+        mock_sort.assert_called_once_with(tracks=result.limited)
 
     async def test_load_from_no_file(self, model: XAutoPF, tracks: list[LocalTrack], mocker: MockerFixture):
         model = XAutoPF(path=model.path, path_mapper=model.path_mapper)
@@ -362,7 +364,7 @@ class TestXAutoPF(LocalPlaylistTester):
         await self.assert_load(model, xml, tracks, mocker=mocker)
 
     def test_clean_matcher_paths_filters_paths(
-            self, model_with_tracks: XAutoPF, matcher: MatchFilter, tracks: list[LocalTrack],
+            self, model_with_tracks: XAutoPF, matcher: GroupFilter, tracks: list[LocalTrack],
     ):
         assert matcher.compare.ready
         model_with_tracks.matcher = matcher
@@ -373,7 +375,7 @@ class TestXAutoPF(LocalPlaylistTester):
         # drops paths not in compared or included
         assert matcher.exclude.paths == {tr.path for tr in tracks[18:20]}
 
-    def test_clean_matcher_paths_sets_paths(self, model_with_tracks: XAutoPF, matcher: MatchFilter):
+    def test_clean_matcher_paths_sets_paths(self, model_with_tracks: XAutoPF, matcher: GroupFilter):
         matcher.compare = ComparerFilter()
         model_with_tracks.matcher = matcher
 
@@ -399,7 +401,7 @@ class TestXAutoPF(LocalPlaylistTester):
         await self.assert_save_dry_run(model_with_tracks)
 
     async def test_save_to_new_file(
-            self, model_with_tracks: XAutoPF, matcher: MatchFilter, xml_playlist_complex: str
+            self, model_with_tracks: XAutoPF, matcher: GroupFilter, xml_playlist_complex: str
     ):
         model_with_tracks._xml = _XMLRoot.model_validate(xml_playlist_complex)
         await model_with_tracks.load()
@@ -409,7 +411,7 @@ class TestXAutoPF(LocalPlaylistTester):
         self.assert_saved_file(model_with_tracks)
 
     async def test_save_to_existing_file(
-            self, model_with_tracks: XAutoPF, path: Path, matcher: MatchFilter
+            self, model_with_tracks: XAutoPF, path: Path, matcher: GroupFilter
     ):
         await model_with_tracks.load()
         model_with_tracks.matcher = matcher
@@ -861,7 +863,7 @@ class TestXMLSource(BaseModelTester):
         assert model.exceptions is None
 
     def test_parse_matcher(self, model: _XMLSource):
-        matcher = MatchFilter(
+        matcher = GroupFilter(
             compare=ComparerFilter[LocalTrack](),
             include=PathFilter(values={"a", "b", "c"}),
             exclude=PathFilter(values={"1", "2", "3"}),
@@ -972,12 +974,12 @@ class TestXMLSmartPlaylist(BaseModelTester):
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 
     def test_parse_matcher_with_no_group_by(self, model: _XMLSmartPlaylist):
-        matcher = MatchFilter[LocalTrack, PathFilter, PathFilter](group_by=None)
+        matcher = GroupFilter[LocalTrack, PathFilter, PathFilter](group_by=None)
         model.parse_matcher(matcher)
         assert model.group_by == _XMLSmartPlaylist.model_fields["group_by"].default
 
     def test_parse_matcher(self, model: _XMLSmartPlaylist, mocker: MockerFixture):
-        matcher = MatchFilter(
+        matcher = GroupFilter(
             compare=ComparerFilter[LocalTrack](),
             include=PathFilter(values={"a", "b", "c"}),
             exclude=PathFilter(values={"1", "2", "3"}),

@@ -18,9 +18,9 @@ class TestValueFilter(FilterTester):
         values = {faker.pystr(30, 50) for _ in range(20)}
         return ValueFilter(values=values)
 
-    def test_from_values(self, faker: Faker):
+    def test_from_values(self, model: ValueFilter, faker: Faker):
         values = faker.words()
-        assert ValueFilter.model_validate(values) == ValueFilter(values=set(values))
+        assert model.__class__.model_validate(values) == model.__class__(values=set(values))
 
     def test_equality(self, model: ValueFilter, faker: Faker):
         assert model == deepcopy(model)
@@ -46,7 +46,7 @@ class TestValueFilter(FilterTester):
         expected = values.copy()
         shuffle(expected)
 
-        filter_ = ValueFilter(values=model.values)
+        filter_ = model.__class__(values=model.values)
         assert filter_.apply(values[:10]) == values[:10]
 
 

@@ -26,7 +26,9 @@ class ValueFilter[IT](Filter[IT]):
     @model_validator(mode="before")
     @classmethod
     def _from_values[T: Iterable[T]](cls, values: T) -> T | dict[str, T]:
-        if isinstance(values, (BaseModel, Mapping)) or not isinstance(values, Iterable):
+        if isinstance(values, BaseModel):
+            return values.model_dump()
+        if isinstance(values, Mapping) or not isinstance(values, Iterable):
             return values
         return {"values": values}
 
@@ -60,7 +62,7 @@ class NameFilter(ValueFilter[str]):
     @field_validator("values", mode="before", check_fields=True)
     @classmethod
     def _extract_values_from_models(cls, values: Iterable[Any]) -> Iterator[str]:
-        return map(cls._extract_value_from_model, values)
+        return set(map(cls._extract_value_from_model, values))
 
     @staticmethod
     def _extract_value_from_model(item: Any) -> str:
@@ -70,7 +72,7 @@ class NameFilter(ValueFilter[str]):
             case HasName() if item.name is not None:
                 return item.name
             case _:
-                raise MusifyTypeError(f"Unrecognised name type: {type(item).__name__!r}")
+                return item
 
     @validate_call
     def check(self, item: str | HasName, *_, **__) -> bool:

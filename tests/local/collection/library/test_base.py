@@ -13,6 +13,7 @@ from pytest_mock import MockerFixture
 
 from musify.local.collection.library import LocalLibrary
 from musify.local.collection.playlist import LocalPlaylist
+from musify.local.collection.playlist._result import LoadPlaylistResult
 from musify.local.item.album import LocalAlbum
 from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
@@ -113,8 +114,8 @@ class TestLocalLibrary(NoUniqueKeyTester):
         """Mock LocalLibrary.load_playlist to return the provided tracks"""
         pl_mapped = {pl.path: pl for pl in playlists}
 
-        async def _load_playlist(path: Path) -> LocalPlaylist:
-            return pl_mapped[path]
+        async def _load_playlist(path: Path) -> tuple[LocalPlaylist, LoadPlaylistResult]:
+            return pl_mapped[path], LoadPlaylistResult()
 
         with patch.object(LocalLibrary, "load_playlist", side_effect=_load_playlist) as mock_load:
             yield mock_load
@@ -241,21 +242,21 @@ class TestLocalLibrary(NoUniqueKeyTester):
     ## Collections
     ###########################################################################
     def test_folders(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
 
         folders = list(model.folders())
         assert len(folders) == len(set(track_folders)) > 0
         assert all(folder.count > 0 for folder in folders)
 
     def test_albums(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
 
         albums = list(model.albums())
         assert len(albums) == len(set(track.album.name for track in model.tracks)) > 0
         assert all(album.count > 0 for album in albums)
 
     def test_artists(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
         expected_artists = len(set(artist.name for track in model.tracks for artist in track.artists))
 
         artists = list(model.artists())
@@ -263,7 +264,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert all(artist.count > 0 for artist in artists)
 
     def test_genres(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
         expected_genres = len(set(genre.name for track in model.tracks for genre in track.genres))
 
         genres = list(model.genres())

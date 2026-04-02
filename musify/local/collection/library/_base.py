@@ -16,6 +16,7 @@ from musify.local.collection.artist import LocalArtistCollection
 from musify.local.collection.folder import Folder
 from musify.local.collection.genre import LocalGenreCollection
 from musify.local.collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
+from musify.local.collection.playlist._result import LoadPlaylistResult
 from musify.local.item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 from musify.logger import STAT
 from musify.models.collection.library import MutableLibrary
@@ -159,7 +160,10 @@ class LocalLibrary(
         self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
 
         await self.load_tracks()
-        await self.load_playlists()
+        playlist_results = await self.load_playlists()
+
+        self._log_load_playlists(playlist_results)
+        self.logger.print_line(STAT)
 
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
         results: dict[str, LibraryURIsResult | None] = self._generate_playlist_uris_results()
@@ -167,8 +171,8 @@ class LocalLibrary(
         results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        self.logger.print_line(STAT)
         self.logger.stat(table)
+        self.logger.print_line(STAT)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -255,7 +259,7 @@ class LocalLibrary(
     ###########################################################################
     ## Playlists
     ###########################################################################
-    async def load_playlist(self, path: str | Path) -> LocalPlaylist | None:
+    async def load_playlist(self, path: str | Path) -> tuple[LocalPlaylist, LoadPlaylistResult] | None:
         """
         Loads the playlist at the given ``path`` and assigns optional arguments using this library's attributes.
 
@@ -267,15 +271,17 @@ class LocalLibrary(
 
                 playlist = LOCAL_PLAYLIST_ADAPTER.validate_python(path)
                 playlist.path_mapper = self.path_mapper
-                return await playlist.load(self.tracks)
+
+                result = await playlist.load(self.tracks)
+                return playlist, result
 
         except (MusifyError, ValueError, FileNotFoundError) as ex:
             self.logger.debug(f"Load error for playlist: {path} - {ex}")
             self.errors.append(path)
 
-    async def load_playlists(self) -> bool:
+    async def load_playlists(self) -> dict[str, LoadPlaylistResult]:
         if not (paths := set(self._playlist_paths)):
-            return False
+            return {}
 
         self.logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
 
@@ -286,11 +292,19 @@ class LocalLibrary(
             initial=0,
             total=len(paths)
         )
-        playlists = sorted(filter(None, await bar), key=lambda x: x.name.casefold())
+
+        playlists: list[LocalPlaylist] = []
+        results: dict[str, LoadPlaylistResult] = {}
+        for playlist, result in filter(None, await bar):
+            playlists.append(playlist)
+            results[playlist.name] = result
+
+        playlists = sorted(playlists, key=lambda x: x.name.casefold())
+        results = dict(sorted(results.items()))
         self.playlists.replace(playlists)
 
         self._log_errors("Could not load the following playlists")
-        return True
+        return results
 
     @property
     def _playlist_paths(self) -> Generator[Path, None, None]:
@@ -329,7 +343,18 @@ class LocalLibrary(
 
         self.logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
-    def log_playlists(self) -> None:
+    def log_playlists(self, results: dict[str, LoadPlaylistResult] = None) -> None:
+        if results:
+            self._log_load_playlists(results)
+        self._log_playlist_uris()
+
+    def _log_load_playlists(self, results: dict[str, LoadPlaylistResult]) -> None:
+        header = f"{self.source.upper()} PLAYLISTS LOADED"
+        table = LoadPlaylistResult.generate_table(results=results, header=header)
+
+        self.logger.stat(table)
+
+    def _log_playlist_uris(self) -> None:
         results = self._generate_playlist_uris_results()
         header = f"{self.source.upper()} PLAYLIST URIS"
         table = LibraryURIsResult.generate_table(results=results, header=header)

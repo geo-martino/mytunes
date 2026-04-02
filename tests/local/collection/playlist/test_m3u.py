@@ -46,7 +46,8 @@ class TestM3U(LocalPlaylistTester):
     async def model(self, path_mapper: PathMapper, faker: Faker, tmp_path: Path) -> M3U:
         path = tmp_path.joinpath(faker.file_path(absolute=False, extension="m3u"))
         playlist = M3U(path=path, path_mapper=path_mapper)
-        return await playlist.load()
+        await playlist.load()
+        return playlist
 
     @pytest.fixture
     def path(self, model: M3U, tracks_on_disk: list[LocalTrack], path_mapper: PathMapper) -> Path:
@@ -156,7 +157,7 @@ class TestM3U(LocalPlaylistTester):
         self.assert_paths_are_mapped(paths)
 
     async def test_save_dry_run(self, model: M3U, tracks: list[LocalTrack]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
         await self.assert_save_dry_run(model)
 
     async def test_save_to_new_file(
@@ -180,5 +181,5 @@ class TestM3U(LocalPlaylistTester):
         self.assert_saved_file(model)
 
     async def test_save_to_new_file_from_existing(self, model: M3U, path: Path, tracks_on_disk: list[LocalTrack]):
-        model.tracks[:] = tracks_on_disk
+        model.tracks.replace(tracks_on_disk)
         await self.assert_save_to_new_file(model, path)

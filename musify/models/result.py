@@ -15,6 +15,15 @@ from musify.models.metadata import Attribute
 
 
 @dataclass(config=ConfigDict(frozen=True))
+class LogPosition(Attribute):
+    position: int | None = Field(
+        description="The position of the log value in the logs.",
+        default=None,
+        ge=1,
+    )
+
+
+@dataclass(config=ConfigDict(frozen=True))
 class LogFormatter[T](Attribute):
     """Metadata for logging a field's value."""
     width: PositiveInt | None = Field(
@@ -157,25 +166,31 @@ class Result(BaseModel):
 
     def generate_log(self, key: str | None = None) -> tuple[str, ...]:
         """Generate a log of stats for this result"""
-        row = []
-
-        if key:
-            row.append(self._key_formatter.get_value(key))
+        row_positions: dict[int, str] = {}
 
         # noinspection PyProtectedMember
-        for field_name, (_, metadata) in self.__class__._metadata_fields.items():
+        for i, (field_name, (_, metadata)) in enumerate(self.__class__._metadata_fields.items()):
             if not (formatters := self._get_formatters(metadata)):
                 continue
             if (value := self._get_field_value(getattr(self, field_name), formatters)) is None:
                 continue
 
-            row.append(self._get_field_cell(value, field_name, formatters=formatters))
+            position = self._get_position(metadata) or i
+            row_positions[position] = self._get_field_cell(value, field_name, formatters=formatters)
+
+        row = list(dict(sorted(row_positions.items())).values())
+        if key:
+            row.insert(0, self._key_formatter.get_value(key))
 
         return tuple(row)
 
     @staticmethod
     def _get_formatters(metadata: list[Any]) -> list[LogFormatter]:
         return [meta for meta in metadata if isinstance(meta, LogFormatter)]
+
+    @staticmethod
+    def _get_position(metadata: list[Any]) -> int:
+        return next((meta.position for meta in metadata if isinstance(meta, LogPosition)), None)
 
     @classmethod
     def _get_field_value(cls, value: Any, formatters: list[LogFormatter]) -> str | None:

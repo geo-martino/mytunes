@@ -4,7 +4,7 @@ The XAutoPF implementation of a :py:class:`LocalPlaylist`.
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
+from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Sequence
 from copy import deepcopy
 from pathlib import Path
 from random import choice
@@ -20,14 +20,16 @@ from typing_inspection.typing_objects import is_annotated
 from musify._types import StrippedString, to_list
 from musify.exception import MusifyValueError
 from musify.local.collection.playlist import LocalPlaylist
+from musify.local.collection.playlist._result import LimitResult, SavePlaylistResult, LoadPlaylistResult
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
 from musify.models.exception import MusifyValidationError
+from musify.models.properties.uri import URI
 from musify.models.result import LogFormatter, CountResult
-from musify.models.sequence import MutableUniqueSequence
+from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
-from musify.processors.filters.match import MatchFilter, MatchResult
+from musify.processors.filters.composite import GroupResult, GroupFilter
 from musify.processors.filters.values import PathFilter
 from musify.processors.limit import ItemLimiter
 from musify.processors.sort import ItemSorter
@@ -37,11 +39,11 @@ try:
 except ImportError:
     xmltodict = None
 
-AutoMatcher = MatchFilter[LocalTrack, PathFilter, PathFilter]
+AutoMatcher = GroupFilter[LocalTrack, PathFilter, PathFilter]
 
 
 @final
-class SyncXAutoPFResult(CountResult):
+class SyncXAutoPFResult(SavePlaylistResult):
     """Stores the results of a sync with a local XAutoPF playlist."""
     __final__ = True
     __required_modules__ = {"xmltodict": xmltodict}
@@ -189,7 +191,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         except MusifyValueError:
             return
 
-    async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
+    async def load(self, tracks: Collection[LocalTrack] = ()) -> LoadPlaylistResult:
         """
         Read the playlist file and update the tracks in this playlist instance.
 
@@ -213,22 +215,26 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         self.limiter = self._xml.smart_playlist.source.limit.limiter
         self.sorter = self._xml.smart_playlist.sorter
 
-        self._match_tracks(tracks=tracks, reference=self._get_reference_for_last_played_track(list(tracks)))
-        self._limit_tracks(ignore=self.matcher.exclude.values)
-        self._sort_tracks()
+        print(len(tracks))
+        reference = self._get_reference_for_last_played_track(list(tracks))
+        match_result = self._match_tracks(tracks=tracks, reference=reference)
+        limit_result = self._limit_tracks(tracks=match_result.combined, ignore=self.matcher.exclude.values)
+        sort_result = self._sort_tracks(tracks=limit_result.limited)
 
+        result = LoadPlaylistResult.from_results(match=match_result, limit=limit_result, sort=sort_result)
+        self.tracks.replace(result.tracks)
         self._original = self.tracks.copy()
 
-        return self
+        return result
 
-    def _limit_tracks(self, ignore: Collection[Path]) -> None:
-        if self.limiter is not None and self.tracks is not None and self.limiter_deduplication:
-            self.tracks[:] = self.tracks.unique
-        super()._limit_tracks(ignore=ignore)
+    def _limit_tracks(self, tracks: Sequence[LocalTrack], ignore: Collection[Path]) -> LimitResult:
+        if self.limiter is not None and tracks is not None and self.limiter_deduplication:
+            tracks = list(MutableUniqueSequence(tracks).unique)
+        return super()._limit_tracks(tracks=tracks, ignore=ignore)
 
-    def log_load(self, result: MatchResult) -> None:
+    def log_load(self, result: GroupResult) -> None:
         """Log the given results of loading tracks."""
-        table = MatchResult.generate_table(results={self.name: result})
+        table = GroupResult.generate_table(results={self.name: result})
         self.logger.stat(table)
 
     async def save(self, dry_run: bool = True, *_, **__) -> SyncXAutoPFResult:

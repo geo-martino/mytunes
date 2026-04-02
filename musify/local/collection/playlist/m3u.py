@@ -1,18 +1,22 @@
 import asyncio
 from collections import Counter
-from collections.abc import Sequence, Collection
+from collections.abc import Sequence, Collection, MutableSequence
 from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
 from pydantic import Field, NonNegativeInt
 
 from musify.local.collection.playlist import LocalPlaylist
+from musify.local.collection.playlist._result import SortResult, LoadPlaylistResult, SavePlaylistResult
 from musify.local.item.track import LocalTrack, LOCAL_TRACK_ADAPTER
+from musify.models.properties.uri import URI
 from musify.models.result import LogFormatter, CountResult
+from musify.models.sequence import MutableUniqueSequence
+from musify.processors.filters.composite import IncludeExcludeResult
 from musify.processors.filters.values import PathFilter
 
 
-class SyncM3UResult(CountResult):
+class SyncM3UResult(SavePlaylistResult):
     """Stores the results of a sync with a local M3U playlist"""
     start: Annotated[
         NonNegativeInt,
@@ -99,7 +103,7 @@ class M3U(LocalPlaylist[PathFilter]):
         file = await LocalTrack.load_file(path)
         return LOCAL_TRACK_ADAPTER.validate_python(file)
 
-    async def load(self, tracks: Collection[LocalTrack] = ()) -> Self:
+    async def load(self, tracks: Collection[LocalTrack] = ()) -> LoadPlaylistResult:
         """
         Read the playlist file and update the tracks in this playlist instance.
 
@@ -108,6 +112,10 @@ class M3U(LocalPlaylist[PathFilter]):
             from scratch according to its settings.
         :return: Self
         """
+        print("m3U", len(tracks))
+        for tr in tracks[:10]:
+            print("m3U", tr.path)
+
         paths: list[str] = []
         if self.path.is_file():  # load from file
             with open(self.path, "r", encoding="utf-8") as file:
@@ -116,29 +124,38 @@ class M3U(LocalPlaylist[PathFilter]):
             if not paths:  # clear on empty playlist file
                 self.tracks.clear()
                 self._original.clear()
-                return self
+                return LoadPlaylistResult()
 
+        print("m3U", "raw", list(paths)[:5])
         self.matcher = PathFilter(values=set(paths), path_mapper=self.path_mapper)
-        paths = self.path_mapper.map_many(paths, check_existence=not bool(tracks))
+        print("m3U", "matcher", list(self.matcher.values)[:5])
+        print("m3U", "matcher", list(self.matcher.paths)[:5])
+        paths = self.path_mapper.map_many(paths, check_existence=not tracks)
+        print("m3U", "mapped", list(paths)[:5])
 
         if tracks:  # match paths from given tracks using the matcher
-            self._match_tracks(tracks)
+            match_result = self._match_tracks(tracks)
+            tracks = MutableUniqueSequence(match_result.combined)
         else:  # use the paths in the matcher to load tracks from scratch
             # TODO: support m3u playlists with duplicate paths?
-            self.tracks[:] = await asyncio.gather(*map(self._load_track, set(paths)))
+            tracks = MutableUniqueSequence(await asyncio.gather(*map(self._load_track, set(paths))))
+            match_result = IncludeExcludeResult(included=tuple(tracks))
 
-        self._limit_tracks(ignore=paths)
-        self._sort_tracks(paths=list(map(Path, paths)))
+        limit_result = self._limit_tracks(tracks=tracks, ignore=paths)
+        sort_result = self._sort_tracks(tracks=tracks, paths=list(map(Path, paths)))
 
+        result = LoadPlaylistResult.from_results(match=match_result, limit=limit_result, sort=sort_result)
+        self.tracks.replace(result.tracks)
         self._original = self.tracks.copy() if self.path.is_file() else []
 
-        return self
+        return result
 
-    def _sort_tracks(self, paths: Sequence[Path] = ()) -> None:
+    def _sort_tracks(self, tracks: Sequence[LocalTrack], paths: Sequence[Path] = ()) -> SortResult:
         if self.sorter is not None or not paths:
-            return super()._sort_tracks()
+            return super()._sort_tracks(tracks)
 
-        self.tracks.sort(key=lambda track: paths.index(track.path))
+        tracks = sorted(tracks, key=lambda track: paths.index(track.path))
+        return SortResult(sorted=tuple(tracks))
 
     async def save(self, dry_run: bool = True, *_, **__) -> SyncM3UResult:
         """

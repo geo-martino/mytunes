@@ -166,7 +166,7 @@ class TestMusicBee(NoUniqueKeyTester):
     ):
         # load is mocked because tracks don't exist on disk, set tracks from super() call load manually
         with patch.object(LocalLibrary, "load_tracks", side_effect=AsyncMock()):
-            model.tracks[:] = tracks
+            model.tracks.replace(tracks)
             await model.load_tracks()
 
         assert len(model.tracks) == len(tracks)
@@ -186,14 +186,14 @@ class TestMusicBee(NoUniqueKeyTester):
                 assert track.play_count is None
 
     async def test_save_file_dry_run(self, model: MusicBee, tracks: list[LocalTrack], library_xml: dict[str, Any]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
 
         with patch.object(XMLLibraryParser, "unparse", return_value="text") as mock_unparse:
             await model.save(dry_run=True)
             mock_unparse.assert_not_called()
 
     async def test_save_file_saves_xml(self, model: MusicBee, tracks: list[LocalTrack], library_xml: dict[str, Any]):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
 
         with patch.object(XMLLibraryParser, "unparse", return_value="text") as mock_unparse:
             result = await model.save(dry_run=False)
@@ -205,7 +205,7 @@ class TestMusicBee(NoUniqueKeyTester):
     async def test_save_file_maps_tracks(
             self, model: MusicBee, tracks: list[LocalTrack], library_xml: dict[str, Any]
     ):
-        model.tracks[:] = tracks
+        model.tracks.replace(tracks)
         assert len(library_xml["Tracks"]) < len(model.tracks)
 
         result = await model.save(dry_run=True)
