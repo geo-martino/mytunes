@@ -13,7 +13,6 @@ from musify.models.exception import CursorError, CursorResponseError
 from musify.models.remote import RemoteModel
 from musify.models.url import HttpURL
 
-
 _HTTP_ADAPTER = TypeAdapter(HttpURL)
 
 

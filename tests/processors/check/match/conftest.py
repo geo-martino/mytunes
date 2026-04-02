@@ -23,7 +23,6 @@ from tests.models.api.utils import MockUrlCursor
 from tests.processors.utils import MockCollection
 from tests.utils import SimpleURI
 
-
 CheckerPage.wait_after_add = 0
 
 

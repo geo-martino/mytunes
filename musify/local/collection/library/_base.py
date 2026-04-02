@@ -1,12 +1,11 @@
 import itertools
 from collections.abc import Generator, Iterable, Collection
-from functools import cached_property
 from pathlib import Path
 from typing import Annotated, ClassVar, final, Self
 
 import tabulate
 from mutagen import MutagenError
-from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, TypeAdapter, PrivateAttr
+from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, PrivateAttr
 from termcolor import colored
 
 from musify._types import to_set

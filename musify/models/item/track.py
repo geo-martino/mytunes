@@ -109,6 +109,7 @@ class HasTracks[TK, TV: Track](AttributeModel):
         description="The tracks in this collection",
         default_factory=UniqueSequence[TK, TV],
         frozen=True,
+        repr=False,
     )
 
     @computed_field(description="The total number of tracks in this sequence")
@@ -133,6 +134,7 @@ class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
         description="The tracks in this collection",
         default_factory=MutableUniqueSequence[TK, TV],
         frozen=True,
+        repr=False,
     )
 
 

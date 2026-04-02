@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import ClassVar, Annotated, Self
+from typing import ClassVar, Annotated
 
-from pydantic import Field, field_validator, model_validator, ModelWrapValidatorHandler
+from pydantic import Field, field_validator, model_validator
 
 from musify.models._attribute import AttributeModel
 from musify.models._base import BaseModel

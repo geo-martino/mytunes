@@ -1,16 +1,14 @@
 import builtins
 import itertools
+import re
+from collections.abc import Collection, Iterator, Callable, Generator
 from contextlib import contextmanager
+from random import choice
+from typing import Self, final, Any
 from unittest.mock import Mock, patch
 
 import math
-import re
-from collections.abc import Collection, Iterator, Callable, Generator
-from random import choice
-from typing import Self, final, Any
-
 from faker import Faker
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from yarl import URL
 
 from musify.models.collection.playlist import Playlist

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
-from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, ModelWrapValidatorHandler, BeforeValidator, \
+from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, BeforeValidator, \
     FilePath
 
 from musify._types import to_set

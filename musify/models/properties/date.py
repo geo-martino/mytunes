@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from contextlib import suppress
 from datetime import date, datetime
-from typing import Annotated, Any, Self
+from typing import Annotated, Any
 
-from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ModelWrapValidatorHandler
+from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt
 
 from musify.models._attribute import AttributeModel
 from musify.models.metadata import TagAttribute, Attribute
-
 
 _DATA_ADAPTER = TypeAdapter[date](date)
 

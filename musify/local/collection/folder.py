@@ -1,7 +1,7 @@
 from collections.abc import MutableMapping, Sequence
 from typing import ClassVar, Any, Self, final, Annotated
 
-from pydantic import Field, model_validator, ModelWrapValidatorHandler
+from pydantic import Field, model_validator
 
 from musify._types import StrippedString
 from musify.local.collection._base import LocalCollection

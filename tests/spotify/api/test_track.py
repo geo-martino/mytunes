@@ -1,8 +1,8 @@
-import math
 from collections.abc import Generator
 from typing import Any
 from unittest.mock import patch, AsyncMock, Mock
 
+import math
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker

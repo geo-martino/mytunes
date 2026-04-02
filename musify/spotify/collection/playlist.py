@@ -67,6 +67,7 @@ class SpotifyPlaylist(
         default_factory=UniqueSequence[str, SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items"),
         frozen=True,
+        repr=False,
     )
 
     total: Annotated[NonNegativeInt, Attribute()] = Field(
@@ -105,7 +106,8 @@ class SpotifyMutablePlaylist(
     tracks: Annotated[MutableUniqueSequence[str, SpotifyPlaylistTrack], Attribute()] = Field(
         description="The tracks in this playlist.",
         default_factory=MutableUniqueSequence[str, SpotifyPlaylistTrack],
-        validation_alias=AliasPath("items", "items")
+        validation_alias=AliasPath("items", "items"),
+        repr=False,
     )
     collaborative: Annotated[bool, Attribute()] = Field(
         description="Whether the owner allows other users to modify the playlist.",

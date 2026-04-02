@@ -13,7 +13,6 @@ from musify.spotify.api._artist import SpotifyArtistEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.cursors import SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
-from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.models.testers import BaseModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator

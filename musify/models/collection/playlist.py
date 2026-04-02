@@ -95,6 +95,7 @@ class HasPlaylists[TK, TV: Playlist](AttributeModel):
         description="The playlists in this collection",
         default_factory=UniqueMapping[TK, TV],
         frozen=True,
+        repr=False,
     )
 
 
@@ -104,6 +105,7 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
         description="The playlists in this collection",
         default_factory=MutableUniqueMapping[TK, TV],
         frozen=True,
+        repr=False,
     )
 
     @validate_call

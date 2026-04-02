@@ -11,7 +11,6 @@ from musify.exception import MusifyTypeError
 from musify.models.properties.file import IsLocalFile, PathMapper, PathStemMapper
 from tests.models.testers import BaseModelTester
 
-
 SYSTEM_TYPES = Literal["linux", "windows"]
 
 def _generate_file_paths(

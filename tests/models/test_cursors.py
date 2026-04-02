@@ -1,10 +1,10 @@
-import math
 import random
 from collections.abc import Generator
 from copy import copy
 from typing import Self, final, ClassVar, Any
 from unittest.mock import patch, Mock, PropertyMock
 
+import math
 import pytest
 from faker import Faker
 from pydantic import AliasPath, AliasChoices

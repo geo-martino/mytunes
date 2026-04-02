@@ -7,7 +7,7 @@ from pathlib import Path, PurePath
 from typing import Any, Annotated, Self, Union, cast
 
 import mutagen
-from pydantic import Field, field_validator, model_validator, Tag, ModelWrapValidatorHandler, Discriminator
+from pydantic import Field, field_validator, model_validator, Tag, Discriminator
 
 from musify.exception import MusifyTypeError
 from musify.models._attribute import AttributeMetaclass

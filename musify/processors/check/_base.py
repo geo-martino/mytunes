@@ -1,8 +1,8 @@
 import itertools
-import math
 from collections.abc import Mapping, Sequence, Iterable
 from contextlib import suppress
 
+import math
 from pydantic import Field, PositiveInt
 from termcolor import colored
 

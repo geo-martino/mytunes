@@ -4,7 +4,7 @@ from functools import total_ordering
 from typing import Any, Self, ClassVar, Annotated
 
 from aiorequestful.types import Number
-from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ModelWrapValidatorHandler
+from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
 
 from musify.models._attribute import AttributeModel
 from musify.models.exception import MusifyValidationError

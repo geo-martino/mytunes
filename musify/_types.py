@@ -1,12 +1,12 @@
 from annotationlib import ForwardRef
 from collections.abc import Iterable, Mapping
 from types import UnionType, GenericAlias
-from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar, SupportsFloat
+from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar
 
 from annotated_types import MinLen
 from pydantic import StringConstraints, BeforeValidator
 from pydantic.alias_generators import to_snake
-from typing_extensions import get_origin, SupportsInt
+from typing_extensions import get_origin
 from typing_inspection.typing_objects import is_annotated
 
 type Character = Annotated[str, StringConstraints(min_length=1, max_length=1)]

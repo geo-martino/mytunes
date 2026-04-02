@@ -4,7 +4,7 @@ from faker import Faker
 from musify.models.item.album import Album, HasAlbums, RemoteAlbum, HasAlbum
 from musify.models.item.artist import Artist
 from tests.models.testers import NoUniqueKeyTester, UniqueKeyTester
-from tests.utils import SimpleURI, split_list
+from tests.utils import SimpleURI
 
 
 class TestAlbum(NoUniqueKeyTester):

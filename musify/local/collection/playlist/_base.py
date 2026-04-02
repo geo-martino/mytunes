@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Self, Any, Annotated
 
 import mutagen
-from pydantic import Field, model_validator, PrivateAttr, ModelWrapValidatorHandler
+from pydantic import Field, model_validator, PrivateAttr
 
 from musify.local.collection._base import LocalCollection
 from musify.local.item.track import LocalTrack, HasLocalTracks

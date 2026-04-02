@@ -2,7 +2,6 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from random import choice
-from typing import Any
 
 import pytest
 from faker import Faker
@@ -19,9 +18,9 @@ from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer
-from musify.processors.filters.match import MatchFilter
-from musify.processors.filters.values import PathFilter, ValueFilter
 from musify.processors.filters.compare import ComparerFilter
+from musify.processors.filters.match import MatchFilter
+from musify.processors.filters.values import PathFilter
 from musify.processors.limit import LimitType, ItemLimiter
 from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from tests.local.collection.playlist.testers import LocalPlaylistTester

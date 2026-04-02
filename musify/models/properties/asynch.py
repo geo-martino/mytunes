@@ -53,4 +53,5 @@ class HasAsyncOperations(AttributeModel):
             "Setting this too high will cause these operations to hang."
         ),
         default=32,
+        repr=False,
     )

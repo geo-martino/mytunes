@@ -26,7 +26,8 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
     tracks: Annotated[UniqueSequence[str, SpotifyTrack], Attribute()] = Field(
         description="The tracks on this album.",
         default_factory=UniqueSequence[str, SpotifyTrack],
-        validation_alias=AliasPath("tracks", "items")
+        validation_alias=AliasPath("tracks", "items"),
+        repr=False,
     )
 
     cursor: Annotated[SpotifyIndexCursor, Attribute()] = Field(

@@ -1,7 +1,7 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self, TYPE_CHECKING
 
-from pydantic import model_validator, ModelWrapValidatorHandler
+from pydantic import model_validator
 
 from musify.models.collection._base import RemoteCollection, CollectionModel
 from musify.models.collection.album import AlbumCollection

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Self, Annotated, Any
 
-from pydantic import Field, model_validator, ModelWrapValidatorHandler
+from pydantic import Field, model_validator
 
 from musify._types import StrippedString
 from musify.models._attribute import AttributeModel

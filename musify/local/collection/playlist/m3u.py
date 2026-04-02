@@ -1,11 +1,10 @@
 import asyncio
 from collections import Counter
 from collections.abc import Sequence, Collection
-from functools import cached_property
 from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
-from pydantic import Field, TypeAdapter, NonNegativeInt
+from pydantic import Field, NonNegativeInt
 
 from musify.local.collection.playlist import LocalPlaylist
 from musify.local.item.track import LocalTrack, LOCAL_TRACK_ADAPTER

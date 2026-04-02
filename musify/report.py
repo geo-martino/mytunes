@@ -8,9 +8,9 @@ from collections.abc import Iterable
 
 from aiorequestful.types import UnitIterable
 from musify.field import TagField, Fields, ALL_FIELDS, TagFields
+from musify.libraries.local.library import LocalLibrary
 from musify.models.object import Library, Playlist
 
-from musify.libraries.local.library import LocalLibrary
 from musify.logger import MusifyLogger
 from musify.logger import REPORT
 from musify.models._base import MusifyResource

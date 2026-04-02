@@ -1,7 +1,7 @@
-import math
 from collections.abc import Generator
 from unittest.mock import Mock, patch
 
+import math
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture

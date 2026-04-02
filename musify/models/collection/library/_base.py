@@ -10,8 +10,7 @@ from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutable
 from musify.models.item.track import Track, HasTracks, HasMutableTracks
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.logger import HasLogger
-from musify.processors.filters import Filter
-from musify.processors.filters.composite import CompositeFilter, IncludeExcludeFilter
+from musify.processors.filters.composite import IncludeExcludeFilter
 from musify.processors.filters.values import NameFilter
 
 
@@ -40,7 +39,8 @@ class Library[TK, TV: Track, KP, VP: Playlist](
 
     playlist_filter: NameFilter | IncludeExcludeFilter[VP, NameFilter, NameFilter] | None = Field(
         description="The filter to apply when loading playlists. Filters playlist by name.",
-        default=None
+        default=None,
+        repr=False,
     )
 
     @abstractmethod

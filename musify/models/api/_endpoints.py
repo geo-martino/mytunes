@@ -14,7 +14,6 @@ from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.types import JSON
-from numpy.lib._datasource import Repository
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic.json_schema import JsonSchemaValue

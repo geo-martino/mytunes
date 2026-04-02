@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections.abc import Collection
 from copy import copy
 from functools import total_ordering, cached_property
-from typing import ClassVar, Self, Any, Annotated, TYPE_CHECKING, cast, Union
+from typing import ClassVar, Self, Annotated, TYPE_CHECKING, cast, Union
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, TypeAdapter
 from pydantic_core.core_schema import ValidationInfo

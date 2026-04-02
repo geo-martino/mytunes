@@ -1,8 +1,8 @@
-import math
 from collections.abc import Generator
 from copy import copy
 from unittest.mock import patch, Mock
 
+import math
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture

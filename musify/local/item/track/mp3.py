@@ -1,12 +1,12 @@
 from collections.abc import MutableSequence, MutableMapping, Iterable
 from copy import copy
-from typing import Any, ClassVar, Self, final, Annotated
+from typing import Any, ClassVar, final, Annotated
 
 import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer, ModelWrapValidatorHandler, NonNegativeFloat, computed_field
+    field_validator, field_serializer, NonNegativeFloat, computed_field
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
 from musify._types import StrippedString

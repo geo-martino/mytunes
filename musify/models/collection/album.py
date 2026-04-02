@@ -1,7 +1,7 @@
 from collections.abc import Sequence, MutableMapping
 from typing import Self, Any, TYPE_CHECKING
 
-from pydantic import model_validator, ModelWrapValidatorHandler, computed_field, PositiveInt
+from pydantic import model_validator, computed_field, PositiveInt
 
 from musify.models.collection._base import RemoteCollection, CollectionModel
 from musify.models.cursors import PageCursor

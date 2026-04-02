@@ -18,7 +18,7 @@ from musify.local.item.artist import LocalArtist
 from musify.local.item.genre import LocalGenre
 from musify.local.item.track import LocalTrack
 from musify.models.collection.playlist import Playlist
-from musify.processors.filters.values import ValueFilter, NameFilter
+from musify.processors.filters.values import NameFilter
 from tests.models.testers import NoUniqueKeyTester
 
 

@@ -103,6 +103,7 @@ class HasAlbums[AT: Album](HasSeparableTags):
     albums: Annotated[list[AT], Attribute()] = Field(
         description="The albums associated with this resource.",
         default_factory=list,
+        repr=False,
     )
 
     @field_validator("albums", mode="before", check_fields=True)

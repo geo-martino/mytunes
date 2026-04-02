@@ -588,6 +588,7 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
             "Setting this too high will cause these operations to hang."
         ),
         default=32,
+        repr=False,
     )
 
     @validate_call

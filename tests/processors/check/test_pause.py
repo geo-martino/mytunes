@@ -1,8 +1,8 @@
 import itertools
-import math
 from collections.abc import Collection, Sequence, Generator
 from unittest.mock import Mock, AsyncMock, patch
 
+import math
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture

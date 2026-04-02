@@ -1,9 +1,5 @@
 from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.backend.base import ResponseRepository
-from aiorequestful.cache.session import CachedSession
-from aiorequestful.response.status import StatusHandler
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import JsonSchema
 from yarl import URL
 
 from musify.models.api import RemoteAPI

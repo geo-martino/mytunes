@@ -23,7 +23,7 @@ from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.image import ImageURL, ImageFile
-from musify.models.properties.uri import URI, HasImmutableURI
+from musify.models.properties.uri import URI
 from musify.models.remote import RemoteModel
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockIndexCursor, MockUrlCursor, MockKeyCursor, MockInitialCursor

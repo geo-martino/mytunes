@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from typing import ClassVar, final, Literal, Type, Any, get_args
 
 from pydantic import AliasPath, validate_call
@@ -17,7 +16,6 @@ from musify.spotify.cursors import SpotifyInitialCursor, SpotifyIndexCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI
-
 
 _ALBUM_TYPE = Literal["album", "single", "compilation", "appears_on"]
 _ALL_ALBUM_TYPES = get_args(_ALBUM_TYPE)

@@ -2,7 +2,6 @@ from pydantic import TypeAdapter
 
 from ._base import LocalPlaylistFile, LocalPlaylist
 
-
 __all__ = [
     LocalPlaylist.__name__,
     LocalPlaylistFile.__name__,

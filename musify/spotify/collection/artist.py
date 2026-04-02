@@ -25,6 +25,7 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
         description="The albums associated with this artist.",
         default_factory=list,
         validation_alias=AliasPath("albums", "items"),
+        repr=False,
     )
 
     # the implementation of SpotifyArtistEndpoints adds a 'starter' cursor to get albums for each artist
