@@ -1,4 +1,5 @@
-from functools import partial, update_wrapper
+from contextlib import suppress
+from functools import partial, update_wrapper, cached_property
 from types import NoneType
 from typing import Optional, Callable, Any, cast, Self
 
@@ -152,7 +153,7 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
     """
     model_config = ConfigDict(ignored_types=(processormethod,))
 
-    @property
+    @cached_property
     def _processor_name(self) -> str | None:
         """The cleaned processor name to be used when calling this processor"""
         name: str = self.__class__.processor_field_name
@@ -160,12 +161,12 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
         value: str | None = getattr(self, name)
         return attribute.cleaner(value) if value else None
 
-    @property
+    @cached_property
     def _processor_method_name(self) -> str | None:
         """The processor method name to be used when calling this processor"""
         return self.__processor_method_map__[self._processor_name]
 
-    @property
+    @cached_property
     def _processor_method(self) -> processormethod:
         """The processor method to be used when calling this processor"""
         return getattr(self, self._processor_method_name)
@@ -184,6 +185,18 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
                 f"Invalid processor name {processor_name!r}. "
                 f"Must be one of: {', '.join(self.__processor_method_map__)}"
             )
+
+        return self
+
+    @model_validator(mode="after")
+    def _clear_cache(self) -> Self:
+        # clear cached properties when revalidating, suppress if cache not yet set
+        with suppress(AttributeError):
+            del self._processor_name
+        with suppress(AttributeError):
+            del self._processor_method_name
+        with suppress(AttributeError):
+            del self._processor_method
 
         return self
 

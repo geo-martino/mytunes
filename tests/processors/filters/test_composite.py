@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import deepcopy, copy
 from pathlib import Path
 
 import pytest
@@ -149,17 +149,17 @@ class TestGroupFilter(FilterTester):
         return track.path
 
     def test_equality(self, model: GroupFilter, faker: Faker):
-        assert model == deepcopy(model)
+        assert model == copy(model)
 
         new_filter = GroupFilter(
-            compare=deepcopy(model.compare),
-            include=deepcopy(model.include),
-            exclude=deepcopy(model.exclude)
+            compare=copy(model.compare),
+            include=copy(model.include),
+            exclude=copy(model.exclude)
         )
         assert model == new_filter
 
-        new_filter.include = deepcopy(model.exclude)
-        new_filter.exclude = deepcopy(model.include)
+        new_filter.include = copy(model.exclude)
+        new_filter.exclude = copy(model.include)
         assert model != new_filter
 
     # noinspection PyMethodOverriding

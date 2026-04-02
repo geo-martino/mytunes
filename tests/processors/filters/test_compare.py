@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import copy
 from unittest.mock import MagicMock
 
 import pytest
@@ -46,9 +46,9 @@ class TestComparerFilter(FilterTester):
 
     def test_equality(self, model: ComparerFilter, faker: Faker):
         model.match_all = faker.boolean()
-        assert model == deepcopy(model)
+        assert model == copy(model)
 
-        new_filter = ComparerFilter(comparers=deepcopy(model.comparers), match_all=model.match_all)
+        new_filter = ComparerFilter(comparers=copy(model.comparers), match_all=model.match_all)
         assert model == new_filter
 
         new_filter.match_all = not model.match_all

@@ -4,7 +4,10 @@ Processor making comparisons between objects and data types.
 import inspect
 import re
 from collections.abc import Sequence
+from contextlib import suppress
 from datetime import datetime
+from functools import cached_property
+from time import perf_counter
 from types import NoneType
 from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final
 
@@ -75,18 +78,6 @@ class Comparer(DynamicProcessor):
         default=False,
     )
 
-    @model_validator(mode="after")
-    def _convert_expected_to_time_mapper(self) -> Self:
-        if not isinstance(self.expected, str) or self._expected_type is str:
-            return self
-
-        try:
-            self.__dict__["expected"] = TimeMapper.model_validate(self.expected)
-        except ValueError:
-            pass
-
-        return self
-
     @property
     def _field_type(self) -> type:
         if self.field is None:
@@ -124,6 +115,14 @@ class Comparer(DynamicProcessor):
             annotation_type = annotation
 
         return annotation_type
+
+    # noinspection PyCallingNonCallable
+    def _clear_cache(self) -> Self:
+        # additional cache clears necessary
+        with suppress(AttributeError):
+            del self._expected_args
+
+        return super()._clear_cache()
 
     @model_validator(mode="after")
     def _convert_expected_to_null(self) -> Self:
@@ -173,6 +172,18 @@ class Comparer(DynamicProcessor):
 
         return self
 
+    @model_validator(mode="after")
+    def _convert_expected_to_time_mapper(self) -> Self:
+        if not isinstance(self.expected, str) or self._expected_type is str:
+            return self
+
+        try:
+            self.__dict__["expected"] = TimeMapper.model_validate(self.expected)
+        except ValueError:
+            pass
+
+        return self
+
     def _convert_expected_value(self, expected_type: type) -> None:
         if self.expected is None or is_typevar(expected_type):
             return
@@ -195,9 +206,6 @@ class Comparer(DynamicProcessor):
         if type(value) != type(self.expected) or value != self.expected:
             self.__dict__["expected"] = value
 
-    def __call__(self, *args, **kwargs) -> bool:
-        return self.compare(*args, **kwargs)
-
     def compare[IT: Any](self, item: IT, reference: IT | None = None) -> bool:
         """
         Compare a ``item`` to a ``reference`` or,
@@ -215,14 +223,18 @@ class Comparer(DynamicProcessor):
         elif isinstance(expected_value, TimeMapper):  # apply map to current time for comparison
             expected_value = expected_value.apply(datetime.now())
 
-        return self._processor_method(actual_value, expected_value)
+        result = self._processor_method(actual_value, expected_value)
+        return result
+
+    @cached_property
+    def _expected_args(self) -> list[str]:
+        return inspect.getfullargspec(self._processor_method.func).args
 
     def _validate_compare_args(self, reference: Any | None = None) -> None:
         if reference is None and self.reference_required:
             raise MusifyTypeError(f"A reference is required for this instance of {self.__class__.__name__}")
 
-        signature = inspect.getfullargspec(self._processor_method.func)
-        if reference is None and "expected" in signature.args and not self.expected:
+        if reference is None and "expected" in self._expected_args and not self.expected:
             raise MusifyTypeError("No comparative item given and no expected values set")
 
     def _get_value_from_item(self, item: Any) -> Any:

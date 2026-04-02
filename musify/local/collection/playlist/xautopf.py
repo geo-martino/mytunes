@@ -24,9 +24,9 @@ from musify.local.collection.playlist._result import LimitResult, SavePlaylistRe
 from musify.local.item.track import LocalTrack
 from musify.models import BaseModel
 from musify.models.exception import MusifyValidationError
-from musify.models.properties.uri import URI
-from musify.models.result import LogFormatter, CountResult
-from musify.models.sequence import MutableUniqueSequence, UniqueSequence
+from musify.models.properties.file import PathMapper
+from musify.models.result import LogFormatter
+from musify.models.sequence import MutableUniqueSequence
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.filters.composite import GroupResult, GroupFilter
@@ -207,15 +207,10 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
         self.description = self._xml.smart_playlist.source.description
 
-        matcher = self._xml.smart_playlist.matcher
-        matcher.include.path_mapper = self.path_mapper
-        matcher.exclude.path_mapper = self.path_mapper
+        self.matcher: AutoMatcher = self._xml.smart_playlist.create_matcher(path_mapper=self.path_mapper)
+        self.limiter = self._xml.smart_playlist.source.limit.create_limiter()
+        self.sorter = self._xml.smart_playlist.create_sorter()
 
-        self.matcher = matcher
-        self.limiter = self._xml.smart_playlist.source.limit.limiter
-        self.sorter = self._xml.smart_playlist.sorter
-
-        print(len(tracks))
         reference = self._get_reference_for_last_played_track(list(tracks))
         match_result = self._match_tracks(tracks=tracks, reference=reference)
         limit_result = self._limit_tracks(tracks=match_result.combined, ignore=self.matcher.exclude.values)
@@ -653,8 +648,7 @@ class _XMLLimit(_XMLBaseModel):
         _XML_LIMIT_TYPE_ADAPTER.validate_python(kind)
         return kind
 
-    @property
-    def limiter(self) -> ItemLimiter | None:
+    def create_limiter(self) -> ItemLimiter | None:
         """Build the limiter for this configuration."""
         if not self.enabled:
             return
@@ -934,11 +928,10 @@ class _XMLSmartPlaylist(_XMLBaseModel):
 
     source: Annotated[_XMLSource, _XMLElementField()] = Field(default_factory=_XMLSource)
 
-    @property
-    def matcher(self) -> AutoMatcher:
+    def create_matcher(self, path_mapper: PathMapper | None = None) -> AutoMatcher:
         """Build the matcher for this configuration."""
-        include = PathFilter(values=self.source.exceptions_include or set())
-        exclude = PathFilter(values=self.source.exceptions or set())
+        include = PathFilter(values=self.source.exceptions_include or set(), path_mapper=path_mapper)
+        exclude = PathFilter(values=self.source.exceptions or set(), path_mapper=path_mapper)
 
         # grouping by track is equivalent to no grouping
         group_by = self.group_by or "track"
@@ -964,8 +957,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
         self.group_by = matcher.group_by or group_by_default
         return self
 
-    @property
-    def sorter(self) -> ItemSorter:
+    def create_sorter(self) -> ItemSorter:
         """Build the sorter for this configuration."""
         return ItemSorter(
             sort_fields=self.source.sort_by.sort_fields if self.source.sort_by is not None else {},

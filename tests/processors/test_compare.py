@@ -1,5 +1,5 @@
 import re
-from copy import deepcopy, copy
+from copy import copy
 from datetime import datetime, date, timedelta
 from random import choice, sample
 
@@ -55,8 +55,21 @@ class TestComparer(BaseModelTester):
         assert comparer.condition == "greater_than"
         assert comparer._processor_method == comparer._is_after
 
+    def test_clears_cache(self, model: Comparer):
+        model.condition = "is_not_null"
+        # these properties are cached
+        assert model._processor_name == "is_not_null"
+        assert model._processor_method == model._is_not_null
+        assert model._expected_args == ["self", "actual"]
+
+        model.condition = "in_range"
+        # cache should clear on changing condition
+        assert model._processor_name == "in_range"
+        assert model._processor_method == model._in_range
+        assert model._expected_args == ["self", "actual", "expected"]
+
     def test_equality(self, model: Comparer):
-        assert model == deepcopy(model)
+        assert model == copy(model)
 
         new_filter = Comparer(
             condition=model.condition,

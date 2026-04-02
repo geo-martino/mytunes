@@ -1,6 +1,5 @@
-import asyncio
 from collections import Counter
-from collections.abc import Sequence, Collection, MutableSequence
+from collections.abc import Sequence, Collection
 from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
@@ -10,10 +9,8 @@ from musify.local.collection.playlist import LocalPlaylist
 from musify.local.collection.playlist._result import SortResult, LoadPlaylistResult, SavePlaylistResult
 from musify.local.item.track import LocalTrack, LOCAL_TRACK_ADAPTER
 from musify.models.properties.file import PathInputType
-from musify.models.properties.uri import URI
-from musify.models.result import LogFormatter, CountResult
+from musify.models.result import LogFormatter
 from musify.models.sequence import MutableUniqueSequence
-from musify.processors.filters.composite import IncludeExcludeResult
 from musify.processors.filters.values import PathFilter
 
 
@@ -113,7 +110,6 @@ class M3U(LocalPlaylist[PathFilter]):
             from scratch according to its settings.
         :return: Self
         """
-        print(len(tracks), self.path.is_file())
         if not self.path.is_file():  # just use the given tracks against the current settings
             return self._load_from_tracks(tracks)
 

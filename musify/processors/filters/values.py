@@ -10,6 +10,7 @@ from musify.models import BaseModel
 from musify.models.properties.file import PathMapper, IsLocalFile, PathInputType
 from musify.models.properties.name import HasName
 from musify.processors.filters._base import Filter
+from musify.utils import default_if_none
 
 
 class ValueFilter[IT](Filter[IT]):
@@ -88,7 +89,7 @@ class PathFilter(ValueFilter[str]):
         description="Set of paths to filter against. These will be stored as un-mapped paths if a PathMapper is set.",
         default_factory=set,
     )
-    path_mapper: PathMapper = Field(
+    path_mapper: Annotated[PathMapper, BeforeValidator(default_if_none)] = Field(
         description="Mapper to use to map paths.",
         default_factory=PathMapper,
     )
@@ -135,5 +136,4 @@ class PathFilter(ValueFilter[str]):
 
     @validate_call
     def check(self, item: PathInputType, *_, **__) -> bool:
-        print("UNMAPPED", self.path_mapper.unmap(item, check_existence=False))
         return self.path_mapper.unmap(item, check_existence=False) in self.values

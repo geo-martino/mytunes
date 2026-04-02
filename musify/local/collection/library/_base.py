@@ -300,7 +300,7 @@ class LocalLibrary(
             results[playlist.name] = result
 
         playlists = sorted(playlists, key=lambda x: x.name.casefold())
-        results = dict(sorted(results.items()))
+        results = dict(sorted(results.items(), key=lambda x: x[0].casefold()))
         self.playlists.replace(playlists)
 
         self._log_errors("Could not load the following playlists")

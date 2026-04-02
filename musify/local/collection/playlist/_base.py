@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Collection, MutableMapping, MutableSequence, Sequence
 from pathlib import Path
-from typing import Self, Any, Annotated
+from typing import Any, Annotated
 
 import mutagen
 from pydantic import Field, model_validator, PrivateAttr
@@ -14,10 +14,9 @@ from musify.models.collection.playlist import MutablePlaylist
 from musify.models.metadata import UniqueAttribute
 from musify.models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
 from musify.models.properties.uri import URI
-from musify.models.result import Result, LenLogFormatter
 from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 from musify.processors.filters import Filter
-from musify.processors.filters.composite import GroupResult, GroupFilter, CompositeFilter, CompositeResult, \
+from musify.processors.filters.composite import CompositeFilter, CompositeResult, \
     IncludeExcludeResult
 from musify.processors.limit import ItemLimiter
 from musify.processors.sort import ItemSorter

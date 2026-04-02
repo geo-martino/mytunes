@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Collection, Iterator
-from typing import Any, final, Annotated, Collection
+from typing import Any, final, Annotated
 
 from pydantic import Field, validate_call, computed_field
 
@@ -188,6 +188,7 @@ class GroupResult[IT: Any](IncludeExcludeResult[IT]):
         return [track for track in [*self.compared, *self.included, *self.grouped] if track not in self.excluded]
 
 
+# noinspection PyFinal
 @final
 class GroupFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
     """

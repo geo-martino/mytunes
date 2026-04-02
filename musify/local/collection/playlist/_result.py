@@ -4,7 +4,7 @@ from pydantic import Field
 
 from musify.local.item.track import LocalTrack
 from musify.models.result import LenLogFormatter, CountResult, LogPosition
-from musify.processors.filters.composite import GroupResult, CompositeFilter, CompositeResult
+from musify.processors.filters.composite import GroupResult, CompositeResult
 
 
 class LimitResult(CountResult):
@@ -37,12 +37,20 @@ class SortResult(CountResult):
     )
 
 
-class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult, SortResult):
-    @property
-    def tracks(self) -> tuple[LocalTrack, ...]:
-        """Return the final list of tracks after a load operation."""
-        # sorting is the last stage of the load process so it will provide the final result
-        return self.sorted
+class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult):
+    tracks: Annotated[
+        tuple[LocalTrack, ...],
+        LogPosition(position=50),
+        LenLogFormatter(
+            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x == 0
+        ),
+        LenLogFormatter(
+            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        ),
+    ] = Field(
+        description="The final list of tracks after all operations.",
+        default_factory=tuple,
+    )
 
     @classmethod
     def from_results(
@@ -54,8 +62,8 @@ class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult, SortResult):
         """Create the result by combining the results from the various playlist load stages."""
         match = {key: val for key, val in (match.__dict__ or {}).items() if not key.startswith("_")}
         limit = {key: val for key, val in (limit.__dict__ or {}).items() if not key.startswith("_")}
-        sort = {key: val for key, val in (sort.__dict__ or {}).items() if not key.startswith("_")}
-        return cls(**match, **limit, **sort)
+        # just take the sorted list as the final tracks as that's always the last step in the load
+        return cls(**match, **limit, tracks=sort.sorted)
 
 
 class SavePlaylistResult(CountResult):

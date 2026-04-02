@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import deepcopy, copy
 from datetime import datetime
 from pathlib import Path
 from random import choice
@@ -14,7 +14,6 @@ from musify.exception import MusifyValueError
 from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
-from musify.local.item import LocalAlbum
 from musify.local.item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
@@ -64,7 +63,7 @@ class TestSyncXAutoPFResult(BaseModelTester):
         )
         initial_xml.smart_playlist.parse_matcher(initial_matcher)
 
-        final_matcher = deepcopy(initial_matcher)
+        final_matcher = copy(initial_matcher)
         final_matcher.include = PathFilter(values=tracks[10:13])
         final_matcher.exclude = PathFilter(values=tracks[18:20])
         final_xml.smart_playlist.parse_matcher(final_matcher)
@@ -331,12 +330,9 @@ class TestXAutoPF(LocalPlaylistTester):
         assert not model.tracks
         assert model.description == xml.smart_playlist.source.description
 
-        matcher = xml.smart_playlist.matcher
-        matcher.include.path_mapper = model.path_mapper
-        matcher.exclude.path_mapper = model.path_mapper
-        assert model.matcher == matcher
-        assert model.limiter == xml.smart_playlist.source.limit.limiter
-        assert model.sorter == xml.smart_playlist.sorter
+        assert model.matcher == xml.smart_playlist.create_matcher(path_mapper=model.path_mapper)
+        assert model.limiter == xml.smart_playlist.source.limit.create_limiter()
+        assert model.sorter == xml.smart_playlist.create_sorter()
 
         mock_match = mocker.spy(model, "_match_tracks")
         mock_limit = mocker.spy(model, "_limit_tracks")
@@ -614,14 +610,14 @@ class TestXMLLimit(BaseModelTester):
         model.type = "Minutes"
         model.selected_by = "MostRecentlyAdded"
 
-        limiter = model.limiter
+        limiter = model.create_limiter()
         assert limiter.limit_by == 25
         assert limiter.kind == LimitType.MINUTES
         assert limiter.sorted_by == "most_recently_added"
         assert limiter.allowance == 1.25
 
         model.enabled = False
-        assert model.limiter is None
+        assert model.create_limiter() is None
 
     def test_parse_limiter(self, model: _XMLLimit):
         limiter = ItemLimiter(
@@ -959,14 +955,16 @@ class TestXMLSmartPlaylist(BaseModelTester):
         model.source.exceptions_include = {"a", "b", "c"}
         model.source.exceptions = {"1", "2", "3"}
 
-        assert model.matcher.compare == model.source.conditions.comparers
-        assert model.matcher.include.values == model.source.exceptions_include
-        assert model.matcher.exclude.values == model.source.exceptions
-        assert model.matcher.group_by == model.group_by
+        matcher = model.create_matcher()
+        assert matcher.compare == model.source.conditions.comparers
+        assert matcher.include.values == model.source.exceptions_include
+        assert matcher.exclude.values == model.source.exceptions
+        assert matcher.group_by == model.group_by
 
     def test_build_matcher_drops_group_by_on_tracks(self, model: _XMLSmartPlaylist):
         model.group_by = "track"
-        assert model.matcher.group_by is None
+        matcher = model.create_matcher()
+        assert matcher.group_by is None
 
     def test_parse_matcher_when_none(self, model: _XMLSmartPlaylist):
         model.group_by = "track"
@@ -998,9 +996,10 @@ class TestXMLSmartPlaylist(BaseModelTester):
         model.shuffle_same_artist_weight = faker.random_int(-10, 10) / 10
         model.source.sort_by = _XMLDefinedSort(id=choice(tuple(_XMLDefinedSort.fields_map.keys())))
 
-        assert model.sorter.sort_fields == model.source.sort_by.sort_fields
-        assert model.sorter.shuffle_mode == ShuffleMode.RECENT_ADDED
-        assert model.sorter.shuffle_weight == model.shuffle_same_artist_weight
+        sorter = model.create_sorter()
+        assert sorter.sort_fields == model.source.sort_by.sort_fields
+        assert sorter.shuffle_mode == ShuffleMode.RECENT_ADDED
+        assert sorter.shuffle_weight == model.shuffle_same_artist_weight
 
     def test_parse_sorter_when_none(self, model: _XMLSmartPlaylist):
         model.parse_sorter()
