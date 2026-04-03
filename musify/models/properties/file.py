@@ -70,12 +70,6 @@ class IsFile(BaseModel, metaclass=FileMetaclass):
 
     @property
     @abstractmethod
-    def created_at(self) -> Annotated[datetime | None, Attribute()]:
-        """The date that the file was created."""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
     def modified_at(self) -> Annotated[datetime | None, Attribute()]:
         """The date that the file was last modified."""
         raise NotImplementedError
@@ -171,10 +165,6 @@ class IsLocalFile(IsFile, metaclass=LocalFileMetaclass):
     @property
     def size(self) -> Annotated[int | None, Attribute()]:
         return self.path.stat().st_size if self.path.is_file() else None
-
-    @property
-    def created_at(self) -> Annotated[datetime | None, Attribute()]:
-        return datetime.fromtimestamp(self.path.stat().st_ctime) if self.path.is_file() else None
 
     @property
     def modified_at(self) -> Annotated[datetime | None, Attribute()]:

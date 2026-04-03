@@ -21,13 +21,11 @@ class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
         """Asserts that saving to a new file works as expected."""
         assert model.path.is_file()
         assert model.modified_at is not None
-        assert model.created_at is not None
 
         model.name = "New Playlist"
         assert model.path == path
         assert path.is_file()
         assert model.modified_at is not None
-        assert model.created_at is not None
 
         await model.save(dry_run=False)
 
@@ -35,7 +33,6 @@ class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
         assert not path.is_file()
         assert model.path.is_file()
         assert model.modified_at is not None
-        assert model.created_at is not None
 
     @staticmethod
     def assert_paths_are_mapped(paths: Iterable[str | Path]) -> None:
@@ -63,24 +60,18 @@ class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
         """Asserts that saving to an existing file works as expected."""
         cls.assert_model_file_exists(model)
         original_dt_modified = model.modified_at
-        # original_dt_created = model.created_at
 
         assert await model.save(dry_run=True) == await model.save(dry_run=False)
-
-        # TODO: these assertions fail on GitHub actions but not locally, why?
         assert model.modified_at > original_dt_modified
-        # assert model.created_at == original_dt_created  # TODO: doesn't work?
 
     @staticmethod
     def assert_model_file_does_not_exist(model: LocalPlaylist) -> None:
         """Asserts that the model's file does not exist."""
         assert not model.path.is_file()
         assert model.modified_at is None
-        assert model.created_at is None
 
     @staticmethod
     def assert_model_file_exists(model: LocalPlaylist) -> None:
         """Asserts that the model's file does not exist."""
         assert model.path.is_file()
         assert model.modified_at is not None
-        assert model.created_at is not None

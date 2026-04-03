@@ -154,7 +154,7 @@ class TestComparer(BaseModelTester):
     def test_convert_expected_to_datetime(self):
         comparer = Comparer(condition="is", expected="2024-01-04", field="added_at")
         assert comparer.expected == datetime(2024, 1, 4)
-        comparer = Comparer(condition="is_after", expected="2024-02-05 12:34:56", field="created_at")
+        comparer = Comparer(condition="is_after", expected="2024-02-05 12:34:56", field="modified_at")
         assert comparer.expected == datetime(2024, 2, 5, 12, 34, 56)
         comparer = Comparer(condition="is_before", expected="2024-03-06 10:11:12", field="modified_at")
         assert comparer.expected == datetime(2024, 3, 6, 10, 11, 12)
@@ -162,7 +162,7 @@ class TestComparer(BaseModelTester):
     def test_convert_expected_to_time_mapper(self):
         comparer = Comparer(condition="is_after", expected="4h", field="added_at")
         assert comparer.expected == TimeMapper(unit="hours", amount=4, add=False)
-        comparer = Comparer(condition="is_before", expected="+5d", field="created_at")
+        comparer = Comparer(condition="is_before", expected="+5d", field="modified_at")
         assert comparer.expected == TimeMapper(unit="days", amount=5, add=True)
 
     def test_convert_expected_skips_time_mapper(self):
