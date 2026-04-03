@@ -1,3 +1,5 @@
+import asyncio
+from asyncio import Task
 from collections.abc import Generator, Sequence
 from copy import deepcopy
 from typing import Any
@@ -9,6 +11,7 @@ from faker import Faker
 from pytest_mock import MockerFixture
 
 from musify.exception import MusifyError
+from musify.logger import Logger
 from musify.models.api import RemoteAPI
 from musify.models.api.playlist import PlaylistReadWriteEndpoints
 from musify.models.collection import CollectionModel
@@ -106,21 +109,28 @@ class TestPlaylistManagement(BaseModelTester):
             mocker: MockerFixture,
             faker: Faker,
     ):
+        mock_run_tasks = mocker.spy(Logger, "run_tasks_async")
         mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
 
-        def _random_exception(*_, **__):
+        async def _random_exception(*_, **__):
             if faker.boolean():
+                await asyncio.sleep(faker.random_int(1, 5) / 10)
                 return
 
             exc = faker.random_element((MusifyError, HTTPError))
             raise exc()
 
-        with patch.object(model, "_setup_playlist", side_effect=_random_exception):
-            # noinspection PyTypeChecker
-            with pytest.raises((MusifyError, HTTPError)):
+        with patch.object(model, "_setup_playlist", side_effect=_random_exception, new_callable=AsyncMock):
+            with pytest.raises(ExceptionGroup) as excinfo:
                 async with model:
                     pass
-            mock_teardown_playlists.assert_called_once()
+
+        assert excinfo.group_contains(MusifyError)
+        assert excinfo.group_contains(HTTPError)
+
+        tasks: list[Task] = mock_run_tasks.call_args.args[1]
+        assert any(task.cancelled() for task in tasks)
+        mock_teardown_playlists.assert_called_once()
 
     async def test_delete_playlists(
             self,

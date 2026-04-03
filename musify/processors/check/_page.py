@@ -146,17 +146,17 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         if self.task_id is not None:
             self.logger.progress.start_task(task_id=self.task_id)
 
-        tasks = [asyncio.create_task(task) for task in map(self._setup_playlist, self.collections)]
-        remove = self.position.number == self.position.total
-
         try:
-            await self.logger.run_tasks_async(tasks, task_id=self.task_id, remove=remove)
-        except (MusifyError, HTTPError):
+            async with asyncio.TaskGroup() as tg:
+                tasks = [tg.create_task(task) for task in map(self._setup_playlist, self.collections)]
+                remove = self.position.number == self.position.total
+                await self.logger.run_tasks_async(tasks, task_id=self.task_id, remove=remove)
+        except* (MusifyError, HTTPError) as exc:
+            print(exc, "MUS")
             # always make sure teardown happens in case of an error to clean up temp playlists
-            for task in tasks:  # TODO: test me
-                task.cancel()
             await self.teardown_playlists()
             raise
+
 
         if self.task_id is not None and not remove:
             self.logger.progress.stop_task(task_id=self.task_id)
