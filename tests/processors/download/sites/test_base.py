@@ -1,5 +1,5 @@
 import locale
-from unittest.mock import patch, Mock, PropertyMock
+from unittest.mock import patch, Mock, PropertyMock, MagicMock
 
 import pytest
 from faker import Faker
@@ -22,8 +22,8 @@ class TestAudioStore(BaseModelTester):
         AudioStore,
         __abstractmethods__=set(),
         _base_url=PropertyMock(return_value=URL.build(scheme="https", host="example.com")),
-        _format_query_path_for_item=Mock(return_value=""),
-        _format_query_params_for_item=Mock(return_value={}),
+        _format_query_path_for_item=MagicMock(return_value=""),
+        _format_query_params_for_item=MagicMock(return_value={}),
     )
     def model(self, faker: Faker) -> AudioStore:
         return AudioStore[str](
@@ -42,8 +42,8 @@ class TestAudioStore(BaseModelTester):
         AudioStore,
         __abstractmethods__=set(),
         _base_url=PropertyMock(return_value=URL.build(scheme="https", host="example.com")),
-        _format_query_path_for_item=Mock(return_value=""),
-        _format_query_params_for_item=Mock(side_effect=lambda item, query, *_, **__: {"q": query}),
+        _format_query_path_for_item=MagicMock(return_value=""),
+        _format_query_params_for_item=MagicMock(side_effect=lambda item, query, *_, **__: {"q": query}),
     )
     def test_format_query_for_item_simple(
             self,
@@ -62,8 +62,8 @@ class TestAudioStore(BaseModelTester):
         AudioStore,
         __abstractmethods__=set(),
         _base_url=PropertyMock(return_value=URL.build(scheme="https", host="example.com")),
-        _format_query_path_for_item=Mock(return_value=""),
-        _format_query_params_for_item=Mock(side_effect=lambda item, query, *_, **__: {"q": query}),
+        _format_query_path_for_item=MagicMock(return_value=""),
+        _format_query_params_for_item=MagicMock(side_effect=lambda item, query, *_, **__: {"q": query}),
     )
     def test_format_query_for_item_with_many_values(
             self,
@@ -88,8 +88,8 @@ class TestAudioStore(BaseModelTester):
         AudioStore,
         __abstractmethods__=set(),
         _base_url=PropertyMock(return_value=URL.build(scheme="https", host="example.com")),
-        _format_query_path_for_item=Mock(return_value=""),
-        _format_query_params_for_item=Mock(side_effect=lambda item, query, *_, **__: {"q": query}),
+        _format_query_path_for_item=MagicMock(return_value=""),
+        _format_query_params_for_item=MagicMock(side_effect=lambda item, query, *_, **__: {"q": query}),
     )
     def test_format_query_for_item_with_cleaner(
             self,

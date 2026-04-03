@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
 import pytest
 
@@ -16,7 +16,7 @@ class TestCheckerMatch(UniqueKeyTester):
     @patch.multiple(
         CheckerMatch,
         __abstractmethods__=set(),
-        match=Mock(),
+        match=MagicMock(),
     )
     def model(
             self,

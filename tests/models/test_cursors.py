@@ -2,7 +2,7 @@ import random
 from collections.abc import Generator
 from copy import copy
 from typing import Self, final, ClassVar, Any
-from unittest.mock import patch, Mock, PropertyMock
+from unittest.mock import patch, Mock, PropertyMock, MagicMock
 
 import math
 import pytest
@@ -145,7 +145,7 @@ class TestIterablePageCursor(BaseModelTester):
     @patch.multiple(
         IterablePageCursor,
         __abstractmethods__=set(),
-        next=Mock(),
+        next=MagicMock(),
     )
     def model(self, faker: Faker) -> IterablePageCursor:
         return IterablePageCursor(url=faker.url())

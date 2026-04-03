@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 
@@ -32,7 +32,7 @@ class TestStringCleaner(StringCleanerTester):
     @patch.multiple(
         StringCleaner,
         __abstractmethods__=set(),
-        _get_item_value=Mock(),
+        _get_item_value=MagicMock(),
     )
     def model(self) -> StringCleaner:
         return StringCleaner(

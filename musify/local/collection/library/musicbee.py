@@ -252,14 +252,14 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             "Album": track.album,
             "Album Artist": track.album.artist if track.album is not None else None,
             "Track Number": track.track.number if track.track is not None else None,
-            "Track Count": track.track_total if track.track is not None else None,
+            "Track Count": track.track.total if track.track is not None else None,
         } | genres | {
             "Year": track.released_at.year if track.released_at is not None else None,
             "BPM": track.bpm,
             "Disc Number": track.disc.number if track.disc is not None else None,
             "Disc Count": track.disc.total if track.disc is not None else None,
             "Compilation": track.album.compilation if track.album is not None else None,
-            "Comments": track.tag_sep.join(track.comments) if track.comments else None,
+            "Comments": track._join_tags(track.comments) if track.comments else None,
             "Total Time": int(track.length * 1000) if track.length is not None else None,  # in milliseconds
             "Rating": track.rating,
             # "Composer": track.composer,  # currently not supported by this program
@@ -269,9 +269,9 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             "Size": track.size,
             "Kind": track.type,
             # "": track.channels,  # unknown MusicBee mapping
-            "Bit Rate": int(track.bit_rate) if track.bit_rate is not None else None,
+            "Bit Rate": int(track.audio.bit_rate) if track.audio.bit_rate is not None else None,
             # "": track.bit_depth if track.bit_depth is not None else None,  # unknown MusicBee mapping
-            "Sample Rate": int(track.sample_rate * 1000) if track.sample_rate is not None else None,  # in Hz
+            "Sample Rate": int(track.audio.sample_rate * 1000) if track.audio.sample_rate is not None else None,  # Hz
             "Date Modified": track.modified_at,
             "Date Added": track.added_at,
             "Play Date UTC": track.last_played_at,

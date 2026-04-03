@@ -120,7 +120,7 @@ class TestMatcher(BaseModelTester):
         assert model.get_scorers_for_item(artist) == expected
 
     def test_get_scorers_for_album(self, model: Matcher, album: Album):
-        album.length = None
+        album.__dict__["length"] = None  # override re-validating from items
 
         assert any(isinstance(scorer, NameScorer) for scorer in model.scorers)
         assert any(isinstance(scorer, AlbumScorer) for scorer in model.scorers)

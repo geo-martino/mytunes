@@ -15,7 +15,7 @@ from musify.exception import MusifyValueError, MusifyAttributeError
 from musify.models import ResourceModel, IntEnumModel, AttributeModel
 from musify.models.item.artist import HasArtists
 from musify.models.item.track import Track
-from musify.models.properties.audio import IsAudioFile
+from musify.models.properties.audio import HasAudioProperties
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
@@ -25,7 +25,7 @@ from musify.processors._base import Processor
 _SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,
     IsLocalFile,
-    IsAudioFile,
+    HasAudioProperties,
     HasAddedDate,
     HasPlayedDate,
 })

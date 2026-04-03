@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 from faker import Faker
@@ -22,7 +22,7 @@ class TestStringScoreReducer(BaseModelTester):
     @patch.multiple(
         RangeScorer,
         __abstractmethods__=set(),
-        _calculate_score=Mock(),
+        _calculate_score=MagicMock(),
     )
     def model(self) -> RangeScorer:
         return RangeScorer[InstanceOf[Mock]](type="test", cleaner=Mock(), range=10)

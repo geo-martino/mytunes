@@ -10,7 +10,6 @@ from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
 from musify.spotify.item.track import SpotifyTrack
-from musify.spotify.properties.length import HasSpotifyLength
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
@@ -19,7 +18,6 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 class SpotifyAlbumCollection[RT: SpotifyArtist](
     SpotifyAlbum,
     RemoteAlbumCollection[SpotifyResourceURI, SpotifyTrack, RT, SpotifyGenre, SpotifyIndexCursor],
-    HasSpotifyLength,
 ):
     __final__ = True
 

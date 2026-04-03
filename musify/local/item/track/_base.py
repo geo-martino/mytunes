@@ -30,7 +30,7 @@ from musify.models.collection.library import Library
 from musify.models.item.track import Track, HasMutableTracks
 from musify.models.metadata import TagAttribute
 from musify.models.properties.asynch import SemaphoreT
-from musify.models.properties.audio import IsAudioFile
+from musify.models.properties.audio import HasAudioProperties
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
 from musify.models.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
@@ -59,11 +59,11 @@ class TagContext(BaseModel):
 
 
 # noinspection PyAbstractClass
-class LocalAudioFile(IsAudioFile, IsReadableFile, IsWriteableFile, IsLocalFile):
+class LocalAudioFile(IsReadableFile, IsWriteableFile, IsLocalFile, HasAudioProperties):
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType):
         data = IsLocalFile._extract_tags_from_mutagen(file)
-        data |= IsAudioFile._extract_tags_from_mutagen(file)
+        data |= HasAudioProperties._extract_tags_from_mutagen(file)
         return data
 
 

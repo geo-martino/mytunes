@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import patch, Mock, AsyncMock
+from unittest.mock import patch, Mock, AsyncMock, MagicMock
 
 import pytest
 from aiorequestful.request import RequestHandler
@@ -29,8 +29,8 @@ class TestSearchEndpoints(EndpointsTester):
     @patch.multiple(
         MockSearchEndpoints,
         __abstractmethods__=set(),
-        _format_query_params=Mock(),
-        _format_query_from_item=Mock(),
+        _format_query_params=MagicMock(),
+        _format_query_from_item=MagicMock(),
     )
     def model(self, handler: RequestHandler) -> SearchEndpoints:
         return self.MockSearchEndpoints(handler=handler)

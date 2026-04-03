@@ -1,5 +1,5 @@
 from typing import ClassVar, final, Any
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
@@ -58,7 +58,7 @@ class MockRemoteAuthoriser(RemoteAuthoriser[Mock]):
     @patch.multiple(
         Authoriser,
         __abstractmethods__=set(),
-        authorise=Mock(),
+        authorise=MagicMock(),
     )
     def create_authoriser(self) -> Authoriser:
         # noinspection PyAbstractClass

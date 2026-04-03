@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 from faker import Faker
@@ -38,7 +38,7 @@ class TestNumericCleaner(BaseModelTester):
     @patch.multiple(
         NumericCleaner,
         __abstractmethods__=set(),
-        _get_item_value=Mock(),
+        _get_item_value=MagicMock(),
     )
     def model(self) -> NumericCleaner:
         return NumericCleaner()

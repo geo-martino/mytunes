@@ -9,7 +9,6 @@ from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.item.genre import SpotifyGenre
-from musify.spotify.properties.length import HasSpotifyLength
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 if TYPE_CHECKING:
@@ -23,7 +22,6 @@ if TYPE_CHECKING:
 class SpotifyArtistCollection[AT: SpotifyAlbum](
     SpotifyArtist,
     RemoteArtistCollection[SpotifyResourceURI, AT, SpotifyGenre, SpotifyIndexCursor | SpotifyInitialCursor],
-    HasSpotifyLength,
 ):
     __final__ = True
 

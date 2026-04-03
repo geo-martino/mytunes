@@ -16,7 +16,7 @@ from musify.models.exception import MusifyValidationError
 from musify.models.metadata import Attribute
 
 
-class IsFileMetaclass(AttributeMetaclass):
+class FileMetaclass(AttributeMetaclass):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
@@ -42,7 +42,7 @@ class IsFileMetaclass(AttributeMetaclass):
 
 
 # noinspection PyAbstractClass
-class IsFile(BaseModel, metaclass=IsFileMetaclass):
+class IsFile(BaseModel, metaclass=FileMetaclass):
     """Attributes and operations for a file on some system."""
     @property
     @abstractmethod
@@ -97,7 +97,7 @@ class IsWriteableFile(IsFile):
         raise NotImplementedError
 
 
-class IsLocalFileMetaclass(IsFileMetaclass):
+class LocalFileMetaclass(FileMetaclass):
 
     @property
     def annotation(cls) -> Self:
@@ -112,7 +112,7 @@ class IsLocalFileMetaclass(IsFileMetaclass):
         ]
 
 
-class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
+class IsLocalFile(IsFile, metaclass=LocalFileMetaclass):
     """Attributes and operations for a file on a local filesystem."""
     path: Annotated[Path, Attribute()] = Field(
         description="The path to the file on the local filesystem."
@@ -135,8 +135,7 @@ class IsLocalFile(IsFile, metaclass=IsLocalFileMetaclass):
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         """Extract the tags from a mutagen file object."""
-        data = dict(path=file.filename)
-        return data
+        return dict(path=file.filename)
 
     @staticmethod
     def _get_ext_from_input(value: Any) -> str:

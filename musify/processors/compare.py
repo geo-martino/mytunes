@@ -22,7 +22,7 @@ from musify._types import LowerSnakeCase, Number
 from musify.exception import MusifyTypeError
 from musify.models import AttributeModel
 from musify.models.item.track import Track
-from musify.models.properties.audio import IsAudioFile
+from musify.models.properties.audio import HasAudioProperties
 from musify.models.properties.date import HasAddedDate, HasPlayedDate
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.name import HasName
@@ -33,7 +33,7 @@ from musify.processors.time import TimeMapper
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,
     IsLocalFile,
-    IsAudioFile,
+    HasAudioProperties,
     HasAddedDate,
     HasPlayedDate,
 })

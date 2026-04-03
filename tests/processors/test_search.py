@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Generator, Collection
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch, AsyncMock, MagicMock
 
 import pytest
 from faker import Faker
@@ -445,7 +445,7 @@ class TestCollectionSearcher(SearcherTester):
     @patch.multiple(
         CollectionModel,
         __abstractmethods__=set(),
-        _items=Mock(),
+        _items=MagicMock(return_value=()),
     )
     def test_collection_on_items_only(self, model: Searcher, collection: CollectionModel, faker: Faker) -> None:
         assert isinstance(collection, ResourceModel) and isinstance(collection, CollectionModel)
@@ -459,7 +459,7 @@ class TestCollectionSearcher(SearcherTester):
     @patch.multiple(
         AlbumCollection,
         __abstractmethods__=set(),
-        _items=Mock(),
+        _items=MagicMock(return_value=()),
     )
     def test_album_on_items_only(self, model: Searcher, tracks: list[Track], faker: Faker) -> None:
         album = Album(name=faker.sentence(), compilation=False)

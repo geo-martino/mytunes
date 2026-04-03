@@ -4,12 +4,13 @@ import re
 from datetime import timedelta
 from functools import reduce, total_ordering
 from operator import mul
-from typing import Annotated
+from typing import Annotated, Self
 
-from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field
+from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator
 
 from musify._types import Number
 from musify.models import AttributeModel
+from musify.models.collection import CollectionModel
 from musify.models.metadata import Attribute
 from musify.models.properties._core import NumberModel
 
@@ -63,3 +64,17 @@ class HasLength(AttributeModel):
         description="The length of this resource.",
         default=None,
     )
+
+    @model_validator(mode="after")
+    def _set_length_from_items(self) -> Self:
+        if not isinstance(self, CollectionModel):
+            return self
+        if not all(isinstance(item, HasLength) for item in self.items):
+            return self
+
+        self: CollectionModel | HasLength
+        length = sum(float(item.length or 0) for item in self._items)
+        if length != self.length and length > 0:
+            self.__dict__["length"] = Length(length)
+
+        return self

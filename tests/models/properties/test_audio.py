@@ -7,9 +7,28 @@ import pytest
 from faker import Faker
 
 from musify.models import makecls
-from musify.models.properties.audio import IsAudioFile, Decibels
+from musify.models.properties.audio import Decibels, HasAudioProperties, AudioProperties
 from musify.models.properties.file import IsLocalFile
 from tests.models.testers import BaseModelTester
+
+
+@pytest.fixture
+def file(faker: Faker, tmp_path: Path) -> mutagen.FileType:
+    path = tmp_path.joinpath(faker.file_name(category="audio"))
+
+    file = mutagen.FileType()
+    file.filename = str(path)
+    file.tags = {}
+
+    stream_info = mutagen.wave.WaveStreamInfo.__new__(mutagen.wave.WaveStreamInfo)
+    stream_info.length = faker.random_int() / 100
+    stream_info.channels = 2
+    stream_info.bitrate = 320000
+    stream_info.sample_rate = 44100
+    stream_info.bits_per_sample = 16
+    file.info = stream_info
+
+    return file
 
 
 class TestDecibels(BaseModelTester):
@@ -21,40 +40,28 @@ class TestDecibels(BaseModelTester):
         assert re.match(r"-\d{1,2}\.\d{0,3}", str(model))
 
 
-class LocalAudioFile(IsLocalFile, IsAudioFile, metaclass=makecls()):
-    pass
-
-
-class TestIsAudioFile(BaseModelTester):
+class TestAudioProperties(BaseModelTester):
 
     @pytest.fixture
-    def model(self, faker: Faker, tmp_path: Path) -> IsAudioFile:
-        return LocalAudioFile(path=tmp_path.joinpath(faker.file_name(extension="wav")))
-
-    @pytest.fixture
-    def file(self, faker: Faker, tmp_path: Path) -> mutagen.FileType:
-        path = tmp_path.joinpath(faker.file_name(category="audio"))
-
-        file = mutagen.FileType()
-        file.filename = str(path)
-        file.tags = {}
-
-        stream_info = mutagen.wave.WaveStreamInfo.__new__(mutagen.wave.WaveStreamInfo)
-        stream_info.length = faker.random_int() / 100
-        stream_info.channels = 2
-        stream_info.bitrate = 320000
-        stream_info.sample_rate = 44100
-        stream_info.bits_per_sample = 16
-        file.info = stream_info
-
-        return file
+    def model(self) -> AudioProperties:
+        return AudioProperties()
 
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType):
-        result = IsAudioFile._extract_tags_from_mutagen(file)
-        assert result == dict(
+        result = AudioProperties.model_validate(file)
+        assert result == AudioProperties(
             length=file.info.length,
             channels=file.info.channels,
             bit_rate=file.info.bitrate / 1000,
             bit_depth=file.info.bits_per_sample,
             sample_rate=file.info.sample_rate / 1000,
         )
+
+
+class TestHasAudioProperties(BaseModelTester):
+
+    @pytest.fixture
+    def model(self) -> HasAudioProperties:
+        return HasAudioProperties()
+
+    def test_extract_tags_from_mutagen(self, file: mutagen.FileType):
+        assert HasAudioProperties._extract_tags_from_mutagen(file) == dict(audio=file)

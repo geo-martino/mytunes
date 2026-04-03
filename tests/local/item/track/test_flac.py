@@ -98,22 +98,13 @@ class TestFLAC(LocalTrackTester):
         tags.pop("source", None)  # just in case the faker generates this key
 
         file.tags = deepcopy(tags)
-        file.tags["length"] = [str(faker.random_int())]  # should be overridden by file.info.length
         file.tags["source"] = [faker.word()]  # should be dropped
 
         assert file.filename
         assert file.pictures
 
         result = FLAC._extract_tags_from_mutagen(file)
-        assert result == tags | dict(
-            path=file.filename,
-            length=file.info.length,
-            channels=2,
-            bit_rate=320.0,
-            bit_depth=16,
-            sample_rate=44.1,
-            images=file.pictures,
-        )
+        assert result == tags | dict(path=file.filename, audio=file, images=file.pictures)
 
     # noinspection PyCallingNonCallable
     def test_merge_position_values_skips(self):

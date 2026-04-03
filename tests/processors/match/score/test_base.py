@@ -1,4 +1,4 @@
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 from pydantic import InstanceOf
@@ -13,7 +13,7 @@ class TestScorer(BaseModelTester):
     @patch.multiple(
         Scorer,
         __abstractmethods__=set(),
-        _calculate_score=Mock(),
+        _calculate_score=MagicMock(),
     )
     def model(self) -> Scorer:
         return Scorer[InstanceOf[Mock]](type="test", cleaner=Mock())

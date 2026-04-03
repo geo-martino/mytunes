@@ -2,11 +2,11 @@ from functools import total_ordering
 from typing import Any, Annotated
 
 import mutagen
-from pydantic import Field, PositiveInt, PositiveFloat
+from pydantic import Field, PositiveInt, PositiveFloat, model_validator
 
+from musify.models import AttributeModel
 from musify.models.metadata import Attribute
 from musify.models.properties._core import NumberModel
-from musify.models.properties.file import IsFile
 from musify.models.properties.length import HasLength
 
 
@@ -19,7 +19,7 @@ class Decibels(NumberModel[Annotated[float, Field(ge=-60.0, le=0.0)]]):
 
 
 # noinspection PyAbstractClass
-class IsAudioFile(HasLength, IsFile):
+class AudioProperties(HasLength):
     """Attributes and operations for an audio on a filesystem."""
 
     channels: Annotated[PositiveInt | None, Attribute()] = Field(
@@ -39,12 +39,16 @@ class IsAudioFile(HasLength, IsFile):
         default=None,
     )
 
+    @model_validator(mode="before")
     @classmethod
-    def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
-        """Extract the tags from a mutagen file object."""
+    def _from_mutagen[T](cls, data: T | mutagen.FileType) -> T | dict[str, Any]:
+        if not isinstance(data, mutagen.FileType):
+            return data
+
+        file = data
         try:
             bit_depth = file.info.bits_per_sample
-        except AttributeError:
+        except AttributeError:  # not all mutagen file types provide this info
             bit_depth = None
 
         data = dict(
@@ -55,3 +59,14 @@ class IsAudioFile(HasLength, IsFile):
             sample_rate=file.info.sample_rate / 1000,  # convert to Hz to kHz
         )
         return data
+
+
+class HasAudioProperties(AttributeModel):
+    audio: Annotated[AudioProperties, Attribute()] = Field(
+        description="The audio properties of the file.",
+        default_factory=AudioProperties,
+    )
+
+    @classmethod
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType):
+        return dict(audio=file)
