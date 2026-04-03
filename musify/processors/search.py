@@ -157,6 +157,10 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
     @validate_call
     async def search_item[T: ResourceModel](self, item: T) -> T | None:
         """Search for matches for the given item and return the matching result if found"""
+        if self._should_skip(item):
+            self._log_skip(f"Cannot process {self._get_item_log_name(item)}")
+            return
+
         self._log_start([item], default_type="item")
         return await self._query_and_match(item)
 
@@ -215,8 +219,12 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
     ## Search: collections
     ###########################################################################
     @validate_call
-    async def search_collection[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T]:
+    async def search_collection[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T] | None:
         """Search for matches for the given collection and return the results."""
+        if self._should_skip(collection):
+            self._log_skip(f"Cannot process {self._get_item_log_name(collection)}")
+            return
+
         self._log_start([collection], default_type="collection")
         _, result = await self._search_collection(collection, show_bar=True)
         return result
@@ -228,6 +236,11 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         """Search for matches for the given collection and return the results per collection."""
         if len(collections) == 0 or sum(collection.count for collection in collections) == 0:
             self._log_skip("No collections or items to search.")
+            return {}
+
+        collections, _ = self._split_items(collections)
+        if not collections:
+            self._log_skip(f"Cannot process of the given collections")
             return {}
 
         self._log_start(collections, default_type="collections")
@@ -313,9 +326,6 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
     ## Query and match utilities
     ###########################################################################
     async def _query(self, item: ResourceModel) -> list[RemoteResource] | None:
-        if self._should_skip(item):
-            return
-
         async with self.concurrency:
             results = await self.api.search.query_item(item)
 

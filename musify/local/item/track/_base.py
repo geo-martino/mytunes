@@ -218,8 +218,8 @@ class LocalTrack[FT: FileType](
     @classmethod
     @validate_call
     async def load_file(cls, path: str | Path) -> FT:
-        # TODO: improve async performance here.
-        #  synchronous loads through mutagen are much faster than async loads,
+        # TODO: improve async performance here
+        #  Synchronous loads through mutagen are much faster than async loads,
         #  possibly because mutagen only loads the header and not the whole audio file.
         #  Can we implement an async load for just the file header?
 

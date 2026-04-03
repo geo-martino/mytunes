@@ -152,18 +152,6 @@ class TestSearcher(SearcherTester, BaseModelTester):
         model.skip_if_has_uri = False
         assert await model._query(item) == mock_query_item.return_value
 
-    async def test_query_skips(
-            self,
-            model: Searcher,
-            item: ResourceModel,
-            mock_skip: Mock,
-            mock_query_item: Mock,
-            faker: Faker,
-    ):
-        mock_skip.return_value = True
-        assert await model._query(item) is None
-        mock_query_item.assert_not_called()
-
     async def test_query_returns_no_results(
             self, model: Searcher, item: ResourceModel, mock_query_item: Mock, faker: Faker
     ):
@@ -365,10 +353,7 @@ class TestItemSearcher(SearcherTester):
 
         result = await model.search_items(items)
 
-        # TODO: ideally, this should be == len(items),
-        #  but the skips applies to both the initial items and the valid items again on query.
-        #  Improve this.
-        assert mock_skip_random.call_count == len(items) + len(valid)
+        assert mock_skip_random.call_count == len(items)
         assert mock_query_item.call_count == len(valid)
 
         self.assert_random_match_result(
