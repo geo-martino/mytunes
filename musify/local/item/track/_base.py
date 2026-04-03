@@ -61,7 +61,7 @@ class TagContext(BaseModel):
 # noinspection PyAbstractClass
 class LocalAudioFile(IsReadableFile, IsWriteableFile, IsLocalFile, HasAudioProperties):
     @classmethod
-    def _extract_tags_from_mutagen(cls, file: mutagen.FileType):
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         data = IsLocalFile._extract_tags_from_mutagen(file)
         data |= HasAudioProperties._extract_tags_from_mutagen(file)
         return data
@@ -264,8 +264,7 @@ class LocalTrack[FT: FileType](
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         """Extract tags from a mutagen file object."""
-        data = dict(file.tags) | super()._extract_tags_from_mutagen(file)
-        return data
+        return dict(file.tags) | super()._extract_tags_from_mutagen(file)
 
     @field_validator(
         "name", "album", "bpm", "key", "uri", "rating",

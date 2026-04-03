@@ -15,7 +15,7 @@ from typing_inspection.typing_objects import is_typevar
 
 from musify.models import AttributeModel
 from musify.models._context import RemoteModelContext
-from musify.models.api._endpoints import HasEndpoints, Endpoints
+from musify.models.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from musify.models.exception import EndpointsError
 from musify.models.metadata import Attribute
 from musify.models.properties.logger import HasLogger
@@ -43,34 +43,14 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
 
 # noinspection PyAbstractClass
 class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
-    # WORKAROUND: these need to be wrap validators to ensure they execute before model handlers on parent classes
-    @model_validator(mode="wrap")
     @classmethod
-    def _from_authoriser[T](cls, value: T | RemoteAuthoriser, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        key = "authoriser"
-        if isinstance(value, Mapping) and set(value.keys()) == {key}:
-            value = value[key]
-        if not isinstance(value, RemoteAuthoriser):
-            return handler(value)
-
-        request_handler = RequestHandler.create(
-            authoriser=value.create_authoriser(), cache=value.cache, payload_handler=JSONPayloadHandler()
-        )
-        return handler(request_handler)
-
-    @model_validator(mode="wrap")
-    @classmethod
-    def _from_credentials[T](cls, value: T | RemoteAuthoriser, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        if not isinstance(value, Mapping):
-            return handler(value)
-
-        with suppress(ValidationError):
-            value = cls._create_authoriser_from_credentials(value)
-
-        return handler(value)
+    def from_credentials(cls, credentials: Mapping[str, Any]) -> Self:
+        """Create an authoriser for the API using the configured credentials."""
+        authoriser = cls._create_authoriser(credentials)
+        return cls.from_authoriser(authoriser)
 
     @classmethod
-    def _create_authoriser_from_credentials(cls, credentials: Mapping[str, Any]) -> AT:
+    def _create_authoriser(cls, credentials: Mapping[str, Any]) -> RemoteAuthoriser:
         base = next(
             (base for base in cls.__pydantic_parent_namespace__["bases"] if issubclass(base, RemoteAPI)), None
         )
@@ -85,12 +65,68 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         return auth_t.model_validate(credentials)
 
     @classmethod
+    def from_authoriser(cls, authoriser: AT) -> Self:
+        """Create an authoriser for the API using the configured authoriser."""
+        handler = cls._create_handler(authoriser)
+        return cls.model_validate(handler)
+
+    @classmethod
+    def _create_handler(cls, authoriser: AT) -> RequestHandler:
+        return RequestHandler.create(
+            authoriser=authoriser.create_authoriser(),
+            cache=authoriser.cache,
+            payload_handler=JSONPayloadHandler()
+        )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_credentials[T](cls, value: T | Mapping[str, Any]) -> T | Self:
+        if not isinstance(value, Mapping):
+            return value
+
+        with suppress(ValidationError):
+            authoriser = cls._create_authoriser(value)
+            handler = cls._create_handler(authoriser)
+            return _map_handler(cls, handler)
+
+        return value
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_authoriser[T](cls, value: T | RemoteAuthoriser) -> T | Self:
+        if not isinstance(value, RemoteAuthoriser):
+            return value
+
+        handler = cls._create_handler(value)
+        return _map_handler(cls, handler)
+
+    @classmethod
     def create_uri(cls, value: Any, kind: str) -> URI:
         """Create a URI for the source handled by this API model from the given ID and type."""
         context = RemoteModelContext(type=kind)
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
-    # TODO: drop this on aiorequestful v2
+
+class HasAPI[API: RemoteAPI](AttributeModel):
+    api: Annotated[API, Attribute()] = Field(
+        description="The API client model used to interact with the remote service."
+    )
+
+    @staticmethod
+    def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:
+        if not key:
+            return api
+
+        for key in key.split("."):
+            if not hasattr(api, key):
+                raise EndpointsError(f"API does not have attribute '{key}'.")
+            api = getattr(api, key)
+
+        return api
+
+
+# TODO: drop this on aiorequestful v2
+class HasCache(HasEndpoints):
     @abstractmethod
     async def _setup_cache(self, cache: ResponseCache) -> None:
         """Set up the repositories and repository getter on the self.handler.session's cache."""
@@ -117,29 +153,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         return self
 
 
-class HasAPI[API: RemoteAPI](AttributeModel):
-    api: Annotated[API, Attribute()] = Field(
-        description="The API client model used to interact with the remote service."
-    )
-
-    @staticmethod
-    def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:
-        if not key:
-            return api
-
-        for key in key.split("."):
-            if not hasattr(api, key):
-                raise EndpointsError(f"API does not have attribute '{key}'.")
-            api = getattr(api, key)
-
-        return api
-
-
 class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
-    api: Annotated[API, Attribute()] = Field(
-        description="The API client model used to interact with the remote service."
-    )
-
     @classmethod
     def _validate_api[T](
             cls,

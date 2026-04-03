@@ -8,9 +8,5 @@ from tests.models.testers import BaseModelTester
 
 class TestSpotifyLibrary(BaseModelTester):
     @pytest.fixture
-    def api(self, faker: Faker) -> SpotifyAPI:
-        return SpotifyAPI(client_id=faker.uuid4(), client_secret=faker.uuid4())
-
-    @pytest.fixture
     def model(self, api: SpotifyAPI) -> SpotifyLibrary:
         return SpotifyLibrary(api=api)

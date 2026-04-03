@@ -166,7 +166,6 @@ class LocalLibrary(
             await self.load_tracks()
             playlist_results = await self.load_playlists()
 
-        self.logger.print("PROGRESS SHOUDL BE DONE NOW")
         self._log_load_playlists(playlist_results)
         self.logger.print_line(STAT)
 

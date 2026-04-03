@@ -57,7 +57,10 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
             api: HasArtistEndpoints[SpotifyArtistEndpoints],
             types: set[_ALBUM_TYPE] | None = None,
     ) -> None:
-        # Need to use this logic instead of setting as default due to cyclical imports
+        # WORKAROUND: Spotify API does not return all album when requesting a combination of album types
+        #  it only returns all albums if each album type is requested individually. Overriding to handle this case
+
+        # Need to use this logic instead of setting as default in func signature due to cyclical imports
         # noinspection PyProtectedMember
         from musify.spotify.api._artist import _ALL_ALBUM_TYPES
         if types is None:
@@ -66,7 +69,5 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
         cursor = SpotifyInitialCursor(**self.cursor.model_dump())
         self._clear()
 
-        # WORKAROUND: Spotify API does not return all album when requesting a combination of album types
-        #  it only returns all albums if each album type is requested individually
         for album_type in types:
             self.albums.extend(await api.artists.get_all(cursor, types={album_type}))

@@ -1,7 +1,11 @@
+from unittest.mock import patch
+
 import pytest
 from faker import Faker
 from yarl import URL
 
+from musify.spotify.api import SpotifyAPI
+from musify.spotify.api._artist import SpotifyArtistEndpoints, _ALL_ALBUM_TYPES
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.cursors import SpotifyIndexCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
@@ -41,3 +45,10 @@ class TestSpotifyArtistCollection(SpotifyResourceTester):
         self.assert_expected_rating(model, payload)
 
         self.assert_has_all_items(model, payload["albums"]["items"], payload["albums"]["total"])
+
+    async def test_reload_items(self, model: SpotifyArtistCollection, api: SpotifyAPI):
+        with patch.object(SpotifyArtistEndpoints, "get_all", return_value=()) as mock_get_all:
+            await model.reload_items(api)
+
+            called_album_types = {t for call in mock_get_all.call_args_list for t in call.kwargs["types"]}
+            assert called_album_types == set(_ALL_ALBUM_TYPES)

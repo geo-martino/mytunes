@@ -3,6 +3,7 @@ from aiorequestful.cache.backend.base import ResponseRepository
 from yarl import URL
 
 from musify.models.api import RemoteAPI
+from musify.models.api._base import HasCache
 from musify.models.api.album import HasAlbumEndpoints
 from musify.models.api.artist import HasArtistEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints
@@ -23,6 +24,7 @@ from musify.spotify.api._user import SpotifyUserEndpoints
 class SpotifyAPI(
     RemoteAPI[SpotifyAuthoriser],
     SpotifyModel,
+    HasCache,
     HasSearchEndpoints[SpotifySearchEndpoints],
     HasUserEndpoints[SpotifyUserEndpoints],
     HasTrackEndpoints[SpotifyTrackEndpoints],

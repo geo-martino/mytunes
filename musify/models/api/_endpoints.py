@@ -20,7 +20,7 @@ from pydantic_core import PydanticUndefined
 from yarl import URL
 
 from musify._types import get_base_types
-from musify.models import ResourceModel
+from musify.models import ResourceModel, BaseModel
 from musify.models._attribute import AttributeMetaclass
 from musify.models._context import RemoteModelContext
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
@@ -31,6 +31,24 @@ from musify.models.properties.image import ImageSource, PILImageFileT, ImageURL
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI, HasURI
 from musify.models.remote import RemoteModel, RemoteResource
+
+
+def _map_handler[T: RequestHandler[Authoriser, JsonSchemaValue]](
+        model: type[BaseModel], value: T | Mapping[str, T]
+) -> T | dict[str, dict[str, T]]:
+    key = "handler"
+    match value:
+        case RequestHandler():
+            handler = value
+        case Mapping() if set(value.keys()) == {key}:
+            return _map_handler(model, value[key])
+        case _:
+            return value
+
+    return {key: handler} | {
+        name: {key: handler} for name, info in model.model_fields.items()
+        if isinstance(info.annotation, type) and issubclass(info.annotation, Endpoints)
+    }
 
 
 class EndpointsMetaclass(AttributeMetaclass):
@@ -97,20 +115,12 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     @model_validator(mode="wrap")
     @classmethod
     def _from_handler[T](cls, value: T | RequestHandler, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        key = "handler"
-        if isinstance(value, Mapping) and set(value.keys()) == {key}:
-            value = value[key]
-        if not isinstance(value, RequestHandler):
-            return handler(value)
-
-        # in case of nested endpoints
-        data = {
-            name: {key: value} for name, info in cls.model_fields.items()
-            if any(issubclass(kls, Endpoints) for kls in get_base_types(info.annotation))
-        }
+        data = _map_handler(cls, value)
 
         self = handler(data)
-        self._handler = value
+        if isinstance(data, Mapping) and (key := "handler") in data:
+            self._handler = data[key]
+
         return self
 
     @property
@@ -242,8 +252,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             )
 
             cursor = cursor.get_cursor_from_response(response=response, path=path)
-            # print("IMTES", len(items))
-            # print("CURSOR", cursor)
 
             if cursor.next == cursor:
                 raise CursorResponseError(
@@ -255,11 +263,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 response_items, cursor = await self._get_all_items_by_generation(
                     cursor, path=path, kind=kind, show_bar=show_bar
                 )
-                # print("GEN", len(response_items))
                 items.extend(response_items)
                 break
 
-        # print("FINL", len(items))
         return tuple(items), cursor
 
     # TODO: migrate this to aiorequestful v2
@@ -294,9 +300,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         tasks = map(functools.partial(self._get_page, item_type=item_type, path=path), cursors)
         responses: list[JsonSchemaValue] = await self.logger.run_tasks_async(tasks, task_id=task_id)
 
-        # print("COUNTS", [len(self._get_items_from_response(response=res, path=path)) for res in responses])
-        # print("COUNTS", sum([len(self._get_items_from_response(response=res, path=path)) for res in responses]))
-
         cursors = cursor.sort_responses(responses, path=path)
         response_items = [
             item for response in responses
@@ -317,10 +320,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         if isinstance(page, IndexCursor):
             log_message = f"{page.offset:>6}/{page.total:<6} {item_type}s"
 
-        p = await self._handler.get(page.url, log_message=log_message)
-        # print("IMTES", len(self._get_items_from_response(response=p, path=path)))
-        # print("CURSOR", page.get_cursor_from_response(response=p, path=path))
-        return p
+        return await self._handler.get(page.url, log_message=log_message)
 
     # TODO: migrate this to aiorequestful v2
     @classmethod
@@ -628,6 +628,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
         items, cursor = await self._get_all_items(
             cursor, path=self._extend_path, kind=self._extend_type, show_bar=show_bar
         )
+
         if isinstance(collection, RemoteCollection):
             items = itertools.chain.from_iterable((collection.items, items))
             collection.cursor = cursor
@@ -849,20 +850,11 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @model_validator(mode="wrap")
     @classmethod
     def _from_handler[T](cls, value: T | RequestHandler, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        key = "handler"
-        if isinstance(value, Mapping) and set(value.keys()) == {key}:
-            value = value[key]
-        if not isinstance(value, RequestHandler):
-            return handler(value)
-
-        data = {
-            name: {key: value} for name, info in cls.model_fields.items()
-            if issubclass(info.annotation, Endpoints)
-        }
+        data = _map_handler(cls, value)
 
         self = handler(data)
-        if isinstance(self, Endpoints):
-            self._handler = value
+        if isinstance(self, Endpoints) and isinstance(data, Mapping) and (key := "handler") in data:
+            self._handler = data[key]
 
         return self
 

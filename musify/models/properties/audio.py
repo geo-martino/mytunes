@@ -68,5 +68,5 @@ class HasAudioProperties(AttributeModel):
     )
 
     @classmethod
-    def _extract_tags_from_mutagen(cls, file: mutagen.FileType):
+    def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
         return dict(audio=file)
