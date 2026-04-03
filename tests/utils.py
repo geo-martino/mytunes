@@ -129,7 +129,7 @@ class CallbackResult:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
+        return None
 
     @classmethod
     def from_response(cls, body: str | bytes) -> Callable[[Any], Self]:

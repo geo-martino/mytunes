@@ -1,9 +1,10 @@
 import itertools
-from collections.abc import Mapping, Sequence, Iterable
+from collections.abc import Mapping, Sequence, Iterable, Generator, AsyncGenerator
 from contextlib import suppress
 
 import math
 from pydantic import Field, PositiveInt
+from rich.progress import TaskID
 from termcolor import colored
 
 from musify.models import ResourceModel
@@ -11,10 +12,10 @@ from musify.models.api import HasAPI
 from musify.models.collection import CollectionModel
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.order import Position
-from musify.models.properties.uri import HasURI
+from musify.models.properties.uri import HasURI, URI
 from musify.models.user import RemoteUser
 from musify.processors._base import InputProcessor
-from musify.processors.check._exception import SkipPage, QuitImmediately
+from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._match.playlist import PlaylistMatch
 from musify.processors.check._page import CheckerPage, _ApiT
@@ -45,9 +46,9 @@ class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
         return self.api.source.title()
 
     @property
-    def user(self) -> RemoteUser | None:
+    def username(self) -> str:
         """The user to create playlists for."""
-        return self.api.user
+        return self.api.user.name is self.api.user is not None else "the current user"
 
     async def check[T: ResourceModel](self, collections: Sequence[CollectionModel[T]]) -> dict[str, CheckResult[T]]:
         """Check the matches for the given collection and return the results."""
@@ -56,66 +57,65 @@ class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
 
         self._log_start(collections)
 
-        total = len(collections)
-        page_total = math.ceil(total / self.interval)
-        bar = self.logger.get_synchronous_iterator(
-            iter(collections), total=total, desc="Creating playlists", unit="playlists"
-        )
+        task_id = self.logger.progress.add_task(description="Creating playlists", total=len(collections))
+        batches = list(itertools.batched(collections, self.interval))
+        batch_total = len(batches)
 
         results: dict[str, CheckResult[T]] = {}
-        for n in range(1, page_total + 1):
+        for batch_number, batch in enumerate(batches, 1):
+
+            page = CheckerPage(
+                position=Position(number=batch_number, total=batch_total, zero_fill=True),
+                api=self.api,
+                collections=batch,
+                task_id=task_id,
+                concurrency=self.concurrency,
+            )
+
             try:
-                results |= await self._check_page(bar, n=n, total=page_total)
-            except KeyboardInterrupt:
-                self.logger.error("User triggered exit with KeyboardInterrupt")
-                break
+                self._log_page(page)
+                async for name, result in self._check_page(page):
+                    results[name] = result
+            except SkipPage:
+                self.logger.error("User triggered skip page with skip command")
+                continue
             except QuitImmediately:
                 self.logger.error("User triggered exit with quit command")
+                break
+            except KeyboardInterrupt:
+                self.logger.error("User triggered exit with KeyboardInterrupt")
                 break
 
         return results
 
     async def _check_page[T: ResourceModel](
-            self, collections: Iterable[CollectionModel[T]], n: int, total: int,
-    ) -> dict[str, CheckResult[T]]:
-        page = CheckerPage(
-            position=Position(number=n, total=total, zero_fill=True),
-            api=self.api,
-            collections=itertools.islice(collections, self.interval),
-            concurrency=self.concurrency,
-        )
-
-        results: dict[str, CheckResult[T]] = {}
+        self, page: CheckerPage[API, T]
+    ) -> AsyncGenerator[tuple[str, CheckResult[T]]]:
         async with page:
-            await page.setup_playlists()
+            await page.pause()
 
-            with suppress(SkipPage):
-                await page.pause()
-                results |= await self._match_page(page)
+            task_id = self.logger.progress.add_task("Matching changes", total=page.count)
+            with self.logger:
+                for name, uri in zip(page.names, page.uris, strict=True):
+                    result = await self._match_page(page, uri=uri)
+                    yield name, result
 
-        return results
+                    self.logger.progress.advance(task_id, advance=1)
 
-    async def _match_page[T: ResourceModel](self, page: CheckerPage[API, T]) -> dict[str, CheckResult[T]]:
-        results: dict[str, CheckResult[T]] = {}
+            self.logger.progress.remove_task(task_id)
 
-        for uri in page.uris:
-            name = page.get_playlist_name(uri)
-            items = page.get_collection_items(uri)
+    async def _match_page[T: ResourceModel](self, page: CheckerPage[API, T], uri: URI) -> CheckResult[T]:
+        items = page.get_collection_items(uri)
+        matcher = PlaylistMatch(page=page, items=items, uri=uri, matcher=self.matcher)
+        playlist_result = await matcher.match()
+        if not playlist_result.skipped:
+            return playlist_result
 
-            matcher = PlaylistMatch(page=page, matcher=self.matcher)
-            playlist_result = await matcher.match(items=items, uri=uri, name=name)
-            if not playlist_result.skipped:
-                results[name] = playlist_result
-                continue
-
-            try:
-                matcher = InputMatch(page=page, matcher=self.matcher)
-                input_result = await matcher.match(items=playlist_result.skipped, uri=uri, name=name)
-                results[name] = playlist_result.merge_results(input_result)
-            except SkipPage:  # catch this here so we can still return current set of results
-                break
-
-        return results
+        self.logger.progress.stop()
+        matcher = InputMatch(page=page, items=playlist_result.skipped, uri=uri, matcher=self.matcher)
+        input_result = await matcher.match()
+        self.logger.progress.start()
+        return playlist_result.merge_results(input_result)
 
     ###########################################################################
     ## Logging + validation
@@ -130,12 +130,15 @@ class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
         types = sorted({f"{it.type.rstrip("s")}s" for it in collections if isinstance(it, ResourceModel)})
         types = self.logger.format_list_to_string(types)
 
-        username = self.user.name if self.user is not None else "the current user"
         message = (
             f"Checking items in {len(collections)} {types} by creating "
-            f"temporary {self.source} playlists for {username}"
+            f"temporary {self.source} playlists for {self.username}"
         )
         self.logger.info(message, header=1)
+
+    def _log_page(self, page: CheckerPage) -> None:
+        message = f"Creating {page.count} {self.source} playlists for {self.username}"
+        self.logger.info(message, header=2)
 
     def _validate_collections(self, collections: Sequence[CollectionModel]) -> Sequence[CollectionModel]:
         collections = [

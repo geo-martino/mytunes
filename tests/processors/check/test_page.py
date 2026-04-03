@@ -98,6 +98,30 @@ class TestPlaylistManagement(BaseModelTester):
         mock_create_playlist.assert_called_once_with(name=collection.name, **playlist_properties)
         mock_sync_playlist.assert_not_called()  # playlist was created so no need to empty it
 
+    async def test_setup_playlists_fails(
+            self,
+            model: CheckerPage,
+            playlists: list[RemoteMutablePlaylist],
+            collections: list[CollectionModel],
+            mocker: MockerFixture,
+            faker: Faker,
+    ):
+        mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
+
+        def _random_exception(*_, **__):
+            if faker.boolean():
+                return
+
+            exc = faker.random_element((MusifyError, HTTPError))
+            raise exc()
+
+        with patch.object(model, "_setup_playlist", side_effect=_random_exception):
+            # noinspection PyTypeChecker
+            with pytest.raises((MusifyError, HTTPError)):
+                async with model:
+                    pass
+            mock_teardown_playlists.assert_called_once()
+
     async def test_delete_playlists(
             self,
             model: CheckerPage,
@@ -142,29 +166,6 @@ class TestPlaylistManagement(BaseModelTester):
         assert playlist.uri not in model._collections
         assert playlist.uri not in model._playlists
         assert playlist.uri not in model._playlists_initial
-
-    async def test_setup_playlists_fails(
-            self,
-            model: CheckerPage,
-            playlists: list[RemoteMutablePlaylist],
-            collections: list[CollectionModel],
-            mocker: MockerFixture,
-            faker: Faker,
-    ):
-        mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
-
-        def _random_exception(*_, **__):
-            if faker.boolean():
-                return
-
-            exc = faker.random_element((MusifyError, HTTPError))
-            raise exc()
-
-        with patch.object(model, "_setup_playlist", side_effect=_random_exception) as mock_setup_playlist:
-            # noinspection PyTypeChecker
-            with pytest.raises((MusifyError, HTTPError)):
-                await model.setup_playlists()
-            mock_teardown_playlists.assert_called_once()
 
     @pytest.fixture
     def mock_delete_playlists(self, model: CheckerPage, mocker: MockerFixture) -> Mock:

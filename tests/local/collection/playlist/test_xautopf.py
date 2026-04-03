@@ -960,11 +960,6 @@ class TestXMLSmartPlaylist(BaseModelTester):
         model.source.exceptions_include = {"a", "b", "c"}
         model.source.exceptions = {"1", "2", "3"}
 
-        from rich import print
-        print()
-        print(model.build_matcher().compare)
-        print(model.source.conditions.build_filter())
-
         matcher = model.build_matcher()
         assert matcher.compare == model.source.conditions.build_filter()
         assert matcher.include.values == model.source.exceptions_include

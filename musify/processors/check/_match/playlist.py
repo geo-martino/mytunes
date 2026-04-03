@@ -2,25 +2,25 @@ from collections import Counter
 from collections.abc import MutableSequence, Collection, Iterable
 from copy import copy
 
-from musify.models.properties.uri import HasURI, URI, HasMutableURI
+from pydantic import Field
+
+from musify.models.properties.uri import HasURI, URI, HasMutableURI, HasImmutableURI
 from musify.models.sequence import UniqueSequence
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check.result import CheckResult
 
 
-class PlaylistMatch(CheckerMatch):
-    async def match[CT: HasURI](self, items: Collection[CT], uri: URI, name: str) -> CheckResult[CT]:
+class PlaylistMatch[IT: HasMutableURI](CheckerMatch[IT]):
+    async def match(self) -> CheckResult[IT]:
         """Match the given that have missing URIs with items in the current playlist."""
-        self.logger.info(f"Checking for changes to items in {self.page.source} playlist: {name}", header=2)
+        self.logger.info(f"Checking for changes to items in {self.page.source} playlist: {self.name}", header=2)
 
-        current = await self.page.get_current_playlist_items(uri)
-        added, removed, unchanged, unavailable, missing = self._compare_items(
-            items=items, others=current, uri=uri, name=name
-        )
+        current = await self.page.get_current_playlist_items(self.uri)
+        added, removed, unchanged, unavailable, missing = self._compare_items(others=current)
 
         if not added and not removed and not missing:
             message = "Playlist unchanged and no missing URIs, skipping match"
-            self._log_debug("SKIP", name, message)
+            self._log_debug("SKIP", message)
             return CheckResult(unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
         missing += removed
@@ -30,31 +30,26 @@ class PlaylistMatch(CheckerMatch):
 
         if not missing:
             message = "No items changed in playlist and no items with missing matches, skipping match"
-            self._log_debug("SKIP", name, message)
+            self._log_debug("SKIP", message)
             return CheckResult(unchanged=unchanged, unavailable=unavailable)
 
         if not added:
             message = "No items added, skipping match"
-            self._log_debug("SKIP", name, message)
+            self._log_debug("SKIP", message)
             return CheckResult(unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
         if not any(isinstance(item, HasMutableURI) for item in missing):
             message = "No items with mutable URIs to match with added items, skipping match"
-            self._log_debug("SKIP", name, message)
+            self._log_debug("SKIP", message)
             return CheckResult(unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
-        changed = self._match_items_with_others(items=missing, others=added, name=name)
+        changed = self._match_items_with_others(items=missing, others=added)
         return CheckResult(changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
-    def _compare_items[CT: HasURI, RT: HasURI](
-            self,
-            items: Collection[CT],
-            others: Collection[RT],
-            uri: URI,
-            name: str,
-    ) -> tuple[list[RT], list[CT], list[CT], list[CT], list[CT]]:
-        valid_items = self.get_valid_items(items)
-
+    def _compare_items[RT: HasURI](
+            self, others: Collection[RT]
+    ) -> tuple[list[RT], list[IT], list[IT], list[IT], list[IT]]:
+        valid_items = self.valid_items
         items_unique = UniqueSequence(valid_items)
         others_unique = UniqueSequence(others)
 
@@ -62,28 +57,26 @@ class PlaylistMatch(CheckerMatch):
         removed = list(items_unique.difference(others_unique))
         removed += self._compare_duplicate_items(valid_items, others, removed)
         unchanged = list(items_unique.intersection(others_unique))
-        unavailable = self.get_unavailable_items(items)
-        missing = self.get_missing_items(items)
+        unavailable = self.unavailable_items
+        missing = self.missing_items
 
-        if self.page.use_existing_playlists and (initial := len(self.page.get_initial_playlist_items(uri))) > 0:
+        if self.page.use_existing_playlists and (initial := len(self.page.get_initial_playlist_items(self.uri))) > 0:
             initial_message = "items that were in the playlist before starting"
-            self._log_debug("REMOTE", name, initial_message, initial)
+            self._log_debug("REMOTE", initial_message, count=initial)
 
-        self._log_debug("REMOTE", name, "items at start", len(items))
-        self._log_debug("REMOTE", name, "items that are confirmed as unavailable", len(unavailable))
-        self._log_debug("REMOTE", name, "items added", len(added))
-        self._log_debug("REMOTE", name, "items removed", len(removed))
-        self._log_debug("REMOTE", name, "difference", len(added) - len(removed))
-        self._log_debug("REMOTE", name, "items unchanged", len(unchanged))
-        self._log_debug("REMOTE", name, "items still with missing URI", len(missing))
-        self._log_debug("REMOTE", name, "total item changes", len(added) - len(removed))
+        self._log_debug("REMOTE", "items at start", count=len(self.items))
+        self._log_debug("REMOTE", "items that are confirmed as unavailable", count=len(unavailable))
+        self._log_debug("REMOTE", "items added", count=len(added))
+        self._log_debug("REMOTE", "items removed", count=len(removed))
+        self._log_debug("REMOTE", "difference", count=len(added) - len(removed))
+        self._log_debug("REMOTE", "items unchanged", count=len(unchanged))
+        self._log_debug("REMOTE", "items still with missing URI", count=len(missing))
+        self._log_debug("REMOTE", "total item changes", count=len(added) - len(removed))
 
         return added, removed, unchanged, unavailable, missing
 
     @staticmethod
-    def _compare_duplicate_items[CT: HasURI](
-            initial: Collection[CT], others: Iterable[HasURI], unique: list[CT]
-    ) -> list[CT]:
+    def _compare_duplicate_items(initial: Collection[IT], others: Iterable[HasURI], unique: list[IT]) -> list[IT]:
         # if item collection originally contained duplicate URIS and one or more of the duplicates were removed
         # find removed duplicate items by looking for changes in counts
         initial_counts = Counter(item.uri for item in initial)
@@ -104,9 +97,7 @@ class PlaylistMatch(CheckerMatch):
 
         return duplicates
 
-    def _match_items_with_others[CT: HasURI](
-            self, items: MutableSequence[CT], others: MutableSequence[CT], name: str | None = None
-    ) -> list[CT]:
+    def _match_items_with_others(self, items: MutableSequence[IT], others: MutableSequence[HasURI]) -> list[IT]:
         initial = len(items)
         changed = []
 
@@ -123,7 +114,7 @@ class PlaylistMatch(CheckerMatch):
             others.remove(match)
 
         final = len(items)
-        self._log_debug("REMOTE", name, "items switched", initial - final)
-        self._log_debug("REMOTE", name, "items still not found", final)
+        self._log_debug("REMOTE", "items switched", count=initial - final)
+        self._log_debug("REMOTE", "items still not found", count=final)
 
         return changed

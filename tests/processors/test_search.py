@@ -223,9 +223,8 @@ class TestSearcher(SearcherTester, BaseModelTester):
         valid = faker.random_elements(items, unique=True)
         invalid = [item for item in items if item not in valid]
 
-        assert model._match_items(items, [], skipped=invalid) == SearchResult(
-            unmatched=items, skipped=invalid
-        )
+        expected = SearchResult(unmatched=tuple(items), skipped=tuple(invalid))
+        assert model._match_items(items, [], skipped=invalid) == expected
 
         result = model._match_items(valid, query_results, skipped=invalid)
         self.assert_random_match_result(

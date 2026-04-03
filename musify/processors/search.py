@@ -2,9 +2,10 @@ import textwrap
 from collections.abc import Sequence, MutableSequence, Collection, Mapping, Iterable
 from typing import Self, Any, Annotated
 
-from pydantic import Field, validate_call, model_validator, field_validator
+from pydantic import Field, validate_call, model_validator, field_validator, BeforeValidator
 from termcolor import colored
 
+from musify._types import to_tuple
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI, IsRemoteService
 from musify.models.api.search import HasSearchEndpoints
@@ -24,7 +25,8 @@ from musify.processors.match import Matcher
 class SearchResult[T: Any](TotalCountResult):
     """Stores the results of the searching process."""
     matches: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(condition=lambda x: False),  # never log this attribute
     ] = Field(
         description=(
@@ -34,7 +36,8 @@ class SearchResult[T: Any](TotalCountResult):
         default_factory=tuple
     )
     matched: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -49,7 +52,8 @@ class SearchResult[T: Any](TotalCountResult):
         default_factory=tuple
     )
     unmatched: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -61,7 +65,7 @@ class SearchResult[T: Any](TotalCountResult):
         default_factory=tuple
     )
     skipped: Annotated[
-        tuple[T, ...],
+        Sequence[T],
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -181,15 +185,8 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
 
         items, skipped = self._split_items(items)
 
-        unit = self._get_unit(items, default_type="items")
-        await self.logger.get_asynchronous_iterator(
-            map(_search_and_match_item, items),
-            desc="Searching",
-            unit=unit,
-            initial=0,
-            total=len(items),
-            disable=not show_bar,
-        )
+        task_id = self.logger.progress.add_task(description=f"Searching", total=len(items), visible=show_bar)
+        await self.logger.run_tasks_async(map(_search_and_match_item, items), task_id=task_id)
 
         return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
 
@@ -238,15 +235,9 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         async def _search_collection(collection: CollectionModel[T]) -> tuple[str, SearchResult[T]]:
             return await self._search_collection(collection, show_bar=False)
 
-        unit = self._get_unit(collections, default_type="collections")
-        bar = self.logger.get_asynchronous_iterator(
-            map(_search_collection, collections),
-            desc="Searching",
-            unit=unit,
-            initial=0,
-            total=len(collections),
-        )
-        return dict(await bar)
+        task_id = self.logger.progress.add_task(description=f"Searching", total=len(collections))
+        results = await self.logger.run_tasks_async(map(_search_collection, collections), task_id=task_id)
+        return dict(results)
 
     async def _search_collection[T: ResourceModel](
             self, collection: CollectionModel[T], show_bar: bool = True
@@ -292,14 +283,8 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
             else:
                 unmatched.append(item)
 
-        unit = self._get_unit(items, default_type="items")
-        await self.logger.get_asynchronous_iterator(
-            map(_search_and_match_item, result.unmatched),
-            desc="Searching",
-            unit=unit,
-            initial=0,
-            total=len(result.unmatched),
-        )
+        task_id = self.logger.progress.add_task(description=f"Searching", total=len(result.unmatched))
+        await self.logger.run_tasks_async(map(_search_and_match_item, result.unmatched), task_id=task_id)
 
         return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped)
 
@@ -438,15 +423,6 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         name = self._get_item_log_name(item)
         name = textwrap.shorten(name, 30, placeholder="...")
         self.logger.debug(f"{name} | {message}")
-
-    @staticmethod
-    def _get_unit(items: Iterable, default_type: str) -> str:
-        unit = default_type
-        types = {it.type for it in items if isinstance(it, ResourceModel)}
-        if len(types) == 1:
-            unit = types.pop()
-
-        return unit
 
     @staticmethod
     def _get_item_log_name(item: Any) -> str:

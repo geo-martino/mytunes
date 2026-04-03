@@ -7,9 +7,11 @@ from faker import Faker
 from pytest_mock import MockerFixture
 
 from musify.models.api import RemoteAPI
+from musify.models.item.track import RemoteTrack
 from musify.models.properties.name import HasName
+from musify.models.properties.uri import HasMutableURI
+from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.check import Checker
-from musify.processors.check._exception import SkipPage, QuitImmediately
 from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._match.playlist import PlaylistMatch
 from musify.processors.check._page import CheckerPage
@@ -93,7 +95,7 @@ class TestChecker(BaseModelTester):
         assert results.keys() == {collection.name for collection in collections}
 
         assert mock_check_page.call_count == expected_pages
-        assert mock_match_page.call_count == expected_pages
+        assert mock_match_page.call_count == len(collections)
         assert mock_pause.call_count == expected_pages
         assert mock_match_playlist.call_count == len(collections)
         assert mock_match_input.call_count == sum(bool(result.skipped) for result in results.values())
@@ -102,14 +104,15 @@ class TestChecker(BaseModelTester):
             self,
             model: Checker,
             collections: list[MockCollection],
+            tracks: list[RemoteTrack],
             mock_match_input: Mock,
             faker: Faker,
     ):
         # force playlist matches to always return valid result
-        def _return_valid_playlist_match(items, *args, **kwargs) -> CheckResult:
+        def _return_valid_playlist_match() -> CheckResult:
             return CheckResult(
-                changed=faker.random_elements(items, unique=True),
-                unchanged=faker.random_elements(items, unique=True)
+                changed=faker.random_elements(tracks, unique=True),
+                unchanged=faker.random_elements(tracks, unique=True)
             )
 
         with patch.object(PlaylistMatch, "match", side_effect=_return_valid_playlist_match) as mock_match_playlist:

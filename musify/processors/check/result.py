@@ -1,7 +1,9 @@
+from collections.abc import Sequence
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, BeforeValidator
 
+from musify._types import to_tuple
 from musify.exception import MusifyValueError
 from musify.models.properties.uri import HasURI
 from musify.models.result import Result, LenLogFormatter
@@ -10,7 +12,8 @@ from musify.models.result import Result, LenLogFormatter
 class CheckResult[T: HasURI](Result):
     """Stores the results of the searching process."""
     changed: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -22,7 +25,8 @@ class CheckResult[T: HasURI](Result):
         default_factory=tuple
     )
     unchanged: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -34,7 +38,8 @@ class CheckResult[T: HasURI](Result):
         default_factory=tuple
     )
     unavailable: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -46,7 +51,8 @@ class CheckResult[T: HasURI](Result):
         default_factory=tuple
     )
     skipped: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -66,7 +72,7 @@ class CheckResult[T: HasURI](Result):
         """
         skipped = list(self.skipped)
 
-        for item in other.changed + other.unavailable:
+        for item in list(other.changed) + list(other.unavailable):
             if item not in skipped:
                 raise MusifyValueError("Can only merge with results which update the skipped items of this result")
             skipped.remove(item)
@@ -76,8 +82,8 @@ class CheckResult[T: HasURI](Result):
                 raise MusifyValueError("Other result must contain all items in this result's skipped items")
 
         return CheckResult(
-            changed=self.changed + other.changed,
-            unchanged=self.unchanged + other.unchanged,
-            unavailable=self.unavailable + other.unavailable,
-            skipped=self.skipped + other.skipped,
+            changed=list(self.changed) + list(other.changed),
+            unchanged=list(self.unchanged) + list(other.unchanged),
+            unavailable=list(self.unavailable) + list(other.unavailable),
+            skipped=list(self.skipped) + list(other.skipped),
         )

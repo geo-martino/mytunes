@@ -76,59 +76,7 @@ def test_file_paths(logger: Logger):
     assert [path.name for path in logger.file_paths] == ["test1.log", "test2.log"]
 
 
-@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
-def test_tqdm_param_position(logger: Logger):
-    assert not logger._bars
-    assert logger._get_tqdm_param_position(2) == 2
-    assert logger._get_tqdm_param_position(9) == 9
-
-    # takes next available position when unfinished bars present
-    bar = logger.get_synchronous_iterator(iterable=range(0, 50), position=4)
-    assert bar.pos == -4
-    assert logger._get_tqdm_param_position() == 5
-    assert logger._bars
-
-    # clears bars
-    for bar in logger._bars:
-        bar.n = bar.total
-        bar.close()
-    assert logger._get_tqdm_param_position() is None
-    assert not logger._bars
-
-
-@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
-def test_tqdm_param_leave(logger: Logger):
-    assert logger._get_tqdm_param_leave(position=0)
-    assert not logger._get_tqdm_param_leave(position=2)
-    assert not logger._get_tqdm_param_leave(position=5)
-
-
-@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
-def test_tqdm_kwargs(logger: Logger):
-    kwargs = dict(iterable=range(0, 50), initial=10, disable=True, file=sys.stderr)
-    kwargs_processed = logger._get_tqdm_kwargs(**kwargs)
-    assert kwargs_processed["initial"] == 10
-    assert kwargs_processed["disable"]
-
-    kwargs = dict(
-        iterable=range(0, 50),
-        initial=10,
-        disable=False,
-        file=sys.stderr,
-        ncols=500,
-        colour="blue",
-        smoothing=0.5,
-        position=3,
-    )
-
-    kwargs_processed = logger._get_tqdm_kwargs(**kwargs)
-    assert kwargs_processed["initial"] == 10
-    assert not kwargs_processed["disable"]
-    assert kwargs_processed["ncols"] != 500
-    assert kwargs_processed["colour"] == "blue"
-    assert kwargs_processed["smoothing"] != 0.5
-
-
+# TODO: update me
 @pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 def test_tqdm_iterator_synchronous(logger: Logger):
     logger._bars.clear()
@@ -164,6 +112,7 @@ def test_tqdm_iterator_synchronous(logger: Logger):
     logger.disable_bars = False
 
 
+# TODO: update me
 @pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
 async def test_tqdm_iterator_asynchronous(logger: Logger):
     async def _task(i: int) -> int:

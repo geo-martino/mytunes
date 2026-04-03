@@ -108,9 +108,9 @@ def mutable_items(faker: Faker) -> list[HasMutableURI]:
 
 
 @pytest.fixture
-def unavailable_items(faker: Faker) -> list[HasImmutableURI]:
+def unavailable_items(faker: Faker) -> list[HasMutableURI]:
     return [
-        HasNameAndImmutableURI(name=faker.name(), uri=SimpleURI.create_unavailable(Track.type))
+        HasNameAndMutableURI(name=faker.name(), uri=SimpleURI.create_unavailable(Track.type))
         for _ in range(faker.random_int(5, 20))
     ]
 

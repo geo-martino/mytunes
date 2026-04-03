@@ -13,6 +13,7 @@ from musify._types import StrippedString
 from musify.models import BaseModel, ResourceModel
 from musify.models._base import ModelMetaclass
 from musify.models.properties.name import HasName
+from musify.models.url import HttpURL
 from musify.processors.clean.string import NameCleaner
 from musify.processors.download.stores.exception import StoreError
 
@@ -43,7 +44,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
         super().__init__(name=name, **data)
 
     name: T = Field(
-        description="The name of the download store",
+        description="The name of the store",
     )
     fields: Sequence[StrippedString] = Field(
         description="The fields to take from an item for use as the query string when opening sites.",
@@ -150,7 +151,7 @@ class HasLocale(BaseModel, metaclass=AudioStoreMetaclass):
         return locale_module.normalize(lc)
 
 
-_HTTP_ADAPTER = TypeAdapter(HttpUrl)
+_HTTP_ADAPTER = TypeAdapter(HttpURL)
 
 
 @final

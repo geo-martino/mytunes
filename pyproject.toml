@@ -24,23 +24,20 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 dependencies = [
+    "pydantic[email]~=2.12.5",
+    "rich>=14.3.3",
     "mutagen~=1.47.0",
     "aiofiles~=25.1.0",
     "aiorequestful~=1.0.20",
     "python-dateutil~=2.9.0",
     "Pillow~=12.1.1",
-    "pydantic~=2.12.5",
     "tabulate[widechars]~=0.10.0",
     "termcolor~=3.3.0",
-    "email-validator>=2.3.0",
 ]
 
 [project.optional-dependencies]
 all = [
-    "musify[bars,musicbee,sqlite]",
-]
-bars = [
-    "tqdm~=4.67.3",
+    "musify[musicbee,sqlite]",
 ]
 musicbee = [
     "xmltodict~=1.0.4",
@@ -48,7 +45,7 @@ musicbee = [
 ]
 sqlite = [
     "aiorequestful[sqlite]~=1.0.20",
-    "aiosqlite~=0.21.0",  # WORKAROUND: pinned to support Connection.is_alive
+    "aiosqlite~=0.21.0",  # WORKAROUND: pinned to support Connection.is_alive  # TODO: drop me on aiorequestful v2
 ]
 
 [project.urls]

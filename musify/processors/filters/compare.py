@@ -59,7 +59,6 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
         # initial state determined by ready and match_all states
         matched = self.ready and self.match_all
 
-        from rich import print
         for comparer, sub_filter in self.comparers.items():
             cmp_match = comparer.compare(item=item, reference=reference)
             sub_match = sub_filter.check(item=item, reference=reference)

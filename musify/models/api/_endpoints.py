@@ -5,7 +5,7 @@ from contextlib import suppress
 from copy import copy
 from io import BytesIO
 from itertools import batched
-from typing import Any, ClassVar, Self, Type, Union, cast
+from typing import Any, ClassVar, Self, Type, Union, cast, AsyncContextManager
 
 from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.auth import Authoriser
@@ -86,7 +86,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         # description="The path to the href of an item in the API response.",
     )
 
-    _handler: InstanceOf[RequestHandler[Authoriser, JSON]] = PrivateAttr(
+    _handler: InstanceOf[RequestHandler[Authoriser, JsonSchemaValue]] = PrivateAttr(
         # description="The handler for the API endpoint.",
         default=None,
     )
@@ -140,6 +140,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return RemoteModelContext(user=self.user, type=kind)
 
     async def __aenter__(self) -> Self:
+        await super().__aenter__()
         if self._handler.closed:
             await self._handler.__aenter__()
         return self
@@ -147,6 +148,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         if not self._handler.closed:
             await self._handler.__aexit__(exc_type, exc_val, exc_tb)
+        return await super().__aexit__(exc_type, exc_val, exc_tb)
 
     @staticmethod
     def _batch_values(values: Iterable, limit: int) -> batched:
@@ -241,8 +243,8 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             )
 
             cursor = cursor.get_cursor_from_response(response=response, path=path)
-            print("IMTES", len(items))
-            print("CURSOR", cursor)
+            # print("IMTES", len(items))
+            # print("CURSOR", cursor)
 
             if cursor.next == cursor:
                 raise CursorResponseError(
@@ -254,11 +256,11 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
                 response_items, cursor = await self._get_all_items_by_generation(
                     cursor, path=path, kind=kind, show_bar=show_bar
                 )
-                print("GEN", len(response_items))
+                # print("GEN", len(response_items))
                 items.extend(response_items)
                 break
 
-        print("FINL", len(items))
+        # print("FINL", len(items))
         return tuple(items), cursor
 
     # TODO: migrate this to aiorequestful v2
@@ -285,17 +287,16 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         item_type = self._get_type_value(kind)
         desc_type = f"{collection_type} {item_type}" if item_type != collection_type else collection_type
 
-        responses: list[JSON] = await self.logger.get_asynchronous_iterator(
-            map(functools.partial(self._get_page, item_type=item_type, path=path), cursors),
-            desc=f"Getting {desc_type}s",
-            unit="pages",
-            initial=0,
+        task_id = self.logger.progress.add_task(
+            description=f"Getting {desc_type}s",
             total=len(cursors),
-            disable=not show_bar or len(cursors) < self._bar_threshold,
+            visible=show_bar or len(cursors) >= self._bar_threshold
         )
+        tasks = map(functools.partial(self._get_page, item_type=item_type, path=path), cursors)
+        responses: list[JsonSchemaValue] = await self.logger.run_tasks_async(tasks, task_id=task_id)
 
-        print("COUNTS", [len(self._get_items_from_response(response=res, path=path)) for res in responses])
-        print("COUNTS", sum([len(self._get_items_from_response(response=res, path=path)) for res in responses]))
+        # print("COUNTS", [len(self._get_items_from_response(response=res, path=path)) for res in responses])
+        # print("COUNTS", sum([len(self._get_items_from_response(response=res, path=path)) for res in responses]))
 
         cursors = cursor.sort_responses(responses, path=path)
         response_items = [
@@ -318,13 +319,15 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             log_message = f"{page.offset:>6}/{page.total:<6} {item_type}s"
 
         p = await self._handler.get(page.url, log_message=log_message)
-        print("IMTES", len(self._get_items_from_response(response=p, path=path)))
-        print("CURSOR", page.get_cursor_from_response(response=p, path=path))
+        # print("IMTES", len(self._get_items_from_response(response=p, path=path)))
+        # print("CURSOR", page.get_cursor_from_response(response=p, path=path))
         return p
 
     # TODO: migrate this to aiorequestful v2
     @classmethod
-    def _get_items_from_response(cls, response: JSON, path: str | AliasPath | AliasChoices) -> list[JSON]:
+    def _get_items_from_response[T: JsonSchemaValue](
+            cls, response: T, path: str | AliasPath | AliasChoices
+    ) -> list[T]:
         items = None
         log = path
 
@@ -355,7 +358,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     # TODO: migrate this to aiorequestful v2
     @classmethod
-    def _get_items_from_response_nested(cls, response: JSON, path: str | AliasPath) -> list[JSON] | None:
+    def _get_items_from_response_nested[T: JsonSchemaValue](
+            cls, response: T, path: str | AliasPath
+    ) -> list[T] | None:
         path = path if isinstance(path, AliasPath) else AliasPath(path)
 
         keys = iter(path.path)
@@ -454,7 +459,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     # TODO: migrate this to aiorequestful v2
     @classmethod
-    def _get_value_from_response(cls, response: JSON, path: str | AliasPath | AliasChoices) -> Any | None:
+    def _get_value_from_response(cls, response: JsonSchemaValue, path: str | AliasPath | AliasChoices) -> Any | None:
         match path:
             case str() as key:
                 return response.get(key)
@@ -578,17 +583,15 @@ class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             return (self.__class__.create_model(it, context=self._model_context) for it in response_items)
 
         batches = list(self._batch_values(uncached_uris, limit))
-        bar = self.logger.get_asynchronous_iterator(
-            map(_get_items, batches),
-            desc=f"Getting {item_type}s",
-            unit="batches",
-            initial=0,
+        task_id = self.logger.progress.add_task(
+            description=f"Getting {item_type}s",
             total=len(batches),
-            disable=not show_bar or len(batches) < self._bar_threshold,
+            visible=show_bar or len(batches) >= self._bar_threshold
         )
+        responses = await self.logger.run_tasks_async(map(_get_items, batches), task_id=task_id)
 
         # TODO: amend this on aiorequestful v2
-        items = cache_items + [item for batch in await bar for item in batch]
+        items = cache_items + [item for batch in responses for item in batch]
         items.sort(key=lambda it: uris.index(it.uri.id))
 
         return items
@@ -665,14 +668,12 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             await self._handler.post(url, json=body, log_message=message)
 
         batches = list(self._batch_values(uris, limit))
-        await self.logger.get_asynchronous_iterator(
-            map(_post_items, batches),
-            desc=f"Adding {item_type}s to {collection_type}",
-            unit="batches",
-            initial=0,
+        task_id = self.logger.progress.add_task(
+            description=f"Adding {item_type}s to {collection_type}",
             total=len(batches),
-            disable=not show_bar or len(batches) < self._bar_threshold,
+            visible=show_bar or len(batches) >= self._bar_threshold
         )
+        await self.logger.run_tasks_async(map(_post_items, batches), task_id=task_id)
 
         self._handler.log("DONE", url, message=f"Added {len(uris):>6} {item_type}s to {collection_type}")
         return len(uris)
@@ -722,14 +723,12 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             await self._handler.delete(url, json=body, log_message=message)
 
         batches = list(self._batch_values(uris, limit))
-        await self.logger.get_asynchronous_iterator(
-            map(_delete_items, batches),
-            desc=f"Removing {item_type}s from {collection_type}",
-            unit="batches",
-            initial=0,
+        task_id = self.logger.progress.add_task(
+            description=f"Removing {item_type}s from {collection_type}",
             total=len(batches),
-            disable=not show_bar or len(batches) < self._bar_threshold,
+            visible=show_bar or len(batches) >= self._bar_threshold
         )
+        await self.logger.run_tasks_async(map(_delete_items, batches), task_id=task_id)
 
         self._handler.log("DONE", url, message=f"Removed {len(uris):>6} {item_type}s from {collection_type}")
         return len(uris)
@@ -794,14 +793,12 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             await self._handler.put(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
-        await self.logger.get_asynchronous_iterator(
-            map(_post_items, batches),
-            desc=f"Adding {item_type}s",
-            unit="batches",
-            initial=0,
+        task_id = self.logger.progress.add_task(
+            description=f"Adding {item_type}s",
             total=len(batches),
-            disable=not show_bar or len(batches) < self._bar_threshold,
+            visible=show_bar or len(batches) >= self._bar_threshold
         )
+        await self.logger.run_tasks_async(map(_post_items, batches), task_id=task_id)
 
         self._handler.log("DONE", self._write_url, message=f"Added {len(uris):>6} {item_type}s")
         return len(uris)
@@ -829,14 +826,12 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             await self._handler.delete(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
-        await self.logger.get_asynchronous_iterator(
-            map(_delete_items, batches),
-            desc=f"Removing {item_type}s",
-            unit="batches",
-            initial=0,
+        task_id = self.logger.progress.add_task(
+            description=f"Removing {item_type}s",
             total=len(batches),
-            disable=not show_bar or len(batches) < self._bar_threshold,
+            visible=show_bar or len(batches) >= self._bar_threshold
         )
+        await self.logger.run_tasks_async(map(_delete_items, batches), task_id=task_id)
 
         self._handler.log("DONE", self._write_url, message=f"Removed {len(uris):>6} {item_type}s")
         return len(uris)
@@ -847,7 +842,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return {"json": {"ids": list(map(str, values))}}
 
 
-class HasEndpoints(RemoteModel):
+class HasEndpoints(RemoteModel, AsyncContextManager):
     @property
     def _handler(self) -> RequestHandler:
         return next(getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys())
@@ -891,14 +886,15 @@ class HasEndpoints(RemoteModel):
         ]
 
     async def __aenter__(self) -> Self:
+        await super().__aenter__()
         for endpoints in self._nested_endpoints:
             await endpoints.__aenter__()
-
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         for endpoints in self._nested_endpoints:
             await endpoints.__aexit__(exc_type, exc_val, exc_tb)
+        return await super().__aexit__(exc_type, exc_val, exc_tb)
 
 
 class HasSavedEndpoints[ET: ReadSavedEndpoints | WriteSavedEndpoints](HasEndpoints):

@@ -621,14 +621,9 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
 
         self._log_save_tracks_header()
 
-        bar = self.logger.get_asynchronous_iterator(
-            map(_save_track, self.tracks),
-            desc="Updating tracks",
-            unit="tracks",
-            initial=0,
-            total=len(self.tracks)
-        )
-        return dict(await bar)
+        task_id = self.logger.progress.add_task(description=f"Updating local tracks", total=len(self.tracks))
+        results = await self.logger.run_tasks_async(map(_save_track, self.tracks), task_id=task_id)
+        return dict(results)
 
     def _log_save_tracks_header(self) -> None:
         message = f"Saving {len(self.tracks)} tracks"

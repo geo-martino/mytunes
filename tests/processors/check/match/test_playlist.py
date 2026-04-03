@@ -1,26 +1,33 @@
 from copy import deepcopy
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
 from musify.models import ResourceModel
+from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemoteMutablePlaylist
 from musify.models.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from musify.processors.check._match.playlist import PlaylistMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
-from tests.models.testers import BaseModelTester
+from tests.models.testers import BaseModelTester, UniqueKeyTester
 from tests.processors.check.match.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.processors.utils import MockCollection
 from tests.utils import split_list
 
 
-class TestPlaylistMatch(BaseModelTester):
+class TestPlaylistMatch(UniqueKeyTester):
     @pytest.fixture
-    def model(self, page: CheckerPage, matcher: Matcher) -> PlaylistMatch:
-        return PlaylistMatch(page=page, matcher=matcher)
+    def model(
+            self,
+            page: CheckerPage,
+            playlist: RemoteMutablePlaylist,
+            mutable_items: list[HasNameAndMutableURI],
+            matcher: Matcher,
+    ) -> PlaylistMatch:
+        return PlaylistMatch(page=page, items=mutable_items, uri=playlist.uri, matcher=matcher)
 
     @pytest.fixture
     def mock_match_items_with_others(self, model: PlaylistMatch, mocker: MockerFixture) -> Mock:
@@ -32,25 +39,20 @@ class TestPlaylistMatch(BaseModelTester):
     def test_compare_items(
             self,
             model: PlaylistMatch,
-            collection: MockCollection,
-            playlist: RemoteMutablePlaylist,
-            available_items: list[HasURI],
-            unavailable_items: list[HasURI],
-            missing_items: list[HasURI],
-            invalid_items: list[ResourceModel],
+            mutable_items: list[HasMutableURI],
+            unavailable_items: list[HasMutableURI],
+            missing_items: list[HasMutableURI],
             mock_get_playlist_items: Mock,
             faker: Faker,
     ):
-        initial, expected_added = split_list(available_items, 2)
+        initial, expected_added = split_list(mutable_items, 2)
         expected_unchanged, expected_removed = split_list(initial, 2)
         current = expected_unchanged + expected_added
 
-        collection.all_items = initial + unavailable_items + missing_items + invalid_items
+        model.items = initial + unavailable_items + missing_items
         mock_get_playlist_items.return_value = current
 
-        added, removed, unchanged, unavailable, missing = model._compare_items(
-            items=list(collection.items), others=current, uri=playlist.uri, name=playlist.name,
-        )
+        added, removed, unchanged, unavailable, missing = model._compare_items(current)
 
         assert added == expected_added
         assert removed == expected_removed
@@ -61,8 +63,6 @@ class TestPlaylistMatch(BaseModelTester):
     def test_compare_duplicate_items(
             self,
             model: PlaylistMatch,
-            playlist: RemoteMutablePlaylist,
-            collection: MockCollection,
             available_items: list[HasURI],
             faker: Faker,
     ):
@@ -76,7 +76,6 @@ class TestPlaylistMatch(BaseModelTester):
         assert removed_duplicates
 
         initial = available_items + initial_duplicates
-        collection.all_items += initial_duplicates
         current, removed = split_list(available_items, 2)
         current += current_duplicates
 
@@ -132,9 +131,10 @@ class TestPlaylistMatch(BaseModelTester):
             mocker: MockerFixture,
     ):
         mock_match = mocker.spy(Matcher, "match")
+        items = available_items + mutable_items
         expected_calls = len(mutable_items)
 
-        model._match_items_with_others(items=available_items + mutable_items, others=mutable_items)
+        model._match_items_with_others(items=items, others=mutable_items)
         assert mock_match.call_count == expected_calls
 
     ###########################################################################
@@ -143,19 +143,18 @@ class TestPlaylistMatch(BaseModelTester):
     async def test_match_skips_on_no_changes(
             self,
             model: PlaylistMatch,
-            collection: MockCollection,
             playlist: RemoteMutablePlaylist,
-            available_items: list[HasNameAndImmutableURI],
-            unavailable_items: list[HasNameAndImmutableURI],
-            invalid_items: list[ResourceModel],
+            mutable_items: list[HasNameAndMutableURI],
+            unavailable_items: list[HasNameAndMutableURI],
             mock_match_items_with_others: Mock,
     ):
-        collection.all_items = available_items + unavailable_items + invalid_items
+        model.items = mutable_items + unavailable_items
 
-        result = await model.match(items=list(collection.items), uri=playlist.uri, name=playlist.name)
+        with patch.object(CheckerPage, "get_current_playlist_items", return_value=mutable_items):
+            result = await model.match()
 
         assert not result.changed
-        assert sorted(result.unchanged) == sorted(available_items)
+        assert sorted(result.unchanged) == sorted(mutable_items)
         assert sorted(result.unavailable) == sorted(unavailable_items)
         assert not result.skipped
 
@@ -164,45 +163,17 @@ class TestPlaylistMatch(BaseModelTester):
     async def test_match_skips_on_none_added(
             self,
             model: PlaylistMatch,
-            collection: MockCollection,
-            playlist: RemoteMutablePlaylist,
-            available_items: list[HasNameAndImmutableURI],
-            unavailable_items: list[HasNameAndImmutableURI],
-            invalid_items: list[ResourceModel],
+            mutable_items: list[HasNameAndMutableURI],
+            unavailable_items: list[HasNameAndMutableURI],
             mock_get_playlist_items: Mock,
             mock_match_items_with_others: Mock,
             faker: Faker,
     ):
-        unchanged, removed = split_list(available_items, 2)
-        collection.all_items = unchanged + removed + unavailable_items + invalid_items
+        unchanged, removed = split_list(mutable_items, 2)
+        model.items = unchanged + removed + unavailable_items
         mock_get_playlist_items.return_value = unchanged
 
-        result = await model.match(items=list(collection.items), uri=playlist.uri, name=playlist.name)
-
-        assert not result.changed
-        assert sorted(result.unchanged) == sorted(unchanged)
-        assert sorted(result.unavailable) == sorted(unavailable_items)
-        assert sorted(result.skipped) == sorted(removed)
-
-        mock_match_items_with_others.assert_not_called()
-
-    async def test_match_skips_on_no_immutable_items(
-            self,
-            model: PlaylistMatch,
-            collection: MockCollection,
-            playlist: RemoteMutablePlaylist,
-            available_items: list[HasNameAndImmutableURI],
-            unavailable_items: list[HasNameAndImmutableURI],
-            invalid_items: list[ResourceModel],
-            mock_get_playlist_items: Mock,
-            mock_match_items_with_others: Mock,
-            faker: Faker,
-    ):
-        unchanged, added, removed = split_list(available_items, 3)
-        collection.all_items = unchanged + removed + unavailable_items + invalid_items
-        mock_get_playlist_items.return_value = unchanged + added
-
-        result = await model.match(items=list(collection.items), uri=playlist.uri, name=playlist.name)
+        result = await model.match()
 
         assert not result.changed
         assert sorted(result.unchanged) == sorted(unchanged)
@@ -214,25 +185,24 @@ class TestPlaylistMatch(BaseModelTester):
     async def test_match(
             self,
             model: PlaylistMatch,
-            collection: MockCollection,
-            playlist: RemoteMutablePlaylist,
             mutable_items: list[HasNameAndMutableURI],
             unavailable_items: list[HasNameAndImmutableURI],
-            invalid_items: list[ResourceModel],
             mock_get_playlist_items: Mock,
             mock_match_items_with_others: Mock,
             faker: Faker,
     ):
         unchanged, added, removed = split_list(mutable_items, 3)
-        collection.all_items = unchanged + removed + unavailable_items + invalid_items
+        items = unchanged + removed + unavailable_items
         mock_get_playlist_items.return_value = unchanged + added
 
         for item in added:
             item = deepcopy(item)
             del item.uri
-            collection.all_items.append(item)
+            items.append(item)
 
-        result = await model.match(items=list(collection.items), uri=playlist.uri, name=playlist.name)
+        model.items = items
+
+        result = await model.match()
 
         assert sorted(result.changed) == sorted(added)
         assert sorted(result.unchanged) == sorted(unchanged)

@@ -9,20 +9,18 @@ import logging.config
 import logging.handlers
 import os
 import sys
-from asyncio import Future
-from collections.abc import Iterable, Awaitable
+from asyncio import Future, Semaphore
+from collections.abc import Iterable, Awaitable, Generator, Callable, AsyncGenerator
+from contextlib import contextmanager
+from functools import cached_property
 from pathlib import Path
-from typing import Any, Annotated
+from typing import Any, Annotated, Generator, ClassVar, ContextManager
 
-from pydantic import Field, validate_call
+from pydantic import Field, validate_call, PrivateAttr
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn, BarColumn, TaskProgressColumn, \
+    TimeRemainingColumn, Console, TaskID
 from termcolor import colored
 
-try:
-    from tqdm.auto import tqdm
-except ImportError:
-    tqdm = None
-
-type ProgressBarType[T] = Iterable[T] | tqdm if tqdm is not None else Iterable[T]
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
 
 EXTRA = logging.INFO - 1
@@ -38,15 +36,21 @@ logging.addLevelName(STAT, "STAT")
 logging.STAT = STAT
 
 
-class Logger(logging.Logger):
+class Logger(logging.Logger, ContextManager):
     """The logger for all logging operations."""
 
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
-    #: When true, all bars returned by :py:meth:`get_progress_bar()` will be disabled by default
-    disable_bars: bool = False
-    #: All currently active progress bars
-    _bars: list[tqdm] = []
+
+    progress: Progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}: "),
+        BarColumn(bar_width=None),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        "/",
+        TimeRemainingColumn(compact=True),
+    )
 
     @property
     def file_paths(self) -> list[Path]:
@@ -76,6 +80,16 @@ class Logger(logging.Logger):
                 console_handlers.add(handler)
 
         return console_handlers
+
+    def __enter__(self) -> Logger:
+        super().__enter__()
+        if not self.progress.live.is_started:
+            self.progress.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.progress.__exit__(exc_type, exc_val, exc_tb)
+        return super().__exit__(exc_type, exc_val, exc_tb)
     
     @validate_call
     def debug(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
@@ -123,13 +137,7 @@ class Logger(logging.Logger):
         msg = self.generate_message(msg, header, hidden)
         super().critical(msg, *args, **kwargs)
 
-    def print_line(self, level: int = logging.CRITICAL + 1) -> None:
-        """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
-        if not self.compact:
-            if self.stdout_handlers and any(logging.DEBUG < h.level <= level for h in self.stdout_handlers):
-                print()
-
-    def print_message(self, *values, sep=' ', end='\n', **kwargs) -> None:
+    def print(self, *values, sep=' ', end='\n', **kwargs) -> None:
         """
         Wrapper for print. Logs the given ``values`` to the INFO setting.
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
@@ -137,10 +145,26 @@ class Logger(logging.Logger):
         """
         message = sep.join(values)
         if message:
-            self.info(message, **kwargs)
+            self.debug(message, **kwargs)
 
-        if not values or not self.stdout_handlers or all(h.level > logging.INFO for h in self.stdout_handlers):
-            print(*values, sep=sep, end=end)
+        if not values or not self.stdout_handlers or all(h.level > logging.DEBUG for h in self.stdout_handlers):
+            self.progress.print(*values, sep=sep, end=end, highlight=False, new_line_start=not self.compact)
+
+    def print_line(self, level: int = logging.CRITICAL + 1) -> None:
+        """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
+        if not self.compact:
+            if self.stdout_handlers and any(logging.DEBUG < h.level <= level for h in self.stdout_handlers):
+                self.progress.print()
+
+    def input(self, text: str | None = None) -> str:
+        """Print dialogue with optional text and get the user's input."""
+        if text:
+            text = text.strip() + " "
+
+        self.print(text, end="")
+        inp = self.progress.console.input().strip()
+        self.debug(f"User input: {inp}")
+        return inp
 
     @staticmethod
     @validate_call
@@ -183,72 +207,87 @@ class Logger(logging.Logger):
 
         return value_str
 
-    def get_synchronous_iterator[T: Any](
-            self, iterable: Iterable[T] | None = None, total: T | int | None = None, **kwargs
-    ) -> ProgressBarType[T]:
+    def run_tasks[T](
+            self,
+            tasks: Iterable[Callable[[], T]],
+            task_id: TaskID | None = None,
+            predicate: Callable[[T], bool] | None = None,
+            remove: bool = True,
+    ) -> list[T]:
         """
-        Return an appropriately configured tqdm progress bar if installed.
-        If not, return either the given ``iterable`` if given or simply ``range(total)``.
-        For tqdm kwargs, see :py:class:`tqdm`
+        Synchronously run the given tasks with progress output if a task_id is provided.
+        Largely just a wrapper to turn :py:meth:`.wrap_tasks` into a callable task to get the results.
+
+        :param tasks: The tasks to run.
+        :param task_id: The progress bar task ID to run the tasks for. If not given, no progress bar will be shown.
+        :param predicate: Only return the task result if the result adheres to this predicate.
+            When None, doesn't return the result if None.
+        :param remove: Whether to remove the progress bar task when done.
+        :return: The results of the tasks.
         """
-        if tqdm is None:
-            return iter(iterable) if iterable is not None else range(total)
+        tasks = self._wrap_tasks(tasks, task_id, predicate)
+        result = [it for it in tasks]
 
-        bar = tqdm(iterable=iterable, **self._get_tqdm_kwargs(total=total, **kwargs))
-        self._bars.append(bar)
-        return bar
+        if remove:
+            self.progress.remove_task(task_id)
+        return result
 
-    def get_asynchronous_iterator[T](
-            self, tasks: Iterable[Awaitable[T]], **kwargs
-    ) -> Awaitable[list[T]] | Future[list[T]]:
+    def _wrap_tasks[T](
+            self,
+            tasks: Iterable[Callable[[], T]],
+            task_id: TaskID | None = None,
+            predicate: Callable[[T], bool] | None = None,
+    ) -> Generator[T]:
+        for task in tasks:
+            result = task()
+            if task_id is not None:
+                self.progress.advance(task_id, advance=1)
+
+            if callable(predicate) and predicate(result):
+                yield result
+            elif predicate is None and result is not None:
+                yield result
+
+    async def run_tasks_async[T](
+            self,
+            tasks: Iterable[Awaitable[T]],
+            task_id: TaskID | None = None,
+            predicate: Callable[[T], bool] | None = None,
+            remove: bool = True,
+    ) -> list[T]:
         """
-        Return an appropriately configured asynchronous tqdm progress bar if installed.
-        If not, gather the given awaitable objects from ``tasks`` and return a coroutine.
+        Asynchronously run the given tasks with progress output if a task_id is provided.
+        Largely just a wrapper to turn :py:meth:`.wrap_tasks_async` into an awaitable task to get the results.
 
-        Note that tqdm does not preserve the order of the input awaitables and will return results in a random order.
-        For tqdm kwargs, see :py:class:`tqdm`
+        :param tasks: The tasks to run.
+        :param task_id: The progress bar task ID to run the tasks for. If not given, no progress bar will be shown.
+        :param predicate: Only return the task result if the result adheres to this predicate.
+            When None, doesn't return the result if None.
+        :param remove: Whether to remove the progress bar task when done.
+        :return: The results of the tasks.
         """
-        if tqdm is None:
-            return asyncio.gather(*tasks)
-        return tqdm.gather(*tasks, **self._get_tqdm_kwargs(**kwargs))
+        tasks = self._wrap_tasks_async(tasks, task_id, predicate)
+        result = [it async for it in tasks]
 
-    def _get_tqdm_kwargs(self, **kwargs) -> dict[str, Any]:
-        preset_keys = ("leave", "disable", "file", "ncols", "colour", "smoothing")
+        if remove:
+            self.progress.remove_task(task_id)
+        return result
 
-        try:
-            cols = os.get_terminal_size().columns
-        except OSError:
-            cols = 120
+    async def _wrap_tasks_async[T](
+            self,
+            tasks: Iterable[Awaitable[T]],
+            task_id: TaskID | None = None,
+            predicate: Callable[[T], bool] | None = None,
+    ) -> AsyncGenerator[T]:
+        for task in tasks:
+            result = await task
+            if task_id is not None:
+                self.progress.advance(task_id, advance=1)
 
-        # adjust kwargs to defaults if needed
-        kwargs["position"] = self._get_tqdm_param_position(**kwargs)
-        return dict(
-            leave=self._get_tqdm_param_leave(**kwargs),
-            disable=self.disable_bars or kwargs.get("disable", False),
-            file=sys.stdout,
-            ncols=cols,
-            colour=kwargs.get("colour", "blue"),
-            smoothing=0.1,
-            **{k: v for k, v in kwargs.items() if k not in preset_keys}
-        )
-
-    def _get_tqdm_param_position(self, position: int = None, **__) -> int | None:
-        if position is not None:
-            return position
-
-        # clear closed bars
-        self._bars = [bar for bar in self._bars if bar.n < (bar.total or 0)]
-        if self._bars:
-            return abs(min(bar.pos for bar in self._bars)) + 1
-
-    def _get_tqdm_param_leave(self, position: int | None, leave: bool = None, **__) -> bool:
-        if leave is not None:
-            return leave
-
-        return all([
-            bool(self.stdout_handlers) or (h.level > logging.DEBUG for h in self.stdout_handlers),
-            position is None or position == 0
-        ])
+            if callable(predicate) and predicate(result):
+                yield result
+            elif predicate is None and result is not None:
+                yield result
 
     def __copy__(self):
         """Do not copy logger"""

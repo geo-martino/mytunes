@@ -1,0 +1,128 @@
+import itertools
+from collections.abc import Collection, Sequence
+from functools import partial
+from webbrowser import open as webopen
+
+from pydantic import Field
+from rich.progress import TaskID
+from termcolor import colored
+from yarl import URL
+
+from musify.models import AttributeModel, ResourceModel
+from musify.models.properties.order import Position
+from musify.models.url import HttpURL
+from musify.processors._base import InputProcessor
+
+
+class StorePausePage[IT: AttributeModel](InputProcessor):
+    position: Position = Field(
+        description="The current position of this page in the process."
+    )
+    task_id: TaskID | None = Field(
+        description=(
+            "The task ID for the progress bar to use to display. If None, a progress bar will not be displayed."
+        ),
+        default=None,
+    )
+
+    items: Sequence[IT] = Field(
+        description="The items to be processed by this page"
+    )
+    urls: Sequence[Sequence[HttpURL]] = Field(
+        description="The URLs to be processed by this page for each item."
+    )
+
+    @property
+    def fields(self) -> tuple[str, ...]:
+        """The valid fields for the items in this page"""
+        classes: set[type[AttributeModel]] = {type(it) for it in self.items}
+        available_fields = set(
+            itertools.chain.from_iterable(kls.__tag_attributes__ for kls in classes)
+        )
+        valid_fields = {
+            field for field in available_fields if any(getattr(item, field) is not None for item in self.items)
+        }
+
+        return tuple(valid_fields)
+
+    @property
+    def types(self) -> str:
+        types = sorted({f"{it.type.rstrip("s")}s" for it in self.items if isinstance(it, ResourceModel)})
+        return self.logger.format_list_to_string(types) if types else "items"
+
+    def open_sites(self) -> None:
+        """Open the sites for this page."""
+        self.logger.debug(f"Opening sites for {len(self.items)} {self.types}")
+        tasks = [
+            partial(self._open_sites_for_item, item=item, urls=urls)
+            for item, urls in zip(self.items, self.urls, strict=True)
+        ]
+        remove = self.position.number == self.position.total
+        self.logger.run_tasks(tasks, task_id=self.task_id, remove=remove)
+
+    def _open_sites_for_item(self, item: IT, urls: Collection[URL]) -> None:
+        self.logger.debug(f"Opening {len(urls)} URLs for {self._get_item_log_value(item)!r}")
+        for url in urls:
+            webopen(str(url))
+
+    ###########################################################################
+    ## Pause page
+    ###########################################################################
+    @property
+    def _header(self) -> str:
+        header = f"Opened {sum(len(urls) for urls in self.urls)} sites for {len(self.items)} {self.types}. "
+        header += f"You may now search for and download the {self.types}."
+        return colored(header, "blue", attrs=["bold"])
+
+    @property
+    def _options(self) -> dict[str, str]:
+        return {
+            "<Return/Enter>": "Once you are finished with this batch, continue on to the next batch",
+            "r": f"Re-open all sites for the current batch of {self.types}",
+            "<Fields>":
+                f"Re-open all sites for the current batch of {self.types} using the input list of fields, "
+                "each separated by a space e.g. title artist album",
+            "q": f"Skip opening sites for any remaining {self.types} and quit",
+            "h": "Show this dialogue again",
+        }
+
+    def _print_help_text(self, header: str | None = None, _: str | None = None) -> None:
+        field_names_message = f"\n\nValid fields for this batch: {" ".join(self.fields)}"
+        post_options = colored(field_names_message, "dark_grey")
+        super()._print_help_text(header=header, post_options=post_options)
+
+    def pause(self) -> tuple[str, ...] | None:
+        self.logger.progress.stop()
+        self._print_help_text(self._header)
+
+        while True:
+            option = self._get_user_input(f"Enter ({self.position})")
+
+            match option.casefold():
+                case "":  # continue to next batch
+                    break
+
+                case "h":
+                    self._print_help_text()
+
+                case "r":  # return True to re-open all sites
+                    self.open_sites()
+
+                case opt if fields := self._get_filtered_fields_from_input(opt):
+                    # return the valid fields to re-open all sites for these fields
+                    return fields
+
+                case opt:
+                    self._log_unrecognised_input(opt)
+
+    def _get_filtered_fields_from_input(self, inp: str) -> tuple[str, ...]:
+        input_fields = set(inp.split())
+        filtered_fields = input_fields & set(self.fields)
+
+        if filtered_fields and filtered_fields != input_fields:
+            self.logger.warning(
+                f"Some fields were not recognised: {", ".join(input_fields - filtered_fields)}. "
+                f"Using only recognised fields: {", ".join(filtered_fields)}."
+            )
+
+        return tuple(filtered_fields)

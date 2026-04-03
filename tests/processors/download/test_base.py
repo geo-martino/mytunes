@@ -13,6 +13,7 @@ from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 from musify.processors.download import StoreManager
+from musify.processors.download._page import StorePausePage
 from musify.processors.download.stores import GeneralAudioStore
 from musify.processors.download.stores.bandcamp import BandcampStore
 from musify.processors.download.stores.juno_download import JunoDownloadStore
@@ -20,6 +21,7 @@ from musify.processors.download.stores.qobuz import QobuzStore
 from musify.processors.download.stores.seven_digital import SevenDigitalStore
 from tests.conftest import LogCapturer
 from tests.models.testers import BaseModelTester
+from tests.processors.utils import assert_help_text
 from tests.utils import patch_input
 
 
@@ -62,13 +64,13 @@ class TestStoreManager(BaseModelTester):
     @pytest.fixture(autouse=True)
     def mock_webopen(self, urls: list[str]):
         """Mock for webopen which appends the queried url to the urls fixture list"""
-        with patch(f"{MODULE_ROOT}.processors.download._base.webopen", new=urls.append):
+        with patch(f"{MODULE_ROOT}.processors.download._page.webopen", new=urls.append):
             yield
 
     @pytest.fixture
-    def mock_pause(self, model: StoreManager) -> Generator[Mock, None, None]:
+    def mock_pause(self) -> Generator[Mock, None, None]:
         """Mock for pause functionality"""
-        with patch.object(model, "_pause") as mock_pause:
+        with patch.object(StorePausePage, "pause", return_value=None) as mock_pause:
             yield mock_pause
 
     @pytest.fixture
@@ -145,6 +147,6 @@ class TestStoreManager(BaseModelTester):
         # 5 extra for 3*r input + 2*<Fields> input
         assert len(urls) == (total + 5 * model.interval) * len(model.stores)
 
-        assert log_capturer.text.count("Enter one of the following") == pages_total
+        assert_help_text(log_capturer, pages_total + 2)
         assert log_capturer.text.count("Some fields were not recognised") == 1
         assert log_capturer.text.count("Unrecognised input") == 1

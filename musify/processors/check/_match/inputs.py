@@ -11,13 +11,13 @@ from musify.models.properties.name import HasName
 from musify.models.properties.uri import HasURI, URI, HasMutableURI
 from musify.models.result import LogFormatter
 from musify.processors._base import InputProcessor
-from musify.processors.check._exception import SkipPage, QuitImmediately
+from musify.processors._exception import SkipPage, QuitImmediately
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check.result import CheckResult
 from musify.processors.formatter import ModelFormatter
 
 
-class InputMatch(CheckerMatch, InputProcessor):
+class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
     formatter: ModelFormatter = Field(
         description="The formatter to use for formatting info about the item to print.",
         default=ModelFormatter(
@@ -27,39 +27,38 @@ class InputMatch(CheckerMatch, InputProcessor):
         )
     )
 
-    async def match[CT: HasURI](self, items: Collection[CT], uri: URI, name: str) -> CheckResult[CT]:
+    async def match(self) -> CheckResult[IT]:
         """Match the given items that have missing URIs with user input."""
-        missing = self.get_missing_items(items)
+        missing = self.missing_items
         if not missing:
             message = "No items with mutable URIs to match to input, skipping match"
-            self._log_debug("SKIP", name, message)
+            self._log_debug("SKIP", message)
             return CheckResult()
 
-        help_text = self._format_help_text_for_match_with_input(name=name, count=len(missing))
-        self.logger.print_message("\n" + help_text)
-
-        self._log_debug("INPUT", name, f"Getting user input for {len(missing)} items")
+        self._log_debug("INPUT", f"Getting user input for {len(missing)} items")
+        self._print_help_text(self._format_header(len(missing)))
 
         initial = deepcopy(missing)
         formatter = self._configure_formatter_for_items(missing)
         option = None
 
-        with suppress(SkipPage):
+        with suppress(SkipPage):  # suppress so we can still compare changes and return a result
             for item in missing:
-                option = await self._match_item_with_input(item, uri=uri, formatter=formatter, option=option)
+                option = await self._match_item_with_input(item, formatter=formatter, option=option)
 
         return self._compare_uri_changes(initial=initial, changes=missing)
 
-    def _format_help_text_for_match_with_input(self, name: str | None = None, count: int | None = None) -> str:
-        header = None
-        if name is not None:
-            message = "The following {items} were removed and/or matches were not found."
-            message = message.format(items="items" if count is None else f"{count} items")
+    ###########################################################################
+    ## Pause page
+    ###########################################################################
+    def _format_header(self, count: int) -> str:
+        message = f"The following {count} items were removed and/or matches were not found."
+        name = colored(self.name, "blue", attrs=["bold"])
+        return f"{name}: {message}"
 
-            header = colored(name, "blue", attrs=["bold"]) + ": "
-            header += colored(message, "red")
-
-        options = {
+    @property
+    def _options(self) -> dict[str, str]:
+        return {
             f"<{self.page.source} URI/URL>": "Assign the given URI to the item",
             "u": f"Mark item as 'Unavailable on {self.page.source}'",
             "ua": "Same as 'u' option but apply to all items in this playlist in addition to this item",
@@ -76,13 +75,12 @@ class InputMatch(CheckerMatch, InputProcessor):
             "h": "Show this dialogue again",
         }
 
-        help_text = self._format_help_text(options=options, header=header)
-        help_text += "\nOR enter a custom URI/URL/ID for this item"
+    def _print_help_text(self, header: str | None = None, _: str = None) -> None:
+        post_options = "\nOR enter a custom URI/URL/ID for this item"
+        super()._print_help_text(header=header, post_options=post_options)
 
-        return help_text + "\n"
-
-    async def _match_item_with_input[CT: HasMutableURI](
-            self, item: CT, uri: URI, formatter: LogFormatter, option: str | None = None
+    async def _match_item_with_input(
+            self, item: IT, formatter: LogFormatter, option: str | None = None
     ) -> str | None:
         name = item.name if isinstance(item, HasName) else str(id(item))
         request_input = option is None
@@ -92,9 +90,8 @@ class InputMatch(CheckerMatch, InputProcessor):
                 option = self._get_user_input(name, formatter=formatter)
 
             match option.casefold():
-                case "h":  # print help text
-                    help_text = self._format_help_text_for_match_with_input()
-                    self.logger.print_message("\n" + help_text)
+                case "h":
+                    self._print_help_text()
 
                 case "s":
                     raise SkipPage()
@@ -104,7 +101,7 @@ class InputMatch(CheckerMatch, InputProcessor):
 
                 case "p":
                     info = self.formatter.format(item)
-                    self.logger.print_message(info)
+                    self.logger.print(info)
 
                 case "u":
                     self._set_unavailable_uri(item)
@@ -123,14 +120,14 @@ class InputMatch(CheckerMatch, InputProcessor):
                     return option
 
                 case "r":
-                    await self.page.refresh_playlist_items(uri)
-                    if self._match_item_with_playlist(item, uri):
+                    await self.page.refresh_playlist_items(self.uri)
+                    if self._match_item_with_playlist(item):
                         break
 
                 case "ra":
                     if request_input:  # only refresh on the first loop
-                        await self.page.refresh_playlist_items(uri)
-                    if self._match_item_with_playlist(item, uri):
+                        await self.page.refresh_playlist_items(self.uri)
+                    if self._match_item_with_playlist(item):
                         return option
 
                 case value if (input_uri := self._create_uri(value, kind=item.type)) is not None:
@@ -143,33 +140,32 @@ class InputMatch(CheckerMatch, InputProcessor):
 
             option = None
 
-    def _set_unavailable_uri(self, item: HasMutableURI) -> None:
+    def _set_unavailable_uri(self, item: IT) -> None:
         item.uri = self._create_uri(None, kind=item.type)
         messages = [f"Marking {item.type} as unavailable", f"URI={item.uri}"]
-        self._log_debug("INPUT", item, messages=messages, pad="<")
+        self._log_debug("INPUT", item=item, messages=messages, pad="<")
 
-    def _drop_uri(self, item: HasMutableURI) -> None:
+    def _drop_uri(self, item: IT) -> None:
         del item.uri
-        self._log_debug("INPUT", item, messages=f"Marking {item.type} as missing", pad="<")
+        self._log_debug("INPUT", item=item, messages=f"Marking {item.type} as missing", pad="<")
 
     def _create_uri(self, value: str | None, kind: str) -> URI | None:
         with suppress(ValidationError):
             return self.page.api.create_uri(value=value, kind=kind)
         return None
 
-    def _match_item_with_playlist(self, item: HasMutableURI, uri: URI) -> bool:
-        items = self.page.get_stored_playlist_items(uri)
+    def _match_item_with_playlist(self, item: IT) -> bool:
+        items = self.page.get_stored_playlist_items(self.uri)
 
         # don't match with items that have already been matched
-        matched = self.get_valid_items(self.page.get_collection_items(uri))
+        matched = self.valid_items
         items = [it for it in items if it not in matched]
 
         match = self._match_item_with_others(item, items, "INPUT")
         if match is not None:
             return True
 
-        name = self.page.get_playlist_name(uri)
-        message = f"No match found for this item in the playlist: {name!r}"
+        message = f"No match found for this item in the playlist: {self.name!r}"
         self.logger.warning(colored(message, "red"))
         return False
 
@@ -185,7 +181,7 @@ class InputMatch(CheckerMatch, InputProcessor):
         return cls.input_formatter.__class__(**kwargs, width=width or None)
 
     @staticmethod
-    def _compare_uri_changes[CT: HasURI](initial: Iterable[CT], changes: Iterable[CT]) -> CheckResult[CT]:
+    def _compare_uri_changes(initial: Iterable[IT], changes: Iterable[IT]) -> CheckResult[IT]:
         changed = []
         unchanged = []
         unavailable = []

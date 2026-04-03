@@ -49,7 +49,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         raise NotImplementedError
 
     @abstractmethod
-    async def load_tracks(self) -> bool:
+    async def load_tracks(self) -> Any:
         """Loads all tracks available for this library. Replaces all currently loaded tracks."""
         raise NotImplementedError
 
@@ -59,7 +59,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         raise NotImplementedError
 
     @abstractmethod
-    async def load_playlists(self) -> bool:
+    async def load_playlists(self) -> Any:
         """
         Load all playlists available for this library filtered down using the ``playlist_filter`` if given.
         Replaces all currently loaded playlists.

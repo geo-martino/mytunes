@@ -1,5 +1,6 @@
+import asyncio
 import itertools
-from collections.abc import Generator, Iterable, Collection
+from collections.abc import Generator, Iterable, Collection, Sequence
 from pathlib import Path
 from typing import Annotated, ClassVar, final, Self
 
@@ -8,7 +9,7 @@ from mutagen import MutagenError
 from pydantic import Field, field_validator, BeforeValidator, DirectoryPath, PrivateAttr
 from termcolor import colored
 
-from musify._types import to_set
+from musify._types import to_set, to_tuple
 from musify.exception import MusifyError, MusifyValueError
 from musify.local.collection._base import LocalCollection
 from musify.local.collection.album import LocalAlbumCollection
@@ -26,6 +27,7 @@ from musify.models.result import TotalCountResult, LenLogFormatter, Result
 from musify.processors.filters import Filter
 from musify.processors.filters.values import ValueFilter
 from musify.processors.sort import ItemSorter
+from musify.utils import afilter
 
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):
@@ -34,7 +36,8 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
         description="The remote library source these URIs are associated with.",
     )
     available: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -46,7 +49,8 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
         default_factory=tuple
     )
     missing: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -61,7 +65,8 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
         default_factory=tuple
     )
     unavailable: Annotated[
-        tuple[T, ...],
+        Sequence[T],
+        BeforeValidator(to_tuple),
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -81,9 +86,9 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
         """Create a result from the given tracks."""
         return cls(
             source=source,
-            available=filter(lambda x: cls._is_available(x, source), tracks),
-            missing=filter(lambda x: cls._is_missing(x, source), tracks),
-            unavailable=filter(lambda x: cls._is_unavailable(x, source), tracks),
+            available=tuple(filter(lambda x: cls._is_available(x, source), tracks)),
+            missing=tuple(filter(lambda x: cls._is_missing(x, source), tracks)),
+            unavailable=tuple(filter(lambda x: cls._is_unavailable(x, source), tracks)),
         )
 
     @staticmethod
@@ -159,9 +164,11 @@ class LocalLibrary(
     async def load(self) -> None:
         self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
 
-        await self.load_tracks()
-        playlist_results = await self.load_playlists()
+        with self.logger:
+            await self.load_tracks()
+            playlist_results = {} #  await self.load_playlists()  TODO: ADD ME BACK
 
+        self.logger.print("PROGRESS SHOUDL BE DONE NOW")
         self._log_load_playlists(playlist_results)
         self.logger.print_line(STAT)
 
@@ -206,23 +213,20 @@ class LocalLibrary(
             self.logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
 
-    async def load_tracks(self) -> bool:
+    async def load_tracks(self) -> int:
         if not (paths := set(self._track_paths)):
-            return False
+            return 0
 
         self.logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
 
-        bar = self.logger.get_asynchronous_iterator(
-            map(self.load_track, paths),
-            desc="Loading tracks",
-            unit="tracks",
-            initial=0,
-            total=len(paths)
+        task_id = self.logger.progress.add_task(
+            description=f"Loading {self.source} tracks", total=len(paths)
         )
-        self.tracks.replace(filter(None, await bar))
+        tracks = await self.logger.run_tasks_async(map(self.load_track, paths), task_id=task_id)
+        self.tracks.replace(tracks)
 
         self._log_errors("Could not load the following tracks")
-        return True
+        return len(self.tracks)
 
     @property
     def _track_paths(self) -> Generator[Path, None, None]:
@@ -285,17 +289,14 @@ class LocalLibrary(
 
         self.logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
 
-        bar = self.logger.get_asynchronous_iterator(
-            map(self.load_playlist, paths),
-            desc="Loading playlists",
-            unit="playlists",
-            initial=0,
-            total=len(paths)
+        task_id = self.logger.progress.add_task(
+            description=f"Loading {self.source} playlists", total=len(paths)
         )
+        task = self.logger.run_tasks_async(map(self.load_playlist, paths), task_id=task_id)
 
         playlists: list[LocalPlaylist] = []
         results: dict[str, LoadPlaylistResult] = {}
-        for playlist, result in filter(None, await bar):
+        for playlist, result in await task:
             playlists.append(playlist)
             results[playlist.name] = result
 
@@ -381,14 +382,9 @@ class LocalLibrary(
 
         self.logger.info(f"Saving {self.playlists.count} playlists in {self.source} {self.type}", header=2)
 
-        bar = self.logger.get_asynchronous_iterator(
-            map(_save_playlist, self.playlists.unique),
-            desc="Updating playlists",
-            unit="playlists",
-            initial=0,
-            total=self.playlists.count
-        )
-        return dict(await bar)
+        task_id = self.logger.progress.add_task(description=f"Updating {self.source} playlists", total=self.playlists.count)
+        results = await self.logger.run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
+        return dict(results)
 
     ###########################################################################
     ## Collections

@@ -137,10 +137,11 @@ class RemoteMutableLibrary[
         """
         self.logger.info(f"Synchronising {self._log_name} library", header=1)
 
-        results = await self.sync_playlist_items(kind=kind, dry_run=dry_run)
-        results["TRACKS"] = await self.sync_tracks(kind=kind, dry_run=dry_run)
-        results["ARTISTS"] = await self.sync_artists(kind=kind, dry_run=dry_run)
-        results["ALBUMS"] = await self.sync_albums(kind=kind, dry_run=dry_run)
+        with self.logger:
+            results = await self.sync_playlist_items(kind=kind, dry_run=dry_run)
+            results["TRACKS"] = await self.sync_tracks(kind=kind, dry_run=dry_run)
+            results["ARTISTS"] = await self.sync_artists(kind=kind, dry_run=dry_run)
+            results["ALBUMS"] = await self.sync_albums(kind=kind, dry_run=dry_run)
 
         self.log_sync_results(results)
         return results
@@ -349,14 +350,11 @@ class RemoteMutableLibrary[
 
                 return pl.name, result.model_copy(update=dict(properties=properties))
 
-        bar = self.logger.get_asynchronous_iterator(
-            map(_sync_playlist, playlists),
-            desc=f"Synchronising {self.source.title()} playlists",
-            unit="playlists",
-            initial=0,
-            total=len(playlists),
+        task_id = self.logger.progress.add_task(
+            description=f"Synchronising {self.source.title()} playlists", total=len(playlists),
         )
-        return dict(await bar)
+        results = await self.logger.run_tasks_async(map(_sync_playlist, playlists), task_id=task_id)
+        return dict(results)
 
     ###########################################################################
     ## Restore saved items
@@ -538,14 +536,15 @@ class RemoteMutableLibrary[
         """
         results: dict[str, SyncRemoteResult] = {}
 
-        if "playlists" in backup:
-            results |= self.restore_playlists(backup, dry_run=dry_run)
-        if "tracks" in backup:
-            results |= self.restore_tracks(backup, dry_run=dry_run)
-        if "artists" in backup:
-            results |= self.restore_artists(backup, dry_run=dry_run)
-        if "albums" in backup:
-            results |= self.restore_albums(backup, dry_run=dry_run)
+        with self.logger:
+            if "playlists" in backup:
+                results |= self.restore_playlists(backup, dry_run=dry_run)
+            if "tracks" in backup:
+                results |= self.restore_tracks(backup, dry_run=dry_run)
+            if "artists" in backup:
+                results |= self.restore_artists(backup, dry_run=dry_run)
+            if "albums" in backup:
+                results |= self.restore_albums(backup, dry_run=dry_run)
 
         self.log_sync_results(results)
         return results
@@ -588,17 +587,13 @@ class RemoteMutableLibrary[
         def _restore_playlist(dump):
             return self._restore_playlist(*dump, dry_run=dry_run)
 
-        bar = self.logger.get_asynchronous_iterator(
-            map(_restore_playlist, playlists),
-            desc="Restoring playlists",
-            unit="playlists",
-            initial=0,
-            total=len(playlists),
+        task_id = self.logger.progress.add_task(
+            description=f"Restoring {self.source.title()} playlists", total=len(playlists),
         )
-        results = dict(filter(None, await bar))
+        results = await self.logger.run_tasks_async(map(_restore_playlist, playlists), task_id=task_id)
 
         await self.load_playlists()
-        return results
+        return dict(results)
 
     async def _restore_playlist(
             self, uri: URI, dump: Mapping[str, Any], items: list[URI], dry_run: bool = False

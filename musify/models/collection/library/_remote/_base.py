@@ -51,24 +51,26 @@ class RemoteLibrary[
 
     async def __aenter__(self) -> Self:
         await self.api.__aenter__()
-        return self
+        return await super().__aenter__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
+        return await super().__aexit__(exc_type, exc_val, exc_tb)
 
     async def load(self):
         self.logger.info(f"Loading {self._log_name} library", header=1)
 
-        await self.load_playlists()
-        await self.load_playlist_items()  # TODO: ADD ME BACK
+        with self.logger:
+            await self.load_playlists()
+            await self.load_playlist_items()  # TODO: ADD ME BACK
 
-        await self.load_tracks()
+            await self.load_tracks()
 
-        await self.load_saved_albums()
-        await self.load_saved_album_tracks()
+            await self.load_saved_albums()
+            await self.load_saved_album_tracks()
 
-        # await self.load_saved_artists()  # TODO: ADD ME BACK
-        # await self.load_saved_artist_albums()  # TODO: ADD ME BACK
+            # await self.load_saved_artists()  # TODO: ADD ME BACK
+            # await self.load_saved_artist_albums()  # TODO: ADD ME BACK
 
         self.logger.print_line(STAT)
 
@@ -152,13 +154,10 @@ class RemoteLibrary[
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
-        await self.logger.get_asynchronous_iterator(
-            map(_extend_playlist_tracks, playlists),
-            desc=f"Loading {self.source.title()} playlist tracks",
-            unit="playlists",
-            initial=0,
-            total=len(playlists),
+        task_id = self.logger.progress.add_task(
+            description=f"Loading {self.source.title()} playlist tracks", total=len(playlists),
         )
+        await self.logger.run_tasks_async(map(_extend_playlist_tracks, playlists), task_id=task_id)
 
         return True
 
@@ -248,13 +247,10 @@ class RemoteLibrary[
             artist.albums.clear()
             artist.albums.extend(albums)
 
-        await self.logger.get_asynchronous_iterator(
-            map(_extend_artist_albums, artists),
-            desc=f"Loading {self.source.title()} artist albums",
-            unit="artists",
-            initial=0,
-            total=len(artists),
+        task_id = self.logger.progress.add_task(
+            description=f"Loading {self.source.title()} artist albums", total=len(artists),
         )
+        await self.logger.run_tasks_async(map(_extend_artist_albums, artists), task_id=task_id)
 
         return True
 
@@ -313,13 +309,10 @@ class RemoteLibrary[
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 
-        await self.logger.get_asynchronous_iterator(
-            map(_extend_album_tracks, albums),
-            desc=f"Loading {self.source.title()} album tracks",
-            unit="albums",
-            initial=0,
-            total=len(albums),
+        task_id = self.logger.progress.add_task(
+            description=f"Loading {self.source.title()} album tracks", total=len(albums),
         )
+        await self.logger.run_tasks_async(map(_extend_album_tracks, albums), task_id=task_id)
 
         return True
 
