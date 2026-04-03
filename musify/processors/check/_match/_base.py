@@ -1,12 +1,11 @@
 from abc import abstractmethod
 from collections.abc import Collection, Iterable, Sequence
-from typing import Any, ClassVar, Annotated
+from typing import Any, ClassVar
 
 from pydantic import Field, InstanceOf, OnErrorOmit
 
-from musify.models import ResourceModel
 from musify.models.properties.logger import HasLogger
-from musify.models.properties.uri import HasURI, HasMutableURI, URI, HasImmutableURI
+from musify.models.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from musify.processors import Processor
 from musify.processors.check._page import CheckerPage, _ApiT
 from musify.processors.check.result import CheckResult

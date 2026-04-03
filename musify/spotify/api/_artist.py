@@ -12,7 +12,7 @@ from musify.models.cursors import PageCursor
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
-from musify.spotify.cursors import SpotifyInitialCursor, SpotifyIndexCursor
+from musify.spotify.cursors import SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
 from musify.spotify.item.artist import SpotifyArtist
 from musify.spotify.properties.uri import SpotifyResourceURI

@@ -1,12 +1,13 @@
 import logging
+from contextlib import AbstractAsyncContextManager
 from functools import cached_property
-from typing import Self, AsyncContextManager
+from typing import Self
 
 from musify.logger import Logger
 from musify.models._base import BaseModel
 
 
-class HasLogger(BaseModel, AsyncContextManager):
+class HasLogger(BaseModel, AbstractAsyncContextManager):
     """Represents a resource that has a logger."""
 
     @cached_property

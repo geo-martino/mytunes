@@ -1,18 +1,12 @@
-## DEPRECATED?
-
 import logging
 import sys
 from collections.abc import Generator
 from copy import copy, deepcopy
+from functools import partial
 
 import pytest
 
 from musify.logger import Logger, EXTRA, REPORT, STAT
-
-try:
-    from tqdm.auto import tqdm
-except ImportError:
-    tqdm = None
 
 
 ###########################################################################
@@ -30,6 +24,26 @@ def logger() -> Generator[Logger, None, None]:
     logger.disable_bars = False
     yield logger
     logger.disable_bars = True
+
+
+def test_additional_levels():
+    assert logging.getLevelName("EXTRA") == EXTRA
+    assert logging.getLevelName("REPORT") == REPORT
+    assert logging.getLevelName("STAT") == STAT
+
+    assert logging.getLoggerClass() == Logger
+    assert isinstance(logging.getLogger(__name__), Logger)
+
+
+def test_file_paths(logger: Logger):
+    logger.addHandler(logging.FileHandler(filename="test1.log", delay=True))
+    logger.addHandler(logging.FileHandler(filename="test2.log", delay=True))
+    assert [path.name for path in logger.file_paths] == ["test1.log", "test2.log"]
+
+
+def test_copy(logger: Logger):
+    assert id(copy(logger)) == id(logger)
+    assert id(deepcopy(logger)) == id(logger)
 
 
 def test_print_line(logger: Logger, capfd: pytest.CaptureFixture):
@@ -70,71 +84,68 @@ def test_print_line(logger: Logger, capfd: pytest.CaptureFixture):
     assert capfd.readouterr().out == ""
 
 
-def test_file_paths(logger: Logger):
-    logger.addHandler(logging.FileHandler(filename="test1.log", delay=True))
-    logger.addHandler(logging.FileHandler(filename="test2.log", delay=True))
-    assert [path.name for path in logger.file_paths] == ["test1.log", "test2.log"]
+def test_run_tasks_sync_gets_results(logger: Logger):
+    tasks = [partial(lambda x: x, i) for i in range(10)]
+    task_id = logger.progress.add_task("Test", total=len(tasks))
+
+    results = logger.run_tasks(tasks, task_id=task_id, remove=False)
+
+    assert task_id in logger.progress.task_ids
+    assert next(task for task in logger.progress.tasks if task.id == task_id).completed
+    assert len(results) == len(tasks)
+    assert sorted(results) == [i for i in range(len(tasks))]
 
 
-# TODO: update me
-@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
-def test_tqdm_iterator_synchronous(logger: Logger):
-    logger._bars.clear()
+def test_run_tasks_sync_removes_task(logger: Logger):
+    tasks = [partial(lambda x: x, i) for i in range(10)]
+    task_id = logger.progress.add_task("Test", total=len(tasks))
 
-    bar: tqdm = logger.get_synchronous_iterator(
-        iterable=range(0, 50), initial=10, disable=True, file=sys.stderr
-    )
-
-    assert bar.iterable == range(0, 50)
-    assert bar.n == 10
-    assert bar.total == 50
-    assert bar.leave
-    assert bar.disable
-    assert bar in logger._bars
-
-    # adheres to disable_bars attribute
-    logger.disable_bars = True
-    bar = logger.get_synchronous_iterator(
-        iterable=range(0, 50),
-        initial=10,
-        disable=False,
-        file=sys.stderr,
-        ncols=500,
-        colour="blue",
-        smoothing=0.5,
-        position=3,
-    )
-
-    assert not bar.leave
-    assert bar.disable
-    assert bar.pos == 0
-
-    logger.disable_bars = False
+    logger.run_tasks(tasks, task_id=task_id, remove=True)
+    assert task_id not in logger.progress.task_ids
 
 
-# TODO: update me
-@pytest.mark.skipif(tqdm is None, reason="Required modules are not installed")
-async def test_tqdm_iterator_asynchronous(logger: Logger):
-    async def _task(i: int) -> int:
-        return i
+def test_run_tasks_sync_runs_without_task_id(logger: Logger):
+    tasks = [partial(lambda x: x, i) for i in range(10)]
 
-    # just check this runs
-    tasks = [_task(i) for i in range(10)]
-    results = await logger.get_asynchronous_iterator(tasks)
+    results = logger.run_tasks(tasks)
 
     assert len(results) == len(tasks)
     assert sorted(results) == [i for i in range(len(tasks))]
 
 
-def test_copy(logger: Logger):
-    assert id(copy(logger)) == id(logger)
-    assert id(deepcopy(logger)) == id(logger)
+async def test_run_tasks_async_gets_results(logger: Logger):
+    async def _task(i: int) -> int:
+        return i
+
+    tasks = [_task(i) for i in range(10)]
+    task_id = logger.progress.add_task("Test", total=len(tasks))
+
+    results = await logger.run_tasks_async(tasks, task_id=task_id, remove=False)
+
+    assert task_id in logger.progress.task_ids
+    assert next(task for task in logger.progress.tasks if task.id == task_id).completed
+    assert len(results) == len(tasks)
+    assert sorted(results) == [i for i in range(len(tasks))]
 
 
-def test_logger_set():
-    assert logging.getLevelName("EXTRA") == EXTRA
-    assert logging.getLevelName("REPORT") == REPORT
-    assert logging.getLevelName("STAT") == STAT
+async def test_run_tasks_async_removes_task(logger: Logger):
+    async def _task(i: int) -> int:
+        return i
 
-    assert logging.getLoggerClass() == Logger
-    assert isinstance(logging.getLogger(__name__), Logger)
+    tasks = [_task(i) for i in range(10)]
+    task_id = logger.progress.add_task("Test", total=len(tasks))
+
+    await logger.run_tasks_async(tasks, task_id=task_id, remove=True)
+    assert task_id not in logger.progress.task_ids
+
+
+async def test_run_tasks_async_runs_without_task_id(logger: Logger):
+    async def _task(i: int) -> int:
+        return i
+
+    tasks = [_task(i) for i in range(10)]
+
+    results = await logger.run_tasks_async(tasks)
+
+    assert len(results) == len(tasks)
+    assert sorted(results) == [i for i in range(len(tasks))]

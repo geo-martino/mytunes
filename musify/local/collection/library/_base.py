@@ -1,4 +1,3 @@
-import asyncio
 import itertools
 from collections.abc import Generator, Iterable, Collection, Sequence
 from pathlib import Path
@@ -27,7 +26,6 @@ from musify.models.result import TotalCountResult, LenLogFormatter, Result
 from musify.processors.filters import Filter
 from musify.processors.filters.values import ValueFilter
 from musify.processors.sort import ItemSorter
-from musify.utils import afilter
 
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):
@@ -166,7 +164,7 @@ class LocalLibrary(
 
         with self.logger:
             await self.load_tracks()
-            playlist_results = {} #  await self.load_playlists()  TODO: ADD ME BACK
+            playlist_results = await self.load_playlists()
 
         self.logger.print("PROGRESS SHOUDL BE DONE NOW")
         self._log_load_playlists(playlist_results)

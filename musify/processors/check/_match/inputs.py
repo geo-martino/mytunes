@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Iterable, Collection
+from collections.abc import Iterable
 from contextlib import suppress
 from copy import deepcopy
 
@@ -8,7 +8,7 @@ from termcolor import colored
 
 from musify import PROGRAM_NAME
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI, URI, HasMutableURI
+from musify.models.properties.uri import URI, HasMutableURI
 from musify.models.result import LogFormatter
 from musify.processors._base import InputProcessor
 from musify.processors._exception import SkipPage, QuitImmediately

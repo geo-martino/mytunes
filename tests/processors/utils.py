@@ -3,13 +3,14 @@ from pathlib import Path
 from random import randrange, choice
 from typing import ClassVar
 
+from _pytest.capture import CaptureFixture
+
 from musify.models import ResourceModel, makecls
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import Playlist
 from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.properties.name import HasName
-from tests.conftest import LogCapturer
 
 
 class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):
@@ -35,5 +36,5 @@ def create_random_file(path: Path, size: int | None = None) -> None:
             file.write(choice(string.ascii_letters))
 
 
-def assert_help_text(log_capturer: LogCapturer, expected: int) -> None:
-    assert log_capturer.text.count("Enter one of the following") == expected
+def assert_help_text(capsys: CaptureFixture[str], expected: int) -> None:
+    assert capsys.readouterr().out.count("Enter one of the following") == expected

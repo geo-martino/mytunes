@@ -9,7 +9,6 @@ from pytest_mock import MockerFixture
 from musify.models.api import RemoteAPI
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasMutableURI
 from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.check import Checker
 from musify.processors.check._match.inputs import InputMatch

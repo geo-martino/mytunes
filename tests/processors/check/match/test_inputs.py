@@ -3,21 +3,22 @@ from copy import deepcopy
 from unittest.mock import Mock, patch
 
 import pytest
+from _pytest.capture import CaptureFixture
+from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
 from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.properties.uri import URI, HasURI
+from musify.models.properties.uri import URI
 from musify.models.result import LogFormatter
 from musify.processors._exception import QuitImmediately
 from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
-from tests.conftest import LogCapturer
-from tests.models.testers import BaseModelTester, UniqueKeyTester
+from tests.models.testers import UniqueKeyTester
 from tests.processors.check.match.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
-from tests.processors.utils import assert_help_text, MockCollection
+from tests.processors.utils import assert_help_text
 from tests.utils import SimpleURI, split_list, patch_input
 
 
@@ -187,7 +188,7 @@ class TestInputMatch(UniqueKeyTester):
             mock_match_item_with_input: Mock,
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
-            log_capturer: LogCapturer,
+            capsys: CaptureFixture[str],
     ):
         kind = model.items[0].type
         inputs = [
@@ -197,7 +198,7 @@ class TestInputMatch(UniqueKeyTester):
             "s",
         ]
 
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             result = await model.match()
 
         assert len(result.changed) == 2
@@ -209,7 +210,7 @@ class TestInputMatch(UniqueKeyTester):
         mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_called_once()
 
-        assert_help_text(log_capturer, inputs.count("h") + 1)
+        assert_help_text(capsys, inputs.count("h") + 1)
 
     async def test_match_quits(
             self,
@@ -217,7 +218,8 @@ class TestInputMatch(UniqueKeyTester):
             mock_match_item_with_input: Mock,
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
-            log_capturer: LogCapturer,
+            capsys: CaptureFixture[str],
+            caplog: LogCaptureFixture,
     ):
         kind = model.items[0].type
         inputs = [
@@ -227,14 +229,14 @@ class TestInputMatch(UniqueKeyTester):
             "q",
         ]
 
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger), pytest.raises(QuitImmediately):
+        with patch_input(iter(inputs)), pytest.raises(QuitImmediately):
             await model.match()
 
         assert mock_match_item_with_input.call_count == 3  # quits early
         mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_not_called()  # doesn't produce a result
 
-        assert_help_text(log_capturer, inputs.count("h") + 1)
+        assert_help_text(capsys, inputs.count("h") + 1)
 
     async def test_match_assigns_uris(
             self,
@@ -320,7 +322,7 @@ class TestInputMatch(UniqueKeyTester):
             mock_match_item_with_input: Mock,
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
-            log_capturer: LogCapturer,
+            capsys: CaptureFixture[str],
     ):
         kind = model.items[0].type
         inputs = [
@@ -342,7 +344,7 @@ class TestInputMatch(UniqueKeyTester):
             "na",
         ]
 
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             result = await model.match()
 
         assert len(result.changed) == 2
@@ -354,5 +356,5 @@ class TestInputMatch(UniqueKeyTester):
         mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_called_once()
 
-        assert_help_text(log_capturer, inputs.count("h") + 1)
+        assert_help_text(capsys, inputs.count("h") + 1)
 

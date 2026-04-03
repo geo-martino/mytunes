@@ -3,22 +3,18 @@
 """
 All classes and operations relating to the logger objects used throughout the entire package.
 """
-import asyncio
 import logging
 import logging.config
 import logging.handlers
-import os
 import sys
-from asyncio import Future, Semaphore
-from collections.abc import Iterable, Awaitable, Generator, Callable, AsyncGenerator
-from contextlib import contextmanager
-from functools import cached_property
+from collections.abc import Iterable, Awaitable, Callable, AsyncGenerator
+from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, Annotated, Generator, ClassVar, ContextManager
+from typing import Any, Annotated, Generator
 
-from pydantic import Field, validate_call, PrivateAttr
+from pydantic import Field, validate_call
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn, BarColumn, TaskProgressColumn, \
-    TimeRemainingColumn, Console, TaskID
+    TimeRemainingColumn, TaskID
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
@@ -36,7 +32,7 @@ logging.addLevelName(STAT, "STAT")
 logging.STAT = STAT
 
 
-class Logger(logging.Logger, ContextManager):
+class Logger(logging.Logger, AbstractContextManager):
     """The logger for all logging operations."""
 
     #: When true, never print a new line in the console when :py:meth:`print()` is called
@@ -228,7 +224,7 @@ class Logger(logging.Logger, ContextManager):
         tasks = self._wrap_tasks(tasks, task_id, predicate)
         result = [it for it in tasks]
 
-        if remove:
+        if remove and task_id in self.progress.task_ids:
             self.progress.remove_task(task_id)
         return result
 
@@ -240,7 +236,7 @@ class Logger(logging.Logger, ContextManager):
     ) -> Generator[T]:
         for task in tasks:
             result = task()
-            if task_id is not None:
+            if task_id is not None and task_id in self.progress.task_ids:
                 self.progress.advance(task_id, advance=1)
 
             if callable(predicate) and predicate(result):
@@ -269,7 +265,7 @@ class Logger(logging.Logger, ContextManager):
         tasks = self._wrap_tasks_async(tasks, task_id, predicate)
         result = [it async for it in tasks]
 
-        if remove:
+        if remove and task_id in self.progress.task_ids:
             self.progress.remove_task(task_id)
         return result
 
@@ -281,7 +277,7 @@ class Logger(logging.Logger, ContextManager):
     ) -> AsyncGenerator[T]:
         for task in tasks:
             result = await task
-            if task_id is not None:
+            if task_id is not None and task_id in self.progress.task_ids:
                 self.progress.advance(task_id, advance=1)
 
             if callable(predicate) and predicate(result):

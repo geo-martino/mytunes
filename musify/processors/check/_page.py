@@ -143,7 +143,9 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
 
     async def __aenter__(self) -> Self:
         await super().__aenter__()
-        self.logger.progress.start_task(task_id=self.task_id)
+        if self.task_id is not None:
+            self.logger.progress.start_task(task_id=self.task_id)
+
         tasks = [asyncio.create_task(task) for task in map(self._setup_playlist, self.collections)]
         remove = self.position.number == self.position.total
 
@@ -156,7 +158,8 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             await self.teardown_playlists()
             raise
 
-        self.logger.progress.stop_task(task_id=self.task_id)
+        if self.task_id is not None and not remove:
+            self.logger.progress.stop_task(task_id=self.task_id)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

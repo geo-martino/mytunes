@@ -1,10 +1,7 @@
 import itertools
-from collections.abc import Mapping, Sequence, Iterable, Generator, AsyncGenerator
-from contextlib import suppress
+from collections.abc import Mapping, Sequence, AsyncGenerator
 
-import math
 from pydantic import Field, PositiveInt
-from rich.progress import TaskID
 from termcolor import colored
 
 from musify.models import ResourceModel
@@ -13,7 +10,6 @@ from musify.models.collection import CollectionModel
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.order import Position
 from musify.models.properties.uri import HasURI, URI
-from musify.models.user import RemoteUser
 from musify.processors._base import InputProcessor
 from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.check._match.inputs import InputMatch
@@ -48,7 +44,7 @@ class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
     @property
     def username(self) -> str:
         """The user to create playlists for."""
-        return self.api.user.name is self.api.user is not None else "the current user"
+        return self.api.user.name if self.api.user is not None else "the current user"
 
     async def check[T: ResourceModel](self, collections: Sequence[CollectionModel[T]]) -> dict[str, CheckResult[T]]:
         """Check the matches for the given collection and return the results."""

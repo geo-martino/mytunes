@@ -2,10 +2,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from musify.models import ResourceModel
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.properties.uri import HasURI, HasImmutableURI
+from musify.models.properties.uri import HasURI
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher

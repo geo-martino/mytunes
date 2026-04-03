@@ -4,6 +4,8 @@ from unittest.mock import patch, Mock
 
 import math
 import pytest
+from _pytest.capture import CaptureFixture
+from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pytest_mock import MockerFixture
 
@@ -19,7 +21,6 @@ from musify.processors.download.stores.bandcamp import BandcampStore
 from musify.processors.download.stores.juno_download import JunoDownloadStore
 from musify.processors.download.stores.qobuz import QobuzStore
 from musify.processors.download.stores.seven_digital import SevenDigitalStore
-from tests.conftest import LogCapturer
 from tests.models.testers import BaseModelTester
 from tests.processors.utils import assert_help_text
 from tests.utils import patch_input
@@ -135,18 +136,23 @@ class TestStoreManager(BaseModelTester):
         assert len(urls) == len(duplicate_tracks) * len(model.stores)
 
     def test_pause(
-            self, model: StoreManager, urls: list[str], unique_tracks: list[Track], log_capturer: LogCapturer
+            self,
+            model: StoreManager,
+            urls: list[str],
+            unique_tracks: list[Track],
+            capsys: CaptureFixture[str],
+            caplog: LogCaptureFixture,
     ):
         total = len(unique_tracks)
         pages_total = math.ceil(total / model.interval)
 
         inputs = ["r", "", "name artists", "r", "bad_tag", "r", "name bad_tag", ""] + [""] * total
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             model.open_sites_for_items(unique_tracks)
 
         # 5 extra for 3*r input + 2*<Fields> input
         assert len(urls) == (total + 5 * model.interval) * len(model.stores)
 
-        assert_help_text(log_capturer, pages_total + 2)
-        assert log_capturer.text.count("Some fields were not recognised") == 1
-        assert log_capturer.text.count("Unrecognised input") == 1
+        assert_help_text(capsys, pages_total + 2)
+        assert caplog.text.count("Some fields were not recognised") == 1
+        assert caplog.text.count("Unrecognised input") == 1

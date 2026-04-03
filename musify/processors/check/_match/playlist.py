@@ -2,9 +2,7 @@ from collections import Counter
 from collections.abc import MutableSequence, Collection, Iterable
 from copy import copy
 
-from pydantic import Field
-
-from musify.models.properties.uri import HasURI, URI, HasMutableURI, HasImmutableURI
+from musify.models.properties.uri import HasURI, HasMutableURI
 from musify.models.sequence import UniqueSequence
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check.result import CheckResult

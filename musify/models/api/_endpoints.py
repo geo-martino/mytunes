@@ -1,11 +1,11 @@
 import functools
 import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
-from contextlib import suppress
+from contextlib import suppress, AbstractAsyncContextManager
 from copy import copy
 from io import BytesIO
 from itertools import batched
-from typing import Any, ClassVar, Self, Type, Union, cast, AsyncContextManager
+from typing import Any, ClassVar, Self, Type, Union, cast
 
 from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.auth import Authoriser
@@ -13,7 +13,6 @@ from aiorequestful.cache.backend.base import ResponseRepository
 from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
-from aiorequestful.types import JSON
 from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
@@ -842,7 +841,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return {"json": {"ids": list(map(str, values))}}
 
 
-class HasEndpoints(RemoteModel, AsyncContextManager):
+class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @property
     def _handler(self) -> RequestHandler:
         return next(getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys())

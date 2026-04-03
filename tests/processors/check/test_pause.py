@@ -4,6 +4,8 @@ from unittest.mock import Mock, AsyncMock, patch
 
 import math
 import pytest
+from _pytest.capture import CaptureFixture
+from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pytest_mock import MockerFixture
 
@@ -14,7 +16,6 @@ from musify.models.collection.playlist import RemoteMutablePlaylist
 from musify.models.item.track import RemoteTrack
 from musify.processors.check import Checker
 from musify.processors.check._page import CheckerPage
-from tests.conftest import LogCapturer
 from tests.processors.utils import MockCollection, assert_help_text
 from tests.utils import patch_input
 
@@ -66,7 +67,7 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            log_capturer: LogCapturer,
+            capsys: CaptureFixture[str],
     ):
         inputs = list(inputs)
 
@@ -95,7 +96,7 @@ class TestCheckerPause:
         assert mock_playlist_items.call_count == expected_playlist_items
         assert mock_teardown_playlists.call_count == expected_pages
 
-        assert_help_text(log_capturer, expected_help)
+        assert_help_text(capsys, expected_help)
 
     ###########################################################################
     ## Tests
@@ -109,10 +110,11 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            log_capturer: LogCapturer
+            capsys: CaptureFixture[str],
+            caplog: LogCaptureFixture,
     ):
         inputs = [""] * pages + ["h"] + ["invalid_input"]  # add some other random inputs
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             await model.check(collections)
 
         self.assert_pause_calls(
@@ -124,7 +126,7 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            log_capturer=log_capturer
+            capsys=capsys,
         )
 
     async def test_pause_prints_help(
@@ -136,10 +138,10 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            log_capturer: LogCapturer
+            capsys: CaptureFixture[str],
     ):
         inputs = ["h", "h", "", "h", "", "h"] + [""] * pages
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             await model.check(collections)
 
         self.assert_pause_calls(
@@ -151,7 +153,7 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            log_capturer=log_capturer
+            capsys=capsys,
         )
 
     async def test_pause_skips(
@@ -163,10 +165,10 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            log_capturer: LogCapturer
+            capsys: CaptureFixture[str],
     ):
         inputs = ["", "h", "", "s", "h"] + [""] * pages
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             await model.check(collections)
 
         self.assert_pause_calls(
@@ -178,7 +180,7 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            log_capturer=log_capturer
+            capsys=capsys,
         )
 
     async def test_pause_quits(
@@ -190,10 +192,11 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            log_capturer: LogCapturer
+            capsys: CaptureFixture[str],
+            caplog: LogCaptureFixture,
     ):
         inputs = ["", "h", "", "q"]
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             await model.check(collections)
 
         self.assert_pause_calls(
@@ -205,7 +208,7 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            log_capturer=log_capturer
+            capsys=capsys,
         )
 
     async def test_pause_print_playlist(
@@ -219,7 +222,7 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            log_capturer: LogCapturer,
+            capsys: CaptureFixture[str],
             faker: Faker,
     ):
         playlist_names = (
@@ -241,7 +244,7 @@ class TestCheckerPause:
             "q",
         ]
 
-        with patch_input(iter(inputs)), log_capturer(loggers=model.logger):
+        with patch_input(iter(inputs)):
             await model.check(collections)
 
         self.assert_pause_calls(
@@ -253,7 +256,7 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            log_capturer=log_capturer
+            capsys=capsys,
         )
 
         # assert explicitly to be sure
