@@ -1,5 +1,4 @@
 import pytest
-from faker import Faker
 
 from musify.spotify.api import SpotifyAPI
 from musify.spotify.collection.library import SpotifyLibrary

@@ -19,7 +19,6 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
-from musify._types import get_base_types
 from musify.models import ResourceModel, BaseModel
 from musify.models._attribute import AttributeMetaclass
 from musify.models._context import RemoteModelContext

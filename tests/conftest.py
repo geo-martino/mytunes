@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections import defaultdict
 from collections.abc import Generator
 from copy import copy
 from io import BytesIO

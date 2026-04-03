@@ -1,5 +1,5 @@
 import locale
-from unittest.mock import patch, Mock, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock
 
 import pytest
 from faker import Faker

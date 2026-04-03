@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, MagicMock
 
 import pytest
 from faker import Faker

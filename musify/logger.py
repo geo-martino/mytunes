@@ -7,10 +7,10 @@ import logging
 import logging.config
 import logging.handlers
 import sys
-from collections.abc import Iterable, Awaitable, Callable, AsyncGenerator
+from collections.abc import Iterable, Awaitable, Callable, Generator, AsyncGenerator
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, Annotated, Generator
+from typing import Any, Annotated
 
 from pydantic import Field, validate_call
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn, BarColumn, TaskProgressColumn, \
