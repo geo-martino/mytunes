@@ -6,15 +6,15 @@ from aiorequestful.cache.backend import ResponseCache
 from pydantic import PositiveInt
 
 from musify.models import ResourceModel
-from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints
-from musify.models.api.album import HasAlbumEndpoints, AlbumReadSavedEndpoints, \
-    AlbumWriteSavedEndpoints, AlbumReadItemsEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, \
-    ArtistWriteSavedEndpoints, ArtistReadItemsEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints
+from musify.models.api.album import HasAlbumEndpoints, AlbumBatchReadAllEndpoints, \
+    AlbumBatchWriteEndpoints, AlbumBatchReadEndpoints
+from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, \
+    ArtistBatchWriteEndpoints, ArtistBatchReadEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 from musify.models.api.search import SearchEndpoints, HasSearchEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, \
-    TrackWriteSavedEndpoints, TrackReadItemsEndpoints
+from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoints, \
+    TrackBatchWriteEndpoints, TrackBatchReadEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.cursors import IndexCursor, UrlCursor, KeyCursor
@@ -83,57 +83,57 @@ class MockSearchEndpoints(
         pass
 
 
-class MockTrackSavedEndpoints(
-    TrackReadSavedEndpoints[SimpleURI, RemoteTrack],
-    TrackWriteSavedEndpoints[SimpleURI, RemoteTrack],
+class MockTrackLibraryEndpoints(
+    TrackBatchReadAllEndpoints[SimpleURI, RemoteTrack],
+    TrackBatchWriteEndpoints[SimpleURI, RemoteTrack],
 ):
     pass
 
 
 class MockTrackEndpoints(
-    TrackReadItemsEndpoints[SimpleURI, RemoteTrack],
-    HasSavedEndpoints[MockTrackSavedEndpoints],
+    TrackBatchReadEndpoints[SimpleURI, RemoteTrack],
+    HasLibraryEndpoints[MockTrackLibraryEndpoints],
 ):
     pass
 
 
-class MockArtistSavedEndpoints(
-    ArtistReadSavedEndpoints[SimpleURI, RemoteTrack],
-    ArtistWriteSavedEndpoints[SimpleURI, RemoteTrack],
+class MockArtistLibraryEndpoints(
+    ArtistBatchReadAllEndpoints[SimpleURI, RemoteTrack],
+    ArtistBatchWriteEndpoints[SimpleURI, RemoteTrack],
 ):
     pass
 
 
 class MockArtistEndpoints(
-    ArtistReadItemsEndpoints[SimpleURI, RemoteArtist],
-    HasSavedEndpoints[MockArtistSavedEndpoints],
+    ArtistBatchReadEndpoints[SimpleURI, RemoteArtist],
+    HasLibraryEndpoints[MockArtistLibraryEndpoints],
 ):
     pass
 
 
-class MockAlbumSavedEndpoints(
-    AlbumReadSavedEndpoints[SimpleURI, RemoteTrack],
-    AlbumWriteSavedEndpoints[SimpleURI, RemoteTrack],
+class MockAlbumLibraryEndpoints(
+    AlbumBatchReadAllEndpoints[SimpleURI, RemoteTrack],
+    AlbumBatchWriteEndpoints[SimpleURI, RemoteTrack],
 ):
     pass
 
 
 class MockAlbumEndpoints(
-    AlbumReadItemsEndpoints[SimpleURI, RemoteAlbum],
-    HasSavedEndpoints[MockAlbumSavedEndpoints],
+    AlbumBatchReadEndpoints[SimpleURI, RemoteAlbum],
+    HasLibraryEndpoints[MockAlbumLibraryEndpoints],
 ):
     pass
 
 
-class MockPlaylistSavedEndpoints(
-    PlaylistReadWriteSavedEndpoints[SimpleURI, RemotePlaylist, RemoteUser],
+class MockPlaylistLibraryEndpoints(
+    PlaylistLibraryEndpoints[SimpleURI, RemotePlaylist, RemoteTrack, RemoteUser],
 ):
     pass
 
 
 class MockPlaylistEndpoints(
     PlaylistReadWriteEndpoints[SimpleURI, RemotePlaylist, RemoteTrack],
-    HasSavedEndpoints[MockPlaylistSavedEndpoints],
+    HasLibraryEndpoints[MockPlaylistLibraryEndpoints],
 ):
     pass
 

@@ -14,7 +14,7 @@ from musify.models.item.track import Track
 from musify.models.properties.uri import URI
 
 if TYPE_CHECKING:
-    from musify.models.api.artist import HasArtistEndpoints, ArtistReadCollectionEndpoints
+    from musify.models.api.artist import HasArtistEndpoints, ArtistCollectionReadEndpoints
 
 
 class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], HasAlbums[AT]):
@@ -90,5 +90,5 @@ class RemoteArtistCollection[UT: URI, AT: RemoteAlbum, GT: RemoteGenre, CT: Page
         self.albums.clear()
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def extend(self, api: HasArtistEndpoints[ArtistReadCollectionEndpoints]) -> None:
+    async def extend(self, api: HasArtistEndpoints[ArtistCollectionReadEndpoints]) -> None:
         self.albums[:] = await api.artists.get_all(self)

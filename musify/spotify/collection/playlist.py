@@ -72,7 +72,7 @@ class SpotifyPlaylist(
         description="The total number of tracks in this playlist.",
         validation_alias=AliasPath("items", "total")
     )
-    # getting current user's saved playlists return a 'starter' cursor of just the URL and total
+    # getting current user's library playlists return a 'starter' cursor of just the URL and total
     # we therefore need to support an InitialCursor here to support this
     cursor: Annotated[SpotifyIndexCursor | SpotifyInitialCursor, Attribute()] = Field(
         description=(

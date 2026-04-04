@@ -11,8 +11,8 @@ from pytest_mock import MockerFixture
 from yarl import URL
 
 from musify import MODULE_ROOT
-from musify.models.api import RemoteAPI, WriteSavedEndpoints, ReadItemEndpoints, ReadItemsEndpoints
-from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints
+from musify.models.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
+from musify.models.api.playlist import PlaylistLibraryEndpoints
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.library import RemoteMutableLibrary
 from musify.models.collection.playlist import RemoteMutablePlaylist, Playlist, RemotePlaylist
@@ -44,7 +44,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         return mocker.spy(Semaphore, "acquire")
 
     ###########################################################################
-    ## Add saved items
+    ## Add library items
     ###########################################################################
     @staticmethod
     def _return_length(uris: Collection, *_, **__) -> int:
@@ -53,16 +53,16 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def mock_add_many(self) -> Generator[Mock, None, None]:
         with patch.object(
-                WriteSavedEndpoints, "add_many", side_effect=self._return_length, new_callable=AsyncMock
+                BatchWriteEndpoints, "add_many", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_add:
             yield mock_add
 
     @pytest.fixture
     def mock_get_many(self) -> Generator[Mock, None, None]:
-        with patch.object(ReadItemsEndpoints, "get_many", new_callable=AsyncMock) as mock_get:
+        with patch.object(BatchReadEndpoints, "get_many", new_callable=AsyncMock) as mock_get:
             yield mock_get
 
-    async def test_add_saved_items_from_resources(
+    async def test_add_library_items_from_resources(
             self,
             model: RemoteMutableLibrary,
             tracks: list[RemoteTrack],
@@ -71,10 +71,10 @@ class TestRemoteMutableLibrary(BaseModelTester):
     ):
         mock_get_many.return_value = tracks
 
-        result = await model._add_saved_items(items=tracks, items_type="tracks", api=model.api.tracks)
+        result = await model._add_library_items(items=tracks, items_type="tracks", api=model.api.tracks)
         assert result == tracks
 
-    async def test_add_saved_items_from_uris(
+    async def test_add_library_items_from_uris(
             self,
             model: RemoteMutableLibrary,
             tracks: list[RemoteTrack],
@@ -84,7 +84,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_get_many.return_value = tracks
         uris = [track.uri for track in tracks]
 
-        result = await model._add_saved_items(items=uris, items_type="tracks", api=model.api.tracks)
+        result = await model._add_library_items(items=uris, items_type="tracks", api=model.api.tracks)
         assert result == tracks
 
     async def test_add_tracks(
@@ -133,7 +133,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert model.albums == albums
 
     ###########################################################################
-    ## Sync saved items
+    ## Sync library items
     ###########################################################################
     @pytest.fixture
     def mock_filter_items(self, model: RemoteMutableLibrary, mocker: MockerFixture) -> Mock:
@@ -153,7 +153,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def mock_remove_many(self) -> Generator[Mock, None, None]:
         with patch.object(
-                WriteSavedEndpoints, "remove_many", side_effect=self._return_length, new_callable=AsyncMock
+                BatchWriteEndpoints, "remove_many", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_remove:
             yield mock_remove
 
@@ -163,7 +163,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_get_all.return_value = uris
         return mock_get_all
 
-    async def test_sync_saved_items(
+    async def test_sync_library_items(
             self,
             model: RemoteMutableLibrary,
             tracks: list[RemoteTrack],
@@ -180,7 +180,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         add, remove, unchanged = mock_get_sync_items.return_value
         remote = mock_get_all.return_value
 
-        result = await model._sync_saved_items(
+        result = await model._sync_library_items(
             kind=kind, items_type="tracks", items=tracks, api=model.api.tracks, dry_run=False
         )
 
@@ -192,7 +192,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_add_many.assert_called_once_with(add)
         mock_remove_many.assert_called_once_with(remove)
 
-    async def test_sync_saved_items_dry_run(
+    async def test_sync_library_items_dry_run(
             self,
             model: RemoteMutableLibrary,
             tracks: list[RemoteTrack],
@@ -209,7 +209,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         add, remove, unchanged = mock_get_sync_items.return_value
         remote = mock_get_all.return_value
 
-        result = await model._sync_saved_items(
+        result = await model._sync_library_items(
             kind=kind, items_type="tracks", items=tracks, api=model.api.tracks, dry_run=True
         )
 
@@ -222,34 +222,34 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_remove_many.assert_not_called()
 
     @pytest.fixture
-    def mock_sync_saved_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
-        with patch.object(model, "_sync_saved_items") as mock_sync:
+    def mock_sync_library_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+        with patch.object(model, "_sync_library_items") as mock_sync:
             yield mock_sync
 
-    async def test_sync_tracks(self, model: RemoteMutableLibrary, mock_sync_saved_items: Mock, faker: Faker):
+    async def test_sync_tracks(self, model: RemoteMutableLibrary, mock_sync_library_items: Mock, faker: Faker):
         kind = faker.random_element(get_args(SYNC_TYPE))
         dry_run = faker.boolean()
 
         await model.sync_tracks(kind=kind, dry_run=dry_run)
-        mock_sync_saved_items.assert_called_once_with(
+        mock_sync_library_items.assert_called_once_with(
             kind=kind, items_type="tracks", items=model.tracks, api=model.api.tracks, dry_run=dry_run
         )
 
-    async def test_sync_artists(self, model: RemoteMutableLibrary, mock_sync_saved_items: Mock, faker: Faker):
+    async def test_sync_artists(self, model: RemoteMutableLibrary, mock_sync_library_items: Mock, faker: Faker):
         kind = faker.random_element(get_args(SYNC_TYPE))
         dry_run = faker.boolean()
 
         await model.sync_artists(kind=kind, dry_run=dry_run)
-        mock_sync_saved_items.assert_called_once_with(
+        mock_sync_library_items.assert_called_once_with(
             kind=kind, items_type="artists", items=model.artists, api=model.api.artists, dry_run=dry_run
         )
 
-    async def test_sync_albums(self, model: RemoteMutableLibrary, mock_sync_saved_items: Mock, faker: Faker):
+    async def test_sync_albums(self, model: RemoteMutableLibrary, mock_sync_library_items: Mock, faker: Faker):
         kind = faker.random_element(get_args(SYNC_TYPE))
         dry_run = faker.boolean()
 
         await model.sync_albums(kind=kind, dry_run=dry_run)
-        mock_sync_saved_items.assert_called_once_with(
+        mock_sync_library_items.assert_called_once_with(
             kind=kind, items_type="albums", items=model.albums, api=model.api.albums, dry_run=dry_run
         )
 
@@ -264,7 +264,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             return next(pl for pl in playlists if str(pl.name) == name)
 
         with patch.object(
-            PlaylistReadWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
+            PlaylistLibraryEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
         ) as mock_create:
             yield mock_create
 
@@ -276,7 +276,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             return next(pl for pl in playlists if str(pl.name) == name)
 
         with patch.object(
-            PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
+            PlaylistLibraryEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
         ) as mock_get_or_create:
             yield mock_get_or_create
 
@@ -332,7 +332,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert mock_semaphore.call_count == len(playlists)
 
     ###########################################################################
-    ## Restore saved items
+    ## Restore library items
     ###########################################################################
     def test_extract_uris_from_backup(
             self,
@@ -365,7 +365,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             tracks: list[Track],
             mock_get_many: Mock,
-            mock_sync_saved_items: Mock,
+            mock_sync_library_items: Mock,
             faker: Faker,
     ):
         dry_run = faker.boolean()
@@ -383,7 +383,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert model.tracks == tracks
 
         mock_get_many.assert_called_once_with(uris)
-        mock_sync_saved_items.assert_called_once_with(
+        mock_sync_library_items.assert_called_once_with(
             kind="refresh", items_type="tracks", items=tracks, api=model.api.tracks, dry_run=dry_run
         )
 
@@ -392,7 +392,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             artists: list[Artist],
             mock_get_many: Mock,
-            mock_sync_saved_items: Mock,
+            mock_sync_library_items: Mock,
             faker: Faker,
     ):
         dry_run = faker.boolean()
@@ -410,7 +410,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert model.artists == artists
 
         mock_get_many.assert_called_once_with(uris)
-        mock_sync_saved_items.assert_called_once_with(
+        mock_sync_library_items.assert_called_once_with(
             kind="refresh", items_type="artists", items=artists, api=model.api.artists, dry_run=dry_run
         )
 
@@ -419,7 +419,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             albums: list[Album],
             mock_get_many: Mock,
-            mock_sync_saved_items: Mock,
+            mock_sync_library_items: Mock,
             faker: Faker,
     ):
         dry_run = faker.boolean()
@@ -437,7 +437,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert model.albums == albums
 
         mock_get_many.assert_called_once_with(uris)
-        mock_sync_saved_items.assert_called_once_with(
+        mock_sync_library_items.assert_called_once_with(
             kind="refresh", items_type="albums", items=albums, api=model.api.albums,  dry_run=dry_run
         )
 
@@ -482,7 +482,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             raise ResponseError(response=response(status=404))
 
         with patch.object(
-                ReadItemEndpoints, "get", side_effect=_get_playlist_or_raise_error, new_callable=AsyncMock
+                ItemReadEndpoints, "get", side_effect=_get_playlist_or_raise_error, new_callable=AsyncMock
         ) as mock_get:
             yield mock_get, failed
             assert mock_get.call_count == len(playlists)

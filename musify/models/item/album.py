@@ -18,7 +18,7 @@ from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
-    from musify.models.api.album import HasAlbumEndpoints, AlbumReadItemEndpoints
+    from musify.models.api.album import HasAlbumEndpoints, AlbumReadEndpoints
 
 
 class Album[RT: Artist, GT: Genre](
@@ -116,5 +116,5 @@ class HasAlbums[AT: Album](HasSeparableTags):
 
 class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasAlbumEndpoints[AlbumReadItemEndpoints]) -> Self:
+    async def reload(self, api: HasAlbumEndpoints[AlbumReadEndpoints]) -> Self:
         return await api.albums.get(self.uri)

@@ -7,15 +7,15 @@ from pydantic import Field, validate_call, BeforeValidator
 from termcolor import colored
 
 from musify.exception import MusifyTypeError
-from musify.models.api import RemoteAPI, IsRemoteService, HasSavedEndpoints, ReadSavedEndpoints, WriteSavedEndpoints, \
-    ReadItemsEndpoints
-from musify.models.api.album import HasAlbumEndpoints, AlbumReadSavedEndpoints, AlbumWriteSavedEndpoints, \
-    AlbumReadItemsEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, ArtistWriteSavedEndpoints, \
-    ArtistReadItemsEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteSavedEndpoints, PlaylistReadWriteEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints, TrackWriteSavedEndpoints, \
-    TrackReadItemsEndpoints
+from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, \
+    BatchReadEndpoints
+from musify.models.api.album import HasAlbumEndpoints, AlbumBatchReadAllEndpoints, AlbumBatchWriteEndpoints, \
+    AlbumBatchReadEndpoints
+from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, ArtistBatchWriteEndpoints, \
+    ArtistBatchReadEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
+from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoints, TrackBatchWriteEndpoints, \
+    TrackBatchReadEndpoints
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._sync import SYNC_TYPE, get_sync_message, get_sync_items
 from musify.models.collection.library import MutableLibrary
@@ -50,55 +50,55 @@ class RemoteMutableLibrary[
     )
 
     ###########################################################################
-    ## Add saved items
+    ## Add library items
     ###########################################################################
     @IsRemoteService._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", TrackReadItemsEndpoints, "reading data for {type}s"),
-        ("tracks", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("tracks.saved", TrackWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("tracks", TrackBatchReadEndpoints, "reading data for {type}s"),
+        ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def add_tracks(self, uris: Sequence[UT | HasURI]) -> None:
-        """Add saved tracks to the library."""
-        api: HasTrackEndpoints[TrackReadItemsEndpoints | HasSavedEndpoints[TrackWriteSavedEndpoints]] = self.api
-        items = await self._add_saved_items(items=uris, items_type="tracks", api=api.tracks)
+        """Add library tracks to the library."""
+        api: HasTrackEndpoints[TrackBatchReadEndpoints | HasLibraryEndpoints[TrackBatchWriteEndpoints]] = self.api
+        items = await self._add_library_items(items=uris, items_type="tracks", api=api.tracks)
         self.tracks.extend(items)
 
     @IsRemoteService._validate_api(
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", ArtistReadItemsEndpoints, "reading data for {type}s"),
-        ("artists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("artists.saved", ArtistWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("artists", ArtistBatchReadEndpoints, "reading data for {type}s"),
+        ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("artists.library", ArtistBatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def add_artists(self, uris: Sequence[RT | HasURI]) -> None:
-        """Add saved artists to the library."""
-        api: HasArtistEndpoints[ArtistReadItemsEndpoints | HasSavedEndpoints[ArtistWriteSavedEndpoints]] = self.api
-        items = await self._add_saved_items(items=uris, items_type="artists", api=api.artists)
+        """Add library artists to the library."""
+        api: HasArtistEndpoints[ArtistBatchReadEndpoints | HasLibraryEndpoints[ArtistBatchWriteEndpoints]] = self.api
+        items = await self._add_library_items(items=uris, items_type="artists", api=api.artists)
         self.artists.extend(items)
 
     @IsRemoteService._validate_api(
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", AlbumReadItemsEndpoints, "reading data for {type}s"),
-        ("albums", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("albums.saved", AlbumWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("albums", AlbumBatchReadEndpoints, "reading data for {type}s"),
+        ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("albums.library", AlbumBatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def add_albums(self, uris: Sequence[RT | HasURI]) -> None:
-        """Add saved albums to the library."""
-        api: HasAlbumEndpoints[AlbumReadItemsEndpoints | HasSavedEndpoints[AlbumWriteSavedEndpoints]] = self.api
-        items = await self._add_saved_items(items=uris, items_type="albums", api=api.albums)
+        """Add library albums to the library."""
+        api: HasAlbumEndpoints[AlbumBatchReadEndpoints | HasLibraryEndpoints[AlbumBatchWriteEndpoints]] = self.api
+        items = await self._add_library_items(items=uris, items_type="albums", api=api.albums)
         self.albums.extend(items)
 
-    async def _add_saved_items(
+    async def _add_library_items(
             self,
             items: Sequence[UT | HasURI],
             items_type: str,
-            api: ReadItemsEndpoints | HasSavedEndpoints[WriteSavedEndpoints],
+            api: BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints],
     ) -> list:
         uris: list[UT] = []
         for item in items:
@@ -115,7 +115,7 @@ class RemoteMutableLibrary[
         message = f"Adding {len(items)} {items_type} to {self._log_name} library"
         self.logger.info(message, header=1)
 
-        count = await api.saved.add_many(items)
+        count = await api.library.add_many(items)
         return await api.get_many(items) if count > 0 else []
 
     ###########################################################################
@@ -154,32 +154,32 @@ class RemoteMutableLibrary[
         self.logger.stat(table)
 
     ###########################################################################
-    ## Sync saved items
+    ## Sync library items
     ###########################################################################
     @IsRemoteService._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("tracks.saved", TrackReadSavedEndpoints, "reading data for saved {type}s"),
-        ("tracks.saved", TrackWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("tracks.library", TrackBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def sync_tracks(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult:
         """
-        Synchronise the current saved track's with the remote service.
+        Synchronise the current library track's with the remote service.
 
         Sync options:
-            * 'new': Do not clear any saved tracks from the remote service and only add new tracks.
-            * 'refresh': Clear all saved tracks from the remote service first, then add all tracks.
-            * 'sync': Clear all saved tracks not currently on the remote service, then add all tracks
+            * 'new': Do not clear any library tracks from the remote service and only add new tracks.
+            * 'refresh': Clear all library tracks from the remote service first, then add all tracks.
+            * 'sync': Clear all library tracks not currently on the remote service, then add all tracks
                 from this library not currently in the remote service.
 
         :param kind: Sync option for the remote service. See description.
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The sync result.
         """
-        api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints | TrackWriteSavedEndpoints]] = self.api
-        return await self._sync_saved_items(
+        api: HasTrackEndpoints[HasLibraryEndpoints[TrackBatchReadAllEndpoints | TrackBatchWriteEndpoints]] = self.api
+        return await self._sync_library_items(
             items=self.tracks, items_type="tracks", kind=kind, api=api.tracks, dry_run=dry_run
         )
 
@@ -187,26 +187,26 @@ class RemoteMutableLibrary[
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("artists.saved", ArtistReadSavedEndpoints, "reading data for saved {type}s"),
-        ("artists.saved", ArtistWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("artists.library", ArtistBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("artists.library", ArtistBatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def sync_artists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult:
         """
-        Synchronise the current saved artist's with the remote service.
+        Synchronise the current library artist's with the remote service.
 
         Sync options:
-            * 'new': Do not clear any saved artists from the remote service and only add new artists.
-            * 'refresh': Clear all saved artists from the remote service first, then add all artists.
-            * 'sync': Clear all saved artists not currently on the remote service, then add all artists
+            * 'new': Do not clear any library artists from the remote service and only add new artists.
+            * 'refresh': Clear all library artists from the remote service first, then add all artists.
+            * 'sync': Clear all library artists not currently on the remote service, then add all artists
                 from this library not currently in the remote service.
 
         :param kind: Sync option for the remote service. See description.
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The sync result.
         """
-        api: HasArtistEndpoints[HasSavedEndpoints[ArtistReadSavedEndpoints | ArtistWriteSavedEndpoints]] = self.api
-        return await self._sync_saved_items(
+        api: HasArtistEndpoints[HasLibraryEndpoints[ArtistBatchReadAllEndpoints | ArtistBatchWriteEndpoints]] = self.api
+        return await self._sync_library_items(
             items=self.artists, items_type="artists", kind=kind, api=api.artists, dry_run=dry_run
         )
 
@@ -214,35 +214,35 @@ class RemoteMutableLibrary[
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("albums.saved", AlbumReadSavedEndpoints, "reading data for saved {type}s"),
-        ("albums.saved", AlbumWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("albums.library", AlbumBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("albums.library", AlbumBatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def sync_albums(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult:
         """
-        Synchronise the current saved album's with the remote service.
+        Synchronise the current library album's with the remote service.
 
         Sync options:
-            * 'new': Do not clear any saved albums from the remote service and only add new albums.
-            * 'refresh': Clear all saved albums from the remote service first, then add all albums.
-            * 'sync': Clear all saved albums not currently on the remote service, then add all albums
+            * 'new': Do not clear any library albums from the remote service and only add new albums.
+            * 'refresh': Clear all library albums from the remote service first, then add all albums.
+            * 'sync': Clear all library albums not currently on the remote service, then add all albums
                 from this library not currently in the remote service.
 
         :param kind: Sync option for the remote service. See description.
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The sync result.
         """
-        api: HasAlbumEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints | AlbumWriteSavedEndpoints]] = self.api
-        return await self._sync_saved_items(
+        api: HasAlbumEndpoints[HasLibraryEndpoints[AlbumBatchReadAllEndpoints | AlbumBatchWriteEndpoints]] = self.api
+        return await self._sync_library_items(
             items=self.albums, items_type="albums", kind=kind, api=api.albums, dry_run=dry_run
         )
 
-    async def _sync_saved_items(
+    async def _sync_library_items(
             self,
             items: Collection[HasURI],
             items_type: str,
             kind: SYNC_TYPE,
-            api: HasSavedEndpoints[ReadSavedEndpoints | WriteSavedEndpoints],
+            api: HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints],
             dry_run: bool,
     ) -> SyncRemoteResult:
         """Run a sync of the given type by calling the given add and remove functions with the appropriate items."""
@@ -252,11 +252,11 @@ class RemoteMutableLibrary[
 
         items = self._filter_items(items, items_type=items_type)
         initial = [item.uri for item in items if item.uri]
-        remote = await api.saved.get_all()
+        remote = await api.library.get_all()
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)
 
-        removed = await api.saved.remove_many(remove) if not dry_run else len(remove)
-        added = await api.saved.add_many(add) if not dry_run else len(add)
+        removed = await api.library.remove_many(remove) if not dry_run else len(remove)
+        added = await api.library.add_many(add) if not dry_run else len(add)
 
         return SyncRemoteResult(
             start=len(remote),
@@ -288,19 +288,19 @@ class RemoteMutableLibrary[
         "playlist",
         None,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
     )
     async def create_playlist(self, name: str, **kwargs) -> PT | None:
         """Create a new playlist with the given name and return it."""
-        api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] = self.api
+        api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistLibraryEndpoints]] = self.api
 
         if (playlist := next((pl for pl in self.playlists.unique if pl.name == name), None)) is not None:
             self.logger.warning(f"Playlist with name {name!r} already exists in {self._log_name} library.")
             return playlist
 
         self.logger.info(f"Creating playlist {name!r} on {self._log_name} library", header=2)
-        playlist = await api.playlists.saved.create(name=name, **kwargs)
+        playlist = await api.playlists.library.create(name=name, **kwargs)
         self.playlists.add(playlist)
 
         return playlist
@@ -310,8 +310,8 @@ class RemoteMutableLibrary[
         dict,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
         ("playlists", PlaylistReadWriteEndpoints, "writing data for {type}s"),
-        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
     )
     async def sync_playlist_items(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncRemoteResult]:
         """
@@ -329,7 +329,7 @@ class RemoteMutableLibrary[
         :return: Map of playlist name to the sync result.
         """
         api: HasPlaylistEndpoints[
-            PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]
+            PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]
         ] = self.api
 
         playlists = list(filter(lambda pl: isinstance(pl, RemoteMutablePlaylist), self.playlists.unique))
@@ -340,7 +340,7 @@ class RemoteMutableLibrary[
 
         async def _sync_playlist[T: RemoteMutablePlaylist](pl: T) -> tuple[str, SyncRemoteResult]:
             async with self.concurrency:
-                remote: T = await api.playlists.saved.get_or_create(pl.name)
+                remote: T = await api.playlists.library.get_or_create(pl.name)
                 remote.tracks.replace(pl.tracks)
 
                 properties = await remote.sync_properties(api, dry_run=dry_run)
@@ -357,7 +357,7 @@ class RemoteMutableLibrary[
         return dict(results)
 
     ###########################################################################
-    ## Restore saved items
+    ## Restore library items
     ###########################################################################
     @staticmethod
     def _extract_uris_from_backup(backup: Any, key: Literal["tracks", "artists", "albums"]) -> tuple[str | URI, ...]:
@@ -380,10 +380,10 @@ class RemoteMutableLibrary[
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", TrackReadItemsEndpoints, "reading data for {type}s"),
-        ("tracks", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("tracks.saved", TrackReadSavedEndpoints, "reading data for saved {type}s"),
-        ("tracks.saved", TrackWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("tracks", TrackBatchReadEndpoints, "reading data for {type}s"),
+        ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("tracks.library", TrackBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
     )
     @validate_call
     async def restore_tracks(
@@ -395,7 +395,7 @@ class RemoteMutableLibrary[
             dry_run: bool = False
     ) -> SyncRemoteResult | None:
         """
-        Restore saved tracks from a backup dump.
+        Restore library tracks from a backup dump.
         This function updates the remote service and reloads this library's tracks after restoring.
 
         Tracks may be in the form of either:
@@ -406,13 +406,13 @@ class RemoteMutableLibrary[
 
         :param uris: Tracks data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
-        :return: The count of saved tracks on the remote service after the sync.
+        :return: The count of library tracks on the remote service after the sync.
         """
         api: HasTrackEndpoints[
-            TrackReadItemsEndpoints | HasSavedEndpoints[TrackReadSavedEndpoints | TrackWriteSavedEndpoints]
+            TrackBatchReadEndpoints | HasLibraryEndpoints[TrackBatchReadAllEndpoints | TrackBatchWriteEndpoints]
         ] = self.api
 
-        self.logger.info(f"Restoring {len(uris)} saved tracks on {self._log_name} library", header=2)
+        self.logger.info(f"Restoring {len(uris)} library tracks on {self._log_name} library", header=2)
 
         self.tracks[:] = await api.tracks.get_many(uris)
         return await self.sync_tracks(kind="refresh", dry_run=dry_run)
@@ -421,10 +421,10 @@ class RemoteMutableLibrary[
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", ArtistReadItemsEndpoints, "reading data for {type}s"),
-        ("artists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("artists.saved", ArtistReadSavedEndpoints, "reading data for saved {type}s"),
-        ("artists.saved", ArtistWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("artists", ArtistBatchReadEndpoints, "reading data for {type}s"),
+        ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("artists.library", ArtistBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("artists.library", ArtistBatchWriteEndpoints, "writing data for library {type}s"),
     )
     @validate_call
     async def restore_artists(
@@ -436,7 +436,7 @@ class RemoteMutableLibrary[
             dry_run: bool = False
     ) -> SyncRemoteResult | None:
         """
-        Restore saved artists from a backup dump.
+        Restore library artists from a backup dump.
         This function updates the remote service and reloads this library's artists after restoring.
 
         Artists may be in the form of either:
@@ -447,13 +447,13 @@ class RemoteMutableLibrary[
 
         :param uris: Artists data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
-        :return: The count of saved artists on the remote service after the sync.
+        :return: The count of library artists on the remote service after the sync.
         """
         api: HasArtistEndpoints[
-            ArtistReadItemsEndpoints | HasSavedEndpoints[ArtistReadSavedEndpoints | ArtistWriteSavedEndpoints]
+            ArtistBatchReadEndpoints | HasLibraryEndpoints[ArtistBatchReadAllEndpoints | ArtistBatchWriteEndpoints]
         ] = self.api
 
-        self.logger.info(f"Restoring {len(uris)} saved artists on {self._log_name} library", header=2)
+        self.logger.info(f"Restoring {len(uris)} library artists on {self._log_name} library", header=2)
 
         self.artists[:] = await api.artists.get_many(uris)
         return await self.sync_artists(kind="refresh", dry_run=dry_run)
@@ -462,10 +462,10 @@ class RemoteMutableLibrary[
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", AlbumReadItemsEndpoints, "reading data for {type}s"),
-        ("albums", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("albums.saved", AlbumReadSavedEndpoints, "reading data for saved {type}s"),
-        ("albums.saved", AlbumWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("albums", AlbumBatchReadEndpoints, "reading data for {type}s"),
+        ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("albums.library", AlbumBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("albums.library", AlbumBatchWriteEndpoints, "writing data for library {type}s"),
     )
     @validate_call
     async def restore_albums(
@@ -477,7 +477,7 @@ class RemoteMutableLibrary[
             dry_run: bool = False
     ) -> SyncRemoteResult | None:
         """
-        Restore saved albums from a backup dump.
+        Restore library albums from a backup dump.
         This function updates the remote service and reloads this library's albums after restoring.
 
         Albums may be in the form of either:
@@ -488,13 +488,13 @@ class RemoteMutableLibrary[
 
         :param uris: Albums data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
-        :return: The count of saved albums on the remote service after the sync.
+        :return: The count of library albums on the remote service after the sync.
         """
         api: HasAlbumEndpoints[
-            AlbumReadItemsEndpoints | HasSavedEndpoints[AlbumReadSavedEndpoints | AlbumWriteSavedEndpoints]
+            AlbumBatchReadEndpoints | HasLibraryEndpoints[AlbumBatchReadAllEndpoints | AlbumBatchWriteEndpoints]
         ] = self.api
 
-        self.logger.info(f"Restoring {len(uris)} saved albums on {self._log_name} library", header=2)
+        self.logger.info(f"Restoring {len(uris)} library albums on {self._log_name} library", header=2)
 
         self.albums[:] = await api.albums.get_many(uris)
         return await self.sync_albums(kind="refresh", dry_run=dry_run)
@@ -554,10 +554,10 @@ class RemoteMutableLibrary[
         dict,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
         ("playlists", PlaylistReadWriteEndpoints, "writing data for {type}s"),
-        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
+        ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
         (None, HasTrackEndpoints, "track endpoints"),
-        ("tracks", TrackReadItemsEndpoints, "reading data for tracks"),
+        ("tracks", TrackBatchReadEndpoints, "reading data for tracks"),
     )
     @validate_call
     async def restore_playlists(
@@ -579,7 +579,7 @@ class RemoteMutableLibrary[
 
         :param playlists: Tracks data. See description for accepted formats.
         :param dry_run: Run function, but do not modify the remote service at all.
-        :return: The count of saved tracks on the remote service after the sync.
+        :return: The count of library tracks on the remote service after the sync.
         """
 
         self.logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
@@ -599,8 +599,8 @@ class RemoteMutableLibrary[
             self, uri: URI, dump: Mapping[str, Any], items: list[URI], dry_run: bool = False
     ) -> tuple[str, SyncRemoteResult] | None:
         api: (
-            HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]] |
-            HasTrackEndpoints[TrackReadItemsEndpoints]
+            HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]] |
+            HasTrackEndpoints[TrackBatchReadEndpoints]
         ) = self.api
 
         async with self.concurrency:
@@ -612,7 +612,7 @@ class RemoteMutableLibrary[
                         f"Playlist with name {dump["name"]!r} does not exist on the remote service. "
                         "Creating a new playlist."
                     )
-                    playlist = await api.playlists.saved.create(**dump)
+                    playlist = await api.playlists.library.create(**dump)
                 else:
                     item_count = len(items)
                     return dump["name"], SyncRemoteResult(

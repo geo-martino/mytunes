@@ -8,9 +8,9 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import ValidationError
 
-from musify.models.api import RemoteAPI, RemoteAuthoriser, HasSavedEndpoints, IsRemoteService, Endpoints
+from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, IsRemoteService, Endpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
-    PlaylistReadWriteSavedEndpoints, PlaylistReadSavedEndpoints
+    PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
 from musify.models.api.track import HasTrackEndpoints
 from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI, MockRemoteAuthoriser, MockTrackEndpoints
@@ -105,13 +105,13 @@ class TestRemoteAPI(BaseModelTester):
         assert api.users.user is None
         assert api.search.user is None
         assert api.tracks.user is None
-        assert api.tracks.saved.user is None
+        assert api.tracks.library.user is None
         assert api.artists.user is None
-        assert api.artists.saved.user is None
+        assert api.artists.library.user is None
         assert api.albums.user is None
-        assert api.albums.saved.user is None
+        assert api.albums.library.user is None
         assert api.playlists.user is None
-        assert api.playlists.saved.user is None
+        assert api.playlists.library.user is None
 
         mock_get.return_value = user
 
@@ -119,13 +119,13 @@ class TestRemoteAPI(BaseModelTester):
             assert api.users.user is user
             assert api.search.user is user
             assert api.tracks.user is user
-            assert api.tracks.saved.user is user
+            assert api.tracks.library.user is user
             assert api.artists.user is user
-            assert api.artists.saved.user is user
+            assert api.artists.library.user is user
             assert api.albums.user is user
-            assert api.albums.saved.user is user
+            assert api.albums.library.user is user
             assert api.playlists.user is user
-            assert api.playlists.saved.user is user
+            assert api.playlists.library.user is user
 
 
 class TestHasAPI(BaseModelTester):
@@ -137,8 +137,8 @@ class TestHasAPI(BaseModelTester):
             False,
             (None, HasPlaylistEndpoints, "{type} endpoints"),
             ("playlists", PlaylistReadWriteEndpoints, "writing data for {type}s"),
-            ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
-            ("playlists.saved", PlaylistReadWriteSavedEndpoints, "writing data for saved {type}s"),
+            ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
+            ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
         )
         async def return_bool(self) -> bool:
             return True
@@ -148,7 +148,7 @@ class TestHasAPI(BaseModelTester):
         return self.MockIsRemoteService(api=api)
 
     async def test_validate_api_with_valid_api(self, handler: RequestHandler):
-        class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]):
+        class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasLibraryEndpoints[PlaylistLibraryEndpoints]):
             pass
 
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):
@@ -166,8 +166,8 @@ class TestHasAPI(BaseModelTester):
         model = self.MockIsRemoteService(api=MockAPI(handler=handler))
         assert await model.return_bool() is False
 
-    async def test_validate_api_fails_on_no_write_saved_playlist_endpoints(self, handler: RequestHandler):
-        class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasSavedEndpoints[PlaylistReadSavedEndpoints]):
+    async def test_validate_api_fails_on_no_write_library_playlist_endpoints(self, handler: RequestHandler):
+        class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasLibraryEndpoints[PlaylistBatchReadAllEndpoints]):
             pass
 
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):

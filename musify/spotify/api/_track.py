@@ -3,28 +3,28 @@ from typing import ClassVar, final
 from pydantic import AliasPath, PositiveInt
 from yarl import URL
 
-from musify.models.api import HasSavedEndpoints
-from musify.models.api.track import TrackReadItemEndpoints, TrackReadItemsEndpoints, \
-    TrackReadSavedEndpoints, TrackWriteSavedEndpoints
+from musify.models.api import HasLibraryEndpoints
+from musify.models.api.track import TrackReadEndpoints, TrackBatchReadEndpoints, \
+    TrackBatchReadAllEndpoints, TrackBatchWriteEndpoints
 from musify.models.api.types import _ApiURISchema
 from musify.spotify import API_URL
-from musify.spotify.api._base import SpotifyEndpoints
+from musify.spotify.api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify.api._types import SpotifyApiURI, SpotifyApiURISequence
 from musify.spotify.item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 @final
-class _SpotifySavedTrackEndpoints(
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack],
-    TrackReadSavedEndpoints[SpotifyResourceURI, SpotifyTrack],
-    TrackWriteSavedEndpoints[SpotifyResourceURI, SpotifyTrack],
+class _SpotifyTrackLibraryEndpoints(
+    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyTrack],
+    TrackBatchReadAllEndpoints[SpotifyResourceURI, SpotifyTrack],
+    TrackBatchWriteEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
     __final__ = True
 
-    _read_url: ClassVar[URL] = API_URL.joinpath("me/tracks")
-    _read_limit: ClassVar[int] = 50
-    _read_path: ClassVar[AliasPath] = AliasPath("items", "*", "track")
+    _read_all_url: ClassVar[URL] = API_URL.joinpath("me/tracks")
+    _read_all_limit: ClassVar[int] = 50
+    _read_all_path: ClassVar[AliasPath] = AliasPath("items", "*", "track")
 
     _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
     _write_limit: ClassVar[int] = 40
@@ -33,15 +33,15 @@ class _SpotifySavedTrackEndpoints(
 @final
 class SpotifyTrackEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack],
-    HasSavedEndpoints[_SpotifySavedTrackEndpoints],
-    TrackReadItemEndpoints[SpotifyResourceURI, SpotifyTrack],
-    TrackReadItemsEndpoints[SpotifyResourceURI, SpotifyTrack],
+    HasLibraryEndpoints[_SpotifyTrackLibraryEndpoints],
+    TrackReadEndpoints[SpotifyResourceURI, SpotifyTrack],
+    TrackBatchReadEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
     __final__ = True
 
-    _many_url: ClassVar[URL] = API_URL.joinpath("tracks")
-    _many_limit: ClassVar[int] = 50
-    _many_path: ClassVar[str] = "tracks"
+    _read_url: ClassVar[URL] = API_URL.joinpath("tracks")
+    _read_limit: ClassVar[int] = 50
+    _read_path: ClassVar[str] = "tracks"
 
     @_ApiURISchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get_audio_features(self, uri: SpotifyApiURI[SpotifyTrack]) -> SpotifyAudioFeatures:

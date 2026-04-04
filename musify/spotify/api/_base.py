@@ -3,7 +3,7 @@ from typing import ClassVar, Any
 
 from pydantic.json_schema import JsonSchemaValue
 
-from musify.models.api import Endpoints
+from musify.models.api import Endpoints, BatchWriteEndpoints
 from musify.spotify import SpotifyModel, SpotifyResource
 from musify.spotify.properties.uri import _SpotifyURIBase
 
@@ -15,7 +15,11 @@ class SpotifyEndpoints[UT: _SpotifyURIBase, RT: SpotifyResource](
     _id_path: ClassVar[str] = "id"
     _url_path: ClassVar[str] = "href"
 
-    # just define this here for write saved endpoints, it's the same for every endpoint type
+
+class _SpotifyLibraryEndpoints[UT: _SpotifyURIBase, RT: SpotifyResource](
+    SpotifyEndpoints[UT, RT], BatchWriteEndpoints[UT, RT],
+):
+    # just define this here for write library endpoints, it's the same for every endpoint type
     @staticmethod
     def _generate_add_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
         return {"params": {"uris": ",".join(map(str, values))}}

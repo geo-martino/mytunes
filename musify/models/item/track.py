@@ -21,7 +21,7 @@ from musify.models.remote import RemoteResource
 from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 
 if TYPE_CHECKING:
-    from musify.models.api.track import HasTrackEndpoints, TrackReadItemEndpoints
+    from musify.models.api.track import HasTrackEndpoints, TrackReadEndpoints
 
 
 class Track[RT: Artist, AT: Album, GT: Genre](
@@ -147,5 +147,5 @@ class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
     )
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasTrackEndpoints[TrackReadItemEndpoints]) -> Self:
+    async def reload(self, api: HasTrackEndpoints[TrackReadEndpoints]) -> Self:
         return await api.tracks.get(self.uri)

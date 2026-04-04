@@ -2,8 +2,8 @@ from typing import ClassVar, Type
 
 from pydantic import Field
 
-from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, ReadCollectionEndpoints, WriteSavedEndpoints, HasEndpoints, HasSavedEndpoints
+from musify.models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
+    BatchReadAllEndpoints, CollectionReadEndpoints, BatchWriteEndpoints, HasEndpoints, HasLibraryEndpoints
 from musify.models.collection.artist import RemoteArtistCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -14,38 +14,38 @@ class ArtistEndpoints[UT: URI, RT: RemoteArtist](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemoteArtist
 
 
-class ArtistReadItemEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
+class ArtistReadEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], ItemReadEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistReadItemsEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
-):
-    pass
-
-
-class ArtistReadCollectionEndpoints[UT: URI, RT: RemoteArtistCollection, IT: RemoteAlbum](
-    ArtistEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT]
+class ArtistCollectionReadEndpoints[UT: URI, RT: RemoteArtistCollection, IT: RemoteAlbum](
+    ArtistEndpoints[UT, RT], CollectionReadEndpoints[UT, RT, IT]
 ):
     type: ClassVar[Type] = RemoteArtistCollection
     _extend_type: ClassVar[Type] = RemoteAlbum
 
 
-class ArtistReadSavedEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
+class ArtistBatchReadEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], BatchReadEndpoints[UT, RT]
 ):
     pass
 
 
-class ArtistWriteSavedEndpoints[UT: URI, RT: RemoteArtist](
-    ArtistEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
+class ArtistBatchReadAllEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], BatchReadAllEndpoints[UT, RT]
 ):
     pass
 
 
-class HasArtistEndpoints[ET: ArtistEndpoints | HasSavedEndpoints](HasEndpoints):
+class ArtistBatchWriteEndpoints[UT: URI, RT: RemoteArtist](
+    ArtistEndpoints[UT, RT], BatchWriteEndpoints[UT, RT]
+):
+    pass
+
+
+class HasArtistEndpoints[ET: ArtistEndpoints | HasLibraryEndpoints](HasEndpoints):
     artists: ET = Field(
         description="Access artist endpoints for the API."
     )

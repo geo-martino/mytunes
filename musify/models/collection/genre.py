@@ -13,7 +13,7 @@ from musify.models.properties.uri import URI
 from musify.models.sequence import UniqueSequence
 
 if TYPE_CHECKING:
-    from musify.models.api.genre import HasGenreEndpoints, GenreReadCollectionEndpoints
+    from musify.models.api.genre import HasGenreEndpoints, GenreCollectionReadEndpoints
 
 
 class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Genre, HasLength):
@@ -85,6 +85,6 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
         self.tracks._replace(())
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def extend(self, api: HasGenreEndpoints[GenreReadCollectionEndpoints]) -> None:
+    async def extend(self, api: HasGenreEndpoints[GenreCollectionReadEndpoints]) -> None:
         # noinspection PyProtectedMember
         self.tracks._replace(await api.genres.get_all(self))

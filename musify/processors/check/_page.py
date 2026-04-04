@@ -10,9 +10,9 @@ from rich.progress import TaskID
 from termcolor import colored
 
 from musify.exception import MusifyError
-from musify.models.api import RemoteAPI, HasAPI, HasSavedEndpoints
-from musify.models.api.playlist import PlaylistReadWriteSavedEndpoints, PlaylistReadWriteEndpoints, \
-    HasPlaylistEndpoints, PlaylistWriteSavedEndpoints
+from musify.models.api import RemoteAPI, HasAPI, HasLibraryEndpoints
+from musify.models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
+    HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from musify.models.cursors import InitialCursor
@@ -28,7 +28,7 @@ from musify.processors.formatter import CollectionFormatter
 
 type _ApiT = RemoteAPI | HasPlaylistEndpoints[
     PlaylistReadWriteEndpoints |
-    HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]
+    HasLibraryEndpoints[PlaylistLibraryEndpoints]
 ]
 
 
@@ -92,10 +92,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
             raise MusifyValidationError(f"API does not support playlist endpoints")
         if not isinstance(api.playlists, PlaylistReadWriteEndpoints):
             raise MusifyValidationError(f"API does not support writing data for playlists")
-        if not isinstance(api.playlists, HasSavedEndpoints):
-            raise MusifyValidationError(f"API does not support saved playlist endpoints")
-        if not isinstance(api.playlists.saved, PlaylistReadWriteSavedEndpoints):
-            raise MusifyValidationError(f"API does not support writing data for saved playlists")
+        if not isinstance(api.playlists, HasLibraryEndpoints):
+            raise MusifyValidationError(f"API does not support library playlist endpoints")
+        if not isinstance(api.playlists.library, PlaylistLibraryEndpoints):
+            raise MusifyValidationError(f"API does not support writing data for library playlists")
 
         return api
 
@@ -167,14 +167,14 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
 
     async def _setup_playlist(self, collection: CollectionModel) -> RemoteMutablePlaylist | None:
         api: PlaylistReadWriteEndpoints = self.api.playlists
-        api_saved: PlaylistReadWriteSavedEndpoints = self.api.playlists.saved
+        api_library: PlaylistLibraryEndpoints = self.api.playlists.library
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
 
         async with self.concurrency:
             if self.use_existing_playlists:
-                playlist: RemoteMutablePlaylist = await api_saved.get_or_create(name=name, **self.additional_properties)
+                playlist: RemoteMutablePlaylist = await api_library.get_or_create(name=name, **self.additional_properties)
             else:
-                playlist: RemoteMutablePlaylist = await api_saved.create(name=name, **self.additional_properties)
+                playlist: RemoteMutablePlaylist = await api_library.create(name=name, **self.additional_properties)
 
             self._collections[playlist.uri] = collection
             self._playlists[playlist.uri] = playlist
@@ -218,7 +218,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
         self.logger.extra(message, header=3)
 
         uris = {pl.uri for pl in playlists}
-        api: PlaylistWriteSavedEndpoints = self.api.playlists.saved
+        api: PlaylistBatchWriteEndpoints = self.api.playlists.library
         await api.remove_many(list(uris))
 
         for uri in uris:

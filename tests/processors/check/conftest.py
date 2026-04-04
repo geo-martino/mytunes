@@ -5,8 +5,8 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints, \
-    PlaylistWriteSavedEndpoints
+from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
+    PlaylistBatchWriteEndpoints
 from musify.models.collection import CollectionModel
 from musify.models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
 from musify.models.cursors import InitialCursor
@@ -100,7 +100,7 @@ def mock_get_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock,
         return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
 
     with patch.object(
-            PlaylistReadWriteSavedEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
+            PlaylistLibraryEndpoints, "get_or_create", side_effect=_get_playlist, new_callable=AsyncMock
     ) as mock_get:
         yield mock_get
 
@@ -111,20 +111,20 @@ def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mo
         return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
 
     with patch.object(
-            PlaylistWriteSavedEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
+            PlaylistLibraryEndpoints, "create", side_effect=_get_playlist, new_callable=AsyncMock
     ) as mock_create:
         yield mock_create
 
 
 @pytest.fixture(autouse=True)
 def mock_add_playlists() -> Generator[Mock, None, None]:
-    with patch.object(PlaylistWriteSavedEndpoints, "add_many", new_callable=AsyncMock) as mock_add:
+    with patch.object(PlaylistBatchWriteEndpoints, "add_many", new_callable=AsyncMock) as mock_add:
         yield mock_add
 
 
 @pytest.fixture(autouse=True)
 def mock_remove_playlists() -> Generator[Mock, None, None]:
-    with patch.object(PlaylistWriteSavedEndpoints, "remove_many", new_callable=AsyncMock) as mock_remove:
+    with patch.object(PlaylistBatchWriteEndpoints, "remove_many", new_callable=AsyncMock) as mock_remove:
         yield mock_remove
 
 

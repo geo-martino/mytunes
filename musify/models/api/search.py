@@ -6,7 +6,7 @@ from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, 
 from yarl import URL
 
 from musify.models import ResourceModel
-from musify.models.api._endpoints import Endpoints, HasEndpoints, HasSavedEndpoints
+from musify.models.api._endpoints import Endpoints, HasEndpoints, HasLibraryEndpoints
 from musify.models.exception import RequestError
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
@@ -113,7 +113,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         raise NotImplementedError
 
 
-class HasSearchEndpoints[ET: SearchEndpoints | HasSavedEndpoints](HasEndpoints):
+class HasSearchEndpoints[ET: SearchEndpoints | HasLibraryEndpoints](HasEndpoints):
     search: ET = Field(
         description="Access search endpoints for the API."
     )

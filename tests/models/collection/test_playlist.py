@@ -9,8 +9,8 @@ from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
 from musify.models._context import RemoteModelContext
-from musify.models.api import RemoteAPI, WriteCollectionEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api import RemoteAPI, CollectionWriteEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 # noinspection PyProtectedMember
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
@@ -161,7 +161,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
 
     @pytest.fixture
     def mock_modify(self) -> Generator[Mock, None, None]:
-        with patch.object(PlaylistReadWriteSavedEndpoints, "modify", new_callable=AsyncMock) as mock_modify:
+        with patch.object(PlaylistLibraryEndpoints, "modify", new_callable=AsyncMock) as mock_modify:
             yield mock_modify
 
     async def test_sync_properties_dry_run(
@@ -216,14 +216,14 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     @pytest.fixture(autouse=True)
     def mock_add(self) -> Generator[Mock, None, None]:
         with patch.object(
-                WriteCollectionEndpoints, "add", side_effect=self._return_length, new_callable=AsyncMock
+                CollectionWriteEndpoints, "add", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_add:
             yield mock_add
 
     @pytest.fixture(autouse=True)
     def mock_remove(self) -> Generator[Mock, None, None]:
         with patch.object(
-                WriteCollectionEndpoints, "remove", side_effect=self._return_length, new_callable=AsyncMock
+                CollectionWriteEndpoints, "remove", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_remove:
             yield mock_remove
 

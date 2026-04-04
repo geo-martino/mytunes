@@ -68,16 +68,16 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
 
 class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
     """The result of loading tracks from a remote library."""
-    saved: Annotated[tuple[T, ...], *_log_formatters] = Field(
-        description="The tracks which are saved in the library but not in playlists or saved albums.",
+    in_library: Annotated[tuple[T, ...], *_log_formatters] = Field(
+        description="The tracks which are in the library but not in playlists or library albums.",
         default_factory=tuple
     )
     in_playlists: Annotated[tuple[T, ...], *_log_formatters] = Field(
-        description="The tracks which are in playlists in the library but not saved tracks.",
+        description="The tracks which are in playlists in the library but not library tracks.",
         default_factory=tuple
     )
     in_albums: Annotated[tuple[T, ...], *_log_formatters] = Field(
-        description="The tracks which are in the library's saved albums but not saved tracks.",
+        description="The tracks which are in the library's library albums but not library tracks.",
         default_factory=tuple
     )
 
@@ -90,7 +90,7 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
     ) -> Self:
         """Create a result from the given library items."""
         return cls(
-            saved=tracks,
+            in_library=tracks,
             in_playlists=cls._get_tracks_in_collections(playlists, tracks),
             in_albums=cls._get_tracks_in_collections(albums, tracks),
         )

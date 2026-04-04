@@ -9,7 +9,7 @@ from faker import Faker
 
 from musify.models.exception import RequestError
 # noinspection PyProtectedMember
-from musify.spotify.api._playlist import _SpotifySavedPlaylistEndpoints
+from musify.spotify.api._playlist import _SpotifyPlaylistLibraryEndpoints
 from musify.spotify.collection.playlist import SpotifyPlaylist
 from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.models.api.testers import EndpointsTester
@@ -17,14 +17,14 @@ from tests.models.api.testers import EndpointsTester
 
 class TestSpotifySavedPlaylistEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> _SpotifySavedPlaylistEndpoints:
-        return _SpotifySavedPlaylistEndpoints.model_validate(handler)
+    def model(self, handler: RequestHandler) -> _SpotifyPlaylistLibraryEndpoints:
+        return _SpotifyPlaylistLibraryEndpoints.model_validate(handler)
 
     @pytest.fixture
     def uri(self, faker: Faker) -> SpotifyResourceURI:
         return SpotifyResourceURI.from_id(faker.pystr(22, 22), kind=SpotifyPlaylist.type)
 
-    async def test_format_body_params(self, model: _SpotifySavedPlaylistEndpoints, faker: Faker):
+    async def test_format_body_params(self, model: _SpotifyPlaylistLibraryEndpoints, faker: Faker):
         name = faker.name()
         description = faker.sentence()
         public = faker.boolean()
@@ -47,7 +47,7 @@ class TestSpotifySavedPlaylistEndpoints(EndpointsTester):
             "public": public,
         }
 
-    async def test_format_body_params_fails(self, model: _SpotifySavedPlaylistEndpoints):
+    async def test_format_body_params_fails(self, model: _SpotifyPlaylistLibraryEndpoints):
         with pytest.raises(RequestError, match="cannot be both public and collaborative"):
             await model._format_playlist_body(public=True, collaborative=True)
 
@@ -58,7 +58,7 @@ class TestSpotifySavedPlaylistEndpoints(EndpointsTester):
 
     async def test_modify_images(
             self,
-            model: _SpotifySavedPlaylistEndpoints,
+            model: _SpotifyPlaylistLibraryEndpoints,
             uri: SpotifyResourceURI,
             image_object: PILImageFile,
             mock_put: Mock,

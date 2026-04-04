@@ -12,7 +12,7 @@ from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 
 if TYPE_CHECKING:
-    from musify.models.api.genre import HasGenreEndpoints, GenreReadItemEndpoints
+    from musify.models.api.genre import HasGenreEndpoints, GenreReadEndpoints
 
 
 class Genre(HasName, ResourceModel, metaclass=makecls()):
@@ -56,5 +56,5 @@ class HasGenres[GT: Genre](HasSeparableTags):
 
 class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasGenreEndpoints[GenreReadItemEndpoints]) -> Self:
+    async def reload(self, api: HasGenreEndpoints[GenreReadEndpoints]) -> Self:
         return await api.genres.get(self.uri)

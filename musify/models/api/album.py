@@ -2,8 +2,8 @@ from typing import ClassVar, Type
 
 from pydantic import Field
 
-from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints, HasEndpoints, HasSavedEndpoints
+from musify.models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
+    BatchReadAllEndpoints, BatchWriteEndpoints, CollectionReadEndpoints, HasEndpoints, HasLibraryEndpoints
 from musify.models.collection.album import RemoteAlbumCollection
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.track import RemoteTrack
@@ -14,38 +14,38 @@ class AlbumEndpoints[UT: URI, RT: RemoteAlbum](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemoteAlbum
 
 
-class AlbumReadItemEndpoints[UT: URI, RT: RemoteAlbum](
-    AlbumEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
+class AlbumReadEndpoints[UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[UT, RT], ItemReadEndpoints[UT, RT]
 ):
     pass
 
 
-class AlbumReadItemsEndpoints[UT: URI, RT: RemoteAlbum](
-    AlbumEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
+class AlbumBatchReadEndpoints[UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[UT, RT], BatchReadEndpoints[UT, RT]
 ):
     pass
 
 
-class AlbumReadCollectionEndpoints[UT: URI, RT: RemoteAlbumCollection, IT: RemoteTrack](
-    AlbumEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT]
+class AlbumCollectionReadEndpoints[UT: URI, RT: RemoteAlbumCollection, IT: RemoteTrack](
+    AlbumEndpoints[UT, RT], CollectionReadEndpoints[UT, RT, IT]
 ):
     type: ClassVar[Type] = RemoteAlbumCollection
     _extend_type: ClassVar[Type] = RemoteTrack
 
 
-class AlbumReadSavedEndpoints[UT: URI, RT: RemoteAlbum](
-    AlbumEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
+class AlbumBatchReadAllEndpoints[UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[UT, RT], BatchReadAllEndpoints[UT, RT]
 ):
     pass
 
 
-class AlbumWriteSavedEndpoints[UT: URI, RT: RemoteAlbum](
-    AlbumEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
+class AlbumBatchWriteEndpoints[UT: URI, RT: RemoteAlbum](
+    AlbumEndpoints[UT, RT], BatchWriteEndpoints[UT, RT]
 ):
     pass
 
 
-class HasAlbumEndpoints[ET: AlbumEndpoints | HasSavedEndpoints](HasEndpoints):
+class HasAlbumEndpoints[ET: AlbumEndpoints | HasLibraryEndpoints](HasEndpoints):
     albums: ET = Field(
         description="Access album endpoints for the API."
     )

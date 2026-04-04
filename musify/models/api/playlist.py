@@ -5,10 +5,10 @@ from pydantic import validate_call, Field, PositiveInt, PrivateAttr
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
-from musify.models.api._endpoints import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteCollectionEndpoints, HasEndpoints, HasSavedEndpoints, ReadCollectionEndpoints, \
-    WriteSavedEndpoints
-from musify.models.api.types import ApiURL, _ApiURLSchema
+from musify.models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
+    BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, HasLibraryEndpoints, CollectionReadEndpoints, \
+    BatchWriteEndpoints
+from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
@@ -19,49 +19,84 @@ class PlaylistEndpoints[UT: URI, RT: RemotePlaylist](Endpoints[UT, RT]):
     type: ClassVar[Type] = RemotePlaylist
 
 
-class PlaylistReadItemEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], ReadItemEndpoints[UT, RT]
-):
-    pass
-
-
-class PlaylistReadItemsEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], ReadItemsEndpoints[UT, RT]
-):
-    pass
-
-
-class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
-    PlaylistReadItemEndpoints[UT, RT], WriteCollectionEndpoints[UT, RT, IT], ReadCollectionEndpoints[UT, RT, IT],
+class PlaylistReadEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
+    PlaylistEndpoints[UT, RT],
+    ItemReadEndpoints[UT, RT],
+    CollectionReadEndpoints[UT, RT, IT],
 ):
     _extend_type: ClassVar[Type] = RemoteTrack
 
 
-class PlaylistReadSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
-    PlaylistEndpoints[UT, RT], ReadSavedEndpoints[UT, RT]
+class PlaylistWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
+    PlaylistEndpoints[UT, RT],
+    CollectionWriteEndpoints[UT, RT, IT],
+):
+    _extend_type: ClassVar[Type] = RemoteTrack
+
+
+class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
+    PlaylistReadEndpoints[UT, RT, IT],
+    PlaylistWriteEndpoints[UT, RT, IT],
+):
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    async def add_and_skip_duplicates(
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
+    ) -> int:
+        """Add items to the playlist and avoid adding any duplicates."""
+        collection = await self.get(url)
+        # noinspection PyArgumentList
+        items = await self.get_all(collection)
+
+        uris_unique = []
+        uris_current = {item.uri for item in items}
+        for uri in uris:
+            if uri not in uris_unique and uri not in uris_current:
+                uris_unique.append(uri)
+
+        return await self.add(url, uris_unique, limit=limit)
+
+
+class PlaylistBatchReadEndpoints[UT: URI, RT: RemotePlaylist](
+    PlaylistEndpoints[UT, RT], BatchReadEndpoints[UT, RT]
+):
+    pass
+
+
+class PlaylistBatchReadAllEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
+    PlaylistEndpoints[UT, RT], BatchReadAllEndpoints[UT, RT]
 ):
     @validate_call
     async def get_by_user(self, user: OT, limit: PositiveInt | None = None) -> list[RT]:
-        """Get the current user's saved playlists owned by the given user."""
+        """Get the current user's library playlists owned by the given user."""
         playlists = await self.get_all(limit=limit)
         return [playlist for playlist in playlists if playlist.owner == user]
 
     @validate_call
     async def get_by_name(self, name: str, limit: PositiveInt | None = None) -> RT | None:
-        """Get the user's saved playlist with the given name. Returns ``None`` if no such playlist exists."""
+        """Get the user's library playlist with the given name. Returns ``None`` if no such playlist exists."""
         playlists = await self.get_all(limit=limit)
         return next((playlist for playlist in playlists if playlist.name == name), None)
 
     @validate_call
     async def get_by_names(self, names: Sequence[str], limit: PositiveInt | None = None) -> list[RT]:
-        """Get the user's saved playlists with the given names."""
+        """Get the user's library playlists with the given names."""
         playlists = await self.get_all(limit=limit)
         playlists_mapped = {playlist.name: playlist for playlist in playlists}
         return [playlists_mapped[name] for name in names if name in playlists_mapped]
 
 
-class PlaylistWriteSavedEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], WriteSavedEndpoints[UT, RT]
+class PlaylistBatchWriteEndpoints[UT: URI, RT: RemotePlaylist](
+    PlaylistEndpoints[UT, RT], BatchWriteEndpoints[UT, RT]
+):
+    pass
+
+
+# noinspection PyAbstractClass
+class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT: RemoteUser](
+    PlaylistWriteEndpoints[UT, RT, IT],
+    PlaylistBatchReadAllEndpoints[UT, RT, OT],
+    PlaylistBatchWriteEndpoints[UT, RT],
 ):
     _create_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to create a playlist for the current user.",
@@ -107,11 +142,6 @@ class PlaylistWriteSavedEndpoints[UT: URI, RT: RemotePlaylist](
         """Format the playlist body for playlist endpoints."""
         return kwargs
 
-
-# noinspection PyAbstractClass
-class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
-    PlaylistReadSavedEndpoints[UT, RT, OT], PlaylistWriteSavedEndpoints[UT, RT]
-):
     @validate_call
     async def get_or_create(self, name: str, **kwargs) -> RT:
         """Get the playlist if it exists in the current user's library or create a new one."""
@@ -122,7 +152,7 @@ class PlaylistReadWriteSavedEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUse
         return playlist
 
 
-class HasPlaylistEndpoints[ET: PlaylistEndpoints | HasSavedEndpoints](HasEndpoints):
+class HasPlaylistEndpoints[ET: PlaylistEndpoints | HasLibraryEndpoints](HasEndpoints):
     playlists: ET = Field(
         description="Access playlist endpoints for the API."
     )

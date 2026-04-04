@@ -3,10 +3,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from musify.models.api import ReadSavedEndpoints
+from musify.models.api import BatchReadAllEndpoints
 
 
 @pytest.fixture
 def mock_get_all() -> Generator[Mock, None, None]:
-    with patch.object(ReadSavedEndpoints, "get_all") as mock_get_all:
+    with patch.object(BatchReadAllEndpoints, "get_all") as mock_get_all:
         yield mock_get_all

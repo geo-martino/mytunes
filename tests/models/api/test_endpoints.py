@@ -14,8 +14,8 @@ from pytest_mock import MockerFixture
 from yarl import URL
 
 from musify.models._context import RemoteModelContext
-from musify.models.api import Endpoints, ReadItemEndpoints, ReadItemsEndpoints, \
-    ReadSavedEndpoints, WriteCollectionEndpoints, WriteSavedEndpoints, ReadCollectionEndpoints
+from musify.models.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
+    BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
 from musify.models.exception import APIModelError
@@ -534,15 +534,15 @@ class TestEndpoints(EndpointsTester):
 
 class TestReadItemEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> ReadItemEndpoints:
-        return ReadItemEndpoints[SimpleURI, MockRemoteResource](
+    def model(self, handler: RequestHandler) -> ItemReadEndpoints:
+        return ItemReadEndpoints[SimpleURI, MockRemoteResource](
             handler=handler,
         )
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_get(
             self,
-            model: ReadItemEndpoints,
+            model: ItemReadEndpoints,
             uri: URI,
             mock_get: Mock,
             converter: Callable[[URI], Any],
@@ -551,19 +551,19 @@ class TestReadItemEndpoints(EndpointsTester):
 
 
 class TestReadItemsEndpoints(EndpointsTester):
-    class MockReadItemsEndpoints(ReadItemsEndpoints[SimpleURI, MockRemoteResource]):
-        _many_url = URL(f"https://api.example.com/{MockRemoteResource.type}s")
-        _many_path = "items"
-        _many_limit = 26
+    class MockReadItemsEndpoints(BatchReadEndpoints[SimpleURI, MockRemoteResource]):
+        _read_url = URL(f"https://api.example.com/{MockRemoteResource.type}s")
+        _read_path = "items"
+        _read_limit = 26
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> ReadItemsEndpoints:
+    def model(self, handler: RequestHandler) -> BatchReadEndpoints:
         return self.MockReadItemsEndpoints(handler=handler)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_get_many(
             self,
-            model: ReadItemsEndpoints,
+            model: BatchReadEndpoints,
             uris: list[URI],
             limit: int,
             items: list[dict[str, Any]],
@@ -582,26 +582,26 @@ class TestReadItemsEndpoints(EndpointsTester):
         assert [result.uri.id for result in results] == [uri.id for uri in uris]
 
     async def test_get_many_uses_default_limit(
-            self, model: ReadItemsEndpoints, uris: list[URI], mock_batch_values_empty: Mock,
+            self, model: BatchReadEndpoints, uris: list[URI], mock_batch_values_empty: Mock,
     ):
         await model.get_many(uris)
-        mock_batch_values_empty.assert_called_once_with(uris, model._many_limit)
+        mock_batch_values_empty.assert_called_once_with(uris, model._read_limit)
 
     def test_generate_batch_url(self, uris: list[URI]):
         url = URL("https://api.example.com/resources")
         uris = list(map(str, uris[:10]))
 
-        url = ReadItemsEndpoints._generate_batch_url(url, uris)
+        url = BatchReadEndpoints._generate_batch_url(url, uris)
         assert url.query["ids"] == ",".join(uris)
 
 
 class TestReadCollectionEndpoints(EndpointsTester):
-    class MockReadCollectionEndpoints(ReadCollectionEndpoints[SimpleURI, MockRemoteCollection, MockRemoteResource]):
+    class MockReadCollectionEndpoints(CollectionReadEndpoints[SimpleURI, MockRemoteCollection, MockRemoteResource]):
         _extend_path = "items"
         _extend_type = "type"
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> ReadCollectionEndpoints:
+    def model(self, handler: RequestHandler) -> CollectionReadEndpoints:
         return self.MockReadCollectionEndpoints(handler=handler)
 
     @pytest.fixture
@@ -617,7 +617,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
         return MockRemoteCollection(uri=uri, cursor=cursor, total=total)
 
     async def test_get_all_from_cursor(
-            self, model: ReadCollectionEndpoints, uri: URI, cursor: PageCursor, mock_get_all_items: Mock, faker: Faker
+            self, model: CollectionReadEndpoints, uri: URI, cursor: PageCursor, mock_get_all_items: Mock, faker: Faker
     ):
         expected_items, _ = mock_get_all_items.return_value
         show_bar = faker.boolean()
@@ -631,7 +631,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
 
     async def test_get_all_from_collection(
             self,
-            model: ReadCollectionEndpoints,
+            model: CollectionReadEndpoints,
             uri: URI,
             cursor: PageCursor,
             collection: RemoteCollection,
@@ -668,15 +668,13 @@ class TestReadCollectionEndpoints(EndpointsTester):
 
 
 class TestWriteCollectionEndpoints(EndpointsTester):
-    class MockWriteCollectionEndpoints(WriteCollectionEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
+    class MockCollectionWriteEndpoints(CollectionWriteEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
         _write_limit = 18
-        _extend_path = "items"
         _extend_type = "items"
-        _remove_path = "items"
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> WriteCollectionEndpoints:
-        return self.MockWriteCollectionEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> CollectionWriteEndpoints:
+        return self.MockCollectionWriteEndpoints(handler=handler)
 
     @pytest.fixture
     def collection(self, uri: URI, total: int, faker: Faker) -> RemoteCollection:
@@ -685,7 +683,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_add(
             self,
-            model: WriteCollectionEndpoints,
+            model: CollectionWriteEndpoints,
             uri: URI,
             uris: list[URI],
             limit: int,
@@ -703,47 +701,15 @@ class TestWriteCollectionEndpoints(EndpointsTester):
         mock_batch_values.assert_called_once_with(uris, limit)
 
     async def test_add_uses_default_limit(
-            self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
+            self, model: CollectionWriteEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.add(uri.api_url, uris)
         mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
-    async def test_add_and_skip_duplicates(
-            self,
-            model: WriteCollectionEndpoints,
-            uri: URI,
-            uris: list[URI],
-            collection: RemoteCollection,
-            mock_get: Mock,
-            faker: Faker,
-            converter: Callable[[URI], Any],
-    ):
-        uris_duplicated = uris + uris[:faker.random_int(1, len(uris))]
-        uris_collection = [
-            uris.pop(faker.random_int(0, len(uris) - 1)) for _ in range(faker.random_int(1, len(uris) - 10))
-        ]
-
-        assert sorted(uris_collection) != sorted(uris)
-        assert sorted(uris_duplicated) != sorted(uris)
-
-        url = converter(uri)
-        limit = faker.random_int(1)
-        uris_duplicated = list(map(self._convert_uri_to_random_input_type, uris_duplicated))
-        collection_items = [MockRemoteResource(uri=uri) for uri in uris_collection]
-
-        # we just want to test that duplicates are skipped when adding, so we mock all surrounding logic
-        with (
-            patch.object(ReadCollectionEndpoints, "get_all", return_value=collection_items, new_callable=AsyncMock),
-            patch.object(WriteCollectionEndpoints, "add", new_callable=AsyncMock) as mock_add
-        ):
-            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
-            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit)
-
-    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_remove(
             self,
-            model: WriteCollectionEndpoints,
+            model: CollectionWriteEndpoints,
             uri: URI,
             uris: list[URI],
             limit: int,
@@ -759,27 +725,27 @@ class TestWriteCollectionEndpoints(EndpointsTester):
         assert result == len(uris)
 
     async def test_remove_uses_default_limit(
-            self, model: WriteCollectionEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
+            self, model: CollectionWriteEndpoints, uri: URI, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.remove(uri.api_url, uris)
         mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)
 
 
 class TestReadSavedEndpoints(EndpointsTester):
-    class MockReadSavedEndpoints(ReadSavedEndpoints[SimpleURI, MockRemoteResource]):
-        _read_url = URL("https://api.example.com/me")
-        _read_path = "items"
-        _read_limit = 15
+    class MockReadSavedEndpoints(BatchReadAllEndpoints[SimpleURI, MockRemoteResource]):
+        _read_all_url = URL("https://api.example.com/me")
+        _read_all_path = "items"
+        _read_all_limit = 15
 
         source = MockRemoteResource.source
         type = MockRemoteResource.type
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> ReadSavedEndpoints:
+    def model(self, handler: RequestHandler) -> BatchReadAllEndpoints:
         return self.MockReadSavedEndpoints(handler=handler)
 
     @pytest.fixture
-    def mock_validate_cursor(self, model: ReadSavedEndpoints, uri: URI, faker: faker) -> Generator[Mock, None, None]:
+    def mock_validate_cursor(self, model: BatchReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock, None, None]:
         cursor = MockInitialCursor(url=uri.api_url)
 
         with patch.object(TypeAdapter, "validate_python", return_value=cursor) as mock_validate:
@@ -795,37 +761,37 @@ class TestReadSavedEndpoints(EndpointsTester):
         await model.get_all(limit=limit, show_bar=show_bar)
 
         mock_validate_cursor.assert_called_once_with(dict(
-            url=self.MockReadSavedEndpoints._read_url, limit=limit
+            url=self.MockReadSavedEndpoints._read_all_url, limit=limit
         ))
         mock_get_all_items.assert_called_once_with(
             mock_validate_cursor.return_value,
-            path=self.MockReadSavedEndpoints._read_path,
+            path=self.MockReadSavedEndpoints._read_all_path,
             kind=self.MockReadSavedEndpoints.type,
             show_bar=show_bar,
         )
 
-    async def test_get_all_uses_default_limit(self, model: ReadSavedEndpoints, mock_validate_cursor: Mock):
+    async def test_get_all_uses_default_limit(self, model: BatchReadAllEndpoints, mock_validate_cursor: Mock):
         await model.get_all()
         mock_validate_cursor.assert_called_once_with(dict(
-            url=self.MockReadSavedEndpoints._read_url, limit=model._read_limit
+            url=self.MockReadSavedEndpoints._read_all_url, limit=model._read_all_limit
         ))
 
 
 class TestWriteSavedEndpoints(EndpointsTester):
-    class MockWriteSavedEndpoints(WriteSavedEndpoints[SimpleURI, MockRemoteResource]):
+    class MockWriteSavedEndpoints(BatchWriteEndpoints[SimpleURI, MockRemoteResource]):
         _write_url = URL("https://api.example.com/me")
-        _read_path = "items"
-        _saved_limit = 12
+        _read_all_path = "items"
+        _read_all_limit = 12
 
         _write_limit = 72
 
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> WriteSavedEndpoints:
+    def model(self, handler: RequestHandler) -> BatchWriteEndpoints:
         return self.MockWriteSavedEndpoints(handler=handler)
 
     async def test_add_many(
             self,
-            model: WriteSavedEndpoints,
+            model: BatchWriteEndpoints,
             uris: list[URI],
             limit: int,
             mock_batch_values: Mock,
@@ -838,14 +804,14 @@ class TestWriteSavedEndpoints(EndpointsTester):
         assert result == len(uris)
 
     async def test_add_many_uses_default_limit(
-            self, model: WriteSavedEndpoints, uris: list[URI], mock_batch_values_empty: Mock
+            self, model: BatchWriteEndpoints, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.add_many(uris)
         mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)
 
     async def test_remove_many(
             self,
-            model: WriteSavedEndpoints,
+            model: BatchWriteEndpoints,
             uris: list[URI],
             limit: int,
             mock_batch_values: Mock,
@@ -858,7 +824,7 @@ class TestWriteSavedEndpoints(EndpointsTester):
         assert result == len(uris)
 
     async def test_remove_many_uses_default_limit(
-            self, model: WriteSavedEndpoints, uris: list[URI], mock_batch_values_empty: Mock
+            self, model: BatchWriteEndpoints, uris: list[URI], mock_batch_values_empty: Mock
     ):
         await model.remove_many(uris)
         mock_batch_values_empty.assert_called_once_with(uris, model._write_limit)

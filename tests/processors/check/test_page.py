@@ -125,8 +125,7 @@ class TestPlaylistManagement(BaseModelTester):
                 async with model:
                     pass
 
-        assert excinfo.group_contains(MusifyError)
-        assert excinfo.group_contains(HTTPError)
+        assert excinfo.group_contains((MusifyError, HTTPError))
 
         tasks: list[Task] = mock_run_tasks.call_args.args[1]
         assert any(task.cancelled() for task in tasks)

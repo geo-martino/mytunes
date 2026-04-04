@@ -8,14 +8,15 @@ from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from musify.local.item.track import LocalTrack
-from musify.models.api import HasSavedEndpoints
-from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api import HasLibraryEndpoints
+from musify.models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadEndpoints, PlaylistWriteEndpoints, \
+    PlaylistReadWriteEndpoints
 from musify.models.api.types import _ApiURISchema, _ApiURLSchema
 from musify.models.cursors import PageCursor, HasPageCursor
 from musify.models.exception import RequestError
 from musify.models.properties.image import ImageSource, PILImageFileT
 from musify.spotify import API_URL
-from musify.spotify.api._base import SpotifyEndpoints
+from musify.spotify.api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify.api._types import SpotifyApiURL, SpotifyApiURISequence, SpotifyApiURI
 from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist, SpotifyPlaylistTrack
 from musify.spotify.item.track import SpotifyTrack
@@ -24,17 +25,22 @@ from musify.spotify.user import SpotifyUser
 
 
 @final
-class _SpotifySavedPlaylistEndpoints(
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyPlaylist],
-    PlaylistReadWriteSavedEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyUser],
+class _SpotifyPlaylistLibraryEndpoints(
+    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist],
+    PlaylistLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyPlaylistTrack, SpotifyUser],
 ):
     __final__ = True
 
     _create_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
 
-    _read_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
-    _read_limit: ClassVar[int] = 50
-    _read_path: ClassVar[str] = "items"
+    _extend_path: ClassVar[AliasChoices] = AliasChoices(
+        "items",
+        AliasPath("items", "items")
+    )
+
+    _read_all_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
+    _read_all_limit: ClassVar[int] = 50
+    _read_all_path: ClassVar[str] = "items"
 
     _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
     _write_limit: ClassVar[int] = 40
@@ -44,10 +50,18 @@ class _SpotifySavedPlaylistEndpoints(
         url = self._write_url.with_query(dict(uris=uri))
         return await super().add(url)
 
+    @staticmethod
+    def _generate_add_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
+        return {"json": {"uris": list(map(str, values))}}
+
     @_ApiURISchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def remove(self, uri: SpotifyApiURI[SpotifyPlaylist], **kwargs) -> None:
         url = self._write_url.with_query(dict(uris=uri))
         return await super().remove(url)
+
+    @staticmethod
+    def _generate_remove_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
+        return {"json": {"items": [{"uri": str(uri)} for uri in values]}}
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(
@@ -97,7 +111,7 @@ class _SpotifySavedPlaylistEndpoints(
 @final
 class SpotifyPlaylistEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyPlaylist],
-    HasSavedEndpoints[_SpotifySavedPlaylistEndpoints],
+    HasLibraryEndpoints[_SpotifyPlaylistLibraryEndpoints],
     PlaylistReadWriteEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyPlaylistTrack],
 ):
     __final__ = True
@@ -107,6 +121,8 @@ class SpotifyPlaylistEndpoints(
         "items",
         AliasPath("items", "items")
     )
+
+    _create_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
 
     # @validate_call  # not currently working with generics
     async def get_all(
@@ -149,5 +165,5 @@ class SpotifyPlaylistEndpoints(
         return await super().remove(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
 
     @staticmethod
-    def _generate_remove_batch_body(values: Iterable[str]) -> JsonSchemaValue:
+    def _generate_remove_batch_kwargs(values: Iterable[str]) -> JsonSchemaValue:
         return {"items": [{"uri": str(uri)} for uri in values]}

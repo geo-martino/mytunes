@@ -3,11 +3,11 @@ from typing import Annotated, Self, Any
 import tabulate
 
 from musify.logger import STAT
-from musify.models.api import RemoteAPI, IsRemoteService, HasSavedEndpoints, ReadSavedEndpoints
-from musify.models.api.album import AlbumReadSavedEndpoints, HasAlbumEndpoints, AlbumReadCollectionEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadSavedEndpoints, PlaylistReadWriteEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackReadSavedEndpoints
+from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints
+from musify.models.api.album import AlbumBatchReadAllEndpoints, HasAlbumEndpoints, AlbumCollectionReadEndpoints
+from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, ArtistCollectionReadEndpoints
+from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAllEndpoints, PlaylistReadWriteEndpoints
+from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoints
 from musify.models.api.user import HasUserEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.collection.album import RemoteAlbumCollection
@@ -66,11 +66,11 @@ class RemoteLibrary[
 
             await self.load_tracks()
 
-            await self.load_saved_albums()
-            await self.load_saved_album_tracks()
+            await self.load_library_albums()
+            await self.load_library_album_tracks()
 
-            # await self.load_saved_artists()  # TODO: ADD ME BACK
-            # await self.load_saved_artist_albums()  # TODO: ADD ME BACK
+            # await self.load_library_artists()  # TODO: ADD ME BACK
+            # await self.load_library_artist_albums()  # TODO: ADD ME BACK
 
         self.logger.print_line(STAT)
 
@@ -115,15 +115,15 @@ class RemoteLibrary[
         "playlist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("playlists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("playlists.saved", PlaylistReadSavedEndpoints, "reading data for saved {type}s"),
+        ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("playlists.library", PlaylistBatchReadAllEndpoints, "reading data for library {type}s"),
     )
     async def load_playlists(self) -> bool:
-        api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadSavedEndpoints]] = self.api
+        api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistBatchReadAllEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} playlists", header=2)
 
-        playlists = await api.playlists.saved.get_all()
+        playlists = await api.playlists.library.get_all()
         if self.playlist_filter is not None:
             playlists: list[PT] = self.playlist_filter.apply(playlists)
 
@@ -178,15 +178,15 @@ class RemoteLibrary[
         "track",
         False,
         (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("tracks.saved", TrackReadSavedEndpoints, "reading data for saved {type}s"),
+        ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("tracks.library", TrackBatchReadAllEndpoints, "reading data for library {type}s"),
     )
     async def load_tracks(self) -> bool:
-        api: HasTrackEndpoints[HasSavedEndpoints[TrackReadSavedEndpoints]] = self.api
+        api: HasTrackEndpoints[HasLibraryEndpoints[TrackBatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} saved tracks", header=2)
+        self.logger.info(f"Loading {self._log_name} library tracks", header=2)
 
-        tracks = await api.tracks.saved.get_all()
+        tracks = await api.tracks.library.get_all()
         # noinspection PyProtectedMember
         self.tracks._replace(tracks)
 
@@ -209,16 +209,16 @@ class RemoteLibrary[
         "artist",
         False,
         (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("artists.saved", ArtistReadSavedEndpoints, "reading data for saved {type}s"),
+        ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("artists.library", ArtistBatchReadAllEndpoints, "reading data for library {type}s"),
     )
-    async def load_saved_artists(self) -> bool:
+    async def load_library_artists(self) -> bool:
         """Load all artists available for this library. Replaces all currently loaded artists."""
-        api: HasArtistEndpoints[HasSavedEndpoints[AlbumReadSavedEndpoints]] = self.api
+        api: HasArtistEndpoints[HasLibraryEndpoints[AlbumBatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} saved artists", header=2)
+        self.logger.info(f"Loading {self._log_name} library artists", header=2)
 
-        artists = await api.artists.saved.get_all()
+        artists = await api.artists.library.get_all()
         self.artists.clear()
         self.artists.extend(artists)
 
@@ -228,17 +228,17 @@ class RemoteLibrary[
         "artist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("artists", ArtistReadCollectionEndpoints, "reading data for saved {type}'s albums"),
+        ("artists", ArtistCollectionReadEndpoints, "reading data for library {type}'s albums"),
     )
-    async def load_saved_artist_albums(self) -> bool:
+    async def load_library_artist_albums(self) -> bool:
         """Load all artists albums for all currently loaded albums."""
-        api: HasArtistEndpoints[ArtistReadCollectionEndpoints] = self.api
+        api: HasArtistEndpoints[ArtistCollectionReadEndpoints] = self.api
 
         artists = list(filter(self._should_extend, self.artists))
         if not artists:
             return False
 
-        self.logger.info(f"Loading albums for {len(artists)} saved artists in {self._log_name} library", header=2)
+        self.logger.info(f"Loading albums for {len(artists)} library artists in {self._log_name} library", header=2)
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
             async with self.concurrency:
@@ -272,16 +272,16 @@ class RemoteLibrary[
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", HasSavedEndpoints, "saved {type}s endpoints"),
-        ("albums.saved", AlbumReadSavedEndpoints, "reading data for saved {type}s"),
+        ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
+        ("albums.library", AlbumBatchReadAllEndpoints, "reading data for library {type}s"),
     )
-    async def load_saved_albums(self) -> bool:
+    async def load_library_albums(self) -> bool:
         """Load all albums available for this library. Replaces all currently loaded albums."""
-        api: HasAlbumEndpoints[HasSavedEndpoints[ReadSavedEndpoints]] = self.api
+        api: HasAlbumEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} saved albums", header=2)
+        self.logger.info(f"Loading {self._log_name} library albums", header=2)
 
-        albums = await api.albums.saved.get_all()
+        albums = await api.albums.library.get_all()
         self.albums.clear()
         self.albums.extend(albums)
 
@@ -291,17 +291,17 @@ class RemoteLibrary[
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", AlbumReadCollectionEndpoints, "reading data for saved {type}'s tracks"),
+        ("albums", AlbumCollectionReadEndpoints, "reading data for library {type}'s tracks"),
     )
-    async def load_saved_album_tracks(self) -> bool:
+    async def load_library_album_tracks(self) -> bool:
         """Load all album tracks for all currently loaded albums."""
-        api: HasAlbumEndpoints[AlbumReadCollectionEndpoints] = self.api
+        api: HasAlbumEndpoints[AlbumCollectionReadEndpoints] = self.api
 
         albums = list(filter(self._should_extend, self.albums))
         if not albums:
             return True
 
-        self.logger.info(f"Loading tracks for {len(albums)} saved albums in {self._log_name} library", header=2)
+        self.logger.info(f"Loading tracks for {len(albums)} library albums in {self._log_name} library", header=2)
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
             async with self.concurrency:

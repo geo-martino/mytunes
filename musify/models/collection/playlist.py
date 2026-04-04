@@ -12,7 +12,7 @@ from musify._types import StrippedString
 from musify.models import ResourceModel, AttributeModel
 from musify.models._context import RemoteModelContext
 from musify.models._metaclass import makecls
-from musify.models.api import HasSavedEndpoints
+from musify.models.api import HasLibraryEndpoints
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._base import CollectionModel, RemoteCollection
 from musify.models.collection._sync import SYNC_TYPE, get_sync_items
@@ -30,8 +30,8 @@ from musify.models.user import RemoteUser
 from musify.processors.filters.compare import ComparerFilter
 
 if TYPE_CHECKING:
-    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadItemEndpoints, \
-        PlaylistReadWriteEndpoints, PlaylistReadWriteSavedEndpoints
+    from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadEndpoints, \
+        PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 
 
 class Playlist[TK, TV: Track](
@@ -173,7 +173,7 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
         return self
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadItemEndpoints]) -> Self:
+    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadEndpoints]) -> Self:
         return await api.playlists.get(self.uri)
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
@@ -202,7 +202,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def sync_properties(
             self,
-            api: HasPlaylistEndpoints[HasSavedEndpoints[PlaylistReadWriteSavedEndpoints]],
+            api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistLibraryEndpoints]],
             dry_run: bool = False,
     ) -> JsonSchemaValue:
         """
@@ -215,7 +215,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
         """
         body = self._get_properties_body()
         if not dry_run:
-            await api.playlists.saved.modify(self.uri.api_url, **body)
+            await api.playlists.library.modify(self.uri.api_url, **body)
 
         return body
 

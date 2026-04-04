@@ -1,15 +1,20 @@
-from collections.abc import Generator
-from unittest.mock import patch, Mock
+from collections.abc import Generator, Callable
+from typing import Any
+from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
-from musify.models.api.playlist import PlaylistReadSavedEndpoints, PlaylistReadWriteSavedEndpoints
+from musify.models.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
+    PlaylistReadWriteEndpoints
+from musify.models.collection import RemoteCollection
 from musify.models.collection.playlist import RemotePlaylist, Playlist
+from musify.models.properties.uri import URI
 from musify.models.user import RemoteUser
-from tests.models.api.testers import EndpointsTester
+from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockUrlCursor
+from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
 
@@ -25,20 +30,61 @@ def playlists(playlists: list[Playlist], faker: Faker) -> list[RemotePlaylist]:
     ]
 
 
+class TestPlaylistReadWriteEndpoints(EndpointsTester):
+    class MockPlaylistReadWriteEndpoints(PlaylistReadWriteEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
+        _write_limit = 18
+        _extend_type = "items"
+
+    @pytest.fixture
+    def model(self, handler: RequestHandler) -> MockPlaylistReadWriteEndpoints:
+        return self.MockPlaylistReadWriteEndpoints(handler=handler)
+
+    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
+    async def test_add_and_skip_duplicates(
+            self,
+            model: PlaylistReadWriteEndpoints,
+            uri: URI,
+            uris: list[URI],
+            mock_get: Mock,
+            faker: Faker,
+            converter: Callable[[URI], Any],
+    ):
+        uris_duplicated = uris + uris[:faker.random_int(1, len(uris))]
+        uris_collection = [
+            uris.pop(faker.random_int(0, len(uris) - 1)) for _ in range(faker.random_int(1, len(uris) - 10))
+        ]
+
+        assert sorted(uris_collection) != sorted(uris)
+        assert sorted(uris_duplicated) != sorted(uris)
+
+        url = converter(uri)
+        limit = faker.random_int(1)
+        uris_duplicated = list(map(self._convert_uri_to_random_input_type, uris_duplicated))
+        collection_items = [MockRemoteResource(uri=uri) for uri in uris_collection]
+
+        # we just want to test that duplicates are skipped when adding, so we mock all surrounding logic
+        with (
+            patch.object(PlaylistReadWriteEndpoints, "get_all", return_value=collection_items, new_callable=AsyncMock),
+            patch.object(PlaylistReadWriteEndpoints, "add", new_callable=AsyncMock) as mock_add
+        ):
+            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
+            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit)
+
+
 @pytest.fixture
 def mock_get_all(playlists: list[RemotePlaylist], faker: Faker) -> Generator[Mock, None, None]:
-    with patch.object(PlaylistReadSavedEndpoints, "get_all", return_value=playlists) as mock_get_all:
+    with patch.object(PlaylistBatchReadAllEndpoints, "get_all", return_value=playlists) as mock_get_all:
         yield mock_get_all
 
 
-class TestPlaylistReadSavedEndpoints(EndpointsTester):
+class TestPlaylistBatchReadAllEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> PlaylistReadSavedEndpoints:
-        return PlaylistReadSavedEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> PlaylistBatchReadAllEndpoints:
+        return PlaylistBatchReadAllEndpoints(handler=handler)
 
     async def test_get_by_user(
             self,
-            model: PlaylistReadSavedEndpoints,
+            model: PlaylistBatchReadAllEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -52,7 +98,7 @@ class TestPlaylistReadSavedEndpoints(EndpointsTester):
 
     async def test_get_by_name(
             self,
-            model: PlaylistReadSavedEndpoints,
+            model: PlaylistBatchReadAllEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -62,7 +108,7 @@ class TestPlaylistReadSavedEndpoints(EndpointsTester):
 
     async def test_get_by_names(
             self,
-            model: PlaylistReadSavedEndpoints,
+            model: PlaylistBatchReadAllEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -71,19 +117,19 @@ class TestPlaylistReadSavedEndpoints(EndpointsTester):
         assert await model.get_by_names(names=[pl.name for pl in expected]) == expected
 
 
-class TestPlaylistWriteSavedEndpoints(EndpointsTester):
+class TestPlaylistLibraryEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> PlaylistReadWriteSavedEndpoints:
-        return PlaylistReadWriteSavedEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> PlaylistLibraryEndpoints:
+        return PlaylistLibraryEndpoints(handler=handler)
 
     @pytest.fixture
     def mock_create(self) -> Generator[Mock, None, None]:
-        with patch.object(PlaylistReadWriteSavedEndpoints, "create") as mock_create:
+        with patch.object(PlaylistLibraryEndpoints, "create") as mock_create:
             yield mock_create
 
     async def test_get_or_create_gets_existing(
             self,
-            model: PlaylistReadWriteSavedEndpoints,
+            model: PlaylistLibraryEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             mock_create: Mock,
@@ -98,7 +144,7 @@ class TestPlaylistWriteSavedEndpoints(EndpointsTester):
 
     async def test_get_or_create_creates_new(
             self,
-            model: PlaylistReadWriteSavedEndpoints,
+            model: PlaylistLibraryEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             mock_create: Mock,

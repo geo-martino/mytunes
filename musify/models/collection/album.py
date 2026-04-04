@@ -14,7 +14,7 @@ from musify.models.properties.uri import URI
 from musify.models.sequence import UniqueSequence
 
 if TYPE_CHECKING:
-    from musify.models.api.album import HasAlbumEndpoints, AlbumReadCollectionEndpoints
+    from musify.models.api.album import HasAlbumEndpoints, AlbumCollectionReadEndpoints
 
 
 class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](CollectionModel[TV], HasTracks[TK, TV], Album[RT, GT]):
@@ -87,6 +87,6 @@ class RemoteAlbumCollection[UT: URI, TT: RemoteTrack, RT: RemoteArtist, GT: Remo
         self.tracks._replace(())
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def extend(self, api: HasAlbumEndpoints[AlbumReadCollectionEndpoints]) -> None:
+    async def extend(self, api: HasAlbumEndpoints[AlbumCollectionReadEndpoints]) -> None:
         # noinspection PyProtectedMember
         self.tracks._replace(await api.albums.get_all(self))

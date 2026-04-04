@@ -4,13 +4,13 @@ from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
-from musify.models.api import HasSavedEndpoints
-from musify.models.api.artist import ArtistReadItemEndpoints, ArtistReadItemsEndpoints, \
-    ArtistReadSavedEndpoints, ArtistReadCollectionEndpoints, ArtistWriteSavedEndpoints, ArtistEndpoints
+from musify.models.api import HasLibraryEndpoints
+from musify.models.api.artist import ArtistReadEndpoints, ArtistBatchReadEndpoints, \
+    ArtistBatchReadAllEndpoints, ArtistCollectionReadEndpoints, ArtistBatchWriteEndpoints, ArtistEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.cursors import PageCursor
 from musify.spotify import API_URL
-from musify.spotify.api._base import SpotifyEndpoints
+from musify.spotify.api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify.collection.artist import SpotifyArtistCollection
 from musify.spotify.cursors import SpotifyInitialCursor
 from musify.spotify.item.album import SpotifyAlbum
@@ -39,16 +39,17 @@ class _SpotifyArtistEndpoints(
 
 
 @final
-class _SpotifySavedArtistEndpoints(
+class _SpotifyArtistLibraryEndpoints(
     _SpotifyArtistEndpoints,
-    ArtistReadSavedEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistWriteSavedEndpoints[SpotifyResourceURI, SpotifyArtist],
+    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistBatchReadAllEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistBatchWriteEndpoints[SpotifyResourceURI, SpotifyArtist],
 ):
     __final__ = True
 
-    _read_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
-    _read_limit: ClassVar[int] = 50
-    _read_path: ClassVar[AliasPath] = AliasPath("artists", "items")
+    _read_all_url: ClassVar[URL] = API_URL.joinpath("me/following").with_query(type="artist")
+    _read_all_limit: ClassVar[int] = 50
+    _read_all_path: ClassVar[AliasPath] = AliasPath("artists", "items")
 
     _write_url: ClassVar[URL] = API_URL.joinpath("me/library")
     _write_limit: ClassVar[int] = 40
@@ -57,16 +58,16 @@ class _SpotifySavedArtistEndpoints(
 @final
 class SpotifyArtistEndpoints(
     _SpotifyArtistEndpoints,
-    HasSavedEndpoints[_SpotifySavedArtistEndpoints],
-    ArtistReadItemEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistReadItemsEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistReadCollectionEndpoints[SpotifyResourceURI, SpotifyArtistCollection, SpotifyAlbum],
+    HasLibraryEndpoints[_SpotifyArtistLibraryEndpoints],
+    ArtistReadEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistBatchReadEndpoints[SpotifyResourceURI, SpotifyArtist],
+    ArtistCollectionReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection, SpotifyAlbum],
 ):
     __final__ = True
 
-    _many_url: ClassVar[URL] = API_URL.joinpath("artists")
-    _many_limit: ClassVar[int] = 50
-    _many_path: ClassVar[str] = "artists"
+    _read_url: ClassVar[URL] = API_URL.joinpath("artists")
+    _read_limit: ClassVar[int] = 50
+    _read_path: ClassVar[str] = "artists"
 
     _extend_path: ClassVar[str] = "items"
 

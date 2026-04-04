@@ -177,7 +177,7 @@ class M3U(LocalPlaylist[PathFilter]):
                 paths = self.path_mapper.unmap_many(self.tracks, check_existence=False)
                 file.writelines(path.strip() + '\n' for path in paths)
 
-            self._original = self.tracks.copy()  # update original tracks to newly saved tracks
+            self._original = self.tracks.copy()  # update original tracks to newly library tracks
 
         final_paths = list(map(Path, self.path_mapper.unmap_many(self.tracks, check_existence=False)))
         return SyncM3UResult.from_paths(start_paths, final_paths)

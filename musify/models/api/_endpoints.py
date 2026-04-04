@@ -511,7 +511,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         return data, mime
 
 
-class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+class ItemReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get(self, url: ApiURL[UT, RT]) -> RT:
         """
@@ -527,80 +527,7 @@ class ReadItemEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return self.__class__.create_model(response, context=self._model_context)
 
 
-class ReadItemsEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _many_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to get multiple resources of this type in one call.",
-    )
-    _many_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request.",
-    )
-    _many_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
-        # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
-    )
-
-    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
-    async def get_many(
-            self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
-    ) -> list[RT]:
-        """
-        Get multiple resources from the API using the given URIs.
-
-        The URIs must relate to the resource type handled by this API model, and can be one of the following:
-            * URLs (as strings or URL objects) pointing to the resource's API
-            * URIs (as strings or URI objects)
-            * Resource objects with a URI property for the resources
-            * IDs (as strings) for the resources
-
-        :param uris: A list of URIs. See above for accepted formats.
-        :param limit: The number of URIs to send in each request to the API.
-        :param show_bar: Show progress bar for each batch of URIs.
-        """
-        item_type = self._get_type_value(self.type)
-
-        if not uris:
-            self._handler.log("SKIP", self._many_url, message=f"No {item_type}s given to add")
-            return []
-
-        if limit is None:
-            limit = self._many_limit
-
-        # TODO: drop this on aiorequestful v2
-        cache_responses = await self._get_responses_from_cache(self._many_url, uris)
-        cache_items = [
-            self.__class__.create_model(response, context=self._model_context)
-            for response in cache_responses.values() if response is not None
-        ]
-        uncached_uris = [uri for uri, response in cache_responses.items() if response is None]
-
-        async def _get_items(batch: Collection) -> Iterator[RT]:
-            url = self._generate_batch_url(self._many_url, batch)
-            message = f"Getting {len(batch):>6} {item_type}s"
-            response = await self._handler.get(url, log_message=message)
-
-            response_items = self._get_items_from_response(response=response, path=self._many_path)
-            return (self.__class__.create_model(it, context=self._model_context) for it in response_items)
-
-        batches = list(self._batch_values(uncached_uris, limit))
-        task_id = self.logger.progress.add_task(
-            description=f"Getting {item_type}s",
-            total=len(batches),
-            visible=show_bar or len(batches) >= self._bar_threshold
-        )
-        responses = await self.logger.run_tasks_async(map(_get_items, batches), task_id=task_id)
-
-        # TODO: amend this on aiorequestful v2
-        items = cache_items + [item for batch in responses for item in batch]
-        items.sort(key=lambda it: uris.index(it.uri.id))
-
-        return items
-
-    @classmethod
-    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
-        """Generate a URL for the API endpoint for batched requests."""
-        return base_url.update_query(ids=",".join(map(str, values)))
-
-
-class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource](Endpoints[UT, RT]):
+class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource](Endpoints[UT, RT]):
     _extend_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
@@ -635,9 +562,7 @@ class ReadCollectionEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
         return list(items)
 
 
-class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
-    ReadItemEndpoints[UT, RT], ReadCollectionEndpoints[UT, RT, IT],
-):
+class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoints[UT, RT]):
     _write_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request for writing items.",
     )
@@ -650,7 +575,7 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
     async def add(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
     ) -> int:
-        """Add items to the current user's saved items for this endpoint resource type."""
+        """Add items to the current user's library items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
         item_type = self._get_type_value(self._extend_type)
 
@@ -662,9 +587,9 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             limit = self._write_limit
 
         async def _post_items(batch: Collection) -> None:
-            body = self._generate_append_batch_body(batch)
             message = f"Adding {len(batch):>6} {item_type}s to {collection_type}"
-            await self._handler.post(url, json=body, log_message=message)
+            kwargs = self._generate_add_collection_kwargs(batch)
+            await self._handler.post(url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
         task_id = self.logger.progress.add_task(
@@ -678,34 +603,16 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         return len(uris)
 
     @staticmethod
-    def _generate_append_batch_body(values: Iterable[str]) -> JsonSchemaValue:
-        """Generate a request body for the API endpoint for append batched requests."""
-        return {"uris": list(map(str, values))}
-
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
-    async def add_and_skip_duplicates(
-            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
-    ) -> int:
-        """Add items to the playlist and avoid adding any duplicates."""
-        collection = await self.get(url)
-        # noinspection PyArgumentList
-        items = await self.get_all(collection)
-
-        uris_unique = []
-        uris_current = {item.uri for item in items}
-        for uri in uris:
-            if uri not in uris_unique and uri not in uris_current:
-                uris_unique.append(uri)
-
-        return await self.add(url, uris_unique, limit=limit)
+    def _generate_add_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
+        """Generate request kwargs for the API endpoint for append batched requests."""
+        return {"json": {"ids": list(map(str, values))}}
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None, show_bar: bool = True
     ) -> int:
-        """Remove items from the current user's saved items for this endpoint resource type."""
+        """Remove items from the current user's library items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
         item_type = self._get_type_value(self._extend_type)
 
@@ -717,9 +624,9 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
             limit = self._write_limit
 
         async def _delete_items(batch: Collection) -> None:
-            body = self._generate_remove_batch_body(batch)
             message = f"Removing {len(batch):>6} {item_type}s from {collection_type}"
-            await self._handler.delete(url, json=body, log_message=message)
+            kwargs = self._generate_remove_collection_kwargs(batch)
+            await self._handler.delete(url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
         task_id = self.logger.progress.add_task(
@@ -733,50 +640,123 @@ class WriteCollectionEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](
         return len(uris)
 
     @staticmethod
-    def _generate_remove_batch_body(values: Iterable[str]) -> JsonSchemaValue:
+    def _generate_remove_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
         """Generate a request body for the API endpoint for remove batched requests."""
-        return {"uris": list(map(str, values))}
+        return {"json": {"ids": list(map(str, values))}}
+
+
+class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+    _read_url: ClassVar[URL] = PrivateAttr(
+        # description="The API endpoint to get multiple resources of this type in one call.",
+    )
+    _read_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request.",
+    )
+    _read_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
+        # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
+    )
+
+    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
+    async def get_many(
+            self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True
+    ) -> list[RT]:
+        """
+        Get multiple resources from the API using the given URIs.
+
+        The URIs must relate to the resource type handled by this API model, and can be one of the following:
+            * URLs (as strings or URL objects) pointing to the resource's API
+            * URIs (as strings or URI objects)
+            * Resource objects with a URI property for the resources
+            * IDs (as strings) for the resources
+
+        :param uris: A list of URIs. See above for accepted formats.
+        :param limit: The number of URIs to send in each request to the API.
+        :param show_bar: Show progress bar for each batch of URIs.
+        """
+        item_type = self._get_type_value(self.type)
+
+        if not uris:
+            self._handler.log("SKIP", self._read_url, message=f"No {item_type}s given to add")
+            return []
+
+        if limit is None:
+            limit = self._read_limit
+
+        # TODO: drop this on aiorequestful v2
+        cache_responses = await self._get_responses_from_cache(self._read_url, uris)
+        cache_items = [
+            self.__class__.create_model(response, context=self._model_context)
+            for response in cache_responses.values() if response is not None
+        ]
+        uncached_uris = [uri for uri, response in cache_responses.items() if response is None]
+
+        async def _get_items(batch: Collection) -> Iterator[RT]:
+            url = self._generate_batch_url(self._read_url, batch)
+            message = f"Getting {len(batch):>6} {item_type}s"
+            response = await self._handler.get(url, log_message=message)
+
+            response_items = self._get_items_from_response(response=response, path=self._read_path)
+            return (self.__class__.create_model(it, context=self._model_context) for it in response_items)
+
+        batches = list(self._batch_values(uncached_uris, limit))
+        task_id = self.logger.progress.add_task(
+            description=f"Getting {item_type}s",
+            total=len(batches),
+            visible=show_bar or len(batches) >= self._bar_threshold
+        )
+        responses = await self.logger.run_tasks_async(map(_get_items, batches), task_id=task_id)
+
+        # TODO: amend this on aiorequestful v2
+        items = cache_items + [item for batch in responses for item in batch]
+        items.sort(key=lambda it: uris.index(it.uri.id))
+
+        return items
+
+    @classmethod
+    def _generate_batch_url(cls, base_url: URL, values: Iterable) -> URL:
+        """Generate a URL for the API endpoint for batched requests."""
+        return base_url.update_query(ids=",".join(map(str, values)))
 
 
 _INITIAL_CURSOR_ADAPTER = TypeAdapter[InitialCursor](InitialCursor.annotation)
 
 
-class ReadSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _read_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to get the current user's saved items.",
+class BatchReadAllEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+    _read_all_url: ClassVar[URL] = PrivateAttr(
+        # description="The API endpoint to get the current user's library items.",
     )
-    _read_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request for reading saved items.",
+    _read_all_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request for reading library items.",
     )
-    _read_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
-        # description="The path to the list of saved items in the API response. Use '*' for wildcard matching.",
+    _read_all_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
+        # description="The path to the list of library items in the API response. Use '*' for wildcard matching.",
     )
 
     @validate_call
     async def get_all(self, limit: PositiveInt | None = None, show_bar: bool = True) -> list[RT]:
-        """Get the current user's saved items for this endpoint resource type."""
+        """Get the current user's library items for this endpoint resource type."""
         if limit is None:
-            limit = self._read_limit
+            limit = self._read_all_limit
 
-        # we don't know what type of pagination will be used for saved items
+        # we don't know what type of pagination will be used for library items
         # just get a cursor which returns a url to begin pagination and figure it out later
-        cursor = _INITIAL_CURSOR_ADAPTER.validate_python(dict(url=self._read_url, limit=limit))
+        cursor = _INITIAL_CURSOR_ADAPTER.validate_python(dict(url=self._read_all_url, limit=limit))
 
-        items, *_ = await self._get_all_items(cursor, path=self._read_path, kind=self.type, show_bar=show_bar)
+        items, *_ = await self._get_all_items(cursor, path=self._read_all_path, kind=self.type, show_bar=show_bar)
         return list(items)
 
 
-class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _write_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to modify the current user's saved items.",
+        # description="The API endpoint to modify the current user's library items.",
     )
     _write_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request for writing saved items.",
+        # description="The maximum number of items that can be sent in each request for writing library items.",
     )
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
-        """Add items to the current user's saved items for this endpoint resource type."""
+        """Add items in batches for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
 
         if not uris:
@@ -787,8 +767,8 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             limit = self._write_limit
 
         async def _post_items(batch: Collection) -> None:
-            kwargs = self._generate_add_batch_kwargs(batch)
             message = f"Adding {len(batch):>6} {item_type}s"
+            kwargs = self._generate_add_batch_kwargs(batch)
             await self._handler.put(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
@@ -809,7 +789,7 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt = None, show_bar: bool = True) -> int:
-        """Remote items from the current user's saved items for this endpoint resource type."""
+        """Remote items in batches for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
 
         if not uris:
@@ -820,8 +800,8 @@ class WriteSavedEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             limit = self._write_limit
 
         async def _delete_items(batch: Collection) -> None:
-            kwargs = self._generate_remove_batch_kwargs(batch)
             message = f"Removing {len(batch):>6} {item_type}s"
+            kwargs = self._generate_remove_batch_kwargs(batch)
             await self._handler.delete(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
@@ -887,7 +867,7 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
         return await super().__aexit__(exc_type, exc_val, exc_tb)
 
 
-class HasSavedEndpoints[ET: ReadSavedEndpoints | WriteSavedEndpoints](HasEndpoints):
-    saved: ET = Field(
-        description="Access endpoints for the current user's saved items.",
+class HasLibraryEndpoints[ET: BatchReadAllEndpoints | BatchWriteEndpoints](HasEndpoints):
+    library: ET = Field(
+        description="Access endpoints for the current user's library items.",
     )

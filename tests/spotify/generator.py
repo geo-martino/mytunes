@@ -805,7 +805,7 @@ class SpotifyPayloadGenerator:
 
     def format_user_item(self, kind: str, item: dict[str, Any]) -> dict[str, Any]:
         """
-        Format a response to expected response for a 'saved user's...' endpoint type.
+        Format a response to expected response for a 'library user's...' endpoint type.
         Reformats the item in place with additional fields.
         """
         item_copy = deepcopy(item)
