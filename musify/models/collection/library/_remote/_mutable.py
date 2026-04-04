@@ -522,7 +522,6 @@ class RemoteMutableLibrary[
             for pl in playlists
         )
 
-    # TODO: fix typing on restore functions, it's a bit too messy and confusing...
     def restore(
             self, backup: Any, dry_run: bool = False
     ) -> dict[str, SyncRemoteResult] | SyncRemoteResult | None:
@@ -549,6 +548,7 @@ class RemoteMutableLibrary[
         self.log_sync_results(results)
         return results
 
+    # TODO: the typing here is atrocious, fix this
     @IsRemoteService._validate_api(
         "playlist",
         dict,

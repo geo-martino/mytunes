@@ -8,9 +8,10 @@ from musify.models import ResourceModel
 from musify.models.api import HasAPI
 from musify.models.collection import CollectionModel
 from musify.models.properties.asynch import HasAsyncOperations
+from musify.models.properties.logger import HasLogger
 from musify.models.properties.order import Position
 from musify.models.properties.uri import HasURI, URI
-from musify.processors._base import InputProcessor
+from musify.processors._base import Processor
 from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._match.playlist import PlaylistMatch
@@ -20,7 +21,7 @@ from musify.processors.match import Matcher
 from musify.processors.match.score.string import NameScorer
 
 
-class Checker[API: _ApiT](InputProcessor, HasAPI[API], HasAsyncOperations):
+class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations):
     api: API = Field(
         description="The API to use for checking matches.",
     )

@@ -18,7 +18,7 @@ from musify.processors.formatter import ModelFormatter
 
 
 class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
-    formatter: ModelFormatter = Field(
+    item_formatter: ModelFormatter = Field(
         description="The formatter to use for formatting info about the item to print.",
         default=ModelFormatter(
             fields=("Name", "Artist", "Album", "Length", "Released At"),
@@ -36,7 +36,7 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
             return CheckResult()
 
         self._log_debug("INPUT", f"Getting user input for {len(missing)} items")
-        self._print_help_text(self._format_header(len(missing)))
+        self._print_help_text(with_header=True)
 
         initial = deepcopy(missing)
         formatter = self._configure_formatter_for_items(missing)
@@ -48,17 +48,49 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
 
         return self._compare_uri_changes(initial=initial, changes=missing)
 
+    @classmethod
+    def _configure_formatter_for_items(cls, items: Iterable) -> LogFormatter:
+        width = min(
+            max(len(item.name) if isinstance(item, HasName) else 0 for item in items),
+            cls.input_formatter.max_width or sys.maxsize,
+        )
+        kwargs = vars(cls.input_formatter)
+        kwargs.pop("width", None)
+
+        return cls.input_formatter.__class__(**kwargs, width=width or None)
+
+    @staticmethod
+    def _compare_uri_changes(initial: Iterable[IT], changes: Iterable[IT]) -> CheckResult[IT]:
+        changed = []
+        unchanged = []
+        unavailable = []
+        skipped = []
+
+        for init, change in zip(initial, changes, strict=True):
+            if init.has_uri is not False and change.has_uri is False:
+                unavailable.append(change)
+            elif init.has_uri is None and change.has_uri is None:
+                skipped.append(change)
+            elif init.uri == change.uri:
+                unchanged.append(change)
+            else:
+                changed.append(change)
+
+        return CheckResult(changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=skipped)
+
     ###########################################################################
     ## Pause page
     ###########################################################################
-    def _format_header(self, count: int) -> str:
-        message = f"The following {count} items were removed and/or matches were not found."
+    @property
+    def _header(self) -> str:
+        message = f"The following {len(self.missing_items)} items were removed and/or matches were not found."
         name = colored(self.name, "blue", attrs=["bold"])
         return f"{name}: {message}"
 
     @property
-    def _options(self) -> dict[str, str]:
+    def _options(self) -> dict[str | None, str]:
         return {
+            "p": "Print more info about the current item",
             f"<{self.page.source} URI/URL>": "Assign the given URI to the item",
             "u": f"Mark item as 'Unavailable on {self.page.source}'",
             "ua": "Same as 'u' option but apply to all items in this playlist in addition to this item",
@@ -69,38 +101,21 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
                 "Same as 'r' option but also check for all other items in this playlist. "
                 "If a match for an item cannot be found, stop and prompt the user again."
             ),
-            "p": "Print all info for the current item",
             "s": "Skip checking process for all current playlists",
             "q": "Skip checking process for all current playlists and quit check",
-            "h": "Show this dialogue again",
+            None: "OR enter a custom URI/URL/ID for this item",
         }
-
-    def _print_help_text(self, header: str | None = None, _: str = None) -> None:
-        post_options = "\nOR enter a custom URI/URL/ID for this item"
-        super()._print_help_text(header=header, post_options=post_options)
 
     async def _match_item_with_input(
             self, item: IT, formatter: LogFormatter, option: str | None = None
     ) -> str | None:
         name = item.name if isinstance(item, HasName) else str(id(item))
-        request_input = option is None
+        input_requested = option is None
 
-        while True:
-            if option is None:
-                option = self._get_user_input(name, formatter=formatter)
-
+        while option or (option := self._get_user_input(name, formatter=formatter)):
             match option.casefold():
-                case "h":
-                    self._print_help_text()
-
-                case "s":
-                    raise SkipPage()
-
-                case "q":
-                    raise QuitImmediately()
-
                 case "p":
-                    info = self.formatter.format(item)
+                    info = self.item_formatter.format(item)
                     self.logger.print(info)
 
                 case "u":
@@ -125,7 +140,7 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
                         break
 
                 case "ra":
-                    if request_input:  # only refresh on the first loop
+                    if input_requested:  # only refresh on the first loop
                         await self.page.refresh_playlist_items(self.uri)
                     if self._match_item_with_playlist(item):
                         return option
@@ -135,8 +150,8 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
                     item.uri = input_uri
                     break
 
-                case opt:
-                    self._log_unrecognised_input(opt)
+                case _:
+                    self._log_unrecognised_input(option)
 
             option = None
 
@@ -168,33 +183,3 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
         message = f"No match found for this item in the playlist: {self.name!r}"
         self.logger.warning(colored(message, "red"))
         return False
-
-    @classmethod
-    def _configure_formatter_for_items(cls, items: Iterable) -> LogFormatter:
-        width = min(
-            max(len(item.name) if isinstance(item, HasName) else 0 for item in items),
-            cls.input_formatter.max_width or sys.maxsize,
-        )
-        kwargs = vars(cls.input_formatter)
-        kwargs.pop("width", None)
-
-        return cls.input_formatter.__class__(**kwargs, width=width or None)
-
-    @staticmethod
-    def _compare_uri_changes(initial: Iterable[IT], changes: Iterable[IT]) -> CheckResult[IT]:
-        changed = []
-        unchanged = []
-        unavailable = []
-        skipped = []
-
-        for init, change in zip(initial, changes, strict=True):
-            if init.has_uri is not False and change.has_uri is False:
-                unavailable.append(change)
-            elif init.has_uri is None and change.has_uri is None:
-                skipped.append(change)
-            elif init.uri == change.uri:
-                unchanged.append(change)
-            else:
-                changed.append(change)
-
-        return CheckResult(changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=skipped)

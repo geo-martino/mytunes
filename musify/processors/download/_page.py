@@ -11,20 +11,10 @@ from yarl import URL
 from musify.models import AttributeModel, ResourceModel
 from musify.models.properties.order import Position
 from musify.models.url import HttpURL
-from musify.processors._base import InputProcessor
+from musify.processors._base import PageProcessor
 
 
-class StorePausePage[IT: AttributeModel](InputProcessor):
-    position: Position = Field(
-        description="The current position of this page in the process."
-    )
-    task_id: TaskID | None = Field(
-        description=(
-            "The task ID for the progress bar to use to display. If None, a progress bar will not be displayed."
-        ),
-        default=None,
-    )
-
+class StorePausePage[IT: AttributeModel](PageProcessor):
     items: Sequence[IT] = Field(
         description="The items to be processed by this page"
     )
@@ -83,28 +73,13 @@ class StorePausePage[IT: AttributeModel](InputProcessor):
                 f"Re-open all sites for the current batch of {self.types} using the input list of fields, "
                 "each separated by a space e.g. title artist album",
             "q": f"Skip opening sites for any remaining {self.types} and quit",
-            "h": "Show this dialogue again",
         }
 
-    def _print_help_text(self, header: str | None = None, _: str | None = None) -> None:
-        field_names_message = f"\n\nValid fields for this batch: {" ".join(self.fields)}"
-        post_options = colored(field_names_message, "dark_grey")
-        super()._print_help_text(header=header, post_options=post_options)
-
     def pause(self) -> tuple[str, ...] | None:
-        self.logger.progress.stop()
-        self._print_help_text(self._header)
+        super().pause()
 
-        while True:
-            option = self._get_user_input(f"Enter ({self.position})")
-
+        while option := self._get_user_input():
             match option.casefold():
-                case "":  # continue to next batch
-                    break
-
-                case "h":
-                    self._print_help_text()
-
                 case "r":  # return True to re-open all sites
                     self.open_sites()
 
@@ -112,8 +87,8 @@ class StorePausePage[IT: AttributeModel](InputProcessor):
                     # return the valid fields to re-open all sites for these fields
                     return fields
 
-                case opt:
-                    self._log_unrecognised_input(opt)
+                case _:
+                    self._log_unrecognised_input(option)
 
     def _get_filtered_fields_from_input(self, inp: str) -> tuple[str, ...]:
         input_fields = set(inp.split())

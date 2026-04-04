@@ -19,11 +19,10 @@ from musify.models.cursors import InitialCursor
 from musify.models.exception import MusifyValidationError
 from musify.models.properties.asynch import HasAsyncOperations
 from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
 from musify.models.properties.uri import HasURI, URI
 from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
-from musify.processors._base import InputProcessor
+from musify.processors._base import PageProcessor
 from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.formatter import CollectionFormatter
 
@@ -33,23 +32,10 @@ type _ApiT = RemoteAPI | HasPlaylistEndpoints[
 ]
 
 
-class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncOperations):
+class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOperations):
     #: The time to wait after adding tracks to a playlist on setup.
     wait_after_add: ClassVar[PositiveFloat] = 0.8
 
-    position: Position = Field(
-        description="The current position of this page in the process."
-    )
-    task_id: TaskID | None = Field(
-        description=(
-            "The task ID for the progress bar to use to display. If None, a progress bar will not be displayed."
-        ),
-        default=None,
-    )
-
-    collections: Sequence[CollectionModel] = Field(
-        description="The collections to be checked on this page."
-    )
     _collections: MutableMapping[URI, CollectionModel[CT]] = PrivateAttr(
         # description="The collections currently being checked mapped to the URIs of the active playlists.",
         default_factory=dict,
@@ -59,8 +45,14 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         default_factory=dict,
     )
     _playlists_initial: MutableMapping[URI, RemoteMutablePlaylist] = PrivateAttr(
-        # description="The initial state of the playlists relating to the collections being checked mapped to the URIs.",
+        # description=(
+        #     "The initial state of the playlists relating to the collections being checked mapped to the URIs."
+        # ),
         default_factory=dict,
+    )
+
+    collections: Sequence[CollectionModel] = Field(
+        description="The collections to be checked on this page."
     )
 
     additional_properties: dict[str, Any] = Field(
@@ -82,7 +74,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         default=False,
     )
 
-    formatter: CollectionFormatter[RemotePlaylist] = Field(
+    playlist_formatter: CollectionFormatter[RemotePlaylist] = Field(
         description="The formatter to use for formatting info about the playlists during the check.",
         default=CollectionFormatter[RemotePlaylist](
             fields=("Name", "URI", "Public URL"),
@@ -119,7 +111,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
 
     @property
     def count(self) -> int:
-        """The names of the playlists being used for checking."""
+        """The number of collections to be checked."""
         return len(self.collections)
 
     @property
@@ -151,12 +143,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
                 tasks = [tg.create_task(task) for task in map(self._setup_playlist, self.collections)]
                 remove = self.position.number == self.position.total
                 await self.logger.run_tasks_async(tasks, task_id=self.task_id, remove=remove)
-        except* (MusifyError, HTTPError) as exc:
-            print(exc, "MUS")
+        except* (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
             await self.teardown_playlists()
             raise
-
 
         if self.task_id is not None and not remove:
             self.logger.progress.stop_task(task_id=self.task_id)
@@ -293,8 +283,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
     ###########################################################################
     ## Pause page
     ###########################################################################
-    def _format_header(self, count: int) -> str:
-        header = f"{count} temporary playlists created on {self._log_library_name}. "
+    @property
+    def _header(self) -> str:
+        source = f"{self.user.name}'s {self.source} library" if self.user is not None else self.source
+        header = f"{len(self._playlists)} temporary playlists created on {source}. "
         header += f"You may now check the items in each playlist on {self.source}."
         return colored(header, "blue", attrs=["bold"])
 
@@ -308,7 +300,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
             "l": "Print the names and links of playlists created",
             "s": "Don't check for changes and skip to the next set of playlists (if applicable)",
             "q": "Delete all temporary playlists and quit check",
-            "h": "Show this dialogue again",
         }
 
     async def pause(self) -> None:
@@ -316,33 +307,18 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         Pause the check process and prompt the user to check and modify the created playlists
         on the remote service before continuing if they wish to.
         """
-        self.logger.progress.stop()
-        self._print_help_text(self._format_header(len(self._playlists)))
+        super().pause()
 
-        while True:
-            option = self._get_user_input(f"Enter ({self.position})")
-
+        while option := self._get_user_input():
             match option.casefold():
-                case "":  # continue to next batch
-                    break
-
-                case "h":
-                    self._print_help_text()
-
-                case "s":
-                    raise SkipPage()
-
-                case "q":
-                    raise QuitImmediately()
-
                 case "l":
                     self._print_playlist_links()
 
                 case name if (playlist := self._get_playlist_by_name(name)) is not None:
                     await self._print_playlist_items(playlist)
 
-                case opt:
-                    self._log_unrecognised_input(opt)
+                case _:
+                    self._log_unrecognised_input(option)
 
     def _print_playlist_links(self):
         header = colored("Created playlists", "blue", attrs=["bold"])
@@ -361,7 +337,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         missing_message = colored("No items available", "red", attrs=["bold"])
 
         header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
-        table = self.formatter.format(playlist, indices=True) or missing_message
+        table = self.playlist_formatter.format(playlist, indices=True) or missing_message
         self.logger.print(header + ":\n" + table + "\n")
 
         items = await self.get_current_playlist_items(playlist.uri)
@@ -372,11 +348,5 @@ class CheckerPage[API: _ApiT, CT: HasURI](InputProcessor, HasAPI[API], HasAsyncO
         playlist.tracks.replace(items)
 
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
-        table = self.formatter.format(playlist, indices=True) or missing_message
+        table = self.playlist_formatter.format(playlist, indices=True) or missing_message
         self.logger.print(header + ":\n" + table + "\n")
-
-    @property
-    def _log_library_name(self) -> str:
-        if self.user is None:
-            return self.source
-        return f"{self.user.name}'s {self.source} library"

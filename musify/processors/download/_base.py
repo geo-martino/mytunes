@@ -13,14 +13,15 @@ from yarl import URL
 from musify._types import StrippedString
 from musify.models import ResourceModel
 from musify.models.collection import CollectionModel
+from musify.models.properties.logger import HasLogger
 from musify.models.properties.order import Position
-from musify.processors._base import InputProcessor
+from musify.processors._base import Processor
 from musify.processors._exception import SkipPage, QuitImmediately
 from musify.processors.download._page import StorePausePage
 from musify.processors.download.stores import AudioStore
 
 
-class StoreManager(InputProcessor):
+class StoreManager(Processor, HasLogger):
     """Runs operations for helping the user to download items from online stores."""
 
     stores: conlist(AudioStore.annotation, min_length=1) = Field(
@@ -51,7 +52,7 @@ class StoreManager(InputProcessor):
     @validate_call
     def open_sites_for_items[T: ResourceModel](self, items: Sequence[T] | CollectionModel[T]) -> None:
         """
-        Run the mananger for the given ``items``.
+        Run the manager for the given ``items``.
 
         Opens the formatted ``urls`` for each item in all items in the user's browser.
         """
