@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import ClassVar, Type
+from typing import ClassVar, Type, overload
 
 from pydantic import validate_call, Field, PositiveInt, PrivateAttr
 from pydantic.json_schema import JsonSchemaValue
@@ -7,7 +7,7 @@ from yarl import URL
 
 from musify.models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, HasLibraryEndpoints, CollectionReadEndpoints, \
-    BatchWriteEndpoints
+    BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
@@ -38,10 +38,23 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
     PlaylistReadEndpoints[UT, RT, IT],
     PlaylistWriteEndpoints[UT, RT, IT],
 ):
+    @overload
+    async def add_and_skip_duplicates(
+            self,
+            url: _URL_TYPE[UT, RT],
+            uris: Sequence[_URI_TYPE[RT]],
+            limit: PositiveInt | None = None,
+            show_bar: bool = True,
+    ) -> int: ...
+
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_and_skip_duplicates(
-            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None
+            self,
+            url: ApiURL[UT, RT],
+            uris: ApiURISequence[UT, IT],
+            limit: PositiveInt = None,
+            show_bar: bool = True,
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
         collection = await self.get(url)
@@ -54,7 +67,7 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
             if uri not in uris_unique and uri not in uris_current:
                 uris_unique.append(uri)
 
-        return await self.add(url, uris_unique, limit=limit)
+        return await self.add(url, uris_unique, limit=limit, show_bar=show_bar)
 
 
 class PlaylistBatchReadEndpoints[UT: URI, RT: RemotePlaylist](
@@ -102,16 +115,6 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
         # description="The API endpoint to create a playlist for the current user.",
     )
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def add(self, url: ApiURL[UT, RT], **kwargs) -> None:
-        """Add an existing playlist to the current user's library."""
-        await self._handler.put(url)
-
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def remove(self, url: ApiURL[UT, RT]) -> None:
-        """Delete the playlist from the current user's library."""
-        await self._handler.delete(url)
-
     @validate_call
     async def create(self, **kwargs) -> RT | None:
         """Create a playlist in the current user's library."""
@@ -126,6 +129,25 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
         message = f"Created playlist: {playlist.name!r} -> {playlist.uri.api_url}"
         self._handler.log("DONE", self._create_url, message=message)
         return playlist
+
+    @overload
+    async def add(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
+
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    async def add(self, url: ApiURL[UT, RT], **kwargs) -> None:
+        """Add an existing playlist to the current user's library."""
+        await self._handler.put(url)
+
+    @overload
+    async def remove(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
+
+    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    async def remove(self, url: ApiURL[UT, RT]) -> None:
+        """Delete the playlist from the current user's library."""
+        await self._handler.delete(url)
+
+    @overload
+    async def modify(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:

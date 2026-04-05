@@ -8,13 +8,14 @@ from yarl import URL
 from musify.models import ResourceModel
 from musify.models.api._endpoints import Endpoints, HasEndpoints, HasLibraryEndpoints
 from musify.models.exception import RequestError
+from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 from musify.processors.clean.string import NameCleaner
 
 
 # noinspection PyAbstractClass
-class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[UT, RT]):
     type: ClassVar[str] = "search"
 
     _query_url: ClassVar[URL] = PrivateAttr(
@@ -40,9 +41,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @classmethod
-    def _get_query_path[T: str | AliasPath | AliasChoices](
-            cls, path: T | None, kind: str | ResourceModel | Type[ResourceModel]
-    ) -> T:
+    def _get_query_path[T: str | AliasPath | AliasChoices](cls, path: T | None, kind: str | QT | Type[QT]) -> T:
         kind = cls._map_type_to_str(kind)
 
         match path:
@@ -59,7 +58,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         raise RequestError(f"Unknown query path type: {path}")
 
     @staticmethod
-    def _map_type_to_str(kind: str | ResourceModel | Type[ResourceModel]) -> str:
+    def _map_type_to_str(kind: str | QT | Type[QT]) -> str:
         match kind:
             case str():
                 return kind
@@ -71,7 +70,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @validate_call
     async def query(
-            self, query: str, types: set[str | Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[str | Type[QT]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
         if limit is None:
@@ -97,20 +96,23 @@ class SearchEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @abstractmethod
     def _format_query_params(
-            self, query: str, types: set[str | Type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[str | Type[QT]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
         raise NotImplementedError
 
     @validate_call
-    async def query_item(self, item: ResourceModel, **kwargs) -> list[RT]:
+    async def query_item(self, item: QT, **kwargs) -> list[RT]:
         """Query for items that match the given item."""
         kwargs = self._format_query_from_item(item, **kwargs)
         return next(iter((await self.query(**kwargs)).values()))
 
     @abstractmethod
-    def _format_query_from_item(self, item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(self, item: QT, **kwargs) -> dict[str, Any]:
         """Should return the kwargs to pass to _format_query_params"""
         raise NotImplementedError
+
+    def _get_name(self, item: HasName) -> str:
+        return self.cleaner.clean(item.name) if self.cleaner is not None else item.name
 
 
 class HasSearchEndpoints[ET: SearchEndpoints | HasLibraryEndpoints](HasEndpoints):

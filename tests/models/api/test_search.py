@@ -14,26 +14,15 @@ from musify.models.item.album import RemoteAlbum
 from musify.models.item.track import Track, RemoteTrack
 from musify.models.remote import RemoteResource
 from tests.models.api.testers import EndpointsTester
+from tests.models.api.utils import MockSearchEndpoints
 from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
 
 
 class TestSearchEndpoints(EndpointsTester):
-    # noinspection PyAbstractClass
-    class MockSearchEndpoints(SearchEndpoints[SimpleURI, MockRemoteResource]):
-        _query_url = URL("https://api.example.com/search")
-        _query_path = AliasPath("items", "{type}s")
-        _query_limit = 22
-
     @pytest.fixture
-    @patch.multiple(
-        MockSearchEndpoints,
-        __abstractmethods__=set(),
-        _format_query_params=MagicMock(),
-        _format_query_from_item=MagicMock(),
-    )
     def model(self, handler: RequestHandler) -> SearchEndpoints:
-        return self.MockSearchEndpoints(handler=handler)
+        return MockSearchEndpoints(handler=handler)
 
     @pytest.fixture
     def types(self) -> set[type[RemoteResource]]:

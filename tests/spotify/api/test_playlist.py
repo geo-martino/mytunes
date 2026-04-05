@@ -15,7 +15,7 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 from tests.models.api.testers import EndpointsTester
 
 
-class TestSpotifySavedPlaylistEndpoints(EndpointsTester):
+class TestSpotifyPlaylistLibraryEndpoints(EndpointsTester):
     @pytest.fixture
     def model(self, handler: RequestHandler) -> _SpotifyPlaylistLibraryEndpoints:
         return _SpotifyPlaylistLibraryEndpoints.model_validate(handler)

@@ -5,12 +5,14 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
+from yarl import URL
 
 from musify.models.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
     PlaylistReadWriteEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.collection.playlist import RemotePlaylist, Playlist
 from musify.models.properties.uri import URI
+from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 from tests.models.api.testers import EndpointsTester, URI_TYPE_CONVERTERS
 from tests.models.api.utils import MockUrlCursor
@@ -47,7 +49,7 @@ class TestPlaylistReadWriteEndpoints(EndpointsTester):
             uris: list[URI],
             mock_get: Mock,
             faker: Faker,
-            converter: Callable[[URI], Any],
+            converter: Callable[[URI], str | URI | URL | RemoteResource],
     ):
         uris_duplicated = uris + uris[:faker.random_int(1, len(uris))]
         uris_collection = [
@@ -61,14 +63,15 @@ class TestPlaylistReadWriteEndpoints(EndpointsTester):
         limit = faker.random_int(1)
         uris_duplicated = list(map(self._convert_uri_to_random_input_type, uris_duplicated))
         collection_items = [MockRemoteResource(uri=uri) for uri in uris_collection]
+        show_bar = faker.boolean()
 
         # we just want to test that duplicates are skipped when adding, so we mock all surrounding logic
         with (
             patch.object(PlaylistReadWriteEndpoints, "get_all", return_value=collection_items, new_callable=AsyncMock),
             patch.object(PlaylistReadWriteEndpoints, "add", new_callable=AsyncMock) as mock_add
         ):
-            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
-            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit)
+            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit, show_bar=show_bar)
+            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit, show_bar=show_bar)
 
 
 @pytest.fixture

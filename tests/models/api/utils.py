@@ -3,7 +3,8 @@ from unittest.mock import patch, Mock, MagicMock
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
-from pydantic import PositiveInt
+from pydantic import PositiveInt, AliasPath
+from yarl import URL
 
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints
@@ -72,8 +73,12 @@ class MockUserEndpoints(
 
 
 class MockSearchEndpoints(
-    SearchEndpoints[SimpleURI, RemoteUser]
+    SearchEndpoints[SimpleURI, RemoteUser, ResourceModel]
 ):
+    _query_url = URL("https://api.example.com/search")
+    _query_path = AliasPath("items", "{type}s")
+    _query_limit = 22
+
     def _format_query_params(
             self, query: str, types: set, limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
@@ -148,6 +153,3 @@ class MockRemoteAPI(
     HasPlaylistEndpoints[MockPlaylistEndpoints],
 ):
     source: ClassVar[str] = MockRemoteAuthoriser.source
-
-    async def _setup_cache(self, cache: ResponseCache) -> None:
-        pass

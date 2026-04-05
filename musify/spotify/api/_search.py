@@ -20,10 +20,15 @@ from musify.spotify.item.track import SpotifyTrack
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 
+type _SearchT = Track | Album | Artist | Playlist
+type _SearchTypeT = type[Track] | type[Album] | type[Artist]| type[Playlist]
+type _ReturnT = SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist
+
+
 @final
 class SpotifySearchEndpoints(
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist],
-    SearchEndpoints[SpotifyResourceURI, SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist],
+    SpotifyEndpoints[SpotifyResourceURI, _ReturnT],
+    SearchEndpoints[SpotifyResourceURI, _ReturnT, _SearchT],
 ):
     __final__ = True
 
@@ -35,7 +40,7 @@ class SpotifySearchEndpoints(
     def _format_query_params(
             self,
             query: str,
-            types: set[str | type[Track] | type[Album] | type[Artist] | type[Playlist]],
+            types: set[str | _SearchTypeT],
             limit: PositiveInt | None = None,
             offset: PositiveInt | None = None,
     ) -> dict[str, Any]:
@@ -50,7 +55,7 @@ class SpotifySearchEndpoints(
         return params
 
     @validate_call
-    def _format_query_from_item(self, item: ResourceModel, **kwargs) -> dict[str, Any]:
+    def _format_query_from_item(self, item: _SearchT, **kwargs) -> dict[str, Any]:
         match item:
             case Track() as track if track.artists:
                 query = f"track:{self._get_name(track)} artist:{self._get_name(track.artists[0])}"
@@ -69,6 +74,3 @@ class SpotifySearchEndpoints(
 
         item_type = item if isinstance(item, SpotifyResource) else item.type
         return {"query": query, "types": {item_type}} | kwargs
-
-    def _get_name(self, item: HasName) -> str:
-        return self.cleaner.clean(item.name) if self.cleaner is not None else item.name
