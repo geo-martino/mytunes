@@ -153,6 +153,6 @@ class TestStoreManager(BaseModelTester):
         # 5 extra for 3*r input + 2*<Fields> input
         assert len(urls) == (total + 5 * model.interval) * len(model.stores)
 
-        assert_help_text(capsys, pages_total + 2)
+        assert_help_text(capsys, pages_total + 2)  # TODO: flakey assertion
         assert caplog.text.count("Some fields were not recognised") == 1
         assert caplog.text.count("Unrecognised input") == 1

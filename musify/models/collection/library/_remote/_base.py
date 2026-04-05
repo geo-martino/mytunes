@@ -1,4 +1,5 @@
-from typing import Annotated, Self, Any
+from collections.abc import Sequence
+from typing import Annotated, Self, Any, TypedDict
 
 import tabulate
 
@@ -21,8 +22,23 @@ from musify.models.item.artist import RemoteArtist, HasArtists
 from musify.models.item.genre import RemoteGenre, HasGenres
 from musify.models.item.track import RemoteTrack
 from musify.models.metadata import Attribute
+from musify.models.properties.uri import URI
 from musify.models.result import Result
 from musify.models.user import RemoteUser
+
+
+class RemotePlaylistDump[UT: URI](TypedDict):
+    name: str
+    uri: UT
+    items: Sequence[str | URI]
+
+
+class RemoteLibraryDump[UT: URI](TypedDict, total=False):
+    playlists: Sequence[RemotePlaylistDump[UT]]
+    tracks: Sequence[str | UT]
+    artists: Sequence[str | UT]
+    albums: Sequence[str | UT]
+    genres: Sequence[str | UT]
 
 
 class RemoteLibrary[
@@ -85,24 +101,26 @@ class RemoteLibrary[
         self.logger.print_line(STAT)
         self.logger.stat(table)
 
-    def dump(self) -> dict[str, Any]:
+    def dump(self) -> RemoteLibraryDump[UT]:
         names_seen = set()
-        playlists = []
+        playlists: list[RemotePlaylistDump[UT]] = []
         for pl in self.playlists.unique:
             if pl.name in names_seen:
                 continue
 
-            pl_backup = pl.model_dump(exclude={"tracks"})
-            pl_backup["tracks"] = [str(track.uri) for track in pl.tracks.unique]
-            playlists.append(pl_backup)
+            pl_dump = RemotePlaylistDump[UT](
+                **pl.model_dump(exclude={"tracks"}),
+                items=[str(track.uri) for track in pl.tracks.unique]
+            )
+            playlists.append(pl_dump)
 
-        return {
-            "tracks": [str(track.uri) for track in self.tracks],
-            "playlists": playlists,
-            "albums": [str(album.uri) for album in self.albums],
-            "artists": [str(artist.uri) for artist in self.artists],
-            "genres": [str(genre.uri) for genre in self.genres],
-        }
+        return RemoteLibraryDump[UT](
+            playlists=playlists,
+            tracks=[str(track.uri) for track in self.tracks],
+            albums=[str(album.uri) for album in self.albums],
+            artists=[str(artist.uri) for artist in self.artists],
+            genres=[str(genre.uri) for genre in self.genres],
+        )
 
     @staticmethod
     def _should_extend(item: Any) -> bool:

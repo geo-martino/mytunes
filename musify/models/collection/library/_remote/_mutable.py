@@ -7,8 +7,8 @@ from pydantic import Field, validate_call, BeforeValidator
 from termcolor import colored
 
 from musify.exception import MusifyTypeError
-from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, \
-    BatchReadEndpoints
+from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
+    BatchReadEndpoints, BatchWriteEndpoints
 from musify.models.api.album import HasAlbumEndpoints, AlbumBatchReadAllEndpoints, AlbumBatchWriteEndpoints, \
     AlbumBatchReadEndpoints
 from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, ArtistBatchWriteEndpoints, \
@@ -19,7 +19,7 @@ from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoint
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._sync import SYNC_TYPE, get_sync_message, get_sync_items
 from musify.models.collection.library import MutableLibrary
-from musify.models.collection.library._remote._base import RemoteLibrary
+from musify.models.collection.library._remote._base import RemoteLibrary, RemoteLibraryDump, RemotePlaylistDump
 from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -60,7 +60,7 @@ class RemoteMutableLibrary[
         ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
         ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
     )
-    async def add_tracks(self, uris: Sequence[UT | HasURI]) -> None:
+    async def add_tracks(self, uris: Sequence[URI | HasURI]) -> None:
         """Add library tracks to the library."""
         api: HasTrackEndpoints[TrackBatchReadEndpoints | HasLibraryEndpoints[TrackBatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="tracks", api=api.tracks)
@@ -96,11 +96,11 @@ class RemoteMutableLibrary[
 
     async def _add_library_items(
             self,
-            items: Sequence[UT | HasURI],
+            items: Sequence[URI | HasURI],
             items_type: str,
             api: BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints],
     ) -> list:
-        uris: list[UT] = []
+        uris: list[URI] = []
         for item in items:
             match item:
                 case URI() as uri:
@@ -359,6 +359,33 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Restore library items
     ###########################################################################
+    @validate_call
+    def restore(
+            self, backup: RemoteLibraryDump[URI], dry_run: bool = False
+    ) -> dict[str, SyncRemoteResult] | SyncRemoteResult | None:
+        """
+        Restore library from a backup.
+
+        :param backup: Backup data to restore.
+        :param dry_run: Run function, but do not modify the remote service at all.
+        :return: The results of the restore as a mapping of item type to either a sync result
+            or a mapping of playlist name to a sync result.
+        """
+        results: dict[str, SyncRemoteResult] = {}
+
+        with self.logger:
+            if "tracks" in backup:
+                results |= self.restore_tracks(backup["tracks"], dry_run=dry_run)
+            if "artists" in backup:
+                results |= self.restore_artists(backup["artists"], dry_run=dry_run)
+            if "albums" in backup:
+                results |= self.restore_albums(backup["albums"], dry_run=dry_run)
+            if "playlists" in backup:
+                results |= self.restore_playlists(backup["playlists"], dry_run=dry_run)
+
+        self.log_sync_results(results)
+        return results
+
     @staticmethod
     def _extract_uris_from_backup(backup: Any, key: Literal["tracks", "artists", "albums"]) -> tuple[str | URI, ...]:
         if isinstance(backup, Mapping) and key in backup:
@@ -376,6 +403,10 @@ class RemoteMutableLibrary[
             case _:
                 raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
 
+    @staticmethod
+    def _extract_tracks_from_backup(backup: Any) -> tuple[str | URI, ...]:
+        return RemoteMutableLibrary._extract_uris_from_backup(backup, "tracks")
+
     @IsRemoteService._validate_api(
         "track",
         None,
@@ -388,10 +419,7 @@ class RemoteMutableLibrary[
     @validate_call
     async def restore_tracks(
             self,
-            uris: Annotated[
-                Sequence[str | URI],
-                BeforeValidator(functools.partial(_extract_uris_from_backup, key="tracks"))
-            ],
+            uris: Annotated[Sequence[str | URI], BeforeValidator(_extract_tracks_from_backup)],
             dry_run: bool = False
     ) -> SyncRemoteResult | None:
         """
@@ -417,6 +445,10 @@ class RemoteMutableLibrary[
         self.tracks[:] = await api.tracks.get_many(uris)
         return await self.sync_tracks(kind="refresh", dry_run=dry_run)
 
+    @staticmethod
+    def _extract_artists_from_backup(backup: Any) -> tuple[str | URI, ...]:
+        return RemoteMutableLibrary._extract_uris_from_backup(backup, "artists")
+
     @IsRemoteService._validate_api(
         "artist",
         None,
@@ -429,10 +461,7 @@ class RemoteMutableLibrary[
     @validate_call
     async def restore_artists(
             self,
-            uris: Annotated[
-                Sequence[str | URI],
-                BeforeValidator(functools.partial(_extract_uris_from_backup, key="artists"))
-            ],
+            uris: Annotated[Sequence[str | URI], BeforeValidator(_extract_artists_from_backup)],
             dry_run: bool = False
     ) -> SyncRemoteResult | None:
         """
@@ -458,6 +487,10 @@ class RemoteMutableLibrary[
         self.artists[:] = await api.artists.get_many(uris)
         return await self.sync_artists(kind="refresh", dry_run=dry_run)
 
+    @staticmethod
+    def _extract_albums_from_backup(backup: Any) -> tuple[str | URI, ...]:
+        return RemoteMutableLibrary._extract_uris_from_backup(backup, "albums")
+
     @IsRemoteService._validate_api(
         "album",
         None,
@@ -470,10 +503,7 @@ class RemoteMutableLibrary[
     @validate_call
     async def restore_albums(
             self,
-            uris: Annotated[
-                Sequence[str | URI],
-                BeforeValidator(functools.partial(_extract_uris_from_backup, key="albums"))
-            ],
+            uris: Annotated[Sequence[str | URI], BeforeValidator(_extract_albums_from_backup)],
             dry_run: bool = False
     ) -> SyncRemoteResult | None:
         """
@@ -503,52 +533,28 @@ class RemoteMutableLibrary[
     ## Restore playlists
     ###########################################################################
     @staticmethod
-    def _extract_playlists_from_backup(
-            backup: Any, key: str = "playlists"
-    ) -> tuple[tuple[str | URI, dict[str, Any], tuple[str | URI, ...]], ...]:
+    def _extract_playlists_from_backup(backup: Any, key: str = "playlists") -> tuple[RemotePlaylistDump[URI], ...]:
         if isinstance(backup, Mapping) and key in backup:
             backup = backup[key]
 
+        def _has_expected_keys(pl: Any) -> bool:
+            return isinstance(pl, Mapping) and all((
+                "name" in pl,
+                "uri" in pl,
+                "items" in pl,
+            ))
+
         match backup:
-            case Mapping() as playlists if all(isinstance(pl, Mapping) and "uri" in pl for pl in playlists.values()):
+            case Mapping() as playlists if all(map(_has_expected_keys, playlists.values())):
                 playlists = playlists.values()
-            case Collection() as playlists if all(isinstance(pl, Mapping) and "uri" in pl for pl in playlists):
+            case Collection() as playlists if all(map(_has_expected_keys, playlists)):
                 pass
             case _:
                 raise MusifyTypeError(f"Unrecognised backup dump format: {type(backup).__name__!r}.")
 
-        return tuple(
-            (pl["uri"], pl, RemoteMutableLibrary._extract_uris_from_backup(pl, "tracks"))
-            for pl in playlists
-        )
+        # noinspection PyTypeChecker
+        return tuple(map(dict, playlists))
 
-    def restore(
-            self, backup: Any, dry_run: bool = False
-    ) -> dict[str, SyncRemoteResult] | SyncRemoteResult | None:
-        """
-        Restore library from a backup.
-
-        :param backup: Backup data to restore.
-        :param dry_run: Run function, but do not modify the remote service at all.
-        :return: The results of the restore as a mapping of item type to either a sync result
-            or a mapping of playlist name to a sync result.
-        """
-        results: dict[str, SyncRemoteResult] = {}
-
-        with self.logger:
-            if "playlists" in backup:
-                results |= self.restore_playlists(backup, dry_run=dry_run)
-            if "tracks" in backup:
-                results |= self.restore_tracks(backup, dry_run=dry_run)
-            if "artists" in backup:
-                results |= self.restore_artists(backup, dry_run=dry_run)
-            if "albums" in backup:
-                results |= self.restore_albums(backup, dry_run=dry_run)
-
-        self.log_sync_results(results)
-        return results
-
-    # TODO: the typing here is atrocious, fix this
     @IsRemoteService._validate_api(
         "playlist",
         dict,
@@ -562,10 +568,7 @@ class RemoteMutableLibrary[
     @validate_call
     async def restore_playlists(
             self,
-            playlists: Annotated[
-                tuple[tuple[str | URI, dict[str, Any], tuple[str | URI, ...]], ...],
-                BeforeValidator(_extract_playlists_from_backup)
-            ],
+            playlists: Annotated[Sequence[RemotePlaylistDump[URI]], BeforeValidator(_extract_playlists_from_backup)],
             dry_run: bool = False,
     ) -> dict[str, SyncRemoteResult]:
         """
@@ -581,11 +584,13 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of library tracks on the remote service after the sync.
         """
-
         self.logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
 
-        def _restore_playlist(dump):
-            return self._restore_playlist(*dump, dry_run=dry_run)
+        def _restore_playlist(dump: dict[str, Any]):
+            name = dump.pop("name")
+            uri = dump.pop("uri")
+            items = dump.pop("items")
+            return self._restore_playlist(uri=uri, name=name, items=items, properties=dump, dry_run=dry_run)
 
         task_id = self.logger.progress.add_task(
             description=f"Restoring {self.source.title()} playlists", total=len(playlists),
@@ -596,7 +601,12 @@ class RemoteMutableLibrary[
         return dict(results)
 
     async def _restore_playlist(
-            self, uri: URI, dump: Mapping[str, Any], items: list[URI], dry_run: bool = False
+            self,
+            uri: str | URI,
+            name: str,
+            items: Sequence[str | URI],
+            properties: Mapping[str, Any],
+            dry_run: bool = False,
     ) -> tuple[str, SyncRemoteResult] | None:
         api: (
             HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]] |
@@ -605,17 +615,17 @@ class RemoteMutableLibrary[
 
         async with self.concurrency:
             try:
-                playlist = await api.playlists.get(uri.api_url)
+                playlist = await api.playlists.get(uri)
             except ResponseError as exc:
                 if not dry_run and exc.response.status == 404:
                     self.logger.warning(
-                        f"Playlist with name {dump["name"]!r} does not exist on the remote service. "
+                        f"Playlist with name {name!r} does not exist on the remote service. "
                         "Creating a new playlist."
                     )
-                    playlist = await api.playlists.library.create(**dump)
+                    playlist = await api.playlists.library.create(name=name, **properties)
                 else:
                     item_count = len(items)
-                    return dump["name"], SyncRemoteResult(
+                    return name, SyncRemoteResult(
                         start=0,
                         added=item_count,
                         removed=0,

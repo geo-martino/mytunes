@@ -15,6 +15,7 @@ from musify.models.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints,
 from musify.models.api.playlist import PlaylistLibraryEndpoints
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.library import RemoteMutableLibrary
+from musify.models.collection.library._remote._base import RemotePlaylistDump
 from musify.models.collection.playlist import RemoteMutablePlaylist, Playlist, RemotePlaylist
 from musify.models.item.album import Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
@@ -447,11 +448,16 @@ class TestRemoteMutableLibrary(BaseModelTester):
     def test_extract_playlists_from_backup(
             self,
             model: RemoteMutableLibrary,
-            playlists: list[Playlist],
+            playlists: list[RemotePlaylist],
             faker: Faker
     ):
-        dump = {faker.uuid4(): {"uri": pl.uri, "tracks": [{"uri": tr.uri} for tr in pl.tracks]} for pl in playlists}
-        expected = tuple((pl["uri"], pl, tuple(tr["uri"] for tr in pl["tracks"])) for pl in dump.values())
+        dump = {
+            faker.uuid4(): {
+                "name": faker.name(), "uri": pl.uri, "items": [{"uri": tr.uri} for tr in pl.tracks]
+            }
+            for pl in playlists
+        }
+        expected = tuple(dump.values())
 
         assert model._extract_playlists_from_backup(dump) == expected
         assert model._extract_playlists_from_backup({"playlists": dump}) == expected
@@ -459,9 +465,9 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert model._extract_playlists_from_backup({"playlists": dump.values()}) == expected
 
     @pytest.fixture
-    def playlists_dump(self, playlists: list[Playlist]) -> list[dict[str, Any]]:
+    def playlists_dump(self, playlists: list[RemotePlaylist]) -> list[RemotePlaylistDump]:
         return [
-            {"name": pl.name, "uri": pl.uri, "tracks": [{"uri": str(tr.uri) for tr in pl.tracks}]}
+            RemotePlaylistDump(name=pl.name, uri=pl.uri, items=[str(tr.uri) for tr in pl.tracks])
             for pl in playlists
         ]
 
@@ -469,15 +475,15 @@ class TestRemoteMutableLibrary(BaseModelTester):
     def mock_get_playlist(
             self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist], faker: Faker
     ) -> Generator[tuple[Mock, list[URL]], None, None]:
-        failed: list[URL] = []
+        failed: list[URI] = []
         response = namedtuple("ClientResponse", ["status"])
 
-        def _get_playlist_or_raise_error(url: URL, *_, **__) -> RemotePlaylist:
-            playlist = next(pl for pl in playlists if str(pl.uri.api_url) == str(url))
+        def _get_playlist_or_raise_error(uri: URI, *_, **__) -> RemotePlaylist:
+            playlist = next(pl for pl in playlists if str(pl.uri) == str(uri))
             if faker.boolean():  # randomly decide whether the playlist 'exists' or not
                 return playlist
 
-            failed.append(url)
+            failed.append(uri)
             # noinspection PyTypeChecker
             raise ResponseError(response=response(status=404))
 
@@ -492,7 +498,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             playlists: list[RemotePlaylist],
             playlists_dump: list[dict[str, Any]],
-            mock_get_playlist: tuple[Mock, list[URL]],
+            mock_get_playlist: tuple[Mock, list[URI]],
             mock_create_playlist: Mock,
             mock_get_many: Mock,
             mock_sync_items: Mock,
@@ -518,7 +524,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             model: RemoteMutableLibrary,
             playlists: list[RemotePlaylist],
             playlists_dump: list[dict[str, Any]],
-            mock_get_playlist: tuple[Mock, list[URL]],
+            mock_get_playlist: tuple[Mock, list[URI]],
             mock_create_playlist: Mock,
             mock_get_many: Mock,
             mock_sync_items: Mock,

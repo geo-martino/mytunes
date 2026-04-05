@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated, TYPE_CHECKING, Self
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload
 
 from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
 from pydantic.json_schema import JsonSchemaValue
@@ -85,7 +85,8 @@ def _get_playlists_map_from_merge_input[TK, TV](
 
 
 type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
-    MutableUniqueMapping[TK, TV] | None, BeforeValidator(_get_playlists_map_from_merge_input)
+    MutableUniqueMapping[TK, TV] | None,
+    BeforeValidator(_get_playlists_map_from_merge_input)
 ]
 
 
@@ -107,6 +108,11 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
         frozen=True,
         repr=False,
     )
+
+    @overload
+    def merge_playlists(
+            self, other: MergePlaylistsType[TK, TV], reference: MergePlaylistsType[TK, TV] = None
+    ) -> None: ...
 
     @validate_call
     def merge_playlists(

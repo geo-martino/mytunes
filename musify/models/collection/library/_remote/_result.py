@@ -1,8 +1,9 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Annotated, Any, Self
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, BeforeValidator
 
+from musify._types import to_tuple
 from musify.models.collection.album import AlbumCollection, RemoteAlbumCollection
 from musify.models.collection.artist import RemoteArtistCollection
 from musify.models.collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
@@ -47,7 +48,7 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
     ] = Field(
         description="Whether the playlists in this result are writeable (i.e. can be modified by the user).",
     )
-    tracks: Annotated[tuple[T, ...], *_log_formatters] = Field(
+    tracks: Annotated[Sequence[T], BeforeValidator(to_tuple), *_log_formatters] = Field(
         description="The tracks in this result.",
     )
 
@@ -68,15 +69,15 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
 
 class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
     """The result of loading tracks from a remote library."""
-    in_library: Annotated[tuple[T, ...], *_log_formatters] = Field(
+    in_library: Annotated[Sequence[T], BeforeValidator(to_tuple), *_log_formatters] = Field(
         description="The tracks which are in the library but not in playlists or library albums.",
         default_factory=tuple
     )
-    in_playlists: Annotated[tuple[T, ...], *_log_formatters] = Field(
+    in_playlists: Annotated[Sequence[T], BeforeValidator(to_tuple), *_log_formatters] = Field(
         description="The tracks which are in playlists in the library but not library tracks.",
         default_factory=tuple
     )
-    in_albums: Annotated[tuple[T, ...], *_log_formatters] = Field(
+    in_albums: Annotated[Sequence[T], BeforeValidator(to_tuple), *_log_formatters] = Field(
         description="The tracks which are in the library's library albums but not library tracks.",
         default_factory=tuple
     )
@@ -109,7 +110,7 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
 
 
 class RemoteArtistsResult[T: RemoteArtist](CountResult):
-    artists: Annotated[tuple[T, ...], *_log_formatters] = Field(
+    artists: Annotated[Sequence[T], BeforeValidator(to_tuple), *_log_formatters] = Field(
         description="The artists in this result.",
         default_factory=tuple
     )
@@ -130,7 +131,7 @@ class RemoteArtistsResult[T: RemoteArtist](CountResult):
 
 
 class RemoteAlbumsResult[T: RemoteAlbum](CountResult):
-    albums: Annotated[tuple[T, ...], *_log_formatters] = Field(
+    albums: Annotated[Sequence[T], BeforeValidator(to_tuple), *_log_formatters] = Field(
         description="The albums in this result.",
         default_factory=tuple,
     )
