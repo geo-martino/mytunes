@@ -26,8 +26,8 @@ from musify.spotify.user import SpotifyUser
 
 @final
 class _SpotifyPlaylistLibraryEndpoints(
-    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist],
     PlaylistLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyPlaylistTrack, SpotifyUser],
+    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist],
 ):
     __final__ = True
 
@@ -50,18 +50,14 @@ class _SpotifyPlaylistLibraryEndpoints(
         url = self._write_url.with_query(dict(uris=uri))
         return await super().add(url)
 
-    @staticmethod
-    def _generate_add_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
-        return {"json": {"uris": list(map(str, values))}}
-
     @_ApiURISchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def remove(self, uri: SpotifyApiURI[SpotifyPlaylist], **kwargs) -> None:
         url = self._write_url.with_query(dict(uris=uri))
         return await super().remove(url)
 
     @staticmethod
-    def _generate_remove_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
-        return {"json": {"items": [{"uri": str(uri)} for uri in values]}}
+    def _generate_remove_batch_kwargs(values: Iterable[str]) -> JsonSchemaValue:
+        return {"items": [{"uri": str(uri)} for uri in values]}
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(
@@ -125,11 +121,10 @@ class SpotifyPlaylistEndpoints(
     _create_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
 
     # @validate_call  # not currently working with generics
-    async def get_all(
-            self, collection: PageCursor | HasPageCursor | SpotifyPlaylist, show_bar: bool = True
-    ) -> list[SpotifyPlaylistTrack]:
+    async def get_all(self, collection: PageCursor | HasPageCursor | SpotifyPlaylist) -> list[SpotifyPlaylistTrack]:
         try:
-            return await super().get_all(collection, show_bar=show_bar)
+
+            return await super().get_all(collection)
         except ResponseError as exc:
             # WORKAROUND: Spotify returns 403 for private playlists, even if the user is a collaborator
             #  and has access to the playlist.
@@ -149,9 +144,12 @@ class SpotifyPlaylistEndpoints(
             url: SpotifyApiURL[SpotifyMutablePlaylist],
             uris: SpotifyApiURISequence[LocalTrack | SpotifyTrack],
             limit: PositiveInt = None,
-            show_bar: bool = True,
     ) -> int:
-        return await super().add(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
+        return await super().add(url.joinpath("items"), uris=uris, limit=limit)
+
+    @staticmethod
+    def _generate_add_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
+        return {"json": {"uris": list(map(str, values))}}
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
@@ -160,10 +158,9 @@ class SpotifyPlaylistEndpoints(
             url: SpotifyApiURL[SpotifyMutablePlaylist],
             uris: SpotifyApiURISequence[LocalTrack | SpotifyTrack],
             limit: PositiveInt = None,
-            show_bar: bool = True,
     ) -> int:
-        return await super().remove(url.joinpath("items"), uris=uris, limit=limit, show_bar=show_bar)
+        return await super().remove(url.joinpath("items"), uris=uris, limit=limit)
 
     @staticmethod
-    def _generate_remove_batch_kwargs(values: Iterable[str]) -> JsonSchemaValue:
-        return {"items": [{"uri": str(uri)} for uri in values]}
+    def _generate_remove_collection_kwargs(values: Iterable[str]) -> dict[str, JsonSchemaValue]:
+        return {"json": {"items": [{"uri": str(uri)} for uri in values]}}

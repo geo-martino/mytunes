@@ -6,7 +6,7 @@ from musify._types import StrippedString
 from musify.models import ResourceModel
 from musify.models._metaclass import makecls
 from musify.models.metadata import UniqueAttribute, Attribute
-from musify.models.properties import HasSeparableTags
+from musify.models.properties.tag import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
@@ -56,5 +56,6 @@ class HasGenres[GT: Genre](HasSeparableTags):
 
 class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasGenreEndpoints[GenreReadEndpoints]) -> Self:
-        return await api.genres.get(self.uri)
+    async def reload(self, api: HasGenreEndpoints[GenreReadEndpoints]) -> None:
+        model = await api.genres.get(self.uri)
+        self.__dict__.update(model.__dict__)

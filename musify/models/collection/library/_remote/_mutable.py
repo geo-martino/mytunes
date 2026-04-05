@@ -344,9 +344,7 @@ class RemoteMutableLibrary[
                 remote.tracks.replace(pl.tracks)
 
                 properties = await remote.sync_properties(api, dry_run=dry_run)
-                result = await remote.sync_items(
-                    api=api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run, show_bar=False
-                )
+                result = await remote.sync_items(api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run)
 
                 return pl.name, result.model_copy(update=dict(properties=properties))
 

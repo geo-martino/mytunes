@@ -80,7 +80,7 @@ class TestPlaylistManagement(BaseModelTester):
 
         mock_get_playlist.assert_called_once_with(name=collection.name, **playlist_properties)
         mock_create_playlist.assert_not_called()
-        mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
+        mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False)
 
     async def test_create_playlist(
             self,
@@ -109,7 +109,7 @@ class TestPlaylistManagement(BaseModelTester):
             mocker: MockerFixture,
             faker: Faker,
     ):
-        mock_run_tasks = mocker.spy(Logger, "run_tasks_async")
+        mock_wrap_tasks = mocker.spy(Logger, "_wrap_tasks_async")
         mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
 
         async def _random_exception(*_, **__):
@@ -127,7 +127,7 @@ class TestPlaylistManagement(BaseModelTester):
 
         assert excinfo.group_contains((MusifyError, HTTPError))
 
-        tasks: list[Task] = mock_run_tasks.call_args.args[1]
+        tasks: list[Task] = mock_wrap_tasks.call_args.args[1]
         assert any(task.cancelled() for task in tasks)
         mock_teardown_playlists.assert_called_once()
 
@@ -170,7 +170,7 @@ class TestPlaylistManagement(BaseModelTester):
 
         await model._restore_playlist(playlist)
 
-        mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False, show_bar=False)
+        mock_sync_playlist.assert_called_once_with(api=model.api, kind="refresh", dry_run=False)
 
         assert playlist.uri not in model._collections
         assert playlist.uri not in model._playlists

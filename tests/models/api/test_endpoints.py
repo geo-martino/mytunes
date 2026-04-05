@@ -17,7 +17,7 @@ from musify.models._context import RemoteModelContext
 from musify.models.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
 from musify.models.collection import RemoteCollection
-from musify.models.cursors import PageCursor, IndexCursor, UrlCursor
+from musify.models.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from musify.models.exception import APIModelError
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
@@ -335,7 +335,7 @@ class TestEndpoints(EndpointsTester):
         assert len(items) == len(expected_items)
         assert cursor == url_cursors[-1]
 
-        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, kind=None, show_bar=True)
+        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, kind=None)
         mock_generation.assert_not_called()
 
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -369,7 +369,7 @@ class TestEndpoints(EndpointsTester):
         assert cursor == index_cursors[-1]
 
         mock_pagination.assert_not_called()
-        mock_generation.assert_called_once_with(index_cursors[0], path=items_key, kind=None, show_bar=True)
+        mock_generation.assert_called_once_with(index_cursors[0], path=items_key, kind=None)
 
         # async so order is not guaranteed
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -397,13 +397,11 @@ class TestEndpoints(EndpointsTester):
             mock_get_page: Mock,
             faker: Faker,
     ):
-        show_bar = faker.boolean()
-
-        items, cursor = await model._get_all_items_by_pagination(url_cursors[0], path=items_key, show_bar=show_bar)
+        items, cursor = await model._get_all_items_by_pagination(url_cursors[0], path=items_key)
 
         assert cursor == index_cursors[-1]
-        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, show_bar=show_bar)
-        mock_generation.assert_called_once_with(index_cursors[1], path=items_key, kind=None, show_bar=show_bar)
+        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key)
+        mock_generation.assert_called_once_with(index_cursors[1], path=items_key, kind=None)
 
         # async so order is not guaranteed
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -574,14 +572,11 @@ class TestReadCollectionEndpoints(EndpointsTester):
             self, model: CollectionReadEndpoints, uri: URI, cursor: PageCursor, mock_get_all_items: Mock, faker: Faker
     ):
         expected_items, _ = mock_get_all_items.return_value
-        show_bar = faker.boolean()
 
-        result = await model.get_all(cursor, show_bar=show_bar)
+        result = await model.get_all(cursor)
         assert result == expected_items
 
-        mock_get_all_items.assert_called_once_with(
-            cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
-        )
+        mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path, kind=model._extend_type)
 
     async def test_get_all_from_collection(
             self,
@@ -602,12 +597,10 @@ class TestReadCollectionEndpoints(EndpointsTester):
         cursor.offset = cursor.total + 1  # set cursor to position after total to simulate missing items
         assert cursor.next is None
 
-        show_bar = faker.boolean()
-
         with patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock):
             assert not collection.has_all_items
 
-            result = await model.get_all(collection, show_bar=show_bar)
+            result = await model.get_all(collection)
 
             assert result == items
 
@@ -616,9 +609,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
             assert collection.cursor is not cursor
             assert collection.cursor is expected_cursor
 
-            mock_get_all_items.assert_called_once_with(
-                cursor, path=model._extend_path, kind=model._extend_type, show_bar=show_bar
-            )
+            mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path, kind=model._extend_type)
 
 
 class TestWriteCollectionEndpoints(EndpointsTester):
@@ -744,36 +735,39 @@ class TestBatchReadAllEndpoints(EndpointsTester):
         return self.MockBatchReadAllEndpoints(handler=handler)
 
     @pytest.fixture
-    def mock_validate_cursor(self, model: BatchReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock, None, None]:
+    def mock_initial_cursor(self, model: BatchReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock, None, None]:
         cursor = MockInitialCursor(url=uri.api_url)
 
-        with patch.object(TypeAdapter, "validate_python", return_value=cursor) as mock_validate:
-            yield mock_validate
+        with patch.object(InitialCursor, "from_url", return_value=cursor) as mock_cursor:
+            yield mock_cursor
 
     async def test_get_all(
-            self, handler: RequestHandler, mock_get_all_items: Mock, mock_validate_cursor: Mock, faker: Faker
+            self, handler: RequestHandler, mock_get_all_items: Mock, mock_initial_cursor: Mock, faker: Faker
     ):
         model = self.MockBatchReadAllEndpoints(handler=handler)
         limit = faker.random_int(1, 100)
-        show_bar = faker.boolean()
 
-        await model.get_all(limit=limit, show_bar=show_bar)
+        await model.get_all(limit=limit)
 
-        mock_validate_cursor.assert_called_once_with(dict(
-            url=self.MockBatchReadAllEndpoints._read_all_url, limit=limit
-        ))
+        mock_initial_cursor.assert_called_once_with(
+            url=self.MockBatchReadAllEndpoints._read_all_url,
+            source=model.source,
+            limit=limit,
+        )
         mock_get_all_items.assert_called_once_with(
-            mock_validate_cursor.return_value,
+            mock_initial_cursor.return_value,
             path=self.MockBatchReadAllEndpoints._read_all_path,
             kind=self.MockBatchReadAllEndpoints.type,
-            show_bar=show_bar,
         )
 
-    async def test_get_all_uses_default_limit(self, model: BatchReadAllEndpoints, mock_validate_cursor: Mock):
+    async def test_get_all_uses_default_limit(self, model: BatchReadAllEndpoints, mock_initial_cursor: Mock):
         await model.get_all()
-        mock_validate_cursor.assert_called_once_with(dict(
-            url=self.MockBatchReadAllEndpoints._read_all_url, limit=model._read_all_limit
-        ))
+
+        mock_initial_cursor.assert_called_once_with(
+            url=self.MockBatchReadAllEndpoints._read_all_url,
+            source=model.source,
+            limit=model._read_all_limit
+        )
 
 
 class TestBatchWriteEndpoints(EndpointsTester):

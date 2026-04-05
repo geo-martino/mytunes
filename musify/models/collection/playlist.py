@@ -149,7 +149,7 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
         default=None,
     )
 
-    @computed_field(description="The total number of items in this playlist")
+    @computed_field(description="The total number of items in this playlist", repr=False)
     @property
     def item_total(self) -> PositiveInt | None:
         return self.cursor.total
@@ -179,8 +179,9 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
         return self
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadEndpoints]) -> Self:
-        return await api.playlists.get(self.uri)
+    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadEndpoints]) -> None:
+        model = await api.playlists.get(self.uri)
+        self.__dict__.update(model.__dict__)
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> None:
@@ -239,7 +240,6 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             kind: SYNC_TYPE = "new",
             items_filter: ComparerFilter | None = None,
             dry_run: bool = False,
-            show_bar: bool = True,
     ) -> SyncRemoteResult:
         """
         Synchronise the current playlist's items with the remote service.
@@ -255,20 +255,15 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
         :param dry_run: Run function, but do not modify the remote playlists at all.
         :param items_filter: An optional filter to apply to items before syncing.
             Only items that pass the filter will be synced.
-        :param show_bar: Show progress bars during sync.
         :return: The sync result.
         """
         tracks = items_filter.apply(self.tracks) if items_filter else self.tracks
         initial = [track.uri for track in tracks if track.uri]
-        remote = await self._get_remote_uris(api, show_bar=show_bar)
+        remote = await self._get_remote_uris(api)
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)
 
-        removed = await api.playlists.remove(
-            self.uri.api_url, uris=remove, show_bar=show_bar
-        ) if not dry_run else len(remove)
-        added = await api.playlists.add(
-            self.uri.api_url, uris=add, show_bar=show_bar
-        ) if not dry_run else len(add)
+        removed = await api.playlists.remove(self.uri, uris=remove) if not dry_run else len(remove)
+        added = await api.playlists.add(self.uri, uris=add) if not dry_run else len(add)
 
         return SyncRemoteResult(
             start=len(remote),
@@ -279,8 +274,6 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             final=len(remote) + added - removed
         )
 
-    async def _get_remote_uris(
-            self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints], show_bar: bool = True
-    ) -> list[UT]:
+    async def _get_remote_uris(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> list[UT]:
         playlist = await api.playlists.get(self.uri.api_url)
-        return [track.uri for track in await api.playlists.get_all(playlist, show_bar=show_bar)]
+        return [track.uri for track in await api.playlists.get_all(playlist)]

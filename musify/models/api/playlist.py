@@ -40,25 +40,16 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
 ):
     @overload
     async def add_and_skip_duplicates(
-            self,
-            url: _URL_TYPE[UT, RT],
-            uris: Sequence[_URI_TYPE[RT]],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
+            self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_and_skip_duplicates(
-            self,
-            url: ApiURL[UT, RT],
-            uris: ApiURISequence[UT, IT],
-            limit: PositiveInt = None,
-            show_bar: bool = True,
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None,
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
         collection = await self.get(url)
-        # noinspection PyArgumentList
         items = await self.get_all(collection)
 
         uris_unique = []
@@ -67,7 +58,7 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
             if uri not in uris_unique and uri not in uris_current:
                 uris_unique.append(uri)
 
-        return await self.add(url, uris_unique, limit=limit, show_bar=show_bar)
+        return await self.add(url, uris_unique, limit=limit)
 
 
 class PlaylistBatchReadEndpoints[UT: URI, RT: RemotePlaylist](

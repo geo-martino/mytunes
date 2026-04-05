@@ -168,7 +168,7 @@ class RemoteLibrary[
 
         async def _extend_playlist_tracks(pl: PT) -> None:
             async with self.concurrency:
-                items = await api.playlists.get_all(pl, show_bar=False)
+                items = await api.playlists.get_all(pl)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
@@ -260,7 +260,7 @@ class RemoteLibrary[
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
             async with self.concurrency:
-                albums = await api.artists.get_all(artist, show_bar=False)
+                albums = await api.artists.get_all(artist)
 
             artist.albums.clear()
             artist.albums.extend(albums)
@@ -323,7 +323,7 @@ class RemoteLibrary[
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
             async with self.concurrency:
-                tracks = await api.albums.get_all(album, show_bar=False)
+                tracks = await api.albums.get_all(album)
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 

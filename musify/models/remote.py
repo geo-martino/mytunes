@@ -26,10 +26,6 @@ class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=makecl
         return hash(self.uri)
 
     @abstractmethod
-    async def reload(self, api: HasEndpoints) -> Self:
-        """
-        Reload this remote resource using the provided API.
-        Returns a new instance of the resource with the updated data.
-        Does not modify the existing instance.
-        """
+    async def reload(self, api: HasEndpoints) -> None:
+        """Reload this remote resource using the provided API."""
         raise NotImplementedError

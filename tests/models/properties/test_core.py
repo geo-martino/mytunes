@@ -3,7 +3,8 @@ from random import choice
 import pytest
 from faker import Faker
 
-from musify.models.properties import NumberModel, HasSeparableTags
+from musify.models.properties import NumberModel
+from musify.models.properties.tag import HasSeparableTags
 from tests.models.testers import BaseModelTester
 
 

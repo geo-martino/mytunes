@@ -7,7 +7,7 @@ from musify.models import ResourceModel
 from musify.models._metaclass import makecls
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.metadata import Attribute
-from musify.models.properties import HasSeparableTags
+from musify.models.properties.tag import HasSeparableTags
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI
@@ -53,6 +53,7 @@ class HasArtists[RT: Artist](HasSeparableTags):
 
 class RemoteArtist[UT: URI, GT: RemoteGenre](Artist[GT], RemoteResource[UT], metaclass=makecls()):
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasArtistEndpoints[ArtistReadEndpoints]) -> Self:
-        return await api.artists.get(self.uri)
+    async def reload(self, api: HasArtistEndpoints[ArtistReadEndpoints]) -> None:
+        model = await api.artists.get(self.uri)
+        self.__dict__.update(model.__dict__)
 

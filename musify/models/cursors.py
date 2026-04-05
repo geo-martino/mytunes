@@ -5,7 +5,8 @@ from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Union, Annotated
 
-from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices
+from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices, \
+    PositiveInt
 
 from musify._types import String
 from musify.exception import MusifyTypeError
@@ -384,7 +385,7 @@ class InitialCursor(_HasLimitParam):
     """
 
     @classmethod
-    def from_url(cls, url: HttpURL, source: str) -> Self:
+    def from_url(cls, url: HttpURL, source: str, limit: PositiveInt | None = None) -> Self:
         """Generate an appropriate initial cursor for the given URL and source."""
         if cls.__final__:
             raise MusifyTypeError(
@@ -396,7 +397,7 @@ class InitialCursor(_HasLimitParam):
         if not classes:
             raise MusifyTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 
-        return TypeAdapter(Union[*classes]).validate_python(dict(url=url))
+        return TypeAdapter(Union[*classes]).validate_python(dict(url=url, limit=limit))
     
     @property
     def next(self) -> Self | None:

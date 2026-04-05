@@ -17,9 +17,8 @@ class SpotifyEndpoints[UT: _SpotifyURIBase, RT: SpotifyResource](
 
 
 class _SpotifyLibraryEndpoints[UT: _SpotifyURIBase, RT: SpotifyResource](
-    SpotifyEndpoints[UT, RT], BatchWriteEndpoints[UT, RT],
+    BatchWriteEndpoints[UT, RT], SpotifyEndpoints[UT, RT],
 ):
-    # just define this here for write library endpoints, it's the same for every endpoint type
     @staticmethod
     def _generate_add_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
         return {"params": {"uris": ",".join(map(str, values))}}

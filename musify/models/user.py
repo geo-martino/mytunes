@@ -24,5 +24,6 @@ class RemoteUser[UT: URI](RemoteResource[UT], HasName, HasImages):
     )
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasUserEndpoints[UserEndpoints]) -> Self:
-        return await api.users.get_me()
+    async def reload(self, api: HasUserEndpoints[UserEndpoints]) -> None:
+        model = await api.users.get_me()
+        self.__dict__.update(model.__dict__)

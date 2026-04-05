@@ -72,5 +72,5 @@ class SpotifySearchEndpoints(
             case _:
                 raise RequestError(f"Unsupported item type: {item.type}")
 
-        item_type = item if isinstance(item, SpotifyResource) else item.type
+        item_type = type(item) if isinstance(item, SpotifyResource) else item.type
         return {"query": query, "types": {item_type}} | kwargs

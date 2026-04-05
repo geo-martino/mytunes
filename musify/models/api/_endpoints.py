@@ -175,11 +175,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items(
-            self,
-            cursor: PageCursor,
-            path: str | AliasPath | AliasChoices,
-            kind: str | Type | None = None,
-            show_bar: bool = True,
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, kind: str | Type | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
         if cursor.next is None:
@@ -196,7 +192,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             message = f"Getting {amount} {item_type}s"
         self._handler.log("INFO", cursor.url, message=message)
 
-        items, cursor = await self._get_all_items_from_cursor(cursor, path=path, kind=kind, show_bar=show_bar)
+        items, cursor = await self._get_all_items_from_cursor(cursor, path=path, kind=kind)
 
         message = f"Retrieved "
         if cursor.total:
@@ -214,17 +210,13 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_from_cursor(
-            self,
-            cursor: PageCursor,
-            path: str | AliasPath | AliasChoices,
-            kind: str | Type | None = None,
-            show_bar: bool = True,
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, kind: str | Type | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         match cursor:
             case IterablePageCursor():
-                return await self._get_all_items_by_generation(cursor, path=path, kind=kind, show_bar=show_bar)
+                return await self._get_all_items_by_generation(cursor, path=path, kind=kind)
             case _:
-                return await self._get_all_items_by_pagination(cursor, path=path, kind=kind, show_bar=show_bar)
+                return await self._get_all_items_by_pagination(cursor, path=path, kind=kind)
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_by_pagination(
@@ -232,7 +224,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             cursor: PageCursor,
             path: str | AliasPath | AliasChoices,
             kind: str | Type | None = None,
-            show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by paginating through the cursor, which must have a next URL for the first page of items.
@@ -263,9 +254,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
-                response_items, cursor = await self._get_all_items_by_generation(
-                    cursor, path=path, kind=kind, show_bar=show_bar
-                )
+                response_items, cursor = await self._get_all_items_by_generation(cursor, path=path, kind=kind)
                 items.extend(response_items)
                 break
 
@@ -277,7 +266,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             cursor: T,
             path: str | AliasPath | AliasChoices,
             kind: str | Type[RT] | None = None,
-            show_bar: bool = True,
     ) -> tuple[tuple[RT, ...], T]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
@@ -298,7 +286,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         task_id = self.logger.progress.add_task(
             description=f"Getting {desc_type}s",
             total=len(cursors),
-            visible=show_bar or len(cursors) >= self._bar_threshold
+            visible=len(cursors) >= self._bar_threshold
         )
         tasks = map(functools.partial(self._get_page, item_type=item_type, path=path), cursors)
         responses: list[JsonSchemaValue] = await self.logger.run_tasks_async(tasks, task_id=task_id)
@@ -543,7 +531,7 @@ class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
     )
 
     @validate_call
-    async def get_all(self, collection: PageCursor | HasPageCursor | RT, show_bar: bool = True) -> list[IT]:
+    async def get_all(self, collection: PageCursor | HasPageCursor | RT) -> list[IT]:
         """Get all items in the collection by paginating through its cursor. May also give a cursor directly."""
         match collection:
             case PageCursor():
@@ -558,9 +546,7 @@ class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
             case _:
                 raise RequestError("Expected a collection or page cursor.")
 
-        items, cursor = await self._get_all_items(
-            cursor, path=self._extend_path, kind=self._extend_type, show_bar=show_bar
-        )
+        items, cursor = await self._get_all_items(cursor, path=self._extend_path, kind=self._extend_type)
 
         if isinstance(collection, RemoteCollection):
             items = itertools.chain.from_iterable((collection.items, items))
@@ -579,21 +565,13 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
 
     @overload
     async def add(
-            self,
-            url: _URL_TYPE[UT, RT],
-            uris: Sequence[_URI_TYPE[RT]],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True
+            self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def add(
-            self,
-            url: ApiURL[UT, RT],
-            uris: ApiURISequence[UT, IT],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt | None = None,
     ) -> int:
         """Add items to the current user's library items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
@@ -615,7 +593,7 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
         task_id = self.logger.progress.add_task(
             description=f"Adding {item_type}s to {collection_type}",
             total=len(batches),
-            visible=show_bar or len(batches) >= self._bar_threshold
+            visible=len(batches) >= self._bar_threshold
         )
         await self.logger.run_tasks_async(map(_post_items, batches), task_id=task_id)
 
@@ -629,21 +607,13 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
 
     @overload
     async def remove(
-            self,
-            url: _URL_TYPE[UT, RT],
-            uris: Sequence[_URI_TYPE[RT]],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True
+            self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
     @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @_ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove(
-            self,
-            url: ApiURL[UT, RT],
-            uris: ApiURISequence[UT, IT],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
+            self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt | None = None,
     ) -> int:
         """Remove items from the current user's library items for this endpoint resource type."""
         collection_type = self._get_type_value(self.type)
@@ -665,7 +635,7 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
         task_id = self.logger.progress.add_task(
             description=f"Removing {item_type}s from {collection_type}",
             total=len(batches),
-            visible=show_bar or len(batches) >= self._bar_threshold
+            visible=len(batches) >= self._bar_threshold
         )
         await self.logger.run_tasks_async(map(_delete_items, batches), task_id=task_id)
 
@@ -690,20 +660,10 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @overload
-    async def get_many(
-            self,
-            uris: Sequence[_URI_TYPE[RT]],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True
-    ) -> int: ...
+    async def get_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
-    async def get_many(
-            self,
-            uris: ApiURISequence[UT, RT],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
-    ) -> list[RT]:
+    async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
 
@@ -715,7 +675,6 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
         :param uris: A list of URIs. See above for accepted formats.
         :param limit: The number of URIs to send in each request to the API.
-        :param show_bar: Show progress bar for each batch of URIs.
         """
         item_type = self._get_type_value(self.type)
 
@@ -746,7 +705,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         task_id = self.logger.progress.add_task(
             description=f"Getting {item_type}s",
             total=len(batches),
-            visible=show_bar or len(batches) >= self._bar_threshold
+            visible=len(batches) >= self._bar_threshold
         )
         responses = await self.logger.run_tasks_async(map(_get_items, batches), task_id=task_id)
 
@@ -777,19 +736,19 @@ class BatchReadAllEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @overload
-    async def get_all(self, limit: PositiveInt | None = None, show_bar: bool = True) -> list[RT]: ...
+    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]: ...
 
     @validate_call
-    async def get_all(self, limit: PositiveInt | None = None, show_bar: bool = True) -> list[RT]:
+    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]:
         """Get the current user's library items for this endpoint resource type."""
         if limit is None:
             limit = self._read_all_limit
 
         # we don't know what type of pagination will be used for library items
         # just get a cursor which returns a url to begin pagination and figure it out later
-        cursor = _INITIAL_CURSOR_ADAPTER.validate_python(dict(url=self._read_all_url, limit=limit))
+        cursor = InitialCursor.from_url(url=self._read_all_url, source=self.source, limit=limit)
 
-        items, *_ = await self._get_all_items(cursor, path=self._read_all_path, kind=self.type, show_bar=show_bar)
+        items, *_ = await self._get_all_items(cursor, path=self._read_all_path, kind=self.type)
         return list(items)
 
 
@@ -802,20 +761,10 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     )
 
     @overload
-    async def add_many(
-            self,
-            uris: Sequence[_URI_TYPE[RT]],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
-    ) -> int: ...
+    async def add_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
-    async def add_many(
-            self,
-            uris: ApiURISequence[UT, RT],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
-    ) -> int:
+    async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Add items in batches for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
 
@@ -835,7 +784,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         task_id = self.logger.progress.add_task(
             description=f"Adding {item_type}s",
             total=len(batches),
-            visible=show_bar or len(batches) >= self._bar_threshold
+            visible=len(batches) >= self._bar_threshold
         )
         await self.logger.run_tasks_async(map(_post_items, batches), task_id=task_id)
 
@@ -848,20 +797,10 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return {"json": {"ids": list(map(str, values))}}
 
     @overload
-    async def remove_many(
-            self,
-            uris: Sequence[_URI_TYPE[RT]],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
-    ) -> int: ...
+    async def remove_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
 
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
-    async def remove_many(
-            self,
-            uris: ApiURISequence[UT, RT],
-            limit: PositiveInt | None = None,
-            show_bar: bool = True,
-    ) -> int:
+    async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Remote items in batches for this endpoint resource type."""
         item_type = self._get_type_value(self.type)
 
@@ -881,7 +820,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         task_id = self.logger.progress.add_task(
             description=f"Removing {item_type}s",
             total=len(batches),
-            visible=show_bar or len(batches) >= self._bar_threshold
+            visible=len(batches) >= self._bar_threshold
         )
         await self.logger.run_tasks_async(map(_delete_items, batches), task_id=task_id)
 

@@ -139,16 +139,13 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
             self.logger.progress.start_task(task_id=self.task_id)
 
         try:
-            async with asyncio.TaskGroup() as tg:
-                tasks = [tg.create_task(task) for task in map(self._setup_playlist, self.collections)]
-                remove = self.position.number == self.position.total
-                await self.logger.run_tasks_async(tasks, task_id=self.task_id, remove=remove)
+            await self.setup_playlists()
         except* (MusifyError, HTTPError):
             # always make sure teardown happens in case of an error to clean up temp playlists
             await self.teardown_playlists()
             raise
 
-        if self.task_id is not None and not remove:
+        if self.task_id is not None and self.position.number < self.position.total:
             self.logger.progress.stop_task(task_id=self.task_id)
         return self
 
@@ -161,7 +158,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
     ###########################################################################
     async def setup_playlists(self) -> None:
         """Set up the playlists for the given collections and store their state."""
-        tasks = [asyncio.create_task(task) for task in map(self._setup_playlist, self.collections)]
+        tasks = map(self._setup_playlist, self.collections)
         remove = self.position.number == self.position.total
         await self.logger.run_tasks_async(tasks, task_id=self.task_id, remove=remove)
 
@@ -183,11 +180,11 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
             # empty the playlist
             if playlist.count:
                 playlist.tracks.clear()
-                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
+                await playlist.sync_items(api=self.api, kind="refresh", dry_run=False)
 
             # add all new uris
             uris = [item.uri for item in collection.items if isinstance(item, HasURI) and item.has_uri]
-            await api.add(playlist.uri.api_url, uris=uris, show_bar=False)
+            await api.add(playlist.uri.api_url, uris=uris)
 
             # WORKAROUND: it seems some APIs need some time between adding and getting items
             await asyncio.sleep(self.wait_after_add)
@@ -236,7 +233,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
     async def _restore_playlist(self, playlist: RemoteMutablePlaylist) -> None:
         async with self.concurrency:
             # playlist existed before the check and should be returned to its original state
-            await playlist.sync_items(api=self.api, kind="refresh", dry_run=False, show_bar=False)
+            await playlist.sync_items(api=self.api, kind="refresh", dry_run=False)
 
         del self._collections[playlist.uri]
         del self._playlists[playlist.uri]

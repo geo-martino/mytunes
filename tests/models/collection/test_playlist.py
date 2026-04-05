@@ -244,18 +244,17 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         add, remove, unchanged = mock_get_sync_items.return_value
         remote = mock_get_playlist_items.return_value
         remote_uris = [item.uri for item in remote]
-        show_bar = faker.boolean()
 
         assert model.tracks == tracks
 
-        result = await model.sync_items(api, kind=kind, dry_run=False, show_bar=show_bar)
+        result = await model.sync_items(api, kind=kind, dry_run=False)
         assert_sync_items_result(result, remote, add, remove, unchanged)
 
-        mock_get_playlist_items.assert_called_once_with(model, show_bar=show_bar)
+        mock_get_playlist_items.assert_called_once_with(model)
         mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
 
-        mock_add.assert_called_once_with(model.uri.api_url, uris=add, show_bar=show_bar)
-        mock_remove.assert_called_once_with(model.uri.api_url, uris=remove, show_bar=show_bar)
+        mock_add.assert_called_once_with(model.uri.api_url, uris=add)
+        mock_remove.assert_called_once_with(model.uri.api_url, uris=remove)
 
     async def test_sync_items_dry_run(
             self,
@@ -274,14 +273,13 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         add, remove, unchanged = mock_get_sync_items.return_value
         remote = mock_get_playlist_items.return_value
         remote_uris = [item.uri for item in remote]
-        show_bar = faker.boolean()
 
         assert model.tracks == tracks
 
-        result = await model.sync_items(api, kind=kind, dry_run=True, show_bar=show_bar)
+        result = await model.sync_items(api, kind=kind, dry_run=True)
         assert_sync_items_result(result, remote, add, remove, unchanged)
 
-        mock_get_playlist_items.assert_called_once_with(model, show_bar=show_bar)
+        mock_get_playlist_items.assert_called_once_with(model)
         mock_get_sync_items.assert_called_once_with(kind, initial=initial, remote=remote_uris)
 
         mock_add.assert_not_called()

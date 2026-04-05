@@ -110,7 +110,6 @@ class LocalPlaylistFile[TF: Filter](
     async def rename(self) -> None:
         """Rename the playlist file to match the name of the playlist."""
         if self.name == self.path.stem:
-            print("SKIP RENAME")
             return
 
         path = self.path.with_stem(self.name)

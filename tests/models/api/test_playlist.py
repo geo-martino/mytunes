@@ -63,15 +63,14 @@ class TestPlaylistReadWriteEndpoints(EndpointsTester):
         limit = faker.random_int(1)
         uris_duplicated = list(map(self._convert_uri_to_random_input_type, uris_duplicated))
         collection_items = [MockRemoteResource(uri=uri) for uri in uris_collection]
-        show_bar = faker.boolean()
 
         # we just want to test that duplicates are skipped when adding, so we mock all surrounding logic
         with (
             patch.object(PlaylistReadWriteEndpoints, "get_all", return_value=collection_items, new_callable=AsyncMock),
             patch.object(PlaylistReadWriteEndpoints, "add", new_callable=AsyncMock) as mock_add
         ):
-            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit, show_bar=show_bar)
-            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit, show_bar=show_bar)
+            await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
+            mock_add.assert_called_once_with(uri.api_url, uris, limit=limit)
 
 
 @pytest.fixture

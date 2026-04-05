@@ -509,8 +509,6 @@ class TestCollectionSearcher(SearcherTester):
 
             assert len(results) == len(collections)
             assert mock_search_collection.call_count == len(collections)
-            for call in mock_search_collection.call_args_list:
-                assert call.kwargs["show_bar"] is False
 
     @pytest.fixture
     def mock_search_items_only(self, model: Searcher) -> Generator[Mock, None, None]:

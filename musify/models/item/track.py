@@ -147,5 +147,6 @@ class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
     )
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasTrackEndpoints[TrackReadEndpoints]) -> Self:
-        return await api.tracks.get(self.uri)
+    async def reload(self, api: HasTrackEndpoints[TrackReadEndpoints]) -> None:
+        model = await api.tracks.get(self.uri)
+        self.__dict__.update(model.__dict__)

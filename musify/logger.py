@@ -3,6 +3,7 @@
 """
 All classes and operations relating to the logger objects used throughout the entire package.
 """
+import asyncio
 import logging
 import logging.config
 import logging.handlers
@@ -10,7 +11,7 @@ import sys
 from collections.abc import Iterable, Awaitable, Callable, Generator, AsyncGenerator
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, Annotated
+from typing import Any, Annotated, Coroutine
 
 from pydantic import Field, validate_call
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn, BarColumn, TaskProgressColumn, \
@@ -246,7 +247,7 @@ class Logger(logging.Logger, AbstractContextManager):
 
     async def run_tasks_async[T](
             self,
-            tasks: Iterable[Awaitable[T]],
+            tasks: Iterable[Coroutine[Any, Any, T]],
             task_id: TaskID | None = None,
             predicate: Callable[[T], bool] | None = None,
             remove: bool = True,
@@ -262,8 +263,10 @@ class Logger(logging.Logger, AbstractContextManager):
         :param remove: Whether to remove the progress bar task when done.
         :return: The results of the tasks.
         """
-        tasks = self._wrap_tasks_async(tasks, task_id, predicate)
-        result = [it async for it in tasks]
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(task) for task in tasks]
+            tasks = self._wrap_tasks_async(tasks, task_id, predicate)
+            result = [it async for it in tasks]
 
         if remove and task_id in self.progress.task_ids:
             self.progress.remove_task(task_id)
