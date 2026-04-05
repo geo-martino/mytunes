@@ -1,10 +1,12 @@
 from typing import ClassVar, Self, TYPE_CHECKING, Annotated
 
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
 
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._metaclass import makecls
+from musify.models.api import ItemReadEndpoints
+from musify.models.api.items import HasTrackEndpoints
 from musify.models.item.album import HasAlbum, Album, RemoteAlbum
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
@@ -20,8 +22,6 @@ from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 from musify.models.sequence import MutableUniqueSequence, UniqueSequence
 
-if TYPE_CHECKING:
-    from musify.models.api.track import HasTrackEndpoints, TrackReadEndpoints
 
 
 class Track[RT: Artist, AT: Album, GT: Genre](
@@ -146,7 +146,7 @@ class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
         default_factory=list,
     )
 
-    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasTrackEndpoints[TrackReadEndpoints]) -> None:
+    @validate_call
+    async def reload(self, api: HasTrackEndpoints[ItemReadEndpoints]) -> None:
         model = await api.tracks.get(self.uri)
         self.__dict__.update(model.__dict__)

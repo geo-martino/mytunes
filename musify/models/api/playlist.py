@@ -1,13 +1,14 @@
 from collections.abc import Sequence
-from typing import ClassVar, Type, overload
+from typing import ClassVar, overload
 
 from pydantic import validate_call, Field, PositiveInt, PrivateAttr
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from musify.models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
-    BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, HasLibraryEndpoints, CollectionReadEndpoints, \
+    BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
     BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
+from musify.models.api import HasLibraryEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
@@ -16,7 +17,7 @@ from musify.models.user import RemoteUser
 
 
 class PlaylistEndpoints[UT: URI, RT: RemotePlaylist](Endpoints[UT, RT]):
-    type: ClassVar[Type] = RemotePlaylist
+    pass
 
 
 class PlaylistReadEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
@@ -24,14 +25,14 @@ class PlaylistReadEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
     ItemReadEndpoints[UT, RT],
     CollectionReadEndpoints[UT, RT, IT],
 ):
-    _extend_type: ClassVar[Type] = RemoteTrack
+    pass
 
 
 class PlaylistWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
     PlaylistEndpoints[UT, RT],
     CollectionWriteEndpoints[UT, RT, IT],
 ):
-    _extend_type: ClassVar[Type] = RemoteTrack
+    pass
 
 
 class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
@@ -115,7 +116,7 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
 
         body = await self._format_playlist_body(**kwargs)
         response = await self._handler.post(self._create_url, json=body)
-        playlist = self.__class__.create_model(response, context=self._model_context)
+        playlist = type(self).create_model(response, context=self._model_context)
 
         message = f"Created playlist: {playlist.name!r} -> {playlist.uri.api_url}"
         self._handler.log("DONE", self._create_url, message=message)

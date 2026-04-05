@@ -3,9 +3,8 @@ from typing import ClassVar, final
 from pydantic import AliasPath, PositiveInt
 from yarl import URL
 
-from musify.models.api import HasLibraryEndpoints
-from musify.models.api.track import TrackReadEndpoints, TrackBatchReadEndpoints, \
-    TrackBatchReadAllEndpoints, TrackBatchWriteEndpoints
+from musify.models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+    BatchReadEndpoints
 from musify.models.api.types import _ApiURISchema
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
@@ -17,8 +16,8 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 @final
 class _SpotifyTrackLibraryEndpoints(
     _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyTrack],
-    TrackBatchReadAllEndpoints[SpotifyResourceURI, SpotifyTrack],
-    TrackBatchWriteEndpoints[SpotifyResourceURI, SpotifyTrack],
+    BatchReadAllEndpoints[SpotifyResourceURI, SpotifyTrack],
+    BatchWriteEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
     __final__ = True
 
@@ -34,8 +33,8 @@ class _SpotifyTrackLibraryEndpoints(
 class SpotifyTrackEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack],
     HasLibraryEndpoints[_SpotifyTrackLibraryEndpoints],
-    TrackReadEndpoints[SpotifyResourceURI, SpotifyTrack],
-    TrackBatchReadEndpoints[SpotifyResourceURI, SpotifyTrack],
+    ItemReadEndpoints[SpotifyResourceURI, SpotifyTrack],
+    BatchReadEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
     __final__ = True
 

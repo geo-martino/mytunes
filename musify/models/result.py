@@ -169,7 +169,7 @@ class Result(BaseModel):
         row_positions: dict[int, str] = {}
 
         # noinspection PyProtectedMember
-        for i, (field_name, (_, metadata)) in enumerate(self.__class__._metadata_fields.items()):
+        for i, (field_name, (_, metadata)) in enumerate(type(self)._metadata_fields.items()):
             if not (formatters := self._get_formatters(metadata)):
                 continue
             if (value := self._get_field_value(getattr(self, field_name), formatters)) is None:
@@ -250,7 +250,7 @@ class TotalCountResult(CountResult):
         total = 0
 
         # noinspection PyProtectedMember
-        for field_name, (_, metadata) in self.__class__._metadata_fields.items():
+        for field_name, (_, metadata) in type(self)._metadata_fields.items():
             if not (formatters := self._get_formatters(metadata)):
                 continue
             if (count := self._get_field_count(getattr(self, field_name), formatters)) is None:

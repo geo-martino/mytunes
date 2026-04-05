@@ -21,11 +21,11 @@ class TestSpotifySearchEndpoints(BaseModelTester):
 
     async def test_format_query_params(self, model: SpotifySearchEndpoints, faker: Faker):
         query = "track:track name artist:artist name"
-        types = {SpotifyTrack, SpotifyArtist}
+        types = {SpotifyTrack.type, SpotifyArtist.type}
 
         result = model._format_query_params(query=query, types=types)
         assert result["q"] == query
-        assert set(result["type"].split(",")) == {it.type for it in types}
+        assert set(result["type"].split(",")) == types
         assert "limit" not in result
         assert "offset" not in result
 

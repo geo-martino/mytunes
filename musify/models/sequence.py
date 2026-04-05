@@ -76,7 +76,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
             return True
         elif isinstance(other, Sequence):
             return self._items == other
-        elif not isinstance(other, self.__class__):
+        elif not isinstance(other, type(self)):
             return super().__eq__(other)
 
         return self._items == other._items
@@ -114,7 +114,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
 
     def copy(self) -> Self:
         """Return a shallow copy of this sequence"""
-        return self.__class__(self._items.copy())
+        return type(self)(self._items.copy())
 
     @validate_call
     def intersection(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
@@ -290,7 +290,7 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
                 self.remove(item)
 
         # noinspection PyTypeChecker,PyArgumentList
-        self.extend(self.__class__.outer_difference(reference, other), allow_duplicates=False)
+        self.extend(type(self).outer_difference(reference, other), allow_duplicates=False)
 
     @validate_call
     def remove(self, __value: TV | Sequence[TV]) -> None:

@@ -156,8 +156,8 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
     @cached_property
     def _processor_name(self) -> str | None:
         """The cleaned processor name to be used when calling this processor"""
-        name: str = self.__class__.processor_field_name
-        attribute: ProcessorAttribute = self.__class__.processor_attribute
+        name: str = type(self).processor_field_name
+        attribute: ProcessorAttribute = type(self).processor_attribute
         value: str | None = getattr(self, name)
         return attribute.cleaner(value) if value else None
 
@@ -173,7 +173,7 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
 
     @model_validator(mode="after")
     def _validate_processor(self) -> Self:
-        if not self.__class__.processor_required:
+        if not type(self).processor_required:
             return self
 
         processor_name = self._processor_name
@@ -202,10 +202,10 @@ class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
 
     @model_validator(mode="after")
     def _map_processor_value(self) -> Any:
-        field_name: str = self.__class__.processor_field_name
+        field_name: str = type(self).processor_field_name
 
         field_value = getattr(self, field_name)
-        clean_value = self.__class__.get_clean_processor_name(field_value)
+        clean_value = type(self).get_clean_processor_name(field_value)
         if clean_value != field_value:
             self.__dict__[field_name] = clean_value
 

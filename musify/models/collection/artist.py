@@ -1,8 +1,10 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self, TYPE_CHECKING
 
-from pydantic import model_validator
+from pydantic import model_validator, validate_call
 
+from musify.models.api import CollectionReadEndpoints
+from musify.models.api.items import HasArtistEndpoints
 from musify.models.collection._base import RemoteCollection, CollectionModel
 from musify.models.collection.album import AlbumCollection
 from musify.models.cursors import PageCursor
@@ -12,9 +14,6 @@ from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.genre import Genre, RemoteGenre
 from musify.models.item.track import Track
 from musify.models.properties.uri import URI
-
-if TYPE_CHECKING:
-    from musify.models.api.artist import HasArtistEndpoints, ArtistCollectionReadEndpoints
 
 
 class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], HasAlbums[AT]):
@@ -89,6 +88,6 @@ class RemoteArtistCollection[UT: URI, AT: RemoteAlbum, GT: RemoteGenre, CT: Page
     def _clear(self) -> None:
         self.albums.clear()
 
-    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def extend(self, api: HasArtistEndpoints[ArtistCollectionReadEndpoints]) -> None:
+    @validate_call
+    async def extend(self, api: HasArtistEndpoints[CollectionReadEndpoints]) -> None:
         self.albums[:] = await api.artists.get_all(self)

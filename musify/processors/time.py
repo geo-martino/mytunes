@@ -68,11 +68,11 @@ class TimeMapper(DynamicProcessor):
 
     @model_validator(mode="after")
     def _map_processor_value(self) -> Any:
-        field_name: str = self.__class__.processor_field_name
+        field_name: str = type(self).processor_field_name
         method_name: str = self._processor_method_name
 
         field_value = getattr(self, field_name)
-        clean_value = self.__class__.get_clean_processor_name(method_name)
+        clean_value = type(self).get_clean_processor_name(method_name)
         if clean_value != field_value:
             self.__dict__[field_name] = clean_value
 

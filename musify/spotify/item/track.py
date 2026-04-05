@@ -24,7 +24,7 @@ from musify.spotify.properties.rating import HasSpotifyRating
 from musify.spotify.properties.uri import SpotifyResourceURI
 
 if TYPE_CHECKING:
-    from musify.models.api.track import HasTrackEndpoints
+    from musify.models.api.items import HasTrackEndpoints
     # noinspection PyProtectedMember
     from musify.spotify.api._track import SpotifyTrackEndpoints
 

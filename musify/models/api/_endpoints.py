@@ -1,11 +1,11 @@
-import functools
 import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from contextlib import suppress, AbstractAsyncContextManager
 from copy import copy
 from io import BytesIO
 from itertools import batched
-from typing import Any, ClassVar, Self, Type, Union, cast, overload
+from types import UnionType
+from typing import Any, ClassVar, Self, cast, overload, get_args, get_origin
 
 from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.auth import Authoriser
@@ -13,77 +13,130 @@ from aiorequestful.cache.backend.base import ResponseRepository
 from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
-from pydantic import Field, InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
+from pydantic import InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
+from musify._types import get_generic, get_generics, get_generic_type, get_bases
+from musify.exception import MusifyTypeError
+from musify.logger import Logger
 from musify.models import ResourceModel, BaseModel
 from musify.models._attribute import AttributeMetaclass
 from musify.models._context import RemoteModelContext
 from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
-from musify.models.exception import APIModelError, RequestError, CursorResponseError, MusifyValidationError
+from musify.models.exception import APIModelError, RequestError, CursorResponseError, MusifyValidationError, ModelError
 from musify.models.properties.image import ImageSource, PILImageFileT, ImageURL
 from musify.models.properties.logger import HasLogger
 from musify.models.properties.uri import URI, HasURI
 from musify.models.remote import RemoteModel, RemoteResource
 
 
-def _map_handler[T: RequestHandler[Authoriser, JsonSchemaValue]](
-        model: type[BaseModel], value: T | Mapping[str, T]
-) -> T | dict[str, dict[str, T]]:
-    key = "handler"
-    match value:
-        case RequestHandler():
-            handler = value
-        case Mapping() if set(value.keys()) == {key}:
-            return _map_handler(model, value[key])
-        case _:
-            return value
-
-    return {key: handler} | {
-        name: {key: handler} for name, info in model.model_fields.items()
-        if isinstance(info.annotation, type) and issubclass(info.annotation, Endpoints)
-    }
-
-
 class EndpointsMetaclass(AttributeMetaclass):
+    @property
+    def type_name(cls) -> str:
+        """The name of the type of resource handled by this Endpoint type."""
+        kls = cast('type[Endpoints]', cls)
+        kls = get_generic(kls, expected=RemoteResource, base=Endpoints)
+        if get_origin(kls) is UnionType:
+            return Logger.format_list_to_string((arg.type for arg in get_args(kls)))
+        return kls.type
+
+    @property
+    def item_type_name(cls) -> str:
+        """The name for the type of items in the collection resource handled by this Endpoint type if applicable."""
+        kls = cast('type[Endpoints]', cls)
+        with suppress(MusifyTypeError):
+            kls = get_generic(kls, expected=RemoteResource, not_expected=RemoteCollection, base=Endpoints)
+            return kls.type
+        return "item"
+
+    @property
+    def type_adapter(cls) -> TypeAdapter[RemoteResource]:
+        """The type adapter for the resources handled by this Endpoint type."""
+        kls = cast('type[Endpoints]', cls)
+        kls = get_generic(kls, expected=RemoteResource, base=Endpoints)
+        return TypeAdapter(kls)
+
+    @property
+    def item_type_adapter(cls) -> TypeAdapter[RemoteResource]:
+        """The type adapter to use for items in the collection resource handled by this Endpoint type if applicable."""
+        kls = cast('type[Endpoints]', cls)
+        bases = get_bases(kls, Endpoints)
+        while issubclass(base := next(bases, None), Endpoints):
+            generics = get_generics(base)
+
+            try:
+                kls = get_generic_type(generics, expected=RemoteResource, not_expected=RemoteCollection)
+                break
+            except MusifyTypeError:
+                continue
+
+        return TypeAdapter(kls)
+
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        cls = cast('type[Endpoints]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+
+        if cls.__final__:
+            try:
+                get_generic(cls, expected=RemoteResource, base=Endpoints)
+            except MusifyTypeError:
+                raise ModelError(f"Must define valid generic types for {cls_name!r}")
+
+        if cls.__final__:
+            cls._validate_generic_types()
+
+        return cls
+
+    def _validate_generic_types(cls) -> None:
+        kls = cast('type[Endpoints]', cls)
+
+        resource_kls = get_generic(kls, expected=RemoteResource, base=Endpoints)
+        if len(get_generics(kls)) > 2 and issubclass(resource_kls, RemoteCollection):
+            item_kls = get_generic(kls, expected=RemoteResource, not_expected=RemoteCollection, base=Endpoints)
+            if not issubclass(kls, RemoteResource) or issubclass(item_kls, RemoteCollection):
+                raise ModelError(f"Must define collection item types for {cls.__name__!r}")
+
     # TODO: migrate this to aiorequestful v2?
     def create_model[T: RemoteResource](
-            cls,
-            value: Any,
-            context: RemoteModelContext,
-            kind: str | type[T] = None,
+            cls, value: Any, context: RemoteModelContext, adapter: type[T] | TypeAdapter[T] = None,
     ) -> T:
         """Create an instance of the resource type handled by this API model from the given value."""
         kls = cast('type[Endpoints]', cls)
         if not kls.__final__:
             raise APIModelError("Can only create resources from final API models.")
 
-        if isinstance(kind, type) and issubclass(kind, RemoteResource) and kind.__final__:
-            # just try to create the resource directly if a final resource type is given
-            return kind.model_validate(value, context=context)
+        if adapter is None:
+            adapter = cls.type_adapter
 
-        if kind is None:
-            kind = kls.type
+        match adapter:
+            case TypeAdapter():
+                return adapter.validate_python(value, context=context)
+            case type() as t if issubclass(t, RemoteResource):
+                return t.model_validate(value, context=context)
 
-        # noinspection PyTypeChecker
-        source_classes = [klass for klass in RemoteResource.registered_submodels if klass.source == kls.source]
-        if not source_classes:
-            raise APIModelError(f"No registered resource models found for source {kls.source!r}.")
+        raise APIModelError(f"Adapter type not recognised: {adapter!r}")
 
-        if isinstance(kind, str):
-            type_classes = [klass for klass in source_classes if klass.type == kind]
-        else:
-            type_classes = [klass for klass in source_classes if issubclass(klass, kind)]
-            kind = kind.__name__
-        if not type_classes:
-            raise APIModelError(f"Could not find a registered {kls.source!r} model for type {kind!r}.")
 
-        return TypeAdapter(Union[*type_classes]).validate_python(value, context=context)
+def _map_handler[T: RequestHandler[Authoriser, JsonSchemaValue]](
+        kls: type[BaseModel], value: T | Mapping[str, T]
+) -> T | dict[str, dict[str, T]]:
+    key = "handler"
+    match value:
+        case RequestHandler():
+            handler = value
+        case Mapping() if set(value.keys()) == {key}:
+            return _map_handler(kls, value[key])
+        case _:
+            return value
+
+    return {key: handler} | {
+        name: {key: handler} for name, info in kls.model_fields.items()
+        if isinstance(info.annotation, type) and issubclass(info.annotation, Endpoints)
+    }
 
 
 type _URL_TYPE[UT, RT] = str | UT | RT
@@ -91,9 +144,6 @@ type _URI_TYPE[RT] = str | URL | RT
 
 
 class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=EndpointsMetaclass):
-    type: ClassVar[str | Type[RemoteResource]] = Field(
-        description="The type of resources the endpoints of this API model handle.",
-    )
     _bar_threshold: ClassVar[int] = PrivateAttr(
         # description="The minimum number of pages required to show a progress bar when paginating through items.",
         default=5,
@@ -129,7 +179,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     @property
     def _nested_endpoints(self) -> list[Endpoints]:
         return [
-            endpoints for name in self.__class__.model_fields.keys()
+            endpoints for name in type(self).model_fields.keys()
             if isinstance(endpoints := getattr(self, name), Endpoints)
         ]
 
@@ -148,8 +198,9 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     @property
     def _model_context(self) -> RemoteModelContext:
-        kind = self._get_type_value(self.type)
-        return RemoteModelContext(user=self.user, type=kind)
+        # WORKAROUND: keeps throwing AttributeError if accessed through the class
+        model_type = EndpointsMetaclass.type_name.fget(type(self))
+        return RemoteModelContext(user=self.user, type=model_type)
 
     async def __aenter__(self) -> Self:
         await super().__aenter__()
@@ -170,20 +221,20 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
     @classmethod
     def create_uri(cls, value: Any) -> URI:
         """Create a URI for the resource type handled by this API model from the given ID."""
-        context = RemoteModelContext(type=cls.type)
+        context = RemoteModelContext(type=cls.type_name)
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items(
-            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, kind: str | Type | None = None,
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
         if cursor.next is None:
             self._handler.log("SKIP", cursor.url, message="Cursor already fully extended")
             return (), cursor
 
-        collection_type = self._get_type_value(self.type)
-        item_type = self._get_type_value(kind)
+        collection_type = type(self).type_name
+        item_type = type(self).item_type_name
         amount = cursor.total or "all"
 
         if item_type != collection_type:
@@ -192,7 +243,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             message = f"Getting {amount} {item_type}s"
         self._handler.log("INFO", cursor.url, message=message)
 
-        items, cursor = await self._get_all_items_from_cursor(cursor, path=path, kind=kind)
+        items, cursor = await self._get_all_items_from_cursor(cursor, path=path)
 
         message = f"Retrieved "
         if cursor.total:
@@ -210,20 +261,17 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_from_cursor(
-            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, kind: str | Type | None = None,
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices
     ) -> tuple[tuple[RT, ...], PageCursor]:
         match cursor:
             case IterablePageCursor():
-                return await self._get_all_items_by_generation(cursor, path=path, kind=kind)
+                return await self._get_all_items_by_generation(cursor, path=path)
             case _:
-                return await self._get_all_items_by_pagination(cursor, path=path, kind=kind)
+                return await self._get_all_items_by_pagination(cursor, path=path)
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_by_pagination(
-            self,
-            cursor: PageCursor,
-            path: str | AliasPath | AliasChoices,
-            kind: str | Type | None = None,
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by paginating through the cursor, which must have a next URL for the first page of items.
@@ -231,22 +279,21 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         This is usually the slower approach, but is more widely supported as it does not require the API
         to provide the total number of items, offset and limit in the page cursor.
         """
-        item_type = self._get_type_value(kind)
         items: list[RT] = []
+        adapter = type(self).item_type_adapter
 
         while cursor.next is not None:
-            cursor: PageCursor = cursor.next
-            response = await self._get_page(cursor, item_type=item_type, path=path)
+            response = await self._get_page(cursor.next)
 
             response_items = self._get_items_from_response(response=response, path=path)
             await self._cache_responses(response_items)
 
             items.extend(
-                self.__class__.create_model(it, context=self._model_context, kind=kind) for it in response_items
+                type(self).create_model(it, context=self._model_context, adapter=adapter)
+                for it in response_items
             )
 
-            cursor = cursor.get_cursor_from_response(response=response, path=path)
-
+            cursor = cursor.next.get_cursor_from_response(response=response, path=path)
             if cursor.next == cursor:
                 raise CursorResponseError(
                     "The next cursor is the same as the current cursor, which may cause an infinite loop."
@@ -254,7 +301,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
-                response_items, cursor = await self._get_all_items_by_generation(cursor, path=path, kind=kind)
+                response_items, cursor = await self._get_all_items_by_generation(cursor, path=path)
                 items.extend(response_items)
                 break
 
@@ -262,10 +309,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_by_generation[T: IterablePageCursor](
-            self,
-            cursor: T,
-            path: str | AliasPath | AliasChoices,
-            kind: str | Type[RT] | None = None,
+            self, cursor: T, path: str | AliasPath | AliasChoices,
     ) -> tuple[tuple[RT, ...], T]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
@@ -279,8 +323,8 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         if not cursors:
             return (), cursor
 
-        collection_type = self._get_type_value(self.type)
-        item_type = self._get_type_value(kind)
+        collection_type = type(self).type_name
+        item_type = type(self).item_type_name
         desc_type = f"{collection_type} {item_type}" if item_type != collection_type else collection_type
 
         task_id = self.logger.progress.add_task(
@@ -288,7 +332,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             total=len(cursors),
             visible=len(cursors) >= self._bar_threshold
         )
-        tasks = map(functools.partial(self._get_page, item_type=item_type, path=path), cursors)
+        tasks = map(self._get_page, cursors)
         responses: list[JsonSchemaValue] = await self.logger.run_tasks_async(tasks, task_id=task_id)
 
         cursors = cursor.sort_responses(responses, path=path)
@@ -297,18 +341,21 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
             for item in self._get_items_from_response(response=response, path=path)
         ]
         await self._cache_responses(response_items)
+
+        adapter = type(self).item_type_adapter
         items: list[RT] = [
-            self.__class__.create_model(item, context=self._model_context, kind=kind)
+            type(self).create_model(item, context=self._model_context, adapter=adapter)
             for item in response_items
         ]
 
         return tuple(items), cursors[-1]
 
     # TODO: migrate this to aiorequestful v2
-    async def _get_page(self, page: PageCursor, item_type: str, path) -> JsonSchemaValue:
+    async def _get_page(self, page: PageCursor) -> JsonSchemaValue:
         """Thin wrapper for sending a get request from a page cursor while also formatting a log message"""
         log_message = None
         if isinstance(page, IndexCursor):
+            item_type = type(self).item_type_name
             log_message = f"{page.offset:>6}/{page.total:<6} {item_type}s"
 
         return await self._handler.get(page.url, log_message=log_message)
@@ -519,15 +566,12 @@ class ItemReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             * An ID (as a string) for the resource
         """
         response = await self._handler.get(url)
-        return self.__class__.create_model(response, context=self._model_context)
+        return type(self).create_model(response, context=self._model_context)
 
 
 class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource](Endpoints[UT, RT]):
     _extend_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
-    )
-    _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
-        # description="The type of the items in the collection."
     )
 
     @validate_call
@@ -546,7 +590,7 @@ class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
             case _:
                 raise RequestError("Expected a collection or page cursor.")
 
-        items, cursor = await self._get_all_items(cursor, path=self._extend_path, kind=self._extend_type)
+        items, cursor = await self._get_all_items(cursor, path=self._extend_path)
 
         if isinstance(collection, RemoteCollection):
             items = itertools.chain.from_iterable((collection.items, items))
@@ -558,9 +602,6 @@ class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
 class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoints[UT, RT]):
     _write_limit: ClassVar[PositiveInt] = PrivateAttr(
         # description="The maximum number of items that can be sent in each request for writing items.",
-    )
-    _extend_type: ClassVar[str | RemoteResource] = PrivateAttr(
-        # description="The type of the items in the collection."
     )
 
     @overload
@@ -574,8 +615,8 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt | None = None,
     ) -> int:
         """Add items to the current user's library items for this endpoint resource type."""
-        collection_type = self._get_type_value(self.type)
-        item_type = self._get_type_value(self._extend_type)
+        collection_type = type(self).type_name
+        item_type = type(self).item_type_name
 
         if not uris:
             self._handler.log("SKIP", url, message=f"No {item_type}s given to add")
@@ -616,8 +657,8 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt | None = None,
     ) -> int:
         """Remove items from the current user's library items for this endpoint resource type."""
-        collection_type = self._get_type_value(self.type)
-        item_type = self._get_type_value(self._extend_type)
+        collection_type = type(self).type_name
+        item_type = type(self).item_type_name
 
         if not uris:
             self._handler.log("SKIP", url, message=f"No {item_type}s given to remove")
@@ -676,7 +717,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         :param uris: A list of URIs. See above for accepted formats.
         :param limit: The number of URIs to send in each request to the API.
         """
-        item_type = self._get_type_value(self.type)
+        item_type = type(self).item_type_name
 
         if not uris:
             self._handler.log("SKIP", self._read_url, message=f"No {item_type}s given to add")
@@ -688,7 +729,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # TODO: drop this on aiorequestful v2
         cache_responses = await self._get_responses_from_cache(self._read_url, uris)
         cache_items = [
-            self.__class__.create_model(response, context=self._model_context)
+            type(self).create_model(response, context=self._model_context)
             for response in cache_responses.values() if response is not None
         ]
         uncached_uris = [uri for uri, response in cache_responses.items() if response is None]
@@ -699,7 +740,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             response = await self._handler.get(url, log_message=message)
 
             response_items = self._get_items_from_response(response=response, path=self._read_path)
-            return (self.__class__.create_model(it, context=self._model_context) for it in response_items)
+            return (type(self).create_model(it, context=self._model_context) for it in response_items)
 
         batches = list(self._batch_values(uncached_uris, limit))
         task_id = self.logger.progress.add_task(
@@ -748,7 +789,7 @@ class BatchReadAllEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # just get a cursor which returns a url to begin pagination and figure it out later
         cursor = InitialCursor.from_url(url=self._read_all_url, source=self.source, limit=limit)
 
-        items, *_ = await self._get_all_items(cursor, path=self._read_all_path, kind=self.type)
+        items, *_ = await self._get_all_items(cursor, path=self._read_all_path)
         return list(items)
 
 
@@ -766,7 +807,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Add items in batches for this endpoint resource type."""
-        item_type = self._get_type_value(self.type)
+        item_type = type(self).item_type_name
 
         if not uris:
             self._handler.log("SKIP", self._write_url, message=f"No {item_type}s given to add")
@@ -802,7 +843,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Remote items in batches for this endpoint resource type."""
-        item_type = self._get_type_value(self.type)
+        item_type = type(self).item_type_name
 
         if not uris:
             self._handler.log("SKIP", self._write_url, message=f"No {item_type}s given to remove")
@@ -836,7 +877,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @property
     def _handler(self) -> RequestHandler:
-        return next(getattr(self, field_name)._handler for field_name in self.__class__.model_fields.keys())
+        return next(getattr(self, field_name)._handler for field_name in type(self).model_fields.keys())
 
     @model_validator(mode="wrap")
     @classmethod
@@ -852,7 +893,7 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @model_validator(mode="after")
     def _all_handlers_are_the_same(self) -> Self:
         # noinspection PyProtectedMember
-        handlers = {id(getattr(self, field_name)._handler) for field_name in self.__class__.model_fields.keys()}
+        handlers = {id(getattr(self, field_name)._handler) for field_name in type(self).model_fields.keys()}
         if len(handlers) != 1:
             raise MusifyValidationError(
                 "All endpoint models must use the same request handler for API to function correctly."
@@ -863,7 +904,7 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @property
     def _nested_endpoints(self) -> list[Endpoints]:
         return [
-            endpoints for name in self.__class__.model_fields.keys()
+            endpoints for name in type(self).model_fields.keys()
             if isinstance(endpoints := getattr(self, name), Endpoints)
         ]
 
@@ -877,9 +918,3 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
         for endpoints in self._nested_endpoints:
             await endpoints.__aexit__(exc_type, exc_val, exc_tb)
         return await super().__aexit__(exc_type, exc_val, exc_tb)
-
-
-class HasLibraryEndpoints[ET: BatchReadAllEndpoints | BatchWriteEndpoints](HasEndpoints):
-    library: ET = Field(
-        description="Access endpoints for the current user's library items.",
-    )

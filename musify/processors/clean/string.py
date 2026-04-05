@@ -118,7 +118,7 @@ class ArtistCleaner(StringCleaner[HasArtists]):
                 artists = item
             case _ if not self.can_clean(item):
                 raise MusifyTypeError(
-                    f"Cannot clean item of type {type(item).__name__!r} with {self.__class__.__name__}"
+                    f"Cannot clean item of type {type(item).__name__!r} with {type(self).__name__}"
                 )
 
         return [val for val in map(super().clean, artists) if val]

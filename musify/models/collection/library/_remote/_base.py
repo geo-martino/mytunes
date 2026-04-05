@@ -4,11 +4,10 @@ from typing import Annotated, Self, Any, TypedDict
 import tabulate
 
 from musify.logger import STAT
-from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints
-from musify.models.api.album import AlbumBatchReadAllEndpoints, HasAlbumEndpoints, AlbumCollectionReadEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, ArtistCollectionReadEndpoints
+from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
+    CollectionReadEndpoints
+from musify.models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAllEndpoints, PlaylistReadWriteEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoints
 from musify.models.api.user import HasUserEndpoints
 from musify.models.collection import RemoteCollection
 from musify.models.collection.album import RemoteAlbumCollection
@@ -197,10 +196,10 @@ class RemoteLibrary[
         False,
         (None, HasTrackEndpoints, "{type} endpoints"),
         ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("tracks.library", TrackBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("tracks.library", BatchReadAllEndpoints, "reading data for library {type}s"),
     )
     async def load_tracks(self) -> bool:
-        api: HasTrackEndpoints[HasLibraryEndpoints[TrackBatchReadAllEndpoints]] = self.api
+        api: HasTrackEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} library tracks", header=2)
 
@@ -228,11 +227,11 @@ class RemoteLibrary[
         False,
         (None, HasArtistEndpoints, "{type} endpoints"),
         ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("artists.library", ArtistBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("artists.library", BatchReadAllEndpoints, "reading data for library {type}s"),
     )
     async def load_library_artists(self) -> bool:
         """Load all artists available for this library. Replaces all currently loaded artists."""
-        api: HasArtistEndpoints[HasLibraryEndpoints[AlbumBatchReadAllEndpoints]] = self.api
+        api: HasArtistEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
 
         self.logger.info(f"Loading {self._log_name} library artists", header=2)
 
@@ -246,11 +245,11 @@ class RemoteLibrary[
         "artist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("artists", ArtistCollectionReadEndpoints, "reading data for library {type}'s albums"),
+        ("artists", CollectionReadEndpoints, "reading data for library {type}'s albums"),
     )
     async def load_library_artist_albums(self) -> bool:
         """Load all artists albums for all currently loaded albums."""
-        api: HasArtistEndpoints[ArtistCollectionReadEndpoints] = self.api
+        api: HasArtistEndpoints[CollectionReadEndpoints] = self.api
 
         artists = list(filter(self._should_extend, self.artists))
         if not artists:
@@ -291,7 +290,7 @@ class RemoteLibrary[
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
         ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("albums.library", AlbumBatchReadAllEndpoints, "reading data for library {type}s"),
+        ("albums.library", BatchReadAllEndpoints, "reading data for library {type}s"),
     )
     async def load_library_albums(self) -> bool:
         """Load all albums available for this library. Replaces all currently loaded albums."""
@@ -309,11 +308,11 @@ class RemoteLibrary[
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", AlbumCollectionReadEndpoints, "reading data for library {type}'s tracks"),
+        ("albums", CollectionReadEndpoints, "reading data for library {type}'s tracks"),
     )
     async def load_library_album_tracks(self) -> bool:
         """Load all album tracks for all currently loaded albums."""
-        api: HasAlbumEndpoints[AlbumCollectionReadEndpoints] = self.api
+        api: HasAlbumEndpoints[CollectionReadEndpoints] = self.api
 
         albums = list(filter(self._should_extend, self.albums))
         if not albums:

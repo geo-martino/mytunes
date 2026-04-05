@@ -25,8 +25,8 @@ class TestSearchEndpoints(EndpointsTester):
         return MockSearchEndpoints(handler=handler)
 
     @pytest.fixture
-    def types(self) -> set[type[RemoteResource]]:
-        return {RemoteTrack, RemoteAlbum}
+    def types(self) -> set[str]:
+        return {RemoteTrack.type, RemoteAlbum.type}
 
     # noinspection PyMethodOverriding
     @pytest.fixture
@@ -42,9 +42,9 @@ class TestSearchEndpoints(EndpointsTester):
     @pytest.fixture
     def mock_query_params(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
         def _format_query_params(
-                query: str, types: set[type[ResourceModel]], limit: PositiveInt | None = None, **kwargs
+                query: str, types: set[str], limit: PositiveInt | None = None, **kwargs
         ) -> dict[str, Any]:
-            params: dict[str, Any] = {"query": query, "types": {t.type for t in types}}
+            params: dict[str, Any] = {"query": query, "types": types}
             if limit is not None:
                 params["limit"] = limit
             return params | kwargs
@@ -57,22 +57,22 @@ class TestSearchEndpoints(EndpointsTester):
         return faker.random_element([RemoteTrack, RemoteAlbum])
 
     def test_get_query_path_on_none(self, kind: type[RemoteResource]):
-        assert SearchEndpoints._get_query_path(None, kind) is kind.type
+        assert SearchEndpoints._get_query_path(None, kind.type) is kind.type
 
     def test_get_query_path_on_key(self, kind: type[RemoteResource], faker: Faker):
         key = "items_{type}s"
-        assert SearchEndpoints._get_query_path(key, kind) == f"items_{kind.type}s"
+        assert SearchEndpoints._get_query_path(key, kind.type) == f"items_{kind.type}s"
 
     def test_get_query_path_on_path(self, kind: type[RemoteResource], faker: Faker):
         path = AliasPath("items", "{type}s")
-        assert SearchEndpoints._get_query_path(path, kind) == AliasPath("items", f"{kind.type}s")
+        assert SearchEndpoints._get_query_path(path, kind.type) == AliasPath("items", f"{kind.type}s")
 
     def test_get_query_path_on_choices(self, kind: type[RemoteResource], faker: Faker):
         choices = AliasChoices(
             "items_{type}s",
             AliasPath("items", "{type}s"),
         )
-        assert SearchEndpoints._get_query_path(choices, kind) == AliasChoices(
+        assert SearchEndpoints._get_query_path(choices, kind.type) == AliasChoices(
             f"items_{kind.type}s",
             AliasPath("items", f"{kind.type}s")
         )
@@ -80,25 +80,25 @@ class TestSearchEndpoints(EndpointsTester):
     async def test_query(
             self,
             model: SearchEndpoints,
-            types: set[type[RemoteResource]],
+            types: set[str],
             mock_get: Mock,
             mock_query_params: Mock,
             faker: Faker,
     ):
         query = faker.sentence()
         limit = faker.random_int(1, 50)
-        expected_params = {"query": query, "types": {t.type for t in types}, "limit": limit}
+        expected_params = {"query": query, "types": types, "limit": limit}
 
         result = await model.query(query=query, types=types, limit=limit)
 
-        assert set(result.keys()) == {t.type for t in types}
+        assert set(result.keys()) == types
         mock_query_params.assert_called_once_with(query=query, types=types, limit=limit)
         mock_get.assert_called_once_with(model._query_url, params=expected_params)
 
     async def test_query_uses_default_limit(
             self,
             model: SearchEndpoints,
-            types: set[type[RemoteResource]],
+            types: set[str],
             mock_get: Mock,
             mock_query_params: Mock,
             faker: Faker,
@@ -119,7 +119,7 @@ class TestSearchEndpoints(EndpointsTester):
 
         query = f"track:{item.name}"
         limit = faker.random_int(1, 50)
-        expected_query = {"query": query, "types": {RemoteTrack}, "limit": limit}
+        expected_query = {"query": query, "types": {RemoteTrack.type}, "limit": limit}
         expected_params = {"query": query, "types": {RemoteTrack.type}, "limit": limit}
 
         with patch.object(

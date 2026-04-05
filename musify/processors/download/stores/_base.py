@@ -40,7 +40,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
             super().__init__(**data)
             return
 
-        name = next(iter(get_args(self.__class__.model_fields["name"].annotation)))
+        name = next(iter(get_args(type(self).model_fields["name"].annotation)))
         super().__init__(name=name, **data)
 
     name: T = Field(

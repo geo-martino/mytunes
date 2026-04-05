@@ -72,7 +72,7 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
             return True
         elif isinstance(other, Mapping):
             return self._items == other
-        elif not isinstance(other, self.__class__):
+        elif not isinstance(other, type(self)):
             return super().__eq__(other)
 
         return not (self.keys() - other.keys())
@@ -122,7 +122,7 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
 
     def copy(self) -> Self:
         """Return a shallow copy of this mapping"""
-        return self.__class__(self._items.copy())
+        return type(self)(self._items.copy())
 
     def _update(self, __m: Iterable[TV] | Mapping[TK | TV, TV], extract_keys: bool = True) -> None:
         """

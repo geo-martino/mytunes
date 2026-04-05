@@ -126,7 +126,7 @@ class M3U(LocalPlaylist[PathFilter]):
 
         if not tracks:  # load the tracks from the paths in file
             task_id = self.logger.progress.add_task(
-                description=f"Loading {self.__class__.__name__} tracks", visible=False
+                description=f"Loading {type(self).__name__} tracks", visible=False
             )
             tasks = map(self._load_track, self.matcher.paths_valid)
             tracks = await self.logger.run_tasks_async(tasks, task_id=task_id)

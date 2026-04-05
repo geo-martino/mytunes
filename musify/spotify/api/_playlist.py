@@ -9,8 +9,7 @@ from yarl import URL
 
 from musify.local.item.track import LocalTrack
 from musify.models.api import HasLibraryEndpoints
-from musify.models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadEndpoints, PlaylistWriteEndpoints, \
-    PlaylistReadWriteEndpoints
+from musify.models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
 from musify.models.api.types import _ApiURISchema, _ApiURLSchema
 from musify.models.cursors import PageCursor, HasPageCursor
 from musify.models.exception import RequestError

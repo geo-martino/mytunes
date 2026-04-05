@@ -1,12 +1,11 @@
-from typing import ClassVar, final, Literal, Type, Any, get_args
+from typing import ClassVar, final, Literal, Any, get_args
 
 from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
-from musify.models.api import HasLibraryEndpoints
-from musify.models.api.artist import ArtistReadEndpoints, ArtistBatchReadEndpoints, \
-    ArtistBatchReadAllEndpoints, ArtistCollectionReadEndpoints, ArtistBatchWriteEndpoints, ArtistEndpoints
+from musify.models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+    BatchReadEndpoints, CollectionReadEndpoints
 from musify.models.api.types import ApiURL, _ApiURLSchema
 from musify.models.cursors import PageCursor
 from musify.spotify import API_URL
@@ -22,11 +21,8 @@ _ALL_ALBUM_TYPES = get_args(_ALBUM_TYPE)
 
 
 class _SpotifyArtistEndpoints(
-    ArtistEndpoints[SpotifyResourceURI, SpotifyArtist],
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyArtist],
+    SpotifyEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
 ):
-    type: ClassVar[Type] = SpotifyArtistCollection  # override to force creation of collections from responses
-
     @staticmethod
     def _add_albums_cursor_to_item[T: dict[str, Any]](item: T) -> T:
         url = URL(item["href"]).joinpath("albums")
@@ -41,9 +37,9 @@ class _SpotifyArtistEndpoints(
 @final
 class _SpotifyArtistLibraryEndpoints(
     _SpotifyArtistEndpoints,
-    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistBatchReadAllEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistBatchWriteEndpoints[SpotifyResourceURI, SpotifyArtist],
+    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    BatchReadAllEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    BatchWriteEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
 ):
     __final__ = True
 
@@ -59,9 +55,9 @@ class _SpotifyArtistLibraryEndpoints(
 class SpotifyArtistEndpoints(
     _SpotifyArtistEndpoints,
     HasLibraryEndpoints[_SpotifyArtistLibraryEndpoints],
-    ArtistReadEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistBatchReadEndpoints[SpotifyResourceURI, SpotifyArtist],
-    ArtistCollectionReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection, SpotifyAlbum],
+    ItemReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    BatchReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    CollectionReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection, SpotifyAlbum],
 ):
     __final__ = True
 
@@ -75,7 +71,7 @@ class SpotifyArtistEndpoints(
     async def get(self, url: ApiURL[SpotifyResourceURI, SpotifyArtist]) -> SpotifyArtistCollection:
         response = await self._handler.get(url)
         self._add_albums_cursor_to_item(response)
-        return self.__class__.create_model(response, context=self._model_context, kind=SpotifyArtistCollection)
+        return type(self).create_model(response, context=self._model_context)
 
     @validate_call
     async def get_all(

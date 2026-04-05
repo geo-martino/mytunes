@@ -4,11 +4,9 @@ from yarl import URL
 
 from musify.models.api import RemoteAPI
 from musify.models.api._base import HasCache
-from musify.models.api.album import HasAlbumEndpoints
-from musify.models.api.artist import HasArtistEndpoints
+from musify.models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints
 from musify.models.api.search import HasSearchEndpoints
-from musify.models.api.track import HasTrackEndpoints
 from musify.models.api.user import HasUserEndpoints
 from musify.spotify import SpotifyModel
 from musify.spotify.api._album import SpotifyAlbumEndpoints

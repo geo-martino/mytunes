@@ -379,7 +379,7 @@ class LazyFixture(object):
         self.name = name
 
     def __repr__(self):
-        return '<{} "{}">'.format(self.__class__.__name__, self.name)
+        return '<{} "{}">'.format(type(self).__name__, self.name)
 
     def __eq__(self, other):
         return self.name == other.name

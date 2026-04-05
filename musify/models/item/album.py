@@ -1,10 +1,12 @@
 from typing import ClassVar, TYPE_CHECKING, Self, Annotated
 
-from pydantic import Field, field_validator, computed_field
+from pydantic import Field, field_validator, computed_field, validate_call
 
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
 from musify.models._metaclass import makecls
+from musify.models.api import ItemReadEndpoints
+from musify.models.api.items import HasAlbumEndpoints
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.metadata import TagAttribute, Attribute
@@ -16,9 +18,6 @@ from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
-
-if TYPE_CHECKING:
-    from musify.models.api.album import HasAlbumEndpoints, AlbumReadEndpoints
 
 
 class Album[RT: Artist, GT: Genre](
@@ -115,7 +114,7 @@ class HasAlbums[AT: Album](HasSeparableTags):
 
 
 class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=makecls()):
-    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasAlbumEndpoints[AlbumReadEndpoints]) -> None:
+    @validate_call
+    async def reload(self, api: HasAlbumEndpoints[ItemReadEndpoints]) -> None:
         model = await api.albums.get(self.uri)
         self.__dict__.update(model.__dict__)

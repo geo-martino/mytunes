@@ -1,13 +1,16 @@
 from annotationlib import ForwardRef
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Iterator
+from contextlib import suppress
 from types import UnionType, GenericAlias
 from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar
 
 from annotated_types import MinLen
-from pydantic import StringConstraints, BeforeValidator
+from pydantic import StringConstraints, BeforeValidator, BaseModel
 from pydantic.alias_generators import to_snake
 from typing_extensions import get_origin
-from typing_inspection.typing_objects import is_annotated
+from typing_inspection.typing_objects import is_annotated, is_typevar, is_forwardref, is_typealias, is_typealiastype
+
+from musify.exception import MusifyTypeError
 
 type Character = Annotated[str, StringConstraints(min_length=1, max_length=1)]
 type StrippedCharacter = Annotated[str, StringConstraints(min_length=1, max_length=1, strip_whitespace=True)]
@@ -128,3 +131,48 @@ def get_base_types(
                 bases[i] = b.__bound__
 
     return tuple(bases)
+
+
+def get_bases(kls: type[BaseModel], expected: type[T]) -> Iterator[type[BaseModel]]:
+    return (base for base in kls.__pydantic_parent_namespace__["bases"] if issubclass(base, expected))
+
+
+def get_generics(kls: type[BaseModel]) -> tuple[type, ...]:
+    """Get all generics from a model definition."""
+    generics = kls.__pydantic_generic_metadata__["args"]
+    generics = [
+        Union[get_base_types(arg)] if len(get_base_types(arg)) > 1 else arg
+        for arg in generics
+    ]
+    return tuple(arg for arg in generics if not is_typevar(arg))
+
+
+def get_generic_type[T](
+        generics: tuple[type, ...], expected: type[T], not_expected: type | None = None
+) -> type[T] | Union[T]:
+    for arg in generics:
+        if isinstance(arg, type) and not_expected is not None and issubclass(arg, not_expected):
+            continue
+
+        if isinstance(arg, type) and issubclass(arg, expected):
+            return arg
+        if get_origin(arg) is UnionType and any(issubclass(arg, expected) for arg in get_base_types(arg)):
+            return arg
+
+    raise MusifyTypeError(f"Could not find a {expected.__name__!r} generic type.")
+
+
+def get_generic[T, B](
+        kls: type[BaseModel], expected: type[T], not_expected: type | None = None, base: type[B] | None = None
+) -> type[T] | Union[T]:
+    """
+    Get the exact generic type from a model definition.
+    Provide an optional base type to look for in the model definition.
+    """
+    if base is None:
+        generics = get_generics(kls)
+    else:
+        while not (generics := get_generics(kls)):
+            kls = next(get_bases(kls, base))
+
+    return get_generic_type(generics, expected, not_expected)

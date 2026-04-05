@@ -149,7 +149,7 @@ class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
         return IncludeExcludeResult(included=included, excluded=excluded)
 
     def __eq__(self, item: Any):
-        return isinstance(item, self.__class__) and all((
+        return isinstance(item, type(self)) and all((
             self.include == item.include,
             self.exclude == item.exclude
         ))
@@ -258,7 +258,7 @@ class GroupFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
         )
 
     def __eq__(self, item: Any):
-        return isinstance(item, self.__class__) and all((
+        return isinstance(item, type(self)) and all((
             self.include == item.include,
             self.exclude == item.exclude,
             self.compare == item.compare,

@@ -11,9 +11,9 @@ from pydantic import ValidationError
 from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, IsRemoteService, Endpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
-from musify.models.api.track import HasTrackEndpoints
+from musify.models.api.items import HasTrackEndpoints
 from musify.models.user import RemoteUser
-from tests.models.api.utils import MockRemoteAPI, MockRemoteAuthoriser, MockTrackEndpoints
+from tests.models.api.utils import MockRemoteAPI, MockRemoteAuthoriser, MockItemEndpoints
 from tests.models.testers import BaseModelTester
 from tests.utils import SimpleURI
 
@@ -158,7 +158,7 @@ class TestHasAPI(BaseModelTester):
         assert await model.return_bool() is True
 
     async def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
-        class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockTrackEndpoints]):
+        class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockItemEndpoints]):
             pass
 
         model = self.MockIsRemoteService(api=MockAPI(handler=handler))

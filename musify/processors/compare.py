@@ -232,7 +232,7 @@ class Comparer(DynamicProcessor):
 
     def _validate_compare_args(self, reference: Any | None = None) -> None:
         if reference is None and self.reference_required:
-            raise MusifyTypeError(f"A reference is required for this instance of {self.__class__.__name__}")
+            raise MusifyTypeError(f"A reference is required for this instance of {type(self).__name__}")
 
         if reference is None and "expected" in self._expected_args and not self.expected:
             raise MusifyTypeError("No comparative item given and no expected values set")
@@ -344,7 +344,7 @@ class Comparer(DynamicProcessor):
         ))
 
     def __eq__(self, item: Any):
-        return isinstance(item, self.__class__) and all((
+        return isinstance(item, type(self)) and all((
             self.condition == item.condition,
             self.expected == item.expected,
             self.field == item.field,

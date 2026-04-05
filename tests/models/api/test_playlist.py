@@ -35,7 +35,6 @@ def playlists(playlists: list[Playlist], faker: Faker) -> list[RemotePlaylist]:
 class TestPlaylistReadWriteEndpoints(EndpointsTester):
     class MockPlaylistReadWriteEndpoints(PlaylistReadWriteEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
         _write_limit = 18
-        _extend_type = "items"
 
     @pytest.fixture
     def model(self, handler: RequestHandler) -> MockPlaylistReadWriteEndpoints:

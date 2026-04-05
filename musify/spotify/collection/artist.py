@@ -2,7 +2,7 @@ from typing import final, Annotated, TYPE_CHECKING
 
 from pydantic import Field, AliasPath, model_validator
 
-from musify.models.api.artist import HasArtistEndpoints
+from musify.models.api.items import HasArtistEndpoints
 from musify.models.collection.artist import RemoteArtistCollection
 from musify.models.metadata import Attribute
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor

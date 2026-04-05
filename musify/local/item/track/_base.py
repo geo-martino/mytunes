@@ -336,7 +336,7 @@ class LocalTrack[FT: FileType](
         if not isinstance(value, Position):
             return
 
-        field: FieldInfo = self.__class__.model_fields[info.field_name]
+        field: FieldInfo = type(self).model_fields[info.field_name]
         if not isinstance(field.validation_alias, AliasChoices):
             return str(value)
 

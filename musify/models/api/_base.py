@@ -13,6 +13,7 @@ from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
 from typing_inspection.typing_objects import is_typevar
 
+from musify._types import get_generic
 from musify.models import AttributeModel
 from musify.models._context import RemoteModelContext
 from musify.models.api._endpoints import HasEndpoints, Endpoints, _map_handler
@@ -51,17 +52,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
 
     @classmethod
     def _create_authoriser(cls, credentials: Mapping[str, Any]) -> RemoteAuthoriser:
-        base = next(
-            (base for base in cls.__pydantic_parent_namespace__["bases"] if issubclass(base, RemoteAPI)), None
-        )
-        if base is None:
-            base = cls
-
-        generics = base.__pydantic_generic_metadata__["args"]
-        if all(is_typevar(arg) for arg in generics):
-            generics = cls.__pydantic_generic_metadata__["args"]
-
-        auth_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, RemoteAuthoriser))
+        auth_t = get_generic(cls, expected=RemoteAuthoriser, base=RemoteAPI)
         return auth_t.model_validate(credentials)
 
     @classmethod

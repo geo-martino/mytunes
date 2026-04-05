@@ -69,7 +69,7 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
         return matched
 
     def __eq__(self, item: Any):
-        return isinstance(item, self.__class__) and all((
+        return isinstance(item, type(self)) and all((
             self.comparers == item.comparers,
             self.match_all == item.match_all,
             self.combine_all == item.combine_all,

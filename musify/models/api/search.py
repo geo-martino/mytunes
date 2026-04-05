@@ -1,12 +1,17 @@
 import logging
 from abc import abstractmethod
-from typing import ClassVar, Any, Type
+from functools import cached_property
+from types import UnionType
+from typing import ClassVar, Any, Type, cast, Union, get_args, override, get_origin
 
-from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices
+from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices, TypeAdapter
 from yarl import URL
 
+from musify._types import get_generic
+from musify.exception import MusifyTypeError
 from musify.models import ResourceModel
-from musify.models.api._endpoints import Endpoints, HasEndpoints, HasLibraryEndpoints
+from musify.models.api._endpoints import Endpoints, HasEndpoints, EndpointsMetaclass
+from musify.models.api import HasLibraryEndpoints
 from musify.models.exception import RequestError
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI
@@ -16,8 +21,6 @@ from musify.processors.clean.string import NameCleaner
 
 # noinspection PyAbstractClass
 class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[UT, RT]):
-    type: ClassVar[str] = "search"
-
     _query_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to query for resources.",
     )
@@ -40,57 +43,38 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
         default=None,
     )
 
-    @classmethod
-    def _get_query_path[T: str | AliasPath | AliasChoices](cls, path: T | None, kind: str | QT | Type[QT]) -> T:
-        kind = cls._map_type_to_str(kind)
-
-        match path:
-            case None:
-                return kind
-            case str() as key:
-                return key.format(type=kind)
-            case AliasPath() as alias:
-                # noinspection PyTypeChecker
-                return AliasPath(*(str(part).format(type=kind) for part in alias.path))
-            case AliasChoices() as choices:
-                return AliasChoices(*(cls._get_query_path(alias, kind) for alias in choices.choices))
-
-        raise RequestError(f"Unknown query path type: {path}")
-
-    @staticmethod
-    def _map_type_to_str(kind: str | QT | Type[QT]) -> str:
-        match kind:
-            case str():
-                return kind
-            case ResourceModel():
-                return kind.type
-            case _ if isinstance(kind, type) and issubclass(kind, ResourceModel):
-                return kind.type
-        raise RequestError(f"Unknown search type: {kind}")
+    @property
+    def supported_search_types(self) -> set[str]:
+        kls = get_generic(type(self), expected=RemoteResource, base=Endpoints)
+        if get_origin(kls) is Union:
+            return {arg.type for arg in get_args(kls)}
+        return {kls.type}
 
     @validate_call
     async def query(
-            self, query: str, types: set[str | Type[QT]], limit: PositiveInt | None = None, **kwargs
+            self, query: str, types: set[str], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
         if limit is None:
             limit = self._query_limit
 
-        params = self._format_query_params(query=query, types=types, limit=limit, **kwargs)
+        supported_types = types & self.supported_search_types  # filter to only supported types
+        if not supported_types:
+            raise MusifyTypeError(f"Unknown search types: {self.logger.format_list_to_string(types)}")
+
+        params = self._format_query_params(query=query, types=supported_types, limit=limit, **kwargs)
         response = await self._handler.get(self._query_url, params=params)
 
         if "error" in response:
-            types_mapped = map(self._map_type_to_str, types)
-            message = [f"Query: {query}", f"Types: {",".join(types_mapped)}", response["error"]]
+            message = [f"Query: {query}", f"Types: {",".join(supported_types)}", response["error"]]
             self._handler.log("SKIP", self._query_url, message=message, level=logging.ERROR)
             return {}
 
         results: dict[str, list[RT]] = {}
-        for kind in types:
-            key = self._map_type_to_str(kind)
-            path = self._get_query_path(self._query_path, kind=kind)
+        for item_type in supported_types:
+            path = self._get_query_path(self._query_path, item_type=item_type)
             items = self._get_items_from_response(response, path=path)
-            results[key] = [self.__class__.create_model(it, context=self._model_context, kind=kind) for it in items]
+            results[item_type] = [type(self).create_model(it, context=self._model_context) for it in items]
 
         return results
 
@@ -99,6 +83,21 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
             self, query: str, types: set[str | Type[QT]], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, Any]:
         raise NotImplementedError
+
+    @classmethod
+    def _get_query_path[T: str | AliasPath | AliasChoices](cls, path: T | None, item_type: str) -> T:
+        match path:
+            case None:
+                return item_type
+            case str() as key:
+                return key.format(type=item_type)
+            case AliasPath() as alias:
+                # noinspection PyTypeChecker
+                return AliasPath(*(str(part).format(type=item_type) for part in alias.path))
+            case AliasChoices() as choices:
+                return AliasChoices(*(cls._get_query_path(alias, item_type) for alias in choices.choices))
+
+        raise RequestError(f"Unknown query path type: {path}")
 
     @validate_call
     async def query_item(self, item: QT, **kwargs) -> list[RT]:

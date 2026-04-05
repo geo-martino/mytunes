@@ -17,6 +17,7 @@ from musify.models._context import RemoteModelContext
 from musify.models.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
 from musify.models.collection import RemoteCollection
+from musify.models.collection.playlist import RemotePlaylist
 from musify.models.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from musify.models.exception import APIModelError
 from musify.models.item.album import RemoteAlbum
@@ -31,7 +32,7 @@ from tests.models.utils import MockRemoteResource, MockRemoteCollection
 from tests.utils import SimpleURI, CallbackResult
 
 
-class TestCreateFromResponse:
+class TestEndpointsMetaclass:
     @final
     class MockEndpoints(Endpoints[SimpleURI, MockRemoteResource]):
         __final__ = True
@@ -39,7 +40,6 @@ class TestCreateFromResponse:
         _url_path: ClassVar[str] = "href"
 
         source = MockRemoteResource.source
-        type = MockRemoteResource.type
 
     @final
     class MockRemoteTrack(RemoteTrack, MockRemoteResource):
@@ -53,6 +53,82 @@ class TestCreateFromResponse:
     class MockRemoteAlbum(RemoteAlbum, MockRemoteResource):
         __final__ = True
 
+    def test_get_type_name_simple(self):
+        class MockTrackEndpoints(Endpoints[SimpleURI, RemoteTrack]):
+            pass
+
+        assert MockTrackEndpoints.type_name == RemoteTrack.type
+
+        class MockAlbumEndpoints(Endpoints[SimpleURI, RemoteAlbum]):
+            pass
+
+        assert MockAlbumEndpoints.type_name == RemoteAlbum.type
+
+    def test_get_type_name_union(self):
+        class MockUnionEndpoints(Endpoints[SimpleURI, RemoteTrack | RemoteAlbum]):
+            pass
+
+        assert MockUnionEndpoints.type_name == "track & album"
+
+    def test_get_item_type_name_simple(self):
+        class MockPlaylistEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack]):
+            pass
+
+        assert MockPlaylistEndpoints.type_name == RemotePlaylist.type
+        assert MockPlaylistEndpoints.item_type_name == RemoteTrack.type
+
+        class MockPlaylistEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteAlbum]):
+            pass
+
+        assert MockPlaylistEndpoints.type_name == RemotePlaylist.type
+        assert MockPlaylistEndpoints.item_type_name == RemoteAlbum.type
+
+    # TODO: fix me
+    def test_get_item_type_name_union(self):
+        class MockUnionEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack | RemoteAlbum]):
+            pass
+
+        assert MockUnionEndpoints.type_name == RemotePlaylist.type
+        assert MockUnionEndpoints.item_type_name == "track & album"
+
+    def test_get_type_adapter_simple(self):
+        class MockTrackEndpoints(Endpoints[SimpleURI, RemoteTrack]):
+            pass
+
+        assert MockTrackEndpoints.type_adapter.core_schema == TypeAdapter(RemoteTrack).core_schema
+
+        class MockAlbumEndpoints(Endpoints[SimpleURI, RemoteAlbum]):
+            pass
+
+        assert MockAlbumEndpoints.type_adapter.core_schema == TypeAdapter(RemoteAlbum).core_schema
+
+    def test_get_type_adapter_union(self):
+        class MockUnionEndpoints(Endpoints[SimpleURI, RemoteTrack | RemoteAlbum]):
+            pass
+
+        assert MockUnionEndpoints.type_adapter.core_schema == TypeAdapter(RemoteTrack | RemoteAlbum).core_schema
+
+    def test_get_item_type_adapter_simple(self):
+        class MockPlaylistEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack]):
+            pass
+
+        assert MockPlaylistEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
+        assert MockPlaylistEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteTrack).core_schema
+
+        class MockPlaylistEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteAlbum]):
+            pass
+
+        assert MockPlaylistEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
+        assert MockPlaylistEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteAlbum).core_schema
+
+    def test_get_item_type_adapter_union(self):
+        class MockUnionEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack | RemoteAlbum]):
+            pass
+
+        assert MockUnionEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
+        assert MockUnionEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteTrack | RemoteAlbum).core_schema
+
+
     @pytest.fixture
     def context(self) -> RemoteModelContext:
         return RemoteModelContext()
@@ -65,84 +141,30 @@ class TestCreateFromResponse:
     def mock_validate_python(self, mocker: MockerFixture) -> Mock:
         return mocker.spy(TypeAdapter, "validate_python")
 
-    def test_create_fails_on_non_final_class(self, context: RemoteModelContext):
+    def test_create_model_fails_on_non_final_class(self, context: RemoteModelContext):
         with pytest.raises(APIModelError, match="Can only create resources from final API models"):
             Endpoints.create_model({}, context=context)
 
-    def test_create_fails_on_unmatched_source(self, context: RemoteModelContext):
-        @final
-        class MockEndpointsTest(Endpoints[SimpleURI, MockRemoteResource]):
-            __final__ = True
-            _id_path: ClassVar[str] = "id"
-            _url_path: ClassVar[str] = "href"
-
-            source = "unknown_source"
-            type = MockRemoteResource.type
-
-        with pytest.raises(APIModelError, match="No registered resource models found"):
-            MockEndpointsTest.create_model({}, context=context)
-
-    def test_create_fails_on_unmatched_kind(self, context: RemoteModelContext):
-        @final
-        class MockEndpointsTest(Endpoints[SimpleURI, MockRemoteResource]):
-            __final__ = True
-            _id_path: ClassVar[str] = "id"
-            _url_path: ClassVar[str] = "href"
-
-            source = MockRemoteResource.source
-            type = "unknown_type"
-
-        with pytest.raises(APIModelError, match=f"Could not find a registered {MockRemoteResource.source!r} model"):
-            MockEndpointsTest.create_model({}, context=context)
-
-    def test_creates_current_kind(
+    def test_create_model(
             self,
             context: RemoteModelContext,
             mock_model_validate: Mock,
             mock_validate_python: Mock,
             faker: Faker,
     ):
-        uri = SimpleURI.create_random(self.MockEndpoints.type)
+        uri = SimpleURI.create_random(self.MockEndpoints.type_name)
 
         data = dict(name=faker.word(), uri=uri)
         result = self.MockEndpoints.create_model(data, context=context)
 
         assert isinstance(result, MockRemoteResource)
-        assert result.type == self.MockEndpoints.type
+        assert result.type == self.MockEndpoints.type_name
 
         mock_model_validate.assert_not_called()
         mock_validate_python.assert_called_once()
         assert mock_validate_python.call_args.kwargs == {"context": context}
 
-    def test_creates_given_type_from_name(
-            self,
-            context: RemoteModelContext,
-            mock_model_validate: Mock,
-            mock_validate_python: Mock,
-            faker: Faker,
-    ):
-        types = [
-            RemoteTrack.type,
-            RemoteAlbum.type,
-            RemoteArtist.type,
-        ]
-        types.remove(self.MockEndpoints.type)
-        expected_type = faker.random_element(types)
-
-        uri = SimpleURI.create_random(expected_type)
-
-        data = dict(name=faker.word(), uri=uri)
-        result = self.MockEndpoints.create_model(data, context=context, kind=expected_type)
-
-        assert isinstance(result, MockRemoteResource)
-        assert result.type != self.MockEndpoints.type
-        assert result.type == expected_type
-
-        mock_model_validate.assert_not_called()
-        mock_validate_python.assert_called_once()
-        assert mock_validate_python.call_args.kwargs == {"context": context}
-
-    def test_creates_given_type_from_type(
+    def test_create_model_from_adapter(
             self,
             context: RemoteModelContext,
             mock_validate_python: Mock,
@@ -156,21 +178,15 @@ class TestCreateFromResponse:
         ]
         expected_type = faker.random_element(types)
 
-        @final
-        class MockType(expected_type):
-            __final__ = True  # needed to force its creation from the object
-            source: ClassVar[str] = "test"
-
-        uri = SimpleURI.create_random(MockType.type)
-        mock_model_validate = mocker.spy(MockType, "model_validate")
+        uri = SimpleURI.create_random(expected_type.type)
+        adapter = TypeAdapter(expected_type)
 
         data = dict(name=faker.word(), uri=uri)
-        result = self.MockEndpoints.create_model(data, context=context, kind=MockType)
+        result = self.MockEndpoints.create_model(data, context=context, adapter=adapter)
 
         assert isinstance(result, expected_type)
 
-        mock_model_validate.assert_called_once_with(data, context=context)
-        mock_validate_python.assert_not_called()
+        mock_validate_python.assert_called_once_with(adapter, data, context=context)
 
 
 class TestEndpoints(EndpointsTester):
@@ -335,7 +351,7 @@ class TestEndpoints(EndpointsTester):
         assert len(items) == len(expected_items)
         assert cursor == url_cursors[-1]
 
-        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, kind=None)
+        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key)
         mock_generation.assert_not_called()
 
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -369,7 +385,7 @@ class TestEndpoints(EndpointsTester):
         assert cursor == index_cursors[-1]
 
         mock_pagination.assert_not_called()
-        mock_generation.assert_called_once_with(index_cursors[0], path=items_key, kind=None)
+        mock_generation.assert_called_once_with(index_cursors[0], path=items_key)
 
         # async so order is not guaranteed
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -401,7 +417,7 @@ class TestEndpoints(EndpointsTester):
 
         assert cursor == index_cursors[-1]
         mock_pagination.assert_called_once_with(url_cursors[0], path=items_key)
-        mock_generation.assert_called_once_with(index_cursors[1], path=items_key, kind=None)
+        mock_generation.assert_called_once_with(index_cursors[1], path=items_key)
 
         # async so order is not guaranteed
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -550,7 +566,6 @@ class TestItemReadEndpoints(EndpointsTester):
 class TestReadCollectionEndpoints(EndpointsTester):
     class MockReadCollectionEndpoints(CollectionReadEndpoints[SimpleURI, MockRemoteCollection, MockRemoteResource]):
         _extend_path = "items"
-        _extend_type = "type"
 
     @pytest.fixture
     def model(self, handler: RequestHandler) -> CollectionReadEndpoints:
@@ -576,7 +591,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
         result = await model.get_all(cursor)
         assert result == expected_items
 
-        mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path, kind=model._extend_type)
+        mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path)
 
     async def test_get_all_from_collection(
             self,
@@ -609,13 +624,12 @@ class TestReadCollectionEndpoints(EndpointsTester):
             assert collection.cursor is not cursor
             assert collection.cursor is expected_cursor
 
-            mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path, kind=model._extend_type)
+            mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path)
 
 
 class TestWriteCollectionEndpoints(EndpointsTester):
     class MockCollectionWriteEndpoints(CollectionWriteEndpoints[SimpleURI, MockRemoteResource, MockRemoteResource]):
         _write_limit = 18
-        _extend_type = "items"
 
     @pytest.fixture
     def model(self, handler: RequestHandler) -> CollectionWriteEndpoints:
@@ -728,7 +742,6 @@ class TestBatchReadAllEndpoints(EndpointsTester):
         _read_all_limit = 15
 
         source = MockRemoteResource.source
-        type = MockRemoteResource.type
 
     @pytest.fixture
     def model(self, handler: RequestHandler) -> BatchReadAllEndpoints:
@@ -750,14 +763,10 @@ class TestBatchReadAllEndpoints(EndpointsTester):
         await model.get_all(limit=limit)
 
         mock_initial_cursor.assert_called_once_with(
-            url=self.MockBatchReadAllEndpoints._read_all_url,
-            source=model.source,
-            limit=limit,
+            url=self.MockBatchReadAllEndpoints._read_all_url, source=model.source, limit=limit,
         )
         mock_get_all_items.assert_called_once_with(
-            mock_initial_cursor.return_value,
-            path=self.MockBatchReadAllEndpoints._read_all_path,
-            kind=self.MockBatchReadAllEndpoints.type,
+            mock_initial_cursor.return_value, path=self.MockBatchReadAllEndpoints._read_all_path,
         )
 
     async def test_get_all_uses_default_limit(self, model: BatchReadAllEndpoints, mock_initial_cursor: Mock):

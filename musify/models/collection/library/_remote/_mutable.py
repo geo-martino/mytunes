@@ -9,13 +9,8 @@ from termcolor import colored
 from musify.exception import MusifyTypeError
 from musify.models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
     BatchReadEndpoints, BatchWriteEndpoints
-from musify.models.api.album import HasAlbumEndpoints, AlbumBatchReadAllEndpoints, AlbumBatchWriteEndpoints, \
-    AlbumBatchReadEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, ArtistBatchWriteEndpoints, \
-    ArtistBatchReadEndpoints
+from musify.models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoints, TrackBatchWriteEndpoints, \
-    TrackBatchReadEndpoints
 from musify.models.collection import SyncRemoteResult
 from musify.models.collection._sync import SYNC_TYPE, get_sync_message, get_sync_items
 from musify.models.collection.library import MutableLibrary
@@ -56,13 +51,13 @@ class RemoteMutableLibrary[
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", TrackBatchReadEndpoints, "reading data for {type}s"),
+        ("tracks", BatchReadEndpoints, "reading data for {type}s"),
         ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
+        ("tracks.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def add_tracks(self, uris: Sequence[URI | HasURI]) -> None:
         """Add library tracks to the library."""
-        api: HasTrackEndpoints[TrackBatchReadEndpoints | HasLibraryEndpoints[TrackBatchWriteEndpoints]] = self.api
+        api: HasTrackEndpoints[BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="tracks", api=api.tracks)
         self.tracks.extend(items)
 
@@ -70,13 +65,13 @@ class RemoteMutableLibrary[
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", ArtistBatchReadEndpoints, "reading data for {type}s"),
+        ("artists", BatchReadEndpoints, "reading data for {type}s"),
         ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("artists.library", ArtistBatchWriteEndpoints, "writing data for library {type}s"),
+        ("artists.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def add_artists(self, uris: Sequence[RT | HasURI]) -> None:
         """Add library artists to the library."""
-        api: HasArtistEndpoints[ArtistBatchReadEndpoints | HasLibraryEndpoints[ArtistBatchWriteEndpoints]] = self.api
+        api: HasArtistEndpoints[BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="artists", api=api.artists)
         self.artists.extend(items)
 
@@ -84,13 +79,13 @@ class RemoteMutableLibrary[
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", AlbumBatchReadEndpoints, "reading data for {type}s"),
+        ("albums", BatchReadEndpoints, "reading data for {type}s"),
         ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("albums.library", AlbumBatchWriteEndpoints, "writing data for library {type}s"),
+        ("albums.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def add_albums(self, uris: Sequence[RT | HasURI]) -> None:
         """Add library albums to the library."""
-        api: HasAlbumEndpoints[AlbumBatchReadEndpoints | HasLibraryEndpoints[AlbumBatchWriteEndpoints]] = self.api
+        api: HasAlbumEndpoints[BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="albums", api=api.albums)
         self.albums.extend(items)
 
@@ -161,8 +156,8 @@ class RemoteMutableLibrary[
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
         ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("tracks.library", TrackBatchReadAllEndpoints, "reading data for library {type}s"),
-        ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
+        ("tracks.library", BatchReadAllEndpoints, "reading data for library {type}s"),
+        ("tracks.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def sync_tracks(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult:
         """
@@ -178,7 +173,7 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The sync result.
         """
-        api: HasTrackEndpoints[HasLibraryEndpoints[TrackBatchReadAllEndpoints | TrackBatchWriteEndpoints]] = self.api
+        api: HasTrackEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints]] = self.api
         return await self._sync_library_items(
             items=self.tracks, items_type="tracks", kind=kind, api=api.tracks, dry_run=dry_run
         )
@@ -188,8 +183,8 @@ class RemoteMutableLibrary[
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
         ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("artists.library", ArtistBatchReadAllEndpoints, "reading data for library {type}s"),
-        ("artists.library", ArtistBatchWriteEndpoints, "writing data for library {type}s"),
+        ("artists.library", BatchReadAllEndpoints, "reading data for library {type}s"),
+        ("artists.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def sync_artists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult:
         """
@@ -205,7 +200,7 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The sync result.
         """
-        api: HasArtistEndpoints[HasLibraryEndpoints[ArtistBatchReadAllEndpoints | ArtistBatchWriteEndpoints]] = self.api
+        api: HasArtistEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints]] = self.api
         return await self._sync_library_items(
             items=self.artists, items_type="artists", kind=kind, api=api.artists, dry_run=dry_run
         )
@@ -215,8 +210,8 @@ class RemoteMutableLibrary[
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
         ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("albums.library", AlbumBatchReadAllEndpoints, "reading data for library {type}s"),
-        ("albums.library", AlbumBatchWriteEndpoints, "writing data for library {type}s"),
+        ("albums.library", BatchReadAllEndpoints, "reading data for library {type}s"),
+        ("albums.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     async def sync_albums(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult:
         """
@@ -232,7 +227,7 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The sync result.
         """
-        api: HasAlbumEndpoints[HasLibraryEndpoints[AlbumBatchReadAllEndpoints | AlbumBatchWriteEndpoints]] = self.api
+        api: HasAlbumEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints]] = self.api
         return await self._sync_library_items(
             items=self.albums, items_type="albums", kind=kind, api=api.albums, dry_run=dry_run
         )
@@ -409,10 +404,10 @@ class RemoteMutableLibrary[
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", TrackBatchReadEndpoints, "reading data for {type}s"),
+        ("tracks", BatchReadEndpoints, "reading data for {type}s"),
         ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("tracks.library", TrackBatchReadAllEndpoints, "reading data for library {type}s"),
-        ("tracks.library", TrackBatchWriteEndpoints, "writing data for library {type}s"),
+        ("tracks.library", BatchReadAllEndpoints, "reading data for library {type}s"),
+        ("tracks.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     @validate_call
     async def restore_tracks(
@@ -435,7 +430,7 @@ class RemoteMutableLibrary[
         :return: The count of library tracks on the remote service after the sync.
         """
         api: HasTrackEndpoints[
-            TrackBatchReadEndpoints | HasLibraryEndpoints[TrackBatchReadAllEndpoints | TrackBatchWriteEndpoints]
+            BatchReadEndpoints | HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints]
         ] = self.api
 
         self.logger.info(f"Restoring {len(uris)} library tracks on {self._log_name} library", header=2)
@@ -451,10 +446,10 @@ class RemoteMutableLibrary[
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", ArtistBatchReadEndpoints, "reading data for {type}s"),
+        ("artists", BatchReadEndpoints, "reading data for {type}s"),
         ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("artists.library", ArtistBatchReadAllEndpoints, "reading data for library {type}s"),
-        ("artists.library", ArtistBatchWriteEndpoints, "writing data for library {type}s"),
+        ("artists.library", BatchReadAllEndpoints, "reading data for library {type}s"),
+        ("artists.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     @validate_call
     async def restore_artists(
@@ -477,7 +472,7 @@ class RemoteMutableLibrary[
         :return: The count of library artists on the remote service after the sync.
         """
         api: HasArtistEndpoints[
-            ArtistBatchReadEndpoints | HasLibraryEndpoints[ArtistBatchReadAllEndpoints | ArtistBatchWriteEndpoints]
+            BatchReadEndpoints | HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints]
         ] = self.api
 
         self.logger.info(f"Restoring {len(uris)} library artists on {self._log_name} library", header=2)
@@ -493,10 +488,10 @@ class RemoteMutableLibrary[
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", AlbumBatchReadEndpoints, "reading data for {type}s"),
+        ("albums", BatchReadEndpoints, "reading data for {type}s"),
         ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("albums.library", AlbumBatchReadAllEndpoints, "reading data for library {type}s"),
-        ("albums.library", AlbumBatchWriteEndpoints, "writing data for library {type}s"),
+        ("albums.library", BatchReadAllEndpoints, "reading data for library {type}s"),
+        ("albums.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
     @validate_call
     async def restore_albums(
@@ -519,7 +514,7 @@ class RemoteMutableLibrary[
         :return: The count of library albums on the remote service after the sync.
         """
         api: HasAlbumEndpoints[
-            AlbumBatchReadEndpoints | HasLibraryEndpoints[AlbumBatchReadAllEndpoints | AlbumBatchWriteEndpoints]
+            BatchReadEndpoints | HasLibraryEndpoints[BatchReadAllEndpoints | BatchWriteEndpoints]
         ] = self.api
 
         self.logger.info(f"Restoring {len(uris)} library albums on {self._log_name} library", header=2)
@@ -561,7 +556,7 @@ class RemoteMutableLibrary[
         ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
         ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
         (None, HasTrackEndpoints, "track endpoints"),
-        ("tracks", TrackBatchReadEndpoints, "reading data for tracks"),
+        ("tracks", BatchReadEndpoints, "reading data for tracks"),
     )
     @validate_call
     async def restore_playlists(
@@ -608,7 +603,7 @@ class RemoteMutableLibrary[
     ) -> tuple[str, SyncRemoteResult] | None:
         api: (
             HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]] |
-            HasTrackEndpoints[TrackBatchReadEndpoints]
+            HasTrackEndpoints[BatchReadEndpoints]
         ) = self.api
 
         async with self.concurrency:

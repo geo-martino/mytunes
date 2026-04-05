@@ -21,7 +21,6 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 
 type _SearchT = Track | Album | Artist | Playlist
-type _SearchTypeT = type[Track] | type[Album] | type[Artist]| type[Playlist]
 type _ReturnT = SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist
 
 
@@ -40,13 +39,11 @@ class SpotifySearchEndpoints(
     def _format_query_params(
             self,
             query: str,
-            types: set[str | _SearchTypeT],
+            types: set[str],
             limit: PositiveInt | None = None,
             offset: PositiveInt | None = None,
     ) -> dict[str, Any]:
-        types_mapped = map(self._map_type_to_str, types)
-
-        params: dict[str, Any] = {"q": query, "type": ",".join(types_mapped)}
+        params: dict[str, Any] = {"q": query, "type": ",".join(types)}
         if limit is not None:
             params["limit"] = limit
         if offset is not None:
@@ -69,8 +66,10 @@ class SpotifySearchEndpoints(
                 query = self._get_name(artist)
             case Playlist() as playlist:
                 query = self._get_name(playlist)
+            case ResourceModel() as resource:
+                raise RequestError(f"Unsupported item type: {resource.type!r}")
             case _:
-                raise RequestError(f"Unsupported item type: {item.type}")
+                raise RequestError(f"Unsupported item type: {type(item).__name__!r}")
 
         item_type = type(item) if isinstance(item, SpotifyResource) else item.type
         return {"query": query, "types": {item_type}} | kwargs

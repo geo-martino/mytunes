@@ -53,7 +53,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
                 case "JPEG" | "JPG":
                     image_format = mutagen.mp4.AtomDataType.JPEG
                 case _:
-                    name = self.__class__.__name__
+                    name = type(self).__name__
                     raise FileError(self.path, f"Unrecognised image format for {name} cover image: {image.format}")
 
             return mutagen.mp4.MP4Cover(data, imageformat=image_format)

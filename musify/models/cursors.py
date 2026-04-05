@@ -264,7 +264,7 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
             return None
 
         url = self.url.update_query({self._offset_param_key: prev_offset, self._limit_param_key: self.limit})
-        return self.__class__(url=url, limit=self.limit, offset=prev_offset, total=self.total)
+        return type(self)(url=url, limit=self.limit, offset=prev_offset, total=self.total)
 
     @property
     def next(self) -> Self | None:
@@ -274,7 +274,7 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
             return None
 
         url = self.url.update_query(limit=self.limit, offset=next_offset)
-        return self.__class__(url=url, limit=self.limit, offset=next_offset, total=self.total)
+        return type(self)(url=url, limit=self.limit, offset=next_offset, total=self.total)
 
     @property
     def iter_pages(self) -> Generator[Self, None, None]:
@@ -327,14 +327,14 @@ class KeyCursor(ReversiblePageCursor, _HasLimitParam):
         if self.before is None:
             return None
         url = self.url.update_query({self._after_param_key: self.before})
-        return self.__class__(url=url, limit=self.limit, total=self.total)
+        return type(self)(url=url, limit=self.limit, total=self.total)
 
     @property
     def next(self) -> Self | None:
         if self.after is None:
             return None
         url = self.url.update_query({self._after_param_key: self.after})
-        return self.__class__(url=url, limit=self.limit, total=self.total)
+        return type(self)(url=url, limit=self.limit, total=self.total)
 
 
 class UrlCursor(PageCursor):
@@ -361,13 +361,13 @@ class UrlCursor(PageCursor):
     def previous(self) -> Self | None:
         if self.previous_url is None:
             return None
-        return self.__class__(url=self.previous_url, next_url=self.url, total=self.total)
+        return type(self)(url=self.previous_url, next_url=self.url, total=self.total)
 
     @property
     def next(self) -> Self | None:
         if self.next_url is None:
             return None
-        return self.__class__(url=self.next_url, previous_url=self.url, total=self.total)
+        return type(self)(url=self.next_url, previous_url=self.url, total=self.total)
 
 
 class InitialCursor(_HasLimitParam):

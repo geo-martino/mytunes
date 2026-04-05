@@ -193,7 +193,7 @@ class ImageFile(ImageSource, IsLocalFile):
     def __eq__(self, other: Self) -> bool:
         if self is other:
             return True
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return super().__eq__(other)
         return self.path == other.path and self.type == other.type
 
@@ -215,7 +215,7 @@ class FileEmbeddedImage(ImageSource):
     def __eq__(self, other: Self) -> bool:
         if self is other:
             return True
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return super().__eq__(other)
         return (self.path is None or self.path == other.path) and self.type == other.type
 
@@ -232,7 +232,7 @@ class ImageURL(ImageSource):
     def __eq__(self, other: Self) -> bool:
         if self is other:
             return True
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return super().__eq__(other)
         return self.url == other.url and self.type == other.type
 

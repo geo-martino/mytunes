@@ -7,9 +7,9 @@ from typing import Any, get_args, Callable, Self, Annotated
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
-from typing_inspection.typing_objects import is_typevar
 from yarl import URL
 
+from musify._types import get_generic
 from musify.models.exception import MusifyValidationError, ModelError, RequestError
 from musify.models.properties.uri import URI, HasURI, HasImmutableURI
 from musify.models.remote import RemoteModel
@@ -25,22 +25,11 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
         return list(params).index(param_key)
 
     @classmethod
-    def _create_type_from_model_generics(cls, model: RemoteModel) -> type[Self]:
+    def _construct_type_from_model_generics(cls, model: RemoteModel) -> type[Self]:
         from musify.models.api import Endpoints
-        generics = ()
-        while not generics:
-            base = next(
-                base for base in model.__pydantic_parent_namespace__["bases"] if issubclass(base, Endpoints)
-            )
-            generics = base.__pydantic_generic_metadata__["args"]
 
-            if all(is_typevar(arg) for arg in generics):
-                generics = model.__pydantic_generic_metadata__["args"]
-
-            model = base
-
-        uri_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, URI))
-        model_t = next(arg for arg in generics if not is_typevar(arg) and issubclass(arg, HasImmutableURI))
+        uri_t = get_generic(type(model), expected=URI, base=Endpoints)
+        model_t = get_generic(type(model), expected=HasImmutableURI, base=Endpoints)
         return cls[uri_t, model_t]
 
     @staticmethod
@@ -167,7 +156,7 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
                 args = list(args)
 
                 self = args.pop(0)
-                cls_t = cls._create_type_from_model_generics(self)
+                cls_t = cls._construct_type_from_model_generics(self)
                 adapter = TypeAdapter(cls_t)
 
                 args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
@@ -264,7 +253,7 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
                 args = list(args)
 
                 self = args.pop(0)
-                cls_t = cls._create_type_from_model_generics(self)
+                cls_t = cls._construct_type_from_model_generics(self)
                 if is_sequence:
                     # noinspection PyTypeHints
                     cls_t = Sequence[cls_t]

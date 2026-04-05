@@ -1,11 +1,10 @@
-from typing import ClassVar, final, Type
+from typing import ClassVar, final
 
 from pydantic import AliasPath
 from yarl import URL
 
-from musify.models.api import HasLibraryEndpoints
-from musify.models.api.album import AlbumReadEndpoints, AlbumBatchReadEndpoints, \
-    AlbumBatchReadAllEndpoints, AlbumBatchWriteEndpoints, AlbumCollectionReadEndpoints
+from musify.models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
+    ItemReadEndpoints, CollectionReadEndpoints
 from musify.spotify import API_URL
 from musify.spotify.api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify.collection.album import SpotifyAlbumCollection
@@ -16,13 +15,11 @@ from musify.spotify.properties.uri import SpotifyResourceURI
 
 @final
 class _SpotifyAlbumLibraryEndpoints(
-    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyAlbum],
-    AlbumBatchReadAllEndpoints[SpotifyResourceURI, SpotifyAlbum],
-    AlbumBatchWriteEndpoints[SpotifyResourceURI, SpotifyAlbum],
+    _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
+    BatchReadAllEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
+    BatchWriteEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
 ):
     __final__ = True
-
-    type: ClassVar[Type] = SpotifyAlbumCollection  # override to force creation of collections from responses
 
     _read_all_url: ClassVar[URL] = API_URL.joinpath("me/albums")
     _read_all_limit: ClassVar[int] = 50
@@ -36,9 +33,9 @@ class _SpotifyAlbumLibraryEndpoints(
 class SpotifyAlbumEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyAlbum],
     HasLibraryEndpoints[_SpotifyAlbumLibraryEndpoints],
-    AlbumReadEndpoints[SpotifyResourceURI, SpotifyAlbum],
-    AlbumBatchReadEndpoints[SpotifyResourceURI, SpotifyAlbum],
-    AlbumCollectionReadEndpoints[SpotifyResourceURI, SpotifyAlbumCollection, SpotifyTrack],
+    ItemReadEndpoints[SpotifyResourceURI, SpotifyAlbum],
+    BatchReadEndpoints[SpotifyResourceURI, SpotifyAlbum],
+    CollectionReadEndpoints[SpotifyResourceURI, SpotifyAlbumCollection, SpotifyTrack],
 ):
     __final__ = True
 

@@ -2,26 +2,22 @@ from typing import ClassVar, final, Any
 from unittest.mock import patch, Mock, MagicMock
 
 from aiorequestful.auth import Authoriser
-from aiorequestful.cache.backend import ResponseCache
 from pydantic import PositiveInt, AliasPath
 from yarl import URL
 
 from musify.models import ResourceModel
-from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints
-from musify.models.api.album import HasAlbumEndpoints, AlbumBatchReadAllEndpoints, \
-    AlbumBatchWriteEndpoints, AlbumBatchReadEndpoints
-from musify.models.api.artist import HasArtistEndpoints, ArtistBatchReadAllEndpoints, \
-    ArtistBatchWriteEndpoints, ArtistBatchReadEndpoints
+from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, BatchReadAllEndpoints, \
+    BatchWriteEndpoints, BatchReadEndpoints
+from musify.models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 from musify.models.api.search import SearchEndpoints, HasSearchEndpoints
-from musify.models.api.track import HasTrackEndpoints, TrackBatchReadAllEndpoints, \
-    TrackBatchWriteEndpoints, TrackBatchReadEndpoints
 from musify.models.api.user import HasUserEndpoints, UserEndpoints
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.cursors import IndexCursor, UrlCursor, KeyCursor
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.artist import RemoteArtist
 from musify.models.item.track import RemoteTrack
+from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
@@ -73,7 +69,7 @@ class MockUserEndpoints(
 
 
 class MockSearchEndpoints(
-    SearchEndpoints[SimpleURI, RemoteUser, ResourceModel]
+    SearchEndpoints[SimpleURI, RemoteTrack | RemoteAlbum | RemoteUser, ResourceModel]
 ):
     _query_url = URL("https://api.example.com/search")
     _query_path = AliasPath("items", "{type}s")
@@ -88,44 +84,16 @@ class MockSearchEndpoints(
         pass
 
 
-class MockTrackLibraryEndpoints(
-    TrackBatchReadAllEndpoints[SimpleURI, RemoteTrack],
-    TrackBatchWriteEndpoints[SimpleURI, RemoteTrack],
+class MockLibraryEndpoints[RT: RemoteResource](
+    BatchReadAllEndpoints[SimpleURI, RT],
+    BatchWriteEndpoints[SimpleURI, RT],
 ):
     pass
 
 
-class MockTrackEndpoints(
-    TrackBatchReadEndpoints[SimpleURI, RemoteTrack],
-    HasLibraryEndpoints[MockTrackLibraryEndpoints],
-):
-    pass
-
-
-class MockArtistLibraryEndpoints(
-    ArtistBatchReadAllEndpoints[SimpleURI, RemoteTrack],
-    ArtistBatchWriteEndpoints[SimpleURI, RemoteTrack],
-):
-    pass
-
-
-class MockArtistEndpoints(
-    ArtistBatchReadEndpoints[SimpleURI, RemoteArtist],
-    HasLibraryEndpoints[MockArtistLibraryEndpoints],
-):
-    pass
-
-
-class MockAlbumLibraryEndpoints(
-    AlbumBatchReadAllEndpoints[SimpleURI, RemoteTrack],
-    AlbumBatchWriteEndpoints[SimpleURI, RemoteTrack],
-):
-    pass
-
-
-class MockAlbumEndpoints(
-    AlbumBatchReadEndpoints[SimpleURI, RemoteAlbum],
-    HasLibraryEndpoints[MockAlbumLibraryEndpoints],
+class MockItemEndpoints[RT: RemoteResource](
+    BatchReadEndpoints[SimpleURI, RT],
+    HasLibraryEndpoints[MockLibraryEndpoints[RT]],
 ):
     pass
 
@@ -147,9 +115,9 @@ class MockRemoteAPI(
     RemoteAPI[MockRemoteAuthoriser],
     HasUserEndpoints[MockUserEndpoints],
     HasSearchEndpoints[MockSearchEndpoints],
-    HasTrackEndpoints[MockTrackEndpoints],
-    HasArtistEndpoints[MockArtistEndpoints],
-    HasAlbumEndpoints[MockAlbumEndpoints],
+    HasTrackEndpoints[MockItemEndpoints[RemoteTrack]],
+    HasArtistEndpoints[MockItemEndpoints[RemoteArtist]],
+    HasAlbumEndpoints[MockItemEndpoints[RemoteAlbum]],
     HasPlaylistEndpoints[MockPlaylistEndpoints],
 ):
     source: ClassVar[str] = MockRemoteAuthoriser.source

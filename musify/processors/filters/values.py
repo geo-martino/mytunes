@@ -47,7 +47,7 @@ class ValueFilter[IT](Filter[IT]):
         return item in self.values
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, self.__class__) and self.values == other.values
+        return isinstance(other, type(self)) and self.values == other.values
 
 
 @final

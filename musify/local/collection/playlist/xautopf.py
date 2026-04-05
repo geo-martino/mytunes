@@ -571,7 +571,7 @@ class _XMLCondition(_XMLBaseModel):
         if field is not None or field not in self.name_field_map:
             field = self.field_name_map[field]
 
-        self.field = field or self.__class__.model_fields["field"].default
+        self.field = field or type(self).model_fields["field"].default
         self.comparison = to_pascal(comparer.condition)
         self.value[:] = sorted(to_list(comparer.expected)) or []
         return self
@@ -688,7 +688,7 @@ class _XMLLimit(_XMLBaseModel):
 
         self.count = limiter.limit_by
         self.type = to_pascal(limiter.kind.name)
-        self.selected_by = to_pascal(limiter.sorted_by) or self.__class__.model_fields["selected_by"].default
+        self.selected_by = to_pascal(limiter.sorted_by) or type(self).model_fields["selected_by"].default
         return self
 
 
@@ -774,8 +774,8 @@ class _XMLSortBy(_XMLBaseModel):
             raise MusifyValueError("Only use this sorter for single-field sorts.")
 
         if not sorter.sort_fields:
-            self.field = self.__class__.model_fields["field"].default
-            self.order = self.__class__.model_fields["order"].default
+            self.field = type(self).model_fields["field"].default
+            self.order = type(self).model_fields["order"].default
             return self
 
         field, reverse = next(iter(sorter.sort_fields.items()))
@@ -956,7 +956,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
         """Parse the given ``matcher`` into this configuration."""
         self.source.parse_matcher(matcher)
 
-        group_by_default = self.__class__.model_fields["group_by"].default
+        group_by_default = type(self).model_fields["group_by"].default
         if matcher is None:
             self.group_by = group_by_default
             return self
@@ -978,7 +978,7 @@ class _XMLSmartPlaylist(_XMLBaseModel):
 
         if sorter is None:
             self.shuffle_mode = None
-            self.shuffle_same_artist_weight = self.__class__.model_fields["shuffle_same_artist_weight"].default
+            self.shuffle_same_artist_weight = type(self).model_fields["shuffle_same_artist_weight"].default
             return self
 
         self.shuffle_mode = to_pascal(sorter.shuffle_mode.name) if sorter.shuffle_mode is not None else None

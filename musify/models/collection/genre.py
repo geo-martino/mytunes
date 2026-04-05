@@ -1,8 +1,10 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self, TYPE_CHECKING
 
-from pydantic import model_validator
+from pydantic import model_validator, validate_call
 
+from musify.models.api import CollectionReadEndpoints
+from musify.models.api.items import HasGenreEndpoints
 from musify.models.collection._base import RemoteCollection, CollectionModel
 from musify.models.cursors import PageCursor
 from musify.models.exception import MusifyValidationError
@@ -11,9 +13,6 @@ from musify.models.item.track import Track, HasTracks, RemoteTrack
 from musify.models.properties.length import HasLength
 from musify.models.properties.uri import URI
 from musify.models.sequence import UniqueSequence
-
-if TYPE_CHECKING:
-    from musify.models.api.genre import HasGenreEndpoints, GenreCollectionReadEndpoints
 
 
 class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Genre, HasLength):
@@ -84,7 +83,7 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
         # noinspection PyProtectedMember
         self.tracks._replace(())
 
-    # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def extend(self, api: HasGenreEndpoints[GenreCollectionReadEndpoints]) -> None:
+    @validate_call
+    async def extend(self, api: HasGenreEndpoints[CollectionReadEndpoints]) -> None:
         # noinspection PyProtectedMember
         self.tracks._replace(await api.genres.get_all(self))
