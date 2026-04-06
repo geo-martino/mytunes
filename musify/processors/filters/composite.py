@@ -50,7 +50,7 @@ class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
     def ready(self):
         return any(filter_.ready for filter_ in self.filters)
 
-    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[T]:
+    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[IT]:
         return self.match(values=values, reference=reference).combined
 
     @abstractmethod
@@ -134,7 +134,7 @@ class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
             match &= not self.exclude.check(item)
         return match
 
-    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[T]:
+    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[IT]:
         return self.match(values=values, reference=reference).combined
 
     def match(self, values: Collection[IT], reference: IT | None = None) -> IncludeExcludeResult[IT]:
@@ -219,7 +219,7 @@ class GroupFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
 
         return match  # cannot apply group_by logic as it depends on the full set of values
 
-    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[T]:
+    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[IT]:
         return self.match(values=values, reference=reference).combined
 
     def match(self, values: Collection[IT], reference: IT | None = None) -> GroupResult:

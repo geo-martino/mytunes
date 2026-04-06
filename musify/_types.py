@@ -199,7 +199,7 @@ def get_base_types(
     return tuple(bases)
 
 
-def get_bases(kls: type[BaseModel], expected: type[T]) -> Iterator[type[BaseModel]]:
+def get_bases[T](kls: type[BaseModel], expected: type[T]) -> Iterator[type[T]]:
     return (base for base in kls.__pydantic_parent_namespace__["bases"] if issubclass(base, expected))
 
 

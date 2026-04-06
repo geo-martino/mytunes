@@ -211,7 +211,7 @@ class MockItemEndpoints[RT: RemoteResource](
 
 
 class MockPlaylistLibraryEndpoints(
-    PlaylistLibraryEndpoints[SimpleURI, RemotePlaylist, RemoteTrack, RemoteUser],
+    PlaylistLibraryEndpoints[SimpleURI, RemotePlaylist, RemoteUser],
 ):
     pass
 

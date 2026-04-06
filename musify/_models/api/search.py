@@ -93,7 +93,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
                 # noinspection PyTypeChecker
                 return AliasPath(*(str(part).format(type=item_type) for part in alias.path))
             case AliasChoices() as choices:
-                return AliasChoices(*(cls._get_query_path(alias, item_type) for alias in choices.choices))
+                return AliasChoices(*(cls._get_query_path(alias, item_type) for alias in iter(choices.choices)))
 
         raise RequestError(f"Unknown query path type: {path}")
 

@@ -25,7 +25,7 @@ from ..._models.properties.uri import HasURI
 
 @final
 class _SpotifyPlaylistLibraryEndpoints(
-    PlaylistLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyPlaylistTrack, SpotifyUser],
+    PlaylistLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist, SpotifyUser],
     _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyPlaylist],
 ):
     __final__ = True

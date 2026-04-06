@@ -103,8 +103,7 @@ class PlaylistBatchWriteEndpoints[UT: URI, RT: RemotePlaylist](
 
 
 # noinspection PyAbstractClass
-class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT: RemoteUser](
-    PlaylistWriteEndpoints[UT, RT, IT],
+class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
     PlaylistBatchReadAllEndpoints[UT, RT, OT],
     PlaylistBatchWriteEndpoints[UT, RT],
 ):
@@ -128,21 +127,21 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
         return playlist
 
     @overload
-    async def add(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
+    async def add(self, url: _URL_TYPE[UT, RT]) -> None: ...
 
     @overload
-    async def add(self, url: URL, **kwargs) -> None: ...
+    async def add(self, url: URL) -> None: ...
 
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    async def add(self, url: ApiURL[UT, RT], **kwargs) -> None:
+    async def add(self, url: ApiURL[UT, RT]) -> None:
         """Add an existing playlist to the current user's library."""
         await self._handler.put(url)
 
     @overload
-    async def remove(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
+    async def remove(self, url: _URL_TYPE[UT, RT]) -> None: ...
 
     @overload
-    async def remove(self, url: URL, **kwargs) -> None: ...
+    async def remove(self, url: URL) -> None: ...
 
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def remove(self, url: ApiURL[UT, RT]) -> None:

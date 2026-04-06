@@ -123,7 +123,7 @@ class EndpointsMetaclass(ModelMetaclass):
 
 def _map_handler[T: RequestHandler[Authoriser, JsonSchemaValue]](
         kls: type[BaseModel], value: T | Mapping[str, T]
-) -> T | dict[str, dict[str, T]]:
+) -> T | dict[str, T] | dict[str, dict[str, T]]:
     key = "handler"
     match value:
         case RequestHandler():
@@ -447,7 +447,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, metaclass=E
         async def _get_response(value: T) -> tuple[T, JsonSchemaValue | None]:
             return value, await repository.get_response(("GET", value))
 
-        bar = self.logger.get_asynchronous_iterator(map(_get_response, values), disable=True)
+        bar = self.logger.run_tasks_async(map(_get_response, values))
         results = dict(await bar)
 
         retrieved_count = sum(result is not None for result in results.values())

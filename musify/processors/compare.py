@@ -86,6 +86,8 @@ class Comparer(DynamicProcessor):
                 annotation = field.annotation
             case property() as prop:
                 annotation = get_type_hints(prop.fget, include_extras=True)["return"]
+            case annotation:
+                raise MusifyTypeError(f"Unknown field type: {annotation}")
 
         return self._extract_type_from_annotation(annotation)
 

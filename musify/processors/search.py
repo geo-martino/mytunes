@@ -310,7 +310,7 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
                 self._log_debug(collection, message=message)
                 return collection
 
-            if not isinstance(collection, RemoteCollection):
+            if isinstance(collection, RemoteResource) and not isinstance(collection, RemoteCollection):
                 message = "API did not return a collection when trying to extend items in collection"
                 self._log_debug(collection, message=message)
                 return collection
