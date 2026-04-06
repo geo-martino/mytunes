@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from pydantic import Field, BeforeValidator
+from pydantic import Field
 
-from musify._types import to_tuple
+from musify._types import TO_TUPLE
 from musify.exception import MusifyValueError
 from musify.models.properties.uri import HasURI
 from musify.models.result import Result, LenLogFormatter
@@ -13,7 +13,7 @@ class CheckResult[T: HasURI](Result):
     """Stores the results of the searching process."""
     changed: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -26,7 +26,7 @@ class CheckResult[T: HasURI](Result):
     )
     unchanged: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -39,7 +39,7 @@ class CheckResult[T: HasURI](Result):
     )
     unavailable: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -52,7 +52,7 @@ class CheckResult[T: HasURI](Result):
     )
     skipped: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),

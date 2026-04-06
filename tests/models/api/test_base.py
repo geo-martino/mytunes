@@ -3,15 +3,14 @@ from typing import ClassVar
 from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
-from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import ValidationError
 
 from musify.models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, IsRemoteService, Endpoints
+from musify.models.api.items import HasTrackEndpoints
 from musify.models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
-from musify.models.api.items import HasTrackEndpoints
 from musify.models.user import RemoteUser
 from tests.models.api.utils import MockRemoteAPI, MockRemoteAuthoriser, MockItemEndpoints
 from tests.models.testers import BaseModelTester

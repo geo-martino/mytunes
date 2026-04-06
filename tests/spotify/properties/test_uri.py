@@ -11,7 +11,7 @@ from musify.models.item.album import Album
 from musify.models.item.artist import Artist
 from musify.models.item.track import Track
 # noinspection PyProtectedMember
-from musify.spotify.properties.uri import _SpotifyURIBase, SpotifyResourceURI, SpotifyUserURI
+from musify.spotify._properties.uri import SpotifyURIBase, SpotifyResourceURI, SpotifyUserURI
 from tests.models.testers import BaseModelTester
 
 
@@ -33,44 +33,44 @@ class SpotifyURITester(BaseModelTester, metaclass=ABCMeta):
 
 class TestSpotifyURIBase(SpotifyURITester):
     @pytest.fixture
-    def model(self, kind: str, id_value: str) -> _SpotifyURIBase:
+    def model(self, kind: str, id_value: str) -> SpotifyURIBase:
         uri_value = f"spotify:{kind}:{id_value}"
-        return _SpotifyURIBase(uri_value)
+        return SpotifyURIBase(uri_value)
 
     def test_validate_uri_length(self, kind: str, id_value: str):
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. Expected format"):  # too short
-            _SpotifyURIBase(f"spotify:{kind}")
+            SpotifyURIBase(f"spotify:{kind}")
 
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. Expected format"):  # too long
-            _SpotifyURIBase(f"spotify:{kind}:{id_value}:extra")
+            SpotifyURIBase(f"spotify:{kind}:{id_value}:extra")
 
     def test_properties(self, kind: str, id_value: str):
-        uri = _SpotifyURIBase(f"spotify:{kind}:{id_value}")
+        uri = SpotifyURIBase(f"spotify:{kind}:{id_value}")
         assert uri.source == "spotify"
         assert uri.type == kind
         assert uri.id == id_value
 
     def test_from_id(self, kind: str, id_value: str):
-        uri = _SpotifyURIBase.from_id(id_value, kind=kind)
+        uri = SpotifyURIBase.from_id(id_value, kind=kind)
         assert uri.root == f"spotify:{kind}:{id_value}"
 
     def test_api_url(self, kind: str, id_value: str):
-        uri = _SpotifyURIBase(f"spotify:{kind}:{id_value}")
+        uri = SpotifyURIBase(f"spotify:{kind}:{id_value}")
         assert uri.api_url == URL(f"https://api.spotify.com/v1/{kind}s/{id_value}")
 
     def test_from_api_url(self, kind: str, id_value: str):
         api_url = f"https://api.spotify.com/v1/{kind}s/{id_value}"
-        uri = _SpotifyURIBase(api_url)
+        uri = SpotifyURIBase(api_url)
         assert uri.type == kind
         assert uri.id == id_value
 
     def test_public_url(self, kind: str, id_value: str):
-        uri = _SpotifyURIBase(f"spotify:{kind}:{id_value}")
+        uri = SpotifyURIBase(f"spotify:{kind}:{id_value}")
         assert uri.public_url == URL(f"https://open.spotify.com/{kind}/{id_value}")
 
     def test_from_public_url(self, kind: str, id_value: str):
         api_url = f"https://open.spotify.com/{kind}/{id_value}"
-        uri = _SpotifyURIBase(api_url)
+        uri = SpotifyURIBase(api_url)
         assert uri.type == kind
         assert uri.id == id_value
 

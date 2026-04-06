@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from yarl import URL
 
 from musify.models._context import RemoteModelContext
-from musify.spotify.collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
+from musify.spotify._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from musify.spotify.cursors import SpotifyIndexCursor
 from musify.spotify.user import SpotifyUser
 from tests.spotify.generator import SpotifyPayloadGenerator

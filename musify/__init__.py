@@ -21,4 +21,4 @@ __all__ = [
 ]
 
 # we must import all the supported URI formats here so that they are registered in the registry
-from .spotify.properties.uri import SpotifyResourceURI, SpotifyUserURI
+from .spotify._properties.uri import SpotifyResourceURI, SpotifyUserURI

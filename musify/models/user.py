@@ -1,4 +1,4 @@
-from typing import ClassVar, TYPE_CHECKING, Self
+from typing import ClassVar, TYPE_CHECKING
 
 from pydantic import Field, EmailStr
 

@@ -11,9 +11,9 @@ from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 from mutagen.mp4 import MP4FreeForm, MP4Cover
 
-from musify.local.item.genre import LocalGenre
-from musify.local.item.track import TagContext
-from musify.local.item.track.m4a import M4A
+from musify.local._item.genre import LocalGenre
+from musify.local._item.track import TagContext
+from musify.local._item.track.m4a import M4A
 from musify.models.properties.date import SparseDate
 from musify.models.properties.music import KeySignature
 from musify.models.properties.order import Position

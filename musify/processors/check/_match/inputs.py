@@ -11,7 +11,7 @@ from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI, HasMutableURI
 from musify.models.result import LogFormatter
 from musify.processors._base import InputProcessor
-from musify.processors._exception import SkipPage, QuitImmediately
+from musify.processors._exception import SkipPage
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check.result import CheckResult
 from musify.processors.formatter import ModelFormatter

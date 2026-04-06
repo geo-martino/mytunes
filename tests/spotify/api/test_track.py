@@ -10,9 +10,9 @@ from yarl import URL
 
 from musify.spotify import API_URL
 # noinspection PyProtectedMember
-from musify.spotify.api._track import SpotifyTrackEndpoints
-from musify.spotify.item.track import SpotifyAudioFeatures, SpotifyAudioAnalysis
-from musify.spotify.properties.uri import SpotifyResourceURI
+from musify.spotify._api.track import SpotifyTrackEndpoints
+from musify.spotify._item.track import SpotifyAudioFeatures, SpotifyAudioAnalysis
+from musify.spotify._properties.uri import SpotifyResourceURI
 from tests.models.testers import BaseModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator
 

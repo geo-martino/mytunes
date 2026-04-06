@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from musify.local.collection.library import LocalLibrary
-from musify.local.collection.library.musicbee import MusicBee
-from musify.local.collection.playlist import LocalPlaylistFile
+from musify.local._collection.library import LocalLibrary
+from musify.local._collection.library.musicbee import MusicBee
+from musify.local._collection.playlist import LocalPlaylistFile
 from musify.models.properties.file import PathStemMapper
 from tests.models.testers import UniqueKeyTester
 

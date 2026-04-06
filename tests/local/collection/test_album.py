@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.local.collection.album import LocalAlbumCollection
+from musify.local._collection.album import LocalAlbumCollection
 from tests.models.testers import NoUniqueKeyTester
 from tests.utils import SimpleURI
 

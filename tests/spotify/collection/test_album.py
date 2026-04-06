@@ -3,7 +3,7 @@ from faker import Faker
 from yarl import URL
 
 from musify.models.properties.date import SparseDate
-from musify.spotify.collection.album import SpotifyAlbumCollection
+from musify.spotify._collection.album import SpotifyAlbumCollection
 from musify.spotify.cursors import SpotifyIndexCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester

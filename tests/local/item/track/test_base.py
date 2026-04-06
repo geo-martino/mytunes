@@ -15,9 +15,9 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
 from musify.exception import MusifyValueError
-from musify.local.item import LocalAlbum
-from musify.local.item.artist import LocalArtist
-from musify.local.item.track import LocalTrack, TagContext, HasLocalTracks
+from musify.local._item import LocalAlbum
+from musify.local._item.artist import LocalArtist
+from musify.local._item.track import LocalTrack, TagContext, HasLocalTracks
 from musify.models.properties.file import IsLocalFile
 from musify.models.properties.image import ImageFile
 from musify.models.properties.length import HasLength

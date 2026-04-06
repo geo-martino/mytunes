@@ -9,9 +9,9 @@ from faker import Faker
 
 from musify.models.exception import RequestError
 # noinspection PyProtectedMember
-from musify.spotify.api._playlist import _SpotifyPlaylistLibraryEndpoints
-from musify.spotify.collection.playlist import SpotifyPlaylist
-from musify.spotify.properties.uri import SpotifyResourceURI
+from musify.spotify._api.playlist import _SpotifyPlaylistLibraryEndpoints
+from musify.spotify._collection.playlist import SpotifyPlaylist
+from musify.spotify._properties.uri import SpotifyResourceURI
 from tests.models.api.testers import EndpointsTester
 
 

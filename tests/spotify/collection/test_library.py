@@ -1,7 +1,7 @@
 import pytest
 
-from musify.spotify.api import SpotifyAPI
-from musify.spotify.collection.library import SpotifyLibrary
+from musify.spotify._api import SpotifyAPI
+from musify.spotify._collection.library import SpotifyLibrary
 from tests.models.testers import BaseModelTester
 
 

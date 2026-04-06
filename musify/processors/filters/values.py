@@ -4,18 +4,17 @@ from typing import Annotated, Any, Self, final
 
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
 
-from musify._types import to_set, StrippedString
+from musify._types import TO_SET, StrippedString, DEFAULT_IF_NONE
 from musify.exception import MusifyTypeError
 from musify.models import BaseModel
 from musify.models.properties.file import PathMapper, IsLocalFile, PathInputType
 from musify.models.properties.name import HasName
 from musify.processors.filters._base import Filter
-from musify.utils import default_if_none
 
 
 class ValueFilter[IT](Filter[IT]):
     """Filter based on a defined list of values."""
-    values: Annotated[set[IT], BeforeValidator(to_set)] = Field(
+    values: Annotated[set[IT], TO_SET] = Field(
         description="Set of values to filter against",
         default_factory=set,
     )
@@ -55,7 +54,7 @@ class NameFilter(ValueFilter[str]):
     """Filter based on a defined list of name values."""
     __final__ = True
 
-    values: Annotated[set[StrippedString], BeforeValidator(to_set)] = Field(
+    values: Annotated[set[StrippedString], TO_SET] = Field(
         description="Set of names to filter against.",
         default_factory=set,
     )
@@ -85,11 +84,11 @@ class PathFilter(ValueFilter[str]):
     """Filter based on a defined list of path values."""
     __final__ = True
 
-    values: Annotated[set[StrippedString], BeforeValidator(to_set)] = Field(
+    values: Annotated[set[StrippedString], TO_SET] = Field(
         description="Set of paths to filter against. These will be stored as un-mapped paths if a PathMapper is set.",
         default_factory=set,
     )
-    path_mapper: Annotated[PathMapper, BeforeValidator(default_if_none)] = Field(
+    path_mapper: Annotated[PathMapper, DEFAULT_IF_NONE] = Field(
         description="Mapper to use to map paths.",
         default_factory=PathMapper,
     )

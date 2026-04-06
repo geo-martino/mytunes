@@ -8,8 +8,8 @@ from faker import Faker
 from pydantic import ValidationError
 
 from musify.exception import MusifyTypeError
-from musify.local.item.track import LocalTrack
-from musify.local.item.track.mp3 import MP3
+from musify.local._item.track import LocalTrack
+from musify.local._item.track.mp3 import MP3
 from musify.models.properties.date import SparseDate
 from musify.models.properties.length import Length
 from musify.models.properties.music import KeySignature

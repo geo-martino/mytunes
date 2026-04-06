@@ -16,7 +16,7 @@ from musify.models.api.playlist import PlaylistLibraryEndpoints
 from musify.models.collection._sync import SYNC_TYPE
 from musify.models.collection.library import RemoteMutableLibrary
 from musify.models.collection.library._remote._base import RemotePlaylistDump
-from musify.models.collection.playlist import RemoteMutablePlaylist, Playlist, RemotePlaylist
+from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from musify.models.item.album import Album, RemoteAlbum
 from musify.models.item.artist import Artist, RemoteArtist
 from musify.models.item.track import RemoteTrack, Track

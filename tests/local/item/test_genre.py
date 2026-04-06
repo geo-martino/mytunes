@@ -2,7 +2,7 @@ from random import choice
 
 import pytest
 
-from musify.local.item.genre import LocalGenre
+from musify.local._item.genre import LocalGenre
 from tests.models.testers import UniqueKeyTester
 from tests.utils import GENRES
 

@@ -1,4 +1,3 @@
-import functools
 from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, Annotated
 

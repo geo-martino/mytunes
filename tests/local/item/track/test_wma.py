@@ -14,9 +14,9 @@ from faker import Faker
 # noinspection PyProtectedMember
 from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 
-from musify.local.item.genre import LocalGenre
-from musify.local.item.track import TagContext
-from musify.local.item.track.wma import WMA
+from musify.local._item.genre import LocalGenre
+from musify.local._item.track import TagContext
+from musify.local._item.track.wma import WMA
 from musify.models.properties.order import Position
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester

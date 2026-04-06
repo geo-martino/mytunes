@@ -1,5 +1,5 @@
 from random import choice
-from typing import ClassVar, Self
+from typing import ClassVar
 
 from pydantic import Field
 

@@ -1,17 +1,15 @@
 import logging
 from abc import abstractmethod
-from functools import cached_property
-from types import UnionType
-from typing import ClassVar, Any, Type, cast, Union, get_args, override, get_origin
+from typing import ClassVar, Any, Type, Union, get_args, get_origin
 
-from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices, TypeAdapter
+from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices
 from yarl import URL
 
 from musify._types import get_generic
 from musify.exception import MusifyTypeError
 from musify.models import ResourceModel
-from musify.models.api._endpoints import Endpoints, HasEndpoints, EndpointsMetaclass
 from musify.models.api import HasLibraryEndpoints
+from musify.models.api._endpoints import Endpoints, HasEndpoints
 from musify.models.exception import RequestError
 from musify.models.properties.name import HasName
 from musify.models.properties.uri import URI

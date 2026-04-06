@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from musify.local.collection.playlist import LocalPlaylist
+from musify.local._collection.playlist import LocalPlaylist
 from musify.models.properties.file import PathStemMapper
 from musify.models.result import Result
 from tests.models.testers import UniqueKeyTester

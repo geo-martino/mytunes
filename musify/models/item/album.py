@@ -1,4 +1,4 @@
-from typing import ClassVar, TYPE_CHECKING, Self, Annotated
+from typing import ClassVar, Annotated
 
 from pydantic import Field, field_validator, computed_field, validate_call
 
@@ -10,12 +10,12 @@ from musify.models.api.items import HasAlbumEndpoints
 from musify.models.item.artist import HasArtists, Artist, RemoteArtist
 from musify.models.item.genre import HasGenres, Genre, RemoteGenre
 from musify.models.metadata import TagAttribute, Attribute
-from musify.models.properties.tag import HasSeparableTags
 from musify.models.properties.date import HasReleaseDate
 from musify.models.properties.image import HasImages
 from musify.models.properties.length import HasLength
 from musify.models.properties.name import HasName
 from musify.models.properties.rating import HasRating
+from musify.models.properties.tag import HasSeparableTags
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 

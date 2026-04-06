@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.spotify.item.genre import SpotifyGenre
+from musify.spotify._item.genre import SpotifyGenre
 from tests.spotify.testers import SpotifyResourceTester
 from tests.utils import GENRES
 

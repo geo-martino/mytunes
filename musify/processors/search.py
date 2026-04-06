@@ -5,7 +5,7 @@ from typing import Self, Any, Annotated
 from pydantic import Field, validate_call, model_validator, field_validator, BeforeValidator
 from termcolor import colored
 
-from musify._types import to_tuple
+from musify._types import TO_TUPLE
 from musify.models import ResourceModel
 from musify.models.api import RemoteAPI, IsRemoteService
 from musify.models.api.search import HasSearchEndpoints
@@ -26,7 +26,7 @@ class SearchResult[T: Any](TotalCountResult):
     """Stores the results of the searching process."""
     matches: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(condition=lambda x: False),  # never log this attribute
     ] = Field(
         description=(
@@ -37,7 +37,7 @@ class SearchResult[T: Any](TotalCountResult):
     )
     matched: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -53,7 +53,7 @@ class SearchResult[T: Any](TotalCountResult):
     )
     unmatched: Annotated[
         Sequence[T],
-        BeforeValidator(to_tuple),
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),

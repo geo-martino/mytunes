@@ -11,10 +11,10 @@ from pytest_mock import MockerFixture
 
 from musify.exception import MusifyValueError
 # noinspection PyProtectedMember
-from musify.local.collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
+from musify.local._collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
-from musify.local.item.track import LocalTrack
+from musify.local._item.track import LocalTrack
 from musify.models.item.track import Track
 from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer

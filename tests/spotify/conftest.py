@@ -3,7 +3,7 @@ from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
-from musify.spotify.api import SpotifyAPI
+from musify.spotify._api import SpotifyAPI
 from tests.spotify.generator import SpotifyPayloadGenerator
 
 

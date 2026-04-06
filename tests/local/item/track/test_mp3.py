@@ -11,9 +11,9 @@ from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
-from musify.local.item.artist import LocalArtist
-from musify.local.item.track import TagContext
-from musify.local.item.track.mp3 import MP3
+from musify.local._item.artist import LocalArtist
+from musify.local._item.track import TagContext
+from musify.local._item.track.mp3 import MP3
 from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 

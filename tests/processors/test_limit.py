@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from musify.local.item.album import LocalAlbum
-from musify.local.item.track import LocalTrack
+from musify.local._item.album import LocalAlbum
+from musify.local._item.track import LocalTrack
 from musify.processors.limit import ItemLimiter, LimitType
 from tests.models.testers import BaseModelTester
 from tests.processors.utils import create_random_file

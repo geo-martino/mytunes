@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping, Sequence
-from typing import Any, Self, TYPE_CHECKING
+from typing import Any, Self
 
 from pydantic import model_validator, validate_call
 

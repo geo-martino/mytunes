@@ -1,4 +1,4 @@
-from typing import ClassVar, TYPE_CHECKING, Self, Annotated
+from typing import ClassVar, Annotated
 
 from pydantic import Field, field_validator, validate_call
 
@@ -8,8 +8,8 @@ from musify.models._metaclass import makecls
 from musify.models.api import ItemReadEndpoints
 from musify.models.api.items import HasGenreEndpoints
 from musify.models.metadata import UniqueAttribute, Attribute
-from musify.models.properties.tag import HasSeparableTags
 from musify.models.properties.name import HasName
+from musify.models.properties.tag import HasSeparableTags
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 

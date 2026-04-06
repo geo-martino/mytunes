@@ -4,9 +4,9 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify.local.collection.folder import Folder
-from musify.local.item.album import LocalAlbum
-from musify.local.item.track import LocalTrack
+from musify.local._collection.folder import Folder
+from musify.local._item.album import LocalAlbum
+from musify.local._item.track import LocalTrack
 from tests.models.testers import NoUniqueKeyTester
 from tests.utils import split_list
 

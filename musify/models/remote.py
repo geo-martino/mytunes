@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import ClassVar, TYPE_CHECKING, Self, Annotated
+from typing import ClassVar, TYPE_CHECKING, Annotated
 
 from pydantic import Field
 

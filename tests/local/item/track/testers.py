@@ -15,8 +15,8 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
+from musify.local._item.track import LocalTrack, TagContext
 from musify.local.exception import FileError
-from musify.local.item.track import LocalTrack, TagContext
 from musify.models.properties.image import ImageFile
 from musify.models.properties.name import HasName
 from tests.models.testers import BaseModelTester, UniqueKeyTester

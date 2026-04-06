@@ -5,11 +5,11 @@ from pydantic import validate_call, Field, PositiveInt, PrivateAttr
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
+from musify.models.api import HasLibraryEndpoints
 from musify.models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
     BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
-from musify.models.api import HasLibraryEndpoints
-from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
+from musify.models.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
 from musify.models.collection.playlist import RemotePlaylist
 from musify.models.item.track import RemoteTrack
 from musify.models.properties.uri import URI
@@ -44,8 +44,8 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
             self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_and_skip_duplicates(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt = None,
     ) -> int:
@@ -125,7 +125,7 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
     @overload
     async def add(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def add(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Add an existing playlist to the current user's library."""
         await self._handler.put(url)
@@ -133,7 +133,7 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
     @overload
     async def remove(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def remove(self, url: ApiURL[UT, RT]) -> None:
         """Delete the playlist from the current user's library."""
         await self._handler.delete(url)
@@ -141,7 +141,7 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
     @overload
     async def modify(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Modify details about a playlist in the current user's library."""
         if not kwargs:

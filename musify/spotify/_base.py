@@ -1,8 +1,7 @@
 from typing import ClassVar
 
 from musify.models.remote import RemoteModel, RemoteResource
-# noinspection PyProtectedMember
-from musify.spotify.properties.uri import _SpotifyURIBase
+from ._properties.uri import SpotifyURIBase
 
 
 class SpotifyModel(RemoteModel):
@@ -10,5 +9,5 @@ class SpotifyModel(RemoteModel):
 
 
 # noinspection PyAbstractClass
-class SpotifyResource[UT: _SpotifyURIBase](RemoteResource[UT], SpotifyModel):
+class SpotifyResource[UT: SpotifyURIBase](RemoteResource[UT], SpotifyModel):
     pass

@@ -6,7 +6,7 @@ from pydantic import TypeAdapter
 from yarl import URL
 
 # noinspection PyProtectedMember
-from musify.models.api.types import _ApiURLSchema, _ApiURISchema
+from musify.models.api.types import ApiURLSchema, ApiURISchema
 from musify.models.properties.uri import URI
 from tests.models.utils import MockRemoteResource
 from tests.utils import SimpleURI
@@ -57,7 +57,7 @@ class ApiSchemaTester[T](metaclass=ABCMeta):
 class TestApiURLSchema(ApiSchemaTester[URL]):
     @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter:
-        return TypeAdapter(_ApiURLSchema[SimpleURI, MockRemoteResource])
+        return TypeAdapter(ApiURLSchema[SimpleURI, MockRemoteResource])
 
     @pytest.fixture(scope="class")
     def uri(self, faker: Faker) -> URI:
@@ -69,13 +69,13 @@ class TestApiURLSchema(ApiSchemaTester[URL]):
 
     def test_requires_generics_definition(self):
         with pytest.raises(TypeError):
-            TypeAdapter(_ApiURLSchema)
+            TypeAdapter(ApiURLSchema)
 
 
 class TestApiURISchema(ApiSchemaTester[URI]):
     @pytest.fixture(scope="class")
     def adapter(self) -> TypeAdapter:
-        return TypeAdapter(_ApiURISchema[SimpleURI, MockRemoteResource])
+        return TypeAdapter(ApiURISchema[SimpleURI, MockRemoteResource])
 
     @pytest.fixture(scope="class")
     def uri(self, faker: Faker) -> URI:
@@ -87,4 +87,4 @@ class TestApiURISchema(ApiSchemaTester[URI]):
 
     def test_requires_generics_definition(self):
         with pytest.raises(TypeError):
-            TypeAdapter(_ApiURISchema)
+            TypeAdapter(ApiURISchema)

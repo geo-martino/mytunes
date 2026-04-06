@@ -11,7 +11,6 @@ from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
-from typing_inspection.typing_objects import is_typevar
 
 from musify._types import get_generic
 from musify.models import AttributeModel

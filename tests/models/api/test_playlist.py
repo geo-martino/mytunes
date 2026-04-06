@@ -1,5 +1,4 @@
 from collections.abc import Generator, Callable
-from typing import Any
 from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
@@ -9,7 +8,6 @@ from yarl import URL
 
 from musify.models.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
     PlaylistReadWriteEndpoints
-from musify.models.collection import RemoteCollection
 from musify.models.collection.playlist import RemotePlaylist, Playlist
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource

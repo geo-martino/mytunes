@@ -6,7 +6,6 @@ from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
 from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
-from rich.progress import TaskID
 from termcolor import colored
 
 from musify.exception import MusifyError
@@ -23,7 +22,6 @@ from musify.models.properties.uri import HasURI, URI
 from musify.models.remote import RemoteResource
 from musify.models.user import RemoteUser
 from musify.processors._base import PageProcessor
-from musify.processors._exception import QuitImmediately, SkipPage
 from musify.processors.formatter import CollectionFormatter
 
 type _ApiT = RemoteAPI | HasPlaylistEndpoints[

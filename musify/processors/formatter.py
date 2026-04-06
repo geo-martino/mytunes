@@ -8,7 +8,7 @@ from pydantic import Field, model_validator, PositiveInt, BeforeValidator, valid
 from tabulate import tabulate
 from termcolor import colored
 
-from musify._types import to_list
+from musify._types import TO_LIST
 from musify.exception import MusifyTypeError
 from musify.models import BaseModel, ResourceModel
 from musify.models.collection import CollectionModel
@@ -43,32 +43,32 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         description="The fields of the model to include in the formatted output.",
         min_length=1,
     )
-    alignments: Annotated[Sequence[ALIGNMENTS], BeforeValidator(to_list)] | None = Field(
+    alignments: Annotated[Sequence[ALIGNMENTS], TO_LIST] | None = Field(
         description="The alignments of the fields in the formatted output. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
-    widths: Annotated[Sequence[PositiveInt], BeforeValidator(to_list)] | None = Field(
+    widths: Annotated[Sequence[PositiveInt], TO_LIST] | None = Field(
         description="The widths of the fields in the formatted output. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
-    truncate: Annotated[Sequence[bool], BeforeValidator(to_list)] | None = Field(
+    truncate: Annotated[Sequence[bool], TO_LIST] | None = Field(
         description="Whether to truncate the fields in the formatted output. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
     colours: Annotated[
         Sequence[COLOURS | tuple[int, int, int] | None],
-        BeforeValidator(to_list)
+        TO_LIST
     ] | None = Field(
         description="The colours to assign to each column. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
     colour_attributes: Annotated[
-        Sequence[Annotated[Sequence[COLOUR_ATTRIBUTES], BeforeValidator(to_list)] | None],
-        BeforeValidator(to_list)
+        Sequence[Annotated[Sequence[COLOUR_ATTRIBUTES], TO_LIST] | None],
+        TO_LIST
     ] | None = Field(
         description="The colour attributes to assign to each column. Must be the same length as `fields`.",
         default=None,

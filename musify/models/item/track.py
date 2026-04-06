@@ -1,4 +1,4 @@
-from typing import ClassVar, Self, TYPE_CHECKING, Annotated
+from typing import ClassVar, Self, Annotated
 
 from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
 
@@ -21,7 +21,6 @@ from musify.models.properties.rating import HasRating
 from musify.models.properties.uri import URI
 from musify.models.remote import RemoteResource
 from musify.models.sequence import MutableUniqueSequence, UniqueSequence
-
 
 
 class Track[RT: Artist, AT: Album, GT: Genre](

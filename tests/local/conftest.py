@@ -4,10 +4,10 @@ from random import sample, choice
 import pytest
 from faker import Faker
 
-from musify.local.item.album import LocalAlbum
-from musify.local.item.artist import LocalArtist
-from musify.local.item.genre import LocalGenre
-from musify.local.item.track import LocalTrack
+from musify.local._item.album import LocalAlbum
+from musify.local._item.artist import LocalArtist
+from musify.local._item.genre import LocalGenre
+from musify.local._item.track import LocalTrack
 from musify.models import ResourceModel
 from tests.utils import GENRES
 

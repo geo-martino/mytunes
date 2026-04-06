@@ -4,9 +4,9 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify.spotify.api import SpotifyAPI
-from musify.spotify.api._artist import SpotifyArtistEndpoints, _ALL_ALBUM_TYPES
-from musify.spotify.collection.artist import SpotifyArtistCollection
+from musify.spotify._api import SpotifyAPI
+from musify.spotify._api.artist import SpotifyArtistEndpoints, _ALL_ALBUM_TYPES
+from musify.spotify._collection.artist import SpotifyArtistCollection
 from musify.spotify.cursors import SpotifyIndexCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester

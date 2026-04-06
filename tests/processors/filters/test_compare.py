@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from faker import Faker
 
-from musify.local.item.track import LocalTrack
+from musify.local._item.track import LocalTrack
 from musify.models.properties.date import SparseDate
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter

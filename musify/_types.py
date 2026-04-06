@@ -1,14 +1,14 @@
 from annotationlib import ForwardRef
 from collections.abc import Iterable, Mapping, Iterator
-from contextlib import suppress
 from types import UnionType, GenericAlias
 from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar
 
 from annotated_types import MinLen
 from pydantic import StringConstraints, BeforeValidator, BaseModel
 from pydantic.alias_generators import to_snake
+from pydantic_core import PydanticUseDefault
 from typing_extensions import get_origin
-from typing_inspection.typing_objects import is_annotated, is_typevar, is_forwardref, is_typealias, is_typealiastype
+from typing_inspection.typing_objects import is_annotated, is_typevar
 
 from musify.exception import MusifyTypeError
 
@@ -48,6 +48,9 @@ def to_set(value: Any) -> set[Any] | None:
             return {value}
 
 
+TO_SET = BeforeValidator(to_set)
+
+
 def to_tuple(value: Any) -> tuple[Any] | None:
     """Converts a value to a tuple."""
     from musify.models import BaseModel  # to prevent cyclical imports
@@ -63,6 +66,9 @@ def to_tuple(value: Any) -> tuple[Any] | None:
             return (value,)
 
 
+TO_TUPLE = BeforeValidator(to_tuple)
+
+
 def to_list(value: Any) -> list[Any] | None:
     """Converts a value to a list."""
     from musify.models import BaseModel  # to prevent cyclical imports
@@ -76,6 +82,19 @@ def to_list(value: Any) -> list[Any] | None:
             return list(value)
         case _:
             return [value]
+
+
+TO_LIST = BeforeValidator(to_list)
+
+
+def _default_if_none[T](value: T) -> T:
+    """Use the Pydantic default if value is None."""
+    if value is None:
+        raise PydanticUseDefault()
+    return value
+
+
+DEFAULT_IF_NONE = BeforeValidator(_default_if_none)
 
 
 ###########################################################################

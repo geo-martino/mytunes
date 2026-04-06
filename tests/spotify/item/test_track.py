@@ -5,10 +5,10 @@ from musify.models.properties.audio import Decibels
 from musify.models.properties.length import Length
 from musify.models.properties.music import KeySignature
 from musify.spotify import API_URL
-from musify.spotify.exception import SpotifyError
 # noinspection PyProtectedMember
-from musify.spotify.item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis, \
+from musify.spotify._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis, \
     _SpotifyAudioAnalysisMeta, _SpotifyAudioAnalysisTrack
+from musify.spotify.exception import SpotifyError
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester, SpotifyModelTester
 

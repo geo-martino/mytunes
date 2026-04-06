@@ -25,7 +25,7 @@ from musify.logger import Logger
 from musify.models import ResourceModel, BaseModel
 from musify.models._attribute import AttributeMetaclass
 from musify.models._context import RemoteModelContext
-from musify.models.api.types import ApiURL, _ApiURLSchema, _ApiURISchema, ApiURISequence
+from musify.models.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
 from musify.models.collection import RemoteCollection
 from musify.models.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from musify.models.exception import APIModelError, RequestError, CursorResponseError, MusifyValidationError, ModelError
@@ -554,7 +554,7 @@ class ItemReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @overload
     async def get(self, url: _URL_TYPE[UT, RT]) -> RT: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get(self, url: ApiURL[UT, RT]) -> RT:
         """
         Get a resource from the API using the given ID, URL, URI, or resource.
@@ -609,8 +609,8 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
             self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURISchema.validate_call("uris", is_sequence=True)
     async def add(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt | None = None,
     ) -> int:
@@ -651,8 +651,8 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
             self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
-    @_ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
-    @_ApiURISchema.validate_call("uris", is_sequence=True)
+    @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
+    @ApiURISchema.validate_call("uris", is_sequence=True)
     async def remove(
             self, url: ApiURL[UT, RT], uris: ApiURISequence[UT, IT], limit: PositiveInt | None = None,
     ) -> int:
@@ -703,7 +703,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @overload
     async def get_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
 
-    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
+    @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
@@ -804,7 +804,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @overload
     async def add_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
 
-    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
+    @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Add items in batches for this endpoint resource type."""
         item_type = type(self).item_type_name
@@ -840,7 +840,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @overload
     async def remove_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
 
-    @_ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
+    @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Remote items in batches for this endpoint resource type."""
         item_type = type(self).item_type_name

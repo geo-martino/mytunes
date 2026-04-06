@@ -47,7 +47,7 @@ class _ApiSchemaBase[UT: URI, MT: HasURI]:
         raise RequestError(f"{param_key!r} value is required.")
 
 
-class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
+class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
@@ -167,10 +167,10 @@ class _ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return decorator
 
 
-type ApiURL[UT: URI, MT: HasURI] = Annotated[URL, _ApiURLSchema[UT, MT]]
+type ApiURL[UT: URI, MT: HasURI] = Annotated[URL, ApiURLSchema[UT, MT]]
 
 
-class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
+class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
@@ -269,5 +269,5 @@ class _ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return decorator
 
 
-type ApiURI[UT: URI, MT: HasURI] = Annotated[UT, _ApiURISchema[UT, MT]]
+type ApiURI[UT: URI, MT: HasURI] = Annotated[UT, ApiURISchema[UT, MT]]
 type ApiURISequence[UT: URI, MT: HasURI] = Sequence[ApiURI[UT, MT]]

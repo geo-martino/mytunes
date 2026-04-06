@@ -1,22 +1,18 @@
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import patch, Mock, AsyncMock, MagicMock
+from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import PositiveInt, AliasPath, AliasChoices
-from yarl import URL
 
-from musify.models import ResourceModel
 from musify.models.api.search import SearchEndpoints
 from musify.models.item.album import RemoteAlbum
 from musify.models.item.track import Track, RemoteTrack
 from musify.models.remote import RemoteResource
 from tests.models.api.testers import EndpointsTester
 from tests.models.api.utils import MockSearchEndpoints
-from tests.models.utils import MockRemoteResource
-from tests.utils import SimpleURI
 
 
 class TestSearchEndpoints(EndpointsTester):

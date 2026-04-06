@@ -6,11 +6,11 @@ from copy import copy
 from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Annotated, TYPE_CHECKING, cast, Union
 
-from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, BeforeValidator, TypeAdapter
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter
 from pydantic_core.core_schema import ValidationInfo
 from yarl import URL
 
-from musify._types import StrippedString, to_set
+from musify._types import StrippedString, TO_SET
 from musify.exception import MusifyTypeError
 from musify.models import ResourceModel
 from musify.models._attribute import AttributeModel
@@ -227,7 +227,7 @@ class HasMutableURI(HasURI):
         ),
         default=None,
     )
-    uris: Annotated[set[URI], BeforeValidator(to_set)] = Field(
+    uris: Annotated[set[URI], TO_SET] = Field(
         description="A set of URIs that represent this resource.",
         default_factory=set,
     )
