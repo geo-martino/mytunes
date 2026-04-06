@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import ClassVar, Sequence, Iterable, Any
+from collections.abc import Sequence, Iterable
+from typing import ClassVar, Any
 
 from pydantic import PrivateAttr
 

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Hashable
+from collections.abc import Hashable, Generator
 from random import choice
-from typing import Callable, Any, Generator
+from typing import Callable, Any
 from unittest.mock import Mock, patch, AsyncMock
 
 import math

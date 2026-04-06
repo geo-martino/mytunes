@@ -16,7 +16,7 @@ from musify._models.collection._sync import SYNC_TYPE
 from musify._models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
 from musify._models.cursors import PageCursor
-from musify._models.item.track import RemoteTrack, Track
+from musify._models.item.track import RemoteTrack
 from musify._models.item.user import RemoteUser
 from musify._models.properties.uri import URI
 from musify.processors.compare import Comparer

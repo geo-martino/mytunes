@@ -1,23 +1,16 @@
-## DEPRECATED?
-
 """
 All classes and operations relating to the logger objects used throughout the entire package.
 """
-import asyncio
 import logging
 import logging.config
 import logging.handlers
 import sys
-from collections.abc import Iterable, Awaitable, Callable, Generator, AsyncGenerator
-from contextlib import AbstractContextManager
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Annotated, Coroutine, ClassVar, Self
+from typing import Any, Annotated
 
-from pydantic import Field, validate_call, BaseModel
+from pydantic import Field, validate_call
 from rich.console import Console
-from rich.progress import Progress as RichProgress, SpinnerColumn, TimeElapsedColumn, TextColumn, BarColumn, \
-    TaskProgressColumn, \
-    TimeRemainingColumn, TaskID
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]

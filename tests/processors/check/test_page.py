@@ -18,7 +18,6 @@ from musify._models.item.track import RemoteTrack
 from musify._models.properties.logger import HasProgress
 from musify._models.properties.order import Position
 from musify.exception import MusifyError
-from musify.logger import Logger
 # noinspection PyProtectedMember
 from musify.processors.check._page import CheckerPage
 from musify.processors.formatter import CollectionFormatter
