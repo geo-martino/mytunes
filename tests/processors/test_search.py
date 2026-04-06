@@ -387,7 +387,7 @@ class TestItemSearcher(SearcherTester):
         result_to_search = SearchResult(
             matches=items_matches, matched=items_matched, unmatched=valid, skipped=invalid
         )
-        result = await model._search_from_result(result_to_search, items)
+        result = await model._search_from_result(result_to_search)
 
         assert mock_query_item.call_count == len(valid)
 
