@@ -84,5 +84,5 @@ class CheckerMatch[IT: HasMutableURI](Processor, HasLogger, HasImmutableURI):
         if count is not None and isinstance(messages, str):
             messages = f"{count:>6} {messages}"
 
-        log = self._format_item_message(method=method, item=self.name, messages=messages, pad=pad)
+        log = self._format_item_message(method=method, item=item or self.name, messages=messages, pad=pad)
         self.logger.debug(log)

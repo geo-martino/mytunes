@@ -14,7 +14,7 @@ from musify._models.item.track import Track, RemoteTrack
 from musify._models.item.user import RemoteUser
 from musify._models.properties.order import Position
 from musify.processors.match import Matcher
-from musify.processors.match._score import NameScorer
+from musify.processors.score import NameScorer
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
 

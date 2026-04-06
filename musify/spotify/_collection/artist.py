@@ -2,19 +2,18 @@ from typing import final, Annotated, TYPE_CHECKING
 
 from pydantic import Field, AliasPath, model_validator
 
-from musify._models.api.items import HasArtistEndpoints
-from musify._models.collection.artist import RemoteArtistCollection
-from musify._models.metadata import Attribute
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._properties.uri import SpotifyResourceURI
+from ..._models.api.items import HasArtistEndpoints
+from ..._models.collection.artist import RemoteArtistCollection
+from ..._models.metadata import Attribute
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember
     from musify.spotify._api.artist import _ALL_ALBUM_TYPES, _ALBUM_TYPE, SpotifyArtistEndpoints
-
 
 
 # noinspection PyFinal

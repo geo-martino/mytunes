@@ -15,9 +15,9 @@ from musify._models.properties.date import HasReleaseDate
 from musify._models.properties.length import HasLength
 from musify._models.properties.name import HasName
 from musify.processors.match import Matcher
-from musify.processors.match._score import Scorer
-from musify.processors.match._score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
-from musify.processors.match._score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
+from musify.processors.score import Scorer
+from musify.processors.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
+from musify.processors.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
 from tests.testers import BaseModelTester
 
 

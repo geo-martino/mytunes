@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 from pydantic import InstanceOf
 
-from musify.processors.match._score.numeric import NumericScorer, RangeScorer, LengthScorer, ReleaseYearScorer, \
+from musify.processors.score.numeric import NumericScorer, RangeScorer, LengthScorer, ReleaseYearScorer, \
     TotalItemsScorer
 from tests.testers import BaseModelTester
 

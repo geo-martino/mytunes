@@ -1,1 +1,1 @@
-from ._properties.uri import SpotifyResourceURI, SpotifyUserURI # type: ignore[import]
+from ._properties.uri import SpotifyResourceURI, SpotifyUserURI  # type: ignore[import]

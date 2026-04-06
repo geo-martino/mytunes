@@ -5,10 +5,6 @@ from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
-from musify._models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
-from musify._models.exception import MusifyValidationError
-from musify._models.metadata import Attribute
-from musify._models.sequence import UniqueSequence, MutableUniqueSequence
 from musify.spotify import SpotifyResource
 from musify.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from musify.spotify.user import SpotifyUser
@@ -17,6 +13,10 @@ from .._properties.date import HasSpotifyAddedDate
 from .._properties.images import HasSpotifyImages
 from .._properties.stats import HasFollowers
 from .._properties.uri import SpotifyResourceURI
+from ..._models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
+from ..._models.exception import MusifyValidationError
+from ..._models.metadata import Attribute
+from ..._models.sequence import UniqueSequence, MutableUniqueSequence
 
 
 @final

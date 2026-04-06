@@ -2,15 +2,15 @@ from typing import final, Self, Annotated
 
 from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
 
-from musify._models.collection.album import RemoteAlbumCollection
-from musify._models.metadata import Attribute
-from musify._models.sequence import UniqueSequence
 from musify.spotify.cursors import SpotifyIndexCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
+from ..._models.collection.album import RemoteAlbumCollection
+from ..._models.metadata import Attribute
+from ..._models.sequence import UniqueSequence
 
 
 # noinspection PyFinal

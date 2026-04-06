@@ -4,14 +4,12 @@ from functools import partial
 from webbrowser import open as webopen
 
 from pydantic import Field
-from rich.progress import TaskID
 from termcolor import colored
 from yarl import URL
 
-from ..._models import AttributeModel, ResourceModel
-from ..._models.properties.order import Position
 from musify._types import HttpURL
 from .._base.inputs import PageProcessor
+from ..._models import AttributeModel
 
 
 class StorePausePage[IT: AttributeModel](PageProcessor):

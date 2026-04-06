@@ -4,14 +4,6 @@ from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self, Any
 from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, \
     ModelWrapValidatorHandler, model_validator
 
-from musify._models import BaseModel
-from musify._models.exception import MusifyValidationError
-from musify._models.item.track import RemoteTrack
-from musify._models.metadata import Attribute
-from musify._models.properties.audio import Decibels
-from musify._models.properties.date import SparseDate, HasAddedDate
-from musify._models.properties.length import Length, HasLength
-from musify._models.properties.order import Position
 from musify.spotify._base import SpotifyResource, SpotifyModel
 from musify.spotify._item.album import SpotifyAlbum
 from musify.spotify._item.artist import SpotifyArtist
@@ -21,10 +13,18 @@ from .._properties.images import HasSpotifyImages
 from .._properties.music import HasSpotifyKeySignature
 from .._properties.rating import HasSpotifyRating
 from .._properties.uri import SpotifyResourceURI
+from ..._models import BaseModel
+from ..._models.exception import MusifyValidationError
+from ..._models.item.track import RemoteTrack
+from ..._models.metadata import Attribute
+from ..._models.properties.audio import Decibels
+from ..._models.properties.date import SparseDate, HasAddedDate
+from ..._models.properties.length import Length, HasLength
+from ..._models.properties.order import Position
 from ..._types import HttpURL
 
 if TYPE_CHECKING:
-    from musify._models.api.items import HasTrackEndpoints
+    from ..._models.api.items import HasTrackEndpoints
     # noinspection PyProtectedMember
     from musify.spotify._api.track import SpotifyTrackEndpoints
 

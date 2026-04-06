@@ -2,8 +2,8 @@ from typing import Annotated
 
 from pydantic import Field, NonNegativeInt, AliasPath
 
-from musify._models import AttributeModel
-from musify._models.metadata import Attribute
+from ..._models import AttributeModel
+from ..._models.metadata import Attribute
 
 
 class HasFollowers(AttributeModel):

@@ -368,7 +368,6 @@ class LocalTrack[FT: FileType](
         if not (values := getattr(self, context.map_uri_to_field, [])):
             return self
 
-
         uris = []
         for value in values:
             with suppress(ValidationError):

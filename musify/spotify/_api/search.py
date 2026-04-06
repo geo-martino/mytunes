@@ -3,13 +3,6 @@ from typing import ClassVar, final, Any
 from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
 
-from musify._models import ResourceModel
-from musify._models.api.search import SearchEndpoints
-from musify._models.collection.playlist import Playlist
-from musify._models.exception import RequestError
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
 from musify.spotify import API_URL, SpotifyResource
 from musify.spotify._api._base import SpotifyEndpoints
 from .._collection.playlist import SpotifyPlaylist
@@ -17,6 +10,13 @@ from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
+from ..._models import ResourceModel
+from ..._models.api.search import SearchEndpoints
+from ..._models.collection.playlist import Playlist
+from ..._models.exception import RequestError
+from ..._models.item.album import Album
+from ..._models.item.artist import Artist
+from ..._models.item.track import Track
 
 type _SearchT = Track | Album | Artist | Playlist
 type _ReturnT = SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist

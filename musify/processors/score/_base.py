@@ -5,9 +5,9 @@ from pydantic import Field
 
 from musify._types import Number
 from musify.processors.clean import TagCleaner
-from ..._base import Processor
-from ...._models.properties.logger import HasLogger
-from ...._models.properties.name import HasName
+from .._base import Processor
+from ..._models.properties.logger import HasLogger
+from ..._models.properties.name import HasName
 
 
 # noinspection PyAbstractClass

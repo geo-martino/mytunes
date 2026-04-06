@@ -2,23 +2,21 @@
 Processor that helps user download items from collections based on given configuration.
 """
 import itertools
-import math
-from collections.abc import Iterable, Collection, Sequence, Iterator
+from collections.abc import Iterable, Collection, Sequence
 
 from pydantic import Field, validate_call, PositiveInt, \
     conlist, AliasChoices
-from termcolor import colored
 from yarl import URL
 
 from musify._types import StrippedString
+from musify.processors.download._page import StorePausePage
+from musify.processors.download.stores import AudioStore
+from .._base import Processor
+from .._flow import SkipPage, QuitImmediately
 from ..._models import ResourceModel
 from ..._models.collection import CollectionModel
 from ..._models.properties.logger import HasLogger
 from ..._models.properties.order import Position
-from .._base import Processor
-from .._flow import SkipPage, QuitImmediately
-from musify.processors.download._page import StorePausePage
-from musify.processors.download.stores import AudioStore
 
 
 class StoreManager(Processor, HasLogger):

@@ -4,10 +4,6 @@ from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
-from musify._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
-    BatchReadEndpoints, CollectionReadEndpoints
-from musify._models.api.types import ApiURL, ApiURLSchema
-from musify._models.cursors import PageCursor
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify.cursors import SpotifyInitialCursor
@@ -15,6 +11,10 @@ from .._collection.artist import SpotifyArtistCollection
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._properties.uri import SpotifyResourceURI
+from ..._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+    BatchReadEndpoints, CollectionReadEndpoints
+from ..._models.api.types import ApiURL, ApiURLSchema
+from ..._models.cursors import PageCursor
 
 _ALBUM_TYPE = Literal["album", "single", "compilation", "appears_on"]
 _ALL_ALBUM_TYPES = get_args(_ALBUM_TYPE)

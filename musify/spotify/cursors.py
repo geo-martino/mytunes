@@ -3,10 +3,10 @@ from typing import final, Annotated
 
 from pydantic import Field, AliasPath
 
-from musify._models.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
-from musify._models.metadata import Attribute
 from musify._types import String
 from musify.spotify import SpotifyModel
+from .._models.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
+from .._models.metadata import Attribute
 
 
 # noinspection PyAbstractClass

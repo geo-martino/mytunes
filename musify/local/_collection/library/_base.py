@@ -300,7 +300,9 @@ class LocalLibrary(
 
         self.logger.info(f"Saving {self.playlists.count} playlists in {self.source} {self.type}", header=2)
 
-        task_id = self.logger.progress.add_task(description=f"Updating {self.source} playlists", total=self.playlists.count)
+        task_id = self.logger.progress.add_task(
+            description=f"Updating {self.source} playlists", total=self.playlists.count
+        )
         results = await self.logger.run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
         return dict(results)
 

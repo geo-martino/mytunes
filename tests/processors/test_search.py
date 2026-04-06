@@ -16,7 +16,7 @@ from musify._models.item.track import Track, RemoteTrack
 from musify._models.properties.uri import HasURI
 from musify._models.remote import RemoteResource
 from musify.processors.match import Matcher
-from musify.processors.match._score.string import NameScorer
+from musify.processors.score.string import NameScorer
 from musify.processors.search import Searcher, SearchResult
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor

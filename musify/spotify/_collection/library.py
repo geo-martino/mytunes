@@ -1,6 +1,5 @@
 from typing import final
 
-from musify._models.collection.library import RemoteMutableLibrary
 from musify.spotify import SpotifyModel
 from musify.spotify._collection.playlist import SpotifyPlaylist
 from musify.spotify.user import SpotifyUser
@@ -10,6 +9,7 @@ from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._item.track import SpotifyTrack
 from .._properties.stats import HasFollowers
+from ..._models.collection.library import RemoteMutableLibrary
 
 
 @final

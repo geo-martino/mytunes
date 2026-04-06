@@ -8,7 +8,7 @@ from pydantic import InstanceOf
 from pytest_mock import MockerFixture
 
 from musify._models.item.track import Track
-from musify.processors.match._score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
+from musify.processors.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
     ArtistScorer, \
     AlbumScorer
 from tests.testers import BaseModelTester

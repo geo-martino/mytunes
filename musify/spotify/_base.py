@@ -1,7 +1,7 @@
 from typing import ClassVar
 
-from musify._models.remote import RemoteModel, RemoteResource
 from ._properties.uri import SpotifyURIBase
+from .._models.remote import RemoteModel, RemoteResource
 
 
 class SpotifyModel(RemoteModel):

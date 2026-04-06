@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import field_validator
 
-from musify._models.properties.image import HasImages
+from ..._models.properties.image import HasImages
 
 
 class HasSpotifyImages(HasImages):

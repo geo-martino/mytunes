@@ -4,7 +4,7 @@ import pytest
 from pydantic import InstanceOf
 
 from musify._models.properties.name import HasName
-from musify.processors.match._score import Scorer
+from musify.processors.score import Scorer
 from tests.testers import BaseModelTester
 
 

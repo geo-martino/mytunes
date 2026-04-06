@@ -7,7 +7,7 @@ from termcolor import colored
 from musify.processors._flow import QuitImmediately, SkipPage
 from musify.processors.check.result import CheckResult
 from musify.processors.match import Matcher
-from musify.processors.match._score.string import NameScorer
+from musify.processors.score.string import NameScorer
 from ._match.inputs import InputMatch
 from ._match.playlist import PlaylistMatch
 from ._page import CheckerPage, _ApiT

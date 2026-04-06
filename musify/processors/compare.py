@@ -7,12 +7,10 @@ from collections.abc import Sequence
 from contextlib import suppress
 from datetime import datetime
 from functools import cached_property
-from time import perf_counter
 from types import NoneType
 from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final
 
-from pydantic import Field, TypeAdapter, model_validator, \
-    ModelWrapValidatorHandler
+from pydantic import Field, TypeAdapter, model_validator
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from typing_inspection.introspection import is_union_origin
@@ -20,14 +18,14 @@ from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase, Number
 from musify.exception import MusifyTypeError
+from musify.processors.time import TimeMapper
+from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
 from .._models import AttributeModel
 from .._models.item.track import Track
 from .._models.properties.audio import HasAudioProperties
 from .._models.properties.date import HasAddedDate, HasPlayedDate
 from .._models.properties.file import IsLocalFile
 from .._models.properties.name import HasName
-from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
-from musify.processors.time import TimeMapper
 
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,
@@ -40,6 +38,7 @@ _COMPARISON_FIELDS_MAP = {
     field: cls for cls in _COMPARISON_TAG_TYPES for field in cls.__tag_attributes__
 }
 COMPARISON_FIELDS = tuple(_COMPARISON_FIELDS_MAP)
+type _COMPARISON_FIELDS_TYPE = Literal[*COMPARISON_FIELDS]
 
 
 @final
@@ -64,7 +63,7 @@ class Comparer(DynamicProcessor):
         description="Expected value/s to match on.",
         default=None,
     )
-    field: Literal[*COMPARISON_FIELDS] | None = Field(
+    field: _COMPARISON_FIELDS_TYPE | None = Field(
         description="The field to match on.",
         default=None,
     )

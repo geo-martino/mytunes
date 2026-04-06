@@ -10,8 +10,8 @@ from typing import Any, Literal, Annotated, SupportsFloat
 
 from pydantic import Field, field_validator, field_serializer
 
-from musify._types import Number
 from musify.exception import MusifyValueError, MusifyAttributeError
+from ._base import Processor
 from .._models import ResourceModel, IntEnumModel, AttributeModel
 from .._models.item.artist import HasArtists
 from .._models.item.track import Track
@@ -20,7 +20,6 @@ from .._models.properties.date import HasAddedDate, HasPlayedDate
 from .._models.properties.file import IsLocalFile
 from .._models.properties.name import HasName
 from .._models.properties.rating import HasRating
-from ._base import Processor
 
 _SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,
@@ -33,7 +32,7 @@ _SORT_FIELDS_MAP = {
     field: cls for cls in _SORT_TAG_TYPES for field in cls.__tag_attributes__
 }
 SORT_FIELDS = frozenset(_SORT_FIELDS_MAP)
-_SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
+type _SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 
 
 class ShuffleMode(IntEnumModel):

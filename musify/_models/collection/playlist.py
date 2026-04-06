@@ -114,6 +114,11 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
             self, other: MergePlaylistsType[TK, TV], reference: MergePlaylistsType[TK, TV] = None
     ) -> None: ...
 
+    @overload
+    def merge_playlists(
+            self, other: MergePlaylistsTypeAnnotated[TK, TV], reference: MergePlaylistsTypeAnnotated[TK, TV] = None
+    ) -> None: ...
+
     @validate_call
     def merge_playlists(
             self, other: MergePlaylistsTypeAnnotated[TK, TV], reference: MergePlaylistsTypeAnnotated[TK, TV] = None

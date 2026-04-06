@@ -3,14 +3,14 @@ from typing import ClassVar, final
 from pydantic import AliasPath, PositiveInt
 from yarl import URL
 
-from musify._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
-    BatchReadEndpoints
-from musify._models.api.types import ApiURISchema
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify._api._types import SpotifyApiURI, SpotifyApiURISequence
 from .._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis
 from .._properties.uri import SpotifyResourceURI
+from ..._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+    BatchReadEndpoints
+from ..._models.api.types import ApiURISchema
 
 
 @final

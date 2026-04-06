@@ -5,7 +5,7 @@ from pydantic import Field, PositiveInt, PositiveFloat
 from musify._types import Number
 from musify.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
-from musify.processors.match._score._base import Scorer
+from musify.processors.score._base import Scorer
 
 
 # noinspection PyAbstractClass

@@ -5,10 +5,9 @@ from typing import Any, final, Annotated
 from pydantic import Field, validate_call, computed_field
 
 from musify._types import StrippedString
-from ..._models.result import CountResult, LenLogFormatter, LogPosition
-from musify.processors.filters import Filter
 from musify.processors.filters._base import Filter
 from musify.processors.filters.compare import ComparerFilter
+from ..._models.result import CountResult, LenLogFormatter, LogPosition
 
 
 # noinspection PyAbstractClass

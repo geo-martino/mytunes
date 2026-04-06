@@ -662,7 +662,7 @@ class _XMLLimit(_XMLBaseModel):
 
         return ItemLimiter(
             limit_by=self.count,
-            kind=self.type,
+            on=self.type,
             sorted_by=self.selected_by,
             allowance=1.25,
         )

@@ -3,10 +3,10 @@ Processor that converts representations of time units to python time objects.
 """
 import re
 from datetime import timedelta, datetime, date
-from typing import Any, Annotated, Self, final
+from typing import Any, Annotated, final
 
 from dateutil.relativedelta import relativedelta
-from pydantic import field_validator, Field, model_validator, ModelWrapValidatorHandler
+from pydantic import field_validator, Field, model_validator
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
@@ -33,6 +33,7 @@ class TimeMapper(DynamicProcessor):
     )
 
     @model_validator(mode="before")
+    @classmethod
     def _from_key[T](cls, data: T | str) -> T | dict[str, Any]:
         if not isinstance(data, str) or not re.match(r"^[-+]?\d+\D+$", data):
             return data

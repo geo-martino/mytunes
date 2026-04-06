@@ -44,6 +44,11 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
             self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
+    @overload
+    async def add_and_skip_duplicates(
+            self, url: URL, uris: Sequence[UT], limit: PositiveInt | None = None,
+    ) -> int: ...
+
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @ApiURISchema.validate_call("uris", is_sequence=True)
     async def add_and_skip_duplicates(
@@ -125,6 +130,9 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
     @overload
     async def add(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
 
+    @overload
+    async def add(self, url: URL, **kwargs) -> None: ...
+
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def add(self, url: ApiURL[UT, RT], **kwargs) -> None:
         """Add an existing playlist to the current user's library."""
@@ -133,6 +141,9 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
     @overload
     async def remove(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
 
+    @overload
+    async def remove(self, url: URL, **kwargs) -> None: ...
+
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def remove(self, url: ApiURL[UT, RT]) -> None:
         """Delete the playlist from the current user's library."""
@@ -140,6 +151,9 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack, OT:
 
     @overload
     async def modify(self, url: _URL_TYPE[UT, RT], **kwargs) -> None: ...
+
+    @overload
+    async def modify(self, url: URL, **kwargs) -> None: ...
 
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(self, url: ApiURL[UT, RT], **kwargs) -> None:

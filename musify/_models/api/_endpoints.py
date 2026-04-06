@@ -554,6 +554,9 @@ class ItemReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @overload
     async def get(self, url: _URL_TYPE[UT, RT]) -> RT: ...
 
+    @overload
+    async def get(self, url: URL) -> RT: ...
+
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get(self, url: ApiURL[UT, RT]) -> RT:
         """
@@ -609,6 +612,9 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
             self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
 
+    @overload
+    async def add(self, url: URL, uris: Sequence[UT], limit: PositiveInt | None = None) -> int: ...
+
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @ApiURISchema.validate_call("uris", is_sequence=True)
     async def add(
@@ -650,6 +656,9 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
     async def remove(
             self, url: _URL_TYPE[UT, RT], uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None,
     ) -> int: ...
+
+    @overload
+    async def remove(self, url: URL, uris: Sequence[UT], limit: PositiveInt | None = None) -> int: ...
 
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     @ApiURISchema.validate_call("uris", is_sequence=True)
@@ -702,6 +711,9 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @overload
     async def get_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
+
+    @overload
+    async def get_many(self, uris: Sequence[UT], limit: PositiveInt | None = None) -> int: ...
 
     @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> list[RT]:
@@ -776,9 +788,6 @@ class BatchReadAllEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         # description="The path to the list of library items in the API response. Use '*' for wildcard matching.",
     )
 
-    @overload
-    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]: ...
-
     @validate_call
     async def get_all(self, limit: PositiveInt | None = None) -> list[RT]:
         """Get the current user's library items for this endpoint resource type."""
@@ -803,6 +812,9 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @overload
     async def add_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
+
+    @overload
+    async def add_many(self, uris: Sequence[UT], limit: PositiveInt | None = None) -> int: ...
 
     @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
@@ -839,6 +851,9 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
     @overload
     async def remove_many(self, uris: Sequence[_URI_TYPE[RT]], limit: PositiveInt | None = None) -> int: ...
+
+    @overload
+    async def remove_many(self, uris: Sequence[UT], limit: PositiveInt | None = None) -> int: ...
 
     @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:

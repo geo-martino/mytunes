@@ -3,9 +3,9 @@ from typing import ClassVar, Any
 
 from pydantic.json_schema import JsonSchemaValue
 
-from musify._models.api import Endpoints, BatchWriteEndpoints
 from musify.spotify import SpotifyModel, SpotifyResource
 from .._properties.uri import SpotifyURIBase
+from ..._models.api import Endpoints, BatchWriteEndpoints
 
 
 class SpotifyEndpoints[UT: SpotifyURIBase, RT: SpotifyResource](

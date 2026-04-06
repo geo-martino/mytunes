@@ -4,11 +4,11 @@ from pydantic import Field, model_validator
 
 from musify._types import LowerStrippedString, Number
 from musify.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
-from musify.processors.match._score._base import Scorer
-from ...._models.exception import MusifyValidationError
-from ...._models.item.album import HasAlbum
-from ...._models.item.artist import HasArtists
-from ...._models.properties.name import HasName
+from musify.processors.score._base import Scorer
+from ..._models.exception import MusifyValidationError
+from ..._models.item.album import HasAlbum
+from ..._models.item.artist import HasArtists
+from ..._models.properties.name import HasName
 
 
 # noinspection PyAbstractClass

@@ -166,10 +166,11 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
 
         async with self.concurrency:
+            props = self.additional_properties
             if self.use_existing_playlists:
-                playlist: RemoteMutablePlaylist = await api_library.get_or_create(name=name, **self.additional_properties)
+                playlist: RemoteMutablePlaylist = await api_library.get_or_create(name=name, **props)
             else:
-                playlist: RemoteMutablePlaylist = await api_library.create(name=name, **self.additional_properties)
+                playlist: RemoteMutablePlaylist = await api_library.create(name=name, **props)
 
             self._collections[playlist.uri] = collection
             self._playlists[playlist.uri] = playlist

@@ -2,10 +2,12 @@ import textwrap
 from collections.abc import Sequence, MutableSequence, Collection, Mapping, Iterable
 from typing import Self, Any, Annotated
 
-from pydantic import Field, validate_call, model_validator, field_validator, BeforeValidator
+from pydantic import Field, validate_call, model_validator, field_validator
 from termcolor import colored
 
 from musify._types import TO_TUPLE
+from musify.processors.match import Matcher
+from ._base import Processor
 from .._models import ResourceModel
 from .._models.api import RemoteAPI, IsRemoteService
 from .._models.api.search import HasSearchEndpoints
@@ -18,8 +20,6 @@ from .._models.properties.name import HasName
 from .._models.properties.uri import HasURI
 from .._models.remote import RemoteResource
 from .._models.result import TotalCountResult, LenLogFormatter
-from ._base import Processor
-from musify.processors.match import Matcher
 
 
 class SearchResult[T: Any](TotalCountResult):
@@ -269,11 +269,11 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         items, skipped = self._split_items(collection.items)
         result = self._match_items(items, list(match.items), skipped)
         if self.keep_matching_collection_items and result.unmatched:
-            result = await self._search_from_result(result, items)
+            result = await self._search_from_result(result)
 
         return name, result
 
-    async def _search_from_result[T: ResourceModel](self, result: SearchResult[T], items: Iterable[T]) -> SearchResult[T]:
+    async def _search_from_result[T: ResourceModel](self, result: SearchResult[T]) -> SearchResult[T]:
         # attempt to search for the unmatched items from the given search result
         # we pop items from the result lists as we go to match the same order as the given items
         # for consistency in ordering
