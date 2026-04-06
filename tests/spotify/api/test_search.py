@@ -71,7 +71,7 @@ class TestSpotifySearchEndpoints(BaseModelTester):
         self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)
 
     async def test_format_query_from_artist(self, model: SpotifySearchEndpoints, faker: Faker):
-        item = Artist(name=faker.word(), album=faker.word())
+        item = Artist(name=faker.word())
         expected_query = item.name
 
         self.assert_format_query_from_item(model=model, item=item, expected_query=expected_query, faker=faker)

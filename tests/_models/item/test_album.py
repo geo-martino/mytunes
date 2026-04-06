@@ -10,8 +10,7 @@ from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 class TestAlbum(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Album:
-        uri = SimpleURI.create_random(Album.type)
-        return Album(name=faker.word(), uri=uri)
+        return Album(name=faker.word())
 
 
 class TestHasAlbum(NoUniqueKeyTester):

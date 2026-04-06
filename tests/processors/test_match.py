@@ -79,7 +79,8 @@ class TestMatcher(BaseModelTester):
     def album(self, albums: list[Album], faker: Faker) -> Album:
         return faker.random_element(albums)
 
-    def get_expected_scorers_from_classes(self, model: Matcher, classes: Collection[type[Scorer]]) -> list[Scorer]:
+    @staticmethod
+    def get_expected_scorers_from_classes(model: Matcher, classes: Collection[type[Scorer]]) -> list[Scorer]:
         return [scorer for scorer in model.scorers if scorer.__class__ in classes]
 
     def test_get_scorers_for_item_strings(self, model: Matcher):

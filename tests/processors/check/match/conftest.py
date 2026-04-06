@@ -20,7 +20,7 @@ from musify._models.properties.uri import HasMutableURI, HasImmutableURI, HasURI
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
 from tests.processors.utils import MockCollection
-from tests.remote import SimpleURI, MockUrlCursor
+from tests.remote import SimpleURI
 
 CheckerPage.wait_after_add = 0
 
@@ -50,8 +50,6 @@ def collection(
 ) -> CollectionModel:
     collection = MockCollection(
         name=playlist.name,
-        cursor=MockUrlCursor(url=faker.url()),
-        uri=SimpleURI.create_random(MockCollection.type),
         all_items=available_items + unavailable_items + missing_items + invalid_items + mutable_items
     )
     page._collections[playlist.uri] = collection

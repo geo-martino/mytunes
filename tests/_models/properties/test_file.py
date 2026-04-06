@@ -13,6 +13,7 @@ from tests.testers import BaseModelTester
 
 SYSTEM_TYPES = Literal["linux", "windows"]
 
+
 def _generate_file_paths(
         faker: Faker, system: SYSTEM_TYPES = None, count: int = 20
 ) -> Iterator[PurePath]:

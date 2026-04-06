@@ -25,6 +25,7 @@ class TestCheckerMatch(UniqueKeyTester):
             collection: CollectionModel,
             matcher: Matcher,
     ) -> CheckerMatch:
+        # noinspection PyAbstractClass
         return CheckerMatch(page=page, items=list(collection.items), uri=playlist.uri, matcher=matcher)
 
     def test_properties(

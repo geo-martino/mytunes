@@ -17,7 +17,7 @@ class TestItemSorter(BaseModelTester):
 
     @pytest.fixture
     def model(self) -> ItemSorter:
-        return ItemSorter(fields=["album", "disc", "track"])
+        return ItemSorter(sort_fields=["album", "disc", "track"])
 
     @pytest.fixture
     def tracks(self, local_tracks: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
@@ -101,7 +101,7 @@ class TestItemSorter(BaseModelTester):
 
     def test_sort_by_album_with_ignore_words(self, tracks_with_ignore_words: list[LocalTrack]):
         tracks_sorted = sorted(tracks_with_ignore_words, key=self._sort_key_for_album(self.ignore_words))
-        ItemSorter(fields="album", ignore_words=self.ignore_words).sort(tracks_with_ignore_words)
+        ItemSorter(sort_fields="album", ignore_words=self.ignore_words).sort(tracks_with_ignore_words)
         assert tracks_with_ignore_words == tracks_sorted
 
     def test_sort_by_name_with_ignore_words_reversed(self, tracks_with_ignore_words: list[LocalTrack]):
@@ -111,7 +111,7 @@ class TestItemSorter(BaseModelTester):
 
     def test_sort_by_album_with_ignore_words_reversed(self, tracks_with_ignore_words: list[LocalTrack]):
         tracks_sorted = sorted(tracks_with_ignore_words, key=self._sort_key_for_album(self.ignore_words), reverse=True)
-        ItemSorter(fields={"album": True}, ignore_words=self.ignore_words).sort(tracks_with_ignore_words)
+        ItemSorter(sort_fields={"album": True}, ignore_words=self.ignore_words).sort(tracks_with_ignore_words)
         assert tracks_with_ignore_words == tracks_sorted
 
     def test_group_by_field(self, tracks: list[LocalTrack]):
@@ -160,11 +160,11 @@ class TestItemSorter(BaseModelTester):
         assert tracks == tracks_original
 
         model = ItemSorter(shuffle_mode=ShuffleMode.RANDOM)
-        ItemSorter(shuffle_mode=ShuffleMode.RANDOM).sort(tracks)
+        model.sort(tracks)
         assert tracks != tracks_original
 
         # shuffle settings ignored when ``fields`` are defined
-        model = ItemSorter(fields="name", shuffle_mode=ShuffleMode.RANDOM)
+        model = ItemSorter(sort_fields="name", shuffle_mode=ShuffleMode.RANDOM)
         model.sort(tracks)
         assert tracks == sorted(tracks, key=self._sort_key_for_name(model.ignore_words))
 
@@ -242,7 +242,7 @@ class TestItemSorter(BaseModelTester):
 
     def test_multi_sort(self, tracks: list[LocalTrack]):
         tracks_sorted = sorted(tracks, key=lambda t: (t.album, t.disc.number, t.track.number))
-        sorter = ItemSorter(fields=["album", "disc", "track"])
+        sorter = ItemSorter(sort_fields=["album", "disc", "track"])
         sorter.sort(tracks)
         assert tracks == tracks_sorted
 
@@ -257,7 +257,7 @@ class TestItemSorter(BaseModelTester):
                     tracks_sorted.extend(list(group_3))
 
         fields = {"album": True, "disc": False, "track": True}
-        sorter = ItemSorter(fields=fields)
+        sorter = ItemSorter(sort_fields=fields)
         sorter.sort(tracks)
 
         assert tracks == tracks_sorted

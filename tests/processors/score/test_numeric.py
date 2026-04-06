@@ -71,7 +71,7 @@ class TestReleaseYearScorer(NumericScorerTester):
 class TestTotalItemsScorer(NumericScorerTester):
     @pytest.fixture
     def model(self) -> TotalItemsScorer:
-        return TotalItemsScorer(range=10)
+        return TotalItemsScorer()
 
     def test_calculate_score(self, model: TotalItemsScorer):
         assert model._calculate_score(20, 20) == 1

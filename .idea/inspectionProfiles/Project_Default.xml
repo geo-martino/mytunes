@@ -23,6 +23,9 @@
         </list>
       </option>
     </inspection_tool>
+    <inspection_tool class="PyProtectedMemberInspection" enabled="true" level="WEAK WARNING" enabled_by_default="false">
+      <scope name="src" level="WEAK WARNING" enabled="true" />
+    </inspection_tool>
     <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="ignoredNames">
         <list>

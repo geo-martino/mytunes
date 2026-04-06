@@ -14,8 +14,7 @@ from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 class TestTrack(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Track:
-        uri = SimpleURI.create_random(Track.type)
-        return Track(name=faker.sentence(), uri=uri)
+        return Track(name=faker.sentence())
 
     @pytest.fixture
     def tracks(self, album: Album, tracks: list[Track], faker: Faker) -> list[Track]:
@@ -38,7 +37,7 @@ class TestTrack(NoUniqueKeyTester):
         assert album.track_total == len(tracks)
 
         track = Track(name=faker.sentence(), album=album)
-        assert track.track is not None
+        assert isinstance(track.track, Position)
         assert track.track.number is None
         assert track.track.total == album.track_total
 
@@ -67,16 +66,16 @@ class TestTrack(NoUniqueKeyTester):
 
     def test_equality(self, faker: Faker):
         track = Track(name=faker.sentence(), artist=faker.name(), album=faker.name())
-        track_equal = Track(name=track.name, artist=track.artist, album=track.album)
+        track_equal = Track(name=track.name, artists=track.artists, album=track.album)
         assert track == track_equal, "Tracks should be equal"
 
-        track_different_name = Track(name=faker.sentence(), artist=track.artist, album=track.album)
+        track_different_name = Track(name=faker.sentence(), artists=track.artists, album=track.album)
         assert track != track_different_name, "Tracks with different names should not be equal"
 
-        track_different_artist = Track(name=track.name, artist=faker.name(), album=track.album)
+        track_different_artist = Track(name=track.name, artists=faker.name(), album=track.album)
         assert track != track_different_artist, "Tracks with different artists should not be equal"
 
-        track_different_album = Track(name=track.name, artist=track.artist, album=faker.name())
+        track_different_album = Track(name=track.name, artists=track.artists, album=faker.name())
         assert track != track_different_album, "Tracks with different albums should not be equal"
 
 

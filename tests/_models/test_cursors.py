@@ -328,7 +328,7 @@ class TestKeyCursor(BaseModelTester):
 class TestUrlCursor(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> UrlCursor:
-        return UrlCursor(url=faker.url(), previous=faker.url(), next=faker.url())
+        return UrlCursor(url=faker.url(), previous_url=faker.url(), next_url=faker.url())
 
     def test_previous(self, model: UrlCursor):
 

@@ -3,7 +3,7 @@ from faker import Faker
 
 from musify._models.collection.library import HasTracksAndPlaylists
 from musify._models.collection.playlist import Playlist
-from musify._models.item.track import Track
+from musify._models.item.track import Track, RemoteTrack
 from tests.testers import NoUniqueKeyTester
 
 
@@ -16,7 +16,7 @@ class TestLibrary(NoUniqueKeyTester):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
         assert library.count == len(tracks)
 
-    def test_dump(self, model: HasTracksAndPlaylists, playlists: list[Playlist], tracks: list[Track]):
+    def test_dump(self, model: HasTracksAndPlaylists, playlists: list[Playlist], tracks: list[RemoteTrack]):
         model = model.__class__(playlists=playlists, tracks=tracks)
 
         backup = model.dump()

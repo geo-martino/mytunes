@@ -11,11 +11,11 @@ from tests.remote import SimpleURI, MockUrlCursor
 
 @pytest.fixture
 def playlists(
-        playlists: list[Playlist], tracks: list[Track], faker: Faker
-) -> list[RemotePlaylist]:
+        playlists: list[Playlist], tracks: list[RemoteTrack], faker: Faker
+) -> list[RemoteMutablePlaylist]:
     return [
         RemoteMutablePlaylist(
-            **pl.model_dump(exclude={"tracks", "uri"}),
+            **pl.model_dump(exclude={"tracks"}),
             owner=RemoteUser(name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type)),
             cursor=MockUrlCursor(url=faker.url()),
             tracks=faker.random_elements(tracks),
@@ -28,7 +28,7 @@ def playlists(
 def tracks(tracks: list[Track], faker: Faker) -> list[RemoteTrack]:
     return [
         RemoteTrack(
-            **track.model_dump(exclude={"uri"}),
+            **track.model_dump(),
             uri=SimpleURI.create_random(RemoteTrack.type))
         for track in tracks
     ]
@@ -38,7 +38,7 @@ def tracks(tracks: list[Track], faker: Faker) -> list[RemoteTrack]:
 def artists(artists: list[Artist], faker: Faker) -> list[RemoteArtist]:
     return [
         RemoteArtist(
-            **artist.model_dump(exclude={"uri"}),
+            **artist.model_dump(),
             uri=SimpleURI.create_random(RemoteArtist.type))
         for artist in artists
     ]
@@ -48,7 +48,7 @@ def artists(artists: list[Artist], faker: Faker) -> list[RemoteArtist]:
 def albums(albums: list[Album], faker: Faker) -> list[RemoteAlbum]:
     return [
         RemoteAlbum(
-            **album.model_dump(exclude={"uri"}),
+            **album.model_dump(),
             uri=SimpleURI.create_random(RemoteAlbum.type))
         for album in albums
     ]

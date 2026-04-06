@@ -9,8 +9,7 @@ from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 class TestArtist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Artist:
-        uri = SimpleURI.create_random(Artist.type)
-        return Artist(name=faker.word(), uri=uri)
+        return Artist(name=faker.word())
 
 
 class TestHasArtists(NoUniqueKeyTester):

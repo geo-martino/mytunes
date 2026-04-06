@@ -177,14 +177,14 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
 
     @pytest.fixture
     def mock_batch_values(
-            self, model: Endpoints, uris: list[URI], limit: int, mocker: MockerFixture
+            self, uris: list[URI], limit: int, mocker: MockerFixture
     ) -> Generator[Mock, None, None]:
         mock_batch_values = mocker.spy(Endpoints, "_batch_values")
         yield mock_batch_values
         mock_batch_values.assert_called_once_with(uris, limit)
 
     @pytest.fixture
-    def mock_batch_values_empty(self, model: Endpoints) -> Generator[Mock, None, None]:
+    def mock_batch_values_empty(self) -> Generator[Mock, None, None]:
         with patch.object(Endpoints, "_batch_values", return_value=[]) as mock_batch_values:
             yield mock_batch_values
 

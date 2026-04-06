@@ -16,8 +16,7 @@ from tests.testers import NoUniqueKeyTester
 class TestArtistCollection(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, albums: list[Album], faker: Faker) -> ArtistCollection:
-        uri = SimpleURI.create_random(ArtistCollection.type)
-        return ArtistCollection(name=faker.word(), albums=albums, uri=uri)
+        return ArtistCollection(name=faker.word(), albums=albums)
 
     def test_artist_name_cannot_be_empty(self, albums: list[Album], faker: Faker):
         with pytest.raises(ValidationError, match="no artists found in albums"):
@@ -59,9 +58,4 @@ class TestRemoteArtistCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: PageCursor, faker: Faker) -> RemoteArtistCollection:
         uri = SimpleURI.create_random(RemoteArtistCollection.type)
-        return RemoteArtistCollection(
-            name=faker.word(),
-            uri=uri,
-            total=faker.random_int(1, 20),
-            cursor=cursor
-        )
+        return RemoteArtistCollection(name=faker.word(), uri=uri, cursor=cursor)

@@ -127,7 +127,6 @@ class TestEndpointsMetaclass:
         assert MockUnionEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
         assert MockUnionEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteTrack | RemoteAlbum).core_schema
 
-
     @pytest.fixture
     def context(self) -> RemoteModelContext:
         return RemoteModelContext()
@@ -167,7 +166,6 @@ class TestEndpointsMetaclass:
             self,
             context: RemoteModelContext,
             mock_validate_python: Mock,
-            mocker: MockerFixture,
             faker: Faker,
     ):
         types = [
@@ -243,8 +241,8 @@ class TestEndpoints(EndpointsTester):
         return [
             MockUrlCursor(
                 url=cursor.url,
-                previous=cursor.previous.url if cursor.previous else None,
-                next=cursor.next.url if cursor.next else None,
+                previous_url=cursor.previous.url if cursor.previous else None,
+                next_url=cursor.next.url if cursor.next else None,
                 total=cursor.total,
             )
             for cursor in index_cursors
@@ -580,7 +578,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
 
     @pytest.fixture
     def collection(self, uri: URI, cursor: PageCursor, total: int, faker: Faker) -> RemoteCollection:
-        return MockRemoteCollection(uri=uri, cursor=cursor, total=total)
+        return MockRemoteCollection(uri=uri, cursor=cursor)
 
     async def test_get_all_from_cursor(
             self, model: CollectionReadEndpoints, uri: URI, cursor: PageCursor, mock_get_all_items: Mock, faker: Faker
@@ -636,7 +634,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
 
     @pytest.fixture
     def collection(self, uri: URI, total: int, faker: Faker) -> RemoteCollection:
-        return MockRemoteCollection(uri=uri, cursor=MockUrlCursor(url=faker.url()), total=total)
+        return MockRemoteCollection(uri=uri, cursor=MockUrlCursor(url=faker.url()))
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_add(

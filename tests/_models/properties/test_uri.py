@@ -45,6 +45,7 @@ def uris(models: list[ResourceModel], faker: Faker) -> list[SimpleURI]:
         while source is None or source in seen:
             source = faker.word()
 
+        # noinspection PyFinal
         class AnotherSimpleURI(SimpleURI):
             _source = source
 

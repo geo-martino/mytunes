@@ -17,9 +17,8 @@ class TestSpotifyAlbumCollection(SpotifyResourceTester):
 
         return SpotifyAlbumCollection(
             name=faker.name(),
-            popularity=faker.random_int(0, 100),
+            rating=faker.random_int(0, 100),
             uri=generator.generate_uri(kind, album_id),
-            total=faker.random_int(1, 20),
             cursor=SpotifyIndexCursor(
                 url=URL(generator.generate_href(kind, album_id)).joinpath("tracks"),
                 limit=20,

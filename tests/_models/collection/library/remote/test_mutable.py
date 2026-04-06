@@ -337,9 +337,9 @@ class TestRemoteMutableLibrary(BaseModelTester):
     def test_extract_uris_from_backup(
             self,
             model: RemoteMutableLibrary,
-            tracks: list[Track],
-            artists: list[Artist],
-            albums: list[Album],
+            tracks: list[RemoteTrack],
+            artists: list[RemoteArtist],
+            albums: list[RemoteAlbum],
             faker: Faker
     ):
         dump = {track.uri: {} for track in tracks}

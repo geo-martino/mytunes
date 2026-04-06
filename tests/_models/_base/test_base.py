@@ -26,6 +26,7 @@ class TestFinalModel:
         var2: ClassVar[str] = Field(description="Unset var2")
         var3: ClassVar[int]
 
+    # noinspection PyUnusedLocal
     def test_validate_class_vars_not_set_on_final_model(self):
         with pytest.raises(ModelError):
             @final
@@ -38,6 +39,7 @@ class TestFinalModel:
                 __final__ = True
                 var3 = 42
 
+    # noinspection PyUnusedLocal
     def test_validate_class_vars_are_set_on_final_model(self):
         @final
         class Child(self.ParentWithClassVars):
@@ -45,6 +47,7 @@ class TestFinalModel:
             var2 = "value2"
             var3 = 42
 
+    # noinspection PyUnusedLocal
     def test_validate_class_vars_skips_on_non_final_model(self):
         class Child(self.ParentWithClassVars):  # just check this doesn't fail
             pass

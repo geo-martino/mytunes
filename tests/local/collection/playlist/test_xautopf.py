@@ -308,7 +308,7 @@ class TestXAutoPF(LocalPlaylistTester):
         limit = model.limiter.limit_by
         tracks_expected = sorted(tracks, key=lambda t: t.added_at, reverse=True)[:limit]
 
-        result = await model.load(tracks)
+        await model.load(tracks)
         assert model.tracks == tracks_expected
 
         # add duplicates and apply deduplication
@@ -535,13 +535,13 @@ class TestXMLConditions(BaseModelTester):
             field="TrackNo",
             comparison="IsIn",
             value=["a", "b", "c"],
-            and_conditions=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])]),
+            And=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])]),
         )
         condition2 = _XMLCondition(
             field="Album Artist",
             comparison="EndsWith",
             value=["an album"],
-            or_conditions=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])])
+            Or=_XMLConditions(condition=[_XMLCondition(value=["a", "b", "c"])])
         )
 
         model.condition = [condition1, condition2]

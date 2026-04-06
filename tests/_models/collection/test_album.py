@@ -17,8 +17,7 @@ class TestAlbumCollection(NoUniqueKeyTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> AlbumCollection:
-        uri = SimpleURI.create_random(AlbumCollection.type)
-        return AlbumCollection(name=faker.word(), uri=uri)
+        return AlbumCollection(name=faker.word())
 
     def test_album_name_cannot_be_empty(self, tracks: list[Track], faker: Faker):
         with pytest.raises(ValidationError, match="no album names found in tracks"):
@@ -60,9 +59,4 @@ class TestRemoteAlbumCollection(RemoteCollectionTester):
     @pytest.fixture
     def model(self, cursor: PageCursor, faker: Faker) -> RemoteAlbumCollection:
         uri = SimpleURI.create_random(RemoteAlbumCollection.type)
-        return RemoteAlbumCollection(
-            name=faker.word(),
-            uri=uri,
-            total=faker.random_int(1, 20),
-            cursor=cursor
-        )
+        return RemoteAlbumCollection(name=faker.word(), uri=uri, cursor=cursor)

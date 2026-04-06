@@ -41,9 +41,7 @@ def collections(
     return [
         MockCollection(
             name=pl.name,
-            cursor=MockUrlCursor(url=faker.url()),
             all_items=faker.random_elements(tracks),
-            uri=SimpleURI.create_random(MockCollection.type),
         )
         for pl in playlists
     ]

@@ -157,9 +157,8 @@ class TestMP3(LocalTrackTester):
     def test_serialize_text_frames_includes_uris(self, model: MP3, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = value + list(map(str, model.uris))
-        info = Namespace(
-            field_name="comments", by_alias=True, context=TagContext(map_uri_to_tag="comments"), mode="python"
-        )
+        context = TagContext(map_uri_to_field="comments")
+        info = Namespace(field_name="comments", by_alias=True, context=context, mode="python")
 
         # noinspection PyTypeChecker
         result = model._serialize_text_frames(value, info=info)
@@ -190,7 +189,7 @@ class TestMP3(LocalTrackTester):
         for image in expected_images.values():
             image.path = model.path
 
-        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        context = TagContext(remote_source=uri.source, map_uri_to_field="comments")
         model = MP3.model_validate(dict(**tags, path=model.path), context=context)
 
         assert model.name == "Sleepwalk My Life Away"
@@ -246,7 +245,7 @@ class TestMP3(LocalTrackTester):
         }
 
         loaded_images = {kind: Image.open(BytesIO(pic.data)) for kind, pic in pictures.items()}
-        context = TagContext(map_uri_to_tag="comments", loaded_images=loaded_images)
+        context = TagContext(map_uri_to_field="comments", loaded_images=loaded_images)
         result = model.to_tags(context=context)
 
         assert {k: v for k, v in result.items() if not k.startswith("APIC")} == expected

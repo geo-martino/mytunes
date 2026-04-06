@@ -60,7 +60,7 @@ class TestSpotifyPlaylistLibraryEndpoints(EndpointsTester):
             self,
             model: _SpotifyPlaylistLibraryEndpoints,
             uri: SpotifyResourceURI,
-            image_object: PILImageFile,
+            image_object: PILImageFile.ImageFile,
             mock_put: Mock,
             faker: Faker,
     ):

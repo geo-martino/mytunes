@@ -128,7 +128,7 @@ class TestSpotifyAudioAnalysis(SpotifyModelTester):
             ),
             track=_SpotifyAudioAnalysisTrack(
                 num_samples=faker.random_int(0, 1000000),
-                duration=Length(faker.random_int(0, 10000) / 1000),
+                length=Length(faker.random_int(0, 10000) / 1000),
                 sample_md5=faker.md5(),
                 offset_seconds=Length(faker.random_int(0, 10000) / 1000),
                 window_seconds=Length(faker.random_int(0, 10000) / 1000),
@@ -137,8 +137,8 @@ class TestSpotifyAudioAnalysis(SpotifyModelTester):
                 end_of_fade_in=Length(faker.random_int(0, 10000) / 1000),
                 start_of_fade_out=Length(faker.random_int(0, 10000) / 1000),
                 loudness=Decibels(faker.random_int(-60000, 0) / 1000),
-                tempo=faker.random_int(0, 300000) / 1000,
-                tempo_confidence=faker.random_int(0, 1000) / 1000,
+                bpm=faker.random_int(0, 300000) / 1000,
+                bpm_confidence=faker.random_int(0, 1000) / 1000,
                 time_signature=faker.random_int(3, 7),
                 time_signature_confidence=faker.random_int(0, 1000) / 1000,
                 key=KeySignature(root=faker.random_int(0, 11), mode=faker.random_int(0, 1)),
@@ -157,7 +157,7 @@ class TestSpotifyAudioAnalysis(SpotifyModelTester):
             beats=[generator.generate_audio_analysis_interval() for _ in range(faker.random_int(1, 10))],
             sections=[generator.generate_audio_analysis_section() for _ in range(faker.random_int(1, 10))],
             segments=[generator.generate_audio_analysis_segment() for _ in range(faker.random_int(1, 10))],
-            tatum=[generator.generate_audio_analysis_interval() for _ in range(faker.random_int(1, 10))],
+            tatums=[generator.generate_audio_analysis_interval() for _ in range(faker.random_int(1, 10))],
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):

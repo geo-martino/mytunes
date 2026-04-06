@@ -52,16 +52,16 @@ class ModelAttributes(AttributeModel):
 
     @property
     def include_me(self) -> Annotated[bool, Attribute()]:
-        return self.code is not None and self.width is not None
+        return True
 
     @computed_field
     @property
     def do_not_include_me(self) -> bool:
-        return self.code is not None and self.width is not None
+        return True
 
     @property
     def do_not_include_me_either(self) -> bool:
-        return self.code is not None and self.width is not None
+        return True
 
 
 class TestAttributeModel(BaseModelTester):

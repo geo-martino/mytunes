@@ -212,7 +212,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert not results
 
     def test_from_tags(self, uri: URI, image_files: list[ImageFile], tags: dict[str, Any], faker: Faker):
-        context = TagContext(remote_source=uri.source, map_uri_to_tag="comments")
+        context = TagContext(remote_source=uri.source, map_uri_to_field="comments")
         model = LocalTrack.model_validate(dict(**tags, path=faker.file_path()), context=context)
 
         assert model.name == "Sleepwalk My Life Away"

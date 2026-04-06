@@ -42,8 +42,9 @@ class TestPlaylistManagement(BaseModelTester):
         model.additional_properties = properties
         return properties
 
+    @staticmethod
     async def assert_create_playlist(
-            self, model: CheckerPage, collection: MockCollection, playlist: RemoteMutablePlaylist
+            model: CheckerPage, collection: MockCollection, playlist: RemoteMutablePlaylist
     ) -> None:
         assert not model._playlists
 

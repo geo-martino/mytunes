@@ -2,12 +2,10 @@ import pytest
 from faker import Faker
 
 from musify.local._item.artist import LocalArtist
-from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester
 
 
 class TestLocalArtist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> LocalArtist:
-        uri = SimpleURI.create_random(LocalArtist.type)
-        return LocalArtist(name=faker.word(), uri=uri)
+        return LocalArtist(name=faker.word())

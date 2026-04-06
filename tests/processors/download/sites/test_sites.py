@@ -12,8 +12,6 @@ from tests.processors.download.utils import assert_track_in_url, assert_artist_i
 
 # Just run a quick check on each store to ensure they render a valid url for tracks
 
-
-
 def test_bandcamp(track: Track, artist: Artist, album: Album):
     model = BandcampStore()
 

@@ -174,8 +174,8 @@ def image_urls(image_types: set[str], faker: Faker) -> Generator[list[ImageURL],
         image_urls.append(image_url)
 
     with (
-            patch.object(ClientSession, "get") as mock_get,
-            patch.object(ClientSession, "close") as mock_close,
+            patch.object(ClientSession, "get"),
+            patch.object(ClientSession, "close"),
     ):
         yield image_urls
 
