@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from faker import Faker
 
 from musify.processors.filters import Filter
-from tests.models.testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 class FilterTester(BaseModelTester, metaclass=ABCMeta):

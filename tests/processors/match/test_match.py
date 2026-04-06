@@ -7,18 +7,18 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify.models.collection.album import AlbumCollection
-from musify.models.item.album import HasAlbums, Album
-from musify.models.item.artist import HasArtists, Artist
-from musify.models.item.track import Track
-from musify.models.properties.date import HasReleaseDate
-from musify.models.properties.length import HasLength
-from musify.models.properties.name import HasName
+from musify._models.collection.album import AlbumCollection
+from musify._models.item.album import HasAlbums, Album
+from musify._models.item.artist import HasArtists, Artist
+from musify._models.item.track import Track
+from musify._models.properties.date import HasReleaseDate
+from musify._models.properties.length import HasLength
+from musify._models.properties.name import HasName
 from musify.processors.match import Matcher
-from musify.processors.match.score import Scorer
-from musify.processors.match.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
-from musify.processors.match.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
-from tests.models.testers import BaseModelTester
+from musify.processors.match._score import Scorer
+from musify.processors.match._score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
+from musify.processors.match._score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
+from tests.testers import BaseModelTester
 
 
 class TestMatcher(BaseModelTester):

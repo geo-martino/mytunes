@@ -6,11 +6,11 @@ from random import choice, shuffle, sample
 import pytest
 from faker import Faker
 
+from musify._models.properties.order import Position
 from musify.local._item.album import LocalAlbum
 from musify.local._item.track import LocalTrack
-from musify.models.properties.order import Position
 from musify.processors.sort import ItemSorter, ShuffleMode
-from tests.models.testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 class TestItemSorter(BaseModelTester):

@@ -9,20 +9,20 @@ from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
 from termcolor import colored
 
 from musify.exception import MusifyError
-from musify.models.api import RemoteAPI, HasAPI, HasLibraryEndpoints
-from musify.models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
+from .._base.inputs import PageProcessor
+from ..formatter import CollectionFormatter
+from ..._models.api import RemoteAPI, HasAPI, HasLibraryEndpoints
+from ..._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
     HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
-from musify.models.cursors import InitialCursor
-from musify.models.exception import MusifyValidationError
-from musify.models.properties.asynch import HasAsyncOperations
-from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI, URI
-from musify.models.remote import RemoteResource
-from musify.models.user import RemoteUser
-from musify.processors._base import PageProcessor
-from musify.processors.formatter import CollectionFormatter
+from ..._models.collection import CollectionModel
+from ..._models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
+from ..._models.cursors import InitialCursor
+from ..._models.exception import MusifyValidationError
+from ..._models.item.user import RemoteUser
+from ..._models.properties.asynch import HasAsyncOperations
+from ..._models.properties.name import HasName
+from ..._models.properties.uri import HasURI, URI
+from ..._models.remote import RemoteResource
 
 type _ApiT = RemoteAPI | HasPlaylistEndpoints[
     PlaylistReadWriteEndpoints |

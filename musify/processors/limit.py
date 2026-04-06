@@ -12,12 +12,11 @@ from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
 from musify.exception import MusifyTypeError, MusifyAttributeError
-from musify.models import ResourceModel, IntEnumModel
-from musify.models.item.album import HasAlbum
-from musify.models.properties.file import IsFile
-from musify.models.properties.length import HasLength
-from musify.processors import processormethod, DynamicProcessor
-from musify.processors._dynamic import ProcessorAttribute
+from .._models import ResourceModel, IntEnumModel
+from .._models.item.album import HasAlbum
+from .._models.properties.file import IsFile
+from .._models.properties.length import HasLength
+from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
 from musify.processors.sort import ItemSorter
 
 

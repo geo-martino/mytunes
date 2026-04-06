@@ -5,18 +5,18 @@ import pytest
 from faker import Faker
 from pydantic import Json, ValidationError
 
-from musify.models.collection import RemoteCollection
-from musify.models.item.artist import HasArtists
-from musify.models.item.genre import HasGenres
-from musify.models.properties.image import HasImages
-from musify.models.properties.length import HasLength
-from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI
+from musify._models.collection import RemoteCollection
+from musify._models.item.artist import HasArtists
+from musify._models.item.genre import HasGenres
+from musify._models.properties.image import HasImages
+from musify._models.properties.length import HasLength
+from musify._models.properties.name import HasName
+from musify._models.properties.uri import HasURI
 from musify.spotify import SpotifyResource
 from musify.spotify._properties.rating import HasSpotifyRating
 from musify.spotify._properties.stats import HasFollowers
 from musify.spotify._properties.uri import SpotifyUserURI
-from tests.models.testers import UniqueKeyTester, BaseModelTester
+from tests.testers import UniqueKeyTester, BaseModelTester
 
 
 class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):

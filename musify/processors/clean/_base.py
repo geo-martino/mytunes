@@ -2,8 +2,8 @@ from abc import abstractmethod
 from typing import Any
 
 from musify.exception import MusifyTypeError
-from musify.models import AttributeModel
-from musify.processors import Processor
+from .._base import Processor
+from ..._models import AttributeModel
 
 
 # noinspection PyAbstractClass

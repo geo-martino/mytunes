@@ -5,8 +5,8 @@ from pydantic import Field
 
 from musify._types import TO_TUPLE
 from musify.exception import MusifyValueError
-from musify.models.properties.uri import HasURI
-from musify.models.result import Result, LenLogFormatter
+from ..._models.properties.uri import HasURI
+from ..._models.result import Result, LenLogFormatter
 
 
 class CheckResult[T: HasURI](Result):

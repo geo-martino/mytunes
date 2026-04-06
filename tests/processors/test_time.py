@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from faker import Faker
 
 from musify.processors.time import TimeMapper
-from tests.models.testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 class TestTimeMapper(BaseModelTester):

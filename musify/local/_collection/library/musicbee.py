@@ -18,9 +18,9 @@ from musify.exception import MusifyTypeError, MusifyValueError
 from musify.local._collection.library._base import LocalLibrary
 from musify.local._collection.playlist import LocalPlaylist
 from musify.local.exception import XMLReaderError, FileDoesNotExistError
-from musify.models import BaseModel, makecls
-from musify.models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
 from ..._item.track import LocalTrack
+from ...._models import BaseModel, makecls
+from ...._models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
 
 try:
     import xmltodict

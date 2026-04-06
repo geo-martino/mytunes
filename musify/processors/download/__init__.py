@@ -1,1 +1,1 @@
-from ._base import StoreManager
+from ._manager import StoreManager

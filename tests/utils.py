@@ -1,139 +1,12 @@
+"""Utilities to use in tests. Usually used for setting up testing conditions."""
 import builtins
 import itertools
-import re
-from collections.abc import Collection, Iterator, Callable, Generator
+from collections.abc import Collection, Iterator, Generator
 from contextlib import contextmanager
 from random import choice
-from typing import Self, final, Any
 from unittest.mock import Mock, patch
 
 import math
-from faker import Faker
-from yarl import URL
-
-from musify.models.collection.playlist import Playlist
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
-from musify.models.properties.uri import URI
-
-GENRES: tuple[str, ...] = tuple(genre.lower() for genre in (
-    "Adult Contemporary",
-    "Arab Pop",
-    "Baroque",
-    "Britpop",
-    "Bubblegum Pop",
-    "Chamber Pop",
-    "Chanson",
-    "Christian Pop",
-    "Classical Crossover",
-    "Europop",
-    "Dance Pop",
-    "Dream Pop",
-    "Electro Pop",
-    "Iranian Pop",
-    "Jangle Pop",
-    "Latin Ballad",
-    "Louisiana Swamp Pop",
-    "Mexican Pop",
-    "New Romanticism",
-    "Orchestral Pop",
-    "Pop Rap",
-    "Popera",
-    "Pop/Rock",
-    "Pop Punk",
-    "Power Pop",
-    "Psychedelic Pop",
-    "Schlager",
-    "Soft Rock",
-    "Space Age Pop",
-    "Sunshine Pop",
-    "Surf Pop",
-    "Synthpop",
-    "Teen Pop",
-    "Traditional Pop Music",
-    "Turkish Pop",
-    "Wonky Pop"
-))
-
-
-@final
-class SimpleURI(URI):
-    __final__ = True
-    _source = "remote"
-
-    @property
-    def source(self) -> str:
-        return self.root.split(":")[0]
-
-    @property
-    def type(self) -> str:
-        return self.root.split(":")[1]
-
-    @property
-    def id(self) -> str:
-        return self.root.split(":")[2]
-
-    @classmethod
-    def create_random(cls, kind: str | None = None) -> Self:
-        if not kind:
-            kind = choice((Track.type, Album.type, Artist.type, Playlist.type))
-        value = Faker().pystr()
-        return cls.from_id(value=value, kind=kind)
-
-    @classmethod
-    def create_unavailable(cls, kind: str) -> Self:
-        return cls.from_id(value=cls._unavailable_id, kind=kind)
-
-    @classmethod
-    def from_id[T](cls, value: T, kind: str) -> T | Self:
-        uri = ":".join((cls._source, kind, str(value)))
-        return cls(uri)
-
-    @property
-    def api_url(self) -> URL:
-        return URL.build(scheme="https", host="api.example.com", path=f"/{self.type}/{self.id}")
-
-    @classmethod
-    def from_api_url[T](cls, value: T) -> T | str:
-        return cls.from_public_url(value)
-
-    @property
-    def public_url(self) -> URL:
-        return URL.build(scheme="https", host="example.com", path=f"/{self.type}/{self.id}")
-
-    @classmethod
-    def from_public_url[T](cls, value: T) -> T | str:
-        if isinstance(value, str) and re.match(r"^https://(api.)?example\.com", value):
-            value = URL(value)
-        if not isinstance(value, URL):
-            return value
-
-        return ":".join((cls._source, *value.path.lstrip("/").split("/")[-2:]))
-
-
-
-class CallbackResult:
-    def __init__(self, method: str = "GET", status: int = 200, body: str | bytes = ''):
-        self.method = method
-        self.status = status
-        self.body = body
-
-    async def read(self) -> bytes:
-        return self.body
-
-    def __await__(self):
-        return self
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return None
-
-    @classmethod
-    def from_response(cls, body: str | bytes) -> Callable[[Any], Self]:
-        return lambda *_, **__: CallbackResult(body=body)
 
 
 def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterator[list[T]]:
@@ -177,7 +50,3 @@ def patch_input(values: Iterator[str]) -> Generator[Mock, None, None]:
 
     with patch.object(builtins, "input", side_effect=input_return) as mock_input:
         yield mock_input
-
-
-def assert_validator_skips[T](func: Callable[[T], T], value: T):
-    assert func(value) is value

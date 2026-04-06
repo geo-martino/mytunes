@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from musify.local._collection.folder import Folder
 from musify.local._item.album import LocalAlbum
 from musify.local._item.track import LocalTrack
-from tests.models.testers import NoUniqueKeyTester
+from tests.testers import NoUniqueKeyTester
 from tests.utils import split_list
 
 

@@ -5,11 +5,11 @@ from typing import Any
 from pydantic import Field, validate_call
 
 from musify.exception import MusifyTypeError
-from musify.models import AttributeModel
-from musify.models.item.album import HasAlbum, Album
-from musify.models.item.artist import HasArtists, Artist
-from musify.models.properties.name import HasName
 from musify.processors.clean._base import TagCleaner
+from ..._models import AttributeModel
+from ..._models.item.album import HasAlbum, Album
+from ..._models.item.artist import HasArtists, Artist
+from ..._models.properties.name import HasName
 
 
 class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):

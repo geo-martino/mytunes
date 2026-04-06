@@ -5,12 +5,12 @@ from typing import ClassVar
 
 from _pytest.capture import CaptureFixture
 
-from musify.models import ResourceModel, makecls
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import Playlist
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.properties.name import HasName
+from musify._models import ResourceModel, makecls
+from musify._models.collection import CollectionModel
+from musify._models.collection.playlist import Playlist
+from musify._models.item.album import Album
+from musify._models.item.artist import Artist
+from musify._models.properties.name import HasName
 
 
 class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):

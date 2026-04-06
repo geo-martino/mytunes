@@ -12,15 +12,15 @@ from pydantic import Field, field_validator, field_serializer
 
 from musify._types import Number
 from musify.exception import MusifyValueError, MusifyAttributeError
-from musify.models import ResourceModel, IntEnumModel, AttributeModel
-from musify.models.item.artist import HasArtists
-from musify.models.item.track import Track
-from musify.models.properties.audio import HasAudioProperties
-from musify.models.properties.date import HasAddedDate, HasPlayedDate
-from musify.models.properties.file import IsLocalFile
-from musify.models.properties.name import HasName
-from musify.models.properties.rating import HasRating
-from musify.processors._base import Processor
+from .._models import ResourceModel, IntEnumModel, AttributeModel
+from .._models.item.artist import HasArtists
+from .._models.item.track import Track
+from .._models.properties.audio import HasAudioProperties
+from .._models.properties.date import HasAddedDate, HasPlayedDate
+from .._models.properties.file import IsLocalFile
+from .._models.properties.name import HasName
+from .._models.properties.rating import HasRating
+from ._base import Processor
 
 _SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
     Track,

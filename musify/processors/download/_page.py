@@ -8,10 +8,10 @@ from rich.progress import TaskID
 from termcolor import colored
 from yarl import URL
 
-from musify.models import AttributeModel, ResourceModel
-from musify.models.properties.order import Position
-from musify.models.url import HttpURL
-from musify.processors._base import PageProcessor
+from ..._models import AttributeModel, ResourceModel
+from ..._models.properties.order import Position
+from musify._types import HttpURL
+from .._base.inputs import PageProcessor
 
 
 class StorePausePage[IT: AttributeModel](PageProcessor):
@@ -37,8 +37,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
 
     @property
     def types(self) -> str:
-        types = sorted({f"{it.type.rstrip("s")}s" for it in self.items if isinstance(it, ResourceModel)})
-        return self.logger.format_list_to_string(types) if types else "items"
+        return self.logger.format_types_to_string(self.items) or "items"
 
     def open_sites(self) -> None:
         """Open the sites for this page."""

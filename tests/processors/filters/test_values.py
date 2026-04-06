@@ -5,8 +5,8 @@ from random import shuffle, choice
 import pytest
 from faker import Faker
 
-from musify.models.properties.file import IsLocalFile
-from musify.models.properties.name import HasName
+from musify._models.properties.file import IsLocalFile
+from musify._models.properties.name import HasName
 from musify.processors.filters.values import ValueFilter, PathFilter, NameFilter
 from tests.processors.filters.testers import FilterTester
 

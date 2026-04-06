@@ -2,7 +2,7 @@ from typing import final
 
 from musify.local._base import LocalModel
 from musify.local._item.genre import LocalGenre
-from musify.models.item.artist import Artist
+from ..._models.item.artist import Artist
 
 
 @final

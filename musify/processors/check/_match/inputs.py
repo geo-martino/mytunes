@@ -7,14 +7,14 @@ from pydantic import Field, ValidationError
 from termcolor import colored
 
 from musify import PROGRAM_NAME
-from musify.models.properties.name import HasName
-from musify.models.properties.uri import URI, HasMutableURI
-from musify.models.result import LogFormatter
-from musify.processors._base import InputProcessor
-from musify.processors._exception import SkipPage
+from musify.processors._flow import SkipPage
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check.result import CheckResult
 from musify.processors.formatter import ModelFormatter
+from ..._base.inputs import InputProcessor
+from ...._models.properties.name import HasName
+from ...._models.properties.uri import URI, HasMutableURI
+from ...._models.result import LogFormatter
 
 
 class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):

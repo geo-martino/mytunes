@@ -14,16 +14,17 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
+from musify._models.properties.file import IsLocalFile
+from musify._models.properties.image import ImageFile
+from musify._models.properties.length import HasLength
+from musify._models.properties.uri import HasMutableURI, URI
 from musify.exception import MusifyValueError
 from musify.local._item import LocalAlbum
 from musify.local._item.artist import LocalArtist
 from musify.local._item.track import LocalTrack, TagContext, HasLocalTracks
-from musify.models.properties.file import IsLocalFile
-from musify.models.properties.image import ImageFile
-from musify.models.properties.length import HasLength
-from musify.models.properties.uri import HasMutableURI, URI
-from tests.models.testers import UniqueKeyTester
-from tests.utils import assert_validator_skips, SimpleURI, split_list
+from tests.remote import SimpleURI
+from tests.testers import UniqueKeyTester, assert_validator_skips
+from tests.utils import split_list
 
 
 class TestLocalTrack(UniqueKeyTester):

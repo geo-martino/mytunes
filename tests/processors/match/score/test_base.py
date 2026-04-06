@@ -3,9 +3,9 @@ from unittest.mock import patch, Mock, MagicMock
 import pytest
 from pydantic import InstanceOf
 
-from musify.models.properties.name import HasName
-from musify.processors.match.score import Scorer
-from tests.models.testers import BaseModelTester
+from musify._models.properties.name import HasName
+from musify.processors.match._score import Scorer
+from tests.testers import BaseModelTester
 
 
 class TestScorer(BaseModelTester):

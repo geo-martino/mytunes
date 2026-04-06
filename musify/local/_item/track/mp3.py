@@ -15,13 +15,13 @@ from musify.local._item.artist import LocalArtist
 from musify.local._item.genre import LocalGenre
 from musify.local._item.track import LocalTrack
 from musify.local._item.track._base import TagContext
-from musify.models.metadata import TagAttribute
-from musify.models.properties.date import SparseDate
-from musify.models.properties.image import ImageURL, ImageFile
-from musify.models.properties.music import KeySignature
-from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
-from musify.models.properties.rating import Rating
+from ...._models.metadata import TagAttribute
+from ...._models.properties.date import SparseDate
+from ...._models.properties.image import ImageURL, ImageFile
+from ...._models.properties.music import KeySignature
+from ...._models.properties.name import HasName
+from ...._models.properties.order import Position
+from ...._models.properties.rating import Rating
 
 
 @final

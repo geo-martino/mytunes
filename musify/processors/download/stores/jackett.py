@@ -4,11 +4,11 @@ from typing import Literal, ClassVar, Union, final
 from pydantic import Field
 from yarl import URL
 
-from musify.models import ResourceModel
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
-from musify.models.url import HttpURL
+from ...._models import ResourceModel
+from ...._models.item.album import Album
+from ...._models.item.artist import Artist
+from ...._models.item.track import Track
+from musify._types import HttpURL
 from musify.processors.download.stores._base import AudioStore
 
 

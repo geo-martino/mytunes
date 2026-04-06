@@ -3,8 +3,8 @@ from typing import Self
 
 from pydantic import model_validator
 
-from musify.models.collection import RemoteCollection
-from musify.models.properties.date import HasAddedDate
+from musify._models.collection import RemoteCollection
+from musify._models.properties.date import HasAddedDate
 
 
 class HasSpotifyAddedDate(HasAddedDate):

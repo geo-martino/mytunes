@@ -2,9 +2,9 @@ from typing import Annotated
 
 from pydantic import Field
 
-from musify.models.result import LenLogFormatter, CountResult, LogPosition
 from musify.processors.filters.composite import GroupResult, CompositeResult
 from ..._item.track import LocalTrack
+from ...._models.result import LenLogFormatter, CountResult, LogPosition
 
 
 class LimitResult(CountResult):

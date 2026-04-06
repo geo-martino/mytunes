@@ -2,13 +2,13 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.properties.uri import HasURI
+from musify._models.collection import CollectionModel
+from musify._models.collection.playlist import RemoteMutablePlaylist
+from musify._models.properties.uri import HasURI
 from musify.processors.check._match._base import CheckerMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
-from tests.models.testers import UniqueKeyTester
+from tests.testers import UniqueKeyTester
 
 
 class TestCheckerMatch(UniqueKeyTester):

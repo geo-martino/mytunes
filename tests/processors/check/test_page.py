@@ -10,19 +10,19 @@ from aiorequestful.exception import HTTPError
 from faker import Faker
 from pytest_mock import MockerFixture
 
+from musify._models.api import RemoteAPI
+from musify._models.api.playlist import PlaylistReadWriteEndpoints
+from musify._models.collection import CollectionModel
+from musify._models.collection.playlist import RemoteMutablePlaylist
+from musify._models.item.track import RemoteTrack
+from musify._models.properties.order import Position
 from musify.exception import MusifyError
 from musify.logger import Logger
-from musify.models.api import RemoteAPI
-from musify.models.api.playlist import PlaylistReadWriteEndpoints
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.item.track import RemoteTrack
-from musify.models.properties.order import Position
 # noinspection PyProtectedMember
 from musify.processors.check._page import CheckerPage
 from musify.processors.formatter import CollectionFormatter
-from tests.models.testers import BaseModelTester
 from tests.processors.utils import MockCollection
+from tests.testers import BaseModelTester
 
 
 @pytest.fixture

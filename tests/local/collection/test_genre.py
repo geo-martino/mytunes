@@ -2,8 +2,8 @@ import pytest
 from faker import Faker
 
 from musify.local._collection.genre import LocalGenreCollection
-from tests.models.testers import UniqueKeyTester
-from tests.utils import SimpleURI
+from tests.remote import SimpleURI
+from tests.testers import UniqueKeyTester
 
 
 class TestLocalGenreCollection(UniqueKeyTester):

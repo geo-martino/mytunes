@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from musify._models.properties.file import PathStemMapper
+from musify._models.result import Result
 from musify.local._collection.playlist import LocalPlaylist
-from musify.models.properties.file import PathStemMapper
-from musify.models.result import Result
-from tests.models.testers import UniqueKeyTester
+from tests.testers import UniqueKeyTester
 
 
 class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):

@@ -7,14 +7,14 @@ import logging
 from collections.abc import Iterable
 
 from aiorequestful.types import UnitIterable
+from musify._models.object import Library, Playlist
 from musify.field import TagField, Fields, ALL_FIELDS, TagFields
 from musify.libraries.local.library import LocalLibrary
-from musify.models.object import Library, Playlist
 
+from musify._models._base import MusifyResource
+from musify._models.collection import MusifyCollection
 from musify.logger import MusifyLogger
 from musify.logger import REPORT
-from musify.models._base import MusifyResource
-from musify.models.collection import MusifyCollection
 from musify.utils import align_string, get_max_width, to_collection
 
 

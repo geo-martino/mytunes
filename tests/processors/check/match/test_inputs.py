@@ -9,17 +9,18 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.properties.uri import URI
-from musify.models.result import LogFormatter
-from musify.processors._exception import QuitImmediately
+from musify._models.collection.playlist import RemoteMutablePlaylist
+from musify._models.properties.uri import URI
+from musify._models.result import LogFormatter
+from musify.processors._flow import QuitImmediately
 from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
-from tests.models.testers import UniqueKeyTester
 from tests.processors.check.match.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
 from tests.processors.utils import assert_help_text
-from tests.utils import SimpleURI, split_list, patch_input
+from tests.remote import SimpleURI
+from tests.testers import UniqueKeyTester
+from tests.utils import split_list, patch_input
 
 
 class TestInputMatch(UniqueKeyTester):

@@ -1,6 +1,6 @@
 from typing import final
 
-from musify.models.item.artist import RemoteArtist
+from musify._models.item.artist import RemoteArtist
 from musify.spotify._base import SpotifyResource
 from musify.spotify._item.genre import SpotifyGenre
 from .._properties.images import HasSpotifyImages

@@ -1,5 +1,5 @@
 from musify.local._base import LocalModel
-from musify.models.collection import CollectionModel
+from ..._models.collection import CollectionModel
 
 
 # noinspection PyAbstractClass

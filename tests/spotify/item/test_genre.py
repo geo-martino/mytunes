@@ -1,20 +1,20 @@
 import pytest
 from faker import Faker
 
+from musify._models.item.genre import Genre
 from musify.spotify._item.genre import SpotifyGenre
 from tests.spotify.testers import SpotifyResourceTester
-from tests.utils import GENRES
 
 
 class TestSpotifyGenre(SpotifyResourceTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> SpotifyGenre:
+    def model(self, genre: Genre) -> SpotifyGenre:
         return SpotifyGenre(
-            name=faker.random_element(GENRES),
+            name=genre.name,
         )
 
-    def test_response(self, faker: Faker):
-        payload = faker.random_element(GENRES)
+    def test_response(self, model: SpotifyGenre, faker: Faker):
+        payload = model.name
         model = SpotifyGenre.model_validate(payload)
 
         assert model.name == payload

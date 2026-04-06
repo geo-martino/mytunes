@@ -3,8 +3,8 @@ from typing import Self, Any, final, ClassVar
 from pydantic import field_validator, model_validator
 from yarl import URL
 
-from musify.models.exception import MusifyValidationError
-from musify.models.properties.uri import URI
+from musify._models.exception import MusifyValidationError
+from musify._models.properties.uri import URI
 from musify.spotify._url import API_URL, PUBLIC_URL
 
 

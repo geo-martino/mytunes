@@ -11,6 +11,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
+from musify._models.collection.playlist import Playlist
 from musify.local._collection.library import LocalLibrary
 from musify.local._collection.playlist import LocalPlaylist
 from musify.local._collection.playlist.result import LoadPlaylistResult
@@ -18,9 +19,8 @@ from musify.local._item.album import LocalAlbum
 from musify.local._item.artist import LocalArtist
 from musify.local._item.genre import LocalGenre
 from musify.local._item.track import LocalTrack
-from musify.models.collection.playlist import Playlist
 from musify.processors.filters.values import NameFilter
-from tests.models.testers import NoUniqueKeyTester
+from tests.testers import NoUniqueKeyTester
 
 
 class TestLocalLibrary(NoUniqueKeyTester):

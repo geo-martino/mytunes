@@ -14,7 +14,7 @@ from musify.local._collection.library.musicbee import MusicBee
 from musify.local._collection.library.musicbee import XMLLibraryParser
 from musify.local._item.track import LocalTrack
 from musify.local.exception import FileDoesNotExistError
-from tests.models.testers import BaseModelTester, NoUniqueKeyTester
+from tests.testers import BaseModelTester, NoUniqueKeyTester
 
 try:
     import xmltodict

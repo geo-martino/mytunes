@@ -4,10 +4,10 @@ from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
-from musify.models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+from musify._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
     BatchReadEndpoints, CollectionReadEndpoints
-from musify.models.api.types import ApiURL, ApiURLSchema
-from musify.models.cursors import PageCursor
+from musify._models.api.types import ApiURL, ApiURLSchema
+from musify._models.cursors import PageCursor
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify.cursors import SpotifyInitialCursor

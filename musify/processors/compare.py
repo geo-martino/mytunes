@@ -20,14 +20,13 @@ from typing_inspection.typing_objects import is_typevar
 
 from musify._types import LowerSnakeCase, Number
 from musify.exception import MusifyTypeError
-from musify.models import AttributeModel
-from musify.models.item.track import Track
-from musify.models.properties.audio import HasAudioProperties
-from musify.models.properties.date import HasAddedDate, HasPlayedDate
-from musify.models.properties.file import IsLocalFile
-from musify.models.properties.name import HasName
-from musify.processors import processormethod, DynamicProcessor
-from musify.processors._dynamic import ProcessorAttribute
+from .._models import AttributeModel
+from .._models.item.track import Track
+from .._models.properties.audio import HasAudioProperties
+from .._models.properties.date import HasAddedDate, HasPlayedDate
+from .._models.properties.file import IsLocalFile
+from .._models.properties.name import HasName
+from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
 from musify.processors.time import TimeMapper
 
 _COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({

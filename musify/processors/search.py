@@ -6,19 +6,19 @@ from pydantic import Field, validate_call, model_validator, field_validator, Bef
 from termcolor import colored
 
 from musify._types import TO_TUPLE
-from musify.models import ResourceModel
-from musify.models.api import RemoteAPI, IsRemoteService
-from musify.models.api.search import HasSearchEndpoints
-from musify.models.collection import CollectionModel, RemoteCollection
-from musify.models.collection.album import AlbumCollection
-from musify.models.exception import MusifyValidationError
-from musify.models.properties.asynch import HasAsyncOperations
-from musify.models.properties.file import IsFile, IsLocalFile
-from musify.models.properties.name import HasName
-from musify.models.properties.uri import HasURI
-from musify.models.remote import RemoteResource
-from musify.models.result import TotalCountResult, LenLogFormatter
-from musify.processors import Processor
+from .._models import ResourceModel
+from .._models.api import RemoteAPI, IsRemoteService
+from .._models.api.search import HasSearchEndpoints
+from .._models.collection import CollectionModel, RemoteCollection
+from .._models.collection.album import AlbumCollection
+from .._models.exception import MusifyValidationError
+from .._models.properties.asynch import HasAsyncOperations
+from .._models.properties.file import IsFile, IsLocalFile
+from .._models.properties.name import HasName
+from .._models.properties.uri import HasURI
+from .._models.remote import RemoteResource
+from .._models.result import TotalCountResult, LenLogFormatter
+from ._base import Processor
 from musify.processors.match import Matcher
 
 
@@ -421,8 +421,7 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         self.logger.report(table)
 
     def _log_start(self, items: Collection, default_type: str) -> None:
-        types = {f"{it.type.rstrip("s")}s" for it in items if isinstance(it, ResourceModel)}
-        types = self.logger.format_list_to_string(types) if types else default_type
+        types = self.logger.format_types_to_string(items) or default_type
         message = f"Searching for matches on {self.source} for {len(items)} {types}"
         self.logger.info(message, header=1)
 

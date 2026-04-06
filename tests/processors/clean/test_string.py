@@ -3,12 +3,12 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from musify._models.item.album import HasAlbum
+from musify._models.item.artist import HasArtists, Artist
+from musify._models.properties.name import HasName
 from musify.exception import MusifyTypeError
-from musify.models.item.album import HasAlbum
-from musify.models.item.artist import HasArtists, Artist
-from musify.models.properties.name import HasName
 from musify.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
-from tests.models.testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 class StringCleanerTester(BaseModelTester, metaclass=ABCMeta):

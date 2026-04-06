@@ -3,7 +3,7 @@ from typing import Self, Any, final
 
 from pydantic import Field, field_validator, field_serializer, validate_call
 
-from musify.models import ResourceModel
+from ..._models import ResourceModel
 from musify.processors.compare import Comparer
 from musify.processors.filters._base import Filter
 

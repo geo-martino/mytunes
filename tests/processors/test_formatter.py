@@ -9,12 +9,12 @@ from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
-from musify.models.properties.order import Position
+from musify._models.item.artist import Artist
+from musify._models.item.track import Track
+from musify._models.properties.order import Position
 from musify.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
-from tests.models.testers import BaseModelTester
 from tests.processors.utils import MockCollection
+from tests.testers import BaseModelTester
 
 
 class TestModelFormatter(BaseModelTester):

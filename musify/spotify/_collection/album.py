@@ -2,9 +2,9 @@ from typing import final, Self, Annotated
 
 from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
 
-from musify.models.collection.album import RemoteAlbumCollection
-from musify.models.metadata import Attribute
-from musify.models.sequence import UniqueSequence
+from musify._models.collection.album import RemoteAlbumCollection
+from musify._models.metadata import Attribute
+from musify._models.sequence import UniqueSequence
 from musify.spotify.cursors import SpotifyIndexCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist

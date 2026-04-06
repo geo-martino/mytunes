@@ -7,12 +7,12 @@ from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
-from musify.models.exception import RequestError
+from musify._models.exception import RequestError
 # noinspection PyProtectedMember
 from musify.spotify._api.playlist import _SpotifyPlaylistLibraryEndpoints
 from musify.spotify._collection.playlist import SpotifyPlaylist
 from musify.spotify._properties.uri import SpotifyResourceURI
-from tests.models.api.testers import EndpointsTester
+from tests.testers import EndpointsTester
 
 
 class TestSpotifyPlaylistLibraryEndpoints(EndpointsTester):

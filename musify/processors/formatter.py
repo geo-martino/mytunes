@@ -10,16 +10,16 @@ from termcolor import colored
 
 from musify._types import TO_LIST
 from musify.exception import MusifyTypeError
-from musify.models import BaseModel, ResourceModel
-from musify.models.collection import CollectionModel
-from musify.models.exception import MusifyValidationError
-from musify.models.item.album import HasAlbum
-from musify.models.item.artist import HasArtists
-from musify.models.properties.date import HasReleaseDate
-from musify.models.properties.length import HasLength
-from musify.models.properties.name import HasName
-from musify.models.properties.order import Position, HasTrackPosition
-from musify.models.properties.uri import HasImmutableURI, HasMutableURI
+from .._models import BaseModel, ResourceModel
+from .._models.collection import CollectionModel
+from .._models.exception import MusifyValidationError
+from .._models.item.album import HasAlbum
+from .._models.item.artist import HasArtists
+from .._models.properties.date import HasReleaseDate
+from .._models.properties.length import HasLength
+from .._models.properties.name import HasName
+from .._models.properties.order import Position, HasTrackPosition
+from .._models.properties.uri import HasImmutableURI, HasMutableURI
 
 FIELDS = Literal[
     "Name", "Album", "Artist", "Released At", "Length", "URI", "Public URL"

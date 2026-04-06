@@ -14,8 +14,8 @@ from musify.spotify._collection.artist import SpotifyArtistCollection
 from musify.spotify._item.album import SpotifyAlbum
 from musify.spotify._properties.uri import SpotifyResourceURI
 from musify.spotify.cursors import SpotifyInitialCursor
-from tests.models.testers import BaseModelTester
 from tests.spotify.generator import SpotifyPayloadGenerator
+from tests.testers import BaseModelTester
 
 
 class TestSpotifyArtistEndpoints(BaseModelTester):

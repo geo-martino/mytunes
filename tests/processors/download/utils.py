@@ -1,14 +1,12 @@
-from random import sample
 from typing import Any
 from urllib.parse import unquote
 
 from yarl import URL
 
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
+from musify._models.item.album import Album
+from musify._models.item.artist import Artist
+from musify._models.item.track import Track
 from musify.processors.download.stores import AudioStore
-from tests.utils import GENRES
 
 
 def assert_value_in_url(url: URL, value: Any):
@@ -30,7 +28,7 @@ def assert_track_in_url(model: AudioStore, track: Track):
 
 
 def assert_artist_in_url(model: AudioStore, artist: Artist):
-    artist.genres = sample(GENRES, k=3)
+    artist.genres = ["rock", "metal", "pop"]
 
     url = model.format_search_url(artist, fields=["name", "genre"])
     assert_value_in_url(url, artist.name)

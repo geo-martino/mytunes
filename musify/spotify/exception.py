@@ -1,4 +1,4 @@
-from musify.models.exception import APIError, AuthenticationError, RemoteError
+from musify._models.exception import APIError, AuthenticationError, RemoteError
 
 
 class SpotifyError(RemoteError):

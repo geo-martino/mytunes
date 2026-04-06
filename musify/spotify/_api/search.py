@@ -3,13 +3,13 @@ from typing import ClassVar, final, Any
 from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
 
-from musify.models import ResourceModel
-from musify.models.api.search import SearchEndpoints
-from musify.models.collection.playlist import Playlist
-from musify.models.exception import RequestError
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
+from musify._models import ResourceModel
+from musify._models.api.search import SearchEndpoints
+from musify._models.collection.playlist import Playlist
+from musify._models.exception import RequestError
+from musify._models.item.album import Album
+from musify._models.item.artist import Artist
+from musify._models.item.track import Track
 from musify.spotify import API_URL, SpotifyResource
 from musify.spotify._api._base import SpotifyEndpoints
 from .._collection.playlist import SpotifyPlaylist

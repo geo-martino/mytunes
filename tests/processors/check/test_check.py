@@ -6,17 +6,17 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify.models.api import RemoteAPI
-from musify.models.item.track import RemoteTrack
-from musify.models.properties.name import HasName
-from musify.processors._exception import QuitImmediately, SkipPage
+from musify._models.api import RemoteAPI
+from musify._models.item.track import RemoteTrack
+from musify._models.properties.name import HasName
+from musify.processors._flow import QuitImmediately, SkipPage
 from musify.processors.check import Checker
 from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._match.playlist import PlaylistMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.check.result import CheckResult
-from tests.models.testers import BaseModelTester
 from tests.processors.utils import MockCollection
+from tests.testers import BaseModelTester
 
 
 class TestChecker(BaseModelTester):

@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.models.properties.date import SparseDate
+from musify._models.properties.date import SparseDate
 from musify.spotify._item.album import SpotifyAlbum
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester

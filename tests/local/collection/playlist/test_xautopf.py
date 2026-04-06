@@ -9,14 +9,14 @@ from pydantic import TypeAdapter, ValidationError
 from pydantic.alias_generators import to_pascal
 from pytest_mock import MockerFixture
 
+from musify._models.item.track import Track
+from musify._models.properties.file import PathMapper
 from musify.exception import MusifyValueError
 # noinspection PyProtectedMember
 from musify.local._collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
 from musify.local._item.track import LocalTrack
-from musify.models.item.track import Track
-from musify.models.properties.file import PathMapper
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.filters.composite import GroupFilter
@@ -24,7 +24,7 @@ from musify.processors.filters.values import PathFilter
 from musify.processors.limit import LimitType, ItemLimiter
 from musify.processors.sort import ShuffleMode, ItemSorter, SORT_FIELDS
 from tests.local.collection.playlist.testers import LocalPlaylistTester
-from tests.models.testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 @pytest.mark.skipif(not SyncXAutoPFResult.required_modules_installed, reason="Required modules are not installed")

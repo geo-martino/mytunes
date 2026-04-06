@@ -9,11 +9,11 @@ from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify.models.api import RemoteAPI
-from musify.models.api.playlist import PlaylistReadWriteEndpoints
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.item.track import RemoteTrack
+from musify._models.api import RemoteAPI
+from musify._models.api.playlist import PlaylistReadWriteEndpoints
+from musify._models.collection import CollectionModel
+from musify._models.collection.playlist import RemoteMutablePlaylist
+from musify._models.item.track import RemoteTrack
 from musify.processors.check import Checker
 from musify.processors.check._page import CheckerPage
 from tests.processors.utils import MockCollection, assert_help_text
@@ -101,6 +101,7 @@ class TestCheckerPause:
     ###########################################################################
     ## Tests
     ###########################################################################
+    # TODO: fails on CLI execution only
     async def test_pages(
             self,
             model: Checker,

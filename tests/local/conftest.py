@@ -1,15 +1,15 @@
 from pathlib import Path
-from random import sample, choice
+from random import choice
 
 import pytest
 from faker import Faker
 
+from musify._models import ResourceModel
+from musify._models.item.genre import Genre
 from musify.local._item.album import LocalAlbum
 from musify.local._item.artist import LocalArtist
 from musify.local._item.genre import LocalGenre
 from musify.local._item.track import LocalTrack
-from musify.models import ResourceModel
-from tests.utils import GENRES
 
 
 @pytest.fixture
@@ -78,10 +78,10 @@ def albums(faker: Faker) -> list[LocalAlbum]:
 
 
 @pytest.fixture
-def genre() -> LocalGenre:
-    return LocalGenre(name=choice(GENRES))
+def genre(genre: Genre) -> LocalGenre:
+    return LocalGenre(name=genre.name)
 
 
 @pytest.fixture
-def genres(faker: Faker) -> list[LocalGenre]:
-    return [LocalGenre(name=genre) for genre in sample(GENRES, k=faker.random_int(5, 10))]
+def genres(genres: list[Genre], faker: Faker) -> list[LocalGenre]:
+    return [LocalGenre(name=genre.name) for genre in genres]

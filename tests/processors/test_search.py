@@ -6,23 +6,22 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify.models import ResourceModel
-from musify.models.api import RemoteAPI
-from musify.models.api.search import SearchEndpoints
-from musify.models.collection import CollectionModel, RemoteCollection
-from musify.models.collection.album import AlbumCollection
-from musify.models.item.album import Album
-from musify.models.item.track import Track, RemoteTrack
-from musify.models.properties.uri import HasURI
-from musify.models.remote import RemoteResource
+from musify._models import ResourceModel
+from musify._models.api import RemoteAPI
+from musify._models.api.search import SearchEndpoints
+from musify._models.collection import CollectionModel, RemoteCollection
+from musify._models.collection.album import AlbumCollection
+from musify._models.item.album import Album
+from musify._models.item.track import Track, RemoteTrack
+from musify._models.properties.uri import HasURI
+from musify._models.remote import RemoteResource
 from musify.processors.match import Matcher
-from musify.processors.match.score.string import NameScorer
+from musify.processors.match._score.string import NameScorer
 from musify.processors.search import Searcher, SearchResult
-from tests.models.api.utils import MockUrlCursor
-from tests.models.testers import BaseModelTester
-from tests.models.utils import MockRemoteCollection, MockRemoteResource
 from tests.processors.utils import MockCollection
-from tests.utils import SimpleURI, split_list
+from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor
+from tests.testers import BaseModelTester
+from tests.utils import split_list
 
 
 class SearcherTester(metaclass=ABCMeta):

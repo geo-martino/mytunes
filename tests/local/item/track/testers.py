@@ -15,12 +15,12 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
+from musify._models.properties.image import ImageFile
+from musify._models.properties.name import HasName
 from musify.local._item.track import LocalTrack, TagContext
 from musify.local.exception import FileError
-from musify.models.properties.image import ImageFile
-from musify.models.properties.name import HasName
-from tests.models.testers import BaseModelTester, UniqueKeyTester
-from tests.utils import SimpleURI
+from tests.remote import SimpleURI
+from tests.testers import BaseModelTester, UniqueKeyTester
 
 
 class LocalTrackEmbeddedImageTester(BaseModelTester, metaclass=ABCMeta):

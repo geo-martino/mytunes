@@ -3,7 +3,7 @@ from typing import ClassVar, final
 from pydantic import AliasPath
 from yarl import URL
 
-from musify.models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
+from musify._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
     ItemReadEndpoints, CollectionReadEndpoints
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints

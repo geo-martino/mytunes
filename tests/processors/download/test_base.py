@@ -10,10 +10,10 @@ from faker import Faker
 from pytest_mock import MockerFixture
 
 from musify import MODULE_ROOT
-from musify.models.collection.playlist import Playlist, MutablePlaylist
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.track import Track
+from musify._models.collection.playlist import Playlist, MutablePlaylist
+from musify._models.item.album import Album
+from musify._models.item.artist import Artist
+from musify._models.item.track import Track
 from musify.processors.download import StoreManager
 from musify.processors.download._page import StorePausePage
 from musify.processors.download.stores import GeneralAudioStore
@@ -21,8 +21,8 @@ from musify.processors.download.stores.bandcamp import BandcampStore
 from musify.processors.download.stores.juno_download import JunoDownloadStore
 from musify.processors.download.stores.qobuz import QobuzStore
 from musify.processors.download.stores.seven_digital import SevenDigitalStore
-from tests.models.testers import BaseModelTester
 from tests.processors.utils import assert_help_text
+from tests.testers import BaseModelTester
 from tests.utils import patch_input
 
 
@@ -135,6 +135,7 @@ class TestStoreManager(BaseModelTester):
         assert mock_pause.call_count == math.ceil(len(duplicate_tracks) / model.interval)
         assert len(urls) == len(duplicate_tracks) * len(model.stores)
 
+    # TODO: fails on CLI execution only
     def test_pause(
             self,
             model: StoreManager,

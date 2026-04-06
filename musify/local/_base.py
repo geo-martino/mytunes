@@ -1,4 +1,4 @@
-from musify.models import BaseModel
+from .._models import BaseModel
 
 
 class LocalModel(BaseModel):

@@ -4,9 +4,9 @@ from random import choice
 import pytest
 from faker import Faker
 
+from musify._models.api import RemoteAPI
 from musify.local._item.track import LocalTrack
-from musify.models.api import RemoteAPI
-from tests.models.api.utils import MockRemoteAPI
+from tests.remote import MockRemoteAPI
 
 
 @pytest.fixture

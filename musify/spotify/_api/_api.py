@@ -2,12 +2,12 @@ from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.backend.base import ResponseRepository
 from yarl import URL
 
-from musify.models.api import RemoteAPI
-from musify.models.api._base import HasCache
-from musify.models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
-from musify.models.api.playlist import HasPlaylistEndpoints
-from musify.models.api.search import HasSearchEndpoints
-from musify.models.api.user import HasUserEndpoints
+from musify._models.api import RemoteAPI
+from musify._models.api._base import HasCache
+from musify._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
+from musify._models.api.playlist import HasPlaylistEndpoints
+from musify._models.api.search import HasSearchEndpoints
+from musify._models.api.user import HasUserEndpoints
 from musify.spotify import SpotifyModel
 from musify.spotify._api.album import SpotifyAlbumEndpoints
 from musify.spotify._api.artist import SpotifyArtistEndpoints

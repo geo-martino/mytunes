@@ -1,12 +1,12 @@
 from typing import final
 
 from musify.local._collection._base import LocalCollection
-from musify.models.collection.album import AlbumCollection
-from musify.models.properties.uri import URI
 from .._item.album import LocalAlbum
 from .._item.artist import LocalArtist
 from .._item.genre import LocalGenre
 from .._item.track import LocalTrack, HasLocalTracks
+from ..._models.collection.album import AlbumCollection
+from ..._models.properties.uri import URI
 
 
 # noinspection PyFinal

@@ -6,9 +6,9 @@ from pydantic import BeforeValidator, Field, model_validator, validate_call, fie
 
 from musify._types import TO_SET, StrippedString, DEFAULT_IF_NONE
 from musify.exception import MusifyTypeError
-from musify.models import BaseModel
-from musify.models.properties.file import PathMapper, IsLocalFile, PathInputType
-from musify.models.properties.name import HasName
+from ..._models import BaseModel
+from ..._models.properties.file import PathMapper, IsLocalFile, PathInputType
+from ..._models.properties.name import HasName
 from musify.processors.filters._base import Filter
 
 

@@ -4,14 +4,19 @@ from types import UnionType, GenericAlias
 from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar
 
 from annotated_types import MinLen
-from pydantic import StringConstraints, BeforeValidator, BaseModel
+from pydantic import StringConstraints, BeforeValidator, BaseModel, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.alias_generators import to_snake
-from pydantic_core import PydanticUseDefault
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import PydanticUseDefault, CoreSchema, core_schema
 from typing_extensions import get_origin
 from typing_inspection.typing_objects import is_annotated, is_typevar
+from yarl import URL as YARL_URL
 
 from musify.exception import MusifyTypeError
 
+###########################################################################
+## Basic annotations
+###########################################################################
 type Character = Annotated[str, StringConstraints(min_length=1, max_length=1)]
 type StrippedCharacter = Annotated[str, StringConstraints(min_length=1, max_length=1, strip_whitespace=True)]
 type String = Annotated[str, StringConstraints(min_length=1)]
@@ -33,9 +38,12 @@ type ListWithValues[T] = Annotated[list[T], MinLen(1)]
 type Number = int | float
 
 
+###########################################################################
+## Validators
+###########################################################################
 def to_set(value: Any) -> set[Any] | None:
     """Converts a value to a set."""
-    from musify.models import BaseModel  # to prevent cyclical imports
+    from musify._models import BaseModel  # to prevent cyclical imports
 
     match value:
         case None:
@@ -53,7 +61,7 @@ TO_SET = BeforeValidator(to_set)
 
 def to_tuple(value: Any) -> tuple[Any] | None:
     """Converts a value to a tuple."""
-    from musify.models import BaseModel  # to prevent cyclical imports
+    from musify._models import BaseModel  # to prevent cyclical imports
 
     match value:
         case None:
@@ -71,7 +79,7 @@ TO_TUPLE = BeforeValidator(to_tuple)
 
 def to_list(value: Any) -> list[Any] | None:
     """Converts a value to a list."""
-    from musify.models import BaseModel  # to prevent cyclical imports
+    from musify._models import BaseModel  # to prevent cyclical imports
 
     match value:
         case None:
@@ -95,6 +103,45 @@ def _default_if_none[T](value: T) -> T:
 
 
 DEFAULT_IF_NONE = BeforeValidator(_default_if_none)
+
+
+###########################################################################
+## 3rd party models
+###########################################################################
+class _URLSchema:
+    # noinspection PyUnusedLocal
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        url_schema = core_schema.url_schema(host_required=True)
+        cast_str_schema = core_schema.chain_schema(
+            [
+                url_schema,
+                core_schema.no_info_plain_validator_function(lambda x: YARL_URL(str(x))),
+            ]
+        )
+        python_schema = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(YARL_URL),
+                cast_str_schema,
+            ]
+        )
+
+        return core_schema.json_or_python_schema(
+            json_schema=url_schema,
+            python_schema=python_schema,
+            serialization=core_schema.to_string_ser_schema()
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.url_schema())
+
+
+HttpURL = Annotated[
+    YARL_URL, _URLSchema
+]
 
 
 ###########################################################################

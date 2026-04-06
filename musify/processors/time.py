@@ -10,8 +10,7 @@ from pydantic import field_validator, Field, model_validator, ModelWrapValidator
 from pydantic.alias_generators import to_snake
 
 from musify._types import LowerSnakeCase
-from musify.processors import DynamicProcessor, processormethod
-from musify.processors._dynamic import ProcessorAttribute
+from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
 
 
 @final

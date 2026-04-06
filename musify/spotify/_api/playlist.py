@@ -7,12 +7,12 @@ from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
-from musify.models.api import HasLibraryEndpoints
-from musify.models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
-from musify.models.api.types import ApiURISchema, ApiURLSchema
-from musify.models.cursors import PageCursor, HasPageCursor
-from musify.models.exception import RequestError
-from musify.models.properties.image import ImageSource, PILImageFileT
+from musify._models.api import HasLibraryEndpoints
+from musify._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
+from musify._models.api.types import ApiURISchema, ApiURLSchema
+from musify._models.cursors import PageCursor, HasPageCursor
+from musify._models.exception import RequestError
+from musify._models.properties.image import ImageSource, PILImageFileT
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from musify.spotify._api._types import SpotifyApiURL, SpotifyApiURISequence, SpotifyApiURI
@@ -20,7 +20,7 @@ from musify.spotify.user import SpotifyUser
 from .._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from .._item.track import SpotifyTrack, SpotifyPlaylistTrack
 from .._properties.uri import SpotifyResourceURI
-from ...models.properties.uri import HasURI
+from ..._models.properties.uri import HasURI
 
 
 @final

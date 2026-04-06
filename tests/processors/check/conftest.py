@@ -5,19 +5,18 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify.models.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
+from musify._models.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
     PlaylistBatchWriteEndpoints
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
-from musify.models.cursors import InitialCursor
-from musify.models.item.track import Track, RemoteTrack
-from musify.models.properties.order import Position
-from musify.models.user import RemoteUser
+from musify._models.collection import CollectionModel
+from musify._models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
+from musify._models.cursors import InitialCursor
+from musify._models.item.track import Track, RemoteTrack
+from musify._models.item.user import RemoteUser
+from musify._models.properties.order import Position
 from musify.processors.match import Matcher
-from musify.processors.match.score import NameScorer
-from tests.models.api.utils import MockUrlCursor, MockInitialCursor
+from musify.processors.match._score import NameScorer
 from tests.processors.utils import MockCollection
-from tests.utils import SimpleURI
+from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
 
 
 @pytest.fixture

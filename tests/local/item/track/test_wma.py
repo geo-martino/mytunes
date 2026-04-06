@@ -14,13 +14,13 @@ from faker import Faker
 # noinspection PyProtectedMember
 from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 
+from musify._models.properties.order import Position
+from musify._models.properties.uri import URI
 from musify.local._item.genre import LocalGenre
 from musify.local._item.track import TagContext
 from musify.local._item.track.wma import WMA
-from musify.models.properties.order import Position
-from musify.models.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
-from tests.utils import assert_validator_skips
+from tests.testers import assert_validator_skips
 
 
 @pytest.fixture

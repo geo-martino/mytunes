@@ -2,7 +2,7 @@ from typing import ClassVar, final
 
 from yarl import URL
 
-from musify.models.api.user import UserEndpoints
+from musify._models.api.user import UserEndpoints
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints
 from musify.spotify.user import SpotifyUser

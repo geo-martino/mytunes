@@ -1,12 +1,9 @@
-from collections.abc import Sequence
 from copy import deepcopy
 from datetime import date
 from typing import Any
 
 from faker import Faker
 from yarl import URL
-
-from tests.utils import GENRES
 
 
 class SpotifyPayloadGenerator:
@@ -350,9 +347,9 @@ class SpotifyPayloadGenerator:
             url=tracks_href, items=tracks, limit=len(tracks), total=track_count
         )
 
-    def generate_genres(self) -> Sequence[str]:
+    def generate_genres(self) -> list[str]:
         """Return a list of randomly generated genres."""
-        return self.faker.random_elements(GENRES, unique=True)
+        return [self.faker.word() for _ in range(self.faker.random_int(0, 10))]
 
     ################################################################################
     ## Playlists

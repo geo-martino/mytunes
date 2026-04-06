@@ -8,7 +8,7 @@ from aiorequestful.types import MethodInput
 from pydantic import ValidationError
 from yarl import URL
 
-from musify.models.properties.uri import URI
+from musify._models.properties.uri import URI
 from musify.spotify import SpotifyModel
 
 

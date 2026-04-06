@@ -3,8 +3,8 @@ from typing import Annotated, Sequence, Iterable, Self
 from pydantic import Field
 
 from musify._types import TO_TUPLE
-from musify.models.result import TotalCountResult, LenLogFormatter
 from ..._item.track import LocalTrack
+from ...._models.result import TotalCountResult, LenLogFormatter
 
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):

@@ -4,12 +4,12 @@ from typing import Any, ClassVar
 
 from pydantic import Field, InstanceOf, OnErrorOmit
 
-from musify.models.properties.logger import HasLogger
-from musify.models.properties.uri import HasURI, HasMutableURI, HasImmutableURI
-from musify.processors import Processor
 from musify.processors.check._page import CheckerPage, _ApiT
 from musify.processors.check.result import CheckResult
 from musify.processors.match import Matcher
+from ..._base import Processor
+from ...._models.properties.logger import HasLogger
+from ...._models.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 
 
 # noinspection PyAbstractClass

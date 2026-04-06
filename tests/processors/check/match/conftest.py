@@ -7,21 +7,20 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from faker import Faker
 
-from musify.models import ResourceModel
-from musify.models.api import RemoteAPI
-from musify.models.api.playlist import PlaylistReadWriteEndpoints
-from musify.models.collection import CollectionModel
-from musify.models.collection.playlist import RemoteMutablePlaylist
-from musify.models.item.genre import Genre
-from musify.models.item.track import Track
-from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
-from musify.models.properties.uri import HasMutableURI, HasImmutableURI, HasURI
+from musify._models import ResourceModel
+from musify._models.api import RemoteAPI
+from musify._models.api.playlist import PlaylistReadWriteEndpoints
+from musify._models.collection import CollectionModel
+from musify._models.collection.playlist import RemoteMutablePlaylist
+from musify._models.item.genre import Genre
+from musify._models.item.track import Track
+from musify._models.properties.name import HasName
+from musify._models.properties.order import Position
+from musify._models.properties.uri import HasMutableURI, HasImmutableURI, HasURI
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
-from tests.models.api.utils import MockUrlCursor
 from tests.processors.utils import MockCollection
-from tests.utils import SimpleURI
+from tests.remote import SimpleURI, MockUrlCursor
 
 CheckerPage.wait_after_add = 0
 

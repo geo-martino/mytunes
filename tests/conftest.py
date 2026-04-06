@@ -14,13 +14,12 @@ from PIL import Image, ImageFile as PILImageFile
 from aiohttp import ClientSession
 from faker import Faker
 
-from musify.models.collection.playlist import Playlist, MutablePlaylist
-from musify.models.item.album import Album
-from musify.models.item.artist import Artist
-from musify.models.item.genre import Genre
-from musify.models.item.track import Track
-from musify.models.properties.image import ImageURL, ImageFile
-from tests.utils import GENRES
+from musify._models.collection.playlist import Playlist, MutablePlaylist
+from musify._models.item.album import Album
+from musify._models.item.artist import Artist
+from musify._models.item.genre import Genre
+from musify._models.item.track import Track
+from musify._models.properties.image import ImageURL, ImageFile
 
 
 @pytest.fixture(scope="session")
@@ -69,13 +68,14 @@ def albums(faker: Faker) -> list[Album]:
 
 
 @pytest.fixture
-def genre() -> Genre:
-    return Genre(name=choice(GENRES))
+def genre(faker: Faker) -> Genre:
+    return Genre(name=faker.word())
 
 
 @pytest.fixture
 def genres(faker: Faker) -> list[Genre]:
-    return [Genre(name=genre) for genre in sample(GENRES, k=faker.random_int(3, 6))]
+    names = [faker.word() for _ in range(faker.random_int(5, 10))]
+    return [Genre(name=name) for name in names]
 
 
 @pytest.fixture

@@ -1,13 +1,11 @@
-from random import choice
-
 import pytest
 
+from musify._models.item.genre import Genre
 from musify.local._item.genre import LocalGenre
-from tests.models.testers import UniqueKeyTester
-from tests.utils import GENRES
+from tests.testers import UniqueKeyTester
 
 
 class TestLocalGenre(UniqueKeyTester):
     @pytest.fixture
-    def model(self) -> LocalGenre:
-        return LocalGenre(name=choice(GENRES))
+    def model(self, genre: Genre) -> LocalGenre:
+        return LocalGenre(name=genre.name)

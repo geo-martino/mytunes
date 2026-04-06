@@ -5,13 +5,13 @@ from pydantic import Field, model_validator
 
 from musify._types import StrippedString
 from musify.local._collection._base import LocalCollection
-from musify.models.exception import MusifyValidationError
-from musify.models.metadata import Attribute
-from musify.models.properties.length import HasLength
-from musify.models.properties.name import HasName
-from musify.models.properties.uri import URI
-from musify.models.sequence import UniqueSequence
 from .._item.track import LocalTrack, HasLocalTracks
+from ..._models.exception import MusifyValidationError
+from ..._models.metadata import Attribute
+from ..._models.properties.length import HasLength
+from ..._models.properties.name import HasName
+from ..._models.properties.uri import URI
+from ..._models.sequence import UniqueSequence
 
 
 @final

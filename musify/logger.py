@@ -192,9 +192,19 @@ class Logger(logging.Logger, AbstractContextManager):
         parts = [header, message, hidden]
         return " ".join(part for part in parts if part).strip()
 
+    @classmethod
+    def format_types_to_string(cls, items: Iterable[Any]) -> str:
+        """Format the given ``items`` as a string of types for logging."""
+        from ._models import ResourceModel
+        types = {f"{it.type.rstrip("s")}s" for it in items if isinstance(it, ResourceModel)}
+        return cls.format_list_to_string(types)
+
     @staticmethod
     def format_list_to_string(values: Iterable[Any]) -> str:
         """Format the given ``values`` as a list of strings for logging."""
+        if isinstance(values, set):
+            values = sorted(values)
+
         values = list(map(str, values))
         value_str = ", ".join(values[:-1])
         if value_str:

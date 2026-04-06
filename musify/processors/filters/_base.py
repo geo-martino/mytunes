@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Collection
 
-from musify.processors._base import Processor
+from .._base import Processor
 
 
 # noinspection PyAbstractClass

@@ -25,19 +25,19 @@ from musify.local._item.album import LocalAlbum
 from musify.local._item.artist import LocalArtist
 from musify.local._item.genre import LocalGenre
 from musify.local.exception import FileError
-from musify.models import BaseModel, ResourceModel, makecls
-from musify.models.collection.library import Library
-from musify.models.item.track import Track, HasMutableTracks
-from musify.models.metadata import TagAttribute
-from musify.models.properties.asynch import SemaphoreT
-from musify.models.properties.audio import HasAudioProperties
-from musify.models.properties.date import HasAddedDate, HasPlayedDate
-from musify.models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from musify.models.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
-from musify.models.properties.logger import HasLogger
-from musify.models.properties.name import HasName
-from musify.models.properties.order import Position
-from musify.models.properties.uri import HasMutableURI, URI
+from ...._models import BaseModel, ResourceModel, makecls
+from ...._models.collection.library import Library
+from ...._models.item.track import Track, HasMutableTracks
+from ...._models.metadata import TagAttribute
+from ...._models.properties.asynch import SemaphoreT
+from ...._models.properties.audio import HasAudioProperties
+from ...._models.properties.date import HasAddedDate, HasPlayedDate
+from ...._models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
+from ...._models.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
+from ...._models.properties.logger import HasLogger
+from ...._models.properties.name import HasName
+from ...._models.properties.order import Position
+from ...._models.properties.uri import HasMutableURI, URI
 
 
 class TagContext(BaseModel):

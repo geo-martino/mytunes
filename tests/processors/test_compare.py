@@ -7,16 +7,16 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
+from musify._models.properties.date import SparseDate
+from musify._models.properties.length import Length
+from musify._models.properties.music import KeySignature
+from musify._models.properties.order import Position
 from musify.exception import MusifyTypeError
 from musify.local._item.track import LocalTrack
 from musify.local._item.track.mp3 import MP3
-from musify.models.properties.date import SparseDate
-from musify.models.properties.length import Length
-from musify.models.properties.music import KeySignature
-from musify.models.properties.order import Position
 from musify.processors.compare import Comparer, COMPARISON_FIELDS
 from musify.processors.time import TimeMapper
-from tests.models.testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 class TestComparer(BaseModelTester):

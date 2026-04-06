@@ -4,14 +4,14 @@ from unittest.mock import patch, MagicMock
 import pytest
 from faker import Faker
 
+from musify._models.item.album import HasAlbum, Album
+from musify._models.item.track import Track
+from musify._models.properties.length import HasLength
 from musify.exception import MusifyTypeError
-from musify.models.item.album import HasAlbum, Album
-from musify.models.item.track import Track
-from musify.models.properties.length import HasLength
 from musify.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
-from tests.models.testers import BaseModelTester
 from tests.processors.utils import MockCollection
+from tests.testers import BaseModelTester
 
 
 class NumericCleanerTester(BaseModelTester, metaclass=ABCMeta):

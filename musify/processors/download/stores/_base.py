@@ -4,16 +4,13 @@ from collections.abc import Sequence, Iterable, Collection, Mapping
 from typing import ClassVar, Literal, Any, Union, get_args, Annotated, final, Self
 from urllib.parse import quote
 
-from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter, \
-    HttpUrl
-from typing_inspection.typing_objects import is_final
+from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter
 from yarl import URL
 
-from musify._types import StrippedString
-from musify.models import BaseModel, ResourceModel
-from musify.models._base import ModelMetaclass
-from musify.models.properties.name import HasName
-from musify.models.url import HttpURL
+from musify._types import StrippedString, HttpURL
+from ...._models import BaseModel, ResourceModel
+from ...._models import ModelMetaclass
+from ...._models.properties.name import HasName
 from musify.processors.clean.string import NameCleaner
 from musify.processors.download.stores.exception import StoreError
 

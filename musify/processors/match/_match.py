@@ -4,13 +4,13 @@ from typing import Any
 
 from pydantic import conlist, Field
 
-from musify.models import AttributeModel
-from musify.models.collection import CollectionModel
-from musify.models.properties.logger import HasLogger
-from musify.models.properties.name import HasName
-from musify.processors import Processor
-from musify.processors.match.score import Scorer, NameScorer
-from musify.processors.match.score.string import StringScorer
+from ._score import Scorer
+from ._score.string import StringScorer, NameScorer
+from .._base import Processor
+from ..._models import AttributeModel
+from ..._models.collection import CollectionModel
+from ..._models.properties.logger import HasLogger
+from ..._models.properties.name import HasName
 
 
 class Matcher(Processor, HasLogger):
