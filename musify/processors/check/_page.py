@@ -134,7 +134,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
     async def __aenter__(self) -> Self:
         await super().__aenter__()
         if self.task_id is not None:
-            self.logger.progress.start_task(task_id=self.task_id)
+            self._progress.start_task(task_id=self.task_id)
 
         try:
             await self.setup_playlists()
@@ -144,7 +144,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
             raise
 
         if self.task_id is not None and self.position.number < self.position.total:
-            self.logger.progress.stop_task(task_id=self.task_id)
+            self._progress.stop_task(task_id=self.task_id)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -158,7 +158,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
         """Set up the playlists for the given collections and store their state."""
         tasks = map(self._setup_playlist, self.collections)
         remove = self.position.number == self.position.total
-        await self.logger.run_tasks_async(tasks, task_id=self.task_id, remove=remove)
+        await self._run_tasks_async(tasks, task_id=self.task_id, remove=remove)
 
     async def _setup_playlist(self, collection: CollectionModel) -> RemoteMutablePlaylist | None:
         api: PlaylistReadWriteEndpoints = self.api.playlists
@@ -198,7 +198,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
         and restoring any that were not.
         """
         if not self._playlists:
-            self.logger.extra("No playlists were created, skipping teardown")
+            self._logger.extra("No playlists were created, skipping teardown")
 
         # all initially empty playlists were temp playlists - delete them, restore the others
         delete = [pl for pl in self._playlists_initial.values() if pl.count == 0]
@@ -211,7 +211,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
 
     async def _delete_playlists(self, playlists: Collection[RemoteMutablePlaylist]) -> None:
         message = f"Deleting {len(playlists)} temporary playlists"
-        self.logger.extra(message, header=3)
+        self._logger.extra(message, header=3)
 
         uris = {pl.uri for pl in playlists}
         api: PlaylistBatchWriteEndpoints = self.api.playlists.library
@@ -224,10 +224,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
 
     async def _restore_playlists(self, playlists: Collection[RemoteMutablePlaylist]) -> None:
         message = f"Restoring {len(playlists)} playlists"
-        self.logger.extra(message, header=3)
+        self._logger.extra(message, header=3)
 
-        task_id = self.logger.progress.add_task(description="Restoring playlists", total=len(playlists))
-        await self.logger.run_tasks_async(map(self._restore_playlist, playlists), task_id=task_id)
+        task_id = self._progress.add_task(description="Restoring playlists", total=len(playlists))
+        await self._run_tasks_async(map(self._restore_playlist, playlists), task_id=task_id)
 
     async def _restore_playlist(self, playlist: RemoteMutablePlaylist) -> None:
         async with self.concurrency:
@@ -319,8 +319,8 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
     def _print_playlist_links(self):
         header = colored("Created playlists", "blue", attrs=["bold"])
         rows = (f"{playlist.name} - {playlist.uri.public_url}" for playlist in self._playlists.values())
-        rows = (self.logger.generate_message(row, header=3) for row in sorted(rows))
-        self.logger.print(header + ":\n" + "\n".join(rows) + "\n")
+        rows = (self._logger.generate_message(row, header=3) for row in sorted(rows))
+        self._logger.print(header + ":\n" + "\n".join(rows) + "\n")
 
     def _get_playlist_by_name(self, name: str) -> RemoteMutablePlaylist | None:
         for playlist in self._playlists.values():
@@ -328,13 +328,13 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
                 return playlist
 
     async def _print_playlist_items(self, playlist: RemoteMutablePlaylist) -> None:
-        self.logger.print()
+        self._logger.print()
 
         missing_message = colored("No items available", "red", attrs=["bold"])
 
         header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
         table = self.playlist_formatter.format(playlist, indices=True) or missing_message
-        self.logger.print(header + ":\n" + table + "\n")
+        self._logger.print(header + ":\n" + table + "\n")
 
         items = await self.get_current_playlist_items(playlist.uri)
         if items == list(playlist.items):
@@ -345,4 +345,4 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
 
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
         table = self.playlist_formatter.format(playlist, indices=True) or missing_message
-        self.logger.print(header + ":\n" + table + "\n")
+        self._logger.print(header + ":\n" + table + "\n")

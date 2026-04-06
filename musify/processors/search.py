@@ -16,6 +16,7 @@ from .._models.collection.album import AlbumCollection
 from .._models.exception import MusifyValidationError
 from .._models.properties.asynch import HasAsyncOperations
 from .._models.properties.file import IsFile, IsLocalFile
+from .._models.properties.logger import HasProgress
 from .._models.properties.name import HasName
 from .._models.properties.uri import HasURI
 from .._models.remote import RemoteResource
@@ -87,7 +88,7 @@ class SearchResult[T: Any](TotalCountResult):
 type _ApiT = RemoteAPI | HasSearchEndpoints
 
 
-class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
+class Searcher[API: _ApiT](Processor, IsRemoteService, HasProgress, HasAsyncOperations):
     api: API = Field(
         description="The API to use when searching for matches.",
     )
@@ -189,8 +190,8 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
 
         items, skipped = self._split_items(items)
 
-        task_id = self.logger.progress.add_task(description=f"Searching", total=len(items))
-        await self.logger.run_tasks_async(map(_search_and_match_item, items), task_id=task_id)
+        task_id = self._progress.add_task(description=f"Searching", total=len(items))
+        await self._run_tasks_async(map(_search_and_match_item, items), task_id=task_id)
 
         return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
 
@@ -248,8 +249,8 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         async def _search_collection(collection: CollectionModel[T]) -> tuple[str, SearchResult[T]]:
             return await self._search_collection(collection)
 
-        task_id = self.logger.progress.add_task(description=f"Searching", total=len(collections))
-        results = await self.logger.run_tasks_async(map(_search_collection, collections), task_id=task_id)
+        task_id = self._progress.add_task(description=f"Searching", total=len(collections))
+        results = await self._run_tasks_async(map(_search_collection, collections), task_id=task_id)
         return dict(results)
 
     async def _search_collection[T: ResourceModel](
@@ -296,8 +297,8 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
             else:
                 unmatched.append(item)
 
-        task_id = self.logger.progress.add_task(description=f"Searching", total=len(result.unmatched))
-        await self.logger.run_tasks_async(map(_search_and_match_item, result.unmatched), task_id=task_id)
+        task_id = self._progress.add_task(description=f"Searching", total=len(result.unmatched))
+        await self._run_tasks_async(map(_search_and_match_item, result.unmatched), task_id=task_id)
 
         return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped)
 
@@ -418,20 +419,20 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasAsyncOperations):
         """Log the given search results"""
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)
-        self.logger.report(table)
+        self._logger.report(table)
 
     def _log_start(self, items: Collection, default_type: str) -> None:
-        types = self.logger.format_types_to_string(items) or default_type
+        types = self._logger.format_types_to_string(items) or default_type
         message = f"Searching for matches on {self.source} for {len(items)} {types}"
-        self.logger.info(message, header=1)
+        self._logger.info(message, header=1)
 
     def _log_skip(self, message: str) -> None:
-        self.logger.extra(colored(message, "yellow"))
+        self._logger.extra(colored(message, "yellow"))
 
     def _log_debug(self, item: Any, message: str) -> None:
         name = self._get_item_log_name(item)
         name = textwrap.shorten(name, 30, placeholder="...")
-        self.logger.debug(f"{name} | {message}")
+        self._logger.debug(f"{name} | {message}")
 
     @staticmethod
     def _get_item_log_name(item: Any) -> str:

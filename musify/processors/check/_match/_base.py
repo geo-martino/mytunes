@@ -85,4 +85,4 @@ class CheckerMatch[IT: HasMutableURI](Processor, HasLogger, HasImmutableURI):
             messages = f"{count:>6} {messages}"
 
         log = self._format_item_message(method=method, item=item or self.name, messages=messages, pad=pad)
-        self.logger.debug(log)
+        self._logger.debug(log)

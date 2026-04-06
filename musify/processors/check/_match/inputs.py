@@ -116,7 +116,7 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
             match option.casefold():
                 case "p":
                     info = self.item_formatter.format(item)
-                    self.logger.print(info)
+                    self._logger.print(info)
 
                 case "u":
                     self._set_unavailable_uri(item)
@@ -181,5 +181,5 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
             return True
 
         message = f"No match found for this item in the playlist: {self.name!r}"
-        self.logger.warning(colored(message, "red"))
+        self._logger.warning(colored(message, "red"))
         return False

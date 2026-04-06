@@ -34,7 +34,7 @@ from ...._models.properties.audio import HasAudioProperties
 from ...._models.properties.date import HasAddedDate, HasPlayedDate
 from ...._models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
 from ...._models.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
-from ...._models.properties.logger import HasLogger
+from ...._models.properties.logger import HasLogger, HasProgress
 from ...._models.properties.name import HasName
 from ...._models.properties.order import Position
 from ...._models.properties.uri import HasMutableURI, URI
@@ -578,7 +578,7 @@ class LocalTrack[FT: FileType](
         return updated
 
 
-class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
+class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, HasProgress):
     concurrency: SemaphoreT = Field(
         description=(
             "The max concurrency of IO tasks (i.e. loading/saving) of files in this library. "
@@ -619,8 +619,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
 
         self._log_save_tracks_header()
 
-        task_id = self.logger.progress.add_task(description=f"Updating local tracks", total=len(self.tracks))
-        results = await self.logger.run_tasks_async(map(_save_track, self.tracks), task_id=task_id)
+        task_id = self._progress.add_task(description=f"Updating local tracks", total=len(self.tracks))
+        results = await self._run_tasks_async(map(_save_track, self.tracks), task_id=task_id)
         return dict(results)
 
     def _log_save_tracks_header(self) -> None:
@@ -635,15 +635,15 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger):
         if isinstance(self, HasName):
             message += f": {self.name!r}"
 
-        self.logger.info(message, header=2)
+        self._logger.info(message, header=2)
 
     def log_save_tracks_results(self, results: Mapping[Path, Iterable[str]]) -> None:
         """Log the given results of saving tracks."""
         for path, tags in results.items():
             if tags:
-                self.logger.debug(f"Updated {path.name} with tags: {', '.join(tags)}")
+                self._logger.debug(f"Updated {path.name} with tags: {', '.join(tags)}")
             else:
-                self.logger.debug(f"No tags updated for {path.name}")
+                self._logger.debug(f"No tags updated for {path.name}")
 
     @validate_call
     def merge_tracks(

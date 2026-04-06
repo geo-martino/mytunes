@@ -129,7 +129,7 @@ class SpotifyPlaylistEndpoints(
             #  and has access to the playlist.
             #  Just log a warning and return an empty list in this case, rather than raising an exception.
             if isinstance(exc.response, ClientResponse) and exc.response.status == 403:
-                self.logger.warning(
+                self._logger.warning(
                     f"Could not retrieve tracks for playlist {collection.name!r} due to insufficient permissions."
                 )
                 return []

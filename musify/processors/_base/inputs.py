@@ -9,7 +9,7 @@ from termcolor import colored
 
 from musify.processors._base import Processor
 from musify.processors._flow import SkipPage, QuitImmediately
-from ..._models.properties.logger import HasLogger
+from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.properties.order import Position
 from ..._models.result import LogFormatter
 
@@ -42,7 +42,7 @@ class InputProcessor(Processor, HasLogger):
         """Format help text with a given mapping of options. Add an option header to include before options."""
         options = self._options | InputProcessor._options.fget(self)
 
-        width = self.logger.progress.console.width
+        width = self._logger.console.width
         # +2 for ':' and space between cols in tabulate
         max_key_width = max(len(key) for key in options if key) + 2
 
@@ -67,7 +67,7 @@ class InputProcessor(Processor, HasLogger):
         if additional_text := options.get(None):
             log += f"\n{additional_text}"
 
-        self.logger.print(log + "\n")
+        self._logger.print(log + "\n")
 
     def _get_user_input(self, text: str = "Enter input", formatter: LogFormatter | None = None) -> str:
         """Print dialogue with optional text and get the user's input."""
@@ -75,9 +75,9 @@ class InputProcessor(Processor, HasLogger):
             formatter = self.input_formatter
 
         log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
-        option = self.logger.input(log)
+        option = self._logger.input(log)
 
-        self.logger.debug(f"User input: {option}")
+        self._logger.debug(f"User input: {option}")
 
         # we can process common options here and just request for input again
         if self._process_common_options(option):
@@ -106,10 +106,10 @@ class InputProcessor(Processor, HasLogger):
 
     def _log_unrecognised_input(self, text: str, help_key: str = "h") -> None:
         message = f"Unrecognised input: {text!r}. Enter {help_key!r} for valid options."
-        self.logger.warning(colored(message, "red"))
+        self._logger.warning(colored(message, "red"))
 
 
-class PageProcessor(InputProcessor):
+class PageProcessor(InputProcessor, HasProgress):
     """Processor that runs in pages, getting user input and printing formatted options text to the terminal."""
     position: Position = Field(
         description="The current position of this page in the process."
@@ -124,7 +124,7 @@ class PageProcessor(InputProcessor):
     @abstractmethod
     def pause(self) -> None:
         """Pause the process and prompt the user for input to proceed."""
-        self.logger.progress.stop()
+        self._progress.stop()
         self._print_help_text(with_header=True)
 
     def _get_user_input(self, text: str | None = None, formatter: LogFormatter | None = None) -> str | None:

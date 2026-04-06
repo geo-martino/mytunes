@@ -58,7 +58,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
 
         supported_types = types & self.supported_search_types  # filter to only supported types
         if not supported_types:
-            raise MusifyTypeError(f"Unknown search types: {self.logger.format_list_to_string(types)}")
+            raise MusifyTypeError(f"Unknown search types: {self._logger.format_list_to_string(types)}")
 
         params = self._format_query_params(query=query, types=supported_types, limit=limit, **kwargs)
         response = await self._handler.get(self._query_url, params=params)

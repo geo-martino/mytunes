@@ -19,7 +19,7 @@ async def get_albums(library: RemoteLibrary, start: date, end: date) -> list[Rem
     key = api.collection_item_map[kind]
 
     async with library:
-        await library.logger.get_asynchronous_iterator(
+        await library._logger.get_asynchronous_iterator(
             (api.extend_items(album.response, kind=kind, key=key) for album in albums),
             desc="Getting album tracks",
             unit="albums"

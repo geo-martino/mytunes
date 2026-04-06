@@ -66,7 +66,7 @@ class Matcher(Processor, HasLogger):
         if not others:
             message = "No items to match against"
             log = self._format_item_message(method="SKIP", item=item, messages=message, pad="<")
-            self.logger.debug(log)
+            self._logger.debug(log)
             return None
 
         best_match = None
@@ -76,7 +76,7 @@ class Matcher(Processor, HasLogger):
         if not scorers:
             message = "No configured scorers can score this item"
             log = self._format_item_message(method="SKIP", item=item, messages=message, pad="<")
-            self.logger.debug(log)
+            self._logger.debug(log)
             return None
 
         self._log_scorers(scorers, item=item, others=others)
@@ -85,7 +85,7 @@ class Matcher(Processor, HasLogger):
         for other in others:
             other_value = self._get_item_log_value(other)
             log = self._format_item_message(method="ITEM", item=item, messages=other_value, pad="-")
-            self.logger.debug(log)
+            self._logger.debug(log)
 
             score = self.score(item=item, other=other, scorers=scorers)
             if score > self.min_score and score > best_score:
@@ -97,7 +97,7 @@ class Matcher(Processor, HasLogger):
 
             messages = [other_value, f"SCORE={score:.2f}"]
             log = self._format_item_message(method="SUM", item=item, messages=messages, pad="-")
-            self.logger.debug(log)
+            self._logger.debug(log)
 
         messages = [self._get_item_log_value(best_match or other), f"SCORE={best_score:.2f}"]
         if best_score <= self.min_score:
@@ -111,7 +111,7 @@ class Matcher(Processor, HasLogger):
             messages.append("= BEST SCORE")
 
         log = self._format_item_message(method=method, item=item, messages=messages, pad="<")
-        self.logger.debug(log)
+        self._logger.debug(log)
         return best_match  # will be None if no match above min_score was found
 
     def _log_scorers(self, scorers: list[Scorer], item: Any, others: Collection) -> None:
@@ -127,7 +127,7 @@ class Matcher(Processor, HasLogger):
         ]
         log = self._format_item_message(method="START", item=item, messages=messages, pad=">")
 
-        self.logger.debug(log)
+        self._logger.debug(log)
 
     def score[T: AttributeModel | HasName](
             self, item: T, other: T, scorers: Sequence[Scorer] | None = None, score_items_in_collections: bool = True
@@ -145,7 +145,7 @@ class Matcher(Processor, HasLogger):
             if score < scorer.required_score:
                 message = ["SCORER FAILED".ljust(25), f"{scorer.type}={score:.2f} < {scorer.required_score:.2f}"]
                 log = self._format_item_message(method="SKIP", item=item, messages=message, pad="<")
-                self.logger.debug(log)
+                self._logger.debug(log)
                 return 0
 
             scores.append(score)
@@ -191,8 +191,8 @@ class Matcher(Processor, HasLogger):
 
         if not items or not others:
             log = self._format_item_message(method="SKIP", item=item, messages=messages)
-            self.logger.debug(log)
+            self._logger.debug(log)
             return
 
         log = self._format_item_message(method="ITEMS", item=item, messages=messages)
-        self.logger.debug(log)
+        self._logger.debug(log)

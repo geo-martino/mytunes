@@ -35,20 +35,20 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
 
     @property
     def types(self) -> str:
-        return self.logger.format_types_to_string(self.items) or "items"
+        return self._logger.format_types_to_string(self.items) or "items"
 
     def open_sites(self) -> None:
         """Open the sites for this page."""
-        self.logger.debug(f"Opening sites for {len(self.items)} {self.types}")
+        self._logger.debug(f"Opening sites for {len(self.items)} {self.types}")
         tasks = [
             partial(self._open_sites_for_item, item=item, urls=urls)
             for item, urls in zip(self.items, self.urls, strict=True)
         ]
         remove = self.position.number == self.position.total
-        self.logger.run_tasks(tasks, task_id=self.task_id, remove=remove)
+        self._run_tasks(tasks, task_id=self.task_id, remove=remove)
 
     def _open_sites_for_item(self, item: IT, urls: Collection[URL]) -> None:
-        self.logger.debug(f"Opening {len(urls)} URLs for {self._get_item_log_value(item)!r}")
+        self._logger.debug(f"Opening {len(urls)} URLs for {self._get_item_log_value(item)!r}")
         for url in urls:
             webopen(str(url))
 
@@ -92,7 +92,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
         filtered_fields = input_fields & set(self.fields)
 
         if filtered_fields and filtered_fields != input_fields:
-            self.logger.warning(
+            self._logger.warning(
                 f"Some fields were not recognised: {", ".join(input_fields - filtered_fields)}. "
                 f"Using only recognised fields: {", ".join(filtered_fields)}."
             )

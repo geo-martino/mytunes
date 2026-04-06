@@ -16,12 +16,12 @@ from ..._models import ResourceModel
 from ..._models.api import HasAPI
 from ..._models.collection import CollectionModel
 from ..._models.properties.asynch import HasAsyncOperations
-from ..._models.properties.logger import HasLogger
+from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.properties.order import Position
 from ..._models.properties.uri import HasURI, URI
 
 
-class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations):
+class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsyncOperations):
     api: API = Field(
         description="The API to use for checking matches.",
     )
@@ -54,7 +54,7 @@ class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations)
 
         self._log_start(collections)
 
-        task_id = self.logger.progress.add_task(description="Creating playlists", total=len(collections))
+        task_id = self._progress.add_task(description="Creating playlists", total=len(collections))
         batches = list(itertools.batched(collections, self.interval))
         batch_total = len(batches)
 
@@ -74,13 +74,13 @@ class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations)
                 async for name, result in self._check_page(page):
                     results[name] = result
             except SkipPage:
-                self.logger.error("User triggered skip page with skip command")
+                self._logger.error("User triggered skip page with skip command")
                 continue
             except QuitImmediately:
-                self.logger.error("User triggered exit with quit command")
+                self._logger.error("User triggered exit with quit command")
                 break
             except KeyboardInterrupt:
-                self.logger.error("User triggered exit with KeyboardInterrupt")
+                self._logger.error("User triggered exit with KeyboardInterrupt")
                 break
 
         return results
@@ -91,15 +91,15 @@ class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations)
         async with page:
             await page.pause()
 
-            task_id = self.logger.progress.add_task("Matching changes", total=page.count)
-            with self.logger:
+            task_id = self._progress.add_task("Matching changes", total=page.count)
+            with self._progress:
                 for name, uri in zip(page.names, page.uris, strict=True):
                     result = await self._match_page(page, uri=uri)
                     yield name, result
 
-                    self.logger.progress.advance(task_id, advance=1)
+                    self._progress.advance(task_id, advance=1)
 
-            self.logger.progress.remove_task(task_id)
+            self._progress.remove_task(task_id)
 
     async def _match_page[T: ResourceModel](self, page: CheckerPage[API, T], uri: URI) -> CheckResult[T]:
         items = page.get_collection_items(uri)
@@ -108,10 +108,10 @@ class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations)
         if not playlist_result.skipped:
             return playlist_result
 
-        self.logger.progress.stop()
+        self._progress.stop()
         matcher = InputMatch(page=page, items=playlist_result.skipped, uri=uri, matcher=self.matcher)
         input_result = await matcher.match()
-        self.logger.progress.start()
+        self._progress.start()
         return playlist_result.merge_results(input_result)
 
     ###########################################################################
@@ -121,19 +121,19 @@ class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations)
         """Log the given check results"""
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)
-        self.logger.report(table)
+        self._logger.report(table)
 
     def _log_start(self, collections: Sequence[CollectionModel]) -> None:
-        types = self.logger.format_types_to_string(collections)
+        types = self._logger.format_types_to_string(collections)
         message = (
             f"Checking items in {len(collections)} {types} by creating "
             f"temporary {self.source} playlists for {self.username}"
         )
-        self.logger.info(message, header=1)
+        self._logger.info(message, header=1)
 
     def _log_page(self, page: CheckerPage) -> None:
         message = f"Creating {page.count} {self.source} playlists for {self.username}"
-        self.logger.info(message, header=2)
+        self._logger.info(message, header=2)
 
     def _validate_collections(self, collections: Sequence[CollectionModel]) -> Sequence[CollectionModel]:
         collections = [
@@ -141,6 +141,6 @@ class Checker[API: _ApiT](Processor, HasLogger, HasAPI[API], HasAsyncOperations)
             if coll.count > 0 and any(isinstance(item, HasURI) for item in coll.items)
         ]
         if len(collections) == 0:
-            self.logger.extra(colored("No valid collections or items to check.", "yellow"))
+            self._logger.extra(colored("No valid collections or items to check.", "yellow"))
 
         return collections

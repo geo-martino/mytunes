@@ -75,7 +75,7 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
             messages.append(f"{item_val!r} -> {other_val!r}")
 
         log = self._format_item_message(method=method, item=item, messages=messages)
-        self.logger.debug(log)
+        self._logger.debug(log)
 
     @staticmethod
     def _clean_log_value[T](value: T) -> T:

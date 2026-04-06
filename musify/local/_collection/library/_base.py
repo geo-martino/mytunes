@@ -81,14 +81,14 @@ class LocalLibrary(
         return ValueFilter(values=names)
 
     async def load(self) -> None:
-        self.logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
+        self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
 
-        with self.logger:
+        with self._progress:
             await self.load_tracks()
             playlist_results = await self.load_playlists()
 
         self._log_load_playlists(playlist_results)
-        self.logger.print_line(STAT)
+        self._logger.print_line(STAT)
 
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
         results: dict[str, LibraryURIsResult | None] = self._generate_playlist_uris_results()
@@ -96,8 +96,8 @@ class LocalLibrary(
         results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        self.logger.stat(table)
-        self.logger.print_line(STAT)
+        self._logger.stat(table)
+        self._logger.print_line(STAT)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -107,8 +107,8 @@ class LocalLibrary(
         errors = list(map(lambda e: colored(e, "red"), sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
-        self.logger.warning(log)
-        self.logger.print_line()
+        self._logger.warning(log)
+        self._logger.print_line()
         self.errors.clear()
 
     ###########################################################################
@@ -122,25 +122,25 @@ class LocalLibrary(
         """
         try:
             async with self.concurrency:
-                self.logger.debug(f"Loading track: {path}")
+                self._logger.debug(f"Loading track: {path}")
                 file = await LocalTrack.load_file(path)
 
             return LOCAL_TRACK_ADAPTER.validate_python(file, context=self.tracks_load_settings)
 
         except (MusifyError, MutagenError, ValueError, OSError) as ex:
-            self.logger.debug(f"Load error for track: {path} - {ex}")
+            self._logger.debug(f"Load error for track: {path} - {ex}")
             self.errors.append(path)
 
     async def load_tracks(self) -> int:
         if not (paths := set(self._track_paths)):
             return 0
 
-        self.logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
+        self._logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
 
-        task_id = self.logger.progress.add_task(
+        task_id = self._progress.add_task(
             description=f"Loading {self.source} tracks", total=len(paths)
         )
-        tracks = await self.logger.run_tasks_async(map(self.load_track, paths), task_id=task_id)
+        tracks = await self._run_tasks_async(map(self.load_track, paths), task_id=task_id)
         self.tracks.replace(tracks)
 
         self._log_errors("Could not load the following tracks")
@@ -156,7 +156,7 @@ class LocalLibrary(
         folders = self.library_folders
         folder_message = "folder" if len(folders) == 1 else "folders"
         message = f"Scanning {len(folders)} {self.source} library {folder_message} for tracks with extensions:"
-        self.logger.info(message, header=2, hidden=self.logger.format_list_to_string(extensions))
+        self._logger.info(message, header=2, hidden=self._logger.format_list_to_string(extensions))
 
         for folder in folders:
             for path in folder.rglob(f"[!.]*"):
@@ -172,7 +172,7 @@ class LocalLibrary(
         key = f"{self.source.upper()} TRACK URIS"
         table = result.generate_table(results={key: result})
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
         source = self.tracks_load_settings.remote_source
@@ -189,7 +189,7 @@ class LocalLibrary(
         """
         try:
             async with self.concurrency:
-                self.logger.debug(f"Loading playlist: {path}")
+                self._logger.debug(f"Loading playlist: {path}")
 
                 playlist = LOCAL_PLAYLIST_ADAPTER.validate_python(path)
                 playlist.path_mapper = self.path_mapper
@@ -198,19 +198,19 @@ class LocalLibrary(
                 return playlist, result
 
         except (MusifyError, ValueError, FileNotFoundError) as ex:
-            self.logger.debug(f"Load error for playlist: {path} - {ex}")
+            self._logger.debug(f"Load error for playlist: {path} - {ex}")
             self.errors.append(path)
 
     async def load_playlists(self) -> dict[str, LoadPlaylistResult]:
         if not (paths := set(self._playlist_paths)):
             return {}
 
-        self.logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
+        self._logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
 
-        task_id = self.logger.progress.add_task(
+        task_id = self._progress.add_task(
             description=f"Loading {self.source} playlists", total=len(paths)
         )
-        task = self.logger.run_tasks_async(map(self.load_playlist, paths), task_id=task_id)
+        task = self._run_tasks_async(map(self.load_playlist, paths), task_id=task_id)
 
         playlists: list[LocalPlaylist] = []
         results: dict[str, LoadPlaylistResult] = {}
@@ -243,7 +243,7 @@ class LocalLibrary(
 
         folder_message = "folder" if len(folders) == 1 else "folders"
         message = f"Scanning {len(folders)} {self.source} library {folder_message} for playlists with extensions:"
-        self.logger.info(message, header=2, hidden=self.logger.format_list_to_string(extensions))
+        self._logger.info(message, header=2, hidden=self._logger.format_list_to_string(extensions))
 
         total = 0
         filtered = 0
@@ -260,7 +260,7 @@ class LocalLibrary(
                 total += 1
                 yield path
 
-        self.logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
+        self._logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
     def log_playlists(self, results: dict[str, LoadPlaylistResult] = None) -> None:
         if results:
@@ -271,14 +271,14 @@ class LocalLibrary(
         header = f"{self.source.upper()} PLAYLISTS LOADED"
         table = LoadPlaylistResult.generate_table(results=results, header=header)
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _log_playlist_uris(self) -> None:
         results = self._generate_playlist_uris_results()
         header = f"{self.source.upper()} PLAYLIST URIS"
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
         source = self.tracks_load_settings.remote_source
@@ -298,12 +298,12 @@ class LocalLibrary(
             async with self.concurrency:
                 return pl.name, await pl.save(dry_run=dry_run)
 
-        self.logger.info(f"Saving {self.playlists.count} playlists in {self.source} {self.type}", header=2)
+        self._logger.info(f"Saving {self.playlists.count} playlists in {self.source} {self.type}", header=2)
 
-        task_id = self.logger.progress.add_task(
+        task_id = self._progress.add_task(
             description=f"Updating {self.source} playlists", total=self.playlists.count
         )
-        results = await self.logger.run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
+        results = await self._run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
         return dict(results)
 
     ###########################################################################

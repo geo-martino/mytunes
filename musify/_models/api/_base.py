@@ -168,7 +168,7 @@ class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
                             f"Cannot run {self.source.title()} operation for {kind}. "
                             f"API does not support {context}."
                         )
-                        self.logger.warning(message)
+                        self._logger.warning(message)
                         return invalid_wrapper()
 
                 return func(self, *args, **kwargs)

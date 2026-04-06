@@ -15,6 +15,7 @@ from musify._models.api.playlist import PlaylistReadWriteEndpoints
 from musify._models.collection import CollectionModel
 from musify._models.collection.playlist import RemoteMutablePlaylist
 from musify._models.item.track import RemoteTrack
+from musify._models.properties.logger import HasProgress
 from musify._models.properties.order import Position
 from musify.exception import MusifyError
 from musify.logger import Logger
@@ -110,7 +111,7 @@ class TestPlaylistManagement(BaseModelTester):
             mocker: MockerFixture,
             faker: Faker,
     ):
-        mock_wrap_tasks = mocker.spy(Logger, "_wrap_tasks_async")
+        mock_wrap_tasks = mocker.spy(HasProgress, "_wrap_tasks_async")
         mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
 
         async def _random_exception(*_, **__):

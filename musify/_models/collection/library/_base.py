@@ -9,7 +9,7 @@ from musify._models.collection import CollectionModel
 from musify._models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
 from musify._models.item.track import Track, HasTracks, HasMutableTracks
 from musify._models.properties.asynch import HasAsyncOperations
-from musify._models.properties.logger import HasLogger
+from musify._models.properties.logger import HasLogger, HasProgress
 from musify.processors.filters.composite import IncludeExcludeFilter
 from musify.processors.filters.values import NameFilter
 
@@ -28,7 +28,12 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
 
 # noinspection PyAbstractClass
 class Library[TK, TV: Track, KP, VP: Playlist](
-    ResourceModel, HasTracksAndPlaylists[TK, TV, KP, VP], HasAsyncOperations, HasLogger, metaclass=makecls()
+    ResourceModel,
+    HasTracksAndPlaylists[TK, TV, KP, VP],
+    HasAsyncOperations,
+    HasLogger,
+    HasProgress,
+    metaclass=makecls()
 ):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"

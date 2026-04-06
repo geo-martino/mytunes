@@ -11,7 +11,7 @@ from ...._models.sequence import UniqueSequence
 class PlaylistMatch[IT: HasMutableURI](CheckerMatch[IT]):
     async def match(self) -> CheckResult[IT]:
         """Match the given that have missing URIs with items in the current playlist."""
-        self.logger.info(f"Checking for changes to items in {self.page.source} playlist: {self.name}", header=2)
+        self._logger.info(f"Checking for changes to items in {self.page.source} playlist: {self.name}", header=2)
 
         current = await self.page.get_current_playlist_items(self.uri)
         added, removed, unchanged, unavailable, missing = self._compare_items(others=current)

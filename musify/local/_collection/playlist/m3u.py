@@ -125,11 +125,11 @@ class M3U(LocalPlaylist[PathFilter]):
         self.matcher: PathFilter = PathFilter(values=set(paths), path_mapper=self.path_mapper)
 
         if not tracks:  # load the tracks from the paths in file
-            task_id = self.logger.progress.add_task(
+            task_id = self._progress.add_task(
                 description=f"Loading {type(self).__name__} tracks", visible=False
             )
             tasks = map(self._load_track, self.matcher.paths_valid)
-            tracks = await self.logger.run_tasks_async(tasks, task_id=task_id)
+            tracks = await self._run_tasks_async(tasks, task_id=task_id)
             tracks = MutableUniqueSequence(tracks)
 
         result = self._load_from_tracks(tracks, paths=paths)
@@ -185,4 +185,4 @@ class M3U(LocalPlaylist[PathFilter]):
     def log_save(self, result: SyncM3UResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncM3UResult.generate_table(results={self.name: result})
-        self.logger.stat(table)
+        self._logger.stat(table)

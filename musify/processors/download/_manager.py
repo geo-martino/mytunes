@@ -15,11 +15,11 @@ from .._base import Processor
 from .._flow import SkipPage, QuitImmediately
 from ..._models import ResourceModel
 from ..._models.collection import CollectionModel
-from ..._models.properties.logger import HasLogger
+from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.properties.order import Position
 
 
-class StoreManager(Processor, HasLogger):
+class StoreManager(Processor, HasLogger, HasProgress):
     """Runs operations for helping the user to download items from online stores."""
 
     stores: conlist(AudioStore.annotation, min_length=1) = Field(
@@ -60,8 +60,8 @@ class StoreManager(Processor, HasLogger):
         self._log_start(items, fields=self.fields)
         item_urls = self._format_urls_for_items(items, fields=self.fields)
 
-        types = self.logger.format_types_to_string(items)
-        task_id = self.logger.progress.add_task(description=f"Opening sites for {types}", total=len(items))
+        types = self._logger.format_types_to_string(items)
+        task_id = self._progress.add_task(description=f"Opening sites for {types}", total=len(items))
         batches = list(itertools.batched(item_urls, self.interval))
         batch_total = len(batches)
 
@@ -83,15 +83,15 @@ class StoreManager(Processor, HasLogger):
                     if fields:
                         page.urls = [self._format_urls_for_item(item, fields=fields) for item in page.items]
 
-                self.logger.progress.start()
+                self._progress.start()
             except SkipPage:
-                self.logger.error("User triggered skip page with skip command")
+                self._logger.error("User triggered skip page with skip command")
                 continue
             except QuitImmediately:
-                self.logger.error("User triggered exit with quit command")
+                self._logger.error("User triggered exit with quit command")
                 break
             except KeyboardInterrupt:
-                self.logger.error("User triggered exit with KeyboardInterrupt")
+                self._logger.error("User triggered exit with KeyboardInterrupt")
                 break
 
     def _format_urls_for_items[T: ResourceModel](
@@ -123,15 +123,15 @@ class StoreManager(Processor, HasLogger):
                 unique_items.append((item, urls))
             unique_urls.update(urls)
 
-        self.logger.print(f"{repeated} urls were repeated and will only be opened once.")
+        self._logger.print(f"{repeated} urls were repeated and will only be opened once.")
         return unique_items
 
     ###########################################################################
     ## Logging
     ###########################################################################
     def _log_start(self, items: Collection[ResourceModel], fields: Iterable[str]) -> None:
-        types = self.logger.format_types_to_string(items)
+        types = self._logger.format_types_to_string(items)
         message = (
             f"Opening sites for {len(items)} {types} on {len(self.stores)} stores using fields: {', '.join(fields)}"
         )
-        self.logger.info(message, header=1)
+        self._logger.info(message, header=1)

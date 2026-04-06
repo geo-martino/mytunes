@@ -2,7 +2,6 @@ import logging
 import sys
 from collections.abc import Generator
 from copy import copy, deepcopy
-from functools import partial
 
 import pytest
 
@@ -82,70 +81,3 @@ def test_print_line(logger: Logger, capfd: pytest.CaptureFixture):
     assert capfd.readouterr().out == ""
     logger.print_line(0)
     assert capfd.readouterr().out == ""
-
-
-def test_run_tasks_sync_gets_results(logger: Logger):
-    tasks = [partial(lambda x: x, i) for i in range(10)]
-    task_id = logger.progress.add_task("Test", total=len(tasks))
-
-    results = logger.run_tasks(tasks, task_id=task_id, remove=False)
-
-    assert task_id in logger.progress.task_ids
-    assert next(task for task in logger.progress.tasks if task.id == task_id).completed
-    assert len(results) == len(tasks)
-    assert sorted(results) == [i for i in range(len(tasks))]
-
-
-def test_run_tasks_sync_removes_task(logger: Logger):
-    tasks = [partial(lambda x: x, i) for i in range(10)]
-    task_id = logger.progress.add_task("Test", total=len(tasks))
-
-    logger.run_tasks(tasks, task_id=task_id, remove=True)
-    assert task_id not in logger.progress.task_ids
-
-
-def test_run_tasks_sync_runs_without_task_id(logger: Logger):
-    tasks = [partial(lambda x: x, i) for i in range(10)]
-
-    results = logger.run_tasks(tasks)
-
-    assert len(results) == len(tasks)
-    assert sorted(results) == [i for i in range(len(tasks))]
-
-
-async def test_run_tasks_async_gets_results(logger: Logger):
-    async def _task(i: int) -> int:
-        return i
-
-    tasks = [_task(i) for i in range(10)]
-    task_id = logger.progress.add_task("Test", total=len(tasks))
-
-    results = await logger.run_tasks_async(tasks, task_id=task_id, remove=False)
-
-    assert task_id in logger.progress.task_ids
-    assert next(task for task in logger.progress.tasks if task.id == task_id).completed
-    assert len(results) == len(tasks)
-    assert sorted(results) == [i for i in range(len(tasks))]
-
-
-async def test_run_tasks_async_removes_task(logger: Logger):
-    async def _task(i: int) -> int:
-        return i
-
-    tasks = [_task(i) for i in range(10)]
-    task_id = logger.progress.add_task("Test", total=len(tasks))
-
-    await logger.run_tasks_async(tasks, task_id=task_id, remove=True)
-    assert task_id not in logger.progress.task_ids
-
-
-async def test_run_tasks_async_runs_without_task_id(logger: Logger):
-    async def _task(i: int) -> int:
-        return i
-
-    tasks = [_task(i) for i in range(10)]
-
-    results = await logger.run_tasks_async(tasks)
-
-    assert len(results) == len(tasks)
-    assert sorted(results) == [i for i in range(len(tasks))]

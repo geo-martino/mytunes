@@ -230,7 +230,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     def log_load(self, result: GroupResult) -> None:
         """Log the given results of loading tracks."""
         table = GroupResult.generate_table(results={self.name: result})
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     async def save(self, dry_run: bool = True, *_, **__) -> SyncXAutoPFResult:
         """
@@ -307,7 +307,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     def log_save(self, result: SyncXAutoPFResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncXAutoPFResult.generate_table(results={self.name: result})
-        self.logger.stat(table)
+        self._logger.stat(table)
 
 
 class _XMLField(metaclass=ABCMeta):

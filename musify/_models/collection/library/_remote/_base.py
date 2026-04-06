@@ -73,9 +73,9 @@ class RemoteLibrary[
         return await super().__aexit__(exc_type, exc_val, exc_tb)
 
     async def load(self):
-        self.logger.info(f"Loading {self._log_name} library", header=1)
+        self._logger.info(f"Loading {self._log_name} library", header=1)
 
-        with self.logger:
+        with self._progress:
             await self.load_playlists()
             await self.load_playlist_items()  # TODO: ADD ME BACK
 
@@ -87,7 +87,7 @@ class RemoteLibrary[
             # await self.load_library_artists()  # TODO: ADD ME BACK
             # await self.load_library_artist_albums()  # TODO: ADD ME BACK
 
-        self.logger.print_line(STAT)
+        self._logger.print_line(STAT)
 
         header = f"{self._log_name.upper()} LIBRARY"
         results: dict[str, Result | None] = self._generate_playlist_results()
@@ -97,8 +97,8 @@ class RemoteLibrary[
         results["SAVED ALBUMS"] = self._generate_album_results()
         table = Result.generate_table(results=results, header=header)
 
-        self.logger.print_line(STAT)
-        self.logger.stat(table)
+        self._logger.print_line(STAT)
+        self._logger.stat(table)
 
     def dump(self) -> RemoteLibraryDump[UT]:
         names_seen = set()
@@ -138,7 +138,7 @@ class RemoteLibrary[
     async def load_playlists(self) -> bool:
         api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistBatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} playlists", header=2)
+        self._logger.info(f"Loading {self._log_name} playlists", header=2)
 
         playlists = await api.playlists.library.get_all()
         if self.playlist_filter is not None:
@@ -163,7 +163,7 @@ class RemoteLibrary[
         if not playlists:
             return False
 
-        self.logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
+        self._logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
 
         async def _extend_playlist_tracks(pl: PT) -> None:
             async with self.concurrency:
@@ -171,10 +171,10 @@ class RemoteLibrary[
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
-        task_id = self.logger.progress.add_task(
+        task_id = self._progress.add_task(
             description=f"Loading {self.source.title()} playlist tracks", total=len(playlists),
         )
-        await self.logger.run_tasks_async(map(_extend_playlist_tracks, playlists), task_id=task_id)
+        await self._run_tasks_async(map(_extend_playlist_tracks, playlists), task_id=task_id)
 
         return True
 
@@ -183,7 +183,7 @@ class RemoteLibrary[
         header = f"{self._log_name.upper()} PLAYLISTS"
         table = RemotePlaylistsResult.generate_table(results=results, header=header)
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[PT]]:
         return RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
@@ -201,7 +201,7 @@ class RemoteLibrary[
     async def load_tracks(self) -> bool:
         api: HasTrackEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} library tracks", header=2)
+        self._logger.info(f"Loading {self._log_name} library tracks", header=2)
 
         tracks = await api.tracks.library.get_all()
         # noinspection PyProtectedMember
@@ -214,7 +214,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} TRACKS"
         table = result.generate_table(results={key: result})
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _generate_track_results(self) -> RemoteTracksResult[TT]:
         return RemoteTracksResult.from_library(self.tracks, self.playlists.unique, self.albums)
@@ -233,7 +233,7 @@ class RemoteLibrary[
         """Load all artists available for this library. Replaces all currently loaded artists."""
         api: HasArtistEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} library artists", header=2)
+        self._logger.info(f"Loading {self._log_name} library artists", header=2)
 
         artists = await api.artists.library.get_all()
         self.artists.clear()
@@ -255,7 +255,7 @@ class RemoteLibrary[
         if not artists:
             return False
 
-        self.logger.info(f"Loading albums for {len(artists)} library artists in {self._log_name} library", header=2)
+        self._logger.info(f"Loading albums for {len(artists)} library artists in {self._log_name} library", header=2)
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
             async with self.concurrency:
@@ -264,10 +264,10 @@ class RemoteLibrary[
             artist.albums.clear()
             artist.albums.extend(albums)
 
-        task_id = self.logger.progress.add_task(
+        task_id = self._progress.add_task(
             description=f"Loading {self.source.title()} artist albums", total=len(artists),
         )
-        await self.logger.run_tasks_async(map(_extend_artist_albums, artists), task_id=task_id)
+        await self._run_tasks_async(map(_extend_artist_albums, artists), task_id=task_id)
 
         return True
 
@@ -277,7 +277,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} ARTISTS"
         table = result.generate_table(results={key: result})
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _generate_artist_results(self) -> RemoteArtistsResult[RT]:
         return RemoteArtistsResult(artists=self.artists)
@@ -296,7 +296,7 @@ class RemoteLibrary[
         """Load all albums available for this library. Replaces all currently loaded albums."""
         api: HasAlbumEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
 
-        self.logger.info(f"Loading {self._log_name} library albums", header=2)
+        self._logger.info(f"Loading {self._log_name} library albums", header=2)
 
         albums = await api.albums.library.get_all()
         self.albums.clear()
@@ -318,7 +318,7 @@ class RemoteLibrary[
         if not albums:
             return True
 
-        self.logger.info(f"Loading tracks for {len(albums)} library albums in {self._log_name} library", header=2)
+        self._logger.info(f"Loading tracks for {len(albums)} library albums in {self._log_name} library", header=2)
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
             async with self.concurrency:
@@ -326,10 +326,10 @@ class RemoteLibrary[
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 
-        task_id = self.logger.progress.add_task(
+        task_id = self._progress.add_task(
             description=f"Loading {self.source.title()} album tracks", total=len(albums),
         )
-        await self.logger.run_tasks_async(map(_extend_album_tracks, albums), task_id=task_id)
+        await self._run_tasks_async(map(_extend_album_tracks, albums), task_id=task_id)
 
         return True
 
@@ -339,7 +339,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} ALBUMS"
         table = result.generate_table(results={key: result})
 
-        self.logger.stat(table)
+        self._logger.stat(table)
 
     def _generate_album_results(self) -> RemoteAlbumsResult[AT]:
         return RemoteAlbumsResult(albums=self.albums)
