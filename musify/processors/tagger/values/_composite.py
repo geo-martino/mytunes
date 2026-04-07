@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from string import Formatter
-from typing import final, Sequence, Self
+from typing import final, Self
 
 from pydantic import Field, model_validator, ValidationError, validate_call
 

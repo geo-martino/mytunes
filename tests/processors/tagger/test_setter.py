@@ -1,13 +1,10 @@
-from contextlib import suppress
 from unittest.mock import patch
 
 import pytest
 from faker import Faker
-from pydantic import ValidationError
 
 from musify._models import AttributeModel
 from musify._models.item.track import Track
-from musify._models.properties.order import Position
 from musify.exception import MusifyValueError
 from musify.processors.sort import ItemSorter
 from musify.processors.tagger._setter import ValueSetter, GroupedSetter, SortedSetter, IncrementalSetter

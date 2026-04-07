@@ -3,9 +3,9 @@ from typing import Union
 
 from pydantic import AliasChoices, Field
 
+from musify.processors.filters import Filter
 from ._setter import Setter
 from .._base import Processor
-from musify.processors.filters import Filter
 from ..._models import AttributeModel
 
 
