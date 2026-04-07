@@ -72,7 +72,7 @@ class TestPlaylistManagement(BaseModelTester):
             mock_get_playlist: Mock,
             mock_create_playlist: Mock,
             mock_sync_playlist: Mock,
-    ) -> None:
+    ):
         model.use_existing_playlists = True
 
         playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())
@@ -92,7 +92,7 @@ class TestPlaylistManagement(BaseModelTester):
             mock_get_playlist: Mock,
             mock_create_playlist: Mock,
             mock_sync_playlist: Mock,
-    ) -> None:
+    ):
         model.use_existing_playlists = False
 
         playlist = next(pl for pl in playlists if pl.name.casefold() == collection.name.casefold())

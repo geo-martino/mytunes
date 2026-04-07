@@ -26,7 +26,10 @@ class Position(AttributeModel):
         default=None,
     )
     zero_fill: Annotated[bool | NonNegativeInt, Attribute()] = Field(
-        description="Number of digits to zero-fill each number when rendering the position as a string.",
+        description=(
+            "Number of digits to zero-fill each number when rendering the position as a string. ",
+            "Alternatively if true, apply zero-fill to the number based on the number of digits of the total."
+        ),
         default=False,
     )
 

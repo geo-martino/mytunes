@@ -14,7 +14,7 @@ from musify._models.properties.order import Position
 from musify.exception import MusifyTypeError
 from musify.local._item.track import LocalTrack
 from musify.local._item.track.mp3 import MP3
-from musify.processors.compare import Comparer, COMPARISON_FIELDS
+from musify.processors.compare import Comparer, _TAG_FIELD_MAP
 from musify.processors.time import TimeMapper
 from tests.testers import BaseModelTester
 
@@ -68,7 +68,7 @@ class TestComparer(BaseModelTester):
         assert model._processor_method == model._in_range
         assert model._expected_args == ["self", "actual", "expected"]
 
-    def test_equality(self, model: Comparer):
+    def test_equality(self, model: Comparer, faker: Faker):
         assert model == copy(model)
 
         new_filter = Comparer(
@@ -80,7 +80,7 @@ class TestComparer(BaseModelTester):
         assert model == new_filter
 
         while new_filter.field == model.field:
-            new_filter.field = choice([field for field in COMPARISON_FIELDS if field not in ("uri",)])
+            new_filter.field = faker.random_element(_TAG_FIELD_MAP.keys())
         assert model != new_filter
 
     def test_convert_expected_to_none(self):

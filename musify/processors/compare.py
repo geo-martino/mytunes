@@ -8,7 +8,7 @@ from contextlib import suppress
 from datetime import datetime
 from functools import cached_property
 from types import NoneType
-from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final
+from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final, TypeAlias
 
 from pydantic import Field, TypeAdapter, model_validator
 from pydantic.alias_generators import to_snake
@@ -20,25 +20,13 @@ from musify._types import LowerSnakeCase, Number
 from musify.exception import MusifyTypeError
 from musify.processors.time import TimeMapper
 from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
+from ._types import get_tag_fields_map, get_tag_fields_type, _TAG_FIELD_MAP, _TAG_FIELD_TYPE
 from .._models import AttributeModel
 from .._models.item.track import Track
 from .._models.properties.audio import HasAudioProperties
 from .._models.properties.date import HasAddedDate, HasPlayedDate
 from .._models.properties.file import IsLocalFile
 from .._models.properties.name import HasName
-
-_COMPARISON_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
-    Track,
-    IsLocalFile,
-    HasAudioProperties,
-    HasAddedDate,
-    HasPlayedDate,
-})
-_COMPARISON_FIELDS_MAP = {
-    field: cls for cls in _COMPARISON_TAG_TYPES for field in cls.__tag_attributes__
-}
-COMPARISON_FIELDS = tuple(_COMPARISON_FIELDS_MAP)
-type _COMPARISON_FIELDS_TYPE = Literal[*COMPARISON_FIELDS]
 
 
 @final
@@ -63,7 +51,7 @@ class Comparer(DynamicProcessor):
         description="Expected value/s to match on.",
         default=None,
     )
-    field: _COMPARISON_FIELDS_TYPE | None = Field(
+    field: Union[_TAG_FIELD_TYPE, NoneType] = Field(
         description="The field to match on.",
         default=None,
     )
@@ -81,7 +69,7 @@ class Comparer(DynamicProcessor):
         if self.field is None:
             return self._extract_type_from_annotation(NoneType)
 
-        match _COMPARISON_FIELDS_MAP[self.field].get_field_info(self.field):
+        match _TAG_FIELD_MAP[self.field].get_field_info(self.field):
             case FieldInfo() as field:
                 annotation = field.annotation
             case property() as prop:

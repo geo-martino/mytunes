@@ -431,7 +431,7 @@ class TestCollectionSearcher(SearcherTester):
         __abstractmethods__=set(),
         _items=MagicMock(return_value=()),
     )
-    def test_collection_on_items_only(self, model: Searcher, collection: CollectionModel, faker: Faker) -> None:
+    def test_collection_on_items_only(self, model: Searcher, collection: CollectionModel, faker: Faker):
         assert isinstance(collection, ResourceModel) and isinstance(collection, CollectionModel)
         assert not model._should_search_on_items_only(collection)
         assert model._should_search_on_items_only(CollectionModel())  # not a resource model
@@ -445,7 +445,7 @@ class TestCollectionSearcher(SearcherTester):
         __abstractmethods__=set(),
         _items=MagicMock(return_value=()),
     )
-    def test_album_on_items_only(self, model: Searcher, tracks: list[Track], faker: Faker) -> None:
+    def test_album_on_items_only(self, model: Searcher, tracks: list[Track], faker: Faker):
         album = Album(name=faker.sentence(), compilation=False)
         for track in tracks:
             track.album = album

@@ -6,12 +6,13 @@ from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collect
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
-from typing import Any, Literal, Annotated, SupportsFloat
+from typing import Any, Literal, Annotated, SupportsFloat, Union
 
 from pydantic import Field, field_validator, field_serializer
 
 from musify.exception import MusifyValueError, MusifyAttributeError
 from ._base import Processor
+from ._types import get_tag_fields_map, get_tag_fields_type, _TAG_FIELD_TYPE
 from .._models import ResourceModel, IntEnumModel, AttributeModel
 from .._models.item.artist import HasArtists
 from .._models.item.track import Track
@@ -20,19 +21,6 @@ from .._models.properties.date import HasAddedDate, HasPlayedDate
 from .._models.properties.file import IsLocalFile
 from .._models.properties.name import HasName
 from .._models.properties.rating import HasRating
-
-_SORT_TAG_TYPES: frozenset[type[AttributeModel]] = frozenset({
-    Track,
-    IsLocalFile,
-    HasAudioProperties,
-    HasAddedDate,
-    HasPlayedDate,
-})
-_SORT_FIELDS_MAP = {
-    field: cls for cls in _SORT_TAG_TYPES for field in cls.__tag_attributes__
-}
-SORT_FIELDS = frozenset(_SORT_FIELDS_MAP)
-type _SORT_FIELDS_TYPE = Literal[*SORT_FIELDS]
 
 
 class ShuffleMode(IntEnumModel):
@@ -62,7 +50,7 @@ class ItemSorter(Processor):
         * A ``shuffle_weight`` of 1 will group the tracks by artist, shuffling artists randomly.
         * A ``shuffle_weight`` of -1 will shuffle the items randomly.
     """
-    sort_fields: Mapping[_SORT_FIELDS_TYPE, bool] = Field(
+    sort_fields: Mapping[_TAG_FIELD_TYPE, bool] = Field(
         description=(
             "Fields to sort by. If defined, this value will always take priority over any shuffle settings "
             "i.e. shuffle settings will be ignored."

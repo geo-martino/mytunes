@@ -136,8 +136,8 @@ class TestImageURL(BaseModelTester):
         assert model == ImageURL(
             url=model.url,
             type=model.type,
-            height=faker.random_int(),
-            width=faker.random_int()
+            height=faker.random_int(1),
+            width=faker.random_int(1),
         )
 
         assert model != ImageURL(
