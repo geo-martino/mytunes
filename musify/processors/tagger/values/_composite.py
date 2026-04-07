@@ -7,13 +7,14 @@ from pydantic import Field, model_validator, ValidationError, validate_call
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
 from musify.processors._types import _TAG_FIELD_MAP
-from musify.processors.tagger._value import FieldValue
-from ..._models import AttributeModel, BaseModel
-from ..._models.exception import MusifyValidationError
+from musify.processors.tagger.values._fields import FieldValue
+from ._base import Value
+from ...._models import AttributeModel
+from ...._models.exception import MusifyValidationError
 
 
 # noinspection PyAbstractClass
-class CompositeValue[IT: AttributeModel](BaseModel):
+class CompositeValue[IT: AttributeModel](Value[IT, str]):
     @abstractmethod
     def get(self, item: IT) -> str:
         """Get the combined value from the given item's tags."""
@@ -51,7 +52,7 @@ class TemplateValue[IT: AttributeModel](CompositeValue[IT]):
     template: StrippedString = Field(
         description="The template of the tag value.",
     )
-    fields: Sequence[FieldValue.annotation] = Field(
+    fields: Sequence[Value.annotation] = Field(
         description="The fields to use to format the template.",
         default_factory=tuple,
     )

@@ -1,7 +1,7 @@
 import re
 from copy import copy
 from datetime import datetime, date, timedelta
-from random import choice, sample
+from random import sample
 
 import pytest
 from faker import Faker

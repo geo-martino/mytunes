@@ -4,12 +4,13 @@ from typing import Any
 
 from pydantic import Field, model_validator
 
-from .._types import get_tag_fields_type
-from ..._models import AttributeModel, BaseModel
+from ._base import Value
+from ..._types import get_tag_fields_type
+from ...._models import AttributeModel
 
 
 # noinspection PyAbstractClass
-class CollectionValue[IT: AttributeModel, VT: Any](BaseModel):
+class CollectionValue[IT: AttributeModel, VT: Any](Value[Iterable[IT], VT]):
     field: get_tag_fields_type() = Field(
         description="The field from which to get a tag value from.",
     )
@@ -27,7 +28,7 @@ class CollectionValue[IT: AttributeModel, VT: Any](BaseModel):
         raise NotImplementedError
 
     def _get_values(self, items: Iterable[IT]) -> list[VT]:
-        values = [getattr(item, self.field) for item in items]
+        values = (getattr(item, self.field) for item in items)
         return list(filter(None, values))
 
 

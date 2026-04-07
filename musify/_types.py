@@ -43,8 +43,6 @@ type Number = int | float
 ###########################################################################
 def to_set(value: Any) -> set[Any] | None:
     """Converts a value to a set."""
-    from ._models import BaseModel  # to prevent cyclical imports
-
     match value:
         case None:
             return
@@ -61,8 +59,6 @@ TO_SET = BeforeValidator(to_set)
 
 def to_tuple(value: Any) -> tuple[Any] | None:
     """Converts a value to a tuple."""
-    from ._models import BaseModel  # to prevent cyclical imports
-
     match value:
         case None:
             return
@@ -79,8 +75,6 @@ TO_TUPLE = BeforeValidator(to_tuple)
 
 def to_list(value: Any) -> list[Any] | None:
     """Converts a value to a list."""
-    from ._models import BaseModel  # to prevent cyclical imports
-
     match value:
         case None:
             return

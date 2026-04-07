@@ -3,8 +3,9 @@ from faker import Faker
 
 from musify._models.item.track import Track
 from musify.exception import MusifyValueError
-from musify.processors.tagger._composite import TemplateValue, JoinValue
-from musify.processors.tagger._value import FieldValue, PathValue, FixedValue
+from musify.processors.tagger.values import FixedValue
+from musify.processors.tagger.values._composite import TemplateValue, JoinValue
+from musify.processors.tagger.values._fields import FieldValue, PathValue
 from tests.testers import BaseModelTester
 
 
@@ -46,7 +47,7 @@ class TestTemplateValue(BaseModelTester):
         track.artist = faker.name()
         expected = f"{track.name} - {track.artist}"
 
-        model = TemplateValue(template="{name} {sep} {artist}", fields=[FixedValue(field="sep", value="-")])
+        model = TemplateValue(template="{name} {sep} {artist}", fields=[FixedValue(name="sep", value="-")])
         assert model.get(track) == expected
 
     def test_get_value_fails_on_missing(self, track: Track, faker: Faker):

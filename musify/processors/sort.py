@@ -8,7 +8,7 @@ from datetime import datetime
 from random import random, randrange, shuffle, uniform
 from typing import Any, Literal, Annotated, SupportsFloat, Union
 
-from pydantic import Field, field_validator, field_serializer
+from pydantic import Field, field_validator, field_serializer, model_validator
 
 from musify.exception import MusifyValueError, MusifyAttributeError
 from ._base import Processor
@@ -74,6 +74,15 @@ class ItemSorter(Processor):
         description="The words to ignore at the beginning of a string when sorting string values.",
         default={"The", "A"},
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_fields[T](cls, data: T | Collection[str]) -> T | dict[str, Iterable[str]]:
+        if isinstance(data, Mapping):
+            return data
+        if not isinstance(data, Collection) or not all(isinstance(value, str) for value in data):
+            return data
+        return dict(sort_fields=data)
 
     @field_validator("sort_fields", mode="before", check_fields=True)
     @staticmethod

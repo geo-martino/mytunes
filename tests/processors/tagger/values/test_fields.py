@@ -7,18 +7,8 @@ from musify._models.item.track import Track
 from musify._models.properties.file import IsLocalFile
 from musify._models.properties.order import Position
 from musify.processors.filters.values import ValueFilter
-from musify.processors.tagger._value import FieldValue, FixedValue, PositionValue, PathValue
+from musify.processors.tagger.values._fields import FieldValue, PositionValue, PathValue
 from tests.testers import BaseModelTester
-
-
-class TestFixedValue(BaseModelTester):
-    @pytest.fixture
-    def model(self, faker: Faker) -> FixedValue:
-        return FixedValue(field=faker.word(), value=faker.sentence())
-
-    def test_get_value(self, model: FixedValue, track: Track):
-        assert model.get(track) == model.value
-        assert model.get(None) == model.value
 
 
 class TestFieldValue(BaseModelTester):
