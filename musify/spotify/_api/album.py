@@ -31,10 +31,10 @@ class _SpotifyAlbumLibraryEndpoints(
 
 @final
 class SpotifyAlbumEndpoints(
-    SpotifyEndpoints[SpotifyResourceURI, SpotifyAlbum],
+    SpotifyEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
     HasLibraryEndpoints[_SpotifyAlbumLibraryEndpoints],
-    ItemReadEndpoints[SpotifyResourceURI, SpotifyAlbum],
-    BatchReadEndpoints[SpotifyResourceURI, SpotifyAlbum],
+    ItemReadEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
+    BatchReadEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
     CollectionReadEndpoints[SpotifyResourceURI, SpotifyAlbumCollection, SpotifyTrack],
 ):
     __final__ = True

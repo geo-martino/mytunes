@@ -97,8 +97,6 @@ class ModelMetaclass(PydanticModelMetaclass):
     @property
     def registered_submodels(cls) -> list[Self]:
         """Get the registered classes for all subclasses of this model."""
-        if cls.__final__:
-            return []
         return [kls for kls in cls.__model_registry__ if issubclass(kls, cls) and kls.required_modules_installed]
 
     @property

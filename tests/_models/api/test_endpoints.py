@@ -348,7 +348,7 @@ class TestEndpoints(EndpointsTester):
         assert len(items) == len(expected_items)
         assert cursor == url_cursors[-1]
 
-        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key)
+        mock_pagination.assert_called_once_with(url_cursors[0], path=items_key, adapter=None)
         mock_generation.assert_not_called()
 
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -382,7 +382,7 @@ class TestEndpoints(EndpointsTester):
         assert cursor == index_cursors[-1]
 
         mock_pagination.assert_not_called()
-        mock_generation.assert_called_once_with(index_cursors[0], path=items_key)
+        mock_generation.assert_called_once_with(index_cursors[0], path=items_key, adapter=None)
 
         # async so order is not guaranteed
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -414,7 +414,7 @@ class TestEndpoints(EndpointsTester):
 
         assert cursor == index_cursors[-1]
         mock_pagination.assert_called_once_with(url_cursors[0], path=items_key)
-        mock_generation.assert_called_once_with(index_cursors[1], path=items_key)
+        mock_generation.assert_called_once_with(index_cursors[1], path=items_key, adapter=None)
 
         # async so order is not guaranteed
         actual_cursors = [call.args[0] for call in mock_get_page.call_args_list]
@@ -588,7 +588,9 @@ class TestReadCollectionEndpoints(EndpointsTester):
         result = await model.get_all(cursor)
         assert result == expected_items
 
-        mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path)
+        mock_get_all_items.assert_called_once()
+        assert mock_get_all_items.call_args.args[0] == cursor
+        assert mock_get_all_items.call_args.kwargs["path"] == model._extend_path
 
     async def test_get_all_from_collection(
             self,
@@ -601,6 +603,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
             faker: faker
     ):
         collection.cursor = cursor
+        adapter = type(model).item_type_adapter
 
         expected_collection = items[:len(items) // 5]
         expected_cursor = deepcopy(cursor)
@@ -621,7 +624,9 @@ class TestReadCollectionEndpoints(EndpointsTester):
             assert collection.cursor is not cursor
             assert collection.cursor is expected_cursor
 
-            mock_get_all_items.assert_called_once_with(cursor, path=model._extend_path)
+            mock_get_all_items.assert_called_once()
+            assert mock_get_all_items.call_args.args[0] == cursor
+            assert mock_get_all_items.call_args.kwargs["path"] == model._extend_path
 
 
 class TestWriteCollectionEndpoints(EndpointsTester):

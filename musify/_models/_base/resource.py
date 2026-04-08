@@ -37,14 +37,14 @@ class ResourceMetaclass(ModelMetaclass):
                 unique_fields.add(field_name)
         return unique_fields
 
-    @property
-    def annotation(cls) -> Self:
-        if not cls.registered_submodels:
-            return cls
-        return Annotated[
-            super().annotation,
-            Field(discriminator="type"),
-        ]
+    # @property
+    # def annotation(cls) -> Self:
+    #     if not cls.registered_submodels:
+    #         return cls
+    #     return Annotated[
+    #         super().annotation,
+    #         Field(discriminator="type"),
+    #     ]
 
 
 class ResourceModel(BaseModel, metaclass=ResourceMetaclass):

@@ -12,7 +12,7 @@ from ..._models.metadata import Attribute
 
 
 @final
-class SpotifyUser(RemoteUser[SpotifyUserURI], SpotifyResource[SpotifyUserURI], HasSpotifyImages, HasFollowers):
+class SpotifyUser(RemoteUser[SpotifyUserURI], HasSpotifyImages, HasFollowers, SpotifyResource[SpotifyUserURI]):
     __final__ = True
 
     name: Annotated[StrippedString | None, Attribute()] = Field(

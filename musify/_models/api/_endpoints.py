@@ -59,7 +59,9 @@ class EndpointsMetaclass(ModelMetaclass):
         """The type adapter for the resources handled by this Endpoint type."""
         kls = cast('type[Endpoints]', cls)
         kls = get_generic(kls, expected=RemoteResource, base=Endpoints)
-        return TypeAdapter(kls)
+        if get_origin(kls) is UnionType:
+            return TypeAdapter(kls)
+        return TypeAdapter(kls.annotation)
 
     @property
     def item_type_adapter(cls) -> TypeAdapter[RemoteResource]:
@@ -75,7 +77,7 @@ class EndpointsMetaclass(ModelMetaclass):
             except MusifyTypeError:
                 continue
 
-        return TypeAdapter(kls)
+        return TypeAdapter(kls.annotation)
 
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         cls = cast('type[Endpoints]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
@@ -110,7 +112,7 @@ class EndpointsMetaclass(ModelMetaclass):
             raise APIModelError("Can only create resources from final API models.")
 
         if adapter is None:
-            adapter = cls.type_adapter
+            adapter = EndpointsMetaclass.type_adapter.fget(cls)
 
         match adapter:
             case TypeAdapter():
@@ -226,7 +228,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items(
-            self, cursor: PageCursor, path: str | AliasPath | AliasChoices
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, adapter: TypeAdapter | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """Get all items from a request with paginated responses using the fastest available method."""
         if cursor.next is None:
@@ -243,7 +245,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
             message = f"Getting {amount} {item_type}s"
         self._handler.log("INFO", cursor.url, message=message)
 
-        items, cursor = await self._get_all_items_from_cursor(cursor, path=path)
+        items, cursor = await self._get_all_items_from_cursor(cursor, path=path, adapter=adapter)
 
         message = f"Retrieved "
         if cursor.total:
@@ -261,17 +263,17 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_from_cursor(
-            self, cursor: PageCursor, path: str | AliasPath | AliasChoices
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, adapter: TypeAdapter | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         match cursor:
             case IterablePageCursor():
-                return await self._get_all_items_by_generation(cursor, path=path)
+                return await self._get_all_items_by_generation(cursor, path=path, adapter=adapter)
             case _:
-                return await self._get_all_items_by_pagination(cursor, path=path)
+                return await self._get_all_items_by_pagination(cursor, path=path, adapter=adapter)
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_by_pagination(
-            self, cursor: PageCursor, path: str | AliasPath | AliasChoices,
+            self, cursor: PageCursor, path: str | AliasPath | AliasChoices, adapter: TypeAdapter | None = None,
     ) -> tuple[tuple[RT, ...], PageCursor]:
         """
         Get all items by paginating through the cursor, which must have a next URL for the first page of items.
@@ -280,7 +282,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         to provide the total number of items, offset and limit in the page cursor.
         """
         items: list[RT] = []
-        adapter = type(self).item_type_adapter
 
         while cursor.next is not None:
             response = await self._get_page(cursor.next)
@@ -301,7 +302,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
 
             if isinstance(cursor, IterablePageCursor):
                 # switch to faster generation mode for the remaining pages
-                response_items, cursor = await self._get_all_items_by_generation(cursor, path=path)
+                response_items, cursor = await self._get_all_items_by_generation(cursor, path=path, adapter=adapter)
                 items.extend(response_items)
                 break
 
@@ -309,7 +310,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
 
     # TODO: migrate this to aiorequestful v2
     async def _get_all_items_by_generation[T: IterablePageCursor](
-            self, cursor: T, path: str | AliasPath | AliasChoices,
+            self, cursor: T, path: str | AliasPath | AliasChoices, adapter: TypeAdapter | None = None,
     ) -> tuple[tuple[RT, ...], T]:
         """
         Get all items by generating the next cursors for the next pages of items and sending requests
@@ -342,7 +343,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         ]
         await self._cache_responses(response_items)
 
-        adapter = type(self).item_type_adapter
         items: list[RT] = [
             type(self).create_model(item, context=self._model_context, adapter=adapter)
             for item in response_items
@@ -593,7 +593,8 @@ class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
             case _:
                 raise RequestError("Expected a collection or page cursor.")
 
-        items, cursor = await self._get_all_items(cursor, path=self._extend_path)
+        adapter = type(self).item_type_adapter
+        items, cursor = await self._get_all_items(cursor, path=self._extend_path, adapter=adapter)
 
         if isinstance(collection, RemoteCollection):
             items = itertools.chain.from_iterable((collection.items, items))
