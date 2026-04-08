@@ -45,18 +45,21 @@ class Setter[IT: AttributeModel, VT: Any](BaseModel, metaclass=SetterMetaclass):
     )
 
     @abstractmethod
-    def set(self, item: IT, other: Collection[IT] = ()) -> None:
-        """Sets the configured tag to the item."""
+    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
+        """Sets the configured tag to the item. Returns True if the tag was set."""
         raise NotImplementedError
 
 
 class ValueSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
-    def set(self, item: IT, other: Collection[IT] = ()) -> None:
+    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
         value = self.value.get(item)
         if value is None:
-            return
+            return False
+        if getattr(item, self.field) == value:
+            return False
 
         setattr(item, self.field, value)
+        return True
 
 
 class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
@@ -68,16 +71,19 @@ class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
         default_factory=tuple,
     )
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> None:
+    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
         self._validate_item_in_group(item, other)
 
         group = self._group_items(item, other)
 
         value = self.value.get(group)
         if value is None:
-            return
+            return False
+        if getattr(item, self.field) == value:
+            return False
 
         setattr(item, self.field, value)
+        return True
 
     @staticmethod
     def _validate_item_in_group(item: IT, other: Collection[IT] = ()) -> None:
@@ -99,7 +105,7 @@ class SortedSetter[IT: AttributeModel, VT: Any](GroupedSetter[IT, VT]):
         default_factory=tuple,
     )
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> None:
+    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
         self._validate_item_in_group(item, other)
 
         group = list(self._group_items(item, other))
@@ -107,9 +113,12 @@ class SortedSetter[IT: AttributeModel, VT: Any](GroupedSetter[IT, VT]):
 
         value = self.value.get(group)
         if value is None:
-            return
+            return False
+        if getattr(item, self.field) == value:
+            return False
 
         setattr(item, self.field, value)
+        return True
 
 
 class IncrementalSetter[IT: AttributeModel](SortedSetter[IT, int], HasCondition[int]):
@@ -127,7 +136,7 @@ class IncrementalSetter[IT: AttributeModel](SortedSetter[IT, int], HasCondition[
         default=1,
     )
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> None:
+    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
         self._validate_item_in_group(item, other)
 
         group = list(self._group_items(item, other))
@@ -136,7 +145,11 @@ class IncrementalSetter[IT: AttributeModel](SortedSetter[IT, int], HasCondition[
         if self.value is not None:
             value = self.value.get(group)
             if value is None or not self._check(value):
-                return
+                return False
 
         value = self.start + (group.index(item) * self.increment)
+        if getattr(item, self.field) == value:
+            return False
+
         setattr(item, self.field, value)
+        return True
