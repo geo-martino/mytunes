@@ -68,7 +68,7 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
         :return: The results of the tasks.
         """
         tasks = (self._wrap_task(task, task_id) for task in tasks)
-        result = list(filter(None, tasks))
+        result = list(filter(lambda x: x is not None, tasks))
 
         if remove and task_id in self._progress.task_ids:
             self._progress.remove_task(task_id)
@@ -97,7 +97,8 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
         """
         async with asyncio.TaskGroup() as tg:
             tasks = [tg.create_task(self._wrap_task_async(task, task_id=task_id)) for task in tasks]
-            result = list(filter(None, await asyncio.gather(*tasks)))
+            result = await asyncio.gather(*tasks)
+            result = list(filter(lambda x: x is not None, result))
 
         if remove and task_id in self._progress.task_ids:
             self._progress.remove_task(task_id)

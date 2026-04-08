@@ -110,7 +110,7 @@ class TestPlaylistManagement(BaseModelTester):
             mocker: MockerFixture,
             faker: Faker,
     ):
-        mock_wrap_tasks = mocker.spy(HasProgress, "_wrap_tasks_async")
+        mock_gather = mocker.spy(asyncio, "gather")
         mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
 
         async def _random_exception(*_, **__):
@@ -128,7 +128,7 @@ class TestPlaylistManagement(BaseModelTester):
 
         assert excinfo.group_contains((MusifyError, HTTPError))
 
-        tasks: list[Task] = mock_wrap_tasks.call_args.args[1]
+        tasks: list[Task] = list(mock_gather.call_args.args)
         assert any(task.cancelled() for task in tasks)
         mock_teardown_playlists.assert_called_once()
 
