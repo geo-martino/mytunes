@@ -7,7 +7,6 @@ import os
 import re
 from collections.abc import Mapping, Sequence, Iterator, MutableMapping
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
 from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote

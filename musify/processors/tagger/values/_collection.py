@@ -5,8 +5,8 @@ from typing import Any
 from pydantic import Field, model_validator
 
 from ._base import Value
-from ...._models import AttributeModel
 from ..._types import _ATTRIBUTE_FIELD_TYPE
+from ...._models import AttributeModel
 
 
 # noinspection PyAbstractClass

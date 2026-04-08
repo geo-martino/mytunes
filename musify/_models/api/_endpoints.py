@@ -2,7 +2,6 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from contextlib import suppress, AbstractAsyncContextManager
 from copy import copy
-from functools import cached_property
 from io import BytesIO
 from itertools import batched
 from types import UnionType

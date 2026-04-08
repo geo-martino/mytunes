@@ -3,15 +3,13 @@ The XAutoPF implementation of a :py:class:`LocalPlaylist`.
 """
 from __future__ import annotations
 
-import inspect
-import traceback
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
 from random import choice
-from typing import Any, Self, Literal, Annotated, ClassVar, get_origin, final
+from typing import Any, Self, Literal, Annotated, ClassVar, final
 
 import aiofiles
 from pydantic import Field, field_validator, model_validator, ConfigDict, model_serializer, \
@@ -19,7 +17,6 @@ from pydantic import Field, field_validator, model_validator, ConfigDict, model_
 from pydantic.alias_generators import to_pascal, to_snake
 from pydantic.fields import FieldInfo, PrivateAttr
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
-from typing_inspection.typing_objects import is_annotated
 
 from musify._types import StrippedString, TO_LIST, to_list
 from musify.exception import MusifyValueError

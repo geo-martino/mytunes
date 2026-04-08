@@ -3,15 +3,14 @@ from collections.abc import Sequence, Collection, Iterable
 from typing import Any, Union
 
 from pydantic import Field, PositiveInt
-from pydantic.fields import FieldInfo
 from typing_inspection.typing_objects import is_typevar
 
 from musify.exception import MusifyValueError
 from musify.processors.sort import ItemSorter
-from musify.processors.tagger.values import Value, CollectionValue, HasCondition
 from musify.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
+from musify.processors.tagger.values import Value, CollectionValue, HasCondition
+from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._models import AttributeModel, BaseModel, ModelMetaclass
-from .._types import _ATTRIBUTE_FIELD_TYPE, get_tag_attributes_type
 
 
 class SetterMetaclass(ModelMetaclass):

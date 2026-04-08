@@ -1,10 +1,7 @@
 import string
-from copy import deepcopy
 from pathlib import Path
 from random import randrange, choice
 from typing import ClassVar
-
-from _pytest.capture import CaptureFixture
 
 from musify._models import ResourceModel, makecls
 from musify._models.collection import CollectionModel

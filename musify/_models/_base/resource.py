@@ -1,6 +1,6 @@
 from collections.abc import Hashable
 from functools import cached_property
-from typing import Any, cast, Annotated, ClassVar, Self
+from typing import Any, cast, ClassVar
 
 from pydantic import Field
 

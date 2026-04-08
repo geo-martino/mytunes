@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Any, final
 
 from pydantic import Field, NonNegativeInt, PositiveInt, validate_call, model_validator
-from pydantic.fields import FieldInfo
 from typing_inspection.typing_objects import is_typevar
 
 from musify.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE

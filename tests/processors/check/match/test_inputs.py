@@ -3,8 +3,6 @@ from copy import deepcopy
 from unittest.mock import Mock, patch
 
 import pytest
-from _pytest.capture import CaptureFixture
-from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture

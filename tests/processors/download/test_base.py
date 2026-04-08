@@ -4,7 +4,6 @@ from unittest.mock import patch, Mock
 
 import math
 import pytest
-from _pytest.capture import CaptureFixture
 from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pytest_mock import MockerFixture

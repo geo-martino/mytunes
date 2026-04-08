@@ -6,7 +6,6 @@ from yarl import URL
 from musify.spotify import API_URL
 from musify.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from .._collection.album import SpotifyAlbumCollection
-from .._item.album import SpotifyAlbum
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
 from ..._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
