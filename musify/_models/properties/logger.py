@@ -111,10 +111,10 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
         :param remove: Whether to remove the progress bar task when done.
         :return: The results of the tasks.
         """
-        async with asyncio.TaskGroup() as tg:
-            tasks = [tg.create_task(task) for task in tasks]
-            tasks = self._wrap_tasks_async(tasks, task_id, predicate)
-            result = [it async for it in tasks]
+        # async with asyncio.TaskGroup() as tg:
+        #     tasks = [tg.create_task(task) for task in tasks]
+        tasks = self._wrap_tasks_async(tasks, task_id, predicate)
+        result = [it async for it in tasks]
 
         if remove and task_id in self._progress.task_ids:
             self._progress.remove_task(task_id)
