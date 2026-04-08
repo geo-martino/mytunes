@@ -197,7 +197,6 @@ class ImageFile(ImageSource, IsLocalFile):
         return self.path == other.path and self.type == other.type
 
     async def load(self) -> PILImageFileT:
-        # TODO: improve async performance?
         async with aiofiles.open(self.path, mode='rb') as file:
             img = Image.open(BytesIO(await file.read()))
         return img

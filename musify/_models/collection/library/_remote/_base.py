@@ -77,15 +77,15 @@ class RemoteLibrary[
 
         with self._progress:
             await self.load_playlists()
-            await self.load_playlist_items()  # TODO: ADD ME BACK
+            await self.load_playlist_items()
 
             await self.load_tracks()
 
             await self.load_library_albums()
             await self.load_library_album_tracks()
 
-            # await self.load_library_artists()  # TODO: ADD ME BACK
-            # await self.load_library_artist_albums()  # TODO: ADD ME BACK
+            await self.load_library_artists()
+            await self.load_library_artist_albums()
 
         self._logger.print_line(STAT)
 

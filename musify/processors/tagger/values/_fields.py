@@ -3,21 +3,41 @@ from pathlib import Path
 from typing import Any, final
 
 from pydantic import Field, NonNegativeInt, PositiveInt, validate_call, model_validator
+from pydantic.fields import FieldInfo
+from typing_inspection.typing_objects import is_typevar
 
-from musify.processors._types import _TAG_FIELD_TYPE
+from musify.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
 from ._base import HasCondition, Value
-from .._base import TaggerMetaclass
-from ...._models import AttributeModel
+from ...._models import AttributeModel, ModelMetaclass, BaseModel
 from ...._models.properties.file import IsLocalFile
 from ...._models.properties.order import Position
 
 
+class FieldValueMetaclass(ModelMetaclass):
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        # set appropriate field types from the generic type
+        base = next((base for base in bases if isinstance(base, mcs) and issubclass(base, BaseModel)), None)
+        generics = next((base.__pydantic_generic_metadata__["args"] for base in bases if isinstance(base, mcs)), None)
+        info = base.model_fields.get("field") if base is not None else None
+        if info is not None:
+            info.annotation = mcs._get_readable_annotation_from_generic_type(generics)
+
+        return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    @staticmethod
+    def _get_readable_annotation_from_generic_type(generics: list[type[AttributeModel]]) -> Any:
+        generic = generics[1] if len(generics) > 1 else None
+        if is_typevar(generic):
+            generic = None
+        return get_tag_attributes_type(generic)
+
+
 @final
-class FieldValue[IT: AttributeModel, VT: Any](Value[IT, VT], HasCondition[VT], metaclass=TaggerMetaclass):
+class FieldValue[IT: AttributeModel, VT: Any](Value[IT, VT], HasCondition[VT], metaclass=FieldValueMetaclass):
     """Gets tag values according to some rules."""
     __final__ = True
 
-    field: _TAG_FIELD_TYPE = Field(
+    field: _ATTRIBUTE_FIELD_TYPE = Field(
         description="The field from which to get a tag value from.",
     )
 

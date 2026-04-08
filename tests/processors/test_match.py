@@ -12,7 +12,7 @@ from musify._models.item.album import HasAlbums, Album
 from musify._models.item.artist import HasArtists, Artist
 from musify._models.item.track import Track
 from musify._models.properties.date import HasReleaseDate
-from musify._models.properties.length import HasLength
+from musify._models.properties.length import HasLength, Length
 from musify._models.properties.name import HasName
 from musify.processors.match import Matcher
 from musify.processors.score import Scorer
@@ -49,7 +49,7 @@ class TestMatcher(BaseModelTester):
         for track in tracks:
             track.artists = sample(artists, k=faker.random_int(1, 3))
             track.album = choice(albums)
-            track.length = faker.random_int()
+            track.__dict__["length"] = Length(faker.random_int())
             track.released_at = faker.date()
 
         return tracks
@@ -68,7 +68,7 @@ class TestMatcher(BaseModelTester):
             collection = AlbumCollection(**album.model_dump(), tracks=sample(tracks, 10))
 
             collection.artists = sample(artists, k=faker.random_int(1, 3))
-            collection.length = faker.random_int()
+            collection.__dict__["length"] = Length(faker.random_int())
             collection.released_at = faker.date()
 
             album_collections.append(collection)

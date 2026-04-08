@@ -3,19 +3,41 @@ from collections.abc import Sequence, Collection, Iterable
 from typing import Any, Union
 
 from pydantic import Field, PositiveInt
+from pydantic.fields import FieldInfo
+from typing_inspection.typing_objects import is_typevar
 
 from musify.exception import MusifyValueError
 from musify.processors.sort import ItemSorter
 from musify.processors.tagger.values import Value, CollectionValue, HasCondition
-from ._base import TaggerMetaclass
-from .._types import _TAG_FIELD_TYPE
-from ..._models import AttributeModel, BaseModel
+from musify.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
+from ..._models import AttributeModel, BaseModel, ModelMetaclass
+from .._types import _ATTRIBUTE_FIELD_TYPE, get_tag_attributes_type
+
+
+class SetterMetaclass(ModelMetaclass):
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
+        # set appropriate field types from the generic type
+        base = next((base for base in bases if isinstance(base, mcs) and issubclass(base, BaseModel)), None)
+        generics = next((base.__pydantic_generic_metadata__["args"] for base in bases if isinstance(base, mcs)), None)
+
+        info = base.model_fields.get("field") if base is not None else None
+        if info is not None:
+            info.annotation = mcs._get_writeable_annotation_from_generic_type(generics)
+
+        return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    @staticmethod
+    def _get_writeable_annotation_from_generic_type(generics: list[type[AttributeModel]]) -> Any:
+        generic = generics[1] if len(generics) > 1 else None
+        if is_typevar(generic):
+            generic = None
+        return get_writeable_tag_attributes_type(generic)
 
 
 # noinspection PyAbstractClass
-class Setter[IT: AttributeModel, VT: Any](BaseModel, metaclass=TaggerMetaclass):
+class Setter[IT: AttributeModel, VT: Any](BaseModel, metaclass=SetterMetaclass):
     """Sets tags on items according to some rules."""
-    field: _TAG_FIELD_TYPE = Field(
+    field: _WRITEABLE_ATTRIBUTE_FIELD_TYPE = Field(
         description="The field to set the tag value to.",
     )
     value: Value.annotation = Field(
@@ -41,7 +63,7 @@ class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
     value: CollectionValue.annotation = Field(
         description="The value getter for the tag value to set.",
     )
-    group_by: Sequence[_TAG_FIELD_TYPE] = Field(
+    group_by: Sequence[_ATTRIBUTE_FIELD_TYPE] = Field(
         description="The fields to group by.",
         default_factory=tuple,
     )

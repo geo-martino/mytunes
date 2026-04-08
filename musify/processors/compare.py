@@ -20,7 +20,7 @@ from musify._types import LowerSnakeCase, Number
 from musify.exception import MusifyTypeError
 from musify.processors.time import TimeMapper
 from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
-from ._types import get_tag_fields_map, get_tag_fields_type, _TAG_FIELD_MAP, _TAG_FIELD_TYPE
+from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_MAP, _ATTRIBUTE_FIELD_TYPE
 from .._models import AttributeModel
 from .._models.item.track import Track
 from .._models.properties.audio import HasAudioProperties
@@ -51,7 +51,7 @@ class Comparer(DynamicProcessor):
         description="Expected value/s to match on.",
         default=None,
     )
-    field: Union[_TAG_FIELD_TYPE, NoneType] = Field(
+    field: Union[_ATTRIBUTE_FIELD_TYPE, NoneType] = Field(
         description="The field to match on.",
         default=None,
     )
@@ -69,7 +69,7 @@ class Comparer(DynamicProcessor):
         if self.field is None:
             return self._extract_type_from_annotation(NoneType)
 
-        match _TAG_FIELD_MAP[self.field].get_field_info(self.field):
+        match _ATTRIBUTE_FIELD_MAP[self.field].get_field_info(self.field):
             case FieldInfo() as field:
                 annotation = field.annotation
             case property() as prop:

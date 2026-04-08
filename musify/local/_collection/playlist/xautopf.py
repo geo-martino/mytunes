@@ -255,7 +255,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         xml.smart_playlist.parse_sorter(self.sorter)
 
         if not dry_run:
-            await self.rename()
+            self.rename()
 
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.path.write_text(xml.unparse_xml(), encoding="utf-8")

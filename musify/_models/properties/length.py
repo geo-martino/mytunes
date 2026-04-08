@@ -63,6 +63,7 @@ class HasLength(AttributeModel):
     length: Annotated[Length | None, Attribute()] = Field(
         description="The length of this resource.",
         default=None,
+        frozen=True,
     )
 
     @model_validator(mode="after")

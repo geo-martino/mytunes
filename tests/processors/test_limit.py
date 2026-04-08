@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
+from musify._models.properties.length import Length
 from musify.local._item.album import LocalAlbum
 from musify.local._item.track import LocalTrack
 from musify.processors.limit import ItemLimiter, LimitType
@@ -25,7 +26,7 @@ class TestItemLimiter(BaseModelTester):
 
             for track in local_tracks[(i-1)*10:i*10]:
                 track.album = album
-                track.length = i * 60
+                track.__dict__["length"] = Length(i * 60)
                 track.rating = i
                 track.last_played_at = datetime.now() if i != 1 and i != 5 else datetime.now() - timedelta(days=1)
                 track.play_count = 1000000 if i == 1 or i == 3 else 0

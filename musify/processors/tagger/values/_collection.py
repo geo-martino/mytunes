@@ -5,13 +5,13 @@ from typing import Any
 from pydantic import Field, model_validator
 
 from ._base import Value
-from ..._types import get_tag_fields_type
 from ...._models import AttributeModel
+from ..._types import _ATTRIBUTE_FIELD_TYPE
 
 
 # noinspection PyAbstractClass
 class CollectionValue[IT: AttributeModel, VT: Any](Value[Iterable[IT], VT]):
-    field: get_tag_fields_type() = Field(
+    field: _ATTRIBUTE_FIELD_TYPE = Field(
         description="The field from which to get a tag value from.",
     )
 

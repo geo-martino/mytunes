@@ -14,7 +14,7 @@ from musify._models.properties.order import Position
 from musify.exception import MusifyTypeError
 from musify.local._item.track import LocalTrack
 from musify.local._item.track.mp3 import MP3
-from musify.processors.compare import Comparer, _TAG_FIELD_MAP
+from musify.processors.compare import Comparer, _ATTRIBUTE_FIELD_MAP
 from musify.processors.time import TimeMapper
 from tests.testers import BaseModelTester
 
@@ -80,7 +80,7 @@ class TestComparer(BaseModelTester):
         assert model == new_filter
 
         while new_filter.field == model.field:
-            new_filter.field = faker.random_element(_TAG_FIELD_MAP.keys())
+            new_filter.field = faker.random_element(_ATTRIBUTE_FIELD_MAP.keys())
         assert model != new_filter
 
     def test_convert_expected_to_none(self):

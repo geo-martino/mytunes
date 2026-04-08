@@ -168,7 +168,7 @@ class MutableUniqueMapping[TK, TV: ResourceModel](UniqueMapping[TK, TV], Mutable
         for key in __item.unique_keys:
             self._items[key] = __item
 
-    @validate_call  # TODO: always defaults to validating as Iterable which causes failures
+    @validate_call
     def update(self, __m: Mapping[TK | TV, TV] | Iterable[TV], extract_keys: bool = True, **kwargs) -> None:
         """Merge this mapping with another mapping or iterable of items"""
         self._update(__m, extract_keys=extract_keys)
@@ -187,7 +187,7 @@ class MutableUniqueMapping[TK, TV: ResourceModel](UniqueMapping[TK, TV], Mutable
         """Remove all items from this mapping"""
         self._items.clear()
 
-    @validate_call  # TODO: always defaults to validating as Iterable which causes failures
+    @validate_call
     def replace(self, __m: Mapping[TK | TV, TV] | Iterable[TV], extract_keys: bool = True) -> None:
         """Replace all items in this mapping with another mapping or iterable of items"""
         self._replace(__m, extract_keys=extract_keys)

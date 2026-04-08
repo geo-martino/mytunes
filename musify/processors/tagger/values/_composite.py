@@ -7,7 +7,7 @@ from pydantic import Field, model_validator, ValidationError, validate_call
 
 from musify._types import StrippedString
 from musify.exception import MusifyValueError
-from musify.processors._types import _TAG_FIELD_MAP
+from musify.processors._types import _ATTRIBUTE_FIELD_MAP
 from musify.processors.tagger.values._fields import FieldValue
 from ._base import Value
 from ...._models import AttributeModel
@@ -74,7 +74,7 @@ class TemplateValue[IT: AttributeModel](CompositeValue[IT]):
 
         if unrecognised_fields:
             errors = ", ".join(unrecognised_fields)
-            expected = ", ".join(_TAG_FIELD_MAP)
+            expected = ", ".join(_ATTRIBUTE_FIELD_MAP)
             message = (
                 f"Unrecognised fields in template: {errors}. If this is meant to be a custom field, "
                 "consider adding its configuration to the template under 'fields'.\n"

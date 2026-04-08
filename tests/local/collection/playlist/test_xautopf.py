@@ -17,7 +17,7 @@ from musify.local._collection.playlist.xautopf import XAutoPF, _XMLCondition, _X
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
 from musify.local._item.track import LocalTrack
-from musify.processors._types import _TAG_FIELD_MAP
+from musify.processors._types import _ATTRIBUTE_FIELD_MAP
 from musify.processors.compare import Comparer
 from musify.processors.filters.compare import ComparerFilter
 from musify.processors.filters.composite import GroupFilter
@@ -773,7 +773,7 @@ class TestXMLSortBy(BaseModelTester):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy, faker: Faker):
-        sorter = ItemSorter(sort_fields={choice(tuple(_TAG_FIELD_MAP)): faker.boolean() for _ in range(3)})
+        sorter = ItemSorter(sort_fields={choice(tuple(_ATTRIBUTE_FIELD_MAP)): faker.boolean() for _ in range(3)})
         with pytest.raises(MusifyValueError):
             model.parse_sorter(sorter=sorter)
 
@@ -820,7 +820,7 @@ class TestDefinedSort(BaseModelTester):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_single_fields(self, model: _XMLDefinedSort, faker: Faker):
-        sorter = ItemSorter(sort_fields={choice(tuple(_TAG_FIELD_MAP)): faker.boolean()})
+        sorter = ItemSorter(sort_fields={choice(tuple(_ATTRIBUTE_FIELD_MAP)): faker.boolean()})
         with pytest.raises(MusifyValueError, match="Only use this sorter for multi-field sorts"):
             model.parse_sorter(sorter=sorter)
 

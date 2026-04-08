@@ -107,12 +107,14 @@ class LocalPlaylistFile[TF: Filter](
 
         return SortResult(sorted=tuple(tracks))
 
-    async def rename(self) -> None:
-        """Rename the playlist file to match the name of the playlist."""
-        if self.name == self.path.stem:
+    def rename(self, filename: str | None = None) -> None:
+        """Rename the playlist file. If no filename is given, use the current name."""
+        if filename is None:
+            filename = self.name
+        if filename == self.path.stem:
             return
 
-        path = self.path.with_stem(self.name)
+        path = self.path.with_stem(filename)
         self.path = self.path.rename(path)
 
 

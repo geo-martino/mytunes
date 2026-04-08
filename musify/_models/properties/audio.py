@@ -2,7 +2,7 @@ from functools import total_ordering
 from typing import Any, Annotated
 
 import mutagen
-from pydantic import Field, PositiveInt, PositiveFloat, model_validator
+from pydantic import Field, PositiveInt, PositiveFloat, model_validator, ConfigDict
 
 from musify._models import AttributeModel
 from musify._models.metadata import Attribute
@@ -21,22 +21,27 @@ class Decibels(NumberModel[Annotated[float, Field(ge=-60.0, le=0.0)]]):
 # noinspection PyAbstractClass
 class AudioProperties(HasLength):
     """Attributes and operations for an audio on a filesystem."""
+    model_config = ConfigDict(frozen=True)
 
     channels: Annotated[PositiveInt | None, Attribute()] = Field(
         description="The number of channels in this audio file i.e. 1 for mono, 2 for stereo, ...",
         default=None,
+        frozen=True,
     )
     bit_rate: Annotated[PositiveFloat | None, Attribute()] = Field(
         description="The bit rate of this track in kbps",
         default=None,
+        frozen=True,
     )
     bit_depth: Annotated[PositiveInt | None, Attribute()] = Field(
         description="The bit depth of this track in bits",
         default=None,
+        frozen=True,
     )
     sample_rate: Annotated[PositiveFloat | None, Attribute()] = Field(
         description="The sample rate of the audio file, in kHz.",
         default=None,
+        frozen=True,
     )
 
     @model_validator(mode="before")
@@ -65,6 +70,7 @@ class HasAudioProperties(AttributeModel):
     audio: Annotated[AudioProperties, Attribute()] = Field(
         description="The audio properties of the file.",
         default_factory=AudioProperties,
+        frozen=True,
     )
 
     @classmethod

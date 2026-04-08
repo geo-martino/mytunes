@@ -12,7 +12,7 @@ from pydantic import Field, field_validator, field_serializer, model_validator
 
 from musify.exception import MusifyValueError, MusifyAttributeError
 from ._base import Processor
-from ._types import get_tag_fields_map, get_tag_fields_type, _TAG_FIELD_TYPE
+from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
 from .._models import ResourceModel, IntEnumModel, AttributeModel
 from .._models.item.artist import HasArtists
 from .._models.item.track import Track
@@ -50,7 +50,7 @@ class ItemSorter(Processor):
         * A ``shuffle_weight`` of 1 will group the tracks by artist, shuffling artists randomly.
         * A ``shuffle_weight`` of -1 will shuffle the items randomly.
     """
-    sort_fields: Mapping[_TAG_FIELD_TYPE, bool] = Field(
+    sort_fields: Mapping[_ATTRIBUTE_FIELD_TYPE, bool] = Field(
         description=(
             "Fields to sort by. If defined, this value will always take priority over any shuffle settings "
             "i.e. shuffle settings will be ignored."

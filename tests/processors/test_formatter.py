@@ -11,6 +11,7 @@ from pytest_mock import MockerFixture
 from musify import MODULE_ROOT
 from musify._models.item.artist import Artist
 from musify._models.item.track import Track
+from musify._models.properties.length import Length
 from musify._models.properties.order import Position
 from musify.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from tests.processors.utils import MockCollection
@@ -27,7 +28,7 @@ class TestModelFormatter(BaseModelTester):
     @pytest.fixture
     def tracks(self, tracks: list[Track], faker: Faker) -> list[Track]:
         for track in tracks:
-            track.length = faker.random_int(min=1, max=100) if faker.boolean() else None
+            track.__dict__["length"] = Length(faker.random_int(min=1, max=100)) if faker.boolean() else None
         return tracks
 
     def test_applies_width_to_all_fields(self, faker: Faker):
