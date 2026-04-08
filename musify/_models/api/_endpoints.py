@@ -70,11 +70,9 @@ class EndpointsMetaclass(ModelMetaclass):
         while issubclass(base := next(bases, None), Endpoints):
             generics = get_generics(base)
 
-            try:
+            with suppress(MusifyTypeError):
                 kls = get_generic_type(generics, expected=RemoteResource, not_expected=RemoteCollection)
                 break
-            except MusifyTypeError:
-                continue
 
         if get_origin(kls) is UnionType:
             return TypeAdapter(kls)
@@ -92,6 +90,7 @@ class EndpointsMetaclass(ModelMetaclass):
         if cls.__final__:
             cls._validate_generic_types()
 
+        # TODO: review these
         with suppress(NameError, TypeError, StopIteration):
             cls.type_name = mcs.type_name(cls)
             cls.type_adapter = mcs.type_adapter(cls)

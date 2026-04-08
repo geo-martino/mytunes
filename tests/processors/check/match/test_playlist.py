@@ -109,7 +109,7 @@ class TestPlaylistMatch(UniqueKeyTester):
         assert mock_match.call_count == expected_matches
 
         # should remove each item in others as it matches
-        assert items == expected_unchanged != mutable_items  # TODO: flakey assertion
+        assert items == expected_unchanged != mutable_items
         assert not others
         assert changed == expected_updated
 

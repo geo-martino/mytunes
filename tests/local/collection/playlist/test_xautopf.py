@@ -172,7 +172,6 @@ def xml_playlist_complex() -> str:
     """.strip()
 
 
-# TODO: find a way to add back empty Description, Exceptions, ExceptionsInclude fields
 @pytest.fixture
 def xml_playlist_recent() -> str:
     """A recently added tracks XAutoPF playlist XML structure for testing purposes."""

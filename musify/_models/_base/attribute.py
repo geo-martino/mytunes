@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from contextlib import suppress
 from functools import reduce
 from typing import Any, cast, Self, get_type_hints
 
@@ -133,10 +134,8 @@ class AttributeModel(BaseModel, metaclass=AttributeMetaclass):
         if (initial := getattr(self, next(key_iter))) is None:
             return
 
-        try:
+        with suppress(AttributeError):
             return reduce(getattr, key_iter, initial)
-        except AttributeError:
-            return None
 
     def __setattr__(self, key: str, value: Any) -> None:
         if len(key_split := key.split(".")) == 1:

@@ -130,10 +130,8 @@ class HasCache(HasEndpoints):
 
         if isinstance(session, CachedSession):
             cache = session.cache
-            try:
+            with suppress(CacheError):
                 await self._setup_cache(cache)
-            except CacheError:
-                pass
 
             for repository in cache.values():
                 # all repositories must use the same payload handler as the request handler

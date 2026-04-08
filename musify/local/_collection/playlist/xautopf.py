@@ -3,8 +3,11 @@ The XAutoPF implementation of a :py:class:`LocalPlaylist`.
 """
 from __future__ import annotations
 
+import inspect
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, MutableSequence, Sequence
+from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
 from random import choice
@@ -185,11 +188,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
     @staticmethod
     def _get_reference_for_last_played_track(tracks: MutableSequence[LocalTrack]) -> LocalTrack | None:
-        try:
+        with suppress(MusifyValueError):
             ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
             return tracks[0]
-        except MusifyValueError:
-            return
 
     async def load(self, tracks: Collection[LocalTrack] = ()) -> LoadPlaylistResult:
         """
@@ -311,22 +312,25 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
 
 class _XMLField(metaclass=ABCMeta):
+    @classmethod
     @abstractmethod
-    def get_field_key(self, key: str) -> str:
+    def get_field_key(cls, key: str) -> str:
         """Format the given ``key`` according to the ``type`` of this field."""
         raise NotImplementedError
 
 
 class _XMLElementField(_XMLField):
-    def get_field_key(self, key: str) -> str:
+    @classmethod
+    def get_field_key(cls, key: str) -> str:
         return key
 
 
 class _XMLAttributeField(_XMLField):
     attr_prefix = "@"
 
-    def get_field_key(self, key: str) -> str:
-        return f"{self.attr_prefix}{key}"
+    @classmethod
+    def get_field_key(cls, key: str) -> str:
+        return f"{cls.attr_prefix}{key.lstrip(cls.attr_prefix)}"
 
 
 class _XMLBaseModel(BaseModel):
@@ -368,20 +372,17 @@ class _XMLBaseModel(BaseModel):
 
     @classmethod
     def _get_xml_field_from_field(cls, field: FieldInfo) -> _XMLField | None:
-        annotation = field.rebuild_annotation()
-        if not is_annotated(get_origin(annotation)):
-            return
-
-        return next((meta for meta in annotation.__metadata__ if isinstance(meta, _XMLField)), None)
+        return next((meta for meta in field.metadata if isinstance(meta, _XMLField)), None)
 
     @classmethod
     def _serialize_xml(cls, dump: dict[str, Any]) -> dict[str, Any]:
         order = list(dump.keys())
         for key, val in tuple(dump.items()):  # set attribute keys
+            # WORKAROUND: sometimes seems to dump the same model twice causing key errors, not sure why
             try:
                 field: FieldInfo = cls._get_field_from_name(key)
             except KeyError:
-                continue  # TODO: sometimes tries to dump the same model twice, why?
+                continue
 
             if (xml_field := cls._get_xml_field_from_field(field)) is not None:
                 dump[new_key := xml_field.get_field_key(key)] = dump.pop(key)
@@ -886,12 +887,10 @@ class _XMLSource(_XMLBaseModel):
         if isinstance(self.sort_by, _XMLDefinedSort):  # remap key to match single-field sorter
             order = list(dump.keys())
 
-            try:
+            with suppress(KeyError):
                 dump[key := "DefinedSort"] = dump.pop(alias := "SortBy")
                 order[order.index(alias)] = key
                 dump = dict(sorted(dump.items(), key=lambda it: order.index(it[0])))
-            except KeyError:
-                pass
 
         return self._serialize_xml(dump)
 

@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Hashable, Generator
+from contextlib import suppress
 from random import choice
 from typing import Callable, Any
 from unittest.mock import Mock, patch, AsyncMock
@@ -80,11 +81,9 @@ class UniqueKeyTester(BaseModelTester, metaclass=ABCMeta):
             assert value in model.unique_keys, f"Value {value} not found in unique keys"
             assert isinstance(value, Hashable)
 
-            try:
+            with suppress(AttributeError, ValueError):
                 setattr(model, key, None)
                 assert value not in model.unique_keys, f"Value {value} should not be in unique keys after removing it"
-            except (AttributeError, ValueError):  # value is not mutable or nullable
-                pass
 
 
 URI_TYPE_CONVERTERS = {

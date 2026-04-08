@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Generator
+from contextlib import suppress
 from copy import copy
 from io import BytesIO
 from pathlib import Path
@@ -264,11 +265,9 @@ def copy_metafunc(metafunc):
     copied.fixturenames = copy(metafunc.fixturenames)
     copied._calls = []
 
-    try:
+    with suppress(AttributeError):
+        # pytest<5.3.0
         copied._ids = copy(metafunc._ids)
-    except AttributeError:
-        # pytest>=5.3.0
-        pass
 
     copied._arg2fixturedefs = copy(metafunc._arg2fixturedefs)
     return copied

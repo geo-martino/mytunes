@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterator
+from contextlib import suppress
 from typing import Any, Self, overload, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
@@ -97,10 +98,8 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __getitem__(self, index: int | slice | TK | TV) -> TV | list[TV]:
         if isinstance(index, int | slice):
-            try:
+            with suppress(IndexError):
                 return self._items[index]
-            except IndexError:
-                pass
         return self._items_mapped[index]
 
     @property

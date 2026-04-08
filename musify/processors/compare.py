@@ -10,7 +10,7 @@ from functools import cached_property
 from types import NoneType
 from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final, TypeAlias
 
-from pydantic import Field, TypeAdapter, model_validator
+from pydantic import Field, TypeAdapter, model_validator, ValidationError
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
 from typing_inspection.introspection import is_union_origin
@@ -165,10 +165,8 @@ class Comparer(DynamicProcessor):
         if not isinstance(self.expected, str) or self._expected_type is str:
             return self
 
-        try:
+        with suppress(ValidationError):
             self.__dict__["expected"] = TimeMapper.model_validate(self.expected)
-        except ValueError:
-            pass
 
         return self
 
