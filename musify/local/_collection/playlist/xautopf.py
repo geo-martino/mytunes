@@ -13,6 +13,7 @@ from pathlib import Path
 from random import choice
 from typing import Any, Self, Literal, Annotated, ClassVar, get_origin, final
 
+import aiofiles
 from pydantic import Field, field_validator, model_validator, ConfigDict, model_serializer, \
     field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices
 from pydantic.alias_generators import to_pascal, to_snake
@@ -240,7 +241,6 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: The results of the sync.
         """
-        # TODO: make this async
         if self._xml is None:
             self._xml = _XMLRoot()
 
@@ -256,10 +256,12 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         xml.smart_playlist.parse_sorter(self.sorter)
 
         if not dry_run:
-            self.filename = self.name  # renames the file
-
+            xml_text = xml.unparse_xml()
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(xml.unparse_xml(), encoding="utf-8")
+
+            self.filename = self.name  # renames the file if it exists
+            async with aiofiles.open(self.path, "w", encoding="utf-8") as file:
+                await file.write(xml_text)
 
             self._original = self.tracks.copy()
 

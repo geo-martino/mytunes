@@ -7,10 +7,12 @@ import os
 import re
 from collections.abc import Mapping, Sequence, Iterator, MutableMapping
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
+import aiofiles
 from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath
 
 from musify._types import TO_SET, to_set
@@ -113,10 +115,9 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
     async def load_settings_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
-        # TODO: make this async
-        with self.xml_settings_path.open("r", encoding="utf-8") as file:
+        async with aiofiles.open(self.xml_settings_path, "r", encoding="utf-8") as file:
             #: A map representation of the loaded XML settings data
-            settings: dict[str, Any] = xmltodict.parse(file.read())
+            settings: dict[str, Any] = xmltodict.parse(await file.read())
         return settings["ApplicationSettings"]
 
     async def set_library_folders(self, xml: dict[str, Any] = None) -> None:
@@ -130,9 +131,8 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
     async def load_library_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
-        # TODO: make this async
         parser = XMLLibraryParser(source=self.xml_library_path, path_keys=self._xml_library_path_keys)
-        return parser.parse()
+        return await parser.parse()
 
     async def load_tracks(self) -> None:
         await self.set_library_folders()
@@ -197,9 +197,8 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
         :param dry_run: Run function, but do not modify the file on the disk.
         """
-        # TODO: make this async
         parser = XMLLibraryParser(source=self.xml_library_path, path_keys=self._xml_library_path_keys)
-        xml = parser.parse()
+        xml = await parser.parse()
 
         tracks, tracks_id_map = await self._tracks_to_xml(xml)
         playlists = await self._playlists_to_xml(xml, tracks=tracks_id_map)
@@ -209,8 +208,11 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         xml["Playlists"] = sorted(playlists.values(), key=lambda pl_xml: pl_xml["Playlist ID"])
 
         if not dry_run:
-            with self.xml_library_path.open("w", encoding="utf-8") as file:
-                file.write(parser.unparse(xml))
+            xml_text = await parser.unparse(xml)
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+
+            async with aiofiles.open(self.xml_library_path, "w", encoding="utf-8") as file:
+                await file.write(xml_text)
 
         return xml
 
@@ -367,6 +369,15 @@ class XMLLibraryParser(BaseModel):
         """Clean the file paths as found in the MusicBee XML library file to a standard system path"""
         return os.path.normpath(unquote(re.sub(r"^file:/+localhost/?", "", str(path))))
 
+    async def _get_tree(self) -> etree._ElementTree:
+        try:
+            async with aiofiles.open(self.source, "rb") as file:
+                source = await file.read()
+        except OSError:
+            source = self.source
+
+        return etree.fromstring(source).getroottree()
+
     ###########################################################################
     ## Parse
     ###########################################################################
@@ -460,13 +471,9 @@ class XMLLibraryParser(BaseModel):
 
         return record
 
-    def parse(self) -> dict[str, Any]:
+    async def parse(self) -> dict[str, Any]:
         """Parse the XML file from the currently stored ``path`` to a dictionary"""
-        try:
-            et = etree.parse(self.source)
-        except OSError:
-            et = etree.fromstring(self.source)
-
+        et = await self._get_tree()
         root_name = et.docinfo.root_name
         results = {}
 
@@ -526,13 +533,9 @@ class XMLLibraryParser(BaseModel):
                     self.source, f"Unexpected value type: {value} ({type(value).__name__})"
                 )
 
-    def unparse(self, data: Mapping[str, Any]) -> str:
+    async def unparse(self, data: Mapping[str, Any]) -> str:
         """Un-parse a map of XML ``data`` to XML and save to file."""
-        try:
-            et = etree.parse(self.source)
-        except XMLReaderError:
-            et = etree.fromstring(self.source)
-
+        et = await self._get_tree()
         parsed: dict[str, Any] = xmltodict.parse(etree.tostring(et.getroot(), encoding='utf-8', method='xml'))
 
         # noinspection PyAbstractClass

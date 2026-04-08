@@ -90,11 +90,9 @@ class EndpointsMetaclass(ModelMetaclass):
         if cls.__final__:
             cls._validate_generic_types()
 
-        # TODO: review these
         with suppress(NameError, TypeError, StopIteration):
             cls.type_name = mcs.type_name(cls)
             cls.type_adapter = mcs.type_adapter(cls)
-        with suppress(NameError, AttributeError, TypeError, StopIteration):
             cls.item_type_name = mcs.item_type_name(cls)
             cls.item_type_adapter = mcs.item_type_adapter(cls)
 

@@ -3,6 +3,7 @@ from collections.abc import Sequence, Collection
 from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
+import aiofiles
 from pydantic import Field, NonNegativeInt
 
 from musify.local._collection.playlist import LocalPlaylist
@@ -165,17 +166,16 @@ class M3U(LocalPlaylist[PathFilter]):
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: The results of the sync.
         """
-        # TODO: make this async
         start_paths = list(map(Path, self.path_mapper.unmap_many(self._original, check_existence=False)))
 
         if not dry_run:
-            self.filename = self.name  # renames the file
-
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            with self.path.open("w", encoding="utf-8") as file:
+
+            self.filename = self.name  # renames the file if it exists
+            async with aiofiles.open(self.path, "w", encoding="utf-8") as file:
                 # reassign any original folder found by the matcher and output
                 paths = self.path_mapper.unmap_many(self.tracks, check_existence=False)
-                file.writelines(path.strip() + '\n' for path in paths)
+                await file.writelines(path.strip() + "\n" for path in paths)
 
             self._original = self.tracks.copy()  # update original tracks to newly library tracks
 

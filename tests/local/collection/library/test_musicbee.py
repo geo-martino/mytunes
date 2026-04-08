@@ -508,10 +508,10 @@ class TestXMLLibraryParser(BaseModelTester):
         path.write_text(xml, encoding="utf-8")
         return path
 
-    def test_parse_unparse_basic(self, xml: str, path: Path):
+    async def test_parse_unparse_basic(self, xml: str, path: Path):
         parser = XMLLibraryParser(source=path, path_keys=MusicBee._xml_library_path_keys)
 
-        parsed = parser.parse()
+        parsed = await parser.parse()
         assert parsed["Major Version"] == 3
         assert parsed["Minor Version"] == 5
         assert parsed["Application Version"] == "3.5.8447.35892"
@@ -520,20 +520,20 @@ class TestXMLLibraryParser(BaseModelTester):
         assert len(parsed["Tracks"]) == 6
         assert len(parsed["Playlists"]) == 4
 
-        assert parser.unparse(parsed) == xml.rstrip('\n') + '\n'
+        assert await parser.unparse(parsed) == xml.rstrip('\n') + '\n'
 
-    def test_parse_unparse_with_changes(self, path: Path):
+    async def test_parse_unparse_with_changes(self, path: Path):
         parser = XMLLibraryParser(source=path, path_keys=MusicBee._xml_library_path_keys)
 
-        parsed = parser.parse()
+        parsed = await parser.parse()
         parsed["Major Version"] = 7
         parsed["Minor Version"] = 9
         parsed["Music Folder"] = str(Path("this", "is", "a", "new", "path"))
 
-        xml = parser.unparse(parsed)
+        xml = await parser.unparse(parsed)
         path.write_text(xml, encoding="utf-8")
 
-        result = parser.parse()
+        result = await parser.parse()
         assert result["Major Version"] == 7
         assert result["Minor Version"] == 9
         assert result["Application Version"] == "3.5.8447.35892"
