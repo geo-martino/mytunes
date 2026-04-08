@@ -158,6 +158,16 @@ class IsLocalFile(IsFile, metaclass=LocalFileMetaclass):
     def filename(self) -> Annotated[str, Attribute()]:
         return self.path.stem
 
+    @filename.setter
+    def filename(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise MusifyTypeError("Filename must be a string.")
+        if value == self.filename:
+            return
+
+        path = self.path.with_stem(value)
+        self.path = self.path.rename(path) if self.path.exists() else path
+
     @property
     def ext(self) -> Annotated[str, Attribute()]:
         return self.path.suffix.lower()

@@ -169,7 +169,7 @@ class M3U(LocalPlaylist[PathFilter]):
         start_paths = list(map(Path, self.path_mapper.unmap_many(self._original, check_existence=False)))
 
         if not dry_run:
-            self.rename()
+            self.filename = self.name  # renames the file
 
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("w", encoding="utf-8") as file:

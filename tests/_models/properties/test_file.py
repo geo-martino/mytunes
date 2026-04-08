@@ -64,6 +64,26 @@ class TestIsLocalFile(BaseModelTester):
         data = IsLocalFile._extract_tags_from_mutagen(file)
         assert data == dict(path=str(model.path))
 
+    def test_rename_when_path_not_exists(self, model: IsLocalFile, faker: Faker):
+        assert not model.path.exists()
+
+        new_filename = faker.file_name(category="audio")
+        model.filename = new_filename
+
+        assert model.path.stem == new_filename
+        assert not model.path.exists()
+
+    def test_rename_when_path_exists(self, model: IsLocalFile, faker: Faker, tmp_path: Path):
+        model.path = tmp_path.joinpath(faker.file_name(category="audio"))
+        model.path.write_text("test")
+        assert model.path.exists()
+
+        new_filename = faker.file_name(category="audio")
+        model.filename = new_filename
+
+        assert model.path.stem == new_filename
+        assert model.path.exists()
+
 
 class TestPathMapper(BaseModelTester):
     @pytest.fixture
