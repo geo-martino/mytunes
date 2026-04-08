@@ -54,10 +54,6 @@ class _SpotifyPlaylistLibraryEndpoints(
         url = self._write_url.with_query(dict(uris=uri))
         return await super().remove(url)
 
-    @staticmethod
-    def _generate_remove_batch_kwargs(values: Iterable[str]) -> JsonSchemaValue:
-        return {"items": [{"uri": str(uri)} for uri in values]}
-
     @ApiURLSchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def modify(
             self,

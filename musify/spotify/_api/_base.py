@@ -20,9 +20,9 @@ class _SpotifyLibraryEndpoints[UT: SpotifyURIBase, RT: SpotifyResource](
     BatchWriteEndpoints[UT, RT], SpotifyEndpoints[UT, RT],
 ):
     @staticmethod
-    def _generate_add_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
+    def _generate_add_batch_kwargs(values: Iterable[Any]) -> dict[str, JsonSchemaValue]:
         return {"params": {"uris": ",".join(map(str, values))}}
 
     @staticmethod
-    def _generate_remove_batch_kwargs(values: Iterable[Any]) -> JsonSchemaValue:
+    def _generate_remove_batch_kwargs(values: Iterable[Any]) -> dict[str, JsonSchemaValue]:
         return {"params": {"uris": ",".join(map(str, values))}}
