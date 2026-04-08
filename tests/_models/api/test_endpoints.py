@@ -82,7 +82,6 @@ class TestEndpointsMetaclass:
         assert MockPlaylistEndpoints.type_name == RemotePlaylist.type
         assert MockPlaylistEndpoints.item_type_name == RemoteAlbum.type
 
-    # TODO: fix me
     def test_get_item_type_name_union(self):
         class MockUnionEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack | RemoteAlbum]):
             pass
@@ -94,12 +93,12 @@ class TestEndpointsMetaclass:
         class MockTrackEndpoints(Endpoints[SimpleURI, RemoteTrack]):
             pass
 
-        assert MockTrackEndpoints.type_adapter.core_schema == TypeAdapter(RemoteTrack).core_schema
+        assert MockTrackEndpoints.type_adapter.core_schema == TypeAdapter(RemoteTrack.annotation).core_schema
 
         class MockAlbumEndpoints(Endpoints[SimpleURI, RemoteAlbum]):
             pass
 
-        assert MockAlbumEndpoints.type_adapter.core_schema == TypeAdapter(RemoteAlbum).core_schema
+        assert MockAlbumEndpoints.type_adapter.core_schema == TypeAdapter(RemoteAlbum.annotation).core_schema
 
     def test_get_type_adapter_union(self):
         class MockUnionEndpoints(Endpoints[SimpleURI, RemoteTrack | RemoteAlbum]):
@@ -111,20 +110,20 @@ class TestEndpointsMetaclass:
         class MockPlaylistEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack]):
             pass
 
-        assert MockPlaylistEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
-        assert MockPlaylistEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteTrack).core_schema
+        assert MockPlaylistEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist.annotation).core_schema
+        assert MockPlaylistEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteTrack.annotation).core_schema
 
         class MockPlaylistEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteAlbum]):
             pass
 
-        assert MockPlaylistEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
-        assert MockPlaylistEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteAlbum).core_schema
+        assert MockPlaylistEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist.annotation).core_schema
+        assert MockPlaylistEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteAlbum.annotation).core_schema
 
     def test_get_item_type_adapter_union(self):
         class MockUnionEndpoints(CollectionReadEndpoints[SimpleURI, RemotePlaylist, RemoteTrack | RemoteAlbum]):
             pass
 
-        assert MockUnionEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist).core_schema
+        assert MockUnionEndpoints.type_adapter.core_schema == TypeAdapter(RemotePlaylist.annotation).core_schema
         assert MockUnionEndpoints.item_type_adapter.core_schema == TypeAdapter(RemoteTrack | RemoteAlbum).core_schema
 
     @pytest.fixture

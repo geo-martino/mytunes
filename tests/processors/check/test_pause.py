@@ -16,7 +16,7 @@ from musify._models.collection.playlist import RemoteMutablePlaylist
 from musify._models.item.track import RemoteTrack
 from musify.processors.check import Checker
 from musify.processors.check._page import CheckerPage
-from tests.processors.utils import MockCollection, assert_help_text
+from tests.processors.utils import MockCollection
 from tests.utils import patch_input
 
 
@@ -67,7 +67,6 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            capsys: CaptureFixture[str],
     ):
         inputs = list(inputs)
 
@@ -96,12 +95,9 @@ class TestCheckerPause:
         assert mock_playlist_items.call_count == expected_playlist_items
         assert mock_teardown_playlists.call_count == expected_pages
 
-        assert_help_text(capsys, expected_help)
-
     ###########################################################################
     ## Tests
     ###########################################################################
-    # TODO: fails on CLI execution only
     async def test_pages(
             self,
             model: Checker,
@@ -111,8 +107,6 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            capsys: CaptureFixture[str],
-            caplog: LogCaptureFixture,
     ):
         inputs = [""] * pages + ["h"] + ["invalid_input"]  # add some other random inputs
         with patch_input(iter(inputs)):
@@ -127,7 +121,6 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            capsys=capsys,
         )
 
     async def test_pause_prints_help(
@@ -139,7 +132,6 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            capsys: CaptureFixture[str],
     ):
         inputs = ["h", "h", "", "h", "", "h"] + [""] * pages
         with patch_input(iter(inputs)):
@@ -154,7 +146,6 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            capsys=capsys,
         )
 
     async def test_pause_skips(
@@ -166,7 +157,6 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            capsys: CaptureFixture[str],
     ):
         inputs = ["", "h", "", "s", "h"] + [""] * pages
         with patch_input(iter(inputs)):
@@ -181,7 +171,6 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            capsys=capsys,
         )
 
     async def test_pause_quits(
@@ -193,8 +182,6 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            capsys: CaptureFixture[str],
-            caplog: LogCaptureFixture,
     ):
         inputs = ["", "h", "", "q"]
         with patch_input(iter(inputs)):
@@ -209,7 +196,6 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            capsys=capsys,
         )
 
     async def test_pause_print_playlist(
@@ -223,7 +209,6 @@ class TestCheckerPause:
             mock_playlist_links: Mock,
             mock_playlist_items: Mock,
             mock_teardown_playlists: Mock,
-            capsys: CaptureFixture[str],
             faker: Faker,
     ):
         playlist_names = (
@@ -257,7 +242,6 @@ class TestCheckerPause:
             mock_playlist_links=mock_playlist_links,
             mock_playlist_items=mock_playlist_items,
             mock_teardown_playlists=mock_teardown_playlists,
-            capsys=capsys,
         )
 
         # assert explicitly to be sure

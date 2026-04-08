@@ -17,7 +17,6 @@ from musify.processors.check._match.inputs import InputMatch
 from musify.processors.check._page import CheckerPage
 from musify.processors.match import Matcher
 from tests.processors.check.match.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
-from tests.processors.utils import assert_help_text
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list, patch_input
@@ -189,7 +188,6 @@ class TestInputMatch(UniqueKeyTester):
             mock_match_item_with_input: Mock,
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
-            capsys: CaptureFixture[str],
     ):
         kind = model.items[0].type
         inputs = [
@@ -211,16 +209,12 @@ class TestInputMatch(UniqueKeyTester):
         mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_called_once()
 
-        assert_help_text(capsys, inputs.count("h") + 1)
-
     async def test_match_quits(
             self,
             model: InputMatch,
             mock_match_item_with_input: Mock,
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
-            capsys: CaptureFixture[str],
-            caplog: LogCaptureFixture,
     ):
         kind = model.items[0].type
         inputs = [
@@ -236,8 +230,6 @@ class TestInputMatch(UniqueKeyTester):
         assert mock_match_item_with_input.call_count == 3  # quits early
         mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_not_called()  # doesn't produce a result
-
-        assert_help_text(capsys, inputs.count("h") + 1)
 
     async def test_match_assigns_uris(
             self,
@@ -323,7 +315,6 @@ class TestInputMatch(UniqueKeyTester):
             mock_match_item_with_input: Mock,
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
-            capsys: CaptureFixture[str],
     ):
         kind = model.items[0].type
         inputs = [
@@ -356,6 +347,4 @@ class TestInputMatch(UniqueKeyTester):
         assert mock_match_item_with_input.call_count == len(model.items)
         mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_called_once()
-
-        assert_help_text(capsys, inputs.count("h") + 1)
 

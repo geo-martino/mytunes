@@ -21,7 +21,6 @@ from musify.processors.download.stores.bandcamp import BandcampStore
 from musify.processors.download.stores.juno_download import JunoDownloadStore
 from musify.processors.download.stores.qobuz import QobuzStore
 from musify.processors.download.stores.seven_digital import SevenDigitalStore
-from tests.processors.utils import assert_help_text
 from tests.testers import BaseModelTester
 from tests.utils import patch_input
 
@@ -135,17 +134,17 @@ class TestStoreManager(BaseModelTester):
         assert mock_pause.call_count == math.ceil(len(duplicate_tracks) / model.interval)
         assert len(urls) == len(duplicate_tracks) * len(model.stores)
 
-    # TODO: fails on CLI execution only
     def test_pause(
             self,
             model: StoreManager,
             urls: list[str],
             unique_tracks: list[Track],
-            capsys: CaptureFixture[str],
+            mocker: MockerFixture,
             caplog: LogCaptureFixture,
     ):
         total = len(unique_tracks)
         pages_total = math.ceil(total / model.interval)
+        mock_pause = mocker.spy(StorePausePage, "pause")
 
         inputs = ["r", "", "name artists", "r", "bad_tag", "r", "name bad_tag", ""] + [""] * total
         with patch_input(iter(inputs)):
@@ -154,6 +153,6 @@ class TestStoreManager(BaseModelTester):
         # 5 extra for 3*r input + 2*<Fields> input
         assert len(urls) == (total + 5 * model.interval) * len(model.stores)
 
-        assert_help_text(capsys, pages_total + 2)  # TODO: flakey assertion
+        assert mock_pause.call_count == pages_total + 2
         assert caplog.text.count("Some fields were not recognised") == 1
         assert caplog.text.count("Unrecognised input") == 1

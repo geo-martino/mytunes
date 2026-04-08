@@ -2,6 +2,7 @@ import itertools
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from contextlib import suppress, AbstractAsyncContextManager
 from copy import copy
+from functools import cached_property
 from io import BytesIO
 from itertools import batched
 from types import UnionType
@@ -36,7 +37,6 @@ from .._base import ModelMetaclass
 
 
 class EndpointsMetaclass(ModelMetaclass):
-    @property
     def type_name(cls) -> str:
         """The name of the type of resource handled by this Endpoint type."""
         kls = cast('type[Endpoints]', cls)
@@ -45,16 +45,16 @@ class EndpointsMetaclass(ModelMetaclass):
             return Logger.format_list_to_string((arg.type for arg in get_args(kls)))
         return kls.type
 
-    @property
     def item_type_name(cls) -> str:
         """The name for the type of items in the collection resource handled by this Endpoint type if applicable."""
         kls = cast('type[Endpoints]', cls)
         with suppress(MusifyTypeError):
             kls = get_generic(kls, expected=RemoteResource, not_expected=RemoteCollection, base=Endpoints)
+            if get_origin(kls) is UnionType:
+                return Logger.format_list_to_string((arg.type for arg in get_args(kls)))
             return kls.type
         return "item"
 
-    @property
     def type_adapter(cls) -> TypeAdapter[RemoteResource]:
         """The type adapter for the resources handled by this Endpoint type."""
         kls = cast('type[Endpoints]', cls)
@@ -63,7 +63,6 @@ class EndpointsMetaclass(ModelMetaclass):
             return TypeAdapter(kls)
         return TypeAdapter(kls.annotation)
 
-    @property
     def item_type_adapter(cls) -> TypeAdapter[RemoteResource]:
         """The type adapter to use for items in the collection resource handled by this Endpoint type if applicable."""
         kls = cast('type[Endpoints]', cls)
@@ -77,6 +76,8 @@ class EndpointsMetaclass(ModelMetaclass):
             except MusifyTypeError:
                 continue
 
+        if get_origin(kls) is UnionType:
+            return TypeAdapter(kls)
         return TypeAdapter(kls.annotation)
 
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
@@ -90,6 +91,13 @@ class EndpointsMetaclass(ModelMetaclass):
 
         if cls.__final__:
             cls._validate_generic_types()
+
+        with suppress(NameError, TypeError, StopIteration):
+            cls.type_name = mcs.type_name(cls)
+            cls.type_adapter = mcs.type_adapter(cls)
+        with suppress(NameError, AttributeError, TypeError, StopIteration):
+            cls.item_type_name = mcs.item_type_name(cls)
+            cls.item_type_adapter = mcs.item_type_adapter(cls)
 
         return cls
 
@@ -112,7 +120,7 @@ class EndpointsMetaclass(ModelMetaclass):
             raise APIModelError("Can only create resources from final API models.")
 
         if adapter is None:
-            adapter = EndpointsMetaclass.type_adapter.fget(cls)
+            adapter = cls.type_adapter
 
         match adapter:
             case TypeAdapter():
@@ -201,7 +209,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
     @property
     def _model_context(self) -> RemoteModelContext:
         # WORKAROUND: keeps throwing AttributeError if accessed through the class
-        model_type = EndpointsMetaclass.type_name.fget(type(self))
+        model_type = type(self).type_name
         return RemoteModelContext(user=self.user, type=model_type)
 
     async def __aenter__(self) -> Self:

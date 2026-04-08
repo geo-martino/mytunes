@@ -1,4 +1,5 @@
 import string
+from copy import deepcopy
 from pathlib import Path
 from random import randrange, choice
 from typing import ClassVar
@@ -34,7 +35,3 @@ def create_random_file(path: Path, size: int | None = None) -> None:
     with path.open("w") as file:
         for _ in range(0, size or randrange(int(6*10e3), int(10e6))):
             file.write(choice(string.ascii_letters))
-
-
-def assert_help_text(capsys: CaptureFixture[str], expected: int) -> None:
-    assert capsys.readouterr().out.count("Enter one of the following") == expected

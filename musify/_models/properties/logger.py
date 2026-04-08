@@ -71,7 +71,6 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
         :return: The results of the tasks.
         """
         tasks = self._wrap_tasks(tasks, task_id, predicate)
-        print("TASKS", tasks)
         result = [it for it in tasks]
 
         if remove and task_id in self._progress.task_ids:
@@ -85,7 +84,6 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
             predicate: Callable[[T], bool] | None = None,
     ) -> Generator[T]:
         for task in tasks:
-            print(task)
             result = task()
             if task_id is not None and task_id in self._progress.task_ids:
                 self._progress.advance(task_id, advance=1)
