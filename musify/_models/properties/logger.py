@@ -56,7 +56,6 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
             self,
             tasks: Iterable[Callable[[], T]],
             task_id: TaskID | None = None,
-            predicate: Callable[[T], bool] | None = None,
             remove: bool = True,
     ) -> list[T]:
         """
@@ -65,39 +64,26 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
 
         :param tasks: The tasks to run.
         :param task_id: The progress bar task ID to run the tasks for. If not given, no progress bar will be shown.
-        :param predicate: Only return the task result if the result adheres to this predicate.
-            When None, doesn't return the result if None.
         :param remove: Whether to remove the progress bar task when done.
         :return: The results of the tasks.
         """
-        tasks = self._wrap_tasks(tasks, task_id, predicate)
-        result = [it for it in tasks]
+        tasks = (self._wrap_task(task, task_id) for task in tasks)
+        result = list(filter(None, tasks))
 
         if remove and task_id in self._progress.task_ids:
             self._progress.remove_task(task_id)
         return result
 
-    def _wrap_tasks[T](
-            self,
-            tasks: Iterable[Callable[[], T]],
-            task_id: TaskID | None = None,
-            predicate: Callable[[T], bool] | None = None,
-    ) -> Generator[T]:
-        for task in tasks:
-            result = task()
-            if task_id is not None and task_id in self._progress.task_ids:
-                self._progress.advance(task_id, advance=1)
-
-            if callable(predicate) and predicate(result):
-                yield result
-            elif predicate is None and result is not None:
-                yield result
+    def _wrap_task[T](self, task: Callable[[], T], task_id: TaskID | None = None) -> T | None:
+        result = task()
+        if task_id is not None and task_id in self._progress.task_ids:
+            self._progress.advance(task_id, advance=1)
+        return result
 
     async def _run_tasks_async[T](
             self,
             tasks: Iterable[Coroutine[Any, Any, T]],
             task_id: TaskID | None = None,
-            predicate: Callable[[T], bool] | None = None,
             remove: bool = True,
     ) -> list[T]:
         """
@@ -106,32 +92,19 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
 
         :param tasks: The tasks to run.
         :param task_id: The progress bar task ID to run the tasks for. If not given, no progress bar will be shown.
-        :param predicate: Only return the task result if the result adheres to this predicate.
-            When None, doesn't return the result if None.
         :param remove: Whether to remove the progress bar task when done.
         :return: The results of the tasks.
         """
-        # async with asyncio.TaskGroup() as tg:
-        #     tasks = [tg.create_task(task) for task in tasks]
-        tasks = self._wrap_tasks_async(tasks, task_id, predicate)
-        result = [it async for it in tasks]
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(self._wrap_task_async(task, task_id=task_id)) for task in tasks]
+            result = list(filter(None, await asyncio.gather(*tasks)))
 
         if remove and task_id in self._progress.task_ids:
             self._progress.remove_task(task_id)
         return result
 
-    async def _wrap_tasks_async[T](
-            self,
-            tasks: Iterable[Awaitable[T]],
-            task_id: TaskID | None = None,
-            predicate: Callable[[T], bool] | None = None,
-    ) -> AsyncGenerator[T]:
-        for task in tasks:
-            result = await task
-            if task_id is not None and task_id in self._progress.task_ids:
-                self._progress.advance(task_id, advance=1)
-
-            if callable(predicate) and predicate(result):
-                yield result
-            elif predicate is None and result is not None:
-                yield result
+    async def _wrap_task_async[T](self, task: Awaitable[T], task_id: TaskID | None = None) -> T:
+        result = await task
+        if task_id is not None and task_id in self._progress.task_ids:
+            self._progress.advance(task_id, advance=1)
+        return result
