@@ -150,10 +150,6 @@ type _URI_TYPE[RT] = str | URL | RT
 
 
 class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress, metaclass=EndpointsMetaclass):
-    _bar_threshold: ClassVar[int] = PrivateAttr(
-        # description="The minimum number of pages required to show a progress bar when paginating through items.",
-        default=5,
-    )
     # TODO: drop this on aiorequestful v2
     _id_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the ID of an item in the API response.",
@@ -332,11 +328,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         item_type = type(self).item_type_name
         desc_type = f"{collection_type} {item_type}" if item_type != collection_type else collection_type
 
-        task_id = self._progress.add_task(
-            description=f"Getting {desc_type}s",
-            total=len(cursors),
-            visible=len(cursors) >= self._bar_threshold
-        )
+        task_id = self._progress.add_task(description=f"Getting {desc_type}s", total=len(cursors))
         tasks = map(self._get_page, cursors)
         responses: list[JsonSchemaValue] = await self._run_tasks_async(tasks, task_id=task_id)
 
@@ -643,9 +635,7 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
 
         batches = list(self._batch_values(uris, limit))
         task_id = self._progress.add_task(
-            description=f"Adding {item_type}s to {collection_type}",
-            total=len(batches),
-            visible=len(batches) >= self._bar_threshold
+            description=f"Adding {item_type}s to {collection_type}", total=len(batches),
         )
         await self._run_tasks_async(map(_post_items, batches), task_id=task_id)
 
@@ -688,9 +678,7 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
 
         batches = list(self._batch_values(uris, limit))
         task_id = self._progress.add_task(
-            description=f"Removing {item_type}s from {collection_type}",
-            total=len(batches),
-            visible=len(batches) >= self._bar_threshold
+            description=f"Removing {item_type}s from {collection_type}", total=len(batches),
         )
         await self._run_tasks_async(map(_delete_items, batches), task_id=task_id)
 
@@ -760,11 +748,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             return (type(self).create_model(it, context=self._model_context) for it in response_items)
 
         batches = list(self._batch_values(uncached_uris, limit))
-        task_id = self._progress.add_task(
-            description=f"Getting {item_type}s",
-            total=len(batches),
-            visible=len(batches) >= self._bar_threshold
-        )
+        task_id = self._progress.add_task(description=f"Getting {item_type}s", total=len(batches))
         responses = await self._run_tasks_async(map(_get_items, batches), task_id=task_id)
 
         # TODO: amend this on aiorequestful v2
@@ -839,11 +823,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             await self._handler.put(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
-        task_id = self._progress.add_task(
-            description=f"Adding {item_type}s",
-            total=len(batches),
-            visible=len(batches) >= self._bar_threshold
-        )
+        task_id = self._progress.add_task(description=f"Adding {item_type}s", total=len(batches))
         await self._run_tasks_async(map(_post_items, batches), task_id=task_id)
 
         self._handler.log("DONE", self._write_url, message=f"Added {len(uris):>6} {item_type}s")
@@ -878,11 +858,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             await self._handler.delete(self._write_url, log_message=message, **kwargs)
 
         batches = list(self._batch_values(uris, limit))
-        task_id = self._progress.add_task(
-            description=f"Removing {item_type}s",
-            total=len(batches),
-            visible=len(batches) >= self._bar_threshold
-        )
+        task_id = self._progress.add_task(description=f"Removing {item_type}s", total=len(batches))
         await self._run_tasks_async(map(_delete_items, batches), task_id=task_id)
 
         self._handler.log("DONE", self._write_url, message=f"Removed {len(uris):>6} {item_type}s")
