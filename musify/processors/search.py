@@ -21,6 +21,7 @@ from .._models.properties.name import HasName
 from .._models.properties.uri import HasURI
 from .._models.remote import RemoteResource
 from .._models.result import TotalCountResult, LenLogFormatter
+from .._utils import truncate_string
 
 
 class SearchResult[T: Any](TotalCountResult):
@@ -431,7 +432,7 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasProgress, HasAsyncOper
 
     def _log_debug(self, item: Any, message: str) -> None:
         name = self._get_item_log_name(item)
-        name = textwrap.shorten(name, 30, placeholder="...")
+        name = truncate_string(name, 30)
         self._logger.debug(f"{name} | {message}")
 
     @staticmethod

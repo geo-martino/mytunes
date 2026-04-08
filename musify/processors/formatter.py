@@ -20,6 +20,7 @@ from .._models.properties.length import HasLength
 from .._models.properties.name import HasName
 from .._models.properties.order import Position, HasTrackPosition
 from .._models.properties.uri import HasImmutableURI, HasMutableURI
+from .._utils import truncate_string
 
 FIELDS = Literal[
     "Name", "Album", "Artist", "Released At", "Length", "URI", "Public URL"
@@ -184,7 +185,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         should_truncate = self.truncate[position]
 
         if should_truncate:
-            value = textwrap.shorten(str(value), width, placeholder="...")
+            value = truncate_string(str(value), width)
         return value
 
     def _colour_value_if_needed[T](self, value: T, position: int) -> T | str:

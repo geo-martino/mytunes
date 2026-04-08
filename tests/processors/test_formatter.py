@@ -181,7 +181,7 @@ class TestModelFormatter(BaseModelTester):
             for value, original, width in zip(row, row_original, model.widths):
                 assert len(str(value)) <= width, "Value should be truncated to the specified width"
                 if len(str(original)) > width:
-                    assert str(value).endswith("..."), "Truncated value should end with '...'"
+                    assert str(value).endswith("."), "Truncated value should end with placeholder"
 
     def test_colours_values(
             self,

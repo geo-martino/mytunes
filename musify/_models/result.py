@@ -11,6 +11,7 @@ from termcolor import colored
 from musify._models import BaseModel
 from musify._models.metadata import Attribute
 from musify._types import StrippedString
+from musify._utils import truncate_string
 from musify.exception import MusifyTypeError
 
 
@@ -75,7 +76,7 @@ class LogFormatter[T](Attribute):
     def _align_value(self, value: str) -> str:
         """Align the given log value according to the alignment and width."""
         if self.max_width is not None and len(value) > self.max_width:
-            value = textwrap.shorten(value, self.max_width, placeholder="...")
+            value = truncate_string(value, self.max_width, truncate_left=self.alignment == "right")
 
         if self.width is None or self.alignment is None:
             return value
