@@ -5,11 +5,11 @@ from typing import Annotated, ClassVar, final
 
 import tabulate
 from mutagen import MutagenError
-from mytunes.local._collection.library._path import LocalSystemPaths
+from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator
 from termcolor import colored
 
-from mytunes._types import TO_SET, to_set
+from mytunes._types import to_set
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.album import LocalAlbumCollection
@@ -45,14 +45,14 @@ class LocalLibrary(
     _ignore_folders: ClassVar[frozenset[str]] = frozenset({"$RECYCLE.BIN"})
     source: ClassVar[str] = "local"
 
-    library_folders: set[
-        Annotated[DirectoryPath, BeforeValidator(LocalSystemPaths.get_current_system_path)]
+    library_folders: Annotated[
+        set[DirectoryPath], BeforeValidator(LocalSystemPaths.get_current_system_paths)
     ] = Field(
         description="Set of folders to scan for music files.",
         default_factory=set,
     )
     playlist_folder: Annotated[
-         Path, BeforeValidator(LocalSystemPaths.get_current_system_path)
+         Path, BeforeValidator(LocalSystemPath.get_current_system_path)
     ] | None = Field(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=None,

@@ -13,7 +13,7 @@ from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 import aiofiles
-from mytunes.local._collection.library._path import LocalSystemPaths
+from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator
 
 from mytunes._types import TO_SET, to_set
@@ -60,12 +60,12 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     _xml_library_path_keys: ClassVar[set[str]] = {"Location", "Music Folder"}
 
     musicbee_folder: Annotated[
-        DirectoryPath, BeforeValidator(LocalSystemPaths.get_current_system_path)
+        DirectoryPath, BeforeValidator(LocalSystemPath.get_current_system_path)
     ] = Field(
         description="The absolute path of the musicbee folder containing settings and library files.",
     )
-    library_folders: set[
-        Annotated[DirectoryPath, BeforeValidator(LocalSystemPaths.get_current_system_path)]
+    library_folders: Annotated[
+        set[DirectoryPath], BeforeValidator(LocalSystemPaths.get_current_system_paths)
     ] = Field(
         description="Set of folders to scan for music files.",
         default_factory=set,
@@ -73,7 +73,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         frozen=True,
     )
     playlist_folder: Annotated[
-         Path, BeforeValidator(LocalSystemPaths.get_current_system_path)
+         Path, BeforeValidator(LocalSystemPath.get_current_system_path)
     ] = Field(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=Path("Playlists"),
@@ -96,7 +96,8 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             return data
 
         with suppress(TypeError):
-            data["path"] = Path(data[key]).joinpath(cls._xml_library_path)
+            path = LocalSystemPath.get_current_system_path(data[key])
+            data["path"] = path.joinpath(cls._xml_library_path)
         return data
 
     @model_validator(mode="after")
