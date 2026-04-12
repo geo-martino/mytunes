@@ -1,7 +1,10 @@
 from abc import abstractmethod
-from typing import Any, ClassVar
+from collections.abc import Mapping
+from typing import Any, ClassVar, Self, Annotated, Union
 
-from pydantic import Field
+from mytunes._models._base.resource import ResourceMetaclass
+from mytunes._models.exception import MyTunesValidationError
+from pydantic import Field, Tag, Discriminator
 
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
@@ -24,6 +27,26 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
     def dump(self) -> dict[str, Any]:
         """Generate a dump of this library's state. This can be used for backup or debugging purposes."""
         return self.model_dump(mode="json", exclude_none=True)
+
+
+class LibraryMetaclass(ResourceMetaclass):
+    @property
+    def annotation(cls) -> Self:
+        def _get_source_from_config[T](data: T | Mapping[str, Any]) -> str:
+            match data:
+                case Library():
+                    return data.source
+                case Mapping():
+                    return data.get("source")
+                case _:
+                    raise MyTunesValidationError(f"Unrecognised type: {type(data).__name__!r}.")
+
+        classes = cls.registered_submodels
+        types = (Annotated[kls, Tag(kls.source)] for kls in classes)
+        return Annotated[
+            Union[*types],
+            Field(discriminator=Discriminator(_get_source_from_config)),
+        ]
 
 
 # noinspection PyAbstractClass
