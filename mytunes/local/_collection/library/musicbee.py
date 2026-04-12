@@ -6,6 +6,7 @@ import hashlib
 import os
 import re
 from collections.abc import Mapping, Sequence, Iterator, MutableMapping
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar, Self, Annotated, final
