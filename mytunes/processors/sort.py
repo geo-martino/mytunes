@@ -103,7 +103,7 @@ class ItemSorter(Processor):
     def sort_by_field(
             cls,
             items: MutableSequence[ResourceModel],
-            field: _SORT_FIELDS_TYPE | None = None,
+            field: _ATTRIBUTE_FIELD_TYPE | None = None,
             reverse: bool = False,
             ignore_words: Iterable[str] = ()
     ) -> None:
@@ -125,7 +125,7 @@ class ItemSorter(Processor):
 
     @classmethod
     def _get_sort_key_by_type(
-            cls, items: Collection[ResourceModel], field: _SORT_FIELDS_TYPE, ignore_words: Iterable[str]
+            cls, items: Collection[ResourceModel], field: _ATTRIBUTE_FIELD_TYPE, ignore_words: Iterable[str]
     ) -> Any:
         try:  # attempt to find an example value to determine the value type for this sort
             value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
@@ -186,7 +186,7 @@ class ItemSorter(Processor):
     def group_by_field[T: ResourceModel](
             cls,
             items: Collection[T],
-            field: _SORT_FIELDS_TYPE,
+            field: _ATTRIBUTE_FIELD_TYPE,
             ignore_words: Iterable[str] = (),
     ) -> dict[Any, list[T]]:
         """
@@ -251,7 +251,7 @@ class ItemSorter(Processor):
     def _sort_by_fields[T: ResourceModel](
             self,
             groups: MutableSequence[T] | MutableMapping[Any, T],
-            fields: Iterator[tuple[_SORT_FIELDS_TYPE, bool]],
+            fields: Iterator[tuple[_ATTRIBUTE_FIELD_TYPE, bool]],
     ) -> MutableSequence[T] | MutableMapping[Any, T]:
         """
         Sort items by the given fields recursively in the order given.

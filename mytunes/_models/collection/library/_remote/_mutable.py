@@ -133,7 +133,7 @@ class RemoteMutableLibrary[
         self._logger.info(f"Synchronising {self._log_name} library", header=1)
 
         with self._progress:
-            results = await self.sync_playlist_items(kind=kind, dry_run=dry_run)
+            results = await self.sync_playlists(kind=kind, dry_run=dry_run)
             results["TRACKS"] = await self.sync_tracks(kind=kind, dry_run=dry_run)
             results["ARTISTS"] = await self.sync_artists(kind=kind, dry_run=dry_run)
             results["ALBUMS"] = await self.sync_albums(kind=kind, dry_run=dry_run)
@@ -308,7 +308,7 @@ class RemoteMutableLibrary[
         ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
         ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
     )
-    async def sync_playlist_items(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncRemoteResult]:
+    async def sync_playlists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncRemoteResult]:
         """
         Synchronise the items of playlists in this library with the remote service.
 

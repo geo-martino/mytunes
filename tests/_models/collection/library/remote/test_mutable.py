@@ -323,7 +323,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     ):
         model.playlists.update(playlists)
 
-        results = await model.sync_playlist_items()
+        results = await model.sync_playlists()
         assert len(results) == len(playlists)
 
         assert mock_get_or_create_playlist.call_count == len(playlists)
