@@ -592,8 +592,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
     @validate_call
     async def save_tracks(
             self,
-            include: Sequence[str] = (),
-            exclude: Sequence[str] = (),
+            include: set[str] | Sequence[str] = (),
+            exclude: set[str] | Sequence[str] = (),
             context: TagContext | None = None,
             replace: bool = False,
             dry_run: bool = True
