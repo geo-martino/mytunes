@@ -108,6 +108,12 @@ class TestMusicBee(NoUniqueKeyTester):
         path.touch()
         return path
 
+    def test_get_current_system_musicbee_path(self, musicbee_folder: Path, platform: str):
+        paths = {platform: musicbee_folder}
+        model = MusicBee(musicbee_folder=paths)
+        assert model.musicbee_folder == musicbee_folder
+        assert model.path == musicbee_folder.joinpath(MusicBee._xml_library_path)
+
     def test_checks_settings_file_exists(self, musicbee_folder: Path, settings_xml_path: Path):
         assert settings_xml_path.is_file()
         MusicBee(musicbee_folder=musicbee_folder)

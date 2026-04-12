@@ -27,7 +27,10 @@ class TestLocalLibrary(NoUniqueKeyTester):
     @pytest.fixture
     def library_folders(self, faker: Faker, tmp_path: Path) -> list[Path]:
         """The folders which contain library tracks and playlists."""
-        return [tmp_path.joinpath(faker.sentence()) for _ in range(faker.random_int(1, 4))]
+        paths = [tmp_path.joinpath(faker.sentence()) for _ in range(faker.random_int(1, 4))]
+        for path in paths:
+            path.mkdir(parents=True, exist_ok=True)
+        return paths
 
     @pytest.fixture
     def playlist_folder(self, faker: Faker) -> Path:
@@ -134,10 +137,15 @@ class TestLocalLibrary(NoUniqueKeyTester):
     ) -> LocalLibrary:
         return LocalLibrary(library_folders=library_folders, playlist_folder=playlist_folder)
 
+    def test_get_current_system_library_paths(self, library_folders: list[Path], platform: str):
+        paths = {platform: library_folders}
+        model = LocalLibrary(library_folders=paths)
+        assert model.library_folders == set(library_folders)
+
     def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]):
         names = {pl.name for pl in playlists}
 
-        model.playlist_filter = NameFilter(values=names)
+        model.playlist_filter = names
         assert isinstance(model.playlist_filter, NameFilter)
         assert model.playlist_filter.values == names
 
