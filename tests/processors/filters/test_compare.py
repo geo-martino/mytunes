@@ -44,6 +44,14 @@ class TestComparerFilter(FilterTester):
 
         return local_tracks
 
+    def test_from_comparer(self, comparers: list[ComparerFilter]):
+        data = comparers[0].model_dump()
+        assert ComparerFilter.model_validate(data).comparers.keys() == {comparers[0]}
+
+    def test_from_comparers(self, comparers: list[ComparerFilter]):
+        data = [cmp.model_dump() for cmp in comparers]
+        assert ComparerFilter.model_validate(data).comparers.keys() == set(comparers)
+
     def test_equality(self, model: ComparerFilter, faker: Faker):
         model.match_all = faker.boolean()
         assert model == copy(model)
@@ -55,7 +63,7 @@ class TestComparerFilter(FilterTester):
         assert model != new_filter
 
     def test_check(self, model: ComparerFilter, faker: Faker):
-        pass
+        pass  # deferred to more specific tests below
 
     def test_check_with_flat_comparers_and_match_any(
             self, model: ComparerFilter, track: LocalTrack, faker: Faker

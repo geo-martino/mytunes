@@ -1,7 +1,8 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Collection
+from contextlib import suppress
 from typing import Self, Any, final
 
-from pydantic import Field, field_validator, field_serializer, validate_call
+from pydantic import Field, field_validator, field_serializer, validate_call, ValidationError, model_validator
 
 from ..._models import ResourceModel
 from mytunes.processors.compare import Comparer
@@ -31,6 +32,19 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
         ),
         default=None,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_comparer[T](cls, data: T | Mapping[str, Any] | Collection[Mapping[str, Any]]) -> T | Mapping[Comparer, Self]:
+        match data:
+            case Mapping():
+                with suppress(ValidationError):
+                    return dict(comparers=Comparer.model_validate(data))
+            case Collection() if all(isinstance(value, Mapping) for value in data):
+                with suppress(ValidationError):
+                    return dict(comparers=[Comparer.model_validate(value) for value in data])
+
+        return data
 
     @field_validator("comparers", mode="before", check_fields=True)
     @classmethod
