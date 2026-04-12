@@ -86,7 +86,8 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         if not isinstance(data, MutableMapping) or (key := "musicbee_folder") not in data:
             return data
 
-        data["path"] = Path(data[key]).joinpath(cls._xml_library_path)
+        with suppress(TypeError):
+            data["path"] = Path(data[key]).joinpath(cls._xml_library_path)
         return data
 
     @model_validator(mode="after")
