@@ -46,7 +46,7 @@ def to_set(value: Any) -> set[Any] | None:
     match value:
         case None:
             return
-        case str() | Mapping() | BaseModel() if isinstance(value, Hashable):
+        case str() | BaseModel():
             return {value}
         case Iterable():
             return set(value)
