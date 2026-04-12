@@ -48,18 +48,10 @@ sqlite = [
     "aiosqlite~=0.21.0",  # WORKAROUND: pinned to support Connection.is_alive  # TODO: drop me on aiorequestful v2
 ]
 
-[project.urls]
-"Documentation" = "https://geo-martino.github.io/mytunes/"
-"Release Notes" = "https://geo-martino.github.io/mytunes/info/release-history.html"
-"Contribute" = "https://geo-martino.github.io/mytunes/info/contributing.html"
-"Source code" = "https://github.com/geo-martino/mytunes"
-Issues = "https://github.com/geo-martino/mytunes/issues"
-
 [dependency-groups]
 dev = [
     "flake8",
     "grip",
-    "rich>=14.3.3",
 ]
 test = [
     "mytunes[all]",
@@ -83,6 +75,13 @@ docs = [
 
 [tool.uv]
 default-groups = ["dev", "test", "docs"]
+
+[project.urls]
+"Documentation" = "https://geo-martino.github.io/mytunes/"
+"Release Notes" = "https://geo-martino.github.io/mytunes/info/release-history.html"
+"Contribute" = "https://geo-martino.github.io/mytunes/info/contributing.html"
+"Source code" = "https://github.com/geo-martino/mytunes"
+Issues = "https://github.com/geo-martino/mytunes/issues"
 
 [tool.hatch.version]
 source = "versioningit"
