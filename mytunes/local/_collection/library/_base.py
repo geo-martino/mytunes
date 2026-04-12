@@ -57,7 +57,7 @@ class LocalLibrary(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=None,
     )
-    path_mapper: PathMapper = Field(
+    path_mapper: PathMapper.annotation = Field(
         description="Mapper to use when mapping paths stored in the playlist files.",
         default_factory=PathMapper,
     )

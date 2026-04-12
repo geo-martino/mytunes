@@ -276,7 +276,7 @@ class TestXAutoPF(LocalPlaylistTester):
             tracks_compared: list[LocalTrack],
             tracks_included: list[LocalTrack],
             tracks_excluded: list[LocalTrack],
-            path_mapper: PathMapper
+            path_mapper: PathMapper,
     ) -> GroupFilter:
         return GroupFilter(
             compare=ComparerFilter(
@@ -299,7 +299,7 @@ class TestXAutoPF(LocalPlaylistTester):
             path: Path,
             tracks: list[LocalTrack],
             path_mapper: PathMapper,
-            faker: Faker
+            faker: Faker,
     ):
         await model.load()
         assert not model.tracks

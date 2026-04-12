@@ -1,7 +1,7 @@
 import os
 from os import sep
 from pathlib import Path, PurePath
-from typing import Iterable, MutableMapping, Mapping
+from typing import Iterable, MutableMapping, Mapping, final
 
 from mytunes._models import BaseModel
 from mytunes._models.exception import MyTunesValidationError
@@ -11,11 +11,13 @@ from pydantic import Field, field_validator
 type PathInputType = str | Path | IsLocalFile | None
 
 
+@final
 class PathMapper(BaseModel):
     """
     Simple path mapper which extracts paths from :py:class:`File` objects.
     Can be extended by child classes for more complex mapping operations.
     """
+    __final__ = True
 
     def map(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """
@@ -70,6 +72,8 @@ class PathMapper(BaseModel):
         return list(map(Path, self.unmap_many(values, check_existence=check_existence)))
 
 
+# noinspection PyFinal
+@final
 class PathStemMapper(PathMapper):
     """
     A more complex path mapper which attempts to replace the stems of paths from strings and :py:class:`File` objects.
@@ -78,6 +82,8 @@ class PathStemMapper(PathMapper):
     Useful for cross-platform support. Can be used to correct paths if the same file exists in
     different locations according to different mounts and/or multiple operating systems.
     """
+    __final__ = True
+
     available_paths: MutableMapping[str, str] = Field(
         description=
         """
