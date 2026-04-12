@@ -649,8 +649,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
     def merge_tracks(
             self,
             others: Iterable[Track],
-            include: Sequence[str] = (),
-            exclude: Sequence[str] = (),
+            include: set[str] | Sequence[str] = (),
+            exclude: set[str] | Sequence[str] = (),
             replace: bool = False,
     ) -> dict[Path, dict[str, Any]]:
         """
