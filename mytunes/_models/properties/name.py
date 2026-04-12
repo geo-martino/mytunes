@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Self, Annotated, Any
 
-from pydantic import Field, model_validator
-
 from mytunes._models.metadata import Attribute
 from mytunes._types import StrippedString
+from pydantic import Field, model_validator
+
 from .._base.attribute import AttributeModel
 
 

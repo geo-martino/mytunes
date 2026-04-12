@@ -31,7 +31,7 @@ from mytunes.processors.sort import ItemSorter
 from ..._item.track import LocalTrack
 from ...._models import BaseModel
 from ...._models.exception import MyTunesValidationError
-from ...._models.properties.file import PathMapper
+from mytunes._models.properties.path import PathMapper
 from ...._models.result import LogFormatter
 from ...._models.sequence import MutableUniqueSequence
 

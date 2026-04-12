@@ -13,7 +13,8 @@ from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 import aiofiles
-from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath
+from mytunes.local._collection.library._path import LocalSystemPaths
+from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator
 
 from mytunes._types import TO_SET, to_set
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
@@ -22,7 +23,8 @@ from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local.exception import XMLReaderError, FileDoesNotExistError
 from ..._item.track import LocalTrack
 from ...._models import BaseModel, makecls
-from ...._models.properties.file import IsReadableFile, IsWriteableFile, PathStemMapper, IsLocalFile
+from ...._models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
+from mytunes._models.properties.path import PathStemMapper
 
 try:
     import xmltodict
@@ -57,16 +59,22 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     #: A list of keys for the XML library that need to be processed as system paths.
     _xml_library_path_keys: ClassVar[set[str]] = {"Location", "Music Folder"}
 
-    musicbee_folder: DirectoryPath = Field(
+    musicbee_folder: Annotated[
+        DirectoryPath, BeforeValidator(LocalSystemPaths.get_current_system_path)
+    ] = Field(
         description="The absolute path of the musicbee folder containing settings and library files.",
     )
-    library_folders: Annotated[set[DirectoryPath], TO_SET] = Field(
+    library_folders: set[
+        Annotated[DirectoryPath, BeforeValidator(LocalSystemPaths.get_current_system_path)]
+    ] = Field(
         description="Set of folders to scan for music files.",
         default_factory=set,
         init=False,
         frozen=True,
     )
-    playlist_folder: Path = Field(
+    playlist_folder: Annotated[
+         Path, BeforeValidator(LocalSystemPaths.get_current_system_path)
+    ] = Field(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=Path("Playlists"),
     )

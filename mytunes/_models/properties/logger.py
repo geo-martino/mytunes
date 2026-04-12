@@ -1,14 +1,14 @@
 import asyncio
 import logging
-from collections.abc import Iterable, Callable, Generator, Coroutine, Awaitable, AsyncGenerator
+from collections.abc import Iterable, Callable, Coroutine, Awaitable
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from functools import cached_property
 from typing import Self, ClassVar, Any
 
+from mytunes.logger import Logger
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, \
     TimeRemainingColumn, TaskID
 
-from mytunes.logger import Logger
 from .._base import BaseModel
 
 

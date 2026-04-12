@@ -7,7 +7,9 @@ from pydantic import BeforeValidator, Field, model_validator, validate_call, fie
 from mytunes._types import TO_SET, StrippedString, DEFAULT_IF_NONE
 from mytunes.exception import MyTunesTypeError
 from ..._models import BaseModel
-from ..._models.properties.file import PathMapper, IsLocalFile, PathInputType
+from ..._models.properties.file import IsLocalFile
+from ..._models.properties.path import PathInputType
+from mytunes._models.properties.path import PathMapper
 from ..._models.properties.name import HasName
 from mytunes.processors.filters._base import Filter
 

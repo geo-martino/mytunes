@@ -10,7 +10,7 @@ from pydantic.alias_generators import to_pascal
 from pytest_mock import MockerFixture
 
 from mytunes._models.item.track import Track
-from mytunes._models.properties.file import PathMapper
+from mytunes._models.properties.path import PathMapper
 from mytunes.exception import MyTunesValueError
 # noinspection PyProtectedMember
 from mytunes.local._collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \

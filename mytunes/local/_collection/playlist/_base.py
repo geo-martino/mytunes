@@ -17,7 +17,8 @@ from ..._item.track import LocalTrack, HasLocalTracks
 from ...._models import makecls
 from ...._models.collection.playlist import MutablePlaylist
 from ...._models.metadata import UniqueAttribute
-from ...._models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile, PathMapper
+from ...._models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
+from mytunes._models.properties.path import PathMapper
 from ...._models.properties.uri import URI
 from ...._models.sequence import MutableUniqueSequence, UniqueSequence
 

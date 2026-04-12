@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import Any, Self
 
+from mytunes._types import Number
 from pydantic import ValidationError
 
-from mytunes._types import Number
 from .._base import RootModel
 
 
