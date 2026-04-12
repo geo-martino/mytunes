@@ -2,6 +2,7 @@ from abc import abstractmethod
 from collections.abc import Mapping
 from typing import Any, ClassVar, Self, Annotated, Union
 
+from mytunes._models._base.attribute import AttributeMetaclass
 from mytunes._models._base.resource import ResourceMetaclass
 from mytunes._models.exception import MyTunesValidationError
 from pydantic import Field, Tag, Discriminator
@@ -29,7 +30,7 @@ class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
         return self.model_dump(mode="json", exclude_none=True)
 
 
-class LibraryMetaclass(ResourceMetaclass):
+class LibraryMetaclass(AttributeMetaclass, ResourceMetaclass):
     @property
     def annotation(cls) -> Self:
         def _get_source_from_config[T](data: T | Mapping[str, Any]) -> str:
@@ -56,7 +57,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
     HasAsyncOperations,
     HasLogger,
     HasProgress,
-    metaclass=makecls()
+    metaclass=LibraryMetaclass
 ):
     """A library of tracks and playlists and other object types."""
     type: ClassVar[str] = "library"
