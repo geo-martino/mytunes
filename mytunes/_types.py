@@ -1,5 +1,5 @@
 from annotationlib import ForwardRef
-from collections.abc import Iterable, Mapping, Iterator
+from collections.abc import Iterable, Mapping, Iterator, Hashable
 from types import UnionType, GenericAlias
 from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar
 
@@ -46,11 +46,11 @@ def to_set(value: Any) -> set[Any] | None:
     match value:
         case None:
             return
-        case str() | Mapping() | BaseModel():
+        case str() | Mapping() | BaseModel() if isinstance(value, Hashable):
             return {value}
         case Iterable():
             return set(value)
-        case _:
+        case _ if isinstance(value, Hashable):
             return {value}
 
 
