@@ -1,10 +1,10 @@
 Printer
 =======
 
-.. inheritance-diagram:: musify.printer
+.. inheritance-diagram:: mytunes.printer
    :parts: 1
 
-.. automodule:: musify.printer
+.. automodule:: mytunes.printer
     :members:
     :undoc-members:
     :show-inheritance:

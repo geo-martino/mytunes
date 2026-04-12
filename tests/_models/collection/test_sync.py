@@ -3,12 +3,12 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 
-from musify import MODULE_ROOT
+from mytunes import MODULE_ROOT
 # noinspection PyProtectedMember
-from musify._models.collection._sync import get_sync_items, get_sync_items_for_add, get_sync_items_for_refresh, \
+from mytunes._models.collection._sync import get_sync_items, get_sync_items_for_add, get_sync_items_for_refresh, \
     get_sync_items_for_sync
-from musify._models.exception import RequestError
-from musify._models.item.track import RemoteTrack
+from mytunes._models.exception import RequestError
+from mytunes._models.item.track import RemoteTrack
 from tests.remote import SimpleURI
 
 

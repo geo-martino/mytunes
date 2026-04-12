@@ -13,19 +13,19 @@ from pydantic import AliasPath, TypeAdapter, AliasChoices
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from musify._models._context import RemoteModelContext
-from musify._models.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
+from mytunes._models._context import RemoteModelContext
+from mytunes._models.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
-from musify._models.collection import RemoteCollection
-from musify._models.collection.playlist import RemotePlaylist
-from musify._models.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
-from musify._models.exception import APIModelError
-from musify._models.item.album import RemoteAlbum
-from musify._models.item.artist import RemoteArtist
-from musify._models.item.track import RemoteTrack
-from musify._models.properties.image import ImageURL, ImageFile
-from musify._models.properties.uri import URI
-from musify._models.remote import RemoteModel, RemoteResource
+from mytunes._models.collection import RemoteCollection
+from mytunes._models.collection.playlist import RemotePlaylist
+from mytunes._models.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
+from mytunes._models.exception import APIModelError
+from mytunes._models.item.album import RemoteAlbum
+from mytunes._models.item.artist import RemoteArtist
+from mytunes._models.item.track import RemoteTrack
+from mytunes._models.properties.image import ImageURL, ImageFile
+from mytunes._models.properties.uri import URI
+from mytunes._models.remote import RemoteModel, RemoteResource
 from tests.remote import SimpleURI, CallbackResult, MockRemoteResource, MockRemoteCollection, MockIndexCursor, \
     MockKeyCursor, MockUrlCursor, MockInitialCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester

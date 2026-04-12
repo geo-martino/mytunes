@@ -10,17 +10,17 @@ from faker import Faker
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from musify import MODULE_ROOT
-from musify._models.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
-from musify._models.api.playlist import PlaylistLibraryEndpoints
-from musify._models.collection._sync import SYNC_TYPE
-from musify._models.collection.library import RemoteMutableLibrary
-from musify._models.collection.library._remote._base import RemotePlaylistDump
-from musify._models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
-from musify._models.item.album import Album, RemoteAlbum
-from musify._models.item.artist import Artist, RemoteArtist
-from musify._models.item.track import RemoteTrack, Track
-from musify._models.properties.uri import URI
+from mytunes import MODULE_ROOT
+from mytunes._models.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
+from mytunes._models.api.playlist import PlaylistLibraryEndpoints
+from mytunes._models.collection._sync import SYNC_TYPE
+from mytunes._models.collection.library import RemoteMutableLibrary
+from mytunes._models.collection.library._remote._base import RemotePlaylistDump
+from mytunes._models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
+from mytunes._models.item.album import Album, RemoteAlbum
+from mytunes._models.item.artist import Artist, RemoteArtist
+from mytunes._models.item.track import RemoteTrack, Track
+from mytunes._models.properties.uri import URI
 from tests._models.collection.library.remote.utils import MockRemoteLibrary
 from tests._models.collection.utils import assert_sync_items_result
 from tests.remote import SimpleURI, MockRemoteAPI

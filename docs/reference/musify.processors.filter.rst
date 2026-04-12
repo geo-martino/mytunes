@@ -1,10 +1,10 @@
 Filter
 ======
 
-.. inheritance-diagram:: musify.processors.filter
+.. inheritance-diagram:: mytunes.processors.filter
    :parts: 1
 
-.. automodule:: musify.processors.filter
+.. automodule:: mytunes.processors.filter
     :members:
     :undoc-members:
     :show-inheritance:

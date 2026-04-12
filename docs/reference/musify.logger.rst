@@ -1,10 +1,10 @@
 Logger
 ======
 
-.. inheritance-diagram:: musify.logger
+.. inheritance-diagram:: mytunes.logger
    :parts: 1
 
-.. automodule:: musify.logger
+.. automodule:: mytunes.logger
     :members:
     :undoc-members:
     :show-inheritance:

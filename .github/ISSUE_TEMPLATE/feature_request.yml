@@ -6,11 +6,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for using Musify and for finding the time to help make using it a better experience for everyone!
+        Thank you for using MyTunes and for finding the time to help make using it a better experience for everyone!
         
         Note, you do not need to create an issue if you have already developed a feature to release.
 
-        You can open a [pull request](https://github.com/geo-martino/musify/pulls) immediately instead.
+        You can open a [pull request](https://github.com/geo-martino/mytunes/pulls) immediately instead.
   - type: textarea
     attributes:
       label: Description

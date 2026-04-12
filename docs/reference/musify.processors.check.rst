@@ -1,10 +1,10 @@
 Check
 =====
 
-.. inheritance-diagram:: musify.processors.check
+.. inheritance-diagram:: mytunes.processors.check
    :parts: 1
 
-.. automodule:: musify.processors.check
+.. automodule:: mytunes.processors.check
     :members:
     :undoc-members:
     :show-inheritance:

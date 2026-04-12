@@ -1,3 +1,3 @@
-from musify.libraries.remote.spotify.api import SpotifyAPI
+from mytunes.libraries.remote.spotify.api import SpotifyAPI
 
 api = SpotifyAPI()

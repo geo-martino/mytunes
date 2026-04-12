@@ -1,10 +1,10 @@
 Utils
 =====
 
-.. inheritance-diagram:: musify.libraries.local.track.utils
+.. inheritance-diagram:: mytunes.libraries.local.track.utils
    :parts: 1
 
-.. automodule:: musify.libraries.local.track.utils
+.. automodule:: mytunes.libraries.local.track.utils
     :members:
     :undoc-members:
     :show-inheritance:

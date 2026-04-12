@@ -7,9 +7,9 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 
-from musify._models.properties.file import PathMapper
-from musify.local._collection.playlist.m3u import M3U, SyncM3UResult
-from musify.local._item.track import LocalTrack
+from mytunes._models.properties.file import PathMapper
+from mytunes.local._collection.playlist.m3u import M3U, SyncM3UResult
+from mytunes.local._item.track import LocalTrack
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.testers import BaseModelTester
 

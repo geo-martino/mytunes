@@ -1,12 +1,12 @@
 """
 Fills in the variable fields of the README template and generates README.md file.
 """
-from musify import PROGRAM_OWNER_USER, PROGRAM_NAME
-from musify.libraries.local.track import TRACK_FILETYPES
-from musify.libraries.local.playlist import PLAYLIST_FILETYPES
-from musify.libraries.local.library import LIBRARY_CLASSES, LocalLibrary
-from musify.utils import SafeDict
-from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
+from mytunes import PROGRAM_OWNER_USER, PROGRAM_NAME
+from mytunes.libraries.local.track import TRACK_FILETYPES
+from mytunes.libraries.local.playlist import PLAYLIST_FILETYPES
+from mytunes.libraries.local.library import LIBRARY_CLASSES, LocalLibrary
+from mytunes.utils import SafeDict
+from mytunes.libraries.remote.spotify.wrangle import SpotifyDataWrangler
 
 SRC_FILENAME = "README.template.md"
 TRG_FILENAME = SRC_FILENAME.replace(".template", "")

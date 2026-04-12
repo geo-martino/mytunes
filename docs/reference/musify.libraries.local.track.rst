@@ -1,7 +1,7 @@
 Track
 =====
     
-.. automodule:: musify.libraries.local.track
+.. automodule:: mytunes.libraries.local.track
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,11 +10,11 @@ Track
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.local.track.field
-   musify.libraries.local.track.flac
-   musify.libraries.local.track.m4a
-   musify.libraries.local.track.mp3
-   musify.libraries.local.track.track
-   musify.libraries.local.track.utils
-   musify.libraries.local.track.wma
+   mytunes.libraries.local.track.field
+   mytunes.libraries.local.track.flac
+   mytunes.libraries.local.track.m4a
+   mytunes.libraries.local.track.mp3
+   mytunes.libraries.local.track.track
+   mytunes.libraries.local.track.utils
+   mytunes.libraries.local.track.wma
    

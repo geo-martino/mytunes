@@ -6,18 +6,18 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify._models import ResourceModel
-from musify._models.api import RemoteAPI
-from musify._models.api.search import SearchEndpoints
-from musify._models.collection import CollectionModel, RemoteCollection
-from musify._models.collection.album import AlbumCollection
-from musify._models.item.album import Album
-from musify._models.item.track import Track, RemoteTrack
-from musify._models.properties.uri import HasURI
-from musify._models.remote import RemoteResource
-from musify.processors.match import Matcher
-from musify.processors.score.string import NameScorer
-from musify.processors.search import Searcher, SearchResult
+from mytunes._models import ResourceModel
+from mytunes._models.api import RemoteAPI
+from mytunes._models.api.search import SearchEndpoints
+from mytunes._models.collection import CollectionModel, RemoteCollection
+from mytunes._models.collection.album import AlbumCollection
+from mytunes._models.item.album import Album
+from mytunes._models.item.track import Track, RemoteTrack
+from mytunes._models.properties.uri import HasURI
+from mytunes._models.remote import RemoteResource
+from mytunes.processors.match import Matcher
+from mytunes.processors.score.string import NameScorer
+from mytunes.processors.search import Searcher, SearchResult
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor
 from tests.testers import BaseModelTester

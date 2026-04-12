@@ -1,7 +1,7 @@
 from p0 import *
 
-from musify.libraries.local.track.field import LocalTrackField
-from musify.report import report_missing_tags
+from mytunes.libraries.local.track.field import LocalTrackField
+from mytunes.report import report_missing_tags
 
 tags = [
     LocalTrackField.TITLE,

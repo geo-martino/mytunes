@@ -1,6 +1,6 @@
 from p4 import *
 
-from musify.libraries.remote.spotify.library import SpotifyLibrary
+from mytunes.libraries.remote.spotify.library import SpotifyLibrary
 
 remote_library = SpotifyLibrary(api=api)
 playlist = "<YOUR PLAYLIST'S NAME>"  # case sensitive

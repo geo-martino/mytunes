@@ -9,11 +9,11 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify.local._collection.library import LocalLibrary
-from musify.local._collection.library.musicbee import MusicBee
-from musify.local._collection.library.musicbee import XMLLibraryParser
-from musify.local._item.track import LocalTrack
-from musify.local.exception import FileDoesNotExistError
+from mytunes.local._collection.library import LocalLibrary
+from mytunes.local._collection.library.musicbee import MusicBee
+from mytunes.local._collection.library.musicbee import XMLLibraryParser
+from mytunes.local._item.track import LocalTrack
+from mytunes.local.exception import FileDoesNotExistError
 from tests.testers import BaseModelTester, NoUniqueKeyTester
 
 try:

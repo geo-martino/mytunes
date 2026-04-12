@@ -1,9 +1,9 @@
 import pytest
 from faker import Faker
 
-from musify._models.item.track import Track
-from musify._models.properties.order import Position
-from musify.processors.tagger.values._collection import MinValue, MaxValue
+from mytunes._models.item.track import Track
+from mytunes._models.properties.order import Position
+from mytunes.processors.tagger.values._collection import MinValue, MaxValue
 from tests.testers import BaseModelTester
 
 

@@ -6,12 +6,12 @@ from faker import Faker
 from pydantic import ValidationError
 from yarl import URL
 
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify.processors.clean.string import NameCleaner
-from musify.processors.download.stores import AudioStore
-from musify.processors.download.stores._base import HasLocale, GeneralAudioStore
-from musify.processors.download.stores.exception import StoreError
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes.processors.clean.string import NameCleaner
+from mytunes.processors.download.stores import AudioStore
+from mytunes.processors.download.stores._base import HasLocale, GeneralAudioStore
+from mytunes.processors.download.stores.exception import StoreError
 from tests.processors.download.utils import assert_value_in_url, assert_value_not_in_url
 from tests.testers import BaseModelTester
 

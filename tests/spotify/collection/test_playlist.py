@@ -3,10 +3,10 @@ from faker import Faker
 from pydantic import ValidationError
 from yarl import URL
 
-from musify._models._context import RemoteModelContext
-from musify.spotify._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
-from musify.spotify.cursors import SpotifyIndexCursor
-from musify.spotify.user import SpotifyUser
+from mytunes._models._context import RemoteModelContext
+from mytunes.spotify._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
+from mytunes.spotify.cursors import SpotifyIndexCursor
+from mytunes.spotify.user import SpotifyUser
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
 

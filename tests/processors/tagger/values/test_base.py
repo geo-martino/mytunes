@@ -1,8 +1,8 @@
 import pytest
 from faker import Faker
 
-from musify._models.item.track import Track
-from musify.processors.tagger.values import FixedValue
+from mytunes._models.item.track import Track
+from mytunes.processors.tagger.values import FixedValue
 from tests.testers import BaseModelTester
 
 

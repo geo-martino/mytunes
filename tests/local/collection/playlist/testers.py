@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from musify._models.properties.file import PathStemMapper
-from musify._models.result import Result
-from musify.local._collection.playlist import LocalPlaylist
+from mytunes._models.properties.file import PathStemMapper
+from mytunes._models.result import Result
+from mytunes.local._collection.playlist import LocalPlaylist
 from tests.testers import UniqueKeyTester
 
 

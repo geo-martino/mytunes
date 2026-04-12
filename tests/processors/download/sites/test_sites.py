@@ -1,11 +1,11 @@
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify.processors.download.stores.bandcamp import BandcampStore
-from musify.processors.download.stores.jackett import JackettStore
-from musify.processors.download.stores.juno_download import JunoDownloadStore
-from musify.processors.download.stores.qobuz import QobuzStore
-from musify.processors.download.stores.seven_digital import SevenDigitalStore
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes.processors.download.stores.bandcamp import BandcampStore
+from mytunes.processors.download.stores.jackett import JackettStore
+from mytunes.processors.download.stores.juno_download import JunoDownloadStore
+from mytunes.processors.download.stores.qobuz import QobuzStore
+from mytunes.processors.download.stores.seven_digital import SevenDigitalStore
 from tests.processors.download.utils import assert_track_in_url, assert_artist_in_url, \
     assert_album_in_url
 

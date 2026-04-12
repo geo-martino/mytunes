@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify._models.properties.order import Position
+from mytunes._models.properties.order import Position
 from tests.testers import BaseModelTester
 
 

@@ -4,10 +4,10 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from musify._models.properties.length import Length
-from musify.local._item.album import LocalAlbum
-from musify.local._item.track import LocalTrack
-from musify.processors.limit import ItemLimiter, LimitType
+from mytunes._models.properties.length import Length
+from mytunes.local._item.album import LocalAlbum
+from mytunes.local._item.track import LocalTrack
+from mytunes.processors.limit import ItemLimiter, LimitType
 from tests.processors.utils import create_random_file
 from tests.testers import BaseModelTester
 

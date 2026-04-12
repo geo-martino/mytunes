@@ -1,10 +1,10 @@
 Sort
 ====
 
-.. inheritance-diagram:: musify.processors.sort
+.. inheritance-diagram:: mytunes.processors.sort
    :parts: 1
 
-.. automodule:: musify.processors.sort
+.. automodule:: mytunes.processors.sort
     :members:
     :undoc-members:
     :show-inheritance:

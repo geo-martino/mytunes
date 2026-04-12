@@ -1,7 +1,7 @@
 Core
 ====
     
-.. automodule:: musify.libraries.remote.core
+.. automodule:: mytunes.libraries.remote.core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,12 +10,12 @@ Core
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.remote.core.api
-   musify.libraries.remote.core.base
-   musify.libraries.remote.core.exception
-   musify.libraries.remote.core.factory
-   musify.libraries.remote.core.library
-   musify.libraries.remote.core.object
-   musify.libraries.remote.core.types
-   musify.libraries.remote.core.wrangle
+   mytunes.libraries.remote.core.api
+   mytunes.libraries.remote.core.base
+   mytunes.libraries.remote.core.exception
+   mytunes.libraries.remote.core.factory
+   mytunes.libraries.remote.core.library
+   mytunes.libraries.remote.core.object
+   mytunes.libraries.remote.core.types
+   mytunes.libraries.remote.core.wrangle
    

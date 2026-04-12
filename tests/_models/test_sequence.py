@@ -7,10 +7,10 @@ import pytest
 from faker import Faker
 from pydantic import TypeAdapter, ValidationError
 
-from musify._models import ResourceModel
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify._models.sequence import UniqueSequence, MutableUniqueSequence
+from mytunes._models import ResourceModel
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes._models.sequence import UniqueSequence, MutableUniqueSequence
 from tests.utils import split_list
 
 

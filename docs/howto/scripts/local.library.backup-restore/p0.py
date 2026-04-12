@@ -1,2 +1,2 @@
-from musify.libraries.local.library import LocalLibrary
+from mytunes.libraries.local.library import LocalLibrary
 library = LocalLibrary()

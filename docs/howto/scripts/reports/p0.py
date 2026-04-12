@@ -1,6 +1,6 @@
-from musify.libraries.local.library import LocalLibrary
-from musify.libraries.remote.spotify.api import SpotifyAPI
-from musify.libraries.remote.spotify.library import SpotifyLibrary
+from mytunes.libraries.local.library import LocalLibrary
+from mytunes.libraries.remote.spotify.api import SpotifyAPI
+from mytunes.libraries.remote.spotify.library import SpotifyLibrary
 
 local_library = LocalLibrary()
 

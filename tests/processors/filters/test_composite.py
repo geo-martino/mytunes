@@ -4,12 +4,12 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from musify._models.properties.date import SparseDate
-from musify.local._item.track import LocalTrack
-from musify.processors.compare import Comparer
-from musify.processors.filters.compare import ComparerFilter
-from musify.processors.filters.composite import IncludeExcludeFilter, GroupFilter
-from musify.processors.filters.values import ValueFilter, PathFilter
+from mytunes._models.properties.date import SparseDate
+from mytunes.local._item.track import LocalTrack
+from mytunes.processors.compare import Comparer
+from mytunes.processors.filters.compare import ComparerFilter
+from mytunes.processors.filters.composite import IncludeExcludeFilter, GroupFilter
+from mytunes.processors.filters.values import ValueFilter, PathFilter
 from tests.processors.filters.testers import FilterTester
 
 

@@ -1,10 +1,10 @@
 Object
 ======
 
-.. inheritance-diagram:: musify.libraries.core.object
+.. inheritance-diagram:: mytunes.libraries.core.object
    :parts: 1
 
-.. automodule:: musify.libraries.core.object
+.. automodule:: mytunes.libraries.core.object
     :members:
     :undoc-members:
     :show-inheritance:

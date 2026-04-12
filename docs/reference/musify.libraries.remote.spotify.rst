@@ -1,7 +1,7 @@
 Spotify
 =======
     
-.. automodule:: musify.libraries.remote.spotify
+.. automodule:: mytunes.libraries.remote.spotify
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,16 +10,16 @@ Spotify
    :maxdepth: 4
    :caption: Subpackages:
 
-   musify.libraries.remote.spotify.api
+   mytunes.libraries.remote.spotify.api
    
 .. toctree::
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.remote.spotify.base
-   musify.libraries.remote.spotify.exception
-   musify.libraries.remote.spotify.factory
-   musify.libraries.remote.spotify.library
-   musify.libraries.remote.spotify.object
-   musify.libraries.remote.spotify.wrangle
+   mytunes.libraries.remote.spotify.base
+   mytunes.libraries.remote.spotify.exception
+   mytunes.libraries.remote.spotify.factory
+   mytunes.libraries.remote.spotify.library
+   mytunes.libraries.remote.spotify.object
+   mytunes.libraries.remote.spotify.wrangle
    

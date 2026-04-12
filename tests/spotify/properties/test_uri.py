@@ -6,12 +6,12 @@ from faker import Faker
 from pydantic import ValidationError
 from yarl import URL
 
-from musify._models.collection.playlist import Playlist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
 # noinspection PyProtectedMember
-from musify.spotify._properties.uri import SpotifyURIBase, SpotifyResourceURI, SpotifyUserURI
+from mytunes.spotify._properties.uri import SpotifyURIBase, SpotifyResourceURI, SpotifyUserURI
 from tests.testers import BaseModelTester
 
 

@@ -14,14 +14,14 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from musify._models.properties.file import IsLocalFile
-from musify._models.properties.image import ImageFile
-from musify._models.properties.length import HasLength
-from musify._models.properties.uri import HasMutableURI, URI
-from musify.exception import MusifyValueError
-from musify.local._item import LocalAlbum
-from musify.local._item.artist import LocalArtist
-from musify.local._item.track import LocalTrack, TagContext, HasLocalTracks
+from mytunes._models.properties.file import IsLocalFile
+from mytunes._models.properties.image import ImageFile
+from mytunes._models.properties.length import HasLength
+from mytunes._models.properties.uri import HasMutableURI, URI
+from mytunes.exception import MyTunesValueError
+from mytunes.local._item import LocalAlbum
+from mytunes.local._item.artist import LocalArtist
+from mytunes.local._item.track import LocalTrack, TagContext, HasLocalTracks
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester, assert_validator_skips
 from tests.utils import split_list
@@ -311,7 +311,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert "compilation" in tags
         assert "comments" not in tags
 
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.to_tags(exclude={"name", "does not exist"})
 
     # noinspection PyTypeChecker
@@ -324,9 +324,9 @@ class TestLocalTrack(UniqueKeyTester):
         assert all(key not in tags for key in HasLength.model_fields)
         assert all(key not in tags for key in HasMutableURI.model_fields)
 
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.to_tags(include={"path"})
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.to_tags(include={"length"})
 
     @pytest.fixture

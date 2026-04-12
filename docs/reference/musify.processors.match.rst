@@ -1,10 +1,10 @@
 Match
 =====
 
-.. inheritance-diagram:: musify.processors.match
+.. inheritance-diagram:: mytunes.processors.match
    :parts: 1
 
-.. automodule:: musify.processors.match
+.. automodule:: mytunes.processors.match
     :members:
     :undoc-members:
     :show-inheritance:

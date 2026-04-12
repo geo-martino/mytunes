@@ -1,10 +1,10 @@
 Wrangle
 =======
 
-.. inheritance-diagram:: musify.libraries.remote.core.wrangle
+.. inheritance-diagram:: mytunes.libraries.remote.core.wrangle
    :parts: 1
 
-.. automodule:: musify.libraries.remote.core.wrangle
+.. automodule:: mytunes.libraries.remote.core.wrangle
     :members:
     :undoc-members:
     :show-inheritance:

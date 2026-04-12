@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import StringConstraints
 
-from musify._types import get_base_types
+from mytunes._types import get_base_types
 
 
 ###########################################################################

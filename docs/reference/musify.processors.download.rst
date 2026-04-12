@@ -1,10 +1,10 @@
 Download
 ========
 
-.. inheritance-diagram:: musify.processors.download
+.. inheritance-diagram:: mytunes.processors.download
    :parts: 1
 
-.. automodule:: musify.processors.download
+.. automodule:: mytunes.processors.download
     :members:
     :undoc-members:
     :show-inheritance:

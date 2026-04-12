@@ -1,9 +1,9 @@
 import pytest
 from faker import Faker
 
-from musify._models.collection.library import HasTracksAndPlaylists
-from musify._models.collection.playlist import Playlist
-from musify._models.item.track import Track, RemoteTrack
+from mytunes._models.collection.library import HasTracksAndPlaylists
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.track import Track, RemoteTrack
 from tests.testers import NoUniqueKeyTester
 
 

@@ -11,15 +11,15 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from musify._models.collection.playlist import Playlist
-from musify.local._collection.library import LocalLibrary
-from musify.local._collection.playlist import LocalPlaylist
-from musify.local._collection.playlist.result import LoadPlaylistResult
-from musify.local._item.album import LocalAlbum
-from musify.local._item.artist import LocalArtist
-from musify.local._item.genre import LocalGenre
-from musify.local._item.track import LocalTrack
-from musify.processors.filters.values import NameFilter
+from mytunes._models.collection.playlist import Playlist
+from mytunes.local._collection.library import LocalLibrary
+from mytunes.local._collection.playlist import LocalPlaylist
+from mytunes.local._collection.playlist.result import LoadPlaylistResult
+from mytunes.local._item.album import LocalAlbum
+from mytunes.local._item.artist import LocalArtist
+from mytunes.local._item.genre import LocalGenre
+from mytunes.local._item.track import LocalTrack
+from mytunes.processors.filters.values import NameFilter
 from tests.testers import NoUniqueKeyTester
 
 

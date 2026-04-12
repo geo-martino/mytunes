@@ -11,10 +11,10 @@ from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
-from musify._models.properties.uri import URI
-from musify.local._item.artist import LocalArtist
-from musify.local._item.track import TagContext
-from musify.local._item.track.mp3 import MP3
+from mytunes._models.properties.uri import URI
+from mytunes.local._item.artist import LocalArtist
+from mytunes.local._item.track import TagContext
+from mytunes.local._item.track.mp3 import MP3
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 
 

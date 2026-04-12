@@ -8,12 +8,12 @@ from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from musify import MODULE_ROOT
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify._models.properties.length import Length
-from musify._models.properties.order import Position
-from musify.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
+from mytunes import MODULE_ROOT
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes._models.properties.length import Length
+from mytunes._models.properties.order import Position
+from mytunes.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

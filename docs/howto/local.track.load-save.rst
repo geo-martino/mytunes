@@ -17,7 +17,7 @@ Load a track as follows:
 .. literalinclude:: scripts/local.track.load-save/p1.py
    :language: Python
 
-You can also just have Musify automatically determine the track type to load based on the file's extension:
+You can also just have MyTunes automatically determine the track type to load based on the file's extension:
 
 .. literalinclude:: scripts/local.track.load-save/p1_load.py
    :language: Python

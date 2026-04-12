@@ -1,6 +1,6 @@
 from p2 import *
 
-from musify.libraries.remote.spotify.library import SpotifyLibrary
+from mytunes.libraries.remote.spotify.library import SpotifyLibrary
 
 
 async def load_library(library: SpotifyLibrary) -> None:

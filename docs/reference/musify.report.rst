@@ -1,10 +1,10 @@
 Report
 ======
 
-.. inheritance-diagram:: musify.report
+.. inheritance-diagram:: mytunes.report
    :parts: 1
 
-.. automodule:: musify.report
+.. automodule:: mytunes.report
     :members:
     :undoc-members:
     :show-inheritance:

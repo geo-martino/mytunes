@@ -2,15 +2,15 @@ import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker
 
-from musify._models import ResourceModel
-from musify._models.collection.playlist import Playlist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
+from mytunes._models import ResourceModel
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
 # noinspection PyProtectedMember
-from musify.spotify._api.search import SpotifySearchEndpoints
-from musify.spotify._item.artist import SpotifyArtist
-from musify.spotify._item.track import SpotifyTrack
+from mytunes.spotify._api.search import SpotifySearchEndpoints
+from mytunes.spotify._item.artist import SpotifyArtist
+from mytunes.spotify._item.track import SpotifyTrack
 from tests.testers import BaseModelTester
 
 

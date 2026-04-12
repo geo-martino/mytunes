@@ -5,7 +5,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from musify import MODULE_ROOT, PROGRAM_OWNER_NAME, PROGRAM_OWNER_USER, PROGRAM_NAME
+from mytunes import MODULE_ROOT, PROGRAM_OWNER_NAME, PROGRAM_OWNER_USER, PROGRAM_NAME
 
 
 # -- Project information -----------------------------------------------------
@@ -46,7 +46,7 @@ typehints_defaults = "braces"
 typehints_use_rtype = False
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "reference/musify.rst"]
+exclude_patterns = ["_build", "reference/mytunes.rst"]
 
 suppress_warnings = [
     "sphinx_autodoc_typehints.forward_reference",
@@ -71,7 +71,7 @@ html_theme_options = dict(
     includehidden=True,
     titles_only=False,
 )
-# html_logo = "_images/musify-logo.png"
+# html_logo = "_images/mytunes-logo.png"
 html_css_files = [
     "style.css",
 ]

@@ -1,7 +1,7 @@
 API
 ===
     
-.. automodule:: musify.libraries.remote.spotify.api
+.. automodule:: mytunes.libraries.remote.spotify.api
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,10 +10,10 @@ API
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.remote.spotify.api.api
-   musify.libraries.remote.spotify.api.base
-   musify.libraries.remote.spotify.api.cache
-   musify.libraries.remote.spotify.api.item
-   musify.libraries.remote.spotify.api.misc
-   musify.libraries.remote.spotify.api.playlist
+   mytunes.libraries.remote.spotify.api.api
+   mytunes.libraries.remote.spotify.api.base
+   mytunes.libraries.remote.spotify.api.cache
+   mytunes.libraries.remote.spotify.api.item
+   mytunes.libraries.remote.spotify.api.misc
+   mytunes.libraries.remote.spotify.api.playlist
    

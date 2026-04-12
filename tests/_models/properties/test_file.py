@@ -7,8 +7,8 @@ import mutagen
 import pytest
 from faker import Faker
 
-from musify._models.properties.file import IsLocalFile, PathMapper, PathStemMapper
-from musify.exception import MusifyTypeError
+from mytunes._models.properties.file import IsLocalFile, PathMapper, PathStemMapper
+from mytunes.exception import MyTunesTypeError
 from tests.testers import BaseModelTester
 
 SYSTEM_TYPES = Literal["linux", "windows"]
@@ -39,7 +39,7 @@ class TestIsLocalFile(BaseModelTester):
         return IsLocalFile(path=Path(faker.file_path()))
 
     def test_get_ext_from_input_fails(self):
-        with pytest.raises(MusifyTypeError):
+        with pytest.raises(MyTunesTypeError):
             IsLocalFile._get_ext_from_input(123)
 
     def test_get_ext_from_input(self, faker: Faker):

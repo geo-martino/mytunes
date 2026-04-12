@@ -1,6 +1,6 @@
 from p0 import *
 
-from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist, SpotifyArtist
+from mytunes.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist, SpotifyArtist
 
 
 async def load_playlist(api: SpotifyAPI) -> SpotifyPlaylist:

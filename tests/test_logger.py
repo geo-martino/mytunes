@@ -5,7 +5,7 @@ from copy import copy, deepcopy
 
 import pytest
 
-from musify.logger import Logger, EXTRA, REPORT, STAT
+from mytunes.logger import Logger, EXTRA, REPORT, STAT
 
 
 ###########################################################################

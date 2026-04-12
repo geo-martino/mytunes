@@ -6,12 +6,12 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from yarl import URL
 
-from musify._models.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
+from mytunes._models.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
     PlaylistReadWriteEndpoints
-from musify._models.collection.playlist import RemotePlaylist, Playlist
-from musify._models.item.user import RemoteUser
-from musify._models.properties.uri import URI
-from musify._models.remote import RemoteResource
+from mytunes._models.collection.playlist import RemotePlaylist, Playlist
+from mytunes._models.item.user import RemoteUser
+from mytunes._models.properties.uri import URI
+from mytunes._models.remote import RemoteResource
 from tests.remote import SimpleURI, MockRemoteResource, MockUrlCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester
 

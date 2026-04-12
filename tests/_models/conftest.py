@@ -3,12 +3,12 @@ from random import choice
 import pytest
 from faker import Faker
 
-from musify._models import ResourceModel
-from musify._models.collection.playlist import Playlist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify._models.item.user import RemoteUser
+from mytunes._models import ResourceModel
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes._models.item.user import RemoteUser
 from tests.remote import SimpleURI
 
 

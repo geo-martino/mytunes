@@ -35,7 +35,7 @@ from the given file, but it will use the given track objects instead of loading 
    :language: Python
    :lines: 3-
 
-You can also just have Musify automatically determine the playlist type to load based on the file's extension:
+You can also just have MyTunes automatically determine the playlist type to load based on the file's extension:
 
 .. literalinclude:: scripts/local.playlist.load-save/p3.py
    :language: Python

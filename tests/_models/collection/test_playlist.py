@@ -7,20 +7,20 @@ from faker import Faker
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
-from musify import MODULE_ROOT
-from musify._models._context import RemoteModelContext
-from musify._models.api import RemoteAPI, CollectionWriteEndpoints
-from musify._models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
+from mytunes import MODULE_ROOT
+from mytunes._models._context import RemoteModelContext
+from mytunes._models.api import RemoteAPI, CollectionWriteEndpoints
+from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 # noinspection PyProtectedMember
-from musify._models.collection._sync import SYNC_TYPE
-from musify._models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
+from mytunes._models.collection._sync import SYNC_TYPE
+from mytunes._models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
-from musify._models.cursors import PageCursor
-from musify._models.item.track import RemoteTrack
-from musify._models.item.user import RemoteUser
-from musify._models.properties.uri import URI
-from musify.processors.compare import Comparer
-from musify.processors.filters.compare import ComparerFilter
+from mytunes._models.cursors import PageCursor
+from mytunes._models.item.track import RemoteTrack
+from mytunes._models.item.user import RemoteUser
+from mytunes._models.properties.uri import URI
+from mytunes.processors.compare import Comparer
+from mytunes.processors.filters.compare import ComparerFilter
 from tests._models.collection.testers import RemoteCollectionTester
 from tests._models.collection.utils import assert_sync_items_result
 from tests.remote import SimpleURI, MockRemoteAPI

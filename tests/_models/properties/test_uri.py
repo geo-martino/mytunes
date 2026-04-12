@@ -5,14 +5,14 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify._models import ResourceModel
-from musify._models._context import RemoteModelContext
-from musify._models.collection.playlist import Playlist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify._models.properties.uri import URI, HasMutableURI, HasImmutableURI
-from musify.exception import MusifyValueError
+from mytunes._models import ResourceModel
+from mytunes._models._context import RemoteModelContext
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes._models.properties.uri import URI, HasMutableURI, HasImmutableURI
+from mytunes.exception import MyTunesValueError
 from tests.remote import SimpleURI
 from tests.testers import BaseModelTester, UniqueKeyTester
 
@@ -197,9 +197,9 @@ class TestHasMutableURI(UniqueKeyTester):
     def test_set_uri_validates_type(self, model: HasMutableURI, uris: list[URI]):
         different_uri = next(uri for uri in uris if uri.source != model.source)
 
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.uri = str(model.uri)
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.uri = different_uri
 
     def test_set_uri_sets_source(self, model: HasMutableURI, uri: URI):

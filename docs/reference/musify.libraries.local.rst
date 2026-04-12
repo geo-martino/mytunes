@@ -1,7 +1,7 @@
 Local
 =====
     
-.. automodule:: musify.libraries.local
+.. automodule:: mytunes.libraries.local
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,15 +10,15 @@ Local
    :maxdepth: 4
    :caption: Subpackages:
 
-   musify.libraries.local.library
-   musify.libraries.local.playlist
-   musify.libraries.local.track
+   mytunes.libraries.local.library
+   mytunes.libraries.local.playlist
+   mytunes.libraries.local.track
    
 .. toctree::
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.local.base
-   musify.libraries.local.collection
-   musify.libraries.local.exception
+   mytunes.libraries.local.base
+   mytunes.libraries.local.collection
+   mytunes.libraries.local.exception
    

@@ -1,10 +1,10 @@
 Image
 =====
 
-.. inheritance-diagram:: musify.file.image
+.. inheritance-diagram:: mytunes.file.image
    :parts: 1
 
-.. automodule:: musify.file.image
+.. automodule:: mytunes.file.image
     :members:
     :undoc-members:
     :show-inheritance:

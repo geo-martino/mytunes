@@ -64,7 +64,7 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
 > ```python
 > import logging
 > import sys
-> from musify.logger import STAT
+> from mytunes.logger import STAT
 > 
 > logging.basicConfig(format="%(message)s", level=STAT, stream=sys.stdout)
 > ```
@@ -86,7 +86,7 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
    > The scopes listed in this example will allow access to read your library data and write to your playlists.
    > See Spotify Web API documentation for more information about [scopes](https://developer.spotify.com/documentation/web-api/concepts/scopes)
    ```python
-    from musify.libraries.remote.spotify.api import SpotifyAPI
+    from mytunes.libraries.remote.spotify.api import SpotifyAPI
    
     spotify_api = SpotifyAPI(
         client_id="<YOUR CLIENT ID>",
@@ -106,7 +106,7 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
    ```
 4. Define helper functions for loading your `SpotifyLibrary` data:
    ```python
-    from musify.libraries.remote.spotify.library import SpotifyLibrary
+    from mytunes.libraries.remote.spotify.library import SpotifyLibrary
 
 
     async def load_library(library: SpotifyLibrary) -> None:
@@ -151,7 +151,7 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
    ```
 5. Define helper functions for loading some Spotify objects using any of the supported identifiers:
    ```python
-    from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist, SpotifyArtist
+    from mytunes.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist, SpotifyArtist
 
 
     async def load_playlist(api: SpotifyAPI) -> SpotifyPlaylist:
@@ -248,7 +248,7 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
 
    #### Generic local library
    ```python
-   from musify.libraries.local.library import LocalLibrary
+   from mytunes.libraries.local.library import LocalLibrary
    
    library = LocalLibrary(
        library_folders=["<PATH TO YOUR LIBRARY FOLDER>", ...],
@@ -258,9 +258,9 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
    
    #### MusicBee
    > You will need to install the `musicbee` optional dependency to work with MusicBee objects.
-   > [Read the docs](https://geo-martino.github.io/musify/howto.install.html) for more info.
+   > [Read the docs](https://geo-martino.github.io/mytunes/howto.install.html) for more info.
    ```python
-   from musify.libraries.local.library import MusicBee
+   from mytunes.libraries.local.library import MusicBee
    
    library = MusicBee(musicbee_folder="<PATH TO YOUR MUSICBEE FOLDER>")
    ```
@@ -335,7 +335,7 @@ For more detailed guides, check out the [documentation](https://{program_owner_u
 
 6. Save the tags to the file:
    ```python
-   from musify.libraries.local.track.field import LocalTrackField
+   from mytunes.libraries.local.track.field import LocalTrackField
    
    # you don't have to save all the tags you just modified
    # select which you wish to save first like so

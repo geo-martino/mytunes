@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.local._item.artist import LocalArtist
+from mytunes.local._item.artist import LocalArtist
 from tests.testers import NoUniqueKeyTester
 
 

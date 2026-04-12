@@ -3,12 +3,12 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 
-from musify._models import AttributeModel
-from musify._models.item.track import Track
-from musify.exception import MusifyValueError
-from musify.processors.sort import ItemSorter
-from musify.processors.tagger._setter import ValueSetter, GroupedSetter, SortedSetter, IncrementalSetter
-from musify.processors.tagger.values import FixedValue, MinValue
+from mytunes._models import AttributeModel
+from mytunes._models.item.track import Track
+from mytunes.exception import MyTunesValueError
+from mytunes.processors.sort import ItemSorter
+from mytunes.processors.tagger._setter import ValueSetter, GroupedSetter, SortedSetter, IncrementalSetter
+from mytunes.processors.tagger.values import FixedValue, MinValue
 from tests.testers import BaseModelTester
 
 
@@ -33,7 +33,7 @@ class GroupedSetterTester(BaseModelTester):
             model.set(track, tracks)  # should pass
 
         track = tracks.pop(0)
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.set(track, tracks)
 
     def test_set_value_with_group(

@@ -1,7 +1,7 @@
 from collections.abc import Collection
 
-from musify._models.collection import SyncRemoteResult
-from musify._models.properties.uri import URI
+from mytunes._models.collection import SyncRemoteResult
+from mytunes._models.properties.uri import URI
 
 
 def assert_sync_items_result(

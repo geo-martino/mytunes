@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.spotify._properties.music import HasSpotifyKeySignature
+from mytunes.spotify._properties.music import HasSpotifyKeySignature
 from tests.testers import NoUniqueKeyTester
 
 

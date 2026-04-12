@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify.spotify._item.artist import SpotifyArtist
+from mytunes.spotify._item.artist import SpotifyArtist
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
 

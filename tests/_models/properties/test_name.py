@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify._models.properties.name import HasName
+from mytunes._models.properties.name import HasName
 from tests.testers import BaseModelTester
 
 

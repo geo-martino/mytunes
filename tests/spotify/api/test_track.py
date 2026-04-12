@@ -8,11 +8,11 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from yarl import URL
 
-from musify.spotify import API_URL
+from mytunes.spotify import API_URL
 # noinspection PyProtectedMember
-from musify.spotify._api.track import SpotifyTrackEndpoints
-from musify.spotify._item.track import SpotifyAudioFeatures, SpotifyAudioAnalysis
-from musify.spotify._properties.uri import SpotifyResourceURI
+from mytunes.spotify._api.track import SpotifyTrackEndpoints
+from mytunes.spotify._item.track import SpotifyAudioFeatures, SpotifyAudioAnalysis
+from mytunes.spotify._properties.uri import SpotifyResourceURI
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.testers import BaseModelTester
 

@@ -3,10 +3,10 @@ from random import sample
 import pytest
 from faker import Faker
 
-from musify._models.collection.album import AlbumCollection
-from musify._models.item.album import Album
-from musify._models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
-from musify._models.properties.order import Position
+from mytunes._models.collection.album import AlbumCollection
+from mytunes._models.item.album import Album
+from mytunes._models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
+from mytunes._models.properties.order import Position
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 

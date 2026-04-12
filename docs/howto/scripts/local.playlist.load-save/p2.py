@@ -1,6 +1,6 @@
 from p1 import *
 
-from musify.libraries.local.playlist import XAutoPF
+from mytunes.libraries.local.playlist import XAutoPF
 
 playlist = M3U("<PATH TO AN M3U PLAYLIST>")
 asyncio.run(playlist.load())

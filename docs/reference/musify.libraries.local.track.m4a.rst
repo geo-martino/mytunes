@@ -1,10 +1,10 @@
 M4A
 ===
 
-.. inheritance-diagram:: musify.libraries.local.track.m4a
+.. inheritance-diagram:: mytunes.libraries.local.track.m4a
    :parts: 1
 
-.. automodule:: musify.libraries.local.track.m4a
+.. automodule:: mytunes.libraries.local.track.m4a
     :members:
     :undoc-members:
     :show-inheritance:

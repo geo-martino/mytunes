@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 from faker import Faker
 
-from musify.processors.filters import Filter
+from mytunes.processors.filters import Filter
 from tests.testers import BaseModelTester
 
 

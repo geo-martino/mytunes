@@ -1,7 +1,7 @@
 File
 ====
     
-.. automodule:: musify.file
+.. automodule:: mytunes.file
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,8 +10,8 @@ File
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.file.base
-   musify.file.exception
-   musify.file.image
-   musify.file.path_mapper
+   mytunes.file.base
+   mytunes.file.exception
+   mytunes.file.image
+   mytunes.file.path_mapper
    

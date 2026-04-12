@@ -2,7 +2,7 @@ from functools import partial
 
 import pytest
 
-from musify._models.properties.logger import HasProgress
+from mytunes._models.properties.logger import HasProgress
 from tests.testers import BaseModelTester
 
 

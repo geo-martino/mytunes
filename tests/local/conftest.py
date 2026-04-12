@@ -4,12 +4,12 @@ from random import choice
 import pytest
 from faker import Faker
 
-from musify._models import ResourceModel
-from musify._models.item.genre import Genre
-from musify.local._item.album import LocalAlbum
-from musify.local._item.artist import LocalArtist
-from musify.local._item.genre import LocalGenre
-from musify.local._item.track import LocalTrack
+from mytunes._models import ResourceModel
+from mytunes._models.item.genre import Genre
+from mytunes.local._item.album import LocalAlbum
+from mytunes.local._item.artist import LocalArtist
+from mytunes.local._item.genre import LocalGenre
+from mytunes.local._item.track import LocalTrack
 
 
 @pytest.fixture

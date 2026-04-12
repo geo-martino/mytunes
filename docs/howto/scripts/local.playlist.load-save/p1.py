@@ -1,7 +1,7 @@
 import asyncio
 
-from musify.libraries.local.playlist import M3U
-from musify.libraries.local.track import load_track
+from mytunes.libraries.local.playlist import M3U
+from mytunes.libraries.local.track import load_track
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)

@@ -7,10 +7,10 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import PositiveInt, AliasPath, AliasChoices
 
-from musify._models.api.search import SearchEndpoints
-from musify._models.item.album import RemoteAlbum
-from musify._models.item.track import Track, RemoteTrack
-from musify._models.remote import RemoteResource
+from mytunes._models.api.search import SearchEndpoints
+from mytunes._models.item.album import RemoteAlbum
+from mytunes._models.item.track import Track, RemoteTrack
+from mytunes._models.remote import RemoteResource
 from tests.remote import MockSearchEndpoints
 from tests.testers import EndpointsTester
 

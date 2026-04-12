@@ -3,12 +3,12 @@ from pathlib import Path
 from random import randrange, choice
 from typing import ClassVar
 
-from musify._models import ResourceModel, makecls
-from musify._models.collection import CollectionModel
-from musify._models.collection.playlist import Playlist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.properties.name import HasName
+from mytunes._models import ResourceModel, makecls
+from mytunes._models.collection import CollectionModel
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.properties.name import HasName
 
 
 class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):

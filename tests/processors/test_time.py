@@ -4,7 +4,7 @@ import pytest
 from dateutil.relativedelta import relativedelta
 from faker import Faker
 
-from musify.processors.time import TimeMapper
+from mytunes.processors.time import TimeMapper
 from tests.testers import BaseModelTester
 
 

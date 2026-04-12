@@ -1,6 +1,6 @@
 import asyncio
 
-from musify.libraries.local.track import FLAC, MP3, M4A, WMA
+from mytunes.libraries.local.track import FLAC, MP3, M4A, WMA
 
 track = FLAC("<PATH TO A FLAC TRACK>")
 asyncio.run(track.load())

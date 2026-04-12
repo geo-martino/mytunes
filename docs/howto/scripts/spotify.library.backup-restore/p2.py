@@ -4,7 +4,7 @@ from p1 import *
 
 import asyncio
 
-from musify.libraries.remote.core.library import RemoteLibrary
+from mytunes.libraries.remote.core.library import RemoteLibrary
 
 with open(path, "r") as file:
     backup = json.load(file)

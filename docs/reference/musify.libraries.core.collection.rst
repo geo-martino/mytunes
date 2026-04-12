@@ -1,10 +1,10 @@
 Collection
 ==========
 
-.. inheritance-diagram:: musify.libraries.core.collection
+.. inheritance-diagram:: mytunes.libraries.core.collection
    :parts: 1
 
-.. automodule:: musify.libraries.core.collection
+.. automodule:: mytunes.libraries.core.collection
     :members:
     :undoc-members:
     :show-inheritance:

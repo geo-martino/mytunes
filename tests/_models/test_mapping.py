@@ -8,11 +8,11 @@ from faker import Faker
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
-from musify._models import ResourceModel
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify._models.mapping import UniqueMapping, MutableUniqueMapping
-from musify.exception import MusifyKeyError
+from mytunes._models import ResourceModel
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes._models.mapping import UniqueMapping, MutableUniqueMapping
+from mytunes.exception import MyTunesKeyError
 
 
 class TestUniqueMapping:
@@ -104,7 +104,7 @@ class TestUniqueMapping:
         initial = models[2:]
         mapping = UniqueMapping(initial)
 
-        with pytest.raises(MusifyKeyError):
+        with pytest.raises(MyTunesKeyError):
             assert mapping[models[0]]
         with pytest.raises(KeyError):
             assert mapping["unknown"]

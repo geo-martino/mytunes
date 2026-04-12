@@ -6,7 +6,7 @@ import mutagen.wave
 import pytest
 from faker import Faker
 
-from musify._models.properties.audio import Decibels, HasAudioProperties, AudioProperties
+from mytunes._models.properties.audio import Decibels, HasAudioProperties, AudioProperties
 from tests.testers import BaseModelTester
 
 

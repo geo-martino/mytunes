@@ -1,10 +1,10 @@
 Base
 ====
 
-.. inheritance-diagram:: musify.processors.base
+.. inheritance-diagram:: mytunes.processors.base
    :parts: 1
 
-.. automodule:: musify.processors.base
+.. automodule:: mytunes.processors.base
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,6 +1,6 @@
 from p4 import *
 
-from musify.libraries.remote.spotify.object import SpotifyPlaylist
+from mytunes.libraries.remote.spotify.object import SpotifyPlaylist
 
 
 async def create_new_music_playlist(name: str, library: RemoteLibrary, start: date, end: date) -> None:

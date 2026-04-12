@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify._models.item.artist import Artist, HasArtists, RemoteArtist
+from mytunes._models.item.artist import Artist, HasArtists, RemoteArtist
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 

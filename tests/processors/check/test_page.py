@@ -10,17 +10,17 @@ from aiorequestful.exception import HTTPError
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify._models.api import RemoteAPI
-from musify._models.api.playlist import PlaylistReadWriteEndpoints
-from musify._models.collection import CollectionModel
-from musify._models.collection.playlist import RemoteMutablePlaylist
-from musify._models.item.track import RemoteTrack
-from musify._models.properties.logger import HasProgress
-from musify._models.properties.order import Position
-from musify.exception import MusifyError
+from mytunes._models.api import RemoteAPI
+from mytunes._models.api.playlist import PlaylistReadWriteEndpoints
+from mytunes._models.collection import CollectionModel
+from mytunes._models.collection.playlist import RemoteMutablePlaylist
+from mytunes._models.item.track import RemoteTrack
+from mytunes._models.properties.logger import HasProgress
+from mytunes._models.properties.order import Position
+from mytunes.exception import MyTunesError
 # noinspection PyProtectedMember
-from musify.processors.check._page import CheckerPage
-from musify.processors.formatter import CollectionFormatter
+from mytunes.processors.check._page import CheckerPage
+from mytunes.processors.formatter import CollectionFormatter
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 
@@ -118,7 +118,7 @@ class TestPlaylistManagement(BaseModelTester):
                 await asyncio.sleep(faker.random_int(1, 5) / 10)
                 return
 
-            exc = faker.random_element((MusifyError, HTTPError))
+            exc = faker.random_element((MyTunesError, HTTPError))
             raise exc()
 
         with patch.object(model, "_setup_playlist", side_effect=_random_exception, new_callable=AsyncMock):
@@ -126,7 +126,7 @@ class TestPlaylistManagement(BaseModelTester):
                 async with model:
                     pass
 
-        assert excinfo.group_contains((MusifyError, HTTPError))
+        assert excinfo.group_contains((MyTunesError, HTTPError))
 
         tasks: list[Task] = list(mock_gather.call_args.args)
         assert any(task.cancelled() for task in tasks)

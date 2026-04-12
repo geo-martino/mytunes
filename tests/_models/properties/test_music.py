@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify._models.properties.music import KeySignature
+from mytunes._models.properties.music import KeySignature
 from tests.testers import BaseModelTester
 
 

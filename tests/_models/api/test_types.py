@@ -6,8 +6,8 @@ from pydantic import TypeAdapter
 from yarl import URL
 
 # noinspection PyProtectedMember
-from musify._models.api.types import ApiURLSchema, ApiURISchema
-from musify._models.properties.uri import URI
+from mytunes._models.api.types import ApiURLSchema, ApiURISchema
+from mytunes._models.properties.uri import URI
 from tests.remote import SimpleURI, MockRemoteResource
 
 

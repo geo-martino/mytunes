@@ -4,11 +4,11 @@ from unittest.mock import patch, MagicMock
 import pytest
 from faker import Faker
 
-from musify._models.item.album import HasAlbum, Album
-from musify._models.item.track import Track
-from musify._models.properties.length import HasLength
-from musify.exception import MusifyTypeError
-from musify.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
+from mytunes._models.item.album import HasAlbum, Album
+from mytunes._models.item.track import Track
+from mytunes._models.properties.length import HasLength
+from mytunes.exception import MyTunesTypeError
+from mytunes.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
@@ -29,7 +29,7 @@ class NumericCleanerTester(BaseModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_get_item_value_fails(model: NumericCleaner):
-        with pytest.raises(MusifyTypeError):
+        with pytest.raises(MyTunesTypeError):
             model._get_item_value("invalid item")
 
 

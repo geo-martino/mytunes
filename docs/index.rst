@@ -1,5 +1,5 @@
 ==================
-Welcome to Musify!
+Welcome to MyTunes!
 ==================
 
 A Swiss Army knife for music library management
@@ -21,9 +21,9 @@ Features
 What's in this documentation
 ----------------------------
 
-* How-to guides on getting started with Musify and other key functionality of the package
+* How-to guides on getting started with MyTunes and other key functionality of the package
 * Release history
-* How to get started with contributing to Musify
+* How to get started with contributing to MyTunes
 * Reference documentation
 
 .. include:: howto/install.rst
@@ -55,17 +55,17 @@ What's in this documentation
    :maxdepth: 1
    :caption: 📖 Reference
 
-   reference/musify.file
-   reference/musify.libraries
-   reference/musify.processors
-   reference/musify.base
-   reference/musify.exception
-   reference/musify.field
-   reference/musify.logger
-   reference/musify.printer
-   reference/musify.report
-   reference/musify.types
-   reference/musify.utils
+   reference/mytunes.file
+   reference/mytunes.libraries
+   reference/mytunes.processors
+   reference/mytunes.base
+   reference/mytunes.exception
+   reference/mytunes.field
+   reference/mytunes.logger
+   reference/mytunes.printer
+   reference/mytunes.report
+   reference/mytunes.types
+   reference/mytunes.utils
 
 .. raw:: html
 

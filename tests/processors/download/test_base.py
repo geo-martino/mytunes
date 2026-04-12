@@ -8,18 +8,18 @@ from _pytest.logging import LogCaptureFixture
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify import MODULE_ROOT
-from musify._models.collection.playlist import Playlist, MutablePlaylist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify.processors.download import StoreManager
-from musify.processors.download._page import StorePausePage
-from musify.processors.download.stores import GeneralAudioStore
-from musify.processors.download.stores.bandcamp import BandcampStore
-from musify.processors.download.stores.juno_download import JunoDownloadStore
-from musify.processors.download.stores.qobuz import QobuzStore
-from musify.processors.download.stores.seven_digital import SevenDigitalStore
+from mytunes import MODULE_ROOT
+from mytunes._models.collection.playlist import Playlist, MutablePlaylist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes.processors.download import StoreManager
+from mytunes.processors.download._page import StorePausePage
+from mytunes.processors.download.stores import GeneralAudioStore
+from mytunes.processors.download.stores.bandcamp import BandcampStore
+from mytunes.processors.download.stores.juno_download import JunoDownloadStore
+from mytunes.processors.download.stores.qobuz import QobuzStore
+from mytunes.processors.download.stores.seven_digital import SevenDigitalStore
 from tests.testers import BaseModelTester
 from tests.utils import patch_input
 

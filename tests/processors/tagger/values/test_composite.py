@@ -1,11 +1,11 @@
 import pytest
 from faker import Faker
 
-from musify._models.item.track import Track
-from musify.exception import MusifyValueError
-from musify.processors.tagger.values import FixedValue
-from musify.processors.tagger.values._composite import TemplateValue, JoinValue
-from musify.processors.tagger.values._fields import FieldValue, PathValue
+from mytunes._models.item.track import Track
+from mytunes.exception import MyTunesValueError
+from mytunes.processors.tagger.values import FixedValue
+from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue
+from mytunes.processors.tagger.values._fields import FieldValue, PathValue
 from tests.testers import BaseModelTester
 
 
@@ -25,7 +25,7 @@ class TestJoinValue(BaseModelTester):
         assert track.key is None
 
         model = JoinValue(fields=["name", "key"])
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.get(track)
 
 
@@ -54,5 +54,5 @@ class TestTemplateValue(BaseModelTester):
         assert track.key is None
 
         model = TemplateValue(template="{name} - {key}")
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.get(track)

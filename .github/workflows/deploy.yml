@@ -20,7 +20,7 @@ jobs:
     needs: validate
     environment:
       name: pypi
-      url: https://pypi.org/p/musify
+      url: https://pypi.org/p/mytunes
     permissions:
       id-token: write
     steps:

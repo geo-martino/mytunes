@@ -1,7 +1,7 @@
 from p2 import *
 
-from musify.libraries.local.library import LocalLibrary
-from musify.libraries.remote.core.library import RemoteLibrary
+from mytunes.libraries.local.library import LocalLibrary
+from mytunes.libraries.remote.core.library import RemoteLibrary
 
 
 async def sync_local_playlist_with_remote(name: str, local_library: LocalLibrary, remote_library: RemoteLibrary):

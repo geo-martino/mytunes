@@ -9,21 +9,21 @@ from pydantic import TypeAdapter, ValidationError
 from pydantic.alias_generators import to_pascal
 from pytest_mock import MockerFixture
 
-from musify._models.item.track import Track
-from musify._models.properties.file import PathMapper
-from musify.exception import MusifyValueError
+from mytunes._models.item.track import Track
+from mytunes._models.properties.file import PathMapper
+from mytunes.exception import MyTunesValueError
 # noinspection PyProtectedMember
-from musify.local._collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
+from mytunes.local._collection.playlist.xautopf import XAutoPF, _XMLCondition, _XMLConditions, \
     _XMLLimit, _XMLDisplayField, _XMLDisplayGroup, _XMLSortBy, _XMLDefinedSort, _XMLSource, _XMLSmartPlaylist, \
     _XMLRoot, _XMLDisplayFields, SyncXAutoPFResult, AutoMatcher
-from musify.local._item.track import LocalTrack
-from musify.processors._types import _ATTRIBUTE_FIELD_MAP
-from musify.processors.compare import Comparer
-from musify.processors.filters.compare import ComparerFilter
-from musify.processors.filters.composite import GroupFilter
-from musify.processors.filters.values import PathFilter
-from musify.processors.limit import LimitType, ItemLimiter
-from musify.processors.sort import ShuffleMode, ItemSorter
+from mytunes.local._item.track import LocalTrack
+from mytunes.processors._types import _ATTRIBUTE_FIELD_MAP
+from mytunes.processors.compare import Comparer
+from mytunes.processors.filters.compare import ComparerFilter
+from mytunes.processors.filters.composite import GroupFilter
+from mytunes.processors.filters.values import PathFilter
+from mytunes.processors.limit import LimitType, ItemLimiter
+from mytunes.processors.sort import ShuffleMode, ItemSorter
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.testers import BaseModelTester
 
@@ -768,12 +768,12 @@ class TestXMLSortBy(BaseModelTester):
 
     def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLSortBy):
         sorter = ItemSorter(sort_fields={"released_at": True})
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_too_many_fields(self, model: _XMLSortBy, faker: Faker):
         sorter = ItemSorter(sort_fields={choice(tuple(_ATTRIBUTE_FIELD_MAP)): faker.boolean() for _ in range(3)})
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter(self, model: _XMLSortBy, faker: Faker):
@@ -810,17 +810,17 @@ class TestDefinedSort(BaseModelTester):
 
     def test_parse_sorter_fails_on_unknown_fields(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={"released_at": True, "compilation": False})
-        with pytest.raises(MusifyValueError, match="Field code mapping not found"):
+        with pytest.raises(MyTunesValueError, match="Field code mapping not found"):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_unknown_fields_map(self, model: _XMLDefinedSort):
         sorter = ItemSorter(sort_fields={"disc.number": True, "track.number": False})
-        with pytest.raises(MusifyValueError, match="No sort defined"):
+        with pytest.raises(MyTunesValueError, match="No sort defined"):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter_fails_on_single_fields(self, model: _XMLDefinedSort, faker: Faker):
         sorter = ItemSorter(sort_fields={choice(tuple(_ATTRIBUTE_FIELD_MAP)): faker.boolean()})
-        with pytest.raises(MusifyValueError, match="Only use this sorter for multi-field sorts"):
+        with pytest.raises(MyTunesValueError, match="Only use this sorter for multi-field sorts"):
             model.parse_sorter(sorter=sorter)
 
     def test_parse_sorter(self, model: _XMLDefinedSort):

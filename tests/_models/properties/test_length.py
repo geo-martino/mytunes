@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify._models.properties.length import Length
+from mytunes._models.properties.length import Length
 from tests.testers import BaseModelTester
 
 

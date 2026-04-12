@@ -1,10 +1,10 @@
 Musicbee
 ========
 
-.. inheritance-diagram:: musify.libraries.local.library.musicbee
+.. inheritance-diagram:: mytunes.libraries.local.library.musicbee
    :parts: 1
 
-.. automodule:: musify.libraries.local.library.musicbee
+.. automodule:: mytunes.libraries.local.library.musicbee
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,8 +1,8 @@
 import pytest
 from faker import Faker
 
-from musify._models.item.track import Track
-from musify._models.properties.order import Position
+from mytunes._models.item.track import Track
+from mytunes._models.properties.order import Position
 
 
 @pytest.fixture

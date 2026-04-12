@@ -7,15 +7,15 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify._models.properties.date import SparseDate
-from musify._models.properties.length import Length
-from musify._models.properties.music import KeySignature
-from musify._models.properties.order import Position
-from musify.exception import MusifyTypeError
-from musify.local._item.track import LocalTrack
-from musify.local._item.track.mp3 import MP3
-from musify.processors.compare import Comparer, _ATTRIBUTE_FIELD_MAP
-from musify.processors.time import TimeMapper
+from mytunes._models.properties.date import SparseDate
+from mytunes._models.properties.length import Length
+from mytunes._models.properties.music import KeySignature
+from mytunes._models.properties.order import Position
+from mytunes.exception import MyTunesTypeError
+from mytunes.local._item.track import LocalTrack
+from mytunes.local._item.track.mp3 import MP3
+from mytunes.processors.compare import Comparer, _ATTRIBUTE_FIELD_MAP
+from mytunes.processors.time import TimeMapper
 from tests.testers import BaseModelTester
 
 
@@ -203,12 +203,12 @@ class TestComparer(BaseModelTester):
 
     def test_compare_with_no_expected_and_no_reference_fails(self, track: MP3, tracks: list[LocalTrack]):
         comparer = Comparer(condition="is", field="name")
-        with pytest.raises(MusifyTypeError):
+        with pytest.raises(MyTunesTypeError):
             comparer.compare(track)
 
     def test_compare_when_reference_required_but_not_provided_fails(self, track: MP3):
         comparer = Comparer(condition="StartsWith", field="album", reference_required=True)
-        with pytest.raises(MusifyTypeError):
+        with pytest.raises(MyTunesTypeError):
             comparer.compare(item=track)
 
     def test_compare_on_null_check(self, track: MP3):

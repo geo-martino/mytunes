@@ -1,6 +1,6 @@
 from p1 import *
 
-from musify.libraries.local.collection import LocalAlbum
+from mytunes.libraries.local.collection import LocalAlbum
 
 
 async def sync_albums(albums: list[LocalAlbum], factory: RemoteObjectFactory) -> None:

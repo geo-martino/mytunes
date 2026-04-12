@@ -1,10 +1,10 @@
 API
 ===
 
-.. inheritance-diagram:: musify.libraries.remote.spotify.api.api
+.. inheritance-diagram:: mytunes.libraries.remote.spotify.api.api
    :parts: 1
 
-.. automodule:: musify.libraries.remote.spotify.api.api
+.. automodule:: mytunes.libraries.remote.spotify.api.api
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
 import pytest
 
-from musify._models.item.genre import Genre
-from musify.local._item.genre import LocalGenre
+from mytunes._models.item.genre import Genre
+from mytunes.local._item.genre import LocalGenre
 from tests.testers import UniqueKeyTester
 
 

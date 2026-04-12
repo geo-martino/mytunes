@@ -1,7 +1,7 @@
 Core
 ====
     
-.. automodule:: musify.libraries.core
+.. automodule:: mytunes.libraries.core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,6 +10,6 @@ Core
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.core.collection
-   musify.libraries.core.object
+   mytunes.libraries.core.collection
+   mytunes.libraries.core.object
    

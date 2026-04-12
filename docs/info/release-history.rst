@@ -94,11 +94,11 @@ Fixed
 
 Added
 -----
-* Can now get tags from any :py:class:`.MusifyItem` and set tags on any :py:class:`.LocalTrack`
+* Can now get tags from any :py:class:`.MyTunesItem` and set tags on any :py:class:`.LocalTrack`
   using the relevant :py:class:`.Field` enums
 * Equality comparison methods to all implementations of :py:class:`.Filter`
 * :py:class:`.BasicLocalCollection` for creating and managing arbitrary local collections
-* :py:class:`.MusifyEnum` now displayed correctly when outputting to ``json`` on :py:class:`.PrettyPrinter` objects
+* :py:class:`.MyTunesEnum` now displayed correctly when outputting to ``json`` on :py:class:`.PrettyPrinter` objects
 * :py:meth:`.LocalTrack.move` and :py:meth:`.LocalTrack.rename` methods to handle moving the file on the disk.
 * Set the ``path`` and ``filename`` properties on a :py:class:`.LocalTrack` to defer the movement of a file on the disk.
   Setting a new path in this way does not immediately move a file.
@@ -222,10 +222,10 @@ Changed
 * :py:class:`.ItemDownloadHelper` only ever takes the first field when the singular name of a field is given
   and many values are available for that field. e.g. only ever takes the first artist when multiple artists are present
   and the requested field is 'artist' and not 'artists'
-* :py:class:`.RemoteCollectionLoader` now inherits from :py:class:`.MusifyItem` interface.
+* :py:class:`.RemoteCollectionLoader` now inherits from :py:class:`.MyTunesItem` interface.
   The class already implemented all necessary methods for this interface and was always designed
-  to be an implementation of the :py:class:`.MusifyItem` interface.
-* Rename ``print`` method on :py:class:`.MusifyLogger` to :py:meth:`.MusifyLogger.print_line`
+  to be an implementation of the :py:class:`.MyTunesItem` interface.
+* Rename ``print`` method on :py:class:`.MyTunesLogger` to :py:meth:`.MyTunesLogger.print_line`
 
 Removed
 -------
@@ -294,8 +294,8 @@ Added
 * ``source`` property on :py:class:`.Library`
 * :py:meth:`.RemoteAPI.get_or_create_playlist` method for only creating a playlist when it doesn't
   already exist by name. Gets the existing playlist otherwise
-* Added :py:meth:`.MusifyCollection.outer_difference` method to cover the logic previously handled
-  by the mislabelled :py:meth:`.MusifyCollection.outer_difference` method
+* Added :py:meth:`.MyTunesCollection.outer_difference` method to cover the logic previously handled
+  by the mislabelled :py:meth:`.MyTunesCollection.outer_difference` method
 * :py:class:`.RemoteDataWrangler` and its implementations now handle URL objects from the ``yarl`` package
 * :py:meth:`.RemoteAPI.follow_playlist` method
 * Wait time logic for :py:class:`.RequestHandler`. This waits by a certain time after each request,
@@ -315,7 +315,7 @@ Changed
   Now takes :py:class:`.APIAuthoriser` and generator for :py:class:`.ResponseCache` objects for instantiation
   instead of kwargs for :py:class:`.APIAuthoriser`.
 * :py:class:`.APIAuthoriser` kwargs given to :py:class:`.SpotifyAPI` now merge with default kwargs.
-* Moved ``remote_wrangler`` attribute from :py:class:`.MusifyCollection` to :py:class:`.LocalCollection`.
+* Moved ``remote_wrangler`` attribute from :py:class:`.MyTunesCollection` to :py:class:`.LocalCollection`.
   This attribute was only needed by :py:class:`.LocalCollection` branch of child classes.
 * Moved ``logger`` attribute from :py:class:`.Library` to :py:class:`.RemoteLibrary`.
 * Switch some dependencies to be optional for groups of operation: progress bars, musicbee, sqlite
@@ -339,11 +339,11 @@ Changed
 * :py:class:`.RemoteItemChecker` also uses the new :py:meth:`.RemoteAPI.follow_playlist` method
   when creating playlists to ensure that a user is following the playlists it creates to avoid 'ghost playlist' issue.
 * :py:meth:`.SpotifyAPI.create_playlist` now returns the full response rather than just the URL of the playlist.
-* Moved :py:class:`.RemoteItemChecker` and :py:class:`.RemoteItemSearcher` to `musify.processors` package.
-* Moved :py:class:`.RemoteDataWrangler` up a level to `musify.libraries.remote.core`.
-* Renamed `musify.libraries.remote.spotify.processors` module to `musify.libraries.remote.spotify.wrangle`.
-* Moved `musify.logger` module to `musify` base package.
-* Restructured contents of `musify.core` package to modules in `musify` base package.
+* Moved :py:class:`.RemoteItemChecker` and :py:class:`.RemoteItemSearcher` to `mytunes.processors` package.
+* Moved :py:class:`.RemoteDataWrangler` up a level to `mytunes.libraries.remote.core`.
+* Renamed `mytunes.libraries.remote.spotify.processors` module to `mytunes.libraries.remote.spotify.wrangle`.
+* Moved `mytunes.logger` module to `mytunes` base package.
+* Restructured contents of `mytunes.core` package to modules in `mytunes` base package.
 
 Fixed
 -----
@@ -355,12 +355,12 @@ Fixed
   to have lower case paths
 * :py:meth:`.RemoteLibrary.restore_playlists` now correctly handles the backup
   output from :py:meth:`.RemoteLibrary.backup_playlists`
-* Issue detecting stdout_handlers affecting :py:meth:`.MusifyLogger.print` and :py:meth:`.MusifyLogger.get_iterator`.
+* Issue detecting stdout_handlers affecting :py:meth:`.MyTunesLogger.print` and :py:meth:`.MyTunesLogger.get_iterator`.
   Now works as expected.
 * :py:meth:`.LocalLibrary.artists` now generates a :py:class:`.LocalArtist` object per individual artist
   rather than on combined artists
 * Issue where :py:meth:`.SpotifyAPI.extend_items` did not show progress when extending some types of responses
-* Fixed logic in :py:meth:`.MusifyCollection.intersection` and :py:meth:`.MusifyCollection.difference`
+* Fixed logic in :py:meth:`.MyTunesCollection.intersection` and :py:meth:`.MyTunesCollection.difference`
 
 Removed
 -------
@@ -373,7 +373,7 @@ Removed
 * `last_modified` field as attribute to ignore when getting attributes
   to print on `LocalCollection` to improve performance
 * Removed logger filters and handlers. Moved to CLI repo.
-* Deleted `musify.libraries.remote.core.processors` package.
+* Deleted `mytunes.libraries.remote.core.processors` package.
 
 Documentation
 -------------
@@ -427,15 +427,15 @@ Added
 
 * :py:class:`.RemoteAPI` methods now accept :py:class:`.RemoteResponse` objects as input, refreshing them automatically
 * Property 'kind' to all objects which have an associated :py:class:`.RemoteObjectType`
-* Introduced :py:class:`.MusifyItemSettable` class to allow distinction
+* Introduced :py:class:`.MyTunesItemSettable` class to allow distinction
   between items that can have their properties set and those that can't
 * Extend :py:class:`.FilterMatcher` with group_by tag functionality
 * Now fully supports parsing of processors relating to :py:class:`.XAutoPF` objects with full I/O of settings
   to/from their related XML files on disk
 * Now supports creating new :py:class:`.XAutoPF` files from scratch without the file needing to already exist
-  For XML values not directly controlled by Musify, users can use the 'default_xml' class attribute
+  For XML values not directly controlled by MyTunes, users can use the 'default_xml' class attribute
   to control the initial default values applied in this scenario
-* 'length' property on :py:class:`.MusifyCollection` and implementation on all subclasses
+* 'length' property on :py:class:`.MyTunesCollection` and implementation on all subclasses
 
 Changed
 -------
@@ -458,7 +458,7 @@ Changed
   As part of this, the base method was made more generic to accommodate all :py:class:`.SpotifyObject` types
 * Renamed 'kind' property on :py:class:`.LocalTrack` to 'type' to avoid clashing property names
 * :py:class:`.ItemMatcher`, :py:class:`.RemoteItemChecker`, and :py:class:`.RemoteItemSearcher` now accept
-  all MusifyItem types that may have their URI property set manually
+  all MyTunesItem types that may have their URI property set manually
 * :py:class:`.RemoteItemChecker` and :py:class:`.RemoteItemSearcher` no longer inherit from :py:class:`.ItemMatcher`.
   Composite pattern used instead.
 * :py:class:`.ItemSorter` now shuffles randomly on unsupported types
@@ -533,7 +533,7 @@ Added
 -----
 
 * Add debug log for error failure reason when loading tracks
-* :py:meth:`.MusifyCollection.intersection` and :py:meth:`.MusifyCollection.difference` methods
+* :py:meth:`.MyTunesCollection.intersection` and :py:meth:`.MyTunesCollection.difference` methods
 * :py:meth:`.Playlist.merge` and :py:meth:`.Library.merge_playlists` methods
 
 Changed
@@ -642,7 +642,7 @@ Fixed
 Fixed
 -----
 
-* :py:class:`.MusifyLogger` would not get file_paths for parent loggers when propagate == True, now it does
+* :py:class:`.MyTunesLogger` would not get file_paths for parent loggers when propagate == True, now it does
 
 
 0.7.1

@@ -9,23 +9,23 @@ from faker import Faker
 from pydantic import Field, AliasPath, PositiveInt
 from yarl import URL
 
-from musify._models import ResourceModel
-from musify._models.api import HasEndpoints, RemoteAuthoriser, BatchReadAllEndpoints, BatchWriteEndpoints, \
+from mytunes._models import ResourceModel
+from mytunes._models.api import HasEndpoints, RemoteAuthoriser, BatchReadAllEndpoints, BatchWriteEndpoints, \
     BatchReadEndpoints, HasLibraryEndpoints, RemoteAPI
-from musify._models.api.items import HasTrackEndpoints, HasArtistEndpoints, HasAlbumEndpoints
-from musify._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, HasPlaylistEndpoints
-from musify._models.api.search import SearchEndpoints, HasSearchEndpoints
-from musify._models.api.user import UserEndpoints, HasUserEndpoints
-from musify._models.collection import RemoteCollection
-from musify._models.collection.playlist import Playlist, RemotePlaylist
-from musify._models.cursors import IndexCursor, KeyCursor, UrlCursor
-from musify._models.item.album import Album, RemoteAlbum
-from musify._models.item.artist import Artist, RemoteArtist
-from musify._models.item.track import Track, RemoteTrack
-from musify._models.item.user import RemoteUser
-from musify._models.properties.name import HasName
-from musify._models.properties.uri import URI
-from musify._models.remote import RemoteResource
+from mytunes._models.api.items import HasTrackEndpoints, HasArtistEndpoints, HasAlbumEndpoints
+from mytunes._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, HasPlaylistEndpoints
+from mytunes._models.api.search import SearchEndpoints, HasSearchEndpoints
+from mytunes._models.api.user import UserEndpoints, HasUserEndpoints
+from mytunes._models.collection import RemoteCollection
+from mytunes._models.collection.playlist import Playlist, RemotePlaylist
+from mytunes._models.cursors import IndexCursor, KeyCursor, UrlCursor
+from mytunes._models.item.album import Album, RemoteAlbum
+from mytunes._models.item.artist import Artist, RemoteArtist
+from mytunes._models.item.track import Track, RemoteTrack
+from mytunes._models.item.user import RemoteUser
+from mytunes._models.properties.name import HasName
+from mytunes._models.properties.uri import URI
+from mytunes._models.remote import RemoteResource
 
 
 class CallbackResult:

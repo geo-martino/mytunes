@@ -2,12 +2,12 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from musify._models.collection import CollectionModel
-from musify._models.collection.playlist import RemoteMutablePlaylist
-from musify._models.properties.uri import HasURI
-from musify.processors.check._match._base import CheckerMatch
-from musify.processors.check._page import CheckerPage
-from musify.processors.match import Matcher
+from mytunes._models.collection import CollectionModel
+from mytunes._models.collection.playlist import RemoteMutablePlaylist
+from mytunes._models.properties.uri import HasURI
+from mytunes.processors.check._match._base import CheckerMatch
+from mytunes.processors.check._page import CheckerPage
+from mytunes.processors.match import Matcher
 from tests.testers import UniqueKeyTester
 
 

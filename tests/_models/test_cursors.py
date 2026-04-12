@@ -10,8 +10,8 @@ from faker import Faker
 from pydantic import AliasPath, AliasChoices
 from yarl import URL
 
-from musify._models.cursors import PageCursor, IterablePageCursor, IndexCursor, KeyCursor, UrlCursor, InitialCursor
-from musify._models.exception import CursorError
+from mytunes._models.cursors import PageCursor, IterablePageCursor, IndexCursor, KeyCursor, UrlCursor, InitialCursor
+from mytunes._models.exception import CursorError
 from tests.testers import BaseModelTester
 
 

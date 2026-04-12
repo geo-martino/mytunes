@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify._models.cursors import PageCursor
+from mytunes._models.cursors import PageCursor
 from tests.remote import MockUrlCursor
 from tests.testers import UniqueKeyTester
 

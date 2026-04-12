@@ -1,10 +1,10 @@
 Utils
 =====
 
-.. inheritance-diagram:: musify.utils
+.. inheritance-diagram:: mytunes.utils
    :parts: 1
 
-.. automodule:: musify.utils
+.. automodule:: mytunes.utils
     :members:
     :undoc-members:
     :show-inheritance:

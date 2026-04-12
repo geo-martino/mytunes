@@ -7,8 +7,8 @@ from faker import Faker
 from pydantic import InstanceOf
 from pytest_mock import MockerFixture
 
-from musify._models.item.track import Track
-from musify.processors.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
+from mytunes._models.item.track import Track
+from mytunes.processors.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
     ArtistScorer, \
     AlbumScorer
 from tests.testers import BaseModelTester

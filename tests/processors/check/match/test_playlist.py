@@ -5,11 +5,11 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify._models.collection.playlist import RemoteMutablePlaylist
-from musify._models.properties.uri import HasURI, HasMutableURI, HasImmutableURI
-from musify.processors.check._match.playlist import PlaylistMatch
-from musify.processors.check._page import CheckerPage
-from musify.processors.match import Matcher
+from mytunes._models.collection.playlist import RemoteMutablePlaylist
+from mytunes._models.properties.uri import HasURI, HasMutableURI, HasImmutableURI
+from mytunes.processors.check._match.playlist import PlaylistMatch
+from mytunes.processors.check._page import CheckerPage
+from mytunes.processors.match import Matcher
 from tests.processors.check.match.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list

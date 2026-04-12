@@ -9,8 +9,8 @@ from PIL.ImageFile import ImageFile as PILImageFile
 from aiohttp import ClientSession
 from faker import Faker
 
-from musify._models.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
-from musify.exception import MusifyValueError
+from mytunes._models.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
+from mytunes.exception import MyTunesValueError
 from tests.remote import CallbackResult
 from tests.testers import BaseModelTester
 
@@ -47,7 +47,7 @@ class TestImageBase(BaseModelTester):
         assert ImageSource._get_type_from_number(2) == "OTHER_FILE_ICON"
         assert ImageSource._get_type_from_number("This will be skipped") == "This will be skipped"
 
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             ImageSource._get_type_from_number(100)
 
     def test_validate_id3_type(self):
@@ -55,7 +55,7 @@ class TestImageBase(BaseModelTester):
         assert ImageSource._validate_id3_type("ARTIST") == "ARTIST"
         assert ImageSource._validate_id3_type("OTHER_FILE_ICON") == "OTHER_FILE_ICON"
 
-        with pytest.raises(MusifyValueError):
+        with pytest.raises(MyTunesValueError):
             ImageSource._validate_id3_type("This will fail")
 
     def test_update_attributes(self, model: ImageBase, image_object: PILImageFile):

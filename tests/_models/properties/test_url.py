@@ -4,7 +4,7 @@ import pytest
 from pydantic import TypeAdapter
 from yarl import URL
 
-from musify._types import HttpURL
+from mytunes._types import HttpURL
 
 
 class TestURLSchema:

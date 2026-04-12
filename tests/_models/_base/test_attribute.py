@@ -3,9 +3,9 @@ from typing import Annotated
 import pytest
 from pydantic import computed_field
 
-from musify._models import AttributeModel
-from musify._models.metadata import Attribute
-from musify.exception import MusifyAttributeError
+from mytunes._models import AttributeModel
+from mytunes._models.metadata import Attribute
+from mytunes.exception import MyTunesAttributeError
 from tests.testers import BaseModelTester
 
 
@@ -146,5 +146,5 @@ class TestAttributeModel(BaseModelTester):
 
     def test_set_attribute_value_when_parent_is_none(self, model: ModelTrack):
         model.extra = None
-        with pytest.raises(MusifyAttributeError):
+        with pytest.raises(MyTunesAttributeError):
             setattr(model, "extra.code", "EXTRACODE")

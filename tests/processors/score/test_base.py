@@ -3,8 +3,8 @@ from unittest.mock import patch, Mock, MagicMock
 import pytest
 from pydantic import InstanceOf
 
-from musify._models.properties.name import HasName
-from musify.processors.score import Scorer
+from mytunes._models.properties.name import HasName
+from mytunes.processors.score import Scorer
 from tests.testers import BaseModelTester
 
 

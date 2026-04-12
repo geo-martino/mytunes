@@ -3,10 +3,10 @@ from urllib.parse import unquote
 
 from yarl import URL
 
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify.processors.download.stores import AudioStore
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes.processors.download.stores import AudioStore
 
 
 def assert_value_in_url(url: URL, value: Any):

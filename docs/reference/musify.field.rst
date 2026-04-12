@@ -1,10 +1,10 @@
 Field
 =====
 
-.. inheritance-diagram:: musify.field
+.. inheritance-diagram:: mytunes.field
    :parts: 1
 
-.. automodule:: musify.field
+.. automodule:: mytunes.field
     :members:
     :undoc-members:
     :show-inheritance:

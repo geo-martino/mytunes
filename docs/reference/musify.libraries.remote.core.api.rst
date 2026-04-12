@@ -1,10 +1,10 @@
 API
 ===
 
-.. inheritance-diagram:: musify.libraries.remote.core.api
+.. inheritance-diagram:: mytunes.libraries.remote.core.api
    :parts: 1
 
-.. automodule:: musify.libraries.remote.core.api
+.. automodule:: mytunes.libraries.remote.core.api
     :members:
     :undoc-members:
     :show-inheritance:

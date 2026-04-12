@@ -1,10 +1,10 @@
 Types
 =====
 
-.. inheritance-diagram:: musify.types
+.. inheritance-diagram:: mytunes.types
    :parts: 1
 
-.. automodule:: musify.types
+.. automodule:: mytunes.types
     :members:
     :undoc-members:
     :show-inheritance:

@@ -4,10 +4,10 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from musify._models.collection.artist import ArtistCollection, RemoteArtistCollection
-from musify._models.cursors import PageCursor
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
+from mytunes._models.collection.artist import ArtistCollection, RemoteArtistCollection
+from mytunes._models.cursors import PageCursor
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
 from tests._models.collection.testers import RemoteCollectionTester
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester

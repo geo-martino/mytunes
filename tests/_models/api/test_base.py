@@ -7,11 +7,11 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import ValidationError
 
-from musify._models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, IsRemoteService, Endpoints
-from musify._models.api.items import HasTrackEndpoints
-from musify._models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
+from mytunes._models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, IsRemoteService, Endpoints
+from mytunes._models.api.items import HasTrackEndpoints
+from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
-from musify._models.item.user import RemoteUser
+from mytunes._models.item.user import RemoteUser
 from tests.remote import SimpleURI, MockRemoteAuthoriser, MockItemEndpoints, MockRemoteAPI
 from tests.testers import BaseModelTester
 

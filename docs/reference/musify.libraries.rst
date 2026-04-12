@@ -1,7 +1,7 @@
 Libraries
 =========
     
-.. automodule:: musify.libraries
+.. automodule:: mytunes.libraries
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,13 +10,13 @@ Libraries
    :maxdepth: 4
    :caption: Subpackages:
 
-   musify.libraries.core
-   musify.libraries.local
-   musify.libraries.remote
+   mytunes.libraries.core
+   mytunes.libraries.local
+   mytunes.libraries.remote
    
 .. toctree::
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.collection
+   mytunes.libraries.collection
    

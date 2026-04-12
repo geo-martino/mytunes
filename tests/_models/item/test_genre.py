@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from musify._models.item.genre import Genre, HasGenres, RemoteGenre
+from mytunes._models.item.genre import Genre, HasGenres, RemoteGenre
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 

@@ -4,9 +4,9 @@ from typing import final, ClassVar
 import pytest
 from pydantic import Field, AliasChoices
 
-from musify._models import BaseModel
-from musify._models.exception import ModelError
-from musify.exception import MusifyImportError
+from mytunes._models import BaseModel
+from mytunes._models.exception import ModelError
+from mytunes.exception import MyTunesImportError
 
 
 @final
@@ -74,7 +74,7 @@ class TestBaseModel:
 
         assert not TestModelWithNoModules.required_modules_installed
 
-        with pytest.raises(MusifyImportError):
+        with pytest.raises(MyTunesImportError):
             TestModelWithNoModules(field="test")
 
     def test_get_aliases_skips_name(self):

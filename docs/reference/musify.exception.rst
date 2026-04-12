@@ -1,10 +1,10 @@
 Exceptions
 ==========
 
-.. inheritance-diagram:: musify.exception
+.. inheritance-diagram:: mytunes.exception
    :parts: 1
 
-.. automodule:: musify.exception
+.. automodule:: mytunes.exception
     :members:
     :undoc-members:
     :show-inheritance:

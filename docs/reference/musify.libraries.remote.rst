@@ -1,7 +1,7 @@
 Remote
 ======
     
-.. automodule:: musify.libraries.remote
+.. automodule:: mytunes.libraries.remote
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,6 +10,6 @@ Remote
    :maxdepth: 4
    :caption: Subpackages:
 
-   musify.libraries.remote.core
-   musify.libraries.remote.spotify
+   mytunes.libraries.remote.core
+   mytunes.libraries.remote.spotify
    

@@ -1,10 +1,10 @@
 Base
 ====
 
-.. inheritance-diagram:: musify.file.base
+.. inheritance-diagram:: mytunes.file.base
    :parts: 1
 
-.. automodule:: musify.file.base
+.. automodule:: mytunes.file.base
     :members:
     :undoc-members:
     :show-inheritance:

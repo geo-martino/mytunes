@@ -1,4 +1,4 @@
-{%- set is_root = basename == "musify" -%}
+{%- set is_root = basename == "mytunes" -%}
 {%- set module_footer = ["base", "exception"] -%}
 {%- set module_caps = ["api", "m3u", "xautopf", "flac", "mp3", "m4a", "wma"] -%}
 
@@ -6,7 +6,7 @@
     {%- if name.endswith(".exception") -%}
         {%- set name = "exceptions"-%}
     {%- else -%}
-        {%- set name = name.replace("musify.", "").replace("_", " ").split(".") | last -%}
+        {%- set name = name.replace("mytunes.", "").replace("_", " ").split(".") | last -%}
     {%- endif -%}
 
     {%- if name | lower in module_caps -%}

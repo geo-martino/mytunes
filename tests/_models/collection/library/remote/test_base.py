@@ -3,14 +3,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from musify._models.api import RemoteAPI
-from musify._models.collection.library import RemoteLibrary
-from musify._models.collection.playlist import Playlist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.track import Track
-from musify._models.item.user import RemoteUser
-from musify._models.remote import RemoteResource
+from mytunes._models.api import RemoteAPI
+from mytunes._models.collection.library import RemoteLibrary
+from mytunes._models.collection.playlist import Playlist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.track import Track
+from mytunes._models.item.user import RemoteUser
+from mytunes._models.remote import RemoteResource
 from tests._models.collection.library.remote.utils import MockRemoteLibrary
 from tests.remote import MockRemoteAPI
 from tests.testers import BaseModelTester

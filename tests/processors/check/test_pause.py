@@ -7,13 +7,13 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from musify._models.api import RemoteAPI
-from musify._models.api.playlist import PlaylistReadWriteEndpoints
-from musify._models.collection import CollectionModel
-from musify._models.collection.playlist import RemoteMutablePlaylist
-from musify._models.item.track import RemoteTrack
-from musify.processors.check import Checker
-from musify.processors.check._page import CheckerPage
+from mytunes._models.api import RemoteAPI
+from mytunes._models.api.playlist import PlaylistReadWriteEndpoints
+from mytunes._models.collection import CollectionModel
+from mytunes._models.collection.playlist import RemoteMutablePlaylist
+from mytunes._models.item.track import RemoteTrack
+from mytunes.processors.check import Checker
+from mytunes.processors.check._page import CheckerPage
 from tests.processors.utils import MockCollection
 from tests.utils import patch_input
 

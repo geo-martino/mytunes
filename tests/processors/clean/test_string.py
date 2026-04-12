@@ -3,11 +3,11 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from musify._models.item.album import HasAlbum
-from musify._models.item.artist import HasArtists, Artist
-from musify._models.properties.name import HasName
-from musify.exception import MusifyTypeError
-from musify.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
+from mytunes._models.item.album import HasAlbum
+from mytunes._models.item.artist import HasArtists, Artist
+from mytunes._models.properties.name import HasName
+from mytunes.exception import MyTunesTypeError
+from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from tests.testers import BaseModelTester
 
 
@@ -23,7 +23,7 @@ class StringCleanerTester(BaseModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def test_get_item_value_fails(model: StringCleaner):
-        with pytest.raises(MusifyTypeError):
+        with pytest.raises(MyTunesTypeError):
             model._get_item_value(123)
 
 

@@ -4,8 +4,8 @@ import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
-from musify._models.api.user import UserEndpoints
-from musify._models.item.user import RemoteUser
+from mytunes._models.api.user import UserEndpoints
+from mytunes._models.item.user import RemoteUser
 from tests.remote import SimpleURI, MockUserEndpoints
 from tests.testers import EndpointsTester
 

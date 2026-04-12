@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from musify._models.api import BatchReadAllEndpoints
+from mytunes._models.api import BatchReadAllEndpoints
 
 
 @pytest.fixture

@@ -2,9 +2,9 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from musify._models.properties.date import SparseDate
-from musify.spotify._collection.album import SpotifyAlbumCollection
-from musify.spotify.cursors import SpotifyIndexCursor
+from mytunes._models.properties.date import SparseDate
+from mytunes.spotify._collection.album import SpotifyAlbumCollection
+from mytunes.spotify.cursors import SpotifyIndexCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
 

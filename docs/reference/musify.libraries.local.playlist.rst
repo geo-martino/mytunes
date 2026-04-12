@@ -1,7 +1,7 @@
 Playlist
 ========
     
-.. automodule:: musify.libraries.local.playlist
+.. automodule:: mytunes.libraries.local.playlist
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,8 +10,8 @@ Playlist
    :maxdepth: 4
    :caption: Submodules:
 
-   musify.libraries.local.playlist.base
-   musify.libraries.local.playlist.m3u
-   musify.libraries.local.playlist.utils
-   musify.libraries.local.playlist.xautopf
+   mytunes.libraries.local.playlist.base
+   mytunes.libraries.local.playlist.m3u
+   mytunes.libraries.local.playlist.utils
+   mytunes.libraries.local.playlist.xautopf
    

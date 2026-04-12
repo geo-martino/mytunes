@@ -1,10 +1,10 @@
 Path Mapper
 ===========
 
-.. inheritance-diagram:: musify.file.path_mapper
+.. inheritance-diagram:: mytunes.file.path_mapper
    :parts: 1
 
-.. automodule:: musify.file.path_mapper
+.. automodule:: mytunes.file.path_mapper
     :members:
     :undoc-members:
     :show-inheritance:

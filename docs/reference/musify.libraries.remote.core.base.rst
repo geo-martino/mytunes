@@ -1,10 +1,10 @@
 Base
 ====
 
-.. inheritance-diagram:: musify.libraries.remote.core.base
+.. inheritance-diagram:: mytunes.libraries.remote.core.base
    :parts: 1
 
-.. automodule:: musify.libraries.remote.core.base
+.. automodule:: mytunes.libraries.remote.core.base
     :members:
     :undoc-members:
     :show-inheritance:

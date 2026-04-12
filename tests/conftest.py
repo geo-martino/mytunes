@@ -15,12 +15,12 @@ from PIL import Image, ImageFile as PILImageFile
 from aiohttp import ClientSession
 from faker import Faker
 
-from musify._models.collection.playlist import Playlist, MutablePlaylist
-from musify._models.item.album import Album
-from musify._models.item.artist import Artist
-from musify._models.item.genre import Genre
-from musify._models.item.track import Track
-from musify._models.properties.image import ImageURL, ImageFile
+from mytunes._models.collection.playlist import Playlist, MutablePlaylist
+from mytunes._models.item.album import Album
+from mytunes._models.item.artist import Artist
+from mytunes._models.item.genre import Genre
+from mytunes._models.item.track import Track
+from mytunes._models.properties.image import ImageURL, ImageFile
 
 
 @pytest.fixture(scope="session")

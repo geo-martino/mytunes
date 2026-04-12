@@ -1,7 +1,7 @@
 from p2 import *
 
 # ...or select which tags you wish to save like so
-from musify.libraries.local.track.field import LocalTrackField
+from mytunes.libraries.local.track.field import LocalTrackField
 
 tags = [
     LocalTrackField.TITLE,

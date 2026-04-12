@@ -1,10 +1,10 @@
 Base
 ====
 
-.. inheritance-diagram:: musify.libraries.remote.spotify.api.base
+.. inheritance-diagram:: mytunes.libraries.remote.spotify.api.base
    :parts: 1
 
-.. automodule:: musify.libraries.remote.spotify.api.base
+.. automodule:: mytunes.libraries.remote.spotify.api.base
     :members:
     :undoc-members:
     :show-inheritance:

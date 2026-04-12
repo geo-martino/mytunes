@@ -1,23 +1,23 @@
 ============
 Contributing
 ============
-To contribute to Musify, follow these steps:
+To contribute to MyTunes, follow these steps:
 
 
 Setup your development environment
 ==================================
 1. Ensure you have Python3.12 or greater installed on your system.
-2. Go to the `GitHub repository <https://github.com/geo-martino/musify>`_ and fork the project by clicking
+2. Go to the `GitHub repository <https://github.com/geo-martino/mytunes>`_ and fork the project by clicking
    **Fork** in the top left:
 
    .. image:: images/contributing/fork.png
 
-3. Go to the page of your GitHub account's fork of Musify and
+3. Go to the page of your GitHub account's fork of MyTunes and
    `clone the repository <https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository>`_:
 
    .. image:: images/contributing/clone.png
 
-4. In a terminal, navigate to the directory of the cloned project and create a virtual environment for Musify:
+4. In a terminal, navigate to the directory of the cloned project and create a virtual environment for MyTunes:
 
    .. code-block:: bash
 

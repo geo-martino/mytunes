@@ -1,10 +1,10 @@
 Library
 =======
 
-.. inheritance-diagram:: musify.libraries.remote.core.library
+.. inheritance-diagram:: mytunes.libraries.remote.core.library
    :parts: 1
 
-.. automodule:: musify.libraries.remote.core.library
+.. automodule:: mytunes.libraries.remote.core.library
     :members:
     :undoc-members:
     :show-inheritance:

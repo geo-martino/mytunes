@@ -1,10 +1,10 @@
 Field
 =====
 
-.. inheritance-diagram:: musify.libraries.local.track.field
+.. inheritance-diagram:: mytunes.libraries.local.track.field
    :parts: 1
 
-.. automodule:: musify.libraries.local.track.field
+.. automodule:: mytunes.libraries.local.track.field
     :members:
     :undoc-members:
     :show-inheritance:
