@@ -37,12 +37,11 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
     @classmethod
     def _from_comparer[T](cls, data: T | Mapping[str, Any] | Collection[Mapping[str, Any]]) -> T | Mapping[Comparer, Self]:
         match data:
-            case Mapping():
+            case Mapping() if data:
                 with suppress(ValidationError):
                     return dict(comparers=Comparer.model_validate(data))
-            case Collection() if all(isinstance(value, Mapping) for value in data):
-                with suppress(ValidationError):
-                    return dict(comparers=[Comparer.model_validate(value) for value in data])
+            case Collection() if data and all(isinstance(value, Mapping) for value in data):
+                return dict(comparers=[Comparer.model_validate(value) for value in data])
 
         return data
 

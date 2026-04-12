@@ -41,6 +41,7 @@ class RemoteMutableLibrary[
             "Only items matching the filter will be added when syncing."
         ),
         default=None,
+        repr=False,
     )
 
     ###########################################################################
