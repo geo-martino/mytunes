@@ -29,8 +29,6 @@ class SpotifyPlaylist(
 ):
     __final__ = True
 
-    source: ClassVar[str] = "spotify"
-
     description: Annotated[str | None, Attribute()] = Field(
         description="The description of the playlist.",
         default=None,

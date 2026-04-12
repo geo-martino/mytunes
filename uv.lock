@@ -1142,7 +1142,6 @@ sqlite = [
 dev = [
     { name = "flake8" },
     { name = "grip" },
-    { name = "rich" },
 ]
 docs = [
     { name = "autodocsumm" },
@@ -1178,7 +1177,7 @@ requires-dist = [
     { name = "pillow", specifier = "~=12.1.1" },
     { name = "pydantic", extras = ["email"], specifier = "~=2.12.5" },
     { name = "python-dateutil", specifier = "~=2.9.0" },
-    { name = "rich", specifier = ">=14.3.3" },
+    { name = "rich", specifier = "~=14.3.3" },
     { name = "tabulate", extras = ["widechars"], specifier = "~=0.10.0" },
     { name = "termcolor", specifier = "~=3.3.0" },
     { name = "xmltodict", marker = "extra == 'all'", specifier = "~=1.0.4" },
@@ -1190,7 +1189,6 @@ provides-extras = ["all", "musicbee", "sqlite"]
 dev = [
     { name = "flake8" },
     { name = "grip" },
-    { name = "rich", specifier = ">=14.3.3" },
 ]
 docs = [
     { name = "autodocsumm", specifier = "~=0.2.14" },
