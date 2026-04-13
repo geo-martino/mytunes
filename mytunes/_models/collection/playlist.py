@@ -138,7 +138,8 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
                 self.playlists.add(deepcopy(playlist))
                 continue
 
-            self.playlists[playlist].merge(playlist, reference=reference[playlist] if reference else None)
+            reference_playlist = reference.get(playlist) if reference else None
+            self.playlists[playlist].merge(playlist, reference=reference_playlist)
 
 
 # noinspection PyAbstractClass

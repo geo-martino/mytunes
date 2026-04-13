@@ -4,9 +4,10 @@ from contextlib import suppress
 from pathlib import PureWindowsPath, PurePosixPath, Path, PurePath
 from typing import Any, Annotated
 
+from mytunes._models import BaseModel
 from mytunes._types import TO_SET
 from mytunes.exception import MyTunesError
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 
 class LocalSystemPath(BaseModel):
@@ -50,7 +51,7 @@ class LocalSystemPath(BaseModel):
     @classmethod
     def get_current_system_path[T](cls, data: T | Mapping[str, Any]) -> T | Path:
         """Validate and extract the current system path from the given data."""
-        if not isinstance(data, Mapping):
+        if not isinstance(data, Mapping) and not isinstance(data, cls):
             return data
 
         with suppress(ValidationError):
@@ -99,7 +100,7 @@ class LocalSystemPaths(BaseModel):
     @classmethod
     def get_current_system_paths[T](cls, data: T | Mapping[str, Any]) -> T | set[Path]:
         """Validate and extract the current system paths from the given data."""
-        if not isinstance(data, Mapping):
+        if not isinstance(data, Mapping) and not isinstance(data, cls):
             return data
 
         with suppress(ValidationError):
