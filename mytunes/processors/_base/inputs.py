@@ -104,8 +104,8 @@ class InputProcessor(Processor, HasLogger):
 
         return False
 
-    def _log_unrecognised_input(self, text: str, help_key: str = "h") -> None:
-        message = f"Unrecognised input: {text!r}. Enter {help_key!r} for valid options."
+    def _log_unrecognised_input(self, value: str, help_key: str = "h") -> None:
+        message = f"Unrecognised input: {value!r}. Enter {help_key!r} for valid options."
         self._logger.warning(colored(message, "red"))
 
 

@@ -111,13 +111,13 @@ class Logger(logging.Logger):
         msg = self.generate_message(msg, header, hidden)
         super().critical(msg, *args, **kwargs)
 
-    def print(self, *values, sep=' ', end='\n', **kwargs) -> None:
+    def print(self, *values, sep=' ', end='\n', header: int | None = None, **kwargs) -> None:
         """
         Wrapper for print. Logs the given ``values`` to the INFO setting.
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
         This ensures the user sees the ``values`` always.
         """
-        message = sep.join(values)
+        message = self.generate_message(sep.join(values), header=header)
         if message:
             self.debug(message, **kwargs)
 
@@ -142,11 +142,7 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(
-            message: str,
-            header: Annotated[int, Field(ge=1, le=4)] | None = None,
-            hidden: str | None = None
-    ) -> str:
+    def generate_message(message: str, header: HeaderType | None = None, hidden: str | None = None) -> str:
         match header:
             case None:
                 header = ""

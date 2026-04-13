@@ -20,7 +20,7 @@ from ...._models.result import LogFormatter
 class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
     item_formatter: ModelFormatter = Field(
         description="The formatter to use for formatting info about the item to print.",
-        default=ModelFormatter(
+        default_factory=lambda: ModelFormatter(
             fields=("Name", "Artist", "Album", "Length", "Released At"),
             colours=("white", "blue", "blue", "red", "yellow"),
             header=True,
