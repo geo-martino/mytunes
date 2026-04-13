@@ -90,7 +90,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         return _map_handler(cls, handler)
 
     @classmethod
-    def create_uri(cls, value: Any, kind: str) -> URI:
+    def create_uri(cls, value: Any, kind: str | None = None) -> URI:
         """Create a URI for the source handled by this API model from the given ID and type."""
         context = RemoteModelContext(type=kind)
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
