@@ -889,8 +889,12 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
 
     @model_validator(mode="after")
     def _all_handlers_are_the_same(self) -> Self:
+        fields = type(self).model_fields
+        if not fields:
+            return self
+
         # noinspection PyProtectedMember
-        handlers = {id(getattr(self, field_name)._handler) for field_name in type(self).model_fields.keys()}
+        handlers = {id(getattr(self, field_name)._handler) for field_name in fields.keys()}
         if len(handlers) != 1:
             raise MyTunesValidationError(
                 "All endpoint models must use the same request handler for API to function correctly."
