@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
 from faker import Faker
-
 from mytunes.processors.filters import Filter
 from tests.testers import BaseModelTester
 

@@ -11,7 +11,6 @@ import pytest
 from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
-
 from mytunes._models.properties.date import SparseDate
 from mytunes._models.properties.music import KeySignature
 from mytunes._models.properties.order import Position

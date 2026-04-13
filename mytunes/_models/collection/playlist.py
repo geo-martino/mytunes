@@ -4,10 +4,6 @@ from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload
 
-from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import ValidationInfo
-
 from mytunes._models import ResourceModel, AttributeModel
 from mytunes._models._context import RemoteModelContext
 from mytunes._models._metaclass import makecls
@@ -28,6 +24,9 @@ from mytunes._models.properties.uri import URI
 from mytunes._models.sequence import UniqueSequence
 from mytunes._types import StrippedString
 from mytunes.processors.filters.compare import ComparerFilter
+from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import ValidationInfo
 
 if TYPE_CHECKING:
     from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistReadEndpoints, \

@@ -2,10 +2,10 @@ from copy import copy
 from pathlib import Path
 from typing import Any, final
 
+from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
 from pydantic import Field, NonNegativeInt, PositiveInt, validate_call, model_validator
 from typing_inspection.typing_objects import is_typevar
 
-from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
 from ._base import HasCondition, Value
 from ...._models import AttributeModel, ModelMetaclass, BaseModel
 from ...._models.properties.file import IsLocalFile

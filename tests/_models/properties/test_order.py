@@ -1,8 +1,7 @@
 import pytest
 from faker import Faker
-from pydantic import ValidationError
-
 from mytunes._models.properties.order import Position
+from pydantic import ValidationError
 from tests.testers import BaseModelTester
 
 

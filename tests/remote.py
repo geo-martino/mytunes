@@ -6,9 +6,6 @@ from unittest.mock import Mock, patch, MagicMock
 
 from aiorequestful.auth import Authoriser
 from faker import Faker
-from pydantic import Field, AliasPath, PositiveInt
-from yarl import URL
-
 from mytunes._models import ResourceModel
 from mytunes._models.api import HasEndpoints, RemoteAuthoriser, BatchReadAllEndpoints, BatchWriteEndpoints, \
     BatchReadEndpoints, HasLibraryEndpoints, RemoteAPI
@@ -26,6 +23,8 @@ from mytunes._models.item.user import RemoteUser
 from mytunes._models.properties.name import HasName
 from mytunes._models.properties.uri import URI
 from mytunes._models.remote import RemoteResource
+from pydantic import Field, AliasPath, PositiveInt
+from yarl import URL
 
 
 class CallbackResult:

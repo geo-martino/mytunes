@@ -2,12 +2,11 @@ from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterat
 from contextlib import suppress
 from typing import Any, Self, overload, get_args
 
-from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
-from pydantic_core import core_schema, CoreSchema
-
 from mytunes._models import ResourceModel
 from mytunes._models.exception import MyTunesValidationError
 from mytunes._models.mapping import MutableUniqueMapping
+from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
+from pydantic_core import core_schema, CoreSchema
 
 
 class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):

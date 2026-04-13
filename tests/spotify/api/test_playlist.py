@@ -6,7 +6,6 @@ import pytest
 from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.request import RequestHandler
 from faker import Faker
-
 from mytunes._models.exception import RequestError
 # noinspection PyProtectedMember
 from mytunes.spotify._api.playlist import _SpotifyPlaylistLibraryEndpoints

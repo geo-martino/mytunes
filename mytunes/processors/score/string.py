@@ -1,10 +1,10 @@
 from typing import Literal, Any, final, Self
 
-from pydantic import Field, model_validator
-
 from mytunes._types import LowerStrippedString, Number
 from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from mytunes.processors.score._base import Scorer
+from pydantic import Field, model_validator
+
 from ..._models.exception import MyTunesValidationError
 from ..._models.item.album import HasAlbum
 from ..._models.item.artist import HasArtists

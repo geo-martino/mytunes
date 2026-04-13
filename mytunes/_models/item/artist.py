@@ -1,7 +1,5 @@
 from typing import ClassVar, Annotated
 
-from pydantic import Field, field_validator, validate_call
-
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
 from mytunes._models.api import ItemReadEndpoints
@@ -14,6 +12,7 @@ from mytunes._models.properties.tag import HasSeparableTags
 from mytunes._models.properties.uri import URI
 from mytunes._models.remote import RemoteResource
 from mytunes._types import to_list
+from pydantic import Field, field_validator, validate_call
 
 
 class Artist[GT: Genre](HasGenres[GT], HasName, HasRating, ResourceModel, metaclass=makecls()):

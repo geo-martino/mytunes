@@ -4,8 +4,6 @@ from unittest.mock import Mock, patch, AsyncMock, MagicMock
 
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes._models import ResourceModel
 from mytunes._models.api import RemoteAPI
 from mytunes._models.api.search import SearchEndpoints
@@ -18,6 +16,7 @@ from mytunes._models.remote import RemoteResource
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
 from mytunes.processors.search import Searcher, SearchResult
+from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor
 from tests.testers import BaseModelTester

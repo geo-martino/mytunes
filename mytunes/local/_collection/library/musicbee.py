@@ -13,18 +13,18 @@ from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 import aiofiles
-from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
-from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator
-
-from mytunes._types import TO_SET, to_set
+from mytunes._models.properties.path import PathStemMapper
+from mytunes._types import to_set
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._collection.library._base import LocalLibrary
+from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local.exception import XMLReaderError, FileDoesNotExistError
+from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator
+
 from ..._item.track import LocalTrack
 from ...._models import BaseModel, makecls
 from ...._models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from mytunes._models.properties.path import PathStemMapper
 
 try:
     import xmltodict

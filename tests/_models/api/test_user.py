@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-
 from mytunes._models.api.user import UserEndpoints
 from mytunes._models.item.user import RemoteUser
 from tests.remote import SimpleURI, MockUserEndpoints

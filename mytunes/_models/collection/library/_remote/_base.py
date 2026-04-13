@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import Annotated, Self, Any, TypedDict
 
 import tabulate
-
 from mytunes._models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
     CollectionReadEndpoints
 from mytunes._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints

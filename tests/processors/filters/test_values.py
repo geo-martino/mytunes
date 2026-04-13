@@ -4,7 +4,6 @@ from random import shuffle, choice
 
 import pytest
 from faker import Faker
-
 from mytunes._models.properties.file import IsLocalFile
 from mytunes._models.properties.name import HasName
 from mytunes.processors.filters.values import ValueFilter, PathFilter, NameFilter

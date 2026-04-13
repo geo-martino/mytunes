@@ -1,13 +1,12 @@
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from contextlib import suppress
 from pathlib import PureWindowsPath, PurePosixPath, Path, PurePath
-from typing import Self, Any, Annotated
+from typing import Any, Annotated
 
 from mytunes._types import TO_SET
 from mytunes.exception import MyTunesError
-from mytunes.local.exception import FileDoesNotExistError
-from pydantic import model_validator, BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class LocalSystemPath(BaseModel):

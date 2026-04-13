@@ -6,11 +6,11 @@ from typing import ClassVar
 from aiohttp import ClientResponse, ClientResponseError
 from aiorequestful.auth.oauth2 import AuthorisationCodeFlow
 from aiorequestful.auth.utils import AuthRequest
+from mytunes.spotify import SpotifyModel, API_URL
+from mytunes.spotify.exception import SpotifyAuthenticationError
 from pydantic import SecretStr, Field, field_validator, PrivateAttr
 from yarl import URL
 
-from mytunes.spotify import SpotifyModel, API_URL
-from mytunes.spotify.exception import SpotifyAuthenticationError
 from ..._models.api import RemoteAuthoriser
 
 

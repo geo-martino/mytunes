@@ -1,3 +1,4 @@
+import math
 from abc import ABCMeta, abstractmethod
 from collections.abc import Hashable, Generator
 from contextlib import suppress
@@ -5,19 +6,17 @@ from random import choice
 from typing import Callable, Any
 from unittest.mock import Mock, patch, AsyncMock
 
-import math
 import pytest
 from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
-from yarl import URL
-
 from mytunes._models import BaseModel, ResourceModel
 from mytunes._models.api import Endpoints
 from mytunes._models.properties.uri import URI
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from tests.remote import SimpleURI, MockRemoteResource, MockIndexCursor
+from yarl import URL
 
 
 def assert_validator_skips[T](func: Callable[[T], T], value: T):

@@ -8,19 +8,17 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 from aiorequestful.exception import HTTPError
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes._models.api import RemoteAPI
 from mytunes._models.api.playlist import PlaylistReadWriteEndpoints
 from mytunes._models.collection import CollectionModel
 from mytunes._models.collection.playlist import RemoteMutablePlaylist
 from mytunes._models.item.track import RemoteTrack
-from mytunes._models.properties.logger import HasProgress
 from mytunes._models.properties.order import Position
 from mytunes.exception import MyTunesError
 # noinspection PyProtectedMember
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.formatter import CollectionFormatter
+from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

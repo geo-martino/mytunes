@@ -2,14 +2,13 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
-from yarl import URL
-
 from mytunes.spotify._api import SpotifyAPI
 from mytunes.spotify._api.artist import SpotifyArtistEndpoints, _ALL_ALBUM_TYPES
 from mytunes.spotify._collection.artist import SpotifyArtistCollection
 from mytunes.spotify.cursors import SpotifyIndexCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
+from yarl import URL
 
 
 class TestSpotifyArtistCollection(SpotifyResourceTester):

@@ -1,12 +1,11 @@
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashable
 from typing import Self, Any, get_args
 
-from pydantic import GetCoreSchemaHandler, validate_call
-from pydantic_core import core_schema, CoreSchema
-
 from mytunes._models import ResourceModel
 from mytunes._models.exception import MyTunesValidationError
 from mytunes.exception import MyTunesKeyError
+from pydantic import GetCoreSchemaHandler, validate_call
+from pydantic_core import core_schema, CoreSchema
 
 
 class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):

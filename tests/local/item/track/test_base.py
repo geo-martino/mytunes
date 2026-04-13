@@ -11,9 +11,6 @@ import mutagen
 import mutagen.wave
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
-
 from mytunes._models.properties.file import IsLocalFile
 from mytunes._models.properties.image import ImageFile
 from mytunes._models.properties.length import HasLength
@@ -22,6 +19,8 @@ from mytunes.exception import MyTunesValueError
 from mytunes.local._item import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.track import LocalTrack, TagContext, HasLocalTracks
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester, assert_validator_skips
 from tests.utils import split_list

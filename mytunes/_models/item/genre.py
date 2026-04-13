@@ -1,7 +1,5 @@
 from typing import ClassVar, Annotated
 
-from pydantic import Field, field_validator, validate_call
-
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
 from mytunes._models.api import ItemReadEndpoints
@@ -12,6 +10,7 @@ from mytunes._models.properties.tag import HasSeparableTags
 from mytunes._models.properties.uri import URI
 from mytunes._models.remote import RemoteResource
 from mytunes._types import StrippedString
+from pydantic import Field, field_validator, validate_call
 
 
 class Genre(HasName, ResourceModel, metaclass=makecls()):

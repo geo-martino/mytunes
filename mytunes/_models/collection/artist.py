@@ -1,8 +1,6 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self
 
-from pydantic import model_validator, validate_call
-
 from mytunes._models.api import CollectionReadEndpoints
 from mytunes._models.api.items import HasArtistEndpoints
 from mytunes._models.collection._base import RemoteCollection, CollectionModel
@@ -14,6 +12,7 @@ from mytunes._models.item.artist import Artist, RemoteArtist
 from mytunes._models.item.genre import Genre, RemoteGenre
 from mytunes._models.item.track import Track
 from mytunes._models.properties.uri import URI
+from pydantic import model_validator, validate_call
 
 
 class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], HasAlbums[AT]):

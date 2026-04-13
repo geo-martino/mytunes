@@ -10,8 +10,6 @@ from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
-from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
-
 from mytunes._models import AttributeModel
 from mytunes._models._context import RemoteModelContext
 from mytunes._models.api._endpoints import HasEndpoints, Endpoints, _map_handler
@@ -21,6 +19,7 @@ from mytunes._models.properties.logger import HasLogger
 from mytunes._models.properties.uri import URI
 from mytunes._models.remote import RemoteModel
 from mytunes._types import get_generic
+from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
 
 
 # noinspection PyAbstractClass

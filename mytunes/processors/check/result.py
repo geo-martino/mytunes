@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from pydantic import Field
-
 from mytunes._types import TO_TUPLE
 from mytunes.exception import MyTunesValueError
+from pydantic import Field
+
 from ..._models.properties.uri import HasURI
 from ..._models.result import Result, LenLogFormatter
 

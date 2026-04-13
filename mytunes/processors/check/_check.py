@@ -1,13 +1,13 @@
 import itertools
 from collections.abc import Mapping, Sequence, AsyncGenerator
 
-from pydantic import Field, PositiveInt
-from termcolor import colored
-
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
+from pydantic import Field, PositiveInt
+from termcolor import colored
+
 from ._match.inputs import InputMatch
 from ._match.playlist import PlaylistMatch
 from ._page import CheckerPage, _ApiT

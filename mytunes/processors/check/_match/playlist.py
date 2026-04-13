@@ -4,6 +4,7 @@ from copy import copy
 
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check.result import CheckResult
+
 from ...._models.properties.uri import HasURI, HasMutableURI
 from ...._models.sequence import UniqueSequence
 

@@ -1,9 +1,9 @@
 from collections.abc import Sequence, Iterable
 from typing import Annotated, Self
 
+from mytunes._types import TO_TUPLE
 from pydantic import Field
 
-from mytunes._types import TO_TUPLE
 from ..._item.track import LocalTrack
 from ...._models.result import TotalCountResult, LenLogFormatter
 

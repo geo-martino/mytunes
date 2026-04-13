@@ -1,4 +1,5 @@
 from mytunes.local._base import LocalModel
+
 from ..._models.collection import CollectionModel
 
 

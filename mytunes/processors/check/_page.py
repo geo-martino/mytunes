@@ -5,10 +5,10 @@ from copy import deepcopy
 from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
+from mytunes.exception import MyTunesError
 from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
 from termcolor import colored
 
-from mytunes.exception import MyTunesError
 from .._base.inputs import PageProcessor
 from ..formatter import CollectionFormatter
 from ..._models.api import RemoteAPI, HasAPI, HasLibraryEndpoints

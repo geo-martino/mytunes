@@ -2,11 +2,10 @@ from copy import deepcopy
 from typing import final, ClassVar
 
 import pytest
-from pydantic import Field, AliasChoices
-
 from mytunes._models import BaseModel
 from mytunes._models.exception import ModelError
 from mytunes.exception import MyTunesImportError
+from pydantic import Field, AliasChoices
 
 
 @final

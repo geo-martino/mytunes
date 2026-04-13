@@ -1,10 +1,10 @@
 from typing import ClassVar, final
 
+from mytunes.spotify import API_URL
+from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from pydantic import AliasPath
 from yarl import URL
 
-from mytunes.spotify import API_URL
-from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from .._collection.album import SpotifyAlbumCollection
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI

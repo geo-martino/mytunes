@@ -1,10 +1,10 @@
 from collections.abc import MutableMapping, Sequence
 from typing import ClassVar, Any, Self, final, Annotated
 
-from pydantic import Field, model_validator
-
 from mytunes._types import StrippedString
 from mytunes.local._collection._base import LocalCollection
+from pydantic import Field, model_validator
+
 from .._item.track import LocalTrack, HasLocalTracks
 from ..._models.exception import MyTunesValidationError
 from ..._models.metadata import Attribute

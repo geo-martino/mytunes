@@ -1,7 +1,6 @@
-from pydantic import Field
-
 from mytunes._models import BaseModel
 from mytunes._models.item.user import RemoteUser
+from pydantic import Field
 
 
 class RemoteModelContext(BaseModel):

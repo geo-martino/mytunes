@@ -1,13 +1,11 @@
+import math
 from collections.abc import Generator
 from typing import Any
 from unittest.mock import patch, AsyncMock, Mock
 
-import math
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from yarl import URL
-
 from mytunes.spotify import API_URL
 # noinspection PyProtectedMember
 from mytunes.spotify._api.track import SpotifyTrackEndpoints
@@ -15,6 +13,7 @@ from mytunes.spotify._item.track import SpotifyAudioFeatures, SpotifyAudioAnalys
 from mytunes.spotify._properties.uri import SpotifyResourceURI
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.testers import BaseModelTester
+from yarl import URL
 
 
 class TestSpotifyTrackEndpoints(BaseModelTester):

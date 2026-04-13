@@ -3,12 +3,12 @@ from contextlib import suppress
 from functools import reduce
 from typing import Any, cast, Self, get_type_hints
 
-from pydantic.fields import FieldInfo
-
 from mytunes._models.exception import ModelError
 from mytunes._models.metadata import Attribute, TagAttribute
 from mytunes._types import get_base_types
 from mytunes.exception import MyTunesAttributeError
+from pydantic.fields import FieldInfo
+
 from ._base import ModelMetaclass, BaseModel
 from .resource import ResourceModel
 

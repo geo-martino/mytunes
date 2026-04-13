@@ -2,9 +2,6 @@ import logging
 from abc import abstractmethod
 from typing import ClassVar, Any, Type, Union, get_args, get_origin
 
-from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices
-from yarl import URL
-
 from mytunes._models import ResourceModel
 from mytunes._models.api import HasLibraryEndpoints
 from mytunes._models.api._endpoints import Endpoints, HasEndpoints
@@ -15,6 +12,8 @@ from mytunes._models.remote import RemoteResource
 from mytunes._types import get_generic
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean.string import NameCleaner
+from pydantic import Field, PrivateAttr, validate_call, AliasPath, PositiveInt, AliasChoices
+from yarl import URL
 
 
 # noinspection PyAbstractClass

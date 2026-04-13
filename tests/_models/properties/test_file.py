@@ -3,7 +3,6 @@ from pathlib import Path
 import mutagen
 import pytest
 from faker import Faker
-
 from mytunes._models.properties.file import IsLocalFile
 from mytunes.exception import MyTunesTypeError
 from tests.testers import BaseModelTester

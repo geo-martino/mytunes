@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import pytest
 from dateutil.relativedelta import relativedelta
 from faker import Faker
-
 from mytunes.processors.time import TimeMapper
 from tests.testers import BaseModelTester
 

@@ -1,7 +1,6 @@
 from unittest.mock import patch, MagicMock
 
 import pytest
-
 from mytunes._models.collection import CollectionModel
 from mytunes._models.collection.playlist import RemoteMutablePlaylist
 from mytunes._models.properties.uri import HasURI

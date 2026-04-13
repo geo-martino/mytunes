@@ -1,8 +1,6 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self
 
-from pydantic import model_validator, validate_call
-
 from mytunes._models.api import CollectionReadEndpoints
 from mytunes._models.api.items import HasGenreEndpoints
 from mytunes._models.collection._base import RemoteCollection, CollectionModel
@@ -13,6 +11,7 @@ from mytunes._models.item.track import Track, HasTracks, RemoteTrack
 from mytunes._models.properties.length import HasLength
 from mytunes._models.properties.uri import URI
 from mytunes._models.sequence import UniqueSequence
+from pydantic import model_validator, validate_call
 
 
 class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Genre, HasLength):

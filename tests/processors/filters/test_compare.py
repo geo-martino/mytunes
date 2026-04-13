@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from faker import Faker
-
 from mytunes._models.properties.date import SparseDate
 from mytunes.local._item.track import LocalTrack
 from mytunes.processors.compare import Comparer

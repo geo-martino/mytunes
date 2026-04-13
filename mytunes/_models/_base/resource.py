@@ -2,10 +2,10 @@ from collections.abc import Hashable
 from functools import cached_property
 from typing import Any, cast, ClassVar
 
-from pydantic import Field
-
 from mytunes._models.exception import ModelError
 from mytunes._models.metadata import UniqueAttribute
+from pydantic import Field
+
 from ._base import ModelMetaclass, BaseModel
 
 

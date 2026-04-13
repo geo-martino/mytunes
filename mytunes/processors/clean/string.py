@@ -2,10 +2,10 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
-from pydantic import Field, validate_call
-
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean._base import TagCleaner
+from pydantic import Field, validate_call
+
 from ..._models import AttributeModel
 from ..._models.item.album import HasAlbum, Album
 from ..._models.item.artist import HasArtists, Artist

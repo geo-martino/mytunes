@@ -3,7 +3,6 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from faker import Faker
-
 from mytunes._models.item.album import HasAlbum, Album
 from mytunes._models.item.track import Track
 from mytunes._models.properties.length import HasLength

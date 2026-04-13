@@ -1,12 +1,10 @@
 import itertools
+import math
 from collections.abc import Collection, Sequence, Generator
 from unittest.mock import Mock, AsyncMock, patch
 
-import math
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes._models.api import RemoteAPI
 from mytunes._models.api.playlist import PlaylistReadWriteEndpoints
 from mytunes._models.collection import CollectionModel
@@ -14,6 +12,7 @@ from mytunes._models.collection.playlist import RemoteMutablePlaylist
 from mytunes._models.item.track import RemoteTrack
 from mytunes.processors.check import Checker
 from mytunes.processors.check._page import CheckerPage
+from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.utils import patch_input
 

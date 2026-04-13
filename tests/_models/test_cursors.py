@@ -1,18 +1,17 @@
+import math
 import random
 from collections.abc import Generator
 from copy import copy
 from typing import Self, final, ClassVar, Any
 from unittest.mock import patch, Mock, PropertyMock, MagicMock
 
-import math
 import pytest
 from faker import Faker
-from pydantic import AliasPath, AliasChoices
-from yarl import URL
-
 from mytunes._models.cursors import PageCursor, IterablePageCursor, IndexCursor, KeyCursor, UrlCursor, InitialCursor
 from mytunes._models.exception import CursorError
+from pydantic import AliasPath, AliasChoices
 from tests.testers import BaseModelTester
+from yarl import URL
 
 
 @final

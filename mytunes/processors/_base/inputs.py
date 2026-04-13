@@ -2,13 +2,13 @@ import textwrap
 from abc import abstractmethod
 from typing import ClassVar
 
+from mytunes.processors._base import Processor
+from mytunes.processors._flow import SkipPage, QuitImmediately
 from pydantic import Field
 from rich.progress import TaskID
 from tabulate import tabulate
 from termcolor import colored
 
-from mytunes.processors._base import Processor
-from mytunes.processors._flow import SkipPage, QuitImmediately
 from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.properties.order import Position
 from ..._models.result import LogFormatter

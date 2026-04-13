@@ -5,8 +5,6 @@ from unittest.mock import patch, AsyncMock, Mock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from yarl import URL
-
 from mytunes.spotify import API_URL
 # noinspection PyProtectedMember
 from mytunes.spotify._api.artist import SpotifyArtistEndpoints
@@ -16,6 +14,7 @@ from mytunes.spotify._properties.uri import SpotifyResourceURI
 from mytunes.spotify.cursors import SpotifyInitialCursor
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.testers import BaseModelTester
+from yarl import URL
 
 
 class TestSpotifyArtistEndpoints(BaseModelTester):

@@ -5,10 +5,7 @@ from typing import Annotated, ClassVar, final
 
 import tabulate
 from mutagen import MutagenError
-from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
-from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator
-from termcolor import colored
-
+from mytunes._models.properties.path import PathMapper
 from mytunes._types import to_set
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
@@ -16,16 +13,19 @@ from mytunes.local._collection.album import LocalAlbumCollection
 from mytunes.local._collection.artist import LocalArtistCollection
 from mytunes.local._collection.folder import Folder
 from mytunes.local._collection.genre import LocalGenreCollection
+from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
 from mytunes.local._collection.playlist.result import LoadPlaylistResult
 from mytunes.logger import STAT
 from mytunes.processors.filters import Filter
 from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.sort import ItemSorter
+from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator
+from termcolor import colored
+
 from .result import LibraryURIsResult
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 from ...._models.collection.library import MutableLibrary
-from mytunes._models.properties.path import PathMapper
 from ...._models.properties.uri import URI
 from ...._models.result import Result
 

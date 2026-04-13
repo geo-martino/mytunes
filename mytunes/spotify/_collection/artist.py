@@ -1,8 +1,8 @@
 from typing import final, Annotated, TYPE_CHECKING
 
+from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from pydantic import Field, AliasPath, model_validator
 
-from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre

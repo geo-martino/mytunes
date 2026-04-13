@@ -1,10 +1,6 @@
 from collections.abc import Sequence
 from typing import ClassVar, overload
 
-from pydantic import validate_call, Field, PositiveInt, PrivateAttr
-from pydantic.json_schema import JsonSchemaValue
-from yarl import URL
-
 from mytunes._models.api import HasLibraryEndpoints
 from mytunes._models.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
@@ -14,6 +10,9 @@ from mytunes._models.collection.playlist import RemotePlaylist
 from mytunes._models.item.track import RemoteTrack
 from mytunes._models.item.user import RemoteUser
 from mytunes._models.properties.uri import URI
+from pydantic import validate_call, Field, PositiveInt, PrivateAttr
+from pydantic.json_schema import JsonSchemaValue
+from yarl import URL
 
 
 class PlaylistEndpoints[UT: URI, RT: RemotePlaylist](Endpoints[UT, RT]):

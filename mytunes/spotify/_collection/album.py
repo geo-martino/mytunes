@@ -1,8 +1,8 @@
 from typing import final, Self, Annotated
 
+from mytunes.spotify.cursors import SpotifyIndexCursor
 from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
 
-from mytunes.spotify.cursors import SpotifyIndexCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre

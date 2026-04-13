@@ -2,9 +2,6 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, Annotated
 
 from aiorequestful.response.exception import ResponseError
-from pydantic import Field, validate_call, BeforeValidator
-from termcolor import colored
-
 from mytunes._models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
     BatchReadEndpoints, BatchWriteEndpoints
 from mytunes._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
@@ -22,6 +19,8 @@ from mytunes._models.item.user import RemoteUser
 from mytunes._models.properties.uri import HasURI, URI
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.filters.compare import ComparerFilter
+from pydantic import Field, validate_call, BeforeValidator
+from termcolor import colored
 
 
 class RemoteMutableLibrary[

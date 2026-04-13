@@ -1,12 +1,11 @@
 """Utilities to use in tests. Usually used for setting up testing conditions."""
 import builtins
 import itertools
+import math
 from collections.abc import Collection, Iterator, Generator
 from contextlib import contextmanager
 from random import choice
 from unittest.mock import Mock, patch
-
-import math
 
 
 def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterator[list[T]]:

@@ -1,10 +1,10 @@
 from abc import abstractmethod
 from typing import Any
 
-from pydantic import Field
-
 from mytunes._types import Number
 from mytunes.processors.clean import TagCleaner
+from pydantic import Field
+
 from .._base import Processor
 from ..._models.properties.logger import HasLogger
 from ..._models.properties.name import HasName

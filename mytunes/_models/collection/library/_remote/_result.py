@@ -1,8 +1,6 @@
 from collections.abc import Iterable, Sequence
 from typing import Annotated, Any, Self
 
-from pydantic import Field, computed_field
-
 from mytunes._models.collection.album import AlbumCollection, RemoteAlbumCollection
 from mytunes._models.collection.artist import RemoteArtistCollection
 from mytunes._models.collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
@@ -11,6 +9,7 @@ from mytunes._models.item.artist import RemoteArtist
 from mytunes._models.item.track import RemoteTrack, HasTracks
 from mytunes._models.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter
 from mytunes._types import TO_TUPLE
+from pydantic import Field, computed_field
 
 _log_formatters = [
     LenLogFormatter(

@@ -2,11 +2,10 @@ from abc import ABCMeta
 
 import pytest
 from faker import Faker
-from yarl import URL
-
 from mytunes._models.cursors import PageCursor
 from tests.remote import MockUrlCursor
 from tests.testers import UniqueKeyTester
+from yarl import URL
 
 
 class RemoteCollectionTester(UniqueKeyTester, metaclass=ABCMeta):

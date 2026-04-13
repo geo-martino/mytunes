@@ -2,7 +2,6 @@ from datetime import date
 
 import pytest
 from faker import Faker
-
 from mytunes._models.properties.date import SparseDate
 from tests.testers import BaseModelTester
 

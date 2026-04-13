@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
-
 from mytunes._models import AttributeModel
 from mytunes._models.item.track import Track
 from mytunes.exception import MyTunesValueError

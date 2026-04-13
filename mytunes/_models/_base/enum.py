@@ -1,12 +1,11 @@
 from enum import IntEnum
 from typing import Any, Self
 
+from mytunes._models.exception import MyTunesValidationError
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.alias_generators import to_snake
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
-
-from mytunes._models.exception import MyTunesValidationError
 
 
 class IntEnumModel(IntEnum):

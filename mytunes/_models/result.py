@@ -2,16 +2,15 @@ import re
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
-from pydantic import ConfigDict, Field, PositiveInt
-from pydantic.dataclasses import dataclass
-from tabulate import tabulate
-from termcolor import colored
-
 from mytunes._models import BaseModel
 from mytunes._models.metadata import Attribute
 from mytunes._types import StrippedString
 from mytunes._utils import truncate_string
 from mytunes.exception import MyTunesTypeError
+from pydantic import ConfigDict, Field, PositiveInt
+from pydantic.dataclasses import dataclass
+from tabulate import tabulate
+from termcolor import colored
 
 
 @dataclass(config=ConfigDict(frozen=True))

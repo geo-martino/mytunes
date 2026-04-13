@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
 import aiofiles
-from pydantic import Field, NonNegativeInt
-
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import SortResult, LoadPlaylistResult, SavePlaylistResult
 from mytunes.processors.filters.values import PathFilter
+from pydantic import Field, NonNegativeInt
+
 from ..._item.track import LocalTrack, LOCAL_TRACK_ADAPTER
 from ...._models.properties.path import PathInputType
 from ...._models.result import LogFormatter

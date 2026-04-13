@@ -2,9 +2,9 @@ from collections.abc import Sequence, Collection, Iterable
 from functools import partial
 from typing import Union, Annotated
 
+from mytunes.processors.filters import Filter
 from pydantic import AliasChoices, Field
 
-from mytunes.processors.filters import Filter
 from ._setter import Setter
 from .._base import Processor
 from ..._models import AttributeModel, ResourceModel

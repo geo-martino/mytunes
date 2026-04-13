@@ -4,15 +4,14 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import Any, get_args, Callable, Self, Annotated
 
-from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema, CoreSchema
-from yarl import URL
-
 from mytunes._models.exception import MyTunesValidationError, ModelError, RequestError
 from mytunes._models.properties.uri import URI, HasURI, HasImmutableURI
 from mytunes._models.remote import RemoteModel
 from mytunes._types import get_generic, HttpURL
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import core_schema, CoreSchema
+from yarl import URL
 
 
 class _ApiSchemaBase[UT: URI, MT: HasURI]:

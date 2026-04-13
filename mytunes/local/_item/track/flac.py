@@ -4,14 +4,14 @@ from typing import Any, final, Annotated
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    NonNegativeFloat, ConfigDict
-from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
-
 from mytunes._types import get_base_types
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
+from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
+    NonNegativeFloat, ConfigDict
+from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
+
 from ...._models.metadata import TagAttribute
 from ...._models.properties.date import SparseDate
 from ...._models.properties.image import ImageFile, ImageURL

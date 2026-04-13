@@ -1,13 +1,13 @@
 from collections.abc import MutableMapping
-from typing import final, ClassVar, Annotated, Self, Literal
-
-from pydantic import AliasPath, Field, model_validator, NonNegativeInt
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import ValidationInfo
+from typing import final, Annotated, Self, Literal
 
 from mytunes.spotify import SpotifyResource
 from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from mytunes.spotify.user import SpotifyUser
+from pydantic import AliasPath, Field, model_validator, NonNegativeInt
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import ValidationInfo
+
 from .._item.track import SpotifyPlaylistTrack
 from .._properties.date import HasSpotifyAddedDate
 from .._properties.images import HasSpotifyImages

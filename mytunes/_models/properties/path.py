@@ -1,7 +1,8 @@
 import os
+from collections.abc import Iterable, Mapping, MutableMapping
 from os import sep
 from pathlib import Path, PurePath
-from typing import Iterable, MutableMapping, Mapping, final
+from typing import final
 
 from mytunes._models import BaseModel
 from mytunes._models.exception import MyTunesValidationError

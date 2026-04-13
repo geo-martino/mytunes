@@ -1,6 +1,8 @@
 import inspect
 from typing import Any, cast, get_origin, Union, Self
 
+from mytunes._models.exception import ModelError, MyTunesValidationError
+from mytunes.exception import MyTunesImportError
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
     ConfigDict, AliasGenerator, AliasChoices, AliasPath
 # noinspection PyProtectedMember
@@ -8,9 +10,6 @@ from pydantic._internal._model_construction import ModelMetaclass as PydanticMod
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from typing_inspection.typing_objects import is_annotated
-
-from mytunes._models.exception import ModelError, MyTunesValidationError
-from mytunes.exception import MyTunesImportError
 
 
 class ModelMetaclass(PydanticModelMetaclass):
