@@ -1,10 +1,10 @@
 from abc import abstractmethod
-from collections.abc import Collection, Iterator
+from collections.abc import Collection, Iterator, Sequence
 from typing import Any, final, Annotated
 
 from pydantic import Field, validate_call, computed_field
 
-from mytunes._types import StrippedString
+from mytunes._types import StrippedString, TO_TUPLE
 from mytunes.processors.filters._base import Filter
 from mytunes.processors.filters.compare import ComparerFilter
 from ..._models.result import CountResult, LenLogFormatter, LogPosition
@@ -79,7 +79,8 @@ class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
 
 class IncludeExcludeResult[IT: Any](CompositeResult[IT]):
     included: Annotated[
-        tuple[IT, ...],
+        Sequence[IT],
+        TO_TUPLE,
         LogPosition(position=1),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
@@ -92,7 +93,8 @@ class IncludeExcludeResult[IT: Any](CompositeResult[IT]):
         default_factory=tuple,
     )
     excluded: Annotated[
-        tuple[IT, ...],
+        Sequence[IT],
+        TO_TUPLE,
         LogPosition(position=2),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
@@ -156,7 +158,8 @@ class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
 
 class GroupResult[IT: Any](IncludeExcludeResult[IT]):
     compared: Annotated[
-        tuple[IT, ...],
+        Sequence[IT],
+        TO_TUPLE,
         LogPosition(position=5),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
@@ -169,7 +172,8 @@ class GroupResult[IT: Any](IncludeExcludeResult[IT]):
         default_factory=tuple,
     )
     grouped: Annotated[
-        tuple[IT, ...],
+        Sequence[IT],
+        TO_TUPLE,
         LogPosition(position=6),
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0

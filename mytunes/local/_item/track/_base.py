@@ -703,8 +703,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
     def restore_tracks(
             self,
             others: Annotated[Sequence[LocalTrack], BeforeValidator(_extract_tracks_from_backup)],
-            include: Sequence[str] = (),
-            exclude: Sequence[str] = (),
+            include: set[str] | Sequence[str] = (),
+            exclude: set[str] | Sequence[str] = (),
     ) -> dict[Path, dict[str, Any]]:
         """
         Restore track tags from a backup to loaded track objects. This does not save the updated tags.

@@ -1,5 +1,6 @@
 from collections.abc import Collection
 from typing import Literal, Annotated
+from mytunes.logger import Logger
 
 from pydantic import NonNegativeInt, Field
 from pydantic.json_schema import JsonSchemaValue
@@ -69,7 +70,7 @@ class SyncRemoteResult(CountResult):
     properties: Annotated[
         JsonSchemaValue,
         MapLogFormatter(
-            value=lambda x: ", ".join(x.keys()),
+            value=lambda x: Logger.format_list_to_string(x.keys()),
             colour="blue",
             condition=lambda x: len(x) > 0,
             include_name_in_log=False
