@@ -353,9 +353,7 @@ class RemoteMutableLibrary[
     ## Restore library items
     ###########################################################################
     @validate_call
-    def restore(
-            self, backup: RemoteLibraryDump[URI], dry_run: bool = False
-    ) -> dict[str, SyncRemoteResult] | SyncRemoteResult | None:
+    async def restore(self, backup: RemoteLibraryDump[URI], dry_run: bool = False) -> dict[str, SyncRemoteResult]:
         """
         Restore library from a backup.
 
@@ -368,13 +366,13 @@ class RemoteMutableLibrary[
 
         with self._progress:
             if "tracks" in backup:
-                results |= self.restore_tracks(backup["tracks"], dry_run=dry_run)
+                results["tracks"] = await self.restore_tracks(backup["tracks"], dry_run=dry_run)
             if "artists" in backup:
-                results |= self.restore_artists(backup["artists"], dry_run=dry_run)
+                results["artists"] = await self.restore_artists(backup["artists"], dry_run=dry_run)
             if "albums" in backup:
-                results |= self.restore_albums(backup["albums"], dry_run=dry_run)
+                results["albums"] = await self.restore_albums(backup["albums"], dry_run=dry_run)
             if "playlists" in backup:
-                results |= self.restore_playlists(backup["playlists"], dry_run=dry_run)
+                results |= await self.restore_playlists(backup["playlists"], dry_run=dry_run)
 
         self.log_sync_results(results)
         return results
