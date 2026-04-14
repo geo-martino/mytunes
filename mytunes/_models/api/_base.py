@@ -129,8 +129,8 @@ class HasAPI[API: RemoteAPI](AttributeModel):
             @functools.wraps(func)
             def wrapper(self: IsRemoteService, *args, **kwargs):
                 for key, expected_type, context in expected:
-                    valid = self._validate_endpoints(key=key, context=context, expected=expected_type, name=kind)
-                    if not valid:
+                    endpoints = self._validate_endpoints(key=key, context=context, expected=expected_type, name=kind)
+                    if endpoints is None:
                         return invalid_wrapper()
 
                 return func(self, *args, **kwargs)
@@ -138,18 +138,17 @@ class HasAPI[API: RemoteAPI](AttributeModel):
             return wrapper
         return decorator
 
-    def _validate_endpoints[T](self, key: str, expected: type[T], context: str, name: str) -> TypeIs[type[T]]:
+    def _validate_endpoints[T](self, key: str, expected: type[T], context: str, name: str) -> T | None:
         api = self._get_endpoints(self.api, key)
-
         if isinstance(api, expected):
-            return True
+            return api
 
         source = self.api.source.title() if isinstance(api, RemoteAPI) else "the"
         context = context.format(type=name)
         message = f"Cannot run {source} operation for {name}. API does not support {context}."
         self._logger.warning(message)
 
-        return False
+        return None
 
 
 # TODO: drop this on aiorequestful v2
