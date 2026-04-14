@@ -11,6 +11,7 @@ from typing import Any, Annotated
 
 from pydantic import Field, validate_call
 from rich.console import Console
+from rich.prompt import Prompt
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
@@ -136,7 +137,7 @@ class Logger(logging.Logger):
             text = text.strip() + " "
 
         self.print(text, end="")
-        inp = self.console.input().strip()
+        inp = Prompt.ask().strip()
         self.debug(f"User input: {inp}")
         return inp
 
