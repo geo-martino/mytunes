@@ -156,7 +156,7 @@ class TestHasAPI(BaseModelTester):
 
     async def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockItemEndpoints]):
-            pass
+            source: ClassVar[str] = "test"
 
         model = self.MockIsRemoteService(api=MockAPI(handler=handler))
         assert await model.return_bool() is False
