@@ -129,9 +129,7 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
         cls._validate_required_modules_installed()
 
         if inspect.isabstract(cls):  # force abstract classes to throw validation error for pydantic validation
-            raise MyTunesValidationError(
-                f"{cls.__name__} cannot be instantiated directly, must be subclassed with a specific source and type"
-            )
+            raise MyTunesValidationError(f"{cls.__name__} cannot be instantiated directly, must be subclassed.")
         return super().__new__(cls)
 
     @classmethod
