@@ -113,34 +113,6 @@ class HasAPI[API: RemoteAPI](AttributeModel):
 
         return api
 
-
-# TODO: drop this on aiorequestful v2
-class HasCache(HasEndpoints):
-    @abstractmethod
-    async def _setup_cache(self, cache: ResponseCache) -> None:
-        """Set up the repositories and repository getter on the self.handler.session's cache."""
-        raise NotImplementedError
-
-    async def __aenter__(self) -> Self:
-        await super().__aenter__()
-
-        handler = self._handler
-        session = handler.session
-
-        if isinstance(session, CachedSession):
-            cache = session.cache
-            with suppress(CacheError):
-                await self._setup_cache(cache)
-
-            for repository in cache.values():
-                # all repositories must use the same payload handler as the request handler
-                # for it to function correctly
-                repository.settings.payload_handler = handler.payload_handler
-
-        return self
-
-
-class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
     @classmethod
     def _validate_api[T](
             cls,
@@ -172,3 +144,34 @@ class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
 
             return wrapper
         return decorator
+
+
+
+# TODO: drop this on aiorequestful v2
+class HasCache(HasEndpoints):
+    @abstractmethod
+    async def _setup_cache(self, cache: ResponseCache) -> None:
+        """Set up the repositories and repository getter on the self.handler.session's cache."""
+        raise NotImplementedError
+
+    async def __aenter__(self) -> Self:
+        await super().__aenter__()
+
+        handler = self._handler
+        session = handler.session
+
+        if isinstance(session, CachedSession):
+            cache = session.cache
+            with suppress(CacheError):
+                await self._setup_cache(cache)
+
+            for repository in cache.values():
+                # all repositories must use the same payload handler as the request handler
+                # for it to function correctly
+                repository.settings.payload_handler = handler.payload_handler
+
+        return self
+
+
+class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
+    pass
