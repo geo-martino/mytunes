@@ -137,7 +137,6 @@ class RemoteMutableLibrary[
             results["ARTISTS"] = await self.sync_artists(kind=kind, dry_run=dry_run)
             results["ALBUMS"] = await self.sync_albums(kind=kind, dry_run=dry_run)
 
-        self.log_sync_results(results)
         return results
 
     def log_sync_results(self, results: Mapping[str, SyncRemoteResult]) -> None:
@@ -373,7 +372,6 @@ class RemoteMutableLibrary[
             if "playlists" in backup:
                 results |= await self.restore_playlists(backup["playlists"], dry_run=dry_run)
 
-        self.log_sync_results(results)
         return results
 
     @staticmethod
