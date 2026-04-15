@@ -35,7 +35,7 @@ class Logger(logging.Logger):
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
 
-    console: Console = Console()
+    console: Console = Console(highlight=False)
 
     @property
     def file_paths(self) -> list[Path]:
@@ -112,7 +112,7 @@ class Logger(logging.Logger):
         msg = self.generate_message(msg, header, hidden)
         super().critical(msg, *args, **kwargs)
 
-    def print(self, *values, sep=' ', end='\n', header: int | None = None, **kwargs) -> None:
+    def print(self, *values, sep=' ', header: int | None = None, **kwargs) -> None:
         """
         Wrapper for print. Logs the given ``values`` to the INFO setting.
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
@@ -120,9 +120,9 @@ class Logger(logging.Logger):
         """
         message = self.generate_message(sep.join(values), header=header)
         if not values or not self.stdout_handlers or all(h.level > logging.DEBUG for h in self.stdout_handlers):
-            self.console.print(*values, sep=sep, end=end, highlight=False, new_line_start=not self.compact)
+            self.console.print(*values, sep=sep, new_line_start=not self.compact, **kwargs)
         elif message:
-            self.debug(message, **kwargs)
+            self.debug(message)
 
     def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
