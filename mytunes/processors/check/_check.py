@@ -89,15 +89,15 @@ class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsy
         self, page: CheckerPage[API, T]
     ) -> AsyncGenerator[tuple[str, CheckResult[T]]]:
         async with page:
-            await page.pause()
+            with self._pause_progress():
+                await page.pause()
 
             task_id = self._progress.add_task("Matching changes", total=page.count)
-            with self._progress:
-                for name, uri in zip(page.names, page.uris, strict=True):
-                    result = await self._match_page(page, uri=uri)
-                    yield name, result
+            for name, uri in zip(page.names, page.uris, strict=True):
+                result = await self._match_page(page, uri=uri)
+                yield name, result
 
-                    self._progress.advance(task_id, advance=1)
+                self._progress.advance(task_id, advance=1)
 
             self._progress.remove_task(task_id)
 
@@ -108,10 +108,10 @@ class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsy
         if not playlist_result.skipped:
             return playlist_result
 
-        self._progress.stop()
-        matcher = InputMatch(page=page, items=playlist_result.skipped, uri=uri, matcher=self.matcher)
-        input_result = await matcher.match()
-        self._progress.start()
+        with self._pause_progress():
+            matcher = InputMatch(page=page, items=playlist_result.skipped, uri=uri, matcher=self.matcher)
+            input_result = await matcher.match()
+
         return playlist_result.merge_results(input_result)
 
     ###########################################################################

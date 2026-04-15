@@ -124,7 +124,6 @@ class PageProcessor(InputProcessor, HasProgress):
     @abstractmethod
     def pause(self) -> None:
         """Pause the process and prompt the user for input to proceed."""
-        self._progress.stop()
         self._print_help_text(with_header=True)
 
     def _get_user_input(self, text: str | None = None, formatter: LogFormatter | None = None) -> str | None:

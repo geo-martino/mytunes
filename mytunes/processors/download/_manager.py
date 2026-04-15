@@ -79,11 +79,11 @@ class StoreManager(Processor, HasLogger, HasProgress):
                 fields = self.fields
                 while fields is not None:
                     page.open_sites()
-                    fields = page.pause()
-                    if fields:
-                        page.urls = [self._format_urls_for_item(item, fields=fields) for item in page.items]
+                    with self._pause_progress():
+                        fields = page.pause()
+                        if fields:
+                            page.urls = [self._format_urls_for_item(item, fields=fields) for item in page.items]
 
-                self._progress.start()
             except SkipPage:
                 self._logger.error("User triggered skip page with skip command")
                 continue

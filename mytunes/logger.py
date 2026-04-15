@@ -136,7 +136,7 @@ class Logger(logging.Logger):
         if text:
             text = text.strip() + " "
 
-        self.print(text, end="")
+        self.print(text)
         inp = Prompt.ask().strip()
         self.debug(f"User input: {inp}")
         return inp

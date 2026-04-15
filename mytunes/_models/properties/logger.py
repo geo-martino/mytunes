@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from collections.abc import Iterable, Callable, Coroutine, Awaitable
-from contextlib import AbstractAsyncContextManager, AbstractContextManager
+from collections.abc import Iterable, Callable, Coroutine, Awaitable, Generator
+from contextlib import AbstractAsyncContextManager, AbstractContextManager, contextmanager
 from functools import cached_property
 from typing import Self, ClassVar, Any
 
@@ -51,6 +51,12 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.__exit__(exc_type, exc_val, exc_tb)
         return await super().__aexit__(exc_type, exc_val, exc_tb)
+
+    @contextmanager
+    def _pause_progress(self) -> Generator[None]:
+        self._progress.stop()
+        yield
+        self._progress.start()
 
     def _run_tasks[T](
             self,
