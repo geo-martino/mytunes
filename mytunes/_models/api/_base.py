@@ -138,14 +138,14 @@ class HasAPI[API: RemoteAPI](AttributeModel):
             return wrapper
         return decorator
 
-    def _validate_endpoints[T](self, key: str, expected: type[T], context: str, name: str) -> T | None:
+    def _validate_endpoints[T](self, key: str, expected: type[T], context: str, name: str = "") -> T | None:
         api = self._get_endpoints(self.api, key)
         if isinstance(api, expected):
             return api
 
         source = self.api.source.title() if isinstance(api, RemoteAPI) else "the"
         context = context.format(type=name)
-        message = f"Cannot run {source} operation for {name}. API does not support {context}."
+        message = f"Cannot run {source} operation for {name or key}. API does not support {context}."
         self._logger.warning(message)
 
         return None
