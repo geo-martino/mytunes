@@ -111,7 +111,7 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
 class RemoteArtistsResult[T: RemoteArtist](CountResult):
     artists: Annotated[Sequence[T], TO_TUPLE, *_log_formatters] = Field(
         description="The artists in this result.",
-        default_factory=tuple
+        default_factory=tuple,
     )
 
     @computed_field(description="All available albums by the artists.")

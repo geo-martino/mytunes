@@ -24,6 +24,7 @@ class HasArtists[RT: Artist](HasSeparableTags):
     artists: Annotated[list[RT], Attribute()] = Field(
         description="The artists associated with this resource.",
         default_factory=list,
+        validation_alias="artist",
     )
 
     @field_validator("artists", mode="before", check_fields=True)

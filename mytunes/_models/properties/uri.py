@@ -229,6 +229,7 @@ class HasMutableURI(HasURI):
     uris: Annotated[set[URI], TO_SET] = Field(
         description="A set of URIs that represent this resource.",
         default_factory=set,
+        validation_alias="uri",
     )
 
     def __init__(self, **data):

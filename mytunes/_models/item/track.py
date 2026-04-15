@@ -140,11 +140,6 @@ class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
 class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
     Track[RT, AT, GT], RemoteResource[UT], metaclass=makecls()
 ):
-    artists: Annotated[list[RT], Attribute()] = Field(
-        description="The artists associated with this resource.",
-        default_factory=list,
-    )
-
     @validate_call
     async def reload(self, api: HasTrackEndpoints[ItemReadEndpoints]) -> None:
         model = await api.tracks.get(self.uri)

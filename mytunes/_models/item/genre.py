@@ -27,6 +27,7 @@ class HasGenres[GT: Genre](HasSeparableTags):
     genres: Annotated[list[GT], Attribute()] = Field(
         description="The genres associated with this resource.",
         default_factory=list,
+        validation_alias="genre",
     )
 
     @field_validator("genres", mode="before", check_fields=True)

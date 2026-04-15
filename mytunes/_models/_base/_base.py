@@ -120,9 +120,6 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
         validate_assignment=True,
         validate_by_name=True,
         validate_by_alias=True,
-        alias_generator=AliasGenerator(
-            validation_alias=lambda name: name.replace("_", "").rstrip("s")
-        ),
     )
 
     def __new__(cls, *args, **kwargs):
@@ -146,10 +143,10 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             return {name}
 
         aliases: set[str | None] = {field.alias}
+        print(aliases)
+        print(cls.model_config)
         if cls.model_config["validate_by_name"]:
             aliases.add(name)
-        if with_serialization_alias:
-            aliases.add(field.serialization_alias)
 
         match field.validation_alias:
             case str():
@@ -157,7 +154,13 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             case AliasChoices():
                 aliases.update(al for al in field.validation_alias.choices if isinstance(al, str))
 
-        return {al for al in aliases if al}
+        aliases = {al for al in aliases if al}
+        if not aliases:
+            aliases.add(name)  # no aliases found, add the name
+
+        if with_serialization_alias and field.serialization_alias:
+            aliases.add(field.serialization_alias)
+        return aliases
 
     @classmethod
     def _get_value_from_data(cls, data: dict[str, Any], field_name: str) -> Any:
