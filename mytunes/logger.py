@@ -134,10 +134,9 @@ class Logger(logging.Logger):
         """Print dialogue with optional text and get the user's input."""
         if text:
             text = text.strip()
-            self.print(text, end="")
-            Prompt.prompt_suffix = " "
 
-        inp = Prompt.ask(choices=choices).strip()
+        Prompt.prompt_suffix = " "
+        inp = Prompt.ask(text, choices=choices, default="" if choices else ...).strip()
         self.debug(f"User input: {inp}")
         return inp
 
