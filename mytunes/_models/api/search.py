@@ -71,7 +71,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
         for item_type in supported_types:
             path = self._get_query_path(self._query_path, item_type=item_type)
             items = self._get_items_from_response(response, path=path)
-            results[item_type] = [type(self).create_model(it, context=self._model_context) for it in items]
+            results[item_type] = [type(self).create_model(it, context=self._model_context) for it in items if it]
 
         return results
 
