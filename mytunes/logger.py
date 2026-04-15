@@ -130,7 +130,7 @@ class Logger(logging.Logger):
             if self.stdout_handlers and any(logging.DEBUG < h.level <= level for h in self.stdout_handlers):
                 self.console.print()
 
-    def input(self, text: str | None = None, choices: list[str] = ()) -> str:
+    def input(self, text: str | None = None, choices: list[str] | None = None) -> str:
         """Print dialogue with optional text and get the user's input."""
         if text:
             text = text.strip()
