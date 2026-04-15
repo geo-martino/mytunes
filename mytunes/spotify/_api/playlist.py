@@ -115,7 +115,7 @@ class SpotifyPlaylistEndpoints(
 
     _create_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
 
-    # @validate_call  # not currently working with generics
+    @validate_call
     async def get_all(self, collection: PageCursor | HasPageCursor | SpotifyPlaylist) -> list[SpotifyPlaylistTrack]:
         try:
 

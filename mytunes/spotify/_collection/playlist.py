@@ -1,5 +1,6 @@
+import sys
 from collections.abc import MutableMapping
-from typing import final, Annotated, Self, Literal
+from typing import final, Annotated, Self, Literal, Any
 
 from mytunes.spotify import SpotifyResource
 from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
@@ -68,6 +69,15 @@ class SpotifyPlaylist(
             return data
 
         data.pop("tracks", None)
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _add_items_if_missing[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
+        if not isinstance(data, MutableMapping) or "items" in data or "cursor" in data:
+            return data
+
+        data["items"] = {"href": f"{data["href"]}/items", "total": sys.maxsize}
         return data
 
 
