@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 from mytunes._models._context import RemoteModelContext
 from mytunes.spotify._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
-from mytunes.spotify.cursors import SpotifyIndexCursor
+from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from mytunes.spotify.user import SpotifyUser
 from pydantic import ValidationError
 from tests.spotify.generator import SpotifyPayloadGenerator
@@ -48,6 +48,20 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
         assert model.owner.uri == payload["owner"]["uri"]
         assert model.public is payload["public"]
         assert model.collaborative == payload["collaborative"]
+
+    def test_response_when_items_is_list_of_none(self, generator: SpotifyPayloadGenerator):
+        payload = generator.generate_playlist()
+        payload["items"] = [None]
+
+        if not payload["collaborative"]:
+            model = SpotifyPlaylist.model_validate(payload)
+        else:
+            model = SpotifyMutablePlaylist.model_validate(payload)
+
+        assert isinstance(model.cursor, SpotifyInitialCursor)
+        assert model.cursor.url == URL(f"{payload["href"]}/items")
+        assert model.total > 0
+        assert model.cursor.total > 0
 
     def test_validate_mutability(self, model: SpotifyPlaylist, generator: SpotifyPayloadGenerator):
         context = RemoteModelContext(user=model.owner)

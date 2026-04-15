@@ -1,5 +1,5 @@
 import sys
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Mapping
 from typing import final, Annotated, Self, Literal, Any
 
 from mytunes.spotify import SpotifyResource
@@ -74,9 +74,12 @@ class SpotifyPlaylist(
     @model_validator(mode="before")
     @classmethod
     def _add_items_if_missing[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
-        if not isinstance(data, MutableMapping) or "items" in data or "cursor" in data:
+        if not isinstance(data, MutableMapping) or "cursor" in data:
+            return data
+        if "items" in data and isinstance(data["items"], Mapping):
             return data
 
+        # WORKAROUND: sometimes the Spotify API returns {"items": [None]} ???
         data["items"] = {"href": f"{data["href"]}/items", "total": sys.maxsize}
         return data
 
