@@ -1,4 +1,9 @@
+from .._models.sequence import UniqueSequence, MutableUniqueSequence
+from .._models.mapping import UniqueMapping, MutableUniqueMapping
+
 from .._models import AttributeModel, ResourceModel  # type: ignore[import]
+from .._models.remote import RemoteResource  # type: ignore[import]
+from .._models.collection import RemoteCollection  # type: ignore[import]
 from .._models.item.album import Album, RemoteAlbum  # type: ignore[import]
 from .._models.item.artist import Artist, RemoteArtist  # type: ignore[import]
 from .._models.item.genre import Genre, RemoteGenre  # type: ignore[import]
