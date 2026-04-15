@@ -183,7 +183,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         width = self.widths[position]
         should_truncate = self.truncate[position]
 
-        if should_truncate:
+        if width is not None and should_truncate:
             value = truncate_string(str(value), width)
         return value
 
