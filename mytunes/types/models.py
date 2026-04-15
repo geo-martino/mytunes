@@ -12,6 +12,23 @@ from .._models.collection.library import RemoteLibrary, RemoteMutableLibrary  # 
 from .._models.collection.playlist import Playlist, MutablePlaylist  # type: ignore[import]
 from .._models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist  # type: ignore[import]
 
+# need to import all these to ensure types work as expected
+from mytunes.local import *  # type: ignore[import]
+from mytunes.local.album import *  # type: ignore[import]
+from mytunes.local.artist import *  # type: ignore[import]
+from mytunes.local.genre import *  # type: ignore[import]
+from mytunes.local.track import *  # type: ignore[import]
+from mytunes.local.library import *  # type: ignore[import]
+from mytunes.local.playlist import *  # type: ignore[import]
+
+from mytunes.spotify import *  # type: ignore[import]
+from mytunes.spotify.album import *  # type: ignore[import]
+from mytunes.spotify.artist import *  # type: ignore[import]
+from mytunes.spotify.genre import *  # type: ignore[import]
+from mytunes.spotify.track import *  # type: ignore[import]
+from mytunes.spotify.user import *  # type: ignore[import]
+from mytunes.spotify.library import *  # type: ignore[import]
+from mytunes.spotify.playlist import *  # type: ignore[import]
 
 AttributeModel = AttributeModel.annotation
 ResourceModel = ResourceModel.annotation
