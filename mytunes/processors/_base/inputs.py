@@ -69,13 +69,15 @@ class InputProcessor(Processor, HasLogger):
 
         self._logger.print(log + "\n")
 
-    def _get_user_input(self, text: str = "Enter input", formatter: LogFormatter | None = None) -> str:
+    def _get_user_input(
+            self, text: str = "Enter input", formatter: LogFormatter | None = None, choices: list[str] = ()
+    ) -> str:
         """Print dialogue with optional text and get the user's input."""
         if formatter is None:
             formatter = self.input_formatter
 
         log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
-        option = self._logger.input(log)
+        option = self._logger.input(log, choices=choices)
 
         self._logger.debug(f"User input: {option}")
 
@@ -126,7 +128,9 @@ class PageProcessor(InputProcessor, HasProgress):
         """Pause the process and prompt the user for input to proceed."""
         self._print_help_text(with_header=True)
 
-    def _get_user_input(self, text: str | None = None, formatter: LogFormatter | None = None) -> str | None:
+    def _get_user_input(
+            self, text: str | None = None, formatter: LogFormatter | None = None, choices: list[str] = ()
+    ) -> str | None:
         if text is None:  # change the default text
             text = f"Enter ({self.position})"
-        return super()._get_user_input(text=text, formatter=formatter)
+        return super()._get_user_input(text=text, formatter=formatter, choices=choices)
