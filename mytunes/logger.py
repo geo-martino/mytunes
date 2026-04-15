@@ -136,7 +136,7 @@ class Logger(logging.Logger):
             text = text.strip()
 
         Prompt.prompt_suffix = " "
-        inp = Prompt.ask(text, choices=choices, default="" if choices else ...).strip()
+        inp = Prompt.ask(text, choices=choices, default="" if choices else ..., show_default=False).strip()
         self.debug(f"User input: {inp}")
         return inp
 
