@@ -11,13 +11,13 @@ from mytunes.processors.formatter import ModelFormatter
 from pydantic import Field, ValidationError
 from termcolor import colored
 
-from ..._base.inputs import InputProcessor
+from ..._base.inputs import OptionsProcessor
 from ...._models.properties.name import HasName
 from ...._models.properties.uri import URI, HasMutableURI
 from ...._models.result import LogFormatter
 
 
-class InputMatch[IT: HasMutableURI](CheckerMatch[IT], InputProcessor):
+class InputMatch[IT: HasMutableURI](CheckerMatch[IT], OptionsProcessor):
     item_formatter: ModelFormatter = Field(
         description="The formatter to use for formatting info about the item to print.",
         default_factory=lambda: ModelFormatter(

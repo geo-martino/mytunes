@@ -14,7 +14,6 @@ from ..._models.properties.order import Position
 from ..._models.result import LogFormatter
 
 
-# noinspection PyAbstractClass
 class InputProcessor(Processor, HasLogger):
     """
     Processor that gets user input as part of it processing.
@@ -25,6 +24,22 @@ class InputProcessor(Processor, HasLogger):
         colour="yellow", colour_attributes=["bold"]
     )
 
+    def _get_user_input(
+            self, text: str = "Enter input", formatter: LogFormatter | None = None, choices: list[str] | None = None
+    ) -> str:
+        """Print dialogue with optional text and get the user's input."""
+        if formatter is None:
+            formatter = self.input_formatter
+
+        log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
+        option = self._logger.input(log, choices=choices)
+
+        self._logger.debug(f"User input: {option}")
+        return option
+
+
+# noinspection PyAbstractClass
+class OptionsProcessor(InputProcessor):
     @property
     def _header(self) -> str | None:
         """The header to display in the help text of the processor."""
@@ -40,7 +55,7 @@ class InputProcessor(Processor, HasLogger):
 
     def _print_help_text(self, with_header: bool = True) -> None:
         """Format help text with a given mapping of options. Add an option header to include before options."""
-        options = self._options | InputProcessor._options.fget(self)
+        options = self._options | OptionsProcessor._options.fget(self)
 
         width = self._logger.console.width
         # +2 for ':' and space between cols in tabulate
@@ -72,14 +87,7 @@ class InputProcessor(Processor, HasLogger):
     def _get_user_input(
             self, text: str = "Enter input", formatter: LogFormatter | None = None, choices: list[str] | None = None
     ) -> str:
-        """Print dialogue with optional text and get the user's input."""
-        if formatter is None:
-            formatter = self.input_formatter
-
-        log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
-        option = self._logger.input(log, choices=choices)
-
-        self._logger.debug(f"User input: {option}")
+        option = super()._get_user_input(text=text, formatter=formatter, choices=choices)
 
         # we can process common options here and just request for input again
         if self._process_common_options(option):
@@ -111,7 +119,7 @@ class InputProcessor(Processor, HasLogger):
         self._logger.warning(colored(message, "red"))
 
 
-class PageProcessor(InputProcessor, HasProgress):
+class PageProcessor(OptionsProcessor, HasProgress):
     """Processor that runs in pages, getting user input and printing formatted options text to the terminal."""
     position: Position = Field(
         description="The current position of this page in the process."
