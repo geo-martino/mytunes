@@ -11,7 +11,7 @@ import aiofiles
 import aiohttp
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from mytunes._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from mytunes._models.metadata import Attribute
 from mytunes._models.properties.file import IsLocalFile
 from mytunes._types import StrippedString, UpperSnakeCase, HttpURL

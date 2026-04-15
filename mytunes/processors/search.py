@@ -13,7 +13,7 @@ from .._models.api import RemoteAPI, IsRemoteService
 from .._models.api.search import HasSearchEndpoints
 from .._models.collection import CollectionModel, RemoteCollection
 from .._models.collection.album import AlbumCollection
-from .._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from .._models.properties.asynch import HasAsyncOperations
 from .._models.properties.file import IsFile, IsLocalFile
 from .._models.properties.logger import HasProgress

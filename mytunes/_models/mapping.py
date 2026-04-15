@@ -2,8 +2,7 @@ from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashabl
 from typing import Self, Any, get_args
 
 from mytunes._models import ResourceModel
-from mytunes._models.exception import MyTunesValidationError
-from mytunes.exception import MyTunesKeyError
+from mytunes.exception import MyTunesKeyError, MyTunesValidationError
 from pydantic import GetCoreSchemaHandler, validate_call
 from pydantic_core import core_schema, CoreSchema
 

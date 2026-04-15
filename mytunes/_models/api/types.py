@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import Any, get_args, Callable, Self, Annotated
 
-from mytunes._models.exception import MyTunesValidationError, ModelError, RequestError
+from mytunes.exception import MyTunesValidationError, ModelError, RequestError
 from mytunes._models.properties.uri import URI, HasURI, HasImmutableURI
 from mytunes._models.remote import RemoteModel
 from mytunes._types import get_generic, HttpURL

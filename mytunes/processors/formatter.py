@@ -9,10 +9,9 @@ from tabulate import tabulate
 from termcolor import colored
 
 from mytunes._types import TO_LIST
-from mytunes.exception import MyTunesTypeError
+from mytunes.exception import MyTunesTypeError, MyTunesValidationError
 from .._models import BaseModel, ResourceModel
 from .._models.collection import CollectionModel
-from .._models.exception import MyTunesValidationError
 from .._models.item.album import HasAlbum
 from .._models.item.artist import HasArtists
 from .._models.properties.date import HasReleaseDate

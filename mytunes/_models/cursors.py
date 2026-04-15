@@ -5,10 +5,9 @@ from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Union, Annotated
 
-from mytunes._models.exception import CursorError, CursorResponseError
 from mytunes._models.remote import RemoteModel
 from mytunes._types import String, HttpURL
-from mytunes.exception import MyTunesTypeError
+from mytunes.exception import MyTunesTypeError, CursorError, CursorResponseError
 from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices, \
     PositiveInt
 

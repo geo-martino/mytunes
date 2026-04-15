@@ -6,7 +6,7 @@ from mytunes.local._collection._base import LocalCollection
 from pydantic import Field, model_validator
 
 from .._item.track import LocalTrack, HasLocalTracks
-from ..._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from ..._models.metadata import Attribute
 from ..._models.properties.length import HasLength
 from ..._models.properties.name import HasName

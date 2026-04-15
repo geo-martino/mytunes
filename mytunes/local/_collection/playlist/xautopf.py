@@ -14,7 +14,7 @@ from typing import Any, Self, Literal, Annotated, ClassVar, final
 import aiofiles
 from mytunes._models.properties.path import PathMapper
 from mytunes._types import StrippedString, TO_LIST, to_list
-from mytunes.exception import MyTunesValueError
+from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import LimitResult, SavePlaylistResult, LoadPlaylistResult
 from mytunes.processors.compare import Comparer
@@ -31,7 +31,6 @@ from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapH
 
 from ..._item.track import LocalTrack
 from ...._models import BaseModel
-from ...._models.exception import MyTunesValidationError
 from ...._models.result import LogFormatter
 from ...._models.sequence import MutableUniqueSequence
 

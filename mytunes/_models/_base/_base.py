@@ -1,8 +1,7 @@
 import inspect
 from typing import Any, cast, get_origin, Union, Self
 
-from mytunes._models.exception import ModelError, MyTunesValidationError
-from mytunes.exception import MyTunesImportError
+from mytunes.exception import MyTunesImportError, MyTunesValidationError, ModelError
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
     ConfigDict, AliasGenerator, AliasChoices, AliasPath
 # noinspection PyProtectedMember

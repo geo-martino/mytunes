@@ -13,7 +13,7 @@ from aiorequestful.response.payload import JSONPayloadHandler
 from mytunes._models import AttributeModel
 from mytunes._models._context import RemoteModelContext
 from mytunes._models.api._endpoints import HasEndpoints, Endpoints, _map_handler
-from mytunes._models.exception import EndpointsError
+from mytunes.exception import EndpointsError
 from mytunes._models.metadata import Attribute
 from mytunes._models.properties.logger import HasLogger
 from mytunes._models.properties.uri import URI

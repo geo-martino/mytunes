@@ -18,7 +18,7 @@ from ..._models.api import HasLibraryEndpoints
 from ..._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
 from ..._models.api.types import ApiURISchema, ApiURLSchema
 from ..._models.cursors import PageCursor, HasPageCursor
-from ..._models.exception import RequestError
+from mytunes.exception import RequestError
 from ..._models.properties.image import ImageSource, PILImageFileT
 from ..._models.properties.uri import HasURI
 

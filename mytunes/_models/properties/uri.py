@@ -8,10 +8,9 @@ from typing import ClassVar, Self, Annotated, TYPE_CHECKING, cast, Union
 
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
-from mytunes._models.exception import MyTunesValidationError
 from mytunes._models.metadata import UniqueAttribute, Attribute
 from mytunes._types import StrippedString, TO_SET, HttpURL
-from mytunes.exception import MyTunesTypeError
+from mytunes.exception import MyTunesTypeError, MyTunesValidationError
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter
 from pydantic_core.core_schema import ValidationInfo
 from yarl import URL

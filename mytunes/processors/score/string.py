@@ -5,7 +5,7 @@ from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCl
 from mytunes.processors.score._base import Scorer
 from pydantic import Field, model_validator
 
-from ..._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from ..._models.item.album import HasAlbum
 from ..._models.item.artist import HasArtists
 from ..._models.properties.name import HasName

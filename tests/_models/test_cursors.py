@@ -8,7 +8,7 @@ from unittest.mock import patch, Mock, PropertyMock, MagicMock
 import pytest
 from faker import Faker
 from mytunes._models.cursors import PageCursor, IterablePageCursor, IndexCursor, KeyCursor, UrlCursor, InitialCursor
-from mytunes._models.exception import CursorError
+from mytunes.exception import CursorError
 from pydantic import AliasPath, AliasChoices
 from tests.testers import BaseModelTester
 from yarl import URL

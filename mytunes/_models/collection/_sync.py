@@ -1,7 +1,7 @@
 from collections.abc import Collection
 from typing import Literal, Annotated
 
-from mytunes._models.exception import RequestError
+from mytunes.exception import RequestError
 from mytunes._models.result import LogFormatter, CountResult, MapLogFormatter
 from mytunes.logger import Logger
 from pydantic import NonNegativeInt, Field

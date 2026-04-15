@@ -15,7 +15,7 @@ from mytunes._models.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints
 from mytunes._models.collection import RemoteCollection
 from mytunes._models.collection.playlist import RemotePlaylist
 from mytunes._models.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
-from mytunes._models.exception import APIModelError
+from mytunes.exception import APIModelError
 from mytunes._models.item.album import RemoteAlbum
 from mytunes._models.item.artist import RemoteArtist
 from mytunes._models.item.track import RemoteTrack

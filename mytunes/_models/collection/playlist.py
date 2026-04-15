@@ -12,7 +12,7 @@ from mytunes._models.collection import SyncRemoteResult
 from mytunes._models.collection._base import CollectionModel, RemoteCollection
 from mytunes._models.collection._sync import SYNC_TYPE, get_sync_items
 from mytunes._models.cursors import PageCursor
-from mytunes._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from mytunes._models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from mytunes._models.item.user import RemoteUser
 from mytunes._models.mapping import UniqueMapping, MutableUniqueMapping

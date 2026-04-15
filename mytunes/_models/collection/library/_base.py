@@ -7,7 +7,7 @@ from mytunes._models._base.attribute import AttributeMetaclass
 from mytunes._models._base.resource import ResourceMetaclass
 from mytunes._models.collection import CollectionModel
 from mytunes._models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
-from mytunes._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from mytunes._models.item.track import Track, HasTracks, HasMutableTracks
 from mytunes._models.properties.asynch import HasAsyncOperations
 from mytunes._models.properties.logger import HasLogger, HasProgress

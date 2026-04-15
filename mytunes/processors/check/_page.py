@@ -5,7 +5,7 @@ from copy import deepcopy
 from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
-from mytunes.exception import MyTunesError
+from mytunes.exception import MyTunesError, MyTunesValidationError
 from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
 from termcolor import colored
 
@@ -17,7 +17,6 @@ from ..._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteE
 from ..._models.collection import CollectionModel
 from ..._models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
 from ..._models.cursors import InitialCursor
-from ..._models.exception import MyTunesValidationError
 from ..._models.item.user import RemoteUser
 from ..._models.properties.asynch import HasAsyncOperations
 from ..._models.properties.name import HasName

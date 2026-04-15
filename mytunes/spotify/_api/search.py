@@ -13,7 +13,7 @@ from .._properties.uri import SpotifyResourceURI
 from ..._models import ResourceModel
 from ..._models.api.search import SearchEndpoints
 from ..._models.collection.playlist import Playlist
-from ..._models.exception import RequestError
+from mytunes.exception import RequestError
 from ..._models.item.album import Album
 from ..._models.item.artist import Artist
 from ..._models.item.track import Track

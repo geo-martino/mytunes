@@ -9,7 +9,7 @@ from pydantic.dataclasses import dataclass
 
 from ._base import Processor
 from ..._models import ModelMetaclass
-from ..._models.exception import ModelError, MyTunesValidationError
+from mytunes.exception import MyTunesValidationError, ModelError
 from ..._models.metadata import Attribute
 
 

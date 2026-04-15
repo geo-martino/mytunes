@@ -15,7 +15,7 @@ from .._properties.images import HasSpotifyImages
 from .._properties.stats import HasFollowers
 from .._properties.uri import SpotifyResourceURI
 from ..._models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
-from ..._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from ..._models.metadata import Attribute
 from ..._models.sequence import UniqueSequence, MutableUniqueSequence
 

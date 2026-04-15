@@ -1,4 +1,4 @@
-from .._models.exception import APIError, AuthenticationError, RemoteError
+from mytunes.exception import RemoteError, APIError, AuthenticationError
 
 
 class SpotifyError(RemoteError):

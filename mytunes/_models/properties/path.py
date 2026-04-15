@@ -5,7 +5,7 @@ from pathlib import Path, PurePath
 from typing import final
 
 from mytunes._models import BaseModel
-from mytunes._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from mytunes._models.properties.file import IsLocalFile
 from pydantic import Field, field_validator
 

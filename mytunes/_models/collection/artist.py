@@ -6,7 +6,7 @@ from mytunes._models.api.items import HasArtistEndpoints
 from mytunes._models.collection._base import RemoteCollection, CollectionModel
 from mytunes._models.collection.album import AlbumCollection
 from mytunes._models.cursors import PageCursor
-from mytunes._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from mytunes._models.item.album import HasAlbums, Album, RemoteAlbum
 from mytunes._models.item.artist import Artist, RemoteArtist
 from mytunes._models.item.genre import Genre, RemoteGenre

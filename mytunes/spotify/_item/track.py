@@ -14,7 +14,7 @@ from .._properties.music import HasSpotifyKeySignature
 from .._properties.rating import HasSpotifyRating
 from .._properties.uri import SpotifyResourceURI
 from ..._models import BaseModel
-from ..._models.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError
 from ..._models.item.track import RemoteTrack
 from ..._models.metadata import Attribute
 from ..._models.properties.audio import Decibels

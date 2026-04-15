@@ -2,7 +2,7 @@ from collections.abc import Hashable
 from functools import cached_property
 from typing import Any, cast, ClassVar
 
-from mytunes._models.exception import ModelError
+from mytunes.exception import ModelError
 from mytunes._models.metadata import UniqueAttribute
 from pydantic import Field
 

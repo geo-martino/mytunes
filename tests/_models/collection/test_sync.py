@@ -6,7 +6,7 @@ from mytunes import MODULE_ROOT
 # noinspection PyProtectedMember
 from mytunes._models.collection._sync import get_sync_items, get_sync_items_for_add, get_sync_items_for_refresh, \
     get_sync_items_for_sync
-from mytunes._models.exception import RequestError
+from mytunes.exception import RequestError
 from mytunes._models.item.track import RemoteTrack
 from tests.remote import SimpleURI
 
