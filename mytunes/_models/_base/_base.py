@@ -195,5 +195,25 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             return field.get_default(call_default_factory=True, validated_data=data)
 
 
-class RootModel[T](PydanticRootModel[T], BaseModel, metaclass=ModelMetaclass):
-    pass
+class RootModel[T](PydanticRootModel[T], metaclass=ModelMetaclass):
+    __required_modules__: dict[str, Any] = {}
+
+    model_config = ConfigDict(
+        validate_default=True,
+        validate_assignment=True,
+        validate_by_name=True,
+        validate_by_alias=True,
+    )
+
+    def __new__(cls, *args, **kwargs):
+        cls._validate_required_modules_installed()
+
+        if inspect.isabstract(cls):  # force abstract classes to throw validation error for pydantic validation
+            raise MyTunesValidationError(f"{cls.__name__} cannot be instantiated directly, must be subclassed.")
+        return super().__new__(cls)
+
+    @classmethod
+    def _validate_required_modules_installed(cls) -> None:
+        if cls.required_modules_installed:
+            return
+        raise MyTunesImportError(f"Cannot use {cls.__name__}. Required modules: {", ".join(cls.__required_modules__)}")

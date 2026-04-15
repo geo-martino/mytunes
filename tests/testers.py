@@ -46,9 +46,9 @@ class BaseModelTester(metaclass=ABCMeta):
     @staticmethod
     def test_model_registry(model: BaseModel):
         if model.__class__.__final__:
-            assert model.__class__ in BaseModel.registered_submodels
+            assert type(model) in type(model).registered_submodels
         else:
-            assert model.__class__ not in BaseModel.registered_submodels
+            assert type(model) not in type(model).registered_submodels
 
 
 class NoUniqueKeyTester(BaseModelTester, metaclass=ABCMeta):
