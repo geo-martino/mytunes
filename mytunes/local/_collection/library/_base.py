@@ -61,7 +61,7 @@ class LocalLibrary(
         description="Mapper to use when mapping paths stored in the playlist files.",
         default_factory=PathMapper,
     )
-    tracks_load_settings: TagContext = Field(
+    tracks_context: TagContext = Field(
         description="Settings to apply when loading tracks in this library.",
         default_factory=TagContext,
         validation_alias="tracks_load_context",
@@ -130,7 +130,7 @@ class LocalLibrary(
                 self._logger.debug(f"Loading track: {path}")
                 file = await LocalTrack.load_file(path)
 
-            return LOCAL_TRACK_ADAPTER.validate_python(file, context=self.tracks_load_settings)
+            return LOCAL_TRACK_ADAPTER.validate_python(file, context=self.tracks_context)
 
         except (MyTunesError, MutagenError, ValueError, OSError) as ex:
             self._logger.debug(f"Load error for track: {path} - {ex}")
@@ -180,7 +180,7 @@ class LocalLibrary(
         self._logger.stat(table)
 
     def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
-        source = self.tracks_load_settings.remote_source
+        source = self.tracks_context.remote_source
         return LibraryURIsResult.from_tracks(self.tracks, source=source)
 
     ###########################################################################
@@ -286,7 +286,7 @@ class LocalLibrary(
         self._logger.stat(table)
 
     def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
-        source = self.tracks_load_settings.remote_source
+        source = self.tracks_context.remote_source
         return {
             playlist.name: LibraryURIsResult.from_tracks(playlist.tracks, source=source)
             for playlist in self.playlists.unique
