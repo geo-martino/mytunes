@@ -236,7 +236,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
 class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
     def format(self, collection: CT, indices: bool | Sequence = False) -> str:
-        if not isinstance(collection, CollectionModel):
+        if not isinstance(collection, CollectionModel) or not collection.count:
             return super().format(collection, indices=indices)
 
         items = list(collection.items)
