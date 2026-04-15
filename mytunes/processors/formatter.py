@@ -48,7 +48,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         default=None,
         min_length=1,
     )
-    widths: Annotated[Sequence[PositiveInt], TO_LIST] | None = Field(
+    widths: Annotated[Sequence[PositiveInt | None], TO_LIST] | None = Field(
         description="The widths of the fields in the formatted output. Must be the same length as `fields`.",
         default=None,
         min_length=1,
