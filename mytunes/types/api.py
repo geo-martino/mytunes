@@ -1,6 +1,6 @@
 from .._models.properties.uri import URI  # type: ignore[import]
 
-from .._models.api import RemoteAPI  # type: ignore[import]
+from .._models.api import RemoteAPI, RemoteAuthoriser  # type: ignore[import]
 from .._models.api import ItemReadEndpoints, CollectionReadEndpoints, CollectionWriteEndpoints  # type: ignore[import]
 from .._models.api import BatchReadEndpoints, BatchWriteEndpoints, BatchReadAllEndpoints  # type: ignore[import]
 from .._models.api.search import SearchEndpoints  # type: ignore[import]
