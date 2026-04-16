@@ -16,20 +16,20 @@ from ..._models.metadata import Attribute
 # noinspection PyPep8Naming
 class processormethod:
     """
-    Decorator for methods on a class decorated with the :py:func:`processormethod` decorator
+    Decorator for methods in a dynamic processor.
 
     This assigns the method as a processor method which can be dynamically called by the processor class.
     Optionally, provide a list of alternative names via which this processor method can also be called.
     """
 
     def __new__(cls, *args, **__):
-        func: Optional[Callable] = next((a for a in args if callable(a)), None)
+        func: Optional[Callable] = next((arg for arg in args if callable(arg)), None)
         self = partial(cls, *args) if func is None else super().__new__(cls)
         return update_wrapper(self, func)
 
     def __init__(self, *args: str | Callable):
-        self.func = next((a for a in args if callable(a)), None)
-        self.alternative_names = tuple(a for a in args if isinstance(a, str))
+        self.func = next((arg for arg in args if callable(arg)), None)
+        self.alternative_names = tuple(arg for arg in args if isinstance(arg, str))
         self.instance_ = None
 
     def __get__(self, instance, owner):
@@ -143,7 +143,7 @@ class DynamicProcessorMetaclass(ModelMetaclass):
 # noinspection PyAbstractClass
 class DynamicProcessor(Processor, metaclass=DynamicProcessorMetaclass):
     """
-    Base class for implementations with :py:func:`processormethod` decorated methods.
+    Base class for implementations with dynamic methods.
 
     Classes that implement this base class have a ``__processor_method_map__`` class attribute
     which is a mapping of all accepted processor names to the processor methods this class contains.
