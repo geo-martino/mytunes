@@ -152,7 +152,6 @@ class LocalLibrary(
         """
         try:
             async with self.concurrency:
-                print(self.concurrency._value)
                 self._logger.debug(f"Loading track: {path}")
                 file = await LocalTrack.load_file(path)
 

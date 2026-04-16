@@ -142,8 +142,6 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
             return {name}
 
         aliases: set[str | None] = {field.alias}
-        print(aliases)
-        print(cls.model_config)
         if cls.model_config["validate_by_name"]:
             aliases.add(name)
 
