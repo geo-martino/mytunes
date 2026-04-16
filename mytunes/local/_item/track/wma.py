@@ -243,7 +243,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     @field_serializer("comments", mode="wrap", when_used="unless-none")
     def _serialize_unicode_attributes[T](
             self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> list[str]:
+    ) -> list:
         if not isinstance(value, tuple | list):
             value = [value]
 
