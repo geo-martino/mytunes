@@ -45,6 +45,8 @@ def test_copy(logger: Logger):
 
 
 def test_print_line(logger: Logger, capfd: pytest.CaptureFixture):
+    logger.setLevel(logging.WARNING)
+
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.WARNING)
     logger.addHandler(handler)

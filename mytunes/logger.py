@@ -11,8 +11,10 @@ from typing import Any, Annotated
 
 from pydantic import Field, validate_call
 from rich.console import Console
+from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 from rich.prompt import Prompt
+from rich.text import Text
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
@@ -36,7 +38,7 @@ class Logger(logging.Logger):
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
 
-    console: Console = Console(highlight=False)
+    console: Console = Console(highlight=False, highlighter=NullHighlighter())
 
     @property
     def file_paths(self) -> list[Path]:
@@ -70,48 +72,65 @@ class Logger(logging.Logger):
         return console_handlers
     
     @validate_call
-    def debug(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def debug(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().debug(msg, *args, **kwargs)
 
-    def stat(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def stat(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         """Log 'msg % args' with severity 'STAT'."""
         if self.isEnabledFor(STAT):
-            msg = self.generate_message(msg, header, hidden)
-            self._log(STAT, msg, args, **kwargs)
+            return
+        msg = self.generate_message(msg, header, hidden)
+        self._log(STAT, msg, args, **kwargs)
 
-    def report(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def report(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         """Log 'msg % args' with severity 'REPORT'."""
-        if self.isEnabledFor(REPORT):
-            msg = self.generate_message(msg, header, hidden)
-            self._log(REPORT, msg, args, **kwargs)
+        if not self.isEnabledFor(REPORT):
+            return
+        msg = self.generate_message(msg, header, hidden)
+        self._log(REPORT, msg, args, **kwargs)
 
     @validate_call
     def extra(
-            self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
     ) -> None:
         """Log 'msg % args' with severity 'EXTRA'."""
-        if self.isEnabledFor(EXTRA):
-            msg = self.generate_message(msg, header, hidden)
-            self._log(EXTRA, msg, args, **kwargs)
+        if not self.isEnabledFor(EXTRA):
+            return
+        msg = self.generate_message(msg, header, hidden)
+        self._log(EXTRA, msg, args, **kwargs)
     
     @validate_call
-    def info(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def info(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().info(msg, *args, **kwargs)
     
     @validate_call
-    def warning(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def warning(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().warning(msg, *args, **kwargs)
     
     @validate_call
-    def error(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def error(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().error(msg, *args, **kwargs)
     
     @validate_call
-    def critical(self, msg: str, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs) -> None:
+    def critical(
+            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
+    ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().critical(msg, *args, **kwargs)
 
@@ -149,7 +168,7 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(message: str, header: HeaderType | None = None, hidden: str | None = None) -> str:
+    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> Text:
         match header:
             case None:
                 header = ""
@@ -170,7 +189,8 @@ class Logger(logging.Logger):
             hidden = colored(hidden, "dark_grey", attrs=["dark"])
 
         parts = [header, message, hidden]
-        return " ".join(part for part in parts if part).strip()
+        text = " ".join(part for part in parts if part).strip()
+        return Text.from_ansi(text)
 
     @classmethod
     def format_types_to_string(cls, items: Iterable[Any]) -> str:

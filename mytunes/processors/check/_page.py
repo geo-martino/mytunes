@@ -318,7 +318,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
     def _print_playlist_links(self):
         header = colored("Created playlists", "blue", attrs=["bold"])
         rows = (f"{playlist.name} - {playlist.uri.public_url}" for playlist in self._playlists.values())
-        rows = (self._logger.generate_message(row, header=3) for row in sorted(rows))
+        rows = map(str, (self._logger.generate_message(row, header=3) for row in sorted(rows)))
         self._logger.print(header + ":\n" + "\n".join(rows) + "\n")
 
     def _get_playlist_by_name(self, name: str) -> RemoteMutablePlaylist | None:
