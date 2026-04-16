@@ -259,7 +259,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
         data = handler(self)
-        if not info.by_alias or not isinstance(data, dict):  # not serializing to tag IDs
+        if not info.by_alias:  # not serializing to tag IDs
             return data
 
         self._flatten_dump(data)

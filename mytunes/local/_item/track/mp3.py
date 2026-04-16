@@ -178,7 +178,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
             self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
     ) -> dict[str, Any]:
         data = handler(self)
-        if not info.by_alias or not isinstance(data, dict):  # not serializing to tag IDs
+        if not info.by_alias:  # not serializing to tag IDs
             return data
 
         for tag_id, tag_value in copy(data).items():
