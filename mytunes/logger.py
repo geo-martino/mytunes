@@ -14,7 +14,6 @@ from rich.console import Console
 from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 from rich.prompt import Prompt
-from rich.text import Text
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
@@ -30,6 +29,9 @@ logging.REPORT = REPORT
 STAT = logging.DEBUG + 3
 logging.addLevelName(STAT, "STAT")
 logging.STAT = STAT
+
+# WORKAROUND: Needed to ensure ANSI codes log as expected by default
+RichHandler.HIGHLIGHTER_CLASS = NullHighlighter
 
 
 class Logger(logging.Logger):
