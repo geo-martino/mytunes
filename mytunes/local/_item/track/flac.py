@@ -176,10 +176,12 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         self._extend_with_uris(values, info=info)
         return list(map(str, values))
 
-    @field_serializer("compilation", mode="plain", when_used="unless-none")
-    def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
+    @field_serializer("compilation", mode="wrap", when_used="unless-none")
+    def _serialize_bool(
+            self, value: bool, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> str | bool:
         if not info.by_alias and info.mode != "json":
-            return value
+            return handler(value)
         return str(int(value))
 
     @field_serializer("track", "disc", mode="wrap", when_used="unless-none")
