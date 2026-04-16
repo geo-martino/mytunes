@@ -57,8 +57,10 @@ class StoreManager(Processor, HasLogger, HasProgress):
         """
         if isinstance(items, CollectionModel):
             items = list(items.items)
+
         if not items:
             self._logger.extra(colored("No items to open sites for.", "yellow"))
+            return
 
         self._log_start(items, fields=self.fields)
         item_urls = self._format_urls_for_items(items, fields=self.fields)
