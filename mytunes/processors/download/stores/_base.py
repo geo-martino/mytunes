@@ -107,7 +107,8 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
                 case _:
                     continue
 
-            query_parts.append(value)
+            if value:
+                query_parts.append(value)
 
         return quote(" ".join(query_parts))
 
