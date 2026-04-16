@@ -241,9 +241,9 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return value.rating
 
     @field_serializer("compilation", mode="wrap", when_used="unless-none")
-    def _serialize_bool[T: str | bool](
-            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> T:
+    def _serialize_bool(
+            self, value: str | bool, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> Any:
         if not info.by_alias and info.mode != "json":
             return handler(value)
         return self._serialize_text_frame(value=str(int(value)), handler=handler, info=info)
