@@ -108,9 +108,7 @@ class LocalLibrary(
         if not isinstance(self.path_mapper, PathStemMapper):
             return
 
-        map_paths = {other: str(path) for other in map(str, others)}
-        # prioritise user input if given
-        self.path_mapper.stem_map = map_paths | dict(self.path_mapper.stem_map)
+        self.path_mapper.stem_map |= {other: str(path) for other in map(str, others)}
 
     async def load(self) -> None:
         self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
