@@ -143,7 +143,7 @@ class HasAPI[API: RemoteAPI](AttributeModel):
         if isinstance(api, expected):
             return api
 
-        source = self.api.source.title() if isinstance(api, RemoteAPI) else "the"
+        source = self.api.source if isinstance(api, RemoteAPI) else "the"
         context = context.format(type=name)
         message = f"Cannot run {source} operation for {name or key}. API does not support {context}."
         self._logger.warning(message)

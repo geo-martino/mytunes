@@ -40,7 +40,7 @@ class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsy
     @property
     def source(self) -> str:
         """The log name of the remote service that this searcher is running on."""
-        return self.api.source.title()
+        return self.api.source
 
     @property
     def username(self) -> str:

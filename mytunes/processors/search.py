@@ -151,7 +151,7 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasProgress, HasAsyncOper
     @property
     def source(self) -> str:
         """The name of the remote service that this searcher is running on."""
-        return self.api.source.title()
+        return self.api.source
 
     ###########################################################################
     ## Search: items

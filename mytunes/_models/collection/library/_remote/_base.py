@@ -58,7 +58,7 @@ class RemoteLibrary[
 
     @property
     def _log_name(self) -> str:
-        source = self.source.title()
+        source = self.source
         if self.user is None:
             return source
         return f"{self.user.name}'s {source}"
@@ -171,7 +171,7 @@ class RemoteLibrary[
             pl.tracks._replace(items)
 
         task_id = self._progress.add_task(
-            description=f"Loading {self.source.title()} playlist tracks", total=len(playlists),
+            description=f"Loading {self.source} playlist tracks", total=len(playlists),
         )
         await self._run_tasks_async(map(_extend_playlist_tracks, playlists), task_id=task_id)
 
@@ -264,7 +264,7 @@ class RemoteLibrary[
             artist.albums.extend(albums)
 
         task_id = self._progress.add_task(
-            description=f"Loading {self.source.title()} artist albums", total=len(artists),
+            description=f"Loading {self.source} artist albums", total=len(artists),
         )
         await self._run_tasks_async(map(_extend_artist_albums, artists), task_id=task_id)
 
@@ -326,7 +326,7 @@ class RemoteLibrary[
             album.tracks._replace(tracks)
 
         task_id = self._progress.add_task(
-            description=f"Loading {self.source.title()} album tracks", total=len(albums),
+            description=f"Loading {self.source} album tracks", total=len(albums),
         )
         await self._run_tasks_async(map(_extend_album_tracks, albums), task_id=task_id)
 

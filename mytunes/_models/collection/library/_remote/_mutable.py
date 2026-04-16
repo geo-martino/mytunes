@@ -342,7 +342,7 @@ class RemoteMutableLibrary[
                 return pl.name, result.model_copy(update=dict(properties=properties))
 
         task_id = self._progress.add_task(
-            description=f"Synchronising {self.source.title()} playlists", total=len(playlists),
+            description=f"Synchronising {self.source} playlists", total=len(playlists),
         )
         results = await self._run_tasks_async(map(_sync_playlist, playlists), task_id=task_id)
         return dict(results)
@@ -581,7 +581,7 @@ class RemoteMutableLibrary[
             return self._restore_playlist(uri=uri, name=name, items=items, properties=dump, dry_run=dry_run)
 
         task_id = self._progress.add_task(
-            description=f"Restoring {self.source.title()} playlists", total=len(playlists),
+            description=f"Restoring {self.source} playlists", total=len(playlists),
         )
         results = await self._run_tasks_async(map(_restore_playlist, playlists), task_id=task_id)
 

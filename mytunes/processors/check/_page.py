@@ -99,7 +99,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
     @property
     def source(self) -> str:
         """The log name of the remote service that this searcher is running on."""
-        return self.api.source.title()
+        return self.api.source
 
     @property
     def user(self) -> RemoteUser | None:
