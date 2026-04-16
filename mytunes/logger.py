@@ -11,6 +11,7 @@ from typing import Any, Annotated
 
 from pydantic import Field, validate_call
 from rich.console import Console
+from rich.logging import RichHandler
 from rich.prompt import Prompt
 from termcolor import colored
 
@@ -62,6 +63,8 @@ class Logger(logging.Logger):
             if isinstance(handler, str):
                 handler = logging.getHandlerByName(handler)
             if isinstance(handler, logging.StreamHandler) and handler.stream == sys.stdout:
+                console_handlers.add(handler)
+            if isinstance(handler, RichHandler):
                 console_handlers.add(handler)
 
         return console_handlers
@@ -126,9 +129,11 @@ class Logger(logging.Logger):
 
     def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
-        if not self.compact:
-            if self.stdout_handlers and any(logging.DEBUG < h.level <= level for h in self.stdout_handlers):
-                self.console.print()
+        if self.compact:
+            return
+
+        if self.stdout_handlers and any(logging.DEBUG < h.level <= level for h in self.stdout_handlers):
+            self.console.print()
 
     def input(self, text: str | None = None, choices: list[str] | None = None) -> str:
         """Print dialogue with optional text and get the user's input."""
