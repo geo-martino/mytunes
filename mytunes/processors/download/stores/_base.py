@@ -38,6 +38,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
             return
 
         name = next(iter(get_args(type(self).model_fields["name"].annotation)))
+        data.pop("name", None)
         super().__init__(name=name, **data)
 
     name: T = Field(
