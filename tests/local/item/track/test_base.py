@@ -132,7 +132,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert file.filename
 
         result = LocalTrack._extract_tags_from_mutagen(file)
-        assert result == tags | dict(path=file.filename, audio=file)
+        assert result == tags | dict(path=file.filename, audio=file, length=file.info.length)
 
     def test_extract_first_value_from_sequence(self):
         # noinspection PyTypeChecker

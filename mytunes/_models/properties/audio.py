@@ -18,7 +18,7 @@ class Decibels(NumberModel[Annotated[float, Field(ge=-60.0, le=0.0)]]):
 
 
 # noinspection PyAbstractClass
-class AudioProperties(HasLength):
+class AudioProperties(AttributeModel):
     """Attributes and operations for an audio on a filesystem."""
     model_config = ConfigDict(frozen=True)
 
@@ -65,7 +65,7 @@ class AudioProperties(HasLength):
         return data
 
 
-class HasAudioProperties(AttributeModel):
+class HasAudioProperties(HasLength):
     audio: Annotated[AudioProperties, Attribute()] = Field(
         description="The audio properties of the file.",
         default_factory=AudioProperties,
@@ -74,4 +74,4 @@ class HasAudioProperties(AttributeModel):
 
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:
-        return dict(audio=file)
+        return dict(audio=file, length=file.info.length)

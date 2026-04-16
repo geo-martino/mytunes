@@ -103,7 +103,7 @@ class TestFLAC(LocalTrackTester):
         assert file.pictures
 
         result = FLAC._extract_tags_from_mutagen(file)
-        assert result == tags | dict(path=file.filename, audio=file, images=file.pictures)
+        assert result == tags | dict(path=file.filename, audio=file, length=file.info.length, images=file.pictures)
 
     # noinspection PyCallingNonCallable
     def test_merge_position_values_skips(self):

@@ -61,4 +61,5 @@ class TestHasAudioProperties(BaseModelTester):
         return HasAudioProperties()
 
     def test_extract_tags_from_mutagen(self, file: mutagen.FileType):
-        assert HasAudioProperties._extract_tags_from_mutagen(file) == dict(audio=file)
+        expected = dict(audio=file, length=file.info.length)
+        assert HasAudioProperties._extract_tags_from_mutagen(file) == expected
