@@ -5,7 +5,7 @@ from .._models.remote import RemoteModel, RemoteResource
 
 
 class SpotifyModel(RemoteModel):
-    source: ClassVar[str] = "spotify"
+    source: ClassVar[str] = "Spotify"
 
 
 # noinspection PyAbstractClass

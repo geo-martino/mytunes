@@ -80,7 +80,7 @@ class SimpleURI(URI):
 
     @classmethod
     def from_id[T](cls, value: T, kind: str) -> T | Self:
-        uri = ":".join((cls._source, kind, str(value)))
+        uri = ":".join((cls._source.lower(), kind, str(value)))
         return cls(uri)
 
     @property
@@ -102,7 +102,7 @@ class SimpleURI(URI):
         if not isinstance(value, URL):
             return value
 
-        return ":".join((cls._source, *value.path.lstrip("/").split("/")[-2:]))
+        return ":".join((cls._source.lower(), *value.path.lstrip("/").split("/")[-2:]))
 
 
 class MockRemoteResource(RemoteResource[SimpleURI]):

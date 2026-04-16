@@ -52,7 +52,7 @@ class URI(RootModel[str]):
         if not isinstance(self.root, str):
             raise MyTunesValidationError(f"URI root must be a string, got {type(self.root).__name__!r}")
 
-        if self.source != self._source:
+        if self.source.casefold() != self._source.casefold():
             raise MyTunesValidationError(
                 f"Given URI does not belong to this {self._source!r} repository type. Found: {self.source!r}"
             )
@@ -123,7 +123,7 @@ class URI(RootModel[str]):
             )
 
         # noinspection PyTypeChecker
-        classes = [klass for klass in kls.registered_submodels if klass._source == source]
+        classes = [klass for klass in kls.registered_submodels if klass._source.casefold() == source.casefold()]
         if not classes:
             raise MyTunesTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 

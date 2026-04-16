@@ -45,7 +45,7 @@ class LocalLibrary(
     __final__ = True
 
     _ignore_folders: ClassVar[frozenset[str]] = frozenset({"$RECYCLE.BIN"})
-    source: ClassVar[str] = "local"
+    source: ClassVar[str] = "Local"
 
     library_folders: Annotated[
         set[DirectoryPath], BeforeValidator(LocalSystemPaths.get_current_system_paths)
