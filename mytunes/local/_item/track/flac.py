@@ -1,3 +1,4 @@
+import sys
 from collections.abc import MutableMapping, Iterable, Sequence
 from typing import Any, final, Annotated
 
@@ -186,6 +187,8 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             self, value: Position, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> str | dict[str, str] | None:
         if not info.by_alias or not isinstance(value, Position):
-            return handler(value)
+            value = handler(value)
+            print(value, file=sys.stderr)
+            return value
         field = type(self).model_fields[info.field_name]
         return super()._serialize_position_tags(value, field=field)
