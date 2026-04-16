@@ -193,7 +193,7 @@ class TestFLAC(LocalTrackTester):
         ))
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_string(value, info=info) == str(value)
+        assert model._serialize_string(value, handler=lambda x: x, info=info) == str(value)
 
     def test_serialize_strings(self, model: FLAC, genres: list[LocalGenre], faker: Faker):
         value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]

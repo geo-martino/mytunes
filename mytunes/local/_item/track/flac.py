@@ -157,11 +157,11 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
     @field_serializer(
         "key", "bpm", "released_at",
-        mode="plain", when_used="unless-none",
+        mode="wrap", when_used="unless-none",
     )
-    def _serialize_string(self, value: Any, info: SerializationInfo) -> str:
+    def _serialize_string(self, value: Any, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> str:
         if not info.by_alias or info.mode == "json":
-            return value
+            return handler(value)
         return str(value)
 
     @field_serializer("genres", "comments", mode="wrap", when_used="unless-none")
@@ -187,8 +187,6 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             self, value: Position, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> str | dict[str, str] | None:
         if not info.by_alias or not isinstance(value, Position):
-            value = handler(value)
-            print(value, file=sys.stderr)
-            return value
+            return handler(value)
         field = type(self).model_fields[info.field_name]
         return super()._serialize_position_tags(value, field=field)

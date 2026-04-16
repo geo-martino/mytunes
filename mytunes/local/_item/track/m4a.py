@@ -169,10 +169,10 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
                 data[key] = [mutagen.mp4.MP4FreeForm(v.encode()) for v in val]
         return data
 
-    @field_serializer("key", "released_at", mode="plain", when_used="unless-none")
-    def _serialize_string(self, value: Any, info: SerializationInfo) -> str:
+    @field_serializer("key", "released_at", mode="wrap", when_used="unless-none")
+    def _serialize_string(self, value: Any, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> str:
         if not info.by_alias or info.mode == "json":
-            return value
+            return handler(value)
         return str(value)
 
     @field_serializer("genres", "comments", mode="wrap", when_used="unless-none")
