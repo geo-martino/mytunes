@@ -210,7 +210,7 @@ class Logger(logging.Logger):
         value_str = ", ".join(values[:-1])
         if value_str:
             value_str = " & ".join([value_str, values[-1]])
-        else:
+        elif values:
             value_str = values[0]
 
         return value_str
