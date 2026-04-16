@@ -190,6 +190,11 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             return self._extract_names(value)
         return self._join_split_tags(value)
 
-    @field_serializer("track", "disc", mode="plain", when_used="unless-none")
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
-        return super()._serialize_position_tags(value, info=info)
+    @field_serializer("track", "disc", mode="wrap", when_used="unless-none")
+    def _serialize_position_tags(
+            self, value: Position, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> str | dict[str, str] | None:
+        if not info.by_alias or not isinstance(value, Position):
+            return handler(value)
+        field = type(self).model_fields[info.field_name]
+        return super()._serialize_position_tags(value, field=field)

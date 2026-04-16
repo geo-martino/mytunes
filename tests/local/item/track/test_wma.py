@@ -119,8 +119,9 @@ class TestWMA(LocalTrackTester):
 
     def test_serialize_position_tags_skips(self, model: WMA):
         info = Namespace(by_alias=True, mode="python")
+        value = ()
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags((), info=info) is None
+        assert model._serialize_position_tags(value, lambda x: x, info=info) is value
 
     def test_serialize_position_tags(self, model: WMA):
         info = Namespace(field_name="track", by_alias=True, context=None, mode="python")
@@ -128,17 +129,17 @@ class TestWMA(LocalTrackTester):
         position = Position(number=1, total=2, zero_fill=3)
         expected = {"WM/TrackNumber": "001", "TotalTracks": "002"}
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(position, info=info) == expected
+        assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
         position = Position(number=1, zero_fill=2)
         expected = {"WM/TrackNumber": "01"}
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(position, info=info) == expected
+        assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
         position = Position(total=3, zero_fill=2)
         expected = {"TotalTracks": "03"}
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(position, info=info) == expected
+        assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
     def test_format_to_tags(self, model: WMA, uri: URI, faker: Faker):
         tags = {

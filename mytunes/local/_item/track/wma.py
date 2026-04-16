@@ -248,9 +248,15 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         # noinspection PyArgumentList
         return [self._serialize_unicode_attribute(val, info=info) for val in values]
 
-    @field_serializer("track", mode="plain", when_used="unless-none")
-    def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
-        tags = super()._serialize_position_tags(value, info=info)
+    @field_serializer("track", mode="wrap", when_used="unless-none")
+    def _serialize_position_tags(
+            self, value: Position, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> str | dict[str, str] | None:
+        if not info.by_alias or not isinstance(value, Position):
+            return handler(value)
+
+        field = type(self).model_fields[info.field_name]
+        tags = super()._serialize_position_tags(value, field=field)
         if not isinstance(tags, Mapping):
             return tags
 

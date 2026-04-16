@@ -328,15 +328,8 @@ class LocalTrack[FT: FileType](
         values = list(map(self._extract_name, values))
         return values
 
-    def _serialize_position_tags[T: Position](
-            self, value: T, info: FieldSerializationInfo
-    ) -> T | str | dict[str, str] | None:
-        if not info.by_alias:  # not serializing to tag IDs
-            return value
-        if not isinstance(value, Position):
-            return
-
-        field: FieldInfo = type(self).model_fields[info.field_name]
+    @staticmethod
+    def _serialize_position_tags(value: Position, field: FieldInfo) -> str | dict[str, str]:
         if not isinstance(field.validation_alias, AliasChoices):
             return str(value)
 
