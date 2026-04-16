@@ -168,7 +168,9 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             self, value: Iterable[str], handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> list:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
-            return handler(value)
+            value = handler(value)
+            print(type(value), value)
+            return value
 
         # noinspection PyTypeChecker
         values = self._serialize_names(value, handler=handler, info=None)
