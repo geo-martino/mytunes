@@ -21,10 +21,5 @@ __all__ = [
     "PACKAGE_ROOT",
 ]
 
-# WORKAROUND: get way too many warnings when trying to dump tracks, this stops them
-warnings.filterwarnings(
-    "ignore", message=".*serialized value may not be as expected.*"
-)
-
 # we must import all the supported URI formats here so that they are registered in the registry
 from .spotify.uri import SpotifyResourceURI, SpotifyUserURI
