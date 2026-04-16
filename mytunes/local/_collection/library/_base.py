@@ -129,8 +129,6 @@ class LocalLibrary(
         self._logger.print_line(STAT)
         self._logger.stat(table)
 
-        self._logger.print_line(STAT)
-
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
             return
