@@ -6,6 +6,7 @@ from collections.abc import Iterable, Collection, Sequence
 
 from pydantic import Field, validate_call, PositiveInt, \
     conlist, AliasChoices
+from termcolor import colored
 from yarl import URL
 
 from mytunes._types import StrippedString
@@ -56,6 +57,8 @@ class StoreManager(Processor, HasLogger, HasProgress):
         """
         if isinstance(items, CollectionModel):
             items = list(items.items)
+        if not items:
+            self._logger.extra(colored("No items to open sites for.", "yellow"))
 
         self._log_start(items, fields=self.fields)
         item_urls = self._format_urls_for_items(items, fields=self.fields)
