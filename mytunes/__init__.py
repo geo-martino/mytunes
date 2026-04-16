@@ -22,7 +22,6 @@ __all__ = [
 ]
 
 # WORKAROUND: get way too many warnings when trying to dump tracks, this stops them
-from pydantic_core import PydanticSerializationUnexpectedValue
 warnings.filterwarnings(
     "ignore", category=UserWarning, message=".*serialized value may not be as expected.*"
 )
