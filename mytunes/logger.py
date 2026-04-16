@@ -82,7 +82,7 @@ class Logger(logging.Logger):
             self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
     ) -> None:
         """Log 'msg % args' with severity 'STAT'."""
-        if self.isEnabledFor(STAT):
+        if not self.isEnabledFor(STAT):
             return
         msg = self.generate_message(msg, header, hidden)
         self._log(STAT, msg, args, **kwargs)
@@ -168,7 +168,7 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> Text:
+    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> str:
         match header:
             case None:
                 header = ""
@@ -189,8 +189,7 @@ class Logger(logging.Logger):
             hidden = colored(hidden, "dark_grey", attrs=["dark"])
 
         parts = [header, message, hidden]
-        text = " ".join(part for part in parts if part).strip()
-        return Text.from_ansi(text)
+        return " ".join(part for part in parts if part).strip()
 
     @classmethod
     def format_types_to_string(cls, items: Iterable[Any]) -> str:
