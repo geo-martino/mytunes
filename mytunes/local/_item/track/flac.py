@@ -170,6 +170,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             value = handler(value)
             print(type(value), value)
+            exit()
             return value
 
         # noinspection PyTypeChecker
