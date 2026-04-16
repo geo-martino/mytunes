@@ -34,14 +34,14 @@ class LibraryMetaclass(AttributeMetaclass, ResourceMetaclass):
         def _get_source_from_config[T](data: T | Mapping[str, Any]) -> str:
             match data:
                 case Library():
-                    return data.source
+                    return data.source.casefold()
                 case Mapping():
-                    return data.get("source")
+                    return data.get("source", "").casefold()
                 case _:
                     raise MyTunesValidationError(f"Unrecognised type: {type(data).__name__!r}.")
 
         classes = cls.registered_submodels
-        types = (Annotated[kls, Tag(kls.source)] for kls in classes)
+        types = (Annotated[kls, Tag(kls.source.casefold())] for kls in classes)
         return Annotated[
             Union[*types],
             Field(discriminator=Discriminator(_get_source_from_config)),

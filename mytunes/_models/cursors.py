@@ -94,7 +94,7 @@ class PageCursor(RemoteModel):
         # noinspection PyTypeChecker
         classes = [
             kls for kls in PageCursor.registered_submodels
-            if kls.source == cls.source and not issubclass(kls, InitialCursor)
+            if kls.source.casefold() == cls.source.casefold() and not issubclass(kls, InitialCursor)
         ]
         if not classes:
             raise CursorResponseError(f"No registered cursor models found for source {cls.source!r}.")
@@ -390,7 +390,7 @@ class InitialCursor(_HasLimitParam):
             )
 
         # noinspection PyTypeChecker
-        classes = [kls for kls in cls.registered_submodels if kls.source == source]
+        classes = [kls for kls in cls.registered_submodels if kls.source.casefold() == source.casefold()]
         if not classes:
             raise MyTunesTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 

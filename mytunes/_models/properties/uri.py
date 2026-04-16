@@ -243,7 +243,7 @@ class HasMutableURI(HasURI):
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
         if self.source is None and len(set(source := uri.source for uri in self.uris)) == 1:
-            self.__dict__["source"] = source
+            self.__dict__["source"] = source.casefold()
         return self
 
     @field_validator("uris", mode="after", check_fields=True)
@@ -253,9 +253,10 @@ class HasMutableURI(HasURI):
         duplicates: set[str] = set()
 
         for uri in uris:
-            if uri.source in sources:
-                duplicates.add(uri.source)
-            sources.add(uri.source)
+            source = uri.source.casefold()
+            if source in sources:
+                duplicates.add(source)
+            sources.add(source)
 
         if duplicates:
             raise MyTunesValidationError(f"Duplicate URIs found from sources: {', '.join(duplicates)}")
@@ -276,7 +277,7 @@ class HasMutableURI(HasURI):
     def uri(self) -> Annotated[URI | None, UniqueAttribute()]:
         if self.source is None:
             return
-        return next((uri for uri in self.uris if uri.source == self.source and uri.exists), None)
+        return next((uri for uri in self.uris if uri.source.casefold() == self.source.casefold() and uri.exists), None)
 
     @uri.setter
     def uri(self, value: URI | None):
@@ -284,12 +285,12 @@ class HasMutableURI(HasURI):
             raise MyTunesValidationError("URI must be a URI instance")
 
         if self.source is None:
-            self.source = value.source
-        elif value.source != self.source:
+            self.source = value.source.casefold()
+        elif value.source.casefold() != self.source.casefold():
             raise MyTunesValidationError(f"Cannot set URI from {value.source} to {self.source}")
 
         for existing in copy(self.uris):
-            if existing.source == value.source:
+            if existing.source.casefold() == value.source.casefold():
                 self.uris.remove(existing)
 
         self.uris.add(value)
@@ -303,7 +304,7 @@ class HasMutableURI(HasURI):
 
         uri = self.uri
         if uri is None:
-            uri = next(uri for uri in self.uris if uri.source == self.source)
+            uri = next(uri for uri in self.uris if uri.source.casefold() == self.source.casefold())
 
         self.uris.remove(uri)
         if hasattr(self, "unique_keys"):

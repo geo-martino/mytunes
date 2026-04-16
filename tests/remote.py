@@ -106,7 +106,7 @@ class SimpleURI(URI):
 
 
 class MockRemoteResource(RemoteResource[SimpleURI]):
-    source: ClassVar[str] = "remote"
+    source: ClassVar[str] = "Remote"
     type: ClassVar[str] = choice((
         RemoteTrack.type,
         RemoteAlbum.type,

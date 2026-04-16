@@ -362,8 +362,8 @@ class LocalTrack[FT: FileType](
     def _assign_uris_from_context(self, info: ValidationInfo) -> Self:
         if not isinstance(context := info.context, TagContext):
             return self
-        if context.remote_source and context.remote_source != self.source:
-            self.source = context.remote_source
+        if context.remote_source and context.remote_source.casefold() != (self.source or "").casefold():
+            self.source = context.remote_source.casefold()
 
         if not (values := getattr(self, context.map_uri_to_field, [])):
             return self

@@ -18,7 +18,7 @@ from yarl import URL
 class MockPageCursor(PageCursor):
     __final__ = True
 
-    source: ClassVar[str] = "test"
+    source: ClassVar[str] = "Test"
 
     param: str | None = None
 

@@ -127,7 +127,7 @@ class TestRemoteAPI(BaseModelTester):
 
 class TestHasAPI(BaseModelTester):
     class MockIsRemoteService(IsRemoteService):
-        source: ClassVar[str] = "test"
+        source: ClassVar[str] = "Test"
 
         @IsRemoteService._validate_api(
             "playlist",
@@ -156,7 +156,7 @@ class TestHasAPI(BaseModelTester):
 
     async def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockItemEndpoints]):
-            source: ClassVar[str] = "test"
+            source: ClassVar[str] = "Test"
 
         model = self.MockIsRemoteService(api=MockAPI(handler=handler))
         assert await model.return_bool() is False

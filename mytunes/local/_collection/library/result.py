@@ -73,16 +73,16 @@ class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     def _is_available(track: T, source: str | None = None) -> bool:
         if source is None:
             return track.has_uri is True
-        return any(uri.source == source and uri.exists for uri in track.uris)
+        return any(uri.source.casefold() == source.casefold() and uri.exists for uri in track.uris)
 
     @staticmethod
     def _is_missing(track: T, source: str | None = None) -> bool:
         if source is None:
             return track.has_uri is None
-        return all(uri.source != source for uri in track.uris)
+        return all(uri.source.casefold() != source.casefold() for uri in track.uris)
 
     @staticmethod
     def _is_unavailable(track: T, source: str | None = None) -> bool:
         if source is None:
             return track.has_uri is False
-        return any(uri.source == source and not uri.exists for uri in track.uris)
+        return any(uri.source.casefold() == source.casefold() and not uri.exists for uri in track.uris)

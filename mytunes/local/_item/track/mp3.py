@@ -292,7 +292,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
 
         context = info.context
         if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
-            values.extend(frame_cls(text=str(uri), desc=f"{uri.source}URI", lang="eng") for uri in self.uris)
+            values.extend(frame_cls(text=str(uri), desc=f"{uri.source.casefold()}URI", lang="eng") for uri in self.uris)
 
         return values
 
