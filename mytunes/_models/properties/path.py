@@ -110,7 +110,7 @@ class PathStemMapper(PathMapper):
         A map of ``{<replacement stems>: <stem to be replaced>}`` i.e. just the opposite map of ``stem_map``.
         Assign new values to ``stem_map`` to update.
         """
-        return dict(list(item[::-1]) for item in self.stem_map.items())
+        return dict(list(item[::-1]) for item in reversed(list(self.stem_map.items())))
 
     @field_validator("available_paths", mode="before", check_fields=True)
     @staticmethod
