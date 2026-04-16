@@ -117,8 +117,8 @@ class LocalLibrary(
             await self.load_tracks()
             playlist_results = await self.load_playlists()
 
-        self._log_load_playlists(playlist_results)
         self._logger.print_line(STAT)
+        self._log_load_playlists(playlist_results)
 
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
         results: dict[str, LibraryURIsResult | None] = self._generate_playlist_uris_results()
@@ -126,7 +126,9 @@ class LocalLibrary(
         results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
+        self._logger.print_line(STAT)
         self._logger.stat(table)
+
         self._logger.print_line(STAT)
 
     def _log_errors(self, message: str = "Could not load") -> None:
