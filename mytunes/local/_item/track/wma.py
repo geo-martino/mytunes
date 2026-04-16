@@ -1,5 +1,5 @@
 import struct
-from collections.abc import MutableMapping, Iterable
+from collections.abc import MutableMapping, Iterable, Mapping
 from typing import ClassVar, Any, final, Annotated
 
 import mutagen.asf
@@ -251,6 +251,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     @field_serializer("track", mode="plain", when_used="unless-none")
     def _serialize_position_tags(self, value: Position, info: FieldSerializationInfo) -> str | dict[str, str] | None:
         tags = super()._serialize_position_tags(value, info=info)
+        if not isinstance(tags, Mapping):
+            return tags
+
         return {k: self._serialize_unicode_attribute(value=v, info=info) for k, v in tags.items()} if tags else None
 
     @model_serializer(mode="wrap")
