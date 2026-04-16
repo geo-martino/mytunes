@@ -283,12 +283,12 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="wrap", when_used="unless-none")
-    def _serialize_text_frames[T](
+    def _serialize_text_frames(
             self,
-            values: T | Iterable[str | HasName],
+            values: Iterable[str | HasName],
             handler: SerializerFunctionWrapHandler,
             info: FieldSerializationInfo,
-    ) -> T | list[InstanceOf[mutagen.id3.TextFrame]]:
+    ) -> list:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return handler(values)
 

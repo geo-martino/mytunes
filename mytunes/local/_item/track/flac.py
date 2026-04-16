@@ -164,9 +164,9 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return str(value)
 
     @field_serializer("genres", "comments", mode="wrap", when_used="unless-none")
-    def _serialize_strings[T: Iterable[str]](
-            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> T | list[str]:
+    def _serialize_strings(
+            self, value: Iterable[str], handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> list:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
             return handler(value)
 
