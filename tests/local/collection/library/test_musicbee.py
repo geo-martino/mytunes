@@ -108,20 +108,29 @@ class TestMusicBee(NoUniqueKeyTester):
         path.touch()
         return path
 
-    def test_get_current_system_musicbee_path(self, musicbee_folder: Path, platform: str, system_paths: dict[str, str]):
+    def test_get_current_system_musicbee_path(
+            self, musicbee_folder: Path, platform: str, system_paths: dict[str, str]
+    ):
         system_paths |= {platform: musicbee_folder}  # should overwrite the randomly generated one
 
         model = MusicBee(musicbee_folder=system_paths)
         assert model.musicbee_folder == musicbee_folder
         assert model.path == musicbee_folder.joinpath(MusicBee._xml_library_path)
 
-    def test_get_path_map_from_system_paths(self, musicbee_folder: Path, platform: str, system_paths: dict[str, str]):
+    def test_get_path_map_from_system_paths(
+            self, musicbee_folder: Path, platform: str, system_paths: dict[str, str], faker: Faker
+    ):
         system_paths |= {platform: musicbee_folder}  # should overwrite the randomly generated one
         system_paths = LocalSystemPath(**system_paths)
 
-        model = MusicBee(musicbee_folder=system_paths)
+        initial_path_map = {faker.file_path(): faker.file_path()}
+        path_mapper = PathStemMapper(stem_map=initial_path_map)
+
+        expected = {str(other): str(musicbee_folder) for other in system_paths.others} | initial_path_map
+
+        model = MusicBee(musicbee_folder=system_paths, path_mapper=path_mapper)
         assert isinstance(model.path_mapper, PathStemMapper)
-        assert model.path_mapper.stem_map == {str(other): str(musicbee_folder) for other in system_paths.others}
+        assert model.path_mapper.stem_map == expected
 
     def test_checks_settings_file_exists(self, musicbee_folder: Path, settings_xml_path: Path):
         assert settings_xml_path.is_file()

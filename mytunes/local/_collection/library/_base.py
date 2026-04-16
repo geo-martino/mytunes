@@ -105,7 +105,9 @@ class LocalLibrary(
             return self
 
         map_path = str(next(iter(paths.paths)))
-        self.path_mapper.stem_map = {other: map_path for other in map(str, paths.others)}
+        map_paths = {other: map_path for other in map(str, paths.others)}
+        # prioritise user input if given
+        self.path_mapper.stem_map = map_paths | dict(self.path_mapper.stem_map)
         return self
 
     async def load(self) -> None:
