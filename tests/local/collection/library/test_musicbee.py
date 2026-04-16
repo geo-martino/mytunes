@@ -118,7 +118,12 @@ class TestMusicBee(NoUniqueKeyTester):
         assert model.path == musicbee_folder.joinpath(MusicBee._xml_library_path)
 
     def test_get_path_map_from_system_paths(
-            self, musicbee_folder: Path, platform: str, system_paths: dict[str, str], faker: Faker
+            self,
+            musicbee_folder: Path,
+            library_folders: list[Path],
+            platform: str,
+            system_paths: dict[str, str],
+            faker: Faker,
     ):
         system_paths |= {platform: musicbee_folder}  # should overwrite the randomly generated one
         system_paths = LocalSystemPath(**system_paths)
@@ -126,7 +131,9 @@ class TestMusicBee(NoUniqueKeyTester):
         initial_path_map = {faker.file_path(): faker.file_path()}
         path_mapper = PathStemMapper(stem_map=initial_path_map)
 
-        expected = {str(other): str(musicbee_folder) for other in system_paths.others} | initial_path_map
+        # WORKAROUND: the musicbee folder is usually in a folder within the music library folder.
+        #  We take the parent to account for this
+        expected = {str(other.parent): str(musicbee_folder.parent) for other in system_paths.others} | initial_path_map
 
         model = MusicBee(musicbee_folder=system_paths, path_mapper=path_mapper)
         assert isinstance(model.path_mapper, PathStemMapper)

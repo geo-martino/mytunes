@@ -113,15 +113,9 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             return handler(data)
 
         self: Self = handler(data)
-        if type(self.path_mapper) is PathMapper:
-            self.path_mapper = PathStemMapper()
-        if not isinstance(self.path_mapper, PathStemMapper):
-            return self
-
-        map_path = str(paths.path)
-        map_paths = {other: map_path for other in map(str, paths.others)}
-        # prioritise user input if given
-        self.path_mapper.stem_map = map_paths | dict(self.path_mapper.stem_map)
+        # WORKAROUND: the musicbee folder is usually in a folder within the music library folder.
+        #  We take the parent to account for this
+        self._set_path_map_from_system_paths(paths.path.parent, [other.parent for other in paths.others])
         return self
 
     @model_validator(mode="after")

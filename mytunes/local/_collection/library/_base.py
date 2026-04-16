@@ -1,6 +1,6 @@
 import itertools
 from collections.abc import Generator, Iterable, Collection
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, ClassVar, final, Any, Self
 
 import tabulate
@@ -99,16 +99,18 @@ class LocalLibrary(
             return handler(data)
 
         self: Self = handler(data)
+        self._set_path_map_from_system_paths(next(iter(paths.paths)), paths.others)
+        return self
+
+    def _set_path_map_from_system_paths(self, path: str | Path, others: Iterable[str | PurePath]) -> None:
         if type(self.path_mapper) is PathMapper:
             self.path_mapper = PathStemMapper()
         if not isinstance(self.path_mapper, PathStemMapper):
-            return self
+            return
 
-        map_path = str(next(iter(paths.paths)))
-        map_paths = {other: map_path for other in map(str, paths.others)}
+        map_paths = {other: str(path) for other in map(str, others)}
         # prioritise user input if given
         self.path_mapper.stem_map = map_paths | dict(self.path_mapper.stem_map)
-        return self
 
     async def load(self) -> None:
         self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
