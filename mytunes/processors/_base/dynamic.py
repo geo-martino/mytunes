@@ -22,9 +22,9 @@ class processormethod:
     Optionally, provide a list of alternative names via which this processor method can also be called.
     """
 
-    def __new__(cls, *args, **__):
+    def __new__(cls, *args, **kwargs):
         func: Optional[Callable] = next((arg for arg in args if callable(arg)), None)
-        self = partial(cls, *args) if func is None else super().__new__(cls)
+        self = partial(cls, *args, **kwargs) if func is None else super().__new__(cls)
         return update_wrapper(self, func)
 
     def __init__(self, *args: str | Callable):

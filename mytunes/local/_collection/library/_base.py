@@ -1,11 +1,11 @@
 import itertools
 from collections.abc import Generator, Iterable, Collection
 from pathlib import Path
-from typing import Annotated, ClassVar, final
+from typing import Annotated, ClassVar, final, Any, Self
 
 import tabulate
 from mutagen import MutagenError
-from mytunes._models.properties.path import PathMapper
+from mytunes._models.properties.path import PathMapper, PathStemMapper
 from mytunes._types import to_set
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
@@ -20,7 +20,9 @@ from mytunes.logger import STAT
 from mytunes.processors.filters import Filter
 from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.sort import ItemSorter
-from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator
+from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
+    ModelWrapValidatorHandler, ValidationError
+from pydantic_core.core_schema import ValidationInfo, ValidatorFunctionWrapHandler
 from termcolor import colored
 
 from .result import LibraryURIsResult
@@ -84,6 +86,27 @@ class LocalLibrary(
 
         names = to_set(names)
         return ValueFilter(values=names)
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _extract_path_map_from_system_paths(
+            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        paths = cls._get_value_from_data(data, "library_folders")
+        try:
+            paths = LocalSystemPaths.model_validate(paths)
+        except ValidationError:
+            return handler(data)
+
+        self: Self = handler(data)
+        if type(self.path_mapper) is PathMapper:
+            self.path_mapper = PathStemMapper()
+        if not isinstance(self.path_mapper, PathStemMapper):
+            return self
+
+        map_path = str(next(iter(paths.paths)))
+        self.path_mapper.stem_map = {other: map_path for other in map(str, paths.others)}
+        return self
 
     async def load(self) -> None:
         self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)

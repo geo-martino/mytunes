@@ -9,7 +9,8 @@ from unittest.mock import patch, Mock
 import pytest
 from faker import Faker
 from mytunes._models.collection.playlist import Playlist
-from mytunes.local._collection.library import LocalLibrary
+from mytunes._models.properties.path import PathStemMapper
+from mytunes.local._collection.library import LocalLibrary, LocalSystemPath, LocalSystemPaths
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import LoadPlaylistResult
 from mytunes.local._item.album import LocalAlbum
@@ -136,10 +137,29 @@ class TestLocalLibrary(NoUniqueKeyTester):
     ) -> LocalLibrary:
         return LocalLibrary(library_folders=library_folders, playlist_folder=playlist_folder)
 
-    def test_get_current_system_library_paths(self, library_folders: list[Path], platform: str):
-        paths = {platform: library_folders}
-        model = LocalLibrary(library_folders=paths)
+    def test_get_current_system_library_paths(
+            self, library_folders: list[Path], platform: str, system_paths: dict[str, str]
+    ):
+        system_paths |= {platform: library_folders}
+
+        model = LocalLibrary(library_folders=system_paths)
         assert model.library_folders == set(library_folders)
+
+    def test_get_path_map_from_system_paths(
+            self, library_folders: list[Path], platform: str, system_paths: dict[str, str]
+    ):
+        system_paths |= {platform: library_folders}  # should overwrite the randomly generated one
+        system_paths = LocalSystemPaths(**system_paths)
+
+        model = LocalLibrary(library_folders=system_paths)
+        assert isinstance(model.path_mapper, PathStemMapper)
+        assert model.path_mapper.stem_map.keys() == set(map(str, system_paths.others))
+
+        # we can only guarantee that one of the library folders will be selected
+        # as LocalSystemPaths uses sets so order is not guaranteed
+        mapped_paths = set(model.path_mapper.stem_map.values())
+        assert len(mapped_paths) == 1
+        assert next(iter(mapped_paths)) in set(map(str, library_folders))
 
     def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]):
         names = {pl.name for pl in playlists}

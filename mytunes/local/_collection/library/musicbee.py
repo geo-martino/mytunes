@@ -13,14 +13,15 @@ from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 import aiofiles
-from mytunes._models.properties.path import PathStemMapper
+from mytunes._models.properties.path import PathStemMapper, PathMapper
 from mytunes._types import to_set
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._collection.library._base import LocalLibrary
 from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local.exception import XMLReaderError, FileDoesNotExistError
-from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator
+from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator, \
+    ModelWrapValidatorHandler, ValidationError
 
 from ..._item.track import LocalTrack
 from ...._models import BaseModel, makecls
@@ -99,6 +100,27 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             path = LocalSystemPath.get_current_system_path(data[key])
             data["path"] = path.joinpath(cls._xml_library_path)
         return data
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _extract_path_map_from_system_paths(
+            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        paths = cls._get_value_from_data(data, "musicbee_folder")
+        try:
+            paths = LocalSystemPath.model_validate(paths)
+        except ValidationError:
+            return handler(data)
+
+        self: Self = handler(data)
+        if type(self.path_mapper) is PathMapper:
+            self.path_mapper = PathStemMapper()
+        if not isinstance(self.path_mapper, PathStemMapper):
+            return self
+
+        map_path = str(paths.path)
+        self.path_mapper.stem_map = {other: map_path for other in map(str, paths.others)}
+        return self
 
     @model_validator(mode="after")
     def _validate_settings_file_exists(self) -> Self:

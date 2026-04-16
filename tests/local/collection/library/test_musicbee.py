@@ -1,13 +1,14 @@
 import os
 import shutil
 from collections.abc import Generator
-from pathlib import Path
+from pathlib import Path, PureWindowsPath, PurePosixPath
 from typing import Any
 from unittest.mock import patch, AsyncMock
 
 import pytest
 from faker import Faker
-from mytunes.local._collection.library import LocalLibrary
+from mytunes._models.properties.path import PathStemMapper
+from mytunes.local._collection.library import LocalLibrary, LocalSystemPaths, LocalSystemPath
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.library.musicbee import XMLLibraryParser
 from mytunes.local._item.track import LocalTrack
@@ -107,11 +108,20 @@ class TestMusicBee(NoUniqueKeyTester):
         path.touch()
         return path
 
-    def test_get_current_system_musicbee_path(self, musicbee_folder: Path, platform: str):
-        paths = {platform: musicbee_folder}
-        model = MusicBee(musicbee_folder=paths)
+    def test_get_current_system_musicbee_path(self, musicbee_folder: Path, platform: str, system_paths: dict[str, str]):
+        system_paths |= {platform: musicbee_folder}  # should overwrite the randomly generated one
+
+        model = MusicBee(musicbee_folder=system_paths)
         assert model.musicbee_folder == musicbee_folder
         assert model.path == musicbee_folder.joinpath(MusicBee._xml_library_path)
+
+    def test_get_path_map_from_system_paths(self, musicbee_folder: Path, platform: str, system_paths: dict[str, str]):
+        system_paths |= {platform: musicbee_folder}  # should overwrite the randomly generated one
+        system_paths = LocalSystemPath(**system_paths)
+
+        model = MusicBee(musicbee_folder=system_paths)
+        assert isinstance(model.path_mapper, PathStemMapper)
+        assert model.path_mapper.stem_map == {str(other): str(musicbee_folder) for other in system_paths.others}
 
     def test_checks_settings_file_exists(self, musicbee_folder: Path, settings_xml_path: Path):
         assert settings_xml_path.is_file()
