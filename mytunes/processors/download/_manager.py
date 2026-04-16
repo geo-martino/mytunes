@@ -45,6 +45,10 @@ class StoreManager(Processor, HasLogger, HasProgress):
     @validate_call
     def open_sites_for_collections(self, collections: Sequence[CollectionModel]) -> None:
         """Run the manager for all items in the given ``collections``."""
+        if not collections:
+            self._log_skip("No collections to open sites for.")
+            return
+
         items = tuple(itertools.chain.from_iterable(coll.items for coll in collections))
         return self.open_sites_for_items(items=items)
 
@@ -59,7 +63,7 @@ class StoreManager(Processor, HasLogger, HasProgress):
             items = list(items.items)
 
         if not items:
-            self._logger.extra(colored("No items to open sites for.", "yellow"))
+            self._log_skip("No items to open sites for.")
             return
 
         self._log_start(items, fields=self.fields)
@@ -140,3 +144,6 @@ class StoreManager(Processor, HasLogger, HasProgress):
             f"Opening sites for {len(items)} {types} on {len(self.stores)} stores using fields: {', '.join(fields)}"
         )
         self._logger.info(message, header=1)
+
+    def _log_skip(self, message: str) -> None:
+        self._logger.extra(colored(message, "yellow"))
