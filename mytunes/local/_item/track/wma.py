@@ -200,9 +200,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         return list(map(cls._deserialize_unicode_attribute, value))
 
     @field_serializer("compilation", mode="wrap", when_used="unless-none")
-    def _serialize_bool[T: bool](
+    def _serialize_bool[T: str | bool](
             self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> str | bool:
+    ) -> T:
         if not info.by_alias and info.mode != "json":
             return handler(value)
         return self._serialize_unicode_attribute(value=str(int(value)), handler=handler, info=info)

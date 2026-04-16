@@ -177,9 +177,9 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return list(map(str, values))
 
     @field_serializer("compilation", mode="wrap", when_used="unless-none")
-    def _serialize_bool(
-            self, value: bool, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> str | bool:
+    def _serialize_bool[T: str | bool](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> T:
         if not info.by_alias and info.mode != "json":
             return handler(value)
         return str(int(value))
