@@ -23,7 +23,7 @@ __all__ = [
 
 # WORKAROUND: get way too many warnings when trying to dump tracks, this stops them
 warnings.filterwarnings(
-    "ignore", category=UserWarning, message=".*serialized value may not be as expected.*"
+    "ignore", module="pydantic", category=UserWarning,# message=".*serialized value may not be as expected.*"
 )
 
 # we must import all the supported URI formats here so that they are registered in the registry
