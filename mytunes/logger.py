@@ -127,9 +127,12 @@ class Logger(logging.Logger):
         elif message:
             self.debug(message)
 
-    def print_line(self) -> None:
+    def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
-        if not self.compact:
+        if self.compact:
+            return
+
+        if self.stdout_handlers and any(level >= h.level for h in self.stdout_handlers):
             self.console.print()
 
     def input(self, text: str | None = None, choices: list[str] | None = None) -> str:

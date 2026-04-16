@@ -45,11 +45,27 @@ def test_copy(logger: Logger):
 
 
 def test_print_line(logger: Logger, capfd: pytest.CaptureFixture):
-    logger.compact = False
-    logger.print_line()
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.WARNING)
+    logger.addHandler(handler)
+
+    assert logger.stdout_handlers
+
+    logger.print_line(logging.ERROR)  # ERROR is above handler level
     assert capfd.readouterr().out == "\n"
+
+    logger.print_line(logging.WARNING)  # WARNING is at handler level
+    assert capfd.readouterr().out == "\n"
+
+    logger.print_line(logging.INFO)  # INFO is below handler level
+    assert capfd.readouterr().out == ""
 
     # compact is True, never print lines
     logger.compact = True
-    logger.print_line()
+
+    logger.print_line(logging.ERROR)
+    assert capfd.readouterr().out == ""
+    logger.print_line(logging.WARNING)
+    assert capfd.readouterr().out == ""
+    logger.print_line(logging.INFO)
     assert capfd.readouterr().out == ""
