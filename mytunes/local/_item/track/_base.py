@@ -412,7 +412,7 @@ class LocalTrack[FT: FileType](
         return self
 
     @field_serializer("images", mode="plain", when_used="unless-none")
-    def _serialize_images(self, images: Any, info: FieldSerializationInfo) -> list:
+    def _serialize_images[T](self, images: dict[str, Any], info: FieldSerializationInfo) -> list | T:
         if not info.by_alias or not self.images:  # if not serializing to tag IDs, return the images models
             return images
 

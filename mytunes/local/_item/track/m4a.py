@@ -205,9 +205,11 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         return [int(value)]
 
     @field_serializer("track", "disc", mode="plain", when_used="unless-none")
-    def _serialize_position_tags[T: Position](self, value: T, info: FieldSerializationInfo) -> T | list[tuple] | None:
+    def _serialize_position_tags(
+            self, value: Position, info: FieldSerializationInfo
+    ) -> list[tuple] | dict[str, Any] | None:
         if not info.by_alias:  # not serializing to tag IDs
-            return value
+            return value.model_dump()
         if not isinstance(value, Position):
             return
         return [value.numbers]
