@@ -200,7 +200,7 @@ class TestFLAC(LocalTrackTester):
         expected = [genre.name for genre in genres] + value[len(genres):]
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_strings(value, info=info) == expected
+        assert model._serialize_strings(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_strings_includes_uris(self, model: FLAC, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
@@ -208,7 +208,7 @@ class TestFLAC(LocalTrackTester):
         context = TagContext(map_uri_to_field="comments")
         info = Namespace(field_name="comments", by_alias=True, context=context, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_strings(value, info=info) == expected
+        assert model._serialize_strings(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_position_tags_skips(self, model: FLAC):
         info = Namespace(by_alias=True, mode="python")

@@ -103,7 +103,7 @@ class TestM4A(LocalTrackTester):
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
-        assert model._serialize_strings(value, info=info) == expected
+        assert model._serialize_strings(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_strings_includes_uris(self, model: M4A, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
@@ -112,7 +112,7 @@ class TestM4A(LocalTrackTester):
         info = Namespace(field_name="comments", by_alias=True, context=context, mode="python")
 
         # noinspection PyTypeChecker
-        assert model._serialize_strings(value, info=info) == expected
+        assert model._serialize_strings(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_bpm_skips(self, model: M4A, faker: Faker):
         info = Namespace(by_alias=True, mode="python")
@@ -128,13 +128,13 @@ class TestM4A(LocalTrackTester):
     def test_serialize_position_tags_skips(self, model: M4A):
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags((), info=info) is None
+        assert model._serialize_position_tags((), handler=lambda x: x, info=info) is None
 
     def test_serialize_position_tags(self, model: M4A):
         position = Position(number=1, total=2, zero_fill=3)
         info = Namespace(by_alias=True, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(position, info=info) == [position.numbers]
+        assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == [position.numbers]
 
     def test_from_tags(
             self,

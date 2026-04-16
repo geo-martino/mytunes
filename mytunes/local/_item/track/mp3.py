@@ -240,39 +240,41 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         # noinspection PyUnresolvedReferences
         return value.rating
 
-    @field_serializer("compilation", mode="plain", when_used="unless-none")
-    def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
+    @field_serializer("compilation", mode="wrap", when_used="unless-none")
+    def _serialize_bool[T: bool](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> str:
         if not info.by_alias and info.mode != "json":
-            return value
-        return self._serialize_text_frame(value=str(int(value)), info=info)
+            return handler(value)
+        return self._serialize_text_frame(value=str(int(value)), handler=handler, info=info)
 
-    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
+    @field_serializer("album", "album_artist", mode="wrap", when_used="unless-none")
     def _serialize_name[T: str | HasName](
-            self, value: T, info: SerializationInfo
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> T | str | InstanceOf[mutagen.id3.TextFrame]:
-        if info.mode == "json":
-            return self._extract_name(value)
+        if not info or info.mode == "json":
+            return super()._serialize_name(value, handler=handler, info=info)
         # noinspection PyArgumentList
-        return self._serialize_text_frame(value, info=info)
+        return self._serialize_text_frame(value, handler=handler, info=info)
 
-    @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
+    @field_serializer("artists", "genres", mode="wrap", when_used="unless-none")
     def _serialize_names[T: Iterable[str | HasName]](
-        self, value: T, info: FieldSerializationInfo
+        self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> T | list[str] | InstanceOf[mutagen.id3.TextFrame]:
         if info.mode == "json":
-            return self._extract_names(value)
+            return super()._serialize_names(value, handler=handler, info=info)
         # noinspection PyArgumentList
-        return self._serialize_text_frame(value, info=info)
+        return self._serialize_text_frame(value, handler=handler, info=info)
 
     @field_serializer(
         "name", "track", "disc", "bpm", "key", "released_at",
-        mode="plain", when_used="unless-none"
+        mode="wrap", when_used="unless-none"
     )
     def _serialize_text_frame[T](
-            self, value: T | str | HasName, info: FieldSerializationInfo
+            self, value: T | str | HasName, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> T | InstanceOf[mutagen.id3.TextFrame]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
-            return value
+            return handler(value)
         if not isinstance(value, tuple | list):
             value = [value]
 
@@ -280,12 +282,15 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         tag_value = self._join_split_tags(value)
         return frame_cls(text=tag_value)
 
-    @field_serializer("comments", mode="plain", when_used="unless-none")
+    @field_serializer("comments", mode="wrap", when_used="unless-none")
     def _serialize_text_frames[T](
-            self, values: T | Iterable[str | HasName], info: FieldSerializationInfo
+            self,
+            values: T | Iterable[str | HasName],
+            handler: SerializerFunctionWrapHandler,
+            info: FieldSerializationInfo,
     ) -> T | list[InstanceOf[mutagen.id3.TextFrame]]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
-            return values
+            return handler(values)
 
         frame_cls = self._get_frame_class(info)
         values: list[frame_cls] = [frame_cls(text=item, lang="eng") for item in values]

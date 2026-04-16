@@ -166,7 +166,7 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
         value = HasName(name=expected)
         info = Namespace(field_name="album", by_alias=True, context=None, mode="json")
         # noinspection PyTypeChecker
-        assert model._serialize_name(value, info=info) == expected
+        assert model._serialize_name(value, handler=lambda x: x, info=info) == expected
 
     @staticmethod
     def test_serialize_names(model: LocalTrack, faker: Faker):
@@ -174,7 +174,7 @@ class LocalTrackTester(UniqueKeyTester, metaclass=ABCMeta):
         value = [HasName(name=word) for word in expected]
         info = Namespace(field_name="artists", by_alias=True, context=None, mode="json")
         # noinspection PyTypeChecker
-        assert model._serialize_names(value, info=info) == expected
+        assert model._serialize_names(value, handler=lambda x: x, info=info) == expected
 
     @staticmethod
     def test_serialize_images(

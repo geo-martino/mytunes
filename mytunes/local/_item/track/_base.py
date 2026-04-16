@@ -23,7 +23,7 @@ from pydantic import field_validator, model_validator, validate_call, AliasChoic
     field_serializer, BeforeValidator, TypeAdapter, ValidationError
 # noinspection PyProtectedMember
 from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
-from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo
+from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
 
 from ...._models import BaseModel, ResourceModel, makecls
 from ...._models.collection.library import Library
@@ -310,22 +310,36 @@ class LocalTrack[FT: FileType](
             return value
         return list(itertools.chain.from_iterable(map(cls._separate_tags, value)))
 
-    @classmethod
-    def _join_split_tags(cls, value: Iterable[Any]) -> str:
-        values = map(cls._extract_name, value)
-        return cls._join_tags(str(v) for v in values if v and str(v))
+    def _join_split_tags(self, value: Iterable[Any]) -> str:
+        # noinspection PyTypeChecker
+        values = (self._serialize_name(val, lambda x: x, None) for val in value)
+        return self._join_tags(str(v) for v in values if v and str(v))
 
-    @staticmethod
-    def _extract_name(value: str | HasName) -> str | None:
+    @field_serializer("album", "album_artist", mode="wrap", when_used="unless-none")
+    def _serialize_name(
+            self,
+            value: str | HasName,
+            handler: SerializerFunctionWrapHandler,
+            info: FieldSerializationInfo,
+    ) -> str | None:
         if not isinstance(value, HasName):
-            return value
+            return handler(value)
         return value.name if value is not None else None
 
-    def _extract_names[T: Iterable[str | HasName]](self, values: T) -> T | list[str]:
-        if not isinstance(values, Iterable):
-            return values
+    @field_serializer("artists", mode="wrap", when_used="unless-none")
+    def _serialize_names(
+            self,
+            values: Iterable[str | HasName],
+            handler: SerializerFunctionWrapHandler,
+            info: FieldSerializationInfo,
+    ) -> str | list[str] | dict[str, str]:
+        if info and info.mode != "json":
+            return self._join_split_tags(values)
 
-        values = list(map(self._extract_name, values))
+        if not isinstance(values, Iterable):
+            return handler(values)
+
+        values = [self._serialize_name(value, handler=handler, info=info) for value in values]
         return values
 
     @staticmethod

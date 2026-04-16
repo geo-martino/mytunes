@@ -163,12 +163,15 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             return value
         return str(value)
 
-    @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
-    def _serialize_strings[T: Iterable[str]](self, value: T, info: FieldSerializationInfo) -> T | list[str]:
+    @field_serializer("genres", "comments", mode="wrap", when_used="unless-none")
+    def _serialize_strings[T: Iterable[str]](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> T | list[str]:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
-            return value
+            return handler(value)
 
-        values = self._extract_names(value)
+        # noinspection PyTypeChecker
+        values = self._serialize_names(value, handler=handler, info=None)
         self._extend_with_uris(values, info=info)
         return list(map(str, values))
 
@@ -177,18 +180,6 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         if not info.by_alias and info.mode != "json":
             return value
         return str(int(value))
-
-    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
-        if not info.by_alias and info.mode == "json":
-            return self._extract_name(value)
-        return self._extract_name(value)
-
-    @field_serializer("artists", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
-        if info.mode == "json":
-            return self._extract_names(value)
-        return self._join_split_tags(value)
 
     @field_serializer("track", "disc", mode="wrap", when_used="unless-none")
     def _serialize_position_tags(

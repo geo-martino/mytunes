@@ -190,7 +190,7 @@ class TestLocalTrack(UniqueKeyTester):
 
     def test_join_split_tags(self, model: LocalTrack, artists: list[LocalArtist], faker: Faker):
         model.artists = artists
-        assert LocalTrack._join_split_tags(artists) == model.artist
+        assert model._join_split_tags(artists) == model.artist
 
     def test_map_images_skips(self, faker: Faker):
         assert_validator_skips(LocalTrack._map_images, None)

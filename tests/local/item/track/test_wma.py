@@ -92,21 +92,22 @@ class TestWMA(LocalTrackTester):
         value = choice(([faker.sentence()], faker.words()))
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="json")
         # noinspection PyTypeChecker
-        assert not isinstance(model._serialize_unicode_attribute(value, info=info), ASFUnicodeAttribute)
+        result = model._serialize_unicode_attribute(value, handler=lambda x: x, info=info)
+        assert not isinstance(result, ASFUnicodeAttribute)
 
     def test_serialize_unicode_attribute(self, model: WMA, faker: Faker):
         value = choice(([faker.sentence()], faker.words()))
         expected = model._join_tags(value)
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_unicode_attribute(value, info=info) == expected
+        assert model._serialize_unicode_attribute(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_unicode_attributes(self, model: WMA, genres: list[LocalGenre], faker: Faker):
         value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
         expected = [genre.name for genre in genres] + value[len(genres):]
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
-        assert model._serialize_unicode_attributes(value, info=info) == expected
+        assert model._serialize_unicode_attributes(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_unicode_attributes_includes_uris(self, model: WMA, faker: Faker):
         value = [faker.sentence() for _ in range(faker.random_int(3, 6))]
@@ -115,13 +116,13 @@ class TestWMA(LocalTrackTester):
         info = Namespace(field_name="comments", by_alias=True, context=context, mode="python")
 
         # noinspection PyTypeChecker
-        assert model._serialize_unicode_attributes(value, info=info) == expected
+        assert model._serialize_unicode_attributes(value, handler=lambda x: x, info=info) == expected
 
     def test_serialize_position_tags_skips(self, model: WMA):
         info = Namespace(by_alias=True, mode="python")
         value = ()
         # noinspection PyTypeChecker
-        assert model._serialize_position_tags(value, lambda x: x, info=info) is value
+        assert model._serialize_position_tags(value, handler=lambda x: x, info=info) is value
 
     def test_serialize_position_tags(self, model: WMA):
         info = Namespace(field_name="track", by_alias=True, context=None, mode="python")

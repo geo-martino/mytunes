@@ -199,54 +199,59 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
             return value
         return list(map(cls._deserialize_unicode_attribute, value))
 
-    @field_serializer("compilation", mode="plain", when_used="unless-none")
-    def _serialize_bool[T: bool](self, value: T, info: FieldSerializationInfo) -> str:
+    @field_serializer("compilation", mode="wrap", when_used="unless-none")
+    def _serialize_bool[T: bool](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> str:
         if not info.by_alias and info.mode != "json":
-            return value
-        return self._serialize_unicode_attribute(value=str(int(value)), info=info)
+            return handler(value)
+        return self._serialize_unicode_attribute(value=str(int(value)), handler=handler, info=info)
 
-    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
+    @field_serializer("album", "album_artist", mode="wrap", when_used="unless-none")
     def _serialize_name(
-        self, value: str | HasName, info: SerializationInfo
+        self, value: str | HasName, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> str | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
-        if info.mode == "json":
-            return self._extract_name(value)
+        if not info or info.mode == "json":
+            return super()._serialize_name(value, handler=handler, info=info)
         # noinspection PyArgumentList
-        return self._serialize_unicode_attribute(value, info=info)
+        return self._serialize_unicode_attribute(value, handler=handler, info=info)
 
-    @field_serializer("artists", "genres", mode="plain", when_used="unless-none")
+    @field_serializer("artists", "genres", mode="wrap", when_used="unless-none")
     def _serialize_names(
-        self, value: Iterable[str | HasName], info: SerializationInfo
+        self, value: Iterable[str | HasName], handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> list[str] | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if info.mode == "json":
-            return self._extract_names(value)
+            return super()._serialize_names(value, handler=handler, info=info)
         # noinspection PyArgumentList
-        return self._serialize_unicode_attributes(value, info=info)
+        return self._serialize_unicode_attributes(value, handler=handler, info=info)
 
     @field_serializer(
         "name", "disc", "bpm", "key", "released_at", "uri",
-        mode="plain", when_used="unless-none",
+        mode="wrap", when_used="unless-none",
     )
     def _serialize_unicode_attribute[T: str | HasName](
-        self, value: T, info: SerializationInfo
+        self, value: T, handler: SerializerFunctionWrapHandler, info: SerializationInfo
     ) -> T | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if not info.by_alias or info.mode == "json":
-            return value
+            return handler(value)
         if not isinstance(value, tuple | list):
             value = [value]
 
         value = self._join_split_tags(value)
         return mutagen.asf.ASFUnicodeAttribute(value)
 
-    @field_serializer("comments", mode="plain", when_used="unless-none")
-    def _serialize_unicode_attributes[T](self, value: T, info: FieldSerializationInfo) -> T | str:
+    @field_serializer("comments", mode="wrap", when_used="unless-none")
+    def _serialize_unicode_attributes[T](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> list[str]:
         if not isinstance(value, tuple | list):
             value = [value]
 
-        values = self._extract_names(value)
+        # noinspection PyTypeChecker
+        values = super()._serialize_names(value, handler=handler, info=None)
         self._extend_with_uris(values, info=info)
         # noinspection PyArgumentList
-        return [self._serialize_unicode_attribute(val, info=info) for val in values]
+        return [self._serialize_unicode_attribute(val, handler=handler, info=info) for val in values]
 
     @field_serializer("track", mode="wrap", when_used="unless-none")
     def _serialize_position_tags(
@@ -260,7 +265,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         if not isinstance(tags, Mapping):
             return tags
 
-        return {k: self._serialize_unicode_attribute(value=v, info=info) for k, v in tags.items()} if tags else None
+        if not tags:
+            return None
+        return {k: self._serialize_unicode_attribute(value=v, handler=handler, info=info) for k, v in tags.items()}
 
     @model_serializer(mode="wrap")
     def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:

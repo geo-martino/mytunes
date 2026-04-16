@@ -175,26 +175,17 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
             return value
         return str(value)
 
-    @field_serializer("genres", "comments", mode="plain", when_used="unless-none")
-    def _serialize_strings[T: Iterable[str]](self, value: T, info: FieldSerializationInfo) -> T | list[str]:
+    @field_serializer("genres", "comments", mode="wrap", when_used="unless-none")
+    def _serialize_strings[T: Iterable[str]](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> T | list[str]:
         if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
-            return value
+            return handler(value)
 
-        values = self._extract_names(value)
+        # noinspection PyTypeChecker
+        values = self._serialize_names(value, handler=handler, info=None)
         self._extend_with_uris(values, info=info)
         return list(map(str, values))
-
-    @field_serializer("album", "album_artist", mode="plain", when_used="unless-none")
-    def _serialize_name(self, value: str | HasName, info: SerializationInfo) -> str | None:
-        if info.by_alias or info.mode == "json":
-            return self._extract_name(value)
-        return self._extract_name(value)
-
-    @field_serializer("artists", mode="plain", when_used="unless-none")
-    def _serialize_names(self, value: Iterable[str | HasName], info: SerializationInfo) -> str | list[str]:
-        if info.mode == "json":
-            return self._extract_names(value)
-        return self._join_split_tags(value)
 
     @field_serializer("bpm", mode="plain", when_used="unless-none")
     def _serialize_bpm[T: Number](self, value: T, info: FieldSerializationInfo) -> T | list[int] | None:
@@ -204,12 +195,12 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
             return
         return [int(value)]
 
-    @field_serializer("track", "disc", mode="plain", when_used="unless-none")
+    @field_serializer("track", "disc", mode="wrap", when_used="unless-none")
     def _serialize_position_tags(
-            self, value: Position, info: FieldSerializationInfo
+            self, value: Position, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> list[tuple] | dict[str, Any] | None:
         if not info.by_alias:  # not serializing to tag IDs
-            return value.model_dump()
+            return handler(value)
         if not isinstance(value, Position):
             return
         return [value.numbers]

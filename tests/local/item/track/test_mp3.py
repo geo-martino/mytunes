@@ -121,7 +121,7 @@ class TestMP3(LocalTrackTester):
         info = Namespace(field_name="name", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
-        result = model._serialize_text_frame(value, info=info)
+        result = model._serialize_text_frame(value, handler=lambda x: x, info=info)
         assert isinstance(result, mutagen.id3.TIT2)
         assert str(result) == value
 
@@ -131,7 +131,7 @@ class TestMP3(LocalTrackTester):
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
-        result = model._serialize_text_frame(value, info=info)
+        result = model._serialize_text_frame(value, handler=lambda x: x, info=info)
         assert isinstance(result, mutagen.id3.COMM)
         assert str(result) == expected
 
@@ -140,7 +140,7 @@ class TestMP3(LocalTrackTester):
         info = Namespace(field_name="artists", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
-        result = model._serialize_text_frame(artists, info=info)
+        result = model._serialize_text_frame(artists, handler=lambda x: x, info=info)
         assert isinstance(result, mutagen.id3.TPE1)
         assert str(result) == expected
 
@@ -149,7 +149,7 @@ class TestMP3(LocalTrackTester):
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
 
         # noinspection PyTypeChecker
-        result = model._serialize_text_frames(expected, info=info)
+        result = model._serialize_text_frames(expected, handler=lambda x: x, info=info)
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
@@ -160,7 +160,7 @@ class TestMP3(LocalTrackTester):
         info = Namespace(field_name="comments", by_alias=True, context=context, mode="python")
 
         # noinspection PyTypeChecker
-        result = model._serialize_text_frames(value, info=info)
+        result = model._serialize_text_frames(value, handler=lambda x: x, info=info)
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
