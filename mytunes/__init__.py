@@ -1,4 +1,5 @@
 """Welcome to MyTunes"""
+import warnings
 from pathlib import Path
 
 PROGRAM_NAME = "MyTunes"
@@ -19,6 +20,11 @@ __all__ = [
     "MODULE_ROOT",
     "PACKAGE_ROOT",
 ]
+
+# WORKAROUND: get way too many warnings when trying to dump tracks, this stops them
+warnings.filterwarnings(
+    "ignore", module="pydantic_core", category=UserWarning, message=".*PydanticSerializationUnexpectedValue.*"
+)
 
 # we must import all the supported URI formats here so that they are registered in the registry
 from .spotify.uri import SpotifyResourceURI, SpotifyUserURI

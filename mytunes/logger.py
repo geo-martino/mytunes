@@ -56,7 +56,7 @@ class Logger(logging.Logger):
         return paths
 
     @property
-    def stdout_handlers(self) -> set[logging.StreamHandler]:
+    def stdout_handlers(self) -> set[logging.Handler]:
         """Get a list of all :py:class:`logging.StreamHandler` handlers that log to stdout"""
         console_handlers = set()
         for handler in self.handlers + list(logging.getHandlerNames()):
