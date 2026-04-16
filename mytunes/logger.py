@@ -122,17 +122,19 @@ class Logger(logging.Logger):
         This ensures the user sees the ``values`` always.
         """
         message = self.generate_message(sep.join(values), header=header)
-        if not values or not self.stdout_handlers or all(h.level > logging.DEBUG for h in self.stdout_handlers):
-            self.console.print(*values, sep=sep, new_line_start=not self.compact, **kwargs)
+        if not values or not self.stdout_handlers or all(
+                logging.DEBUG < h.level <= self.getEffectiveLevel() for h in self.stdout_handlers
+        ):
+            self.console.print(message, sep=sep, new_line_start=not self.compact, **kwargs)
         elif message:
             self.debug(message)
 
     def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
-        if self.compact:
+        if self.compact or not self.stdout_handlers:
             return
 
-        if self.stdout_handlers and any(level >= h.level for h in self.stdout_handlers):
+        if level >= self.getEffectiveLevel():
             self.console.print()
 
     def input(self, text: str | None = None, choices: list[str] | None = None) -> str:
