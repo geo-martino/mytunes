@@ -7,12 +7,11 @@ from functools import cached_property
 from io import BytesIO
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar, Annotated
-import aiofiles
 
 import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from mutagen import FileType, MutagenError
+from mutagen import FileType
 from mytunes._types import StrippedString, to_list
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._base import LocalModel
@@ -224,14 +223,14 @@ class LocalTrack[FT: FileType](
         #  possibly because mutagen only loads the header and not the whole audio file.
         #  Can we implement an async load for just the file header?
 
-        async with aiofiles.open(path, mode='rb') as file:
-            try:
-                file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
-            except MutagenError:  # async load doesn't always work...
-                # fallback to loading synchronously directly through mutagen
-                file = mutagen.File(path, options=cls.__supported_types__)
+        # async with aiofiles.open(path, mode='rb') as file:
+        #     try:
+        #         file = mutagen.File(BytesIO(await file.read()), options=cls.__supported_types__)
+        #     except MutagenError:  # async load doesn't always work...
+        #         # fallback to loading synchronously directly through mutagen
+        #         file = mutagen.File(path, options=cls.__supported_types__)
 
-        # file = mutagen.File(path, options=cls.__supported_types__)
+        file = mutagen.File(path, options=cls.__supported_types__)
         if file is None:
             raise FileError(path=path, message="Failed to load file to the expected type")
 
