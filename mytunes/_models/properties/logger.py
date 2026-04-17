@@ -107,7 +107,6 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
             result = list(filter(lambda x: x is not None, result))
 
         if remove and task_id in self._progress.task_ids:
-            self._progress.update(task_id, completed=True)
             self._progress.remove_task(task_id)
         return result
 
