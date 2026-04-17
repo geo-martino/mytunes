@@ -9,14 +9,14 @@ from mytunes._types import TO_TUPLE
 from mytunes.processors.match import Matcher
 from ._base import Processor
 from .._models import ResourceModel
-from .._models.api import RemoteAPI, IsRemoteService
+from .._models.api import RemoteAPI, HasAPI
 from .._models.api.search import HasSearchEndpoints
 from .._models.collection import CollectionModel, RemoteCollection
 from .._models.collection.album import AlbumCollection
 from mytunes.exception import MyTunesValidationError
 from .._models.properties.asynch import HasAsyncOperations
 from .._models.properties.file import IsFile, IsLocalFile
-from .._models.properties.logger import HasProgress
+from .._models.properties.logger import HasProgress, HasLogger
 from .._models.properties.name import HasName
 from .._models.properties.uri import HasURI
 from .._models.remote import RemoteResource
@@ -90,7 +90,7 @@ class SearchResult[T: Any](TotalCountResult):
 type _ApiT = RemoteAPI | HasSearchEndpoints
 
 
-class Searcher[API: _ApiT](Processor, IsRemoteService, HasProgress, HasAsyncOperations):
+class Searcher[API: _ApiT](Processor, HasProgress, HasAPI[API], HasAsyncOperations):
     api: API = Field(
         description="The API to use when searching for matches.",
     )

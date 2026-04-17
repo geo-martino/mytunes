@@ -22,7 +22,7 @@ from ..._models.properties.uri import HasURI, URI
 from ...logger import REPORT
 
 
-class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsyncOperations):
+class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperations):
     api: API = Field(
         description="The API to use for checking matches.",
     )

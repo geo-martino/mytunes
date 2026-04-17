@@ -96,7 +96,7 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
         return URI.get_adapter_for_source(cls.source).validate_python(value, context=context)
 
 
-class HasAPI[API: RemoteAPI](AttributeModel):
+class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
     api: Annotated[API, Attribute()] = Field(
         description="The API client model used to interact with the remote service."
     )
@@ -127,7 +127,7 @@ class HasAPI[API: RemoteAPI](AttributeModel):
 
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
-            def wrapper(self: IsRemoteService, *args, **kwargs):
+            def wrapper(self: HasAPI, *args, **kwargs):
                 for key, expected_type, context in expected:
                     endpoints = self._validate_endpoints(key=key, context=context, expected=expected_type, name=kind)
                     if endpoints is None:
@@ -175,7 +175,3 @@ class HasCache(HasEndpoints):
                 repository.settings.payload_handler = handler.payload_handler
 
         return self
-
-
-class IsRemoteService[API: RemoteAPI](HasAPI[API], HasLogger, RemoteModel):
-    pass

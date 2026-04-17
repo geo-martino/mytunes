@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from mytunes._models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, IsRemoteService, Endpoints
+from mytunes._models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, Endpoints, HasAPI
 from mytunes._models.api.items import HasTrackEndpoints
 from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
@@ -126,10 +126,10 @@ class TestRemoteAPI(BaseModelTester):
 
 
 class TestHasAPI(BaseModelTester):
-    class MockIsRemoteService(IsRemoteService):
+    class MockHasAPI(HasAPI):
         source: ClassVar[str] = "Test"
 
-        @IsRemoteService._validate_api(
+        @HasAPI._validate_api(
             "playlist",
             False,
             (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -141,8 +141,8 @@ class TestHasAPI(BaseModelTester):
             return True
 
     @pytest.fixture
-    def model(self, api: RemoteAPI) -> IsRemoteService:
-        return self.MockIsRemoteService(api=api)
+    def model(self, api: RemoteAPI) -> HasAPI:
+        return self.MockHasAPI(api=api)
 
     async def test_validate_api_with_valid_api(self, handler: RequestHandler):
         class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasLibraryEndpoints[PlaylistLibraryEndpoints]):
@@ -151,14 +151,14 @@ class TestHasAPI(BaseModelTester):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):
             pass
 
-        model = self.MockIsRemoteService(api=MockAPI(handler=handler))
+        model = self.MockHasAPI(api=MockAPI(handler=handler))
         assert await model.return_bool() is True
 
     async def test_validate_api_fails_on_no_playlist_endpoints(self, handler: RequestHandler):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasTrackEndpoints[MockItemEndpoints]):
             source: ClassVar[str] = "Test"
 
-        model = self.MockIsRemoteService(api=MockAPI(handler=handler))
+        model = self.MockHasAPI(api=MockAPI(handler=handler))
         assert await model.return_bool() is False
 
     async def test_validate_api_fails_on_no_write_library_playlist_endpoints(self, handler: RequestHandler):
@@ -168,5 +168,5 @@ class TestHasAPI(BaseModelTester):
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):
             pass
 
-        model = self.MockIsRemoteService(api=MockAPI(handler=handler))
+        model = self.MockHasAPI(api=MockAPI(handler=handler))
         assert await model.return_bool() is False

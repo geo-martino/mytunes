@@ -10,7 +10,7 @@ from .._models.api.playlist import PlaylistBatchReadEndpoints, PlaylistBatchWrit
 from .._models.api.playlist import PlaylistBatchReadAllEndpoints  # type: ignore[import]
 from .._models.api.user import UserEndpoints  # type: ignore[import]
 
-from .._models.api import HasAPI, HasEndpoints, HasCache, IsRemoteService  # type: ignore[import]
+from .._models.api import HasAPI, HasEndpoints, HasCache  # type: ignore[import]
 from .._models.api.items import HasLibraryEndpoints, HasTrackEndpoints  # type: ignore[import]
 from .._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasGenreEndpoints  # type: ignore[import]
 from .._models.api.search import HasSearchEndpoints  # type: ignore[import]

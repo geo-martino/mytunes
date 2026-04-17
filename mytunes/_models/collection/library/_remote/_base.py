@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from typing import Annotated, Self, Any, TypedDict
 
 import tabulate
-from mytunes._models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
-    CollectionReadEndpoints
+from mytunes._models.api import RemoteAPI, HasLibraryEndpoints, BatchReadAllEndpoints, \
+    CollectionReadEndpoints, HasAPI
 from mytunes._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAllEndpoints, PlaylistReadWriteEndpoints
 from mytunes._models.api.user import HasUserEndpoints
@@ -21,6 +21,7 @@ from mytunes._models.item.track import RemoteTrack
 from mytunes._models.item.user import RemoteUser
 from mytunes._models.metadata import Attribute
 from mytunes._models.properties.uri import URI
+from mytunes._models.remote import RemoteModel
 from mytunes._models.result import Result
 from mytunes.logger import STAT
 
@@ -48,7 +49,7 @@ class RemoteLibrary[
     GT: RemoteGenre,
     UT: RemoteUser,
 ](
-    Library[UT, TT, UT, PT], IsRemoteService[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
+    Library[UT, TT, UT, PT], RemoteModel, HasAPI[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
     @property
     def user(self) -> Annotated[UT | None, Attribute()]:
@@ -124,7 +125,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - playlists
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "playlist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -145,7 +146,7 @@ class RemoteLibrary[
 
         return True
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "playlist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -188,7 +189,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - tracks
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "track",
         False,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -220,7 +221,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - artists
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "artist",
         False,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -239,7 +240,7 @@ class RemoteLibrary[
 
         return True
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "artist",
         False,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -284,7 +285,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - albums
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -303,7 +304,7 @@ class RemoteLibrary[
 
         return True
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "album",
         False,
         (None, HasAlbumEndpoints, "{type} endpoints"),

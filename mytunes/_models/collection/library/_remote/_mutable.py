@@ -2,7 +2,7 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, Annotated
 
 from aiorequestful.response.exception import ResponseError
-from mytunes._models.api import RemoteAPI, IsRemoteService, HasLibraryEndpoints, BatchReadAllEndpoints, \
+from mytunes._models.api import RemoteAPI, HasAPI, HasLibraryEndpoints, BatchReadAllEndpoints, \
     BatchReadEndpoints, BatchWriteEndpoints
 from mytunes._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
@@ -47,7 +47,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Add library items
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -61,7 +61,7 @@ class RemoteMutableLibrary[
         items = await self._add_library_items(items=uris, items_type="tracks", api=api.tracks)
         self.tracks.extend(items)
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -75,7 +75,7 @@ class RemoteMutableLibrary[
         items = await self._add_library_items(items=uris, items_type="artists", api=api.artists)
         self.artists.extend(items)
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -151,7 +151,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Sync library items
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -178,7 +178,7 @@ class RemoteMutableLibrary[
             items=self.tracks, items_type="tracks", kind=kind, api=api.tracks, dry_run=dry_run
         )
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -205,7 +205,7 @@ class RemoteMutableLibrary[
             items=self.artists, items_type="artists", kind=kind, api=api.artists, dry_run=dry_run
         )
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -279,7 +279,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Create/Sync Playlists
     ###########################################################################
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "playlist",
         None,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -300,7 +300,7 @@ class RemoteMutableLibrary[
 
         return playlist
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "playlist",
         dict,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
@@ -397,7 +397,7 @@ class RemoteMutableLibrary[
     def _extract_tracks_from_backup(backup: Any) -> tuple[str | URI, ...]:
         return RemoteMutableLibrary._extract_uris_from_backup(backup, "tracks")
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "track",
         None,
         (None, HasTrackEndpoints, "{type} endpoints"),
@@ -439,7 +439,7 @@ class RemoteMutableLibrary[
     def _extract_artists_from_backup(backup: Any) -> tuple[str | URI, ...]:
         return RemoteMutableLibrary._extract_uris_from_backup(backup, "artists")
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "artist",
         None,
         (None, HasArtistEndpoints, "{type} endpoints"),
@@ -481,7 +481,7 @@ class RemoteMutableLibrary[
     def _extract_albums_from_backup(backup: Any) -> tuple[str | URI, ...]:
         return RemoteMutableLibrary._extract_uris_from_backup(backup, "albums")
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "album",
         None,
         (None, HasAlbumEndpoints, "{type} endpoints"),
@@ -545,7 +545,7 @@ class RemoteMutableLibrary[
         # noinspection PyTypeChecker
         return tuple(map(dict, playlists))
 
-    @IsRemoteService._validate_api(
+    @HasAPI._validate_api(
         "playlist",
         dict,
         (None, HasPlaylistEndpoints, "{type} endpoints"),
