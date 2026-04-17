@@ -64,7 +64,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
 
     @property
     def _options(self) -> dict[str | None, str]:
-        fields = colored(self._logger.format_list_to_string(sorted(self.fields)), "dark_gray", attrs=["dark"])
+        fields = colored(self._logger.format_list_to_string(sorted(self.fields)), "dark_grey", attrs=["dark"])
         return {
             "<Return/Enter>": "Once you are finished with this batch, continue on to the next batch",
             "r": f"Re-open all sites for the current batch of {self.types}",

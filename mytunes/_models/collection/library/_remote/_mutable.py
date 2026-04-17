@@ -269,7 +269,7 @@ class RemoteMutableLibrary[
         filtered_items = self.sync_filter.apply(items)
         difference = len(filtered_items) - initial_count
         if difference:
-            message = colored(f"Filtered out {difference} {items_type}.", "dark_gray", attrs=["dark"])
+            message = colored(f"Filtered out {difference} {items_type}.", "dark_grey", attrs=["dark"])
             self._logger.info(message, header=3)
 
         return items
