@@ -102,7 +102,7 @@ class TestIncrementalSetter(GroupedSetterTester):
 
         model.sort_by = ItemSorter(sort_fields={"name": True})
         model.set(track, tracks)
-        assert track.track.number == expected
+        assert track.track.number == expected  # TODO: flakey assertion - very rare
 
     def test_set_value_with_group(
             self, model: IncrementalSetter, tracks: list[Track], tracks_group: list[Track], faker: Faker

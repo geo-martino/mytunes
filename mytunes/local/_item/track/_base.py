@@ -450,7 +450,18 @@ class LocalTrack[FT: FileType](
         return tuple(fields)
 
     @classmethod
+    def _map_uri_field(cls, fields: Collection[str], context: TagContext = None) -> tuple[str, ...]:
+        fields = list(fields)
+        if context is not None and context.map_uri_to_field and "uri" in fields:
+            fields.remove("uri")
+            fields.append(context.map_uri_to_field)
+
+        return tuple(fields)
+
+    @classmethod
     def _map_tag_fields(cls, fields: Collection[str]) -> tuple[str, ...]:
+        fields = cls._map_uri_field(fields)
+
         tag_fields = []
         for field in cls._validate_tag_fields(fields):
             if (tag_field := cls.__tag_fields__[field]) not in tag_fields:
@@ -480,8 +491,12 @@ class LocalTrack[FT: FileType](
             file: FT,
             include: Collection[str] = (),
             exclude: Collection[str] = (),
+            context: TagContext = None,
     ) -> dict[str, set[str]]:
+        include = cls._map_uri_field(include, context=context)
         include = cls._validate_tag_fields(include or cls.__tag_fields__)
+
+        exclude = cls._map_uri_field(exclude, context=context)
         exclude = cls._validate_tag_fields(exclude)
 
         tag_fields = set(include) - set(exclude)
@@ -534,7 +549,10 @@ class LocalTrack[FT: FileType](
             exclude: Collection[str] = (),
             context: TagContext[FT] = None
     ) -> dict[str, Any]:
+        include = self._map_uri_field(include, context=context)
         include = self._validate_tag_fields(include or self.__tag_fields__)
+
+        exclude = self._map_uri_field(exclude, context=context)
         exclude = self._validate_tag_fields(exclude)
 
         return self.model_dump(

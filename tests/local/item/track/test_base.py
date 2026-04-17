@@ -286,6 +286,13 @@ class TestLocalTrack(UniqueKeyTester):
         result = LocalTrack.clear(file, include=include_tags, exclude=exclude_tags)
         assert set(result) == set(t for t in include_tags if t not in exclude_tags)
 
+    def test_clear_selected_uri_tag(self, file: mutagen.FileType, context: TagContext):
+        result = LocalTrack.clear(file, include={"uri"}, context=context)
+        assert context.map_uri_to_field in result
+
+        result = LocalTrack.clear(file, exclude={"uri"}, context=context)
+        assert context.map_uri_to_field not in result
+
     def test_clear_tag(self, file: mutagen.FileType, tags: dict[str, Any]):
         tag_id = choice(list(tags))
         assert LocalTrack._clear_tag(file, tag_id=tag_id) == {tag_id}
@@ -312,6 +319,13 @@ class TestLocalTrack(UniqueKeyTester):
 
         with pytest.raises(MyTunesValueError):
             model.to_tags(exclude={"name", "does not exist"})
+
+    def test_to_selected_uri_tag(self, model: LocalTrack, context: TagContext):
+        tags = model.to_tags(include={"uri"}, context=context)
+        assert context.map_uri_to_field in tags
+
+        tags = model.to_tags(exclude={"uri"}, context=context)
+        assert context.map_uri_to_field not in tags
 
     # noinspection PyTypeChecker
     def test_to_tags_contains_no_properties(self, model: LocalTrack):
