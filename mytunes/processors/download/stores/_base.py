@@ -82,7 +82,10 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
         if not fields:
             raise StoreError("No fields provided")
 
-        query = self._format_query_for_item(item, fields=fields) + f" {self.additional_query}"
+        query = self._format_query_for_item(item, fields=fields)
+        if self.additional_query:
+            query += f" {self.additional_query}"
+
         path = self._format_query_path_for_item(item, query=query)
 
         params = self._format_query_params_for_item(item, query=query, fields=fields)
