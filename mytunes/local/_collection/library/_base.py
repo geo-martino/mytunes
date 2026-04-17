@@ -1,5 +1,5 @@
 import itertools
-from collections.abc import Generator, Iterable, Collection
+from collections.abc import Generator, Iterable, Collection, Sequence
 from pathlib import Path, PurePath
 from typing import Annotated, ClassVar, final, Any, Self
 
@@ -20,7 +20,7 @@ from mytunes.processors.filters import Filter
 from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.sort import ItemSorter
 from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
-    ModelWrapValidatorHandler, ValidationError
+    ModelWrapValidatorHandler, ValidationError, validate_call
 from pydantic_core.core_schema import ValidationInfo, ValidatorFunctionWrapHandler
 from termcolor import colored
 
@@ -211,6 +211,19 @@ class LocalLibrary(
     def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
         source = self.tracks_context.remote_source
         return LibraryURIsResult.from_tracks(self.tracks, source=source)
+
+    @validate_call
+    async def save_tracks(
+            self,
+            include: set[str] | Sequence[str] = (),
+            exclude: set[str] | Sequence[str] = (),
+            context: TagContext | None = None,
+            replace: bool = False,
+            dry_run: bool = False
+    ) -> dict[Path, dict[str, Any]]:
+        if context is None:
+            context = self.tracks_context
+        return await super().save_tracks(include, exclude, context, replace, dry_run)
 
     ###########################################################################
     ## Playlists

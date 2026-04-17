@@ -636,7 +636,7 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
 
         match self:
             case Library() as lib:
-                message += f"in {lib.source} {lib.type}"
+                message += f" in {lib.source} {lib.type}"
             case ResourceModel() as resource if isinstance(resource.type, str):
                 message += f" in {resource.type}"
 
