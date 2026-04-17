@@ -328,8 +328,6 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
                 return playlist
 
     async def _print_playlist_items(self, playlist: RemoteMutablePlaylist) -> None:
-        self._logger.print_line()
-
         missing_message = colored("No items available", "red", attrs=["bold"])
 
         header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
