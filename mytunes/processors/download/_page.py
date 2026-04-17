@@ -24,12 +24,14 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
     def fields(self) -> tuple[str, ...]:
         """The valid fields for the items in this page"""
         classes: set[type[AttributeModel]] = {type(it) for it in self.items}
-        available_fields = set(
-            itertools.chain.from_iterable(kls.__tag_attributes__ for kls in classes)
-        )
-        valid_fields = {
-            field for field in available_fields if any(getattr(item, field) is not None for item in self.items)
-        }
+        available_fields = set(itertools.chain.from_iterable(kls.__tag_attributes__ for kls in classes))
+
+        valid_fields = set()
+        for field in available_fields:
+            for item in self.items:
+                value = getattr(item, field, None)
+                if value or value == 0:
+                    valid_fields.add(field)
 
         return tuple(valid_fields)
 
