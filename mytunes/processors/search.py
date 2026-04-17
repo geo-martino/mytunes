@@ -90,7 +90,7 @@ class SearchResult[T: Any](TotalCountResult):
 type _ApiT = RemoteAPI | HasSearchEndpoints
 
 
-class Searcher[API: _ApiT](Processor, HasProgress, HasAPI[API], HasAsyncOperations):
+class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperations):
     api: API = Field(
         description="The API to use when searching for matches.",
     )
