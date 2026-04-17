@@ -50,6 +50,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
     def _open_sites_for_item(self, item: IT, urls: Collection[URL]) -> None:
         self._logger.debug(f"Opening {len(urls)} URLs for {self._get_item_log_value(item)!r}")
         for url in urls:
+            self._logger.debug(f"Opening {str(url)!r}")
             webopen(str(url))
 
     ###########################################################################
