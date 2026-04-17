@@ -18,7 +18,7 @@ class JunoDownloadStore(AudioStore[Literal["juno"]]):
 
     @property
     def _base_url(self) -> URL:
-        return URL.build(scheme="https", host=f"junodownload.com")
+        return URL.build(scheme="https", host=f"www.junodownload.com")
 
     def _format_query_path_for_item(self, item: Union[_accepted_types], query: str) -> str:
         return f"search/"
