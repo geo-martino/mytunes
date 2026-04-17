@@ -90,18 +90,18 @@ class StoreManager(Processor, HasLogger, HasProgress):
                 items=batch_items,
                 urls=batch_urls,
             )
-            opened = False
 
             try:
-                fields = self.fields
-                while fields is not None:
-                    page.open_sites()
-                    with self._pause_progress():
-                        fields = page.pause(not opened)
-                        if fields:
-                            page.urls = [self._format_urls_for_item(item, fields=fields) for item in page.items]
+                page.open_sites()
+                fields = page.pause(True)
+                if not fields:
+                    continue
 
-                    opened = True
+                with self._pause_progress():
+                    while fields is not None:
+                        page.urls = [self._format_urls_for_item(item, fields=fields) for item in page.items]
+                        page.open_sites()
+                        fields = page.pause(False)
 
             except SkipPage:
                 self._logger.error("User triggered skip page with skip command")
