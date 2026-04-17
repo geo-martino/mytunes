@@ -139,7 +139,7 @@ class StoreManager(Processor, HasLogger, HasProgress):
                 unique_items.append((item, urls))
             unique_urls.update(urls)
 
-        self._logger.print(f"{repeated} urls were repeated and will only be opened once.")
+        self._logger.debug(f"{repeated} urls were repeated and will only be opened once.")
         return unique_items
 
     ###########################################################################

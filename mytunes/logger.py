@@ -43,36 +43,56 @@ class Logger(logging.Logger):
     console: Console = Console(highlight=False, highlighter=NullHighlighter())
 
     @property
-    def file_paths(self) -> list[Path]:
-        """Get a list of the paths of all file handlers for this logger"""
-        def extract_paths(lggr: logging.Logger) -> None:
-            """Extract file path from the handlers of the given ``lggr``"""
-            for handler in lggr.handlers:
-                if isinstance(handler, logging.FileHandler) and handler.baseFilename not in paths:
-                    paths.append(Path(handler.baseFilename))
+    def stdout_handlers(self) -> list[logging.Handler]:
+        """Get a list of all handlers used by this logger that log to stdout."""
+        handlers = []
+        for handler in self.get_all_handlers():
+            match handler:
+                case logging.StreamHandler() if handler not in handlers and handler.stream == sys.stdout:
+                    handlers.append(handler)
+                case RichHandler() if handler not in handlers:
+                    handlers.append(handler)
 
-        paths = []
-        logger = self
-        extract_paths(logger)
-        while logger.propagate and logger.parent:
-            logger = logger.parent
-            extract_paths(logger)
-        return paths
+        return handlers
 
     @property
-    def stdout_handlers(self) -> set[logging.Handler]:
-        """Get a list of all :py:class:`logging.StreamHandler` handlers that log to stdout"""
-        console_handlers = set()
-        for handler in self.handlers + list(logging.getHandlerNames()):
-            if isinstance(handler, str):
-                handler = logging.getHandlerByName(handler)
-            if isinstance(handler, logging.StreamHandler) and handler.stream == sys.stdout:
-                console_handlers.add(handler)
-            if isinstance(handler, RichHandler):
-                console_handlers.add(handler)
+    def file_handlers(self) -> list[logging.FileHandler]:
+        """Get a list of all handlers used by this logger that log to a file."""
+        handlers = []
+        for handler in self.get_all_handlers():
+            match handler:
+                case logging.FileHandler() if handler not in handlers:
+                    handlers.append(handler)
 
-        return console_handlers
-    
+        return handlers
+
+    @property
+    def file_paths(self) -> list[Path]:
+        """Get a list of the paths of all file handlers for this logger"""
+        paths = []
+        for handler in self.file_handlers:
+            if handler.baseFilename not in paths:
+                paths.append(Path(handler.baseFilename))
+        return paths
+
+    def get_all_handlers(self, logger: logging.Logger = None) -> list[logging.Handler]:
+        """Get all handlers for this logger, including from any parent loggers if propagate is set to True."""
+        if logger is None:
+            logger = self
+
+        handlers = logger.handlers.copy()
+        if not logger.propagate or logger.parent is None:
+            return handlers
+
+        for handler in self.get_all_handlers(logger.parent):
+            if handler not in handlers:
+                handlers.append(handler)
+
+        return handlers
+
+    def _will_log_to_stdout(self, level: int) -> bool:
+        return level >= self.getEffectiveLevel() and any(level >= h.level for h in self.stdout_handlers)
+
     @validate_call
     def debug(
             self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
@@ -107,28 +127,28 @@ class Logger(logging.Logger):
             return
         msg = self.generate_message(msg, header, hidden)
         self._log(EXTRA, msg, args, **kwargs)
-    
+
     @validate_call
     def info(
             self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
     ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().info(msg, *args, **kwargs)
-    
+
     @validate_call
     def warning(
             self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
     ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().warning(msg, *args, **kwargs)
-    
+
     @validate_call
     def error(
             self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
     ) -> None:
         msg = self.generate_message(msg, header, hidden)
         super().error(msg, *args, **kwargs)
-    
+
     @validate_call
     def critical(
             self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
@@ -143,9 +163,7 @@ class Logger(logging.Logger):
         This ensures the user sees the ``values`` always.
         """
         message = self.generate_message(sep.join(values), header=header)
-        if not values or not self.stdout_handlers or all(
-                logging.DEBUG < h.level <= self.getEffectiveLevel() for h in self.stdout_handlers
-        ):
+        if not values or not self._will_log_to_stdout(logging.DEBUG):
             self.console.print(message, sep=sep, new_line_start=not self.compact, **kwargs)
         elif message:
             self.debug(message)
@@ -155,7 +173,7 @@ class Logger(logging.Logger):
         if self.compact or not self.stdout_handlers:
             return
 
-        if level >= self.getEffectiveLevel():
+        if self._will_log_to_stdout(level):
             self.console.print()
 
     def input(self, text: str | None = None, choices: list[str] | None = None) -> str:
