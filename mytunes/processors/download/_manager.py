@@ -92,15 +92,13 @@ class StoreManager(Processor, HasLogger, HasProgress):
             )
 
             try:
-                page.open_sites()
-                fields = page.pause(True)
-                if not fields:
-                    continue
+                page.open_sites(True)
 
                 with self._pause_progress():
+                    fields = page.pause(True)
                     while fields is not None:
                         page.urls = [self._format_urls_for_item(item, fields=fields) for item in page.items]
-                        page.open_sites()
+                        page.open_sites(False)
                         fields = page.pause(False)
 
             except SkipPage:

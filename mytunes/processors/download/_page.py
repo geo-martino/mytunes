@@ -37,7 +37,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
     def types(self) -> str:
         return self._logger.format_types_to_string(self.items) or "items"
 
-    def open_sites(self) -> None:
+    def open_sites(self, progress: bool = True) -> None:
         """Open the sites for this page."""
         self._logger.debug(f"Opening sites for {len(self.items)} {self.types}")
         tasks = [
@@ -45,7 +45,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
             for item, urls in zip(self.items, self.urls, strict=True)
         ]
         remove = self.position.number == self.position.total
-        self._run_tasks(tasks, task_id=self.task_id, remove=remove)
+        self._run_tasks(tasks, task_id=self.task_id if progress else None, remove=remove)
 
     def _open_sites_for_item(self, item: IT, urls: Collection[URL]) -> None:
         self._logger.debug(f"Opening {len(urls)} URLs for {self._get_item_log_value(item)!r}")
