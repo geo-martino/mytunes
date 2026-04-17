@@ -319,7 +319,8 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
         header = colored("Created playlists", "blue", attrs=["bold"])
         rows = (f"{playlist.name} - {playlist.uri.public_url}" for playlist in self._playlists.values())
         rows = map(str, (self._logger.generate_message(row, header=3) for row in sorted(rows)))
-        self._logger.print(header + ":\n" + "\n".join(rows) + "\n")
+        self._logger.print(header + ":\n" + "\n".join(rows))
+        self._logger.print_line()
 
     def _get_playlist_by_name(self, name: str) -> RemoteMutablePlaylist | None:
         for playlist in self._playlists.values():
@@ -327,13 +328,14 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
                 return playlist
 
     async def _print_playlist_items(self, playlist: RemoteMutablePlaylist) -> None:
-        self._logger.print()
+        self._logger.print_line()
 
         missing_message = colored("No items available", "red", attrs=["bold"])
 
         header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
         table = self.playlist_formatter.format(playlist, indices=True) or missing_message
-        self._logger.print(header + ":\n" + table + "\n")
+        self._logger.print(header + ":\n" + table)
+        self._logger.print_line()
 
         items = await self.get_current_playlist_items(playlist.uri)
         if items == list(playlist.items):
@@ -344,4 +346,5 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
 
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
         table = self.playlist_formatter.format(playlist, indices=True) or missing_message
-        self._logger.print(header + ":\n" + table + "\n")
+        self._logger.print(header + ":\n" + table)
+        self._logger.print_line()

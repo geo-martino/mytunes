@@ -82,7 +82,8 @@ class OptionsProcessor(InputProcessor):
         if additional_text := options.get(None):
             log += f"\n{additional_text}"
 
-        self._logger.print(log + "\n")
+        self._logger.print(log)
+        self._logger.print_line()
 
     def _get_user_input(
             self, text: str = "Enter input", formatter: LogFormatter | None = None, choices: list[str] | None = None
