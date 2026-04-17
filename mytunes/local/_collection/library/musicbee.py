@@ -13,11 +13,10 @@ from typing import Any, ClassVar, Self, Annotated, final
 from urllib.parse import quote, unquote
 
 import aiofiles
-from mytunes._models.properties.path import PathStemMapper, PathMapper
+from mytunes._models.properties.path import PathStemMapper, PathMapper, SystemPath, SystemPaths
 from mytunes._types import to_set
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._collection.library._base import LocalLibrary
-from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local.exception import XMLReaderError, FileDoesNotExistError
 from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePath, BeforeValidator, \
@@ -61,12 +60,12 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     _xml_library_path_keys: ClassVar[set[str]] = {"Location", "Music Folder"}
 
     musicbee_folder: Annotated[
-        DirectoryPath, BeforeValidator(LocalSystemPath.get_current_system_path)
+        DirectoryPath, BeforeValidator(SystemPath.get_current_system_path)
     ] = Field(
         description="The absolute path of the musicbee folder containing settings and library files.",
     )
     library_folders: Annotated[
-        set[DirectoryPath], BeforeValidator(LocalSystemPaths.get_current_system_paths)
+        set[DirectoryPath], BeforeValidator(SystemPaths.get_current_system_paths)
     ] = Field(
         description="Set of folders to scan for music files.",
         default_factory=set,
@@ -74,7 +73,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         frozen=True,
     )
     playlist_folder: Annotated[
-         Path, BeforeValidator(LocalSystemPath.get_current_system_path)
+         Path, BeforeValidator(SystemPath.get_current_system_path)
     ] = Field(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=Path("Playlists"),
@@ -97,7 +96,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             return data
 
         with suppress(TypeError):
-            path = LocalSystemPath.get_current_system_path(data[key])
+            path = SystemPath.get_current_system_path(data[key])
             data["path"] = path.joinpath(cls._xml_library_path)
         return data
 
@@ -108,7 +107,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
     ) -> Self:
         paths = cls._get_value_from_data(data, "musicbee_folder")
         try:
-            paths = LocalSystemPath.model_validate(paths)
+            paths = SystemPath.model_validate(paths)
         except ValidationError:
             return handler(data)
 

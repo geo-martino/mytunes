@@ -5,7 +5,7 @@ from typing import Annotated, ClassVar, final, Any, Self
 
 import tabulate
 from mutagen import MutagenError
-from mytunes._models.properties.path import PathMapper, PathStemMapper
+from mytunes._models.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes._types import to_set
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
@@ -13,7 +13,6 @@ from mytunes.local._collection.album import LocalAlbumCollection
 from mytunes.local._collection.artist import LocalArtistCollection
 from mytunes.local._collection.folder import Folder
 from mytunes.local._collection.genre import LocalGenreCollection
-from mytunes.local._collection.library._path import LocalSystemPath, LocalSystemPaths
 from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
 from mytunes.local._collection.playlist.result import LoadPlaylistResult
 from mytunes.logger import STAT
@@ -48,13 +47,13 @@ class LocalLibrary(
     source: ClassVar[str] = "Local"
 
     library_folders: Annotated[
-        set[DirectoryPath], BeforeValidator(LocalSystemPaths.get_current_system_paths)
+        set[DirectoryPath], BeforeValidator(SystemPaths.get_current_system_paths)
     ] = Field(
         description="Set of folders to scan for music files.",
         default_factory=set,
     )
     playlist_folder: Annotated[
-         Path, BeforeValidator(LocalSystemPath.get_current_system_path)
+         Path, BeforeValidator(SystemPath.get_current_system_path)
     ] | None = Field(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=None,
@@ -94,7 +93,7 @@ class LocalLibrary(
     ) -> Self:
         paths = cls._get_value_from_data(data, "library_folders")
         try:
-            paths = LocalSystemPaths.model_validate(paths)
+            paths = SystemPaths.model_validate(paths)
         except ValidationError:
             return handler(data)
 

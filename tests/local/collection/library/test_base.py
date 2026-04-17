@@ -9,8 +9,8 @@ from unittest.mock import patch, Mock
 import pytest
 from faker import Faker
 from mytunes._models.collection.playlist import Playlist
-from mytunes._models.properties.path import PathStemMapper
-from mytunes.local._collection.library import LocalLibrary, LocalSystemPath, LocalSystemPaths
+from mytunes._models.properties.path import PathStemMapper, SystemPath, SystemPaths
+from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import LoadPlaylistResult
 from mytunes.local._item.album import LocalAlbum
@@ -149,7 +149,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
             self, library_folders: list[Path], platform: str, system_paths: dict[str, str], faker: Faker
     ):
         system_paths |= {platform: library_folders}  # should overwrite the randomly generated one
-        system_paths = LocalSystemPaths(**system_paths)
+        system_paths = SystemPaths(**system_paths)
 
         initial_path_map = {faker.file_path(): faker.file_path()}
         path_mapper = PathStemMapper(stem_map=initial_path_map)
@@ -159,7 +159,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert model.path_mapper.stem_map.keys() == set(map(str, system_paths.others)) | initial_path_map.keys()
 
         # we can only guarantee that one of the library folders will be selected
-        # as LocalSystemPaths uses sets so order is not guaranteed
+        # as SystemPaths uses sets so order is not guaranteed
         mapped_paths = set(model.path_mapper.stem_map.values())
         assert len(mapped_paths) == 1 + len(initial_path_map)
         assert any(path in set(map(str, library_folders)) for path in mapped_paths)

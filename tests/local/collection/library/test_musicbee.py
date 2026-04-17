@@ -7,8 +7,8 @@ from unittest.mock import patch, AsyncMock
 
 import pytest
 from faker import Faker
-from mytunes._models.properties.path import PathStemMapper
-from mytunes.local._collection.library import LocalLibrary, LocalSystemPaths, LocalSystemPath
+from mytunes._models.properties.path import PathStemMapper, SystemPath, SystemPaths
+from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.library.musicbee import XMLLibraryParser
 from mytunes.local._item.track import LocalTrack
@@ -126,7 +126,7 @@ class TestMusicBee(NoUniqueKeyTester):
             faker: Faker,
     ):
         system_paths |= {platform: musicbee_folder}  # should overwrite the randomly generated one
-        system_paths = LocalSystemPath(**system_paths)
+        system_paths = SystemPath(**system_paths)
 
         initial_path_map = {faker.file_path(): faker.file_path()}
         path_mapper = PathStemMapper(stem_map=initial_path_map)
