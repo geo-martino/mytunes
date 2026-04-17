@@ -19,6 +19,7 @@ from ..._models.properties.asynch import HasAsyncOperations
 from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.properties.order import Position
 from ..._models.properties.uri import HasURI, URI
+from ...logger import REPORT
 
 
 class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsyncOperations):
@@ -121,6 +122,7 @@ class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsy
         """Log the given check results"""
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)
+        self._logger.print_line(REPORT)
         self._logger.report(table)
 
     def _log_start(self, collections: Sequence[CollectionModel]) -> None:
