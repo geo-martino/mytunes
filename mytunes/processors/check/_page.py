@@ -333,10 +333,10 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
         header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
         table = self.playlist_formatter.format(playlist, indices=True) or missing_message
         self._logger.print(header + ":\n" + table)
-        self._logger.print_line()
 
         items = await self.get_current_playlist_items(playlist.uri)
         if items == list(playlist.items):
+            self._logger.print_line()
             return
 
         playlist = deepcopy(playlist)
