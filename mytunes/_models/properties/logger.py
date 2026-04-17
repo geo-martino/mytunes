@@ -83,7 +83,7 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
     def _wrap_task[T](self, task: Callable[[], T], task_id: TaskID | None = None) -> T | None:
         result = task()
         if task_id is not None and task_id in self._progress.task_ids:
-            self._progress.advance(task_id, advance=1)
+            self._progress.advance(task_id)
         return result
 
     async def _run_tasks_async[T](
@@ -107,11 +107,12 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
             result = list(filter(lambda x: x is not None, result))
 
         if remove and task_id in self._progress.task_ids:
+            self._progress.update(task_id, completed=True)
             self._progress.remove_task(task_id)
         return result
 
     async def _wrap_task_async[T](self, task: Awaitable[T], task_id: TaskID | None = None) -> T:
         result = await task
         if task_id is not None and task_id in self._progress.task_ids:
-            self._progress.advance(task_id, advance=1)
+            self._progress.advance(task_id)
         return result

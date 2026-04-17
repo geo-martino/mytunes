@@ -97,7 +97,7 @@ class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsy
                 result = await self._match_page(page, uri=uri)
                 yield name, result
 
-                self._progress.advance(task_id, advance=1)
+                self._progress.advance(task_id)
 
             self._progress.remove_task(task_id)
 
