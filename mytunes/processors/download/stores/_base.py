@@ -2,7 +2,6 @@ import locale as locale_module
 from abc import abstractmethod
 from collections.abc import Sequence, Iterable, Collection, Mapping
 from typing import ClassVar, Literal, Any, Union, get_args, Annotated, final, Self
-from urllib.parse import quote
 
 from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter
 from yarl import URL
@@ -113,7 +112,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
             if value:
                 query_parts.append(value)
 
-        return quote(" ".join(query_parts))
+        return " ".join(query_parts)
 
     def _get_query_part(self, item: Union[_accepted_types]) -> str | None:
         match item:
