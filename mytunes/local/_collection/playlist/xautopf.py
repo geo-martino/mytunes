@@ -230,7 +230,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         table = GroupResult.generate_table(results={self.name: result})
         self._logger.stat(table)
 
-    async def save(self, dry_run: bool = True, *_, **__) -> SyncXAutoPFResult:
+    async def save(self, dry_run: bool = False, *_, **__) -> SyncXAutoPFResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
 

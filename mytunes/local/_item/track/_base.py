@@ -603,7 +603,7 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
             exclude: set[str] | Sequence[str] = (),
             context: TagContext | None = None,
             replace: bool = False,
-            dry_run: bool = True
+            dry_run: bool = False
     ) -> dict[Path, dict[str, Any]]:
         """
         Save tags for all tracks in this collection.

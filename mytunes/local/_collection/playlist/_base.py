@@ -122,7 +122,7 @@ class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteab
         raise NotImplementedError
 
     @abstractmethod
-    async def save(self, dry_run: bool = True, *args, **kwargs) -> SavePlaylistResult:
+    async def save(self, dry_run: bool = False, *args, **kwargs) -> SavePlaylistResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
 

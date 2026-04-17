@@ -317,7 +317,7 @@ class LocalLibrary(
             for playlist in self.playlists.unique
         }
 
-    async def save_playlists(self, dry_run: bool = True) -> dict[str, Result]:
+    async def save_playlists(self, dry_run: bool = False) -> dict[str, Result]:
         """
         Save associated tracks and settings (if applicable) for all playlists in this library.
 

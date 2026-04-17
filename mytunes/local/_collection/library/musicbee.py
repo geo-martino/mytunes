@@ -218,7 +218,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
         self.errors.append(path)
 
-    async def save(self, dry_run: bool = True, *_, **__) -> dict[str, Any]:
+    async def save(self, dry_run: bool = False, *_, **__) -> dict[str, Any]:
         """
         Generate and save the XML library file for this MusicBee library.
 
