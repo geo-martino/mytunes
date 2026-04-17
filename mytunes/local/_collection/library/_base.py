@@ -128,6 +128,7 @@ class LocalLibrary(
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
         self._logger.stat(table, new_line_start=True)
+        self._logger.print_line(STAT)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -205,6 +206,7 @@ class LocalLibrary(
         table = result.generate_table(results={key: result})
 
         self._logger.stat(table)
+        self._logger.print_line(STAT)
 
     def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
         source = self.tracks_context.remote_source
@@ -311,6 +313,7 @@ class LocalLibrary(
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
         self._logger.stat(table)
+        self._logger.print_line(STAT)
 
     def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
         source = self.tracks_context.remote_source

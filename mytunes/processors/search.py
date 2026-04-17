@@ -22,6 +22,7 @@ from .._models.properties.uri import HasURI
 from .._models.remote import RemoteResource
 from .._models.result import TotalCountResult, LenLogFormatter
 from .._utils import truncate_string
+from ..logger import REPORT
 
 
 class SearchResult[T: Any](TotalCountResult):
@@ -420,7 +421,9 @@ class Searcher[API: _ApiT](Processor, IsRemoteService, HasProgress, HasAsyncOper
         """Log the given search results"""
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)
+
         self._logger.report(table)
+        self._logger.print_line(REPORT)
 
     def _log_start(self, items: Collection, default_type: str) -> None:
         types = self._logger.format_types_to_string(items) or default_type

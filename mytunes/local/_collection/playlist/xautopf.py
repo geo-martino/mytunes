@@ -33,6 +33,7 @@ from ..._item.track import LocalTrack
 from ...._models import BaseModel
 from ...._models.result import LogFormatter
 from ...._models.sequence import MutableUniqueSequence
+from ....logger import STAT
 
 try:
     import xmltodict
@@ -228,7 +229,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     def log_load(self, result: GroupResult) -> None:
         """Log the given results of loading tracks."""
         table = GroupResult.generate_table(results={self.name: result})
+
         self._logger.stat(table)
+        self._logger.print_line(STAT)
 
     async def save(self, dry_run: bool = False, *_, **__) -> SyncXAutoPFResult:
         """
@@ -306,7 +309,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
     def log_save(self, result: SyncXAutoPFResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncXAutoPFResult.generate_table(results={self.name: result})
+
         self._logger.stat(table)
+        self._logger.print_line(STAT)
 
 
 class _XMLField(metaclass=ABCMeta):

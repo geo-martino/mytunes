@@ -145,6 +145,7 @@ class RemoteMutableLibrary[
         table = SyncRemoteResult.generate_table(results=results, header=header)
 
         self._logger.stat(table)
+        self._logger.print_line(STAT)
 
     ###########################################################################
     ## Sync library items

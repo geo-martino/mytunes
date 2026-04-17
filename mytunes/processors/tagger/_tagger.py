@@ -11,7 +11,7 @@ from ..._models import AttributeModel, ResourceModel
 from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.result import Result, MapLogFormatter
 from ..._types import TO_TUPLE
-from ...logger import Logger
+from ...logger import Logger, REPORT
 
 
 class TaggerResult(Result):
@@ -81,4 +81,6 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         """Log the given tagger results"""
         header = "TAGGER RESULTS"
         table = TaggerResult.generate_table(results=results, header=header)
+
         self._logger.report(table)
+        self._logger.print_line(REPORT)

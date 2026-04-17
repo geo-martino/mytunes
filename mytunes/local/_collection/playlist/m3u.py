@@ -13,6 +13,7 @@ from ..._item.track import LocalTrack, LOCAL_TRACK_ADAPTER
 from ...._models.properties.path import PathInputType
 from ...._models.result import LogFormatter
 from ...._models.sequence import MutableUniqueSequence
+from ....logger import STAT
 
 
 class SyncM3UResult(SavePlaylistResult):
@@ -185,4 +186,6 @@ class M3U(LocalPlaylist[PathFilter]):
     def log_save(self, result: SyncM3UResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncM3UResult.generate_table(results={self.name: result})
+
         self._logger.stat(table)
+        self._logger.print_line(STAT)
