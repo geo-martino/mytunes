@@ -89,6 +89,12 @@ class TestStoreManager(BaseModelTester):
         """Fixture which returns a list of tracks with some duplicates present"""
         return unique_tracks * 4
 
+    def test_from_names(self, model: StoreManager, faker: Faker) -> None:
+        # only select stores which don't need extra configuration
+        names = {"bandcamp", "qobuz", "7digital"}
+        model = StoreManager(stores=names, **model.model_dump(exclude={"stores"}))
+        assert {store.name for store in model.stores} == names
+
     def test_open_sites_for_collections(
             self,
             model: StoreManager,

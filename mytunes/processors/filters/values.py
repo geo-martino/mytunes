@@ -126,11 +126,11 @@ class PathFilter(ValueFilter[str]):
         return (str(value) if isinstance(value, Path) else value for value in values)
 
     @model_validator(mode="after")
-    def _map_paths(self) -> Self:
+    def _unmap_paths(self) -> Self:
         if self.path_mapper is None:
             return self
 
-        values = set(self.path_mapper.map_many(self.values, check_existence=False))
+        values = set(self.path_mapper.unmap_many(self.values, check_existence=False))
         if values != self.values:
             self.__dict__["values"] = values
         return self
