@@ -73,7 +73,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
 
     playlist_formatter: CollectionFormatter[RemotePlaylist] = Field(
         description="The formatter to use for formatting info about the playlists during the check.",
-        default_factory=lambda: CollectionFormatter(
+        default=CollectionFormatter(
             fields=("Name", "URI", "Public URL"),
             colours=("white", "red", "yellow"),
             header=False,

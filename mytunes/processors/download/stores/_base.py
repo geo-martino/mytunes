@@ -141,7 +141,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
 class HasLocale(BaseModel, metaclass=AudioStoreMetaclass):
     locale: Literal[*list(locale_module.locale_alias.values())] = Field(
         description="The locale of the store to access.",
-        default_factory=lambda: locale_module.getdefaultlocale()[0],
+        default=locale_module.getdefaultlocale()[0],
     )
 
     @field_validator("locale", mode="before", check_fields=True)

@@ -30,7 +30,7 @@ class Checker[API: _ApiT](Processor, HasLogger, HasProgress, HasAPI[API], HasAsy
             "The matcher to use for confirming closest matches returned by the API "
             "when comparing changes in playlists"
         ),
-        default_factory=lambda: Matcher(scorers=[NameScorer()]),
+        default=Matcher(scorers=[NameScorer()]),
     )
     interval: PositiveInt = Field(
         description="The number of playlists to create before pausing for user input.",
