@@ -18,6 +18,7 @@ from mytunes._models.item.track import RemoteTrack
 from mytunes._models.item.user import RemoteUser
 from mytunes._models.properties.uri import HasURI, URI
 from mytunes.exception import MyTunesTypeError
+from mytunes.logger import STAT
 from mytunes.processors.filters.compare import ComparerFilter
 from pydantic import Field, validate_call, BeforeValidator
 from termcolor import colored

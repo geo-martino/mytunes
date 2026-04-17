@@ -5,6 +5,7 @@ from contextlib import suppress
 from copy import copy
 from functools import cached_property
 from io import BytesIO
+from logging import DEBUG
 from pathlib import Path
 from typing import Self, Any, Literal, ClassVar, Annotated
 
@@ -646,6 +647,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
 
     def log_save_tracks_results(self, results: Mapping[Path, Iterable[str]]) -> None:
         """Log the given results of saving tracks."""
+        self._logger.print_line(DEBUG)
+
         for path, tags in results.items():
             if tags:
                 self._logger.debug(f"Updated {path.name} with tags: {', '.join(tags)}")
