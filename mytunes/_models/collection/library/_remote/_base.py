@@ -86,8 +86,6 @@ class RemoteLibrary[
             await self.load_library_artists()
             await self.load_library_artist_albums()
 
-        self._logger.print_line(STAT)
-
         header = f"{self._log_name.upper()} LIBRARY"
         results: dict[str, Result | None] = self._generate_playlist_results()
         results[tabulate.SEPARATING_LINE] = None
@@ -96,8 +94,7 @@ class RemoteLibrary[
         results["SAVED ALBUMS"] = self._generate_album_results()
         table = Result.generate_table(results=results, header=header)
 
-        self._logger.print_line(STAT)
-        self._logger.stat(table)
+        self._logger.stat(table, new_line_start=True)
 
     def dump(self) -> RemoteLibraryDump[UT]:
         names_seen = set()

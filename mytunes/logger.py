@@ -93,68 +93,37 @@ class Logger(logging.Logger):
     def _will_log_to_stdout(self, level: int) -> bool:
         return level >= self.getEffectiveLevel() and any(level >= h.level for h in self.stdout_handlers)
 
-    @validate_call
-    def debug(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
-        msg = self.generate_message(msg, header, hidden)
-        super().debug(msg, *args, **kwargs)
+    def _log(
+            self,
+            level: int,
+            msg: object,
+            args: logging._ArgsType = (),
+            header: HeaderType | None = None,
+            hidden: str | None = None,
+            new_line_start: bool = False,
+            **kwargs,
+    ):
+        if not self.compact and new_line_start:
+            self.print_line(level)
 
-    def stat(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
+        msg = self.generate_message(msg, header, hidden)
+        super()._log(level, msg, args, **kwargs)
+
+    def stat(self, *args, **kwargs) -> None:
         """Log 'msg % args' with severity 'STAT'."""
-        if not self.isEnabledFor(STAT):
-            return
-        msg = self.generate_message(msg, header, hidden)
-        self._log(STAT, msg, args, **kwargs)
+        if self.isEnabledFor(STAT):
+            self._log(STAT, *args, **kwargs)
 
-    def report(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
+    def report(self, *args, **kwargs) -> None:
         """Log 'msg % args' with severity 'REPORT'."""
-        if not self.isEnabledFor(REPORT):
-            return
-        msg = self.generate_message(msg, header, hidden)
-        self._log(REPORT, msg, args, **kwargs)
+        if self.isEnabledFor(REPORT):
+            self._log(REPORT, *args, **kwargs)
 
     @validate_call
-    def extra(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
+    def extra(self, *args, **kwargs) -> None:
         """Log 'msg % args' with severity 'EXTRA'."""
         if not self.isEnabledFor(EXTRA):
-            return
-        msg = self.generate_message(msg, header, hidden)
-        self._log(EXTRA, msg, args, **kwargs)
-
-    @validate_call
-    def info(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
-        msg = self.generate_message(msg, header, hidden)
-        super().info(msg, *args, **kwargs)
-
-    @validate_call
-    def warning(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
-        msg = self.generate_message(msg, header, hidden)
-        super().warning(msg, *args, **kwargs)
-
-    @validate_call
-    def error(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
-        msg = self.generate_message(msg, header, hidden)
-        super().error(msg, *args, **kwargs)
-
-    @validate_call
-    def critical(
-            self, msg: object, *args, header: HeaderType | None = None, hidden: str | None = None, **kwargs
-    ) -> None:
-        msg = self.generate_message(msg, header, hidden)
-        super().critical(msg, *args, **kwargs)
+            self._log(EXTRA, *args, **kwargs)
 
     def print(self, *values, sep=' ', header: int | None = None, **kwargs) -> None:
         """
@@ -209,7 +178,7 @@ class Logger(logging.Logger):
             hidden = colored(hidden, "dark_grey", attrs=["dark"])
 
         parts = [header, message, hidden]
-        return " ".join(part for part in parts if part).strip()
+        return " ".join(map(str, (part for part in parts if part))).strip()
 
     @classmethod
     def format_types_to_string(cls, items: Iterable[Any]) -> str:

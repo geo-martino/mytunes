@@ -117,17 +117,17 @@ class LocalLibrary(
             await self.load_tracks()
             playlist_results = await self.load_playlists()
 
-        self._logger.print_line(STAT)
-        self._log_load_playlists(playlist_results)
+        self._log_playlist_load(playlist_results)
+        self._log_library_uris()
 
+    def _log_library_uris(self):
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
         results: dict[str, LibraryURIsResult | None] = self._generate_playlist_uris_results()
         results[tabulate.SEPARATING_LINE] = None
         results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        self._logger.print_line(STAT)
-        self._logger.stat(table)
+        self._logger.stat(table, new_line_start=True)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -137,8 +137,7 @@ class LocalLibrary(
         errors = list(map(lambda e: colored(e, "red"), sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
-        self._logger.warning(log)
-        self._logger.print_line()
+        self._logger.warning(log, new_line_start=True)
         self.errors.clear()
 
     ###########################################################################
@@ -198,6 +197,9 @@ class LocalLibrary(
                 yield path
 
     def log_tracks(self) -> None:
+        self._log_track_uris()
+
+    def _log_track_uris(self) -> None:
         result = self._generate_track_uris_results()
         key = f"{self.source.upper()} TRACK URIS"
         table = result.generate_table(results={key: result})
@@ -294,14 +296,14 @@ class LocalLibrary(
 
     def log_playlists(self, results: dict[str, LoadPlaylistResult] = None) -> None:
         if results:
-            self._log_load_playlists(results)
+            self._log_playlist_load(results)
         self._log_playlist_uris()
 
-    def _log_load_playlists(self, results: dict[str, LoadPlaylistResult]) -> None:
+    def _log_playlist_load(self, results: dict[str, LoadPlaylistResult]) -> None:
         header = f"{self.source.upper()} PLAYLISTS LOADED"
         table = LoadPlaylistResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table)
+        self._logger.stat(table, new_line_start=True)
 
     def _log_playlist_uris(self) -> None:
         results = self._generate_playlist_uris_results()
