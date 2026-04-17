@@ -75,8 +75,9 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
             None: colored("\nValid fields: ", "white") + fields
         }
 
-    def pause(self) -> tuple[str, ...] | None:
-        super().pause()
+    def pause(self, print_help: bool = True) -> tuple[str, ...] | None:
+        if print_help:
+            super().pause()
 
         while option := self._get_user_input():
             match option.casefold():
