@@ -44,15 +44,18 @@ class EndpointsMetaclass(ModelMetaclass):
             return Logger.format_list_to_string((arg.type for arg in get_args(kls)))
         return kls.type
 
-    def item_type_name(cls) -> str:
+    def item_type_name(cls) -> str | None:
         """The name for the type of items in the collection resource handled by this Endpoint type if applicable."""
+        if not issubclass(cls, (CollectionReadEndpoints, CollectionWriteEndpoints)):
+            return None
+
         kls = cast('type[Endpoints]', cls)
         with suppress(MyTunesTypeError):
             kls = get_generic(kls, expected=RemoteResource, not_expected=RemoteCollection, base=Endpoints)
             if get_origin(kls) is UnionType:
                 return Logger.format_list_to_string((arg.type for arg in get_args(kls)))
             return kls.type
-        return "item"
+        return None
 
     def type_adapter(cls) -> TypeAdapter[RemoteResource]:
         """The type adapter for the resources handled by this Endpoint type."""
@@ -239,7 +242,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         item_type = type(self).item_type_name
         amount = cursor.total or "all"
 
-        if item_type != collection_type:
+        if item_type and item_type != collection_type:
             message = f"Extending {collection_type} with {amount} {item_type}s"
         else:
             message = f"Getting {amount} {item_type}s"
@@ -254,7 +257,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
             message += f"{len(items):>6}"
 
         message += f" {item_type}s"
-        if item_type != collection_type:
+        if item_type and item_type != collection_type:
             message += f" for {collection_type}"
 
         self._handler.log("DONE", cursor.url, message=message)
@@ -326,7 +329,10 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
 
         collection_type = type(self).type_name
         item_type = type(self).item_type_name
-        desc_type = f"{collection_type} {item_type}" if item_type != collection_type else collection_type
+        if item_type and item_type != collection_type:
+            desc_type = f"{collection_type} {item_type}"
+        else:
+            desc_type = collection_type
 
         task_id = self._progress.add_task(description=f"Getting {desc_type}s", total=len(cursors))
         tasks = map(self._get_page, cursors)
@@ -351,7 +357,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         """Thin wrapper for sending a get request from a page cursor while also formatting a log message"""
         log_message = None
         if isinstance(page, IndexCursor):
-            item_type = type(self).item_type_name
+            item_type = type(self).item_type_name or "item"
             log_message = f"{page.offset:>6}/{page.total:<6} {item_type}s"
 
         return await self._handler.get(page.url, log_message=log_message)
@@ -619,7 +625,7 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
     ) -> int:
         """Add items to the current user's library items for this endpoint resource type."""
         collection_type = type(self).type_name
-        item_type = type(self).item_type_name
+        item_type = type(self).item_type_name or "item"
 
         if not uris:
             self._handler.log("SKIP", url, message=f"No {item_type}s given to add")
@@ -662,7 +668,7 @@ class CollectionWriteEndpoints[UT: URI, RT: RemoteResource, IT: HasURI](Endpoint
     ) -> int:
         """Remove items from the current user's library items for this endpoint resource type."""
         collection_type = type(self).type_name
-        item_type = type(self).item_type_name
+        item_type = type(self).item_type_name or "item"
 
         if not uris:
             self._handler.log("SKIP", url, message=f"No {item_type}s given to remove")
@@ -722,7 +728,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         :param uris: A list of URIs. See above for accepted formats.
         :param limit: The number of URIs to send in each request to the API.
         """
-        item_type = type(self).item_type_name
+        item_type = type(self).item_type_name or "item"
 
         if not uris:
             self._handler.log("SKIP", self._read_url, message=f"No {item_type}s given to add")
@@ -808,7 +814,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def add_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Add items in batches for this endpoint resource type."""
-        item_type = type(self).item_type_name
+        item_type = type(self).item_type_name or "item"
 
         if not uris:
             self._handler.log("SKIP", self._write_url, message=f"No {item_type}s given to add")
@@ -843,7 +849,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @ApiURISchema.validate_call("uris", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
     async def remove_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> int:
         """Remote items in batches for this endpoint resource type."""
-        item_type = type(self).item_type_name
+        item_type = type(self).item_type_name or "item"
 
         if not uris:
             self._handler.log("SKIP", self._write_url, message=f"No {item_type}s given to remove")
