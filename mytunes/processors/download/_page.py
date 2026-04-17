@@ -64,6 +64,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
 
     @property
     def _options(self) -> dict[str | None, str]:
+        fields = colored(self._logger.format_list_to_string(sorted(self.fields)), "dark_gray", attrs=["dark"])
         return {
             "<Return/Enter>": "Once you are finished with this batch, continue on to the next batch",
             "r": f"Re-open all sites for the current batch of {self.types}",
@@ -71,7 +72,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
                 f"Re-open all sites for the current batch of {self.types} using the input list of fields, "
                 "each separated by a space e.g. title artist album",
             "q": f"Skip opening sites for any remaining {self.types} and quit",
-            None: f"Valid fields: {self._logger.format_list_to_string(sorted(self.fields))}"
+            None: colored("\nValid fields: ", "white") + fields
         }
 
     def pause(self) -> tuple[str, ...] | None:

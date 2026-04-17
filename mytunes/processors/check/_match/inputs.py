@@ -103,7 +103,7 @@ class InputMatch[IT: HasMutableURI](CheckerMatch[IT], OptionsProcessor):
             ),
             "s": "Skip checking process for all current playlists",
             "q": "Skip checking process for all current playlists and quit check",
-            None: "OR enter a custom URI/URL/ID for this item",
+            None: colored("OR enter a custom URI/URL/ID for this item", "white")
         }
 
     async def _match_item_with_input(
