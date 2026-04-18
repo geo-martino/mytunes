@@ -25,7 +25,7 @@ class TestSearchEndpoints(EndpointsTester):
 
     # noinspection PyMethodOverriding
     @pytest.fixture
-    def mock_get(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
+    def mock_get(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock]:
         response = {
             model._query_path.path[0]: {"tracks": [{"name": faker.name()}], "albums": [{"name": faker.name()}]}
         }
@@ -35,7 +35,7 @@ class TestSearchEndpoints(EndpointsTester):
             mock_get.assert_called_once()
 
     @pytest.fixture
-    def mock_query_params(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock, None, None]:
+    def mock_query_params(self, model: SearchEndpoints, faker: Faker) -> Generator[Mock]:
         def _format_query_params(
                 query: str, types: set[str], limit: PositiveInt | None = None, **kwargs
         ) -> dict[str, Any]:

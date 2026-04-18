@@ -34,7 +34,7 @@ class TestMusicBee(NoUniqueKeyTester):
         return tracks
 
     @pytest.fixture
-    def settings_xml(self, library_folders: list[Path], tmp_path: Path) -> Generator[dict[str, Any], None, None]:
+    def settings_xml(self, library_folders: list[Path], tmp_path: Path) -> Generator[dict[str, Any]]:
         """Mocks the XML settings parser to return a sample parsed XML dict."""
         xml = {
             "ApplicationSettings": {
@@ -47,7 +47,7 @@ class TestMusicBee(NoUniqueKeyTester):
             yield xml
 
     @pytest.fixture
-    def library_xml(self, tracks: list[LocalTrack], faker: Faker) -> Generator[dict[str, Any], None, None]:
+    def library_xml(self, tracks: list[LocalTrack], faker: Faker) -> Generator[dict[str, Any]]:
         """Mocks the XML library parser to return a sample parsed XML dict."""
         tracks = tracks[:len(tracks) // 2]  # only map some tracks
         tracks_xml = [MusicBee._track_to_xml(track, track_id=i) for i, track in enumerate(tracks, 1)]

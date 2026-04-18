@@ -127,7 +127,7 @@ def invalid_items(faker: Faker) -> list[Genre]:
 
 
 @pytest.fixture(autouse=True)
-def mock_get_playlist_items(available_items: list[HasURI], faker: Faker) -> Generator[Mock, None, None]:
+def mock_get_playlist_items(available_items: list[HasURI], faker: Faker) -> Generator[Mock]:
     with patch.object(
             PlaylistReadWriteEndpoints, "get_all", return_value=available_items, new_callable=AsyncMock
     ) as mock_get_all:
@@ -135,7 +135,7 @@ def mock_get_playlist_items(available_items: list[HasURI], faker: Faker) -> Gene
 
 
 @pytest.fixture(autouse=True)
-def mock_match() -> Generator[Mock, None, None]:
+def mock_match() -> Generator[Mock]:
     def _get_match[T: HasName | HasMutableURI](item: T, others: Collection[T], *_, **__) -> T | None:
         return next((other for other in others if item.name == other.name), None)
 

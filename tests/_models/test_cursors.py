@@ -150,7 +150,7 @@ class TestIterablePageCursor(BaseModelTester):
         return IterablePageCursor(url=faker.url())
 
     @pytest.fixture
-    def mock_next(self) -> Generator[Mock, None, None]:
+    def mock_next(self) -> Generator[Mock]:
         with patch.object(IterablePageCursor, "next", new_callable=PropertyMock) as mock_next:
             yield mock_next
 

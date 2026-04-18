@@ -50,14 +50,14 @@ class TestRemoteMutableLibrary(BaseModelTester):
         return len(uris)
 
     @pytest.fixture
-    def mock_add_many(self) -> Generator[Mock, None, None]:
+    def mock_add_many(self) -> Generator[Mock]:
         with patch.object(
                 BatchWriteEndpoints, "add_many", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_add:
             yield mock_add
 
     @pytest.fixture
-    def mock_get_many(self) -> Generator[Mock, None, None]:
+    def mock_get_many(self) -> Generator[Mock]:
         with patch.object(BatchReadEndpoints, "get_many", new_callable=AsyncMock) as mock_get:
             yield mock_get
 
@@ -139,7 +139,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         return mocker.spy(model, "_filter_items")
 
     @pytest.fixture(autouse=True)
-    def mock_get_sync_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:
+    def mock_get_sync_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock]:
         initial = [track.uri for track in tracks]
         add = faker.random_elements(initial, unique=True)
         remove = faker.random_elements(initial, length=faker.random_int(0, len(add)), unique=True)
@@ -150,7 +150,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             yield mock_get_items
 
     @pytest.fixture
-    def mock_remove_many(self) -> Generator[Mock, None, None]:
+    def mock_remove_many(self) -> Generator[Mock]:
         with patch.object(
                 BatchWriteEndpoints, "remove_many", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_remove:
@@ -221,7 +221,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_remove_many.assert_not_called()
 
     @pytest.fixture
-    def mock_sync_library_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+    def mock_sync_library_items(self, model: RemoteMutableLibrary) -> Generator[Mock]:
         with patch.object(model, "_sync_library_items") as mock_sync:
             yield mock_sync
 
@@ -258,7 +258,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def mock_create_playlist(
             self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         def _get_playlist(name: str, *_, **__) -> RemotePlaylist:
             return next(pl for pl in playlists if str(pl.name) == name)
 
@@ -270,7 +270,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def mock_get_or_create_playlist(
             self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist]
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         def _get_playlist(name: str, *_, **__) -> RemotePlaylist:
             return next(pl for pl in playlists if str(pl.name) == name)
 
@@ -301,12 +301,12 @@ class TestRemoteMutableLibrary(BaseModelTester):
         assert playlist.uri in model.playlists
 
     @pytest.fixture
-    def mock_sync_properties(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+    def mock_sync_properties(self, model: RemoteMutableLibrary) -> Generator[Mock]:
         with patch.object(RemoteMutablePlaylist, "sync_properties", new_callable=AsyncMock) as mock_sync_props:
             yield mock_sync_props
 
     @pytest.fixture
-    def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock, None, None]:
+    def mock_sync_items(self, model: RemoteMutableLibrary) -> Generator[Mock]:
         with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync_items:
             yield mock_sync_items
 
@@ -472,7 +472,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def mock_get_playlist(
             self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist], faker: Faker
-    ) -> Generator[tuple[Mock, list[URL]], None, None]:
+    ) -> Generator[tuple[Mock, list[URL]]]:
         failed: list[URI] = []
         response = namedtuple("ClientResponse", ["status"])
 

@@ -88,7 +88,7 @@ class TestModelFormatter(BaseModelTester):
         ModelFormatter(fields=fields, alignments=valid_alignments)
 
     @pytest.fixture
-    def mock_tabulate(self) -> Generator[Mock, None, None]:
+    def mock_tabulate(self) -> Generator[Mock]:
         with patch(f"{MODULE_ROOT}.processors.formatter.tabulate") as mock_tabulate:
             yield mock_tabulate
 

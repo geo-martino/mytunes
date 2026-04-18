@@ -32,7 +32,7 @@ class TestChecker(BaseModelTester):
         return mocker.spy(Checker, "_match_page")
 
     @pytest.fixture(autouse=True)
-    def mock_pause(self) -> Generator[Mock, None, None]:
+    def mock_pause(self) -> Generator[Mock]:
         with patch.object(CheckerPage, "pause") as mock_pause:
             yield mock_pause
 

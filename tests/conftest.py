@@ -155,7 +155,7 @@ def image_files(image_types: set[str], faker: Faker, tmp_path: Path) -> list[Pat
 
 
 @pytest.fixture
-def image_urls(image_types: set[str], faker: Faker) -> Generator[list[ImageURL], None, None]:
+def image_urls(image_types: set[str], faker: Faker) -> Generator[list[ImageURL]]:
     image_urls: list[ImageURL] = []
 
     for _ in range(faker.random_int(3, 5)):

@@ -165,7 +165,7 @@ class IterablePageCursor(PageCursor):
     This can be used to produce all URLs for all pages in advance so that they can be requested concurrently.
     """
     @property
-    def iter_pages(self) -> Generator[Self, None, None]:
+    def iter_pages(self) -> Generator[Self]:
         """Iteratively generate the next cursors for the next pages of items, if any."""
         cursor = self.next
         if cursor == self:
@@ -274,7 +274,7 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
         return type(self)(url=url, limit=self.limit, offset=next_offset, total=self.total)
 
     @property
-    def iter_pages(self) -> Generator[Self, None, None]:
+    def iter_pages(self) -> Generator[Self]:
         """Iteratively generate the next cursors for the next pages of items, if any."""
         cursor = self.next
         while cursor is not None:

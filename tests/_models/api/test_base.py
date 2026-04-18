@@ -31,13 +31,13 @@ def api() -> RemoteAPI:
 
 
 @pytest.fixture
-def mock_get() -> Generator[Mock, None, None]:
+def mock_get() -> Generator[Mock]:
     with patch.object(RequestHandler, "get", new_callable=AsyncMock) as mock_get:
         yield mock_get
 
 
 @pytest.fixture(autouse=True)
-def mock_create_model() -> Generator[Mock, None, None]:
+def mock_create_model() -> Generator[Mock]:
     with patch.object(Endpoints, "create_model", side_effect=lambda x, *_, **__: x) as mock_create_model:
         yield mock_create_model
 
@@ -91,7 +91,7 @@ class TestRemoteAPI(BaseModelTester):
             name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type))
 
     @pytest.fixture(autouse=True)
-    def mock_handler_context(self, handler: RequestHandler) -> Generator[Mock, None, None]:
+    def mock_handler_context(self, handler: RequestHandler) -> Generator[Mock]:
         with patch.object(RequestHandler, "__aenter__", return_value=handler) as mock_context:
             yield mock_context
 

@@ -70,7 +70,7 @@ class TestPlaylistReadWriteEndpoints(EndpointsTester):
 
 
 @pytest.fixture
-def mock_get_all(playlists: list[RemotePlaylist], faker: Faker) -> Generator[Mock, None, None]:
+def mock_get_all(playlists: list[RemotePlaylist], faker: Faker) -> Generator[Mock]:
     with patch.object(PlaylistBatchReadAllEndpoints, "get_all", return_value=playlists) as mock_get_all:
         yield mock_get_all
 
@@ -121,7 +121,7 @@ class TestPlaylistLibraryEndpoints(EndpointsTester):
         return PlaylistLibraryEndpoints(handler=handler)
 
     @pytest.fixture
-    def mock_create(self) -> Generator[Mock, None, None]:
+    def mock_create(self) -> Generator[Mock]:
         with patch.object(PlaylistLibraryEndpoints, "create") as mock_create:
             yield mock_create
 

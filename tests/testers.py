@@ -124,12 +124,12 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         return faker.random_int(1, 20)
 
     @pytest.fixture(autouse=True)
-    def mock_create_model(self) -> Generator[Mock, None, None]:
+    def mock_create_model(self) -> Generator[Mock]:
         with patch.object(Endpoints, "create_model", side_effect=lambda x, *_, **__: x) as mock_create_model:
             yield mock_create_model
 
     @pytest.fixture
-    def mock_get(self) -> Generator[Mock, None, None]:
+    def mock_get(self) -> Generator[Mock]:
         with patch.object(RequestHandler, "get", new_callable=AsyncMock) as mock_get:
             yield mock_get
             mock_get.assert_called_once()
@@ -137,7 +137,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
     @pytest.fixture
     def mock_get_batched(
             self, uris: list[URI], limit: int, items: list[dict[str, Any]], items_key: str, faker: Faker
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         expected = math.ceil(len(uris) / limit)
 
         def _return_items(url: URL, **__) -> dict[str, list[dict[str, Any]]]:
@@ -150,7 +150,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             assert mock_get.call_count == expected
 
     @pytest.fixture
-    def mock_post_batched(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_post_batched(self, uris: list[URI], limit: int) -> Generator[Mock]:
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(RequestHandler, "post") as mock_post:
@@ -158,7 +158,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             assert mock_post.call_count == expected
 
     @pytest.fixture
-    def mock_put_batched(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_put_batched(self, uris: list[URI], limit: int) -> Generator[Mock]:
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(RequestHandler, "put") as mock_put:
@@ -166,7 +166,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
             assert mock_put.call_count == expected
 
     @pytest.fixture
-    def mock_delete_batched(self, uris: list[URI], limit: int) -> Generator[Mock, None, None]:
+    def mock_delete_batched(self, uris: list[URI], limit: int) -> Generator[Mock]:
         expected = math.ceil(len(uris) / limit)
 
         with patch.object(RequestHandler, "delete") as mock_delete:
@@ -176,13 +176,13 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
     @pytest.fixture
     def mock_batch_values(
             self, uris: list[URI], limit: int, mocker: MockerFixture
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         mock_batch_values = mocker.spy(Endpoints, "_batch_values")
         yield mock_batch_values
         mock_batch_values.assert_called_once_with(uris, limit)
 
     @pytest.fixture
-    def mock_batch_values_empty(self) -> Generator[Mock, None, None]:
+    def mock_batch_values_empty(self) -> Generator[Mock]:
         with patch.object(Endpoints, "_batch_values", return_value=[]) as mock_batch_values:
             yield mock_batch_values
 
@@ -195,7 +195,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
         return "items"
 
     @pytest.fixture
-    def mock_get_all_items(self, items: list[dict[str, Any]], faker: Faker) -> Generator[Mock, None, None]:
+    def mock_get_all_items(self, items: list[dict[str, Any]], faker: Faker) -> Generator[Mock]:
         total = faker.random_int(1, 100)
         cursor = MockIndexCursor(
             url=faker.url(), offset=total + 1, limit=faker.random_int(0, 20), total=total

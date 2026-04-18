@@ -34,7 +34,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
         ]
 
     @pytest.fixture
-    def mock_get(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+    def mock_get(self, generator: SpotifyPayloadGenerator) -> Generator[Mock]:
         def _generate_payload(url: URL, *_, **__) -> dict[str, Any]:
             artist_id = url.path.split("/")[-1]
             return generator.generate_artist(artist_id)
@@ -49,7 +49,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
         assert model.uri == uri
 
     @pytest.fixture
-    def mock_get_all(self, generator: SpotifyPayloadGenerator, faker: Faker) -> Generator[Mock, None, None]:
+    def mock_get_all(self, generator: SpotifyPayloadGenerator, faker: Faker) -> Generator[Mock]:
         def _generate_payload(url: URL, *_, **__) -> dict[str, Any]:
             items = [generator.generate_album() for _ in range(faker.random_int(1, 50))]
             return {"href": str(url), "items": items}

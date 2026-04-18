@@ -66,7 +66,7 @@ class TestStoreManager(BaseModelTester):
             yield
 
     @pytest.fixture
-    def mock_pause(self) -> Generator[Mock, None, None]:
+    def mock_pause(self) -> Generator[Mock]:
         """Mock for pause functionality"""
         with patch.object(StorePausePage, "pause", return_value=None) as mock_pause:
             yield mock_pause

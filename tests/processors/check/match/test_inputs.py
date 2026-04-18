@@ -31,7 +31,7 @@ class TestInputMatch(UniqueKeyTester):
         return InputMatch(page=page, items=missing_items, uri=playlist.uri, matcher=matcher)
 
     @pytest.fixture(autouse=True)
-    def mock_uri_adapter(self) -> Generator[Mock, None, None]:
+    def mock_uri_adapter(self) -> Generator[Mock]:
         adapter = TypeAdapter(SimpleURI)
         with patch.object(URI, "get_adapter_for_source", return_value=adapter) as mock_adapter:
             yield mock_adapter

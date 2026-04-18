@@ -33,7 +33,7 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
         ]
 
     @pytest.fixture
-    def mock_get_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+    def mock_get_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock]:
         def _generate_payload(url: URL, *_, **__) -> dict[str, Any]:
             track_id = url.path.split("/")[-1]
             return generator.generate_audio_features(track_id)
@@ -53,7 +53,7 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
         assert model.uri == uri
 
     @pytest.fixture
-    def mock_get_many_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+    def mock_get_many_features(self, generator: SpotifyPayloadGenerator) -> Generator[Mock]:
         # noinspection PyUnusedLocal
         def _generate_payload(url: URL, params: dict[str, Any], *_, **__) -> dict[str, Any]:
             track_ids = params["ids"].split(",")
@@ -80,7 +80,7 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
         assert mock_get_many_features.call_count == expected
 
     @pytest.fixture
-    def mock_get_analysis(self, generator: SpotifyPayloadGenerator) -> Generator[Mock, None, None]:
+    def mock_get_analysis(self, generator: SpotifyPayloadGenerator) -> Generator[Mock]:
         def _generate_payload(*_, **__) -> dict[str, Any]:
             return generator.generate_audio_analysis()
 

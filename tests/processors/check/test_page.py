@@ -302,7 +302,7 @@ class TestPausePages:
         return model
 
     @pytest.fixture
-    def mock_get_playlist_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:
+    def mock_get_playlist_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock]:
         def _random_tracks(*_, **__) -> Sequence[RemoteTrack]:
             return faker.random_elements(tracks)
 

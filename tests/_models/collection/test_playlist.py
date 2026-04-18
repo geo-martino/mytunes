@@ -144,7 +144,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         return MockRemoteAPI()
 
     @pytest.fixture
-    def mock_modify(self) -> Generator[Mock, None, None]:
+    def mock_modify(self) -> Generator[Mock]:
         with patch.object(PlaylistLibraryEndpoints, "modify", new_callable=AsyncMock) as mock_modify:
             yield mock_modify
 
@@ -163,7 +163,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         mock_modify.assert_called_once_with(model.uri.api_url, **result)
 
     @pytest.fixture(autouse=True)
-    def mock_get_sync_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:
+    def mock_get_sync_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock]:
         initial = [track.uri for track in tracks]
         add = faker.random_elements(initial, unique=True)
         remove = faker.random_elements(initial, length=faker.random_int(0, len(add)), unique=True)
@@ -180,7 +180,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     @pytest.fixture(autouse=True)
     def mock_get_playlist_items(
             self, model: RemoteMutablePlaylist, uris: list[URI], faker: Faker
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         tracks = [RemoteTrack(uri=uri, name=faker.sentence()) for uri in uris]
         with (
             patch.object(
@@ -198,14 +198,14 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         return len(uris)
 
     @pytest.fixture(autouse=True)
-    def mock_add(self) -> Generator[Mock, None, None]:
+    def mock_add(self) -> Generator[Mock]:
         with patch.object(
                 CollectionWriteEndpoints, "add", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_add:
             yield mock_add
 
     @pytest.fixture(autouse=True)
-    def mock_remove(self) -> Generator[Mock, None, None]:
+    def mock_remove(self) -> Generator[Mock]:
         with patch.object(
                 CollectionWriteEndpoints, "remove", side_effect=self._return_length, new_callable=AsyncMock
         ) as mock_remove:

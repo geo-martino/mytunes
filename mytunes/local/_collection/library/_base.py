@@ -176,7 +176,7 @@ class LocalLibrary(
         return len(self.tracks)
 
     @property
-    def _track_paths(self) -> Generator[Path, None, None]:
+    def _track_paths(self) -> Generator[Path]:
         if not self.library_folders:
             return
 
@@ -273,7 +273,7 @@ class LocalLibrary(
         return results
 
     @property
-    def _playlist_paths(self) -> Generator[Path, None, None]:
+    def _playlist_paths(self) -> Generator[Path]:
         if self.playlist_folder is None:
             return
 
@@ -360,14 +360,14 @@ class LocalLibrary(
     ## Collections
     ###########################################################################
     @property
-    def folders(self) -> Generator[Folder, None, None]:
+    def folders(self) -> Generator[Folder]:
         """
         Dynamically generate a set of folder collections from the tracks in this library.
         Folder collections are generated relevant to the library folder it is found in.
         """
         return self.generate_folders(self.tracks)
 
-    def generate_folders(self, tracks: Collection[LocalTrack]) -> Generator[Folder, None, None]:
+    def generate_folders(self, tracks: Collection[LocalTrack]) -> Generator[Folder]:
         """
         Dynamically generate a set of folder collections from the given tracks.
         Folder collections are generated relevant to the library folder it is found in.
@@ -389,12 +389,12 @@ class LocalLibrary(
             yield Folder(name=path.name, tracks=group)
 
     @property
-    def albums(self) -> Generator[LocalAlbumCollection, None, None]:
+    def albums(self) -> Generator[LocalAlbumCollection]:
         """Dynamically generate a set of album collections from the tracks in this library"""
         return self.generate_albums(self.tracks)
 
     @classmethod
-    def generate_albums(cls, tracks: Collection[LocalTrack]) -> Generator[LocalAlbumCollection, None, None]:
+    def generate_albums(cls, tracks: Collection[LocalTrack]) -> Generator[LocalAlbumCollection]:
         """Dynamically generate a set of album collections from the given tracks"""
         tracks = sorted(tracks, key=lambda track: track.album.name if track.album else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="album")
@@ -411,12 +411,12 @@ class LocalLibrary(
             yield LocalAlbumCollection(**album.model_dump(), tracks=group)
 
     @property
-    def artists(self) -> Generator[LocalArtistCollection, None, None]:
+    def artists(self) -> Generator[LocalArtistCollection]:
         """Dynamically generate a set of artist collections from the tracks in this library"""
         return self.generate_artists(self.tracks)
 
     @classmethod
-    def generate_artists(cls, tracks: Collection[LocalTrack]) -> Generator[LocalArtistCollection, None, None]:
+    def generate_artists(cls, tracks: Collection[LocalTrack]) -> Generator[LocalArtistCollection]:
         """Dynamically generate a set of artist collections from the given tracks"""
         tracks = sorted(tracks, key=lambda track: track.artists[0].name if track.artists else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="artists")
@@ -437,12 +437,12 @@ class LocalLibrary(
             yield LocalArtistCollection(**artist.model_dump(), albums=albums)
 
     @property
-    def genres(self) -> Generator[LocalGenreCollection, None, None]:
+    def genres(self) -> Generator[LocalGenreCollection]:
         """Dynamically generate a set of genre collections from the tracks in this library"""
         return self.generate_genres(self.tracks)
 
     @classmethod
-    def generate_genres(cls, tracks: Collection[LocalTrack]) -> Generator[LocalGenreCollection, None, None]:
+    def generate_genres(cls, tracks: Collection[LocalTrack]) -> Generator[LocalGenreCollection]:
         """Dynamically generate a set of genre collections from the given tracks."""
         tracks = sorted(tracks, key=lambda track: track.genre)
         grouped = ItemSorter.group_by_field(items=tracks, field="genres")

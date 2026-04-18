@@ -262,7 +262,7 @@ class TestEndpoints(EndpointsTester):
             items: list[dict[str, Any]],
             total: int,
             items_key: str,
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         cursors = {cursor.url: cursor for cursor in index_cursors}
 
         def _return_response(url: URL, *_, **__) -> dict[str, Any]:
@@ -280,7 +280,7 @@ class TestEndpoints(EndpointsTester):
             url_cursors: list[UrlCursor],
             items: list[dict[str, Any]],
             total: int,
-    ) -> Generator[Mock, None, None]:
+    ) -> Generator[Mock]:
         cursors = {cursor.url: cursor for cursor in url_cursors}
         index_cursors = {cursor.url: cursor for cursor in index_cursors}
 
@@ -748,7 +748,7 @@ class TestBatchReadAllEndpoints(EndpointsTester):
         return self.MockBatchReadAllEndpoints(handler=handler)
 
     @pytest.fixture
-    def mock_initial_cursor(self, model: BatchReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock, None, None]:
+    def mock_initial_cursor(self, model: BatchReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock]:
         cursor = MockInitialCursor(url=uri.api_url)
 
         with patch.object(InitialCursor, "from_url", return_value=cursor) as mock_cursor:

@@ -41,7 +41,7 @@ def split_list[T](lst: Collection[T], n: int = None, overlap: int = 0) -> Iterat
 
 
 @contextmanager
-def patch_input(values: Iterator[str]) -> Generator[Mock, None, None]:
+def patch_input(values: Iterator[str]) -> Generator[Mock]:
     """``builtins.input`` calls will return the ``values`` in order, finishing on ''"""
     def input_return(*_, **__) -> str:
         """An order of return values for user input that will test various stages of the pause"""

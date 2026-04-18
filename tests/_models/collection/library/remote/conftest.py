@@ -6,6 +6,6 @@ from mytunes._models.api import BatchReadAllEndpoints
 
 
 @pytest.fixture
-def mock_get_all() -> Generator[Mock, None, None]:
+def mock_get_all() -> Generator[Mock]:
     with patch.object(BatchReadAllEndpoints, "get_all") as mock_get_all:
         yield mock_get_all

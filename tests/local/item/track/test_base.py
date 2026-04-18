@@ -86,7 +86,7 @@ class TestLocalTrack(UniqueKeyTester):
         return TagContext()
 
     @pytest.fixture
-    def mock_load_file(self, file: mutagen.FileType) -> Generator[Mock, None, None]:
+    def mock_load_file(self, file: mutagen.FileType) -> Generator[Mock]:
         with patch.object(LocalTrack, "load_file", return_value=file) as mock_load:
             yield mock_load
 
@@ -343,7 +343,7 @@ class TestLocalTrack(UniqueKeyTester):
             model.to_tags(include={"length"})
 
     @pytest.fixture
-    def mock_to_tags(self, tags: dict[str, Any]) -> Generator[Mock, None, None]:
+    def mock_to_tags(self, tags: dict[str, Any]) -> Generator[Mock]:
         with patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags:
             yield mock_to_tags
 
@@ -453,7 +453,7 @@ class TestLocalTrack(UniqueKeyTester):
         return faker.boolean()
 
     @pytest.fixture
-    def mock_load(self, file: mutagen.FileType, tracks: list[LocalTrack]) -> Generator[Mock, None, None]:
+    def mock_load(self, file: mutagen.FileType, tracks: list[LocalTrack]) -> Generator[Mock]:
         with patch.object(LocalTrack, "load", return_value=file, new_callable=AsyncMock) as mock_load:
             yield mock_load
             assert mock_load.call_count == len(tracks)
@@ -469,7 +469,7 @@ class TestLocalTrack(UniqueKeyTester):
             context: TagContext,
             replace_tags: bool,
             faker: Faker,
-    ) -> Generator[tuple[Mock, list[dict[str, Any]]], None, None]:
+    ) -> Generator[tuple[Mock, list[dict[str, Any]]]]:
         expected = []
 
         def _random_tags(*_, **__) -> dict[str, Any]:
@@ -486,7 +486,7 @@ class TestLocalTrack(UniqueKeyTester):
             )
 
     @pytest.fixture
-    def mock_save(self) -> Generator[Mock, None, None]:
+    def mock_save(self) -> Generator[Mock]:
         with patch.object(LocalTrack, "save") as mock_save:
             yield mock_save
 

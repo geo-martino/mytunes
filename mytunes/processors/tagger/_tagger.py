@@ -40,12 +40,6 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         validation_alias=AliasChoices("fields", "rules"),
     )
 
-    def filter_items(self, items: Iterable[IT]) -> Iterable[IT]:
-        """Apply the item filter to the items provided (if applicable)."""
-        if self.item_filter is None or not self.item_filter.ready:
-            return items
-        return filter(self.item_filter.check, items)
-
     def set_tags_to_items(self, items: Iterable[IT]) -> dict[str, TaggerResult]:
         """Apply setters to the item from the collection."""
         items = list(self.filter_items(items))
@@ -55,6 +49,12 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         results = dict(self._run_tasks(tasks, task_id=task_id))
 
         return results
+
+    def filter_items(self, items: Iterable[IT]) -> Iterable[IT]:
+        """Apply the item filter to the items provided (if applicable)."""
+        if self.item_filter is None or not self.item_filter.ready:
+            return items
+        return filter(self.item_filter.check, items)
 
     def _set_tags_to_item_with_key(self, item: IT, collection: Collection[IT]) -> tuple[str, TaggerResult] | None:
         result = self.set_tags_to_item(item, collection)

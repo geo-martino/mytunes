@@ -11,7 +11,7 @@ from mytunes.logger import Logger, EXTRA, REPORT, STAT
 ## Logger tests
 ###########################################################################
 @pytest.fixture
-def logger() -> Generator[Logger, None, None]:
+def logger() -> Generator[Logger]:
     """Yields a :py:class:`Logger` with all handlers removed for testing"""
     logger = Logger(__name__)
     logger.compact = False

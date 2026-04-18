@@ -33,19 +33,19 @@ class SearcherTester(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @pytest.fixture
-    def mock_query_item(self, query_results: list[RemoteResource]) -> Generator[Mock, None, None]:
+    def mock_query_item(self, query_results: list[RemoteResource]) -> Generator[Mock]:
         with patch.object(SearchEndpoints, "query_item", return_value=query_results) as mock_query_item:
             yield mock_query_item
 
     @pytest.fixture
-    def mock_skip(self, model: Searcher) -> Generator[Mock, None, None]:
+    def mock_skip(self, model: Searcher) -> Generator[Mock]:
         with patch.object(model, "_should_skip", return_value=False) as mock_match:
             yield mock_match
 
     @pytest.fixture
     def mock_skip_random(
             self, model: Searcher, faker: Faker
-    ) -> Generator[tuple[Mock, list, list], None, None]:
+    ) -> Generator[tuple[Mock, list, list]]:
         valid = []
         invalid = []
 
@@ -70,14 +70,14 @@ class SearcherTester(metaclass=ABCMeta):
         return faker.random_element(query_results)
 
     @pytest.fixture
-    def mock_match(self, model: Searcher, match: RemoteTrack, faker: Faker) -> Generator[Mock, None, None]:
+    def mock_match(self, model: Searcher, match: RemoteTrack, faker: Faker) -> Generator[Mock]:
         with patch.object(model, "_pop_match_from_results", return_value=match) as mock_match:
             yield mock_match
 
     @pytest.fixture
     def mock_match_random(
             self, model: Searcher, mock_match: Mock, faker: Faker
-    ) -> Generator[tuple[Mock, list, list, list], None, None]:
+    ) -> Generator[tuple[Mock, list, list, list]]:
         matches = []
         matched = []
         unmatched = []
@@ -461,12 +461,12 @@ class TestCollectionSearcher(SearcherTester):
         assert model._should_search_on_items_only(collection)
 
     @pytest.fixture(autouse=True)
-    def mock_collection_reload(self, match: RemoteCollection) -> Generator[Mock, None, None]:
+    def mock_collection_reload(self, match: RemoteCollection) -> Generator[Mock]:
         with patch.object(MockRemoteResource, "reload", return_value=match, new_callable=AsyncMock) as mock_reload:
             yield mock_reload
 
     @pytest.fixture(autouse=True)
-    def mock_collection_extend(self, match: RemoteCollection) -> Generator[Mock, None, None]:
+    def mock_collection_extend(self, match: RemoteCollection) -> Generator[Mock]:
         with patch.object(MockRemoteCollection, "extend", new_callable=AsyncMock) as mock_extend:
             yield mock_extend
 
@@ -509,22 +509,22 @@ class TestCollectionSearcher(SearcherTester):
             assert mock_search_collection.call_count == len(collections)
 
     @pytest.fixture
-    def mock_search_items_only(self, model: Searcher) -> Generator[Mock, None, None]:
+    def mock_search_items_only(self, model: Searcher) -> Generator[Mock]:
         with patch.object(model, "_should_search_on_items_only", return_value=False) as mock_items_only:
             yield mock_items_only
 
     @pytest.fixture
-    def mock_search_items(self, model: Searcher) -> Generator[Mock, None, None]:
+    def mock_search_items(self, model: Searcher) -> Generator[Mock]:
         with patch.object(model, "_search_items", return_value=SearchResult()) as mock_search_items:
             yield mock_search_items
 
     @pytest.fixture
-    def mock_search_from_result(self, model: Searcher) -> Generator[Mock, None, None]:
+    def mock_search_from_result(self, model: Searcher) -> Generator[Mock]:
         with patch.object(model, "_search_from_result", return_value=SearchResult()) as mock_search_from_result:
             yield mock_search_from_result
 
     @pytest.fixture
-    def mock_match_items(self, model: Searcher, match: RemoteCollection) -> Generator[Mock, None, None]:
+    def mock_match_items(self, model: Searcher, match: RemoteCollection) -> Generator[Mock]:
         with patch.object(model, "_match_items", return_value=SearchResult()) as mock_match:
             yield mock_match
 

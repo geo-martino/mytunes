@@ -51,7 +51,7 @@ class TestSpotifyPlaylistLibraryEndpoints(EndpointsTester):
             await model._format_playlist_body(public=True, collaborative=True)
 
     @pytest.fixture
-    def mock_put(self, handler: RequestHandler) -> Generator[Mock, None, None]:
+    def mock_put(self, handler: RequestHandler) -> Generator[Mock]:
         with patch.object(RequestHandler, "put") as mock_put:
             yield mock_put
 

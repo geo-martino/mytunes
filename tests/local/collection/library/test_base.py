@@ -70,7 +70,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         return tracks
 
     @pytest.fixture
-    def mock_load_track(self, tracks: list[LocalTrack]) -> Generator[Mock, None, None]:
+    def mock_load_track(self, tracks: list[LocalTrack]) -> Generator[Mock]:
         """Mock LocalLibrary.load_track to return the provided tracks"""
         tracks_mapped = {track.path: track for track in tracks}
 
@@ -113,7 +113,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         return playlists
 
     @pytest.fixture
-    def mock_load_playlist(self, playlists: list[LocalPlaylist]) -> Generator[Mock, None, None]:
+    def mock_load_playlist(self, playlists: list[LocalPlaylist]) -> Generator[Mock]:
         """Mock LocalLibrary.load_playlist to return the provided tracks"""
         pl_mapped = {pl.path: pl for pl in playlists}
 

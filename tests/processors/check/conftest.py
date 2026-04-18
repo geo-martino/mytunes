@@ -80,7 +80,7 @@ def matcher() -> Matcher:
 
 
 @pytest.fixture(autouse=True)
-def mock_get(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, None]:
+def mock_get(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock]:
     def _get_playlist(url: URL, *_, **__) -> RemoteMutablePlaylist | None:
         return next((pl for pl in playlists if pl.uri.api_url == url), None)
 
@@ -91,7 +91,7 @@ def mock_get(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, No
 
 
 @pytest.fixture(autouse=True)
-def mock_get_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, None]:
+def mock_get_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock]:
     def _get_playlist(name: str, *_, **__) -> RemoteMutablePlaylist | None:
         return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
 
@@ -102,7 +102,7 @@ def mock_get_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock,
 
 
 @pytest.fixture(autouse=True)
-def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock, None, None]:
+def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mock]:
     def _get_playlist(name: str, *_, **__) -> RemoteMutablePlaylist | None:
         return next((pl for pl in playlists if pl.name.casefold() == name.casefold()), None)
 
@@ -113,31 +113,31 @@ def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mo
 
 
 @pytest.fixture(autouse=True)
-def mock_add_playlists() -> Generator[Mock, None, None]:
+def mock_add_playlists() -> Generator[Mock]:
     with patch.object(PlaylistBatchWriteEndpoints, "add_many", new_callable=AsyncMock) as mock_add:
         yield mock_add
 
 
 @pytest.fixture(autouse=True)
-def mock_remove_playlists() -> Generator[Mock, None, None]:
+def mock_remove_playlists() -> Generator[Mock]:
     with patch.object(PlaylistBatchWriteEndpoints, "remove_many", new_callable=AsyncMock) as mock_remove:
         yield mock_remove
 
 
 @pytest.fixture(autouse=True)
-def mock_add() -> Generator[Mock, None, None]:
+def mock_add() -> Generator[Mock]:
     with patch.object(PlaylistReadWriteEndpoints, "add", new_callable=AsyncMock) as mock_add:
         yield mock_add
 
 
 @pytest.fixture(autouse=True)
-def mock_sync_playlist() -> Generator[Mock, None, None]:
+def mock_sync_playlist() -> Generator[Mock]:
     with patch.object(RemoteMutablePlaylist, "sync_items", new_callable=AsyncMock) as mock_sync:
         yield mock_sync
 
 
 @pytest.fixture(autouse=True)
-def mock_get_playlist_items(tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock, None, None]:
+def mock_get_playlist_items(tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock]:
     with patch.object(
             PlaylistReadWriteEndpoints, "get_all", return_value=tracks, new_callable=AsyncMock
     ) as mock_get_all:
@@ -145,7 +145,7 @@ def mock_get_playlist_items(tracks: list[RemoteTrack], faker: Faker) -> Generato
 
 
 @pytest.fixture(autouse=True)
-def mock_initial_cursor_from_url() -> Generator[Mock, None, None]:
+def mock_initial_cursor_from_url() -> Generator[Mock]:
     def _from_url(url: URL, *_, **__) -> MockInitialCursor:
         return MockInitialCursor(url=url)
 
