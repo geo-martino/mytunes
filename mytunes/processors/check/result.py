@@ -85,5 +85,5 @@ class CheckResult[T: HasURI](Result):
             changed=list(self.changed) + list(other.changed),
             unchanged=list(self.unchanged) + list(other.unchanged),
             unavailable=list(self.unavailable) + list(other.unavailable),
-            skipped=list(self.skipped) + list(other.skipped),
+            skipped=skipped,
         )
