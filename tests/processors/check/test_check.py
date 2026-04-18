@@ -83,7 +83,6 @@ class TestChecker(BaseModelTester):
             mock_pause: Mock,
             mock_match_playlist: Mock,
             mock_match_input: Mock,
-            faker: Faker,
     ):
         model.interval = len(collections) // 4
         expected_pages = math.ceil(len(collections) / model.interval)
@@ -110,7 +109,7 @@ class TestChecker(BaseModelTester):
         def _return_valid_playlist_match() -> CheckResult:
             return CheckResult(
                 changed=faker.random_elements(tracks, unique=True),
-                unchanged=faker.random_elements(tracks, unique=True)
+                unchanged=faker.random_elements(tracks, unique=True),
             )
 
         with patch.object(PlaylistMatch, "match", side_effect=_return_valid_playlist_match) as mock_match_playlist:

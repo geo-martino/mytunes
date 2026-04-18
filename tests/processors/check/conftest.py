@@ -40,7 +40,7 @@ def collections(
     return [
         MockCollection(
             name=pl.name,
-            all_items=faker.random_elements(tracks),
+            all_items=list(faker.random_elements(tracks)),
         )
         for pl in playlists
     ]
