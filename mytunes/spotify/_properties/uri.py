@@ -112,6 +112,10 @@ class SpotifyResourceURI(SpotifyURIBase):
 class SpotifyUserURI(SpotifyURIBase):
     __final__ = True
 
+    @classmethod
+    def from_id(cls, value: Any, kind: str = "user") -> Self:
+        return super().from_id(value, kind)
+
     @model_validator(mode="after")
     def _type_is_user(self) -> Self:
         if self.type != "user":
