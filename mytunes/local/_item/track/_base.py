@@ -696,8 +696,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
             track = self.tracks.get(other)
             if track is None and isinstance(other, LocalTrack):
                 track = next((it for it in self.tracks if it.path == other.path), None)
-                if track is None:
-                    continue
+            if track is None:
+                continue
 
             result = track.merge(other, include=include, exclude=exclude, replace=replace)
             if result:
