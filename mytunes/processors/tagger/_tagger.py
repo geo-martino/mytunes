@@ -82,5 +82,5 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         header = "TAGGER RESULTS"
         table = TaggerResult.generate_table(results=results, header=header)
 
-        self._logger.report(table)
+        self._logger.report(table, new_line_start=True)
         self._logger.print_line(REPORT)

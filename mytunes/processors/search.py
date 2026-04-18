@@ -423,7 +423,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)
 
-        self._logger.report(table)
+        self._logger.report(table, new_line_start=True)
         self._logger.print_line(REPORT)
 
     def _log_start(self, items: Collection, default_type: str) -> None:
