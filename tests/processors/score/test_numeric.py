@@ -3,9 +3,10 @@ from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 from faker import Faker
+from pydantic import InstanceOf
+
 from mytunes.processors.score.numeric import NumericScorer, RangeScorer, LengthScorer, ReleaseYearScorer, \
     TotalItemsScorer
-from pydantic import InstanceOf
 from tests.testers import BaseModelTester
 
 

@@ -1,10 +1,11 @@
 from typing import ClassVar, final, Any
 
-from mytunes.spotify import API_URL, SpotifyResource
-from mytunes.spotify._api._base import SpotifyEndpoints
 from pydantic import PositiveInt, validate_call, AliasPath
 from yarl import URL
 
+from mytunes.exception import RequestError
+from mytunes.spotify import API_URL, SpotifyResource
+from mytunes.spotify._api._base import SpotifyEndpoints
 from .._collection.playlist import SpotifyPlaylist
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
@@ -13,7 +14,6 @@ from .._properties.uri import SpotifyResourceURI
 from ..._models import ResourceModel
 from ..._models.api.search import SearchEndpoints
 from ..._models.collection.playlist import Playlist
-from mytunes.exception import RequestError
 from ..._models.item.album import Album
 from ..._models.item.artist import Artist
 from ..._models.item.track import Track

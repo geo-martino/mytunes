@@ -2,6 +2,7 @@ from abc import ABCMeta
 from unittest.mock import patch, MagicMock
 
 import pytest
+
 from mytunes._models.item.album import HasAlbum
 from mytunes._models.item.artist import HasArtists, Artist
 from mytunes._models.properties.name import HasName

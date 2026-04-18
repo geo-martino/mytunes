@@ -5,12 +5,13 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes._models.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, Endpoints, HasAPI
 from mytunes._models.api.items import HasTrackEndpoints
 from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
 from mytunes._models.item.user import RemoteUser
-from pydantic import ValidationError
 from tests.remote import SimpleURI, MockRemoteAuthoriser, MockItemEndpoints, MockRemoteAPI
 from tests.testers import BaseModelTester
 

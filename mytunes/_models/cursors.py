@@ -5,11 +5,12 @@ from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Union, Annotated
 
+from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices, \
+    PositiveInt
+
 from mytunes._models.remote import RemoteModel
 from mytunes._types import String, HttpURL
 from mytunes.exception import MyTunesTypeError, CursorError, CursorResponseError
-from pydantic import Field, NonNegativeInt, model_validator, ValidationError, TypeAdapter, AliasPath, AliasChoices, \
-    PositiveInt
 
 _HTTP_ADAPTER = TypeAdapter(HttpURL)
 

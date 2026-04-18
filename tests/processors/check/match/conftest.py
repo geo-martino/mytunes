@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from faker import Faker
+
 from mytunes._models import ResourceModel
 from mytunes._models.api import RemoteAPI
 from mytunes._models.api.playlist import PlaylistReadWriteEndpoints

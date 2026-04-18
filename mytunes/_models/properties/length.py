@@ -6,12 +6,13 @@ from functools import reduce, total_ordering
 from operator import mul
 from typing import Annotated, Self
 
+from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator
+
 from mytunes._models import AttributeModel
 from mytunes._models.collection import CollectionModel
 from mytunes._models.metadata import Attribute
 from mytunes._models.properties._core import NumberModel
 from mytunes._types import Number
-from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator
 
 
 @total_ordering

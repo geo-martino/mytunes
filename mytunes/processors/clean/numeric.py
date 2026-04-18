@@ -1,10 +1,10 @@
 from collections.abc import Collection
 from typing import Any
 
-from mytunes._types import Number
-from mytunes.processors.clean._base import TagCleaner
 from pydantic import Field, NonNegativeInt, validate_call
 
+from mytunes._types import Number
+from mytunes.processors.clean._base import TagCleaner
 from ..._models import AttributeModel
 from ..._models.collection import CollectionModel
 from ..._models.item.album import HasAlbum

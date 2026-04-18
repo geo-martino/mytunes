@@ -1,11 +1,12 @@
 from abc import abstractmethod
 from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 
+from pydantic import Field
+
 from mytunes._models import BaseModel
 from mytunes._models._metaclass import makecls
 from mytunes._models.metadata import UniqueAttribute
 from mytunes._models.properties.uri import URI, HasImmutableURI
-from pydantic import Field
 
 if TYPE_CHECKING:
     from mytunes._models.api import HasEndpoints

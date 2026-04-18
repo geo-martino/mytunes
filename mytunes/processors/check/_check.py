@@ -1,13 +1,13 @@
 import itertools
 from collections.abc import Mapping, Sequence, AsyncGenerator
 
+from pydantic import Field, PositiveInt
+from termcolor import colored
+
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
-from pydantic import Field, PositiveInt
-from termcolor import colored
-
 from ._match.inputs import InputMatch
 from ._match.playlist import PlaylistMatch
 from ._page import CheckerPage, _ApiT
@@ -16,10 +16,9 @@ from ..._models import ResourceModel
 from ..._models.api import HasAPI
 from ..._models.collection import CollectionModel
 from ..._models.properties.asynch import HasAsyncOperations
-from ..._models.properties.logger import HasLogger, HasProgress
+from ..._models.properties.logger import HasProgress
 from ..._models.properties.order import Position
 from ..._models.properties.uri import HasURI, URI
-from ...logger import REPORT
 
 
 class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperations):

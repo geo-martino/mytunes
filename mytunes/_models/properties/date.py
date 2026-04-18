@@ -4,9 +4,9 @@ from contextlib import suppress
 from datetime import date, datetime
 from typing import Annotated, Any
 
-from mytunes._models.metadata import TagAttribute, Attribute
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt
 
+from mytunes._models.metadata import TagAttribute, Attribute
 from .._base.attribute import AttributeModel
 
 _DATA_ADAPTER = TypeAdapter[date](date)

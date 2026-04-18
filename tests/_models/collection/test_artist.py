@@ -2,11 +2,12 @@ from random import sample
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes._models.collection.artist import ArtistCollection, RemoteArtistCollection
 from mytunes._models.cursors import PageCursor
 from mytunes._models.item.album import Album
 from mytunes._models.item.artist import Artist
-from pydantic import ValidationError
 from tests._models.collection.testers import RemoteCollectionTester
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester

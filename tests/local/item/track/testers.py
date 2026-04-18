@@ -12,12 +12,13 @@ import pytest
 from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
+
 from mytunes._models.properties.image import ImageFile
 from mytunes._models.properties.name import HasName
 from mytunes.local._item.track import LocalTrack, TagContext
 from mytunes.local.exception import FileError
-from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
 from tests.remote import SimpleURI
 from tests.testers import BaseModelTester, UniqueKeyTester
 

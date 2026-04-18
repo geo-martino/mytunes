@@ -3,14 +3,14 @@ from collections.abc import Iterable
 from contextlib import suppress
 from copy import deepcopy
 
+from pydantic import Field, ValidationError
+from termcolor import colored
+
 from mytunes import PROGRAM_NAME
 from mytunes.processors._flow import SkipPage
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.formatter import ModelFormatter
-from pydantic import Field, ValidationError
-from termcolor import colored
-
 from ..._base.inputs import OptionsProcessor
 from ...._models.properties.name import HasName
 from ...._models.properties.uri import URI, HasMutableURI

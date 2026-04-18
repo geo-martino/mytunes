@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
+
 from mytunes._models.collection.album import AlbumCollection
 from mytunes._models.item.album import HasAlbums, Album
 from mytunes._models.item.artist import HasArtists, Artist
@@ -16,7 +18,6 @@ from mytunes.processors.match import Matcher
 from mytunes.processors.score import Scorer
 from mytunes.processors.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
 from mytunes.processors.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
-from pytest_mock import MockerFixture
 from tests.testers import BaseModelTester
 
 

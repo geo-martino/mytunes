@@ -4,6 +4,9 @@ from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter, ValidationError
+from pytest_mock import MockerFixture
+
 from mytunes import MODULE_ROOT
 from mytunes._models._context import RemoteModelContext
 from mytunes._models.api import RemoteAPI, CollectionWriteEndpoints
@@ -18,8 +21,6 @@ from mytunes._models.item.user import RemoteUser
 from mytunes._models.properties.uri import URI
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
-from pydantic import TypeAdapter, ValidationError
-from pytest_mock import MockerFixture
 from tests._models.collection.testers import RemoteCollectionTester
 from tests._models.collection.utils import assert_sync_items_result
 from tests.remote import SimpleURI, MockRemoteAPI

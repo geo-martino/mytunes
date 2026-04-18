@@ -2,20 +2,20 @@ import sys
 from collections.abc import MutableMapping, Mapping
 from typing import final, Annotated, Self, Literal, Any
 
-from mytunes.spotify import SpotifyResource
-from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
-from mytunes.spotify.user import SpotifyUser
 from pydantic import AliasPath, Field, model_validator, NonNegativeInt
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
+from mytunes.exception import MyTunesValidationError
+from mytunes.spotify import SpotifyResource
+from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
+from mytunes.spotify.user import SpotifyUser
 from .._item.track import SpotifyPlaylistTrack
 from .._properties.date import HasSpotifyAddedDate
 from .._properties.images import HasSpotifyImages
 from .._properties.stats import HasFollowers
 from .._properties.uri import SpotifyResourceURI
 from ..._models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
-from mytunes.exception import MyTunesValidationError
 from ..._models.metadata import Attribute
 from ..._models.sequence import UniqueSequence, MutableUniqueSequence
 

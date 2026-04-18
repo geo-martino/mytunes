@@ -2,16 +2,16 @@ from collections.abc import Sequence, Collection, Iterable
 from functools import partial
 from typing import Union, Annotated
 
-from mytunes.processors.filters import Filter
 from pydantic import AliasChoices, Field
 
+from mytunes.processors.filters import Filter
 from ._setter import Setter
 from .._base import Processor
 from ..._models import AttributeModel, ResourceModel
 from ..._models.properties.logger import HasLogger, HasProgress
 from ..._models.result import Result, MapLogFormatter
 from ..._types import TO_TUPLE
-from ...logger import Logger, REPORT
+from ...logger import Logger
 
 
 class TaggerResult(Result):

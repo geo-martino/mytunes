@@ -4,6 +4,10 @@ from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload
 
+from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import ValidationInfo
+
 from mytunes._models import ResourceModel, AttributeModel
 from mytunes._models._context import RemoteModelContext
 from mytunes._models._metaclass import makecls
@@ -12,7 +16,6 @@ from mytunes._models.collection import SyncRemoteResult
 from mytunes._models.collection._base import CollectionModel, RemoteCollection
 from mytunes._models.collection._sync import SYNC_TYPE, get_sync_items
 from mytunes._models.cursors import PageCursor
-from mytunes.exception import MyTunesValidationError
 from mytunes._models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from mytunes._models.item.user import RemoteUser
 from mytunes._models.mapping import UniqueMapping, MutableUniqueMapping
@@ -23,10 +26,8 @@ from mytunes._models.properties.name import HasName
 from mytunes._models.properties.uri import URI
 from mytunes._models.sequence import UniqueSequence
 from mytunes._types import StrippedString
+from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.compare import ComparerFilter
-from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import ValidationInfo
 
 if TYPE_CHECKING:
     from mytunes._models.api.playlist import HasPlaylistEndpoints, PlaylistReadEndpoints, \

@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import Any, final
 
-from mytunes.processors.filters import Filter
 from pydantic import Field, AliasChoices
 
+from mytunes.processors.filters import Filter
 from ...._models import BaseModel
 from ...._types import StrippedString
 

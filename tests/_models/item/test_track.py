@@ -2,6 +2,7 @@ from random import sample
 
 import pytest
 from faker import Faker
+
 from mytunes._models.collection.album import AlbumCollection
 from mytunes._models.item.album import Album
 from mytunes._models.item.track import Track, HasTracks, HasMutableTracks, RemoteTrack

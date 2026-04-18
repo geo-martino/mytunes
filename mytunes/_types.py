@@ -4,7 +4,6 @@ from types import UnionType, GenericAlias
 from typing import Annotated, Any, TypeAliasType, get_args, evaluate_forward_ref, Union, TypeVar
 
 from annotated_types import MinLen
-from mytunes.exception import MyTunesTypeError
 from pydantic import StringConstraints, BeforeValidator, BaseModel, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.alias_generators import to_snake
 from pydantic.json_schema import JsonSchemaValue
@@ -12,6 +11,8 @@ from pydantic_core import PydanticUseDefault, CoreSchema, core_schema
 from typing_extensions import get_origin
 from typing_inspection.typing_objects import is_annotated, is_typevar
 from yarl import URL as YARL_URL
+
+from mytunes.exception import MyTunesTypeError
 
 ###########################################################################
 ## Basic annotations

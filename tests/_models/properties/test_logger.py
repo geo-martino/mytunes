@@ -1,6 +1,7 @@
 from functools import partial
 
 import pytest
+
 from mytunes._models.properties.logger import HasProgress
 from tests.testers import BaseModelTester
 

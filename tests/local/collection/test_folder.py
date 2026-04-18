@@ -2,10 +2,11 @@ from random import sample, choice
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes.local._collection.folder import Folder
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.track import LocalTrack
-from pydantic import ValidationError
 from tests.testers import NoUniqueKeyTester
 from tests.utils import split_list
 

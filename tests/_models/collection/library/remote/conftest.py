@@ -2,6 +2,7 @@ from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 import pytest
+
 from mytunes._models.api import BatchReadAllEndpoints
 
 

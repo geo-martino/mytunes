@@ -3,6 +3,7 @@ from random import choice
 
 import pytest
 from faker import Faker
+
 from mytunes._models import ResourceModel
 from mytunes._models.item.genre import Genre
 from mytunes.local._item.album import LocalAlbum

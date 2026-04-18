@@ -13,6 +13,7 @@ from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 # noinspection PyProtectedMember
 from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
+
 from mytunes._models.properties.order import Position
 from mytunes._models.properties.uri import URI
 from mytunes.local._item.genre import LocalGenre

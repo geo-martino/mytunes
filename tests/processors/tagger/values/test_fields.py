@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
+
 from mytunes._models.item.track import Track
 from mytunes._models.properties.file import IsLocalFile
 from mytunes._models.properties.order import Position

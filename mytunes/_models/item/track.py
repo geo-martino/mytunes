@@ -1,5 +1,7 @@
 from typing import ClassVar, Self, Annotated
 
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
+
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
 from mytunes._models.api import ItemReadEndpoints
@@ -18,8 +20,6 @@ from mytunes._models.properties.rating import HasRating
 from mytunes._models.properties.uri import URI
 from mytunes._models.remote import RemoteResource
 from mytunes._models.sequence import MutableUniqueSequence, UniqueSequence
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
-
 from .._base.attribute import AttributeModel
 
 

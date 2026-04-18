@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import ClassVar, Annotated, Any
 
-from mytunes._models.metadata import Attribute
 from pydantic import Field, field_validator, model_validator
 
+from mytunes._models.metadata import Attribute
 from .._base import BaseModel
 from .._base.attribute import AttributeModel
 

@@ -4,6 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
+
 from mytunes._models.collection.playlist import RemoteMutablePlaylist
 from mytunes._models.properties.uri import URI
 from mytunes._models.result import LogFormatter
@@ -11,8 +14,6 @@ from mytunes.processors._flow import QuitImmediately
 from mytunes.processors.check._match.inputs import InputMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
-from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
 from tests.processors.check.match.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester

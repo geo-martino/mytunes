@@ -4,13 +4,14 @@ from collections.abc import Iterable, Mapping, MutableMapping
 from contextlib import suppress
 from os import sep
 from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
-from typing import final, Mapping, Any, Annotated
+from typing import final, Any, Annotated
+
+from pydantic import Field, field_validator, ValidationError
 
 from mytunes._models import BaseModel
+from mytunes._models.properties.file import IsLocalFile
 from mytunes._types import TO_SET
 from mytunes.exception import MyTunesValidationError, MyTunesError
-from mytunes._models.properties.file import IsLocalFile
-from pydantic import Field, field_validator, ValidationError
 
 type PathInputType = str | Path | IsLocalFile | None
 

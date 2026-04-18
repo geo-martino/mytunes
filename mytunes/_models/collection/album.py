@@ -1,18 +1,19 @@
 from collections.abc import Sequence, MutableMapping
 from typing import Self, Any
 
+from pydantic import model_validator, computed_field, PositiveInt, validate_call
+
 from mytunes._models.api import CollectionReadEndpoints
 from mytunes._models.api.items import HasAlbumEndpoints
 from mytunes._models.collection._base import RemoteCollection, CollectionModel
 from mytunes._models.cursors import PageCursor
-from mytunes.exception import MyTunesValidationError
 from mytunes._models.item.album import Album, RemoteAlbum
 from mytunes._models.item.artist import Artist, RemoteArtist
 from mytunes._models.item.genre import Genre, RemoteGenre
 from mytunes._models.item.track import Track, HasTracks, RemoteTrack
 from mytunes._models.properties.uri import URI
 from mytunes._models.sequence import UniqueSequence
-from pydantic import model_validator, computed_field, PositiveInt, validate_call
+from mytunes.exception import MyTunesValidationError
 
 
 class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](CollectionModel[TV], HasTracks[TK, TV], Album[RT, GT]):

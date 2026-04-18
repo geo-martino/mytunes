@@ -13,6 +13,12 @@ from aiorequestful.cache.backend.base import ResponseRepository
 from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
+from pydantic import InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
+    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import PydanticUndefined
+from yarl import URL
+
 from mytunes._models import ResourceModel, BaseModel
 from mytunes._models._context import RemoteModelContext
 from mytunes._models.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
@@ -26,12 +32,6 @@ from mytunes._types import get_generic, get_generics, get_generic_type, get_base
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError, ModelError, RequestError, APIModelError, \
     CursorResponseError
 from mytunes.logger import Logger
-from pydantic import InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
-    PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import PydanticUndefined
-from yarl import URL
-
 from .._base import ModelMetaclass
 
 

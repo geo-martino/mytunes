@@ -1,10 +1,11 @@
 from typing import ClassVar, Self
 
+from pydantic import Field, PrivateAttr
+from yarl import URL
+
 from mytunes._models.api import Endpoints, HasEndpoints
 from mytunes._models.item.user import RemoteUser
 from mytunes._models.properties.uri import URI
-from pydantic import Field, PrivateAttr
-from yarl import URL
 
 
 class UserEndpoints[UT: URI, RT: RemoteUser](Endpoints[UT, RT]):

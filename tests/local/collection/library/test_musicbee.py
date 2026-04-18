@@ -1,19 +1,20 @@
 import os
 import shutil
 from collections.abc import Generator
-from pathlib import Path, PureWindowsPath, PurePosixPath
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch, AsyncMock
 
 import pytest
 from faker import Faker
-from mytunes._models.properties.path import PathStemMapper, SystemPath, SystemPaths
+from pytest_mock import MockerFixture
+
+from mytunes._models.properties.path import PathStemMapper, SystemPath
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.library.musicbee import XMLLibraryParser
 from mytunes.local._item.track import LocalTrack
 from mytunes.local.exception import FileDoesNotExistError
-from pytest_mock import MockerFixture
 from tests.testers import BaseModelTester, NoUniqueKeyTester
 
 try:

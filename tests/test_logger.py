@@ -4,6 +4,7 @@ from collections.abc import Generator
 from copy import copy, deepcopy
 
 import pytest
+
 from mytunes.logger import Logger, EXTRA, REPORT, STAT
 
 

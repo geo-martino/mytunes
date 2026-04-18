@@ -3,9 +3,10 @@ from typing import Annotated
 
 import pytest
 from faker import Faker
+from termcolor import can_colorize, colored
+
 from mytunes._models.result import LogFormatter, LenLogFormatter, Result, CountResult, TotalCountResult, MapLogFormatter
 from mytunes.exception import MyTunesTypeError
-from termcolor import can_colorize, colored
 from tests.testers import BaseModelTester
 
 

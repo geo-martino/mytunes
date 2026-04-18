@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections.abc import Sequence, Iterable
 from typing import ClassVar, Any
 
+from pydantic import PrivateAttr
+
 from mytunes._models import AttributeModel
 from mytunes._types import String
-from pydantic import PrivateAttr
 
 
 class HasSeparableTags(AttributeModel):

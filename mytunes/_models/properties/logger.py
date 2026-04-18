@@ -5,10 +5,10 @@ from contextlib import AbstractAsyncContextManager, AbstractContextManager, cont
 from functools import cached_property
 from typing import Self, ClassVar, Any
 
-from mytunes.logger import Logger
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn, \
     TimeRemainingColumn, TaskID
 
+from mytunes.logger import Logger
 from .._base import BaseModel
 
 

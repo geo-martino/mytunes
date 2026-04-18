@@ -2,7 +2,7 @@ import functools
 from abc import abstractmethod
 from collections.abc import Mapping, Callable
 from contextlib import suppress
-from typing import Self, Any, Annotated, TypeIs
+from typing import Self, Any, Annotated
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
@@ -10,16 +10,17 @@ from aiorequestful.cache.exception import CacheError
 from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
+from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
+
 from mytunes._models import AttributeModel
 from mytunes._models._context import RemoteModelContext
 from mytunes._models.api._endpoints import HasEndpoints, Endpoints, _map_handler
-from mytunes.exception import EndpointsError
 from mytunes._models.metadata import Attribute
 from mytunes._models.properties.logger import HasLogger
 from mytunes._models.properties.uri import URI
 from mytunes._models.remote import RemoteModel
 from mytunes._types import get_generic
-from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
+from mytunes.exception import EndpointsError
 
 
 # noinspection PyAbstractClass

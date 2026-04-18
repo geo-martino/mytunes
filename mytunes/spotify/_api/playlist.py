@@ -3,14 +3,15 @@ from typing import ClassVar, final
 
 from aiohttp import ClientResponse
 from aiorequestful.response.exception import ResponseError
-from mytunes.spotify import API_URL
-from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
-from mytunes.spotify._api._types import SpotifyApiURL, SpotifyApiURISequence, SpotifyApiURI
-from mytunes.spotify.user import SpotifyUser
 from pydantic import validate_call, PositiveInt, AliasPath, AliasChoices
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
+from mytunes.exception import RequestError
+from mytunes.spotify import API_URL
+from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
+from mytunes.spotify._api._types import SpotifyApiURL, SpotifyApiURISequence, SpotifyApiURI
+from mytunes.spotify.user import SpotifyUser
 from .._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from .._item.track import SpotifyTrack, SpotifyPlaylistTrack
 from .._properties.uri import SpotifyResourceURI
@@ -18,7 +19,6 @@ from ..._models.api import HasLibraryEndpoints
 from ..._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
 from ..._models.api.types import ApiURISchema, ApiURLSchema
 from ..._models.cursors import PageCursor, HasPageCursor
-from mytunes.exception import RequestError
 from ..._models.properties.image import ImageSource, PILImageFileT
 from ..._models.properties.uri import HasURI
 

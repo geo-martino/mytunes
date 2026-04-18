@@ -2,18 +2,19 @@ from abc import abstractmethod
 from collections.abc import Mapping
 from typing import Any, ClassVar, Self, Annotated, Union
 
+from pydantic import Field, Tag, Discriminator
+
 from mytunes._models import ResourceModel
 from mytunes._models._base.attribute import AttributeMetaclass
 from mytunes._models._base.resource import ResourceMetaclass
 from mytunes._models.collection import CollectionModel
 from mytunes._models.collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
-from mytunes.exception import MyTunesValidationError
 from mytunes._models.item.track import Track, HasTracks, HasMutableTracks
 from mytunes._models.properties.asynch import HasAsyncOperations
 from mytunes._models.properties.logger import HasLogger, HasProgress
+from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.composite import IncludeExcludeFilter
 from mytunes.processors.filters.values import NameFilter
-from pydantic import Field, Tag, Discriminator
 
 
 class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](

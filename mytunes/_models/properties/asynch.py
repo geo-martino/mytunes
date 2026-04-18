@@ -1,11 +1,12 @@
 from asyncio import Semaphore
 from typing import Annotated, Any
 
-from mytunes._models import AttributeModel
 from pydantic import Field
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
+
+from mytunes._models import AttributeModel
 
 
 class _SemaphoreSchema:

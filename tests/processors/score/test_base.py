@@ -1,9 +1,10 @@
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
+from pydantic import InstanceOf
+
 from mytunes._models.properties.name import HasName
 from mytunes.processors.score import Scorer
-from pydantic import InstanceOf
 from tests.testers import BaseModelTester
 
 

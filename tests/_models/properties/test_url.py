@@ -1,9 +1,10 @@
 import json
 
 import pytest
-from mytunes._types import HttpURL
 from pydantic import TypeAdapter
 from yarl import URL
+
+from mytunes._types import HttpURL
 
 
 class TestURLSchema:

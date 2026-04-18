@@ -1,5 +1,7 @@
 from aiorequestful.cache.backend import ResponseCache
 from aiorequestful.cache.backend.base import ResponseRepository
+from yarl import URL
+
 from mytunes.spotify import SpotifyModel
 from mytunes.spotify._api.album import SpotifyAlbumEndpoints
 from mytunes.spotify._api.artist import SpotifyArtistEndpoints
@@ -9,8 +11,6 @@ from mytunes.spotify._api.playlist import SpotifyPlaylistEndpoints
 from mytunes.spotify._api.search import SpotifySearchEndpoints
 from mytunes.spotify._api.track import SpotifyTrackEndpoints
 from mytunes.spotify._api.user import SpotifyUserEndpoints
-from yarl import URL
-
 from ..._models.api import RemoteAPI, HasCache
 from ..._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from ..._models.api.playlist import HasPlaylistEndpoints

@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Any, Annotated
 
 import mutagen
+from pydantic import Field, model_validator, PrivateAttr
+
 from mytunes._models.properties.path import PathMapper
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.playlist.result import LimitResult, SortResult, LoadPlaylistResult, SavePlaylistResult
@@ -12,8 +14,6 @@ from mytunes.processors.filters.composite import CompositeFilter, CompositeResul
     IncludeExcludeResult
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
-from pydantic import Field, model_validator, PrivateAttr
-
 from ..._item.track import LocalTrack, HasLocalTracks
 from ...._models import makecls
 from ...._models.collection.playlist import MutablePlaylist
