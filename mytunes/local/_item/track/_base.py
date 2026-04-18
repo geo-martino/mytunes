@@ -691,10 +691,11 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
         :return: A map of the track path to the fields that were updated on that track.
         """
         updated: dict[Path, dict[str, Any]] = {}
+
         for other in others:
             track = self.tracks.get(other)
-            if track is None:
-                track = next((tr for tr in self.tracks if tr.path == other.path), None)
+            if track is None and isinstance(other, LocalTrack):
+                track = next((it for it in self.tracks if it.path == other.path), None)
                 if track is None:
                     continue
 

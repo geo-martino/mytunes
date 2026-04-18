@@ -44,7 +44,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
 
     async def test_get(self, model: SpotifyArtistEndpoints, uri: SpotifyResourceURI, mock_get: Mock):
         model = await model.get(uri)
-        mock_get.assert_called_with(API_URL.joinpath("artists", uri.id))
+        mock_get.assert_called_once_with(API_URL.joinpath("artists", uri.id))
         assert isinstance(model, SpotifyArtistCollection)
         assert model.uri == uri
 

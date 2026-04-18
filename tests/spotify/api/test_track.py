@@ -48,7 +48,7 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
             mock_get_features: Mock,
     ):
         model = await model.get_audio_features(uri)
-        mock_get_features.assert_called_with(API_URL.joinpath("audio-features", uri.id))
+        mock_get_features.assert_called_once_with(API_URL.joinpath("audio-features", uri.id))
         assert isinstance(model, SpotifyAudioFeatures)
         assert model.uri == uri
 
@@ -94,5 +94,5 @@ class TestSpotifyTrackEndpoints(BaseModelTester):
             mock_get_analysis: Mock,
     ):
         model = await model.get_audio_analysis(uri)
-        mock_get_analysis.assert_called_with(API_URL.joinpath("audio-analysis", uri.id))
+        mock_get_analysis.assert_called_once_with(API_URL.joinpath("audio-analysis", uri.id))
         assert isinstance(model, SpotifyAudioAnalysis)  # no id on this model so just check it's the right type
