@@ -305,11 +305,11 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped)
 
     async def _extend_collection_items[T: RemoteResource | RemoteCollection](self, collection: T) -> T:
-        message = "Cannot extend items in collection: valid endpoints not configured for this resource type"
         if not isinstance(collection, RemoteCollection):
             try:
                 collection = await collection.reload(self.api)
             except AttributeError:
+                message = "Cannot reload collection: valid endpoints not configured for this resource type"
                 self._log_debug(collection, message=message)
                 return collection
 
@@ -321,6 +321,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         try:
             await collection.extend(self.api)
         except AttributeError:
+            message = "Cannot extend items in collection: valid endpoints not configured for this resource type"
             self._log_debug(collection, message=message)
 
         return collection

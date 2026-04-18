@@ -113,8 +113,8 @@ class MockRemoteResource(RemoteResource[SimpleURI]):
         RemoteArtist.type,
     ))
 
-    async def reload(self, api: HasEndpoints) -> None:
-        pass
+    async def reload(self, api: HasEndpoints) -> Self:
+        return self
 
 
 class MockRemoteCollection(MockRemoteResource, RemoteCollection, HasName):

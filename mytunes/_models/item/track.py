@@ -141,6 +141,7 @@ class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
     Track[RT, AT, GT], RemoteResource[UT], metaclass=makecls()
 ):
     @validate_call
-    async def reload(self, api: HasTrackEndpoints[ItemReadEndpoints]) -> None:
+    async def reload(self, api: HasTrackEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.tracks.get(self.uri)
         self.__dict__.update(model.__dict__)
+        return model

@@ -1,4 +1,4 @@
-from typing import ClassVar, Annotated
+from typing import ClassVar, Annotated, Self
 
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
@@ -116,6 +116,7 @@ class HasAlbums[AT: Album](HasSeparableTags):
 
 class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=makecls()):
     @validate_call
-    async def reload(self, api: HasAlbumEndpoints[ItemReadEndpoints]) -> None:
+    async def reload(self, api: HasAlbumEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.albums.get(self.uri)
         self.__dict__.update(model.__dict__)
+        return model

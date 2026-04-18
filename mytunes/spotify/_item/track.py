@@ -246,9 +246,10 @@ class SpotifyAudioFeatures(SpotifyResource[SpotifyResourceURI], HasLength, HasSp
         return uri
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasTrackEndpoints[SpotifyTrackEndpoints]) -> None:
+    async def reload(self, api: HasTrackEndpoints[SpotifyTrackEndpoints]) -> Self:
         model = await api.tracks.get_audio_features(self.uri)
         self.__dict__.update(model.__dict__)
+        return model
 
 
 class _SpotifyAudioAnalysisMeta(BaseModel):

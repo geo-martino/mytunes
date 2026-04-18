@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import ClassVar, TYPE_CHECKING, Annotated
+from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 
 from mytunes._models import BaseModel
 from mytunes._models._metaclass import makecls
@@ -25,6 +25,9 @@ class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=makecl
         return hash(self.uri)
 
     @abstractmethod
-    async def reload(self, api: HasEndpoints) -> None:
-        """Reload this remote resource using the provided API."""
+    async def reload(self, api: HasEndpoints) -> Self:
+        """
+        Reload this remote resource using the provided API.
+        Returns the response model from the API which will always be a different instance to this resource.
+        """
         raise NotImplementedError

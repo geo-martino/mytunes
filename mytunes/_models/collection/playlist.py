@@ -184,9 +184,10 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
         return self
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadEndpoints]) -> None:
+    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadEndpoints]) -> Self:
         model = await api.playlists.get(self.uri)
         self.__dict__.update(model.__dict__)
+        return model
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> None:

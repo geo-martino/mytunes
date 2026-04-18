@@ -1,4 +1,4 @@
-from typing import ClassVar, TYPE_CHECKING
+from typing import ClassVar, TYPE_CHECKING, Self
 
 from mytunes._models.properties.image import HasImages
 from mytunes._models.properties.name import HasName
@@ -23,6 +23,7 @@ class RemoteUser[UT: URI](RemoteResource[UT], HasName, HasImages):
     )
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasUserEndpoints[UserEndpoints]) -> None:
+    async def reload(self, api: HasUserEndpoints[UserEndpoints]) -> Self:
         model = await api.users.get_me()
         self.__dict__.update(model.__dict__)
+        return model

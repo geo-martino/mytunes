@@ -1,4 +1,4 @@
-from typing import ClassVar, Annotated
+from typing import ClassVar, Annotated, Self
 
 from mytunes._models import ResourceModel
 from mytunes._models._metaclass import makecls
@@ -62,6 +62,7 @@ class HasGenres[GT: Genre](HasSeparableTags):
 
 class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=makecls()):
     @validate_call
-    async def reload(self, api: HasGenreEndpoints[ItemReadEndpoints]) -> None:
+    async def reload(self, api: HasGenreEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.genres.get(self.uri)
         self.__dict__.update(model.__dict__)
+        return model
