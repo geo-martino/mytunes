@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 
 from mytunes._models.properties.date import SparseDate
 from tests.testers import BaseModelTester
@@ -11,6 +12,13 @@ class TestSparseDate(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SparseDate:
         return SparseDate(year=faker.year())
+
+    def test_validate_month_not_set_when_day_set(self, model: SparseDate, faker: Faker):
+        model.month = None
+        model.day = None
+
+        with pytest.raises(ValidationError):
+            model.day = faker.random_int(min=1, max=28)
 
     def test_from_date(self, model: SparseDate):
         model = model.model_validate("2025-03-01")
@@ -39,10 +47,10 @@ class TestSparseDate(BaseModelTester):
         model.day = None
         assert model.date is None
 
-        model.day = faker.random_int(min=1, max=28)
+        model.month = faker.random_int(min=1, max=12)
         assert model.date is None
 
-        model.month = faker.random_int(min=1, max=12)
+        model.day = faker.random_int(min=1, max=28)
         assert model.date == date(year=model.year, month=model.month, day=model.day)
 
     def test_to_string(self, model: SparseDate):
@@ -51,12 +59,11 @@ class TestSparseDate(BaseModelTester):
         model.day = 1
         assert str(model) == "2025-03-01"
 
-        model.month = None
-        assert str(model) == "2025"
-
-        model.month = 3
         model.day = None
         assert str(model) == "2025-03"
+
+        model.month = None
+        assert str(model) == "2025"
 
     def test_equality(self):
         model = SparseDate(year=2024, month=3, day=12)

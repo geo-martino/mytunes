@@ -3,12 +3,13 @@ from __future__ import annotations
 from contextlib import suppress
 from datetime import date, datetime
 from functools import total_ordering
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ValidationError
 
 from mytunes._models.metadata import TagAttribute, Attribute
 from .._base.attribute import AttributeModel
+from ...exception import MyTunesValidationError
 
 _DATA_ADAPTER = TypeAdapter[date](date)
 
@@ -53,6 +54,12 @@ class SparseDate(AttributeModel):
 
         value = iter(data.split("-"))
         return dict(year=next(value, None), month=next(value, None), day=next(value, None))
+
+    @model_validator(mode="after")
+    def _validate_month_not_set_when_day_set(self) -> Self:
+        if self.month is None and self.day is not None:
+            raise MyTunesValidationError("Cannot set day when month is not set.")
+        return self
 
     @property
     def date(self) -> date | None:
