@@ -40,5 +40,5 @@ class FixedValue[VT: Any](Value[BaseModel, VT]):
         description="The value of the fixed value.",
     )
 
-    def get(self, *_, **__) -> VT:
+    def get(self, item: Any) -> VT:
         return self.value

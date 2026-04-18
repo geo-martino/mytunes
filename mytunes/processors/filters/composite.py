@@ -50,7 +50,7 @@ class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
     def ready(self):
         return any(filter_.ready for filter_ in self.filters)
 
-    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[IT]:
+    def apply(self, values: Collection[IT], reference: IT | None = None) -> list[IT]:
         return self.match(values=values, reference=reference).combined
 
     @abstractmethod
@@ -130,13 +130,13 @@ class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
         return self.include, self.exclude
 
     @validate_call
-    def check(self, item: IT, *_, **__) -> bool:
-        match = self.include.check(item)
+    def check(self, item: IT, reference: IT | None = None) -> bool:
+        match = self.include.check(item, reference=reference)
         if self.exclude.ready:
-            match &= not self.exclude.check(item)
+            match &= not self.exclude.check(item, reference=reference)
         return match
 
-    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[IT]:
+    def apply(self, values: Collection[IT], reference: IT | None = None) -> list[IT]:
         return self.match(values=values, reference=reference).combined
 
     def match(self, values: Collection[IT], reference: IT | None = None) -> IncludeExcludeResult[IT]:
@@ -213,7 +213,7 @@ class GroupFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
     )
 
     @validate_call
-    def check(self, item: IT, reference: IT | None = None, *_, **__) -> bool:
+    def check(self, item: IT, reference: IT | None = None) -> bool:
         if self.exclude.check(item, reference=reference):
             return False
 
@@ -223,7 +223,7 @@ class GroupFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
 
         return match  # cannot apply group_by logic as it depends on the full set of values
 
-    def apply(self, values: Collection[IT], reference: IT | None = None, *_, **__) -> list[IT]:
+    def apply(self, values: Collection[IT], reference: IT | None = None) -> list[IT]:
         return self.match(values=values, reference=reference).combined
 
     def match(self, values: Collection[IT], reference: IT | None = None) -> GroupResult:

@@ -265,7 +265,7 @@ class TestLocalTrack(UniqueKeyTester):
 
     async def test_save(self, model: LocalTrack, file: mutagen.FileType, faker: Faker):
         with patch.object(mutagen.FileType, "save") as mock_save:
-            await model.save(file)
+            await model.save(file=file)
             mock_save.assert_called_once()
 
     def test_clear_all_tags(self, file: mutagen.FileType, faker: Faker):
@@ -516,7 +516,8 @@ class TestLocalTrack(UniqueKeyTester):
         assert set(results.keys()) == {track.path for track in tracks}
         assert all(t in results.values() for t in expected)
 
-        mock_save.assert_not_called()
+        assert mock_save.call_count == len(tracks)
+        assert mock_save.call_args.kwargs["dry_run"] is True
         assert mock_semaphore.call_count == len(tracks)
 
     async def test_save_tracks(

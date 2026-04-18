@@ -68,7 +68,7 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
         return len(self.comparers) > 0
 
     @validate_call
-    def check(self, item: IT, reference: IT | None = None, *_, **__) -> bool:
+    def check(self, item: IT, reference: IT | None = None) -> bool:
         # initial state determined by ready and match_all states
         matched = self.ready and self.match_all
 

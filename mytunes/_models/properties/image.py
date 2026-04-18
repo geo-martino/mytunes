@@ -179,7 +179,7 @@ class ImageBase(BaseModel):
 # noinspection PyAbstractClass
 class ImageSource(ImageBase):
     @abstractmethod
-    async def load(self, **kwargs) -> PILImageFileT:
+    async def load(self) -> PILImageFileT:
         """Load the image."""
         raise NotImplementedError
 
@@ -234,7 +234,7 @@ class ImageURL(ImageSource):
             return super().__eq__(other)
         return self.url == other.url and self.type == other.type
 
-    async def load(self, session: aiohttp.ClientSession = None, **__) -> PILImageFileT:
+    async def load(self, session: aiohttp.ClientSession = None) -> PILImageFileT:
         """Load the image from the URL."""
         close_session = False
         if session is None:

@@ -160,7 +160,7 @@ class M3U(LocalPlaylist[PathFilter]):
         tracks = sorted(tracks, key=lambda track: paths.index(track.path))
         return SortResult(sorted=tuple(tracks))
 
-    async def save(self, dry_run: bool = False, *_, **__) -> SyncM3UResult:
+    async def save(self, dry_run: bool = False) -> SyncM3UResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
 

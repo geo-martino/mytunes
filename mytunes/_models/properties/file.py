@@ -75,7 +75,7 @@ class IsFile(BaseModel, metaclass=FileMetaclass):
 # noinspection PyAbstractClass
 class IsReadableFile(IsFile):
     @abstractmethod
-    async def load(self, *args, **kwargs) -> Any:
+    async def load(self) -> Any:
         """Load the file to this object"""
         raise NotImplementedError
 
@@ -83,7 +83,7 @@ class IsReadableFile(IsFile):
 # noinspection PyAbstractClass
 class IsWriteableFile(IsFile):
     @abstractmethod
-    async def save(self, *args, **kwargs) -> Any:
+    async def save(self) -> Any:
         """Save this object to file."""
         raise NotImplementedError
 

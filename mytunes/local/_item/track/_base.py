@@ -480,7 +480,10 @@ class LocalTrack[FT: FileType](
         self.__dict__ = model.__dict__
         return file
 
-    async def save(self, file: FT) -> FT:
+    async def save(self, dry_run: bool = False, file: FT = None) -> FT:
+        if dry_run or file is None:
+            return file
+
         # TODO: make this async somehow?
         file.save()
         return file
@@ -638,8 +641,8 @@ class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, Ha
             async with self.concurrency:
                 file = await track.load()
                 tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
-                if tags and not dry_run:
-                    await track.save(file)
+                if tags:
+                    await track.save(dry_run=dry_run, file=file)
 
             return track.path, tags
 

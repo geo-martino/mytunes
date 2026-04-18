@@ -35,7 +35,7 @@ class ValueFilter[IT](Filter[IT]):
         return {"values": values}
 
     @validate_call
-    def check(self, item: IT, *_, **__) -> bool:
+    def check(self, item: IT, reference: IT | None = None) -> bool:
         return item in self.values
 
     def __iter__(self):
@@ -77,7 +77,7 @@ class NameFilter(ValueFilter[str]):
                 return item
 
     @validate_call
-    def check(self, item: str | HasName, *_, **__) -> bool:
+    def check[T: str | HasName](self, item: T, reference: T | None = None) -> bool:
         return self._extract_value_from_model(item) in self.values
 
 
@@ -136,5 +136,5 @@ class PathFilter(ValueFilter[str]):
         return self
 
     @validate_call
-    def check(self, item: PathInputType, *_, **__) -> bool:
+    def check(self, item: PathInputType, reference: PathInputType | None = None) -> bool:
         return self.path_mapper.unmap(item, check_existence=False) in self.values
