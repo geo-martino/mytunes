@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from contextlib import suppress
 from datetime import date, datetime
+from functools import total_ordering
 from typing import Annotated, Any
 
-from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt
+from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ValidationError
 
 from mytunes._models.metadata import TagAttribute, Attribute
 from .._base.attribute import AttributeModel
@@ -12,6 +13,7 @@ from .._base.attribute import AttributeModel
 _DATA_ADAPTER = TypeAdapter[date](date)
 
 
+@total_ordering
 class SparseDate(AttributeModel):
     """
     A sparse date represents a date which may not have all parts to make up a full date.
@@ -77,10 +79,30 @@ class SparseDate(AttributeModel):
             try:
                 dt = TypeAdapter(date).validate_python(other)
                 return self.__eq__(dt)
-            except ValueError:
+            except ValidationError:
                 return False
 
         return super().__eq__(other)
+
+    def __lt__(self, other: Any) -> bool:
+        def _sort_key(item: Any) -> tuple[int, int, int] | None:
+            match item:
+                case SparseDate():
+                    return item.year, item.month or 1, item.day or 1
+                case date():
+                    return item.year, item.month, item.day
+                case str():
+                    try:
+                        dt = SparseDate.model_validate(other)
+                        return _sort_key(dt)
+                    except ValidationError:
+                        return None
+                case _:
+                    return None
+
+        self_key = _sort_key(self)
+        other_key = _sort_key(other)
+        return self_key is not None and other_key is not None and self_key < other_key
 
 
 class HasReleaseDate(AttributeModel):

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from faker import Faker
@@ -64,3 +64,9 @@ class TestSparseDate(BaseModelTester):
         assert model == model
         assert model == date(2024, 3, 12)
         assert model == "2024-03-12"
+
+    def test_ordering(self, model: SparseDate, faker: Faker):
+        model_date = date(year=model.year, month=model.month or 1, day=model.day or 1)
+        assert model < model.model_copy(update=dict(year=model.year + 2))
+        assert model < model_date + timedelta(days=1)
+        assert model > (model_date - timedelta(days=1)).isoformat()
