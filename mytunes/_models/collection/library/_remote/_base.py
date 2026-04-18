@@ -95,7 +95,7 @@ class RemoteLibrary[
         results["SAVED ALBUMS"] = self._generate_album_results()
         table = Result.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     def dump(self) -> RemoteLibraryDump[UT]:
         names_seen = set()
@@ -180,8 +180,7 @@ class RemoteLibrary[
         header = f"{self._log_name.upper()} PLAYLISTS"
         table = RemotePlaylistsResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True)
-        self._logger.print_line(STAT)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[PT]]:
         return RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
@@ -212,8 +211,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} TRACKS"
         table = result.generate_table(results={key: result})
 
-        self._logger.stat(table, new_line_start=True)
-        self._logger.print_line(STAT)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     def _generate_track_results(self) -> RemoteTracksResult[TT]:
         return RemoteTracksResult.from_library(self.tracks, self.playlists.unique, self.albums)

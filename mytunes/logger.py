@@ -26,7 +26,7 @@ REPORT = logging.INFO - 3
 logging.addLevelName(REPORT, "REPORT")
 logging.REPORT = REPORT
 
-STAT = logging.DEBUG + 3
+STAT = logging.INFO - 5
 logging.addLevelName(STAT, "STAT")
 logging.STAT = STAT
 
@@ -101,6 +101,7 @@ class Logger(logging.Logger):
             header: HeaderType | None = None,
             hidden: str | None = None,
             new_line_start: bool = False,
+            new_line_end: bool = False,
             **kwargs,
     ):
         if not self.compact and new_line_start:
@@ -108,6 +109,9 @@ class Logger(logging.Logger):
 
         msg = self.generate_message(msg, header, hidden)
         super()._log(level, msg, args, **kwargs)
+
+        if not self.compact and new_line_end:
+            self.print_line(level)
 
     def stat(self, *args, **kwargs) -> None:
         """Log 'msg % args' with severity 'STAT'."""
@@ -119,7 +123,6 @@ class Logger(logging.Logger):
         if self.isEnabledFor(REPORT):
             self._log(REPORT, *args, **kwargs)
 
-    @validate_call
     def extra(self, *args, **kwargs) -> None:
         """Log 'msg % args' with severity 'EXTRA'."""
         if not self.isEnabledFor(EXTRA):

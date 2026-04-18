@@ -127,18 +127,17 @@ class LocalLibrary(
         results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True)
-        self._logger.print_line(STAT)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
             return
 
         header = colored(message, "white") + ":"
-        errors = list(map(lambda e: colored(e, "red"), sorted(set(self.errors))))
+        errors = list(map(lambda err: colored(err, "red"), sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
-        self._logger.warning(log, new_line_start=True)
+        self._logger.warning(log, new_line_start=True, new_line_end=True)
         self.errors.clear()
 
     ###########################################################################

@@ -123,8 +123,7 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)
 
-        self._logger.report(table, new_line_start=True)
-        self._logger.print_line(REPORT)
+        self._logger.report(table, new_line_start=True, new_line_end=True)
 
     def _log_start(self, collections: Sequence[CollectionModel]) -> None:
         types = self._logger.format_types_to_string(collections)
