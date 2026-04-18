@@ -198,6 +198,7 @@ class LocalLibrary(
                 yield path
 
     def log_tracks(self) -> None:
+        self._logger.print_line(STAT)
         self._log_track_uris()
 
     def _log_track_uris(self) -> None:
@@ -310,6 +311,7 @@ class LocalLibrary(
         self._logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
     def log_playlists(self, results: dict[str, LoadPlaylistResult] = None) -> None:
+        self._logger.print_line(STAT)
         if results:
             self._log_playlist_load(results)
         self._log_playlist_uris()
@@ -318,7 +320,8 @@ class LocalLibrary(
         header = f"{self.source.upper()} PLAYLISTS LOADED"
         table = LoadPlaylistResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True)
+        self._logger.stat(table)
+        self._logger.print_line(STAT)
 
     def _log_playlist_uris(self) -> None:
         results = self._generate_playlist_uris_results()
