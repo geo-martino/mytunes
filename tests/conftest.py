@@ -81,12 +81,12 @@ def genres(faker: Faker) -> list[Genre]:
 
 @pytest.fixture
 def playlist(faker: Faker) -> Playlist:
-    return MutablePlaylist(name=faker.sentence())
+    return MutablePlaylist(name=faker.sentence().rstrip("."))
 
 
 @pytest.fixture
 def playlists(faker: Faker) -> list[Playlist]:
-    return [MutablePlaylist(name=faker.sentence()) for _ in range(faker.random_int(10, 30))]
+    return [MutablePlaylist(name=faker.sentence().rstrip(".")) for _ in range(faker.random_int(10, 30))]
 
 
 @pytest.fixture

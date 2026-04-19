@@ -77,7 +77,7 @@ class TestWMA(LocalTrackTester):
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> WMA:
         extension = choice(tuple(WMA.supported_extensions))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
-        return WMA(name=faker.sentence(), uri=uri, path=path)
+        return WMA(name=faker.sentence().rstrip("."), uri=uri, path=path)
 
     def test_deserialize_unicode_attribute(self, faker: Faker):
         expected = faker.sentence()

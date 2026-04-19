@@ -14,7 +14,7 @@ from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 class TestTrack(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Track:
-        return Track(name=faker.sentence())
+        return Track(name=faker.sentence().rstrip("."))
 
     @pytest.fixture
     def tracks(self, album: Album, tracks: list[Track], faker: Faker) -> list[Track]:
@@ -28,48 +28,48 @@ class TestTrack(NoUniqueKeyTester):
 
     def test_set_track_total_from_album(self, tracks: list[Track], faker: Faker):
         # does not attempt to set track.total when not available
-        track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
+        track = Track(name=faker.sentence().rstrip("."), album=Album(name=faker.sentence().rstrip(".")))
         assert track.track is None
-        track = Track(name=faker.sentence(), album=AlbumCollection(name=faker.sentence()))
+        track = Track(name=faker.sentence().rstrip("."), album=AlbumCollection(name=faker.sentence().rstrip(".")))
         assert track.track is None
 
         album = AlbumCollection(name=tracks[0].album.name, tracks=tracks)
         assert album.track_total == len(tracks)
 
-        track = Track(name=faker.sentence(), album=album)
+        track = Track(name=faker.sentence().rstrip("."), album=album)
         assert isinstance(track.track, Position)
         assert track.track.number is None
         assert track.track.total == album.track_total
 
-        track = Track(name=faker.sentence(), album=album, track=5)
+        track = Track(name=faker.sentence().rstrip("."), album=album, track=5)
         assert track.track.number == 5
         assert track.track.total == album.track_total
 
     def test_set_disc_total_from_album(self, tracks: list[Track], faker: Faker):
         # does not attempt to set disc.total when not available
-        track = Track(name=faker.sentence(), album=Album(name=faker.sentence()))
+        track = Track(name=faker.sentence().rstrip("."), album=Album(name=faker.sentence().rstrip(".")))
         assert track.disc is None
-        track = Track(name=faker.sentence(), album=AlbumCollection(name=faker.sentence()))
+        track = Track(name=faker.sentence().rstrip("."), album=AlbumCollection(name=faker.sentence().rstrip(".")))
         assert track.disc is None
 
         album = AlbumCollection(name=tracks[0].album.name, tracks=tracks)
         assert album.disc_total == max(track.disc.total for track in tracks)
 
-        track = Track(name=faker.sentence(), album=album)
+        track = Track(name=faker.sentence().rstrip("."), album=album)
         assert track.disc is not None
         assert track.disc.number is None
         assert track.disc.total == album.disc_total
 
-        track = Track(name=faker.sentence(), album=album, disc=5)
+        track = Track(name=faker.sentence().rstrip("."), album=album, disc=5)
         assert track.disc.number == 5
         assert track.disc.total == album.disc_total
 
     def test_equality(self, faker: Faker):
-        track = Track(name=faker.sentence(), artist=faker.name(), album=faker.name())
+        track = Track(name=faker.sentence().rstrip("."), artist=faker.name(), album=faker.name())
         track_equal = Track(name=track.name, artists=track.artists, album=track.album)
         assert track == track_equal, "Tracks should be equal"
 
-        track_different_name = Track(name=faker.sentence(), artists=track.artists, album=track.album)
+        track_different_name = Track(name=faker.sentence().rstrip("."), artists=track.artists, album=track.album)
         assert track != track_different_name, "Tracks with different names should not be equal"
 
         track_different_artist = Track(name=track.name, artists=faker.name(), album=track.album)

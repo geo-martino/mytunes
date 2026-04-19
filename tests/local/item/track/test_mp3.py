@@ -58,7 +58,7 @@ class TestMP3(LocalTrackTester):
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> MP3:
         extension = choice(tuple(MP3.supported_extensions))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
-        return MP3(name=faker.sentence(), uri=uri, path=path)
+        return MP3(name=faker.sentence().rstrip("."), uri=uri, path=path)
     
     def test_merge_suffixed_tags(self, uri: URI, faker: Faker):
         data: dict[str, str | bytes | list] = {

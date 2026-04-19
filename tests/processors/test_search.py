@@ -411,7 +411,7 @@ class TestCollectionSearcher(SearcherTester):
     @pytest.fixture
     def collections(self, tracks: list[Track], faker: Faker) -> list[CollectionModel]:
         return [
-            MockCollection(name=faker.sentence(), all_items=faker.random_elements(tracks))
+            MockCollection(name=faker.sentence().rstrip("."), all_items=faker.random_elements(tracks))
             for _ in range(faker.random_int(5, 10))
         ]
 
@@ -446,7 +446,7 @@ class TestCollectionSearcher(SearcherTester):
         _items=MagicMock(return_value=()),
     )
     def test_album_on_items_only(self, model: Searcher, tracks: list[Track], faker: Faker):
-        album = Album(name=faker.sentence(), compilation=False)
+        album = Album(name=faker.sentence().rstrip("."), compilation=False)
         for track in tracks:
             track.album = album
 
@@ -499,7 +499,7 @@ class TestCollectionSearcher(SearcherTester):
 
     async def test_search_collections(self, model: Searcher, collections: list[CollectionModel], faker: Faker):
         def _random_result(*_, **__) -> tuple[str, SearchResult]:
-            return faker.sentence(), SearchResult()
+            return faker.sentence().rstrip("."), SearchResult()
 
         with patch.object(
                 model, "_search_collection", side_effect=_random_result

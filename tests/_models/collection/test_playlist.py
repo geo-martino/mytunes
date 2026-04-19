@@ -31,13 +31,13 @@ from tests.utils import split_list
 class TestPlaylist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Playlist:
-        return Playlist(name=faker.sentence())
+        return Playlist(name=faker.sentence().rstrip("."))
 
 
 class TestMutablePlaylist(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> MutablePlaylist:
-        return MutablePlaylist(name=faker.sentence())
+        return MutablePlaylist(name=faker.sentence().rstrip("."))
 
 
 class TestHasPlaylists(BaseModelTester):
@@ -182,7 +182,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
     def mock_get_playlist_items(
             self, model: RemoteMutablePlaylist, uris: list[URI], faker: Faker
     ) -> Generator[Mock]:
-        tracks = [RemoteTrack(uri=uri, name=faker.sentence()) for uri in uris]
+        tracks = [RemoteTrack(name=faker.sentence().rstrip("."), uri=uri) for uri in uris]
         with (
             patch.object(
                 PlaylistReadWriteEndpoints, "get", return_value=model, new_callable=AsyncMock

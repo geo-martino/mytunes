@@ -81,7 +81,7 @@ class TestSearchEndpoints(EndpointsTester):
             mock_query_params: Mock,
             faker: Faker,
     ):
-        query = faker.sentence()
+        query = faker.sentence().rstrip(".")
         limit = faker.random_int(1, 50)
         expected_params = {"query": query, "types": types, "limit": limit}
 
@@ -99,7 +99,7 @@ class TestSearchEndpoints(EndpointsTester):
             mock_query_params: Mock,
             faker: Faker,
     ):
-        query = faker.sentence()
+        query = faker.sentence().rstrip(".")
 
         await model.query(query=query, types=types)
         mock_query_params.assert_called_once_with(query=query, types=types, limit=model._query_limit)

@@ -49,7 +49,7 @@ class TestM4A(LocalTrackTester):
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> M4A:
         extension = choice(tuple(M4A.supported_extensions))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
-        return M4A(name=faker.sentence(), uri=uri, path=path)
+        return M4A(name=faker.sentence().rstrip("."), uri=uri, path=path)
 
     def test_deserialize_free_form_field(self, faker: Faker):
         expected = faker.pystr()

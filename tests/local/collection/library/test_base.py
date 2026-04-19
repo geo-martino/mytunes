@@ -28,7 +28,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
     @pytest.fixture
     def library_folders(self, faker: Faker, tmp_path: Path) -> list[Path]:
         """The folders which contain library tracks and playlists."""
-        paths = [tmp_path.joinpath(faker.sentence()) for _ in range(faker.random_int(1, 4))]
+        paths = [tmp_path.joinpath(faker.sentence().rstrip(".")) for _ in range(faker.random_int(1, 4))]
         for path in paths:
             path.mkdir(parents=True, exist_ok=True)
         return paths

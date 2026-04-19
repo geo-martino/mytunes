@@ -86,7 +86,7 @@ class TestFLAC(LocalTrackTester):
     def model(self, uri: URI, faker: Faker, tmp_path: Path) -> FLAC:
         extension = choice(tuple(FLAC.supported_extensions))
         path = Path(tmp_path, faker.file_name(extension=extension)).absolute()
-        return FLAC(name=faker.sentence(), uri=uri, path=path)
+        return FLAC(name=faker.sentence().rstrip("."), uri=uri, path=path)
 
     # noinspection PyMethodOverriding
     @pytest.fixture
@@ -197,7 +197,7 @@ class TestFLAC(LocalTrackTester):
         assert model._serialize_string(value, handler=lambda x: x, info=info) == str(value)
 
     def test_serialize_strings(self, model: FLAC, genres: list[LocalGenre], faker: Faker):
-        value = genres + [faker.sentence() for _ in range(faker.random_int(3, 6))]
+        value = genres + [faker.sentence().rstrip(".")for _ in range(faker.random_int(3, 6))]
         expected = [genre.name for genre in genres] + value[len(genres):]
         info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
         # noinspection PyTypeChecker
