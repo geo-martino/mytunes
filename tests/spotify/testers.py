@@ -55,7 +55,7 @@ class SpotifyModelTester(BaseModelTester, metaclass=ABCMeta):
 
     @staticmethod
     def assert_expected_genres(model: HasGenres, payload: Json):
-        assert sorted(genre.name for genre in model.genres) == sorted(payload["genres"])
+        assert sorted(genre.name for genre in model.genres) == sorted(set(payload["genres"]))
 
     @staticmethod
     def assert_expected_length(model: HasLength, payload: Json):

@@ -549,10 +549,11 @@ class TestXMLConditions(BaseModelTester):
         combine_all = faker.boolean()
 
         expected = ComparerFilter[LocalTrack](
-            comparers={
-                condition1.build_comparer(): condition1.and_conditions.build_filter(True),
-                condition2.build_comparer(): condition2.or_conditions.build_filter(False),
-            },
+            comparers=(condition1.build_comparer(), condition2.build_comparer()),
+            nested=(
+                condition1.and_conditions.build_filter(True),
+                condition2.or_conditions.build_filter(False),
+            ),
             match_all=model.combine_method == "All",
             combine_all=combine_all,
         )
@@ -572,10 +573,11 @@ class TestXMLConditions(BaseModelTester):
         condition2.or_conditions = _XMLConditions(condition=[_XMLCondition(comparison="IsIn", value=["4", "5", "6"])])
 
         comparers = ComparerFilter(
-            comparers={
-                condition1.build_comparer(): condition1.and_conditions.build_filter(True),
-                condition2.build_comparer(): condition2.or_conditions.build_filter(False),
-            },
+            comparers=(condition1.build_comparer(), condition2.build_comparer()),
+            nested=(
+                condition1.and_conditions.build_filter(True),
+                condition2.or_conditions.build_filter(False),
+            ),
             match_all=faker.boolean(),
         )
 

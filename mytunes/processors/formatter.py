@@ -134,8 +134,8 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
         if len(value) != len(self.fields):
             raise MyTunesValidationError(
-                f"The number of {name} must match the number of fields. "
-                f"{len(value)} {name} != {len(self.fields)} fields."
+                f"The number of {name} must match the number of fields: "
+                f"{len(value)} {name} != {len(self.fields)} fields"
             )
 
     def format(self, item: RT | Iterable[RT], indices: bool | Sequence = False) -> str:

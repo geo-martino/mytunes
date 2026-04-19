@@ -1,7 +1,9 @@
-from collections.abc import Iterable, Mapping, Collection
+from collections.abc import Iterable, Mapping, Collection, Sequence
 from contextlib import suppress
-from typing import Self, Any, final
+from typing import Self, Any, final, Annotated
 
+from mytunes._types import TO_TUPLE
+from mytunes.exception import MyTunesValidationError
 from pydantic import Field, field_validator, field_serializer, validate_call, ValidationError, model_validator
 
 from ..._models import ResourceModel
@@ -14,12 +16,17 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     __final__ = True
 
-    comparers: Mapping[Comparer, Self] = Field(
+    comparers: Annotated[Sequence[Comparer], TO_TUPLE] = Field(
+        description="Comparers to filter against.",
+        default_factory=tuple,
+    )
+    nested: Annotated[Sequence[Self | None], TO_TUPLE] | None = Field(
         description=(
-            "Comparers to filter against. Mapped to additional filters where the first boolean indicates "
-            "whether to AND (True) or OR (False) the comparer and sub-filter results."
+            "Additional filters to apply in conjunction with comparers. "
+            "Must match the comparers 1-to-1."
         ),
-        default_factory=dict,
+        default=None,
+        validation_alias="filters",
     )
     match_all: bool = Field(
         description="When true, all comparers must match, otherwise any can match",
@@ -45,23 +52,16 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
 
         return data
 
-    @field_validator("comparers", mode="before", check_fields=True)
-    @classmethod
-    def _comparer_to_mapping(
-        cls, value: Comparer | Iterable[Comparer] | Mapping[str, Self]
-    ) -> Mapping[str, tuple[bool, Self]]:
-        if isinstance(value, Comparer):
-            value = [value]
-        if not isinstance(value, Mapping):
-            value = {comparer: ComparerFilter() for comparer in value}
+    @model_validator(mode="after")
+    def _validate_lengths_match(self) -> Self:
+        if self.nested is None:
+            return self
 
-        return value
-
-    @field_serializer("comparers", check_fields=True)
-    def _flatten_comparers[T: Mapping[Comparer, tuple]](self, comparers: T) -> T | list[Comparer]:
-        if all(not sub_filter.ready for sub_filter in comparers.values()):
-            return list(self.comparers.keys())
-        return comparers
+        if len(self.comparers) != len(self.nested):
+            raise MyTunesValidationError(
+                f"The number of comparers must match the number of nested filters when provided: "
+                f"{len(self.comparers)} != {len(self.nested)}"
+            )
 
     @property
     def ready(self) -> bool:
@@ -71,13 +71,15 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
     def check(self, item: IT, reference: IT | None = None) -> bool:
         # initial state determined by ready and match_all states
         matched = self.ready and self.match_all
+        nested = self.nested or [None] * len(self.comparers)
 
-        for comparer, sub_filter in self.comparers.items():
-            cmp_match = comparer.compare(item=item, reference=reference)
-            sub_match = sub_filter.check(item=item, reference=reference)
+        for comparer, sub_filter in zip(self.comparers, nested, strict=True):
+            match = comparer.compare(item=item, reference=reference)
+            if sub_filter is not None:
+                sub_match = sub_filter.check(item=item, reference=reference) if sub_filter is not None else None
+                match = (match and sub_match) if sub_filter.combine_all else (match or sub_match)
 
-            combined_match = (cmp_match and sub_match) if sub_filter.combine_all else (cmp_match or sub_match)
-            matched = (matched and combined_match) if self.match_all else (matched or combined_match)
+            matched = (matched and match) if self.match_all else (matched or match)
 
         return matched
 

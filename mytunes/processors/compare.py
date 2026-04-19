@@ -141,7 +141,7 @@ class Comparer(DynamicProcessor):
             self._convert_expected_value(self._field_type)
         elif (
                 is_typevar(self._expected_type)
-                and get_origin(self._actual_type) is Sequence
+                and get_origin(self._actual_type) in (Sequence, UniqueSequence)
                 and is_typevar(next(iter(get_args(self._actual_type))))
                 and (expected_type := next(iter(get_args(self._field_type)), None)) is not None
         ):
@@ -153,7 +153,7 @@ class Comparer(DynamicProcessor):
     def _convert_expected_to_sequence_when_actual_is_generic(self) -> Self:
         if (
                   is_typevar(self._actual_type)
-                  and get_origin(self._expected_type) in (Sequence, set)
+                  and get_origin(self._expected_type) in (set, Sequence, UniqueSequence)
                   and is_typevar(next(iter(get_args(self._expected_type)), None))
         ):
             expected_type = set[self._field_type]
@@ -176,13 +176,12 @@ class Comparer(DynamicProcessor):
             return
 
         # prevent strings being split into list of characters
-        if isinstance(self.expected, str) and get_origin(expected_type) in (set, tuple, list):
+        if isinstance(self.expected, str) and get_origin(expected_type) in (set, tuple, list, UniqueSequence):
             self.expected = (self.expected,)
 
-        try:
-            value = expected_type(self.expected)
-        except (TypeError, ValueError):
-            value = self.expected
+        value = self.expected
+        with suppress(TypeError, ValueError, AttributeError):
+            value = expected_type(value)
 
         try:
             value = TypeAdapter(expected_type).validate_python(value)
@@ -316,19 +315,6 @@ class Comparer(DynamicProcessor):
         if actual is None or expected is None:
             return False
         return bool(re.search(expected, actual, flags=re.I))
-
-    def __hash__(self):
-        match self.expected:
-            case None:
-                expected = ""
-            case set() | list() | UniqueSequence():
-                expected = tuple(self.expected)
-            case _:
-                expected = self.expected
-
-        return hash((
-            self.condition, expected, self.field or "", self.reference_required
-        ))
 
     def __eq__(self, item: Any):
         return isinstance(item, type(self)) and all((

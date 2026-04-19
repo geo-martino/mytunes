@@ -75,7 +75,7 @@ class SparseDate(AttributeModel):
         return str(self.year)
 
     def __hash__(self) -> int:
-        return hash((self.year, self.month or 0, self.day or 0))
+        return hash((self.year, self.month or 1, self.day or 1))
 
     def __eq__(self, other):
         if self is other:

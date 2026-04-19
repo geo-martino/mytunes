@@ -580,12 +580,12 @@ class _XMLCondition(_XMLBaseModel):
         self.value[:] = sorted(to_list(comparer.expected)) or []
         return self
 
-    def parse_sub_comparers(self, comparers: ComparerFilter) -> Self:
+    def parse_sub_comparers(self, comparers: ComparerFilter | None) -> Self:
         """Parse the given comparers into this model's sub-comparers."""
         self.and_conditions = None
         self.or_conditions = None
 
-        if not comparers.ready:
+        if not isinstance(comparers, ComparerFilter) or not comparers.ready:
             return self
 
         sub = _XMLConditions.model_validate(comparers)
@@ -607,20 +607,25 @@ class _XMLConditions(_XMLBaseModel):
 
     def build_filter(self, combine: bool | None = None) -> ComparerFilter[LocalTrack]:
         """Build the comparer filter for this configuration."""
-        filters: dict[Comparer, ComparerFilter[LocalTrack]] = {}
+        comparers: list[Comparer] = []
+        nested: list[ComparerFilter[LocalTrack]] = []
+
         for condition in self.condition:
-            comparer = condition.build_comparer()
+            comparers.append(condition.build_comparer())
+
+            sub_comparers = None
             if condition.and_conditions:
                 sub_comparers = condition.and_conditions.build_filter(True)
             elif condition.or_conditions:
                 sub_comparers = condition.or_conditions.build_filter(False)
-            else:
-                sub_comparers = ComparerFilter[LocalTrack]()
 
-            filters[comparer] = sub_comparers
+            nested.append(sub_comparers)
 
         return ComparerFilter[LocalTrack](
-            comparers=filters, match_all=self.combine_method == "All", combine_all=combine
+            comparers=comparers,
+            nested_filteres=nested,
+            match_all=self.combine_method == "All",
+            combine_all=combine
         )
 
     @model_validator(mode="wrap")
@@ -635,10 +640,12 @@ class _XMLConditions(_XMLBaseModel):
 
     def parse_comparers(self, comparers: ComparerFilter) -> Self:
         """Parse the given ``comparers`` into this model."""
+        nested = comparers.nested or [None] * len(comparers.comparers)
+
         self.combine_method = "All" if comparers.match_all else "Any"
         self.condition[:] = [
-            _XMLCondition.model_validate(comparer).parse_sub_comparers(comparers=sub_comparer)
-            for comparer, sub_comparer in comparers.comparers.items()
+            _XMLCondition.model_validate(comparer).parse_sub_comparers(comparers=nested)
+            for comparer, nested in zip(comparers.comparers, nested, strict=True)
         ]
         return self
 

@@ -44,13 +44,13 @@ class TestComparerFilter(FilterTester):
 
         return local_tracks
 
-    def test_from_comparer(self, comparers: list[ComparerFilter]):
+    def test_from_comparer(self, comparers: list[Comparer]):
         data = comparers[0].model_dump()
-        assert ComparerFilter.model_validate(data).comparers.keys() == {comparers[0]}
+        assert ComparerFilter.model_validate(data).comparers == (comparers[0],)
 
-    def test_from_comparers(self, comparers: list[ComparerFilter]):
+    def test_from_comparers(self, comparers: list[Comparer]):
         data = [cmp.model_dump() for cmp in comparers]
-        assert ComparerFilter.model_validate(data).comparers.keys() == set(comparers)
+        assert ComparerFilter.model_validate(data).comparers == tuple(comparers)
 
     def test_equality(self, model: ComparerFilter, faker: Faker):
         model.match_all = faker.boolean()
@@ -110,17 +110,16 @@ class TestComparerFilter(FilterTester):
         comparer_1_sub = MagicMock()
         comparer_1_sub.combine_all = True
         comparer_1_sub.check.return_value = True
-        model.comparers[comparers[0]] = comparer_1_sub
 
         comparer_2_sub = MagicMock()
         comparer_2_sub.combine_all = False
         comparer_2_sub.check.return_value = False
-        model.comparers[comparers[1]] = comparer_2_sub
 
         comparer_3_sub = MagicMock()
         comparer_3_sub.combine_all = True
         comparer_3_sub.check.return_value = False
-        model.comparers[comparers[2]] = comparer_3_sub
+
+        model.nested = [comparer_1_sub, comparer_2_sub, comparer_3_sub]
 
         track.name = "track name"
         track.released_at = SparseDate(year=2025, month=1, day=1)

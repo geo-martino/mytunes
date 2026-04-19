@@ -29,7 +29,7 @@ class TestHasGenres(NoUniqueKeyTester):
 
     def test_set_genres_on_property(self, model: HasGenres, genres: list[Genre]):
         model.genre = genres
-        assert [genre.name for genre in model.genres] == [genre.name for genre in genres]
+        assert sorted(genre.name for genre in model.genres) == sorted(set(genre.name for genre in genres))
 
         model.genre = genres[0]
         assert [genre.name for genre in model.genres] == [genres[0].name]
