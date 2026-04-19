@@ -3,6 +3,7 @@ from abc import abstractmethod
 from collections.abc import Sequence, Iterable, Collection, Mapping
 from typing import ClassVar, Literal, Any, Union, get_args, Annotated, final, Self
 
+from mytunes._models.sequence import UniqueSequence
 from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter
 from yarl import URL
 
@@ -102,7 +103,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
             match value:
                 case str() | HasName():
                     value = self._get_query_part(value)
-                case list() | tuple() | set() | dict():
+                case list() | tuple() | set() | dict() | UniqueSequence():
                     value = " ".join(val for val in map(self._get_query_part, value) if val)
                 case _ if value is not None:
                     value = str(value)

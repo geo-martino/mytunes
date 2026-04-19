@@ -2,6 +2,7 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
+from mytunes._models.sequence import UniqueSequence
 from pydantic import Field, validate_call
 
 from mytunes.exception import MyTunesTypeError
@@ -102,7 +103,7 @@ class ArtistCleaner(StringCleaner[HasArtists]):
                 return super().can_clean(item.name)
             case HasArtists():
                 return cls.can_clean(item.artists)
-            case list():
+            case list() | UniqueSequence():
                 return all(cls.can_clean(it) for it in item)
             case _:
                 return super().can_clean(item)

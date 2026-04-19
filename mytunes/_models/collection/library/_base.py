@@ -17,11 +17,11 @@ from mytunes.processors.filters.composite import IncludeExcludeFilter
 from mytunes.processors.filters.values import NameFilter
 
 
-class HasTracksAndPlaylists[TK, TV: Track, KP, VP: Playlist](
-    CollectionModel[TV], HasTracks[TK, TV], HasPlaylists[KP, VP],
+class HasTracksAndPlaylists[TT: Track, PT: Playlist](
+    CollectionModel[TT], HasTracks[TT], HasPlaylists[PT],
 ):
     @property
-    def _items(self) -> list[TV]:
+    def _items(self) -> list[TT]:
         return list(self.tracks)
 
     def dump(self) -> dict[str, Any]:
@@ -50,9 +50,9 @@ class LibraryMetaclass(AttributeMetaclass, ResourceMetaclass):
 
 
 # noinspection PyAbstractClass
-class Library[TK, TV: Track, KP, VP: Playlist](
+class Library[TT: Track, PT: Playlist](
     ResourceModel,
-    HasTracksAndPlaylists[TK, TV, KP, VP],
+    HasTracksAndPlaylists[TT, PT],
     HasAsyncOperations,
     HasLogger,
     HasProgress,
@@ -65,7 +65,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
         description="The name of the source of this library.",
     )
 
-    playlist_filter: NameFilter | IncludeExcludeFilter[VP, NameFilter, NameFilter] | None = Field(
+    playlist_filter: NameFilter | IncludeExcludeFilter[PT, NameFilter, NameFilter] | None = Field(
         description="The filter to apply when loading playlists. Filters playlist by name.",
         default=None,
         repr=False,
@@ -101,7 +101,7 @@ class Library[TK, TV: Track, KP, VP: Playlist](
 
 
 # noinspection PyAbstractClass
-class MutableLibrary[TK, TV: Track, KP, VP: Playlist](
-    HasMutableTracks[TK, TV], HasMutablePlaylists[KP, VP], Library[TK, TV, KP, VP]
+class MutableLibrary[TT: Track, PT: Playlist](
+    HasMutableTracks[TT], HasMutablePlaylists[PT], Library[TT, PT]
 ):
     """A mutable library of tracks and playlists and other object types."""

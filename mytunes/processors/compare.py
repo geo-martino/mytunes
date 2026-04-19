@@ -10,6 +10,7 @@ from functools import cached_property
 from types import NoneType
 from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final, TypeAlias
 
+from mytunes._models.sequence import UniqueSequence
 from pydantic import Field, TypeAdapter, model_validator, ValidationError
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
@@ -320,7 +321,7 @@ class Comparer(DynamicProcessor):
         match self.expected:
             case None:
                 expected = ""
-            case set() | list():
+            case set() | list() | UniqueSequence():
                 expected = tuple(self.expected)
             case _:
                 expected = self.expected

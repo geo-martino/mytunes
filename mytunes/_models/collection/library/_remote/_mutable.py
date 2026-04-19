@@ -34,7 +34,7 @@ class RemoteMutableLibrary[
     GT: RemoteGenre,
     UT: RemoteUser
 ](
-    MutableLibrary[UT, TT, UT, PT], RemoteLibrary[API, TT, PT, RT, AT, GT, UT]
+    MutableLibrary[TT, PT], RemoteLibrary[API, TT, PT, RT, AT, GT, UT]
 ):
     sync_filter: ComparerFilter | None = Field(
         description=(
@@ -297,7 +297,7 @@ class RemoteMutableLibrary[
 
         self._logger.info(f"Creating playlist {name!r} on {self._log_name} library", header=2)
         playlist = await api.playlists.library.create(name=name, **kwargs)
-        self.playlists.add(playlist)
+        self.playlists.append(playlist)
 
         return playlist
 

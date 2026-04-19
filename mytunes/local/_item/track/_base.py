@@ -607,7 +607,7 @@ class LocalTrack[FT: FileType](
         return updated
 
 
-class HasLocalTracks[TK, TV: LocalTrack](HasMutableTracks[TK, TV], HasLogger, HasProgress):
+class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgress):
     concurrency: SemaphoreT = Field(
         description=(
             "The max concurrency of IO tasks (i.e. loading/saving) of files in this library. "

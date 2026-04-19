@@ -258,14 +258,14 @@ class TestLocalLibrary(NoUniqueKeyTester):
             self, model: LocalLibrary, playlists: list[LocalPlaylist], mock_load_playlist: Mock,
     ):
         for pl in playlists[:5]:  # ensure these tracks preloaded playlists are replaced
-            model.playlists[pl.name] = pl
+            model.playlists.append(pl)
             os.remove(pl.path)
 
         await model.load_playlists()
         self.assert_playlists_loaded(model, playlists[5:], mock_load_playlist)
 
     async def test_save_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
-        model.playlists.update(playlists)
+        model.playlists.extend(playlists)
         results = await model.save_playlists(dry_run=True)
         assert list(results.keys()) == [pl.name for pl in playlists]
 

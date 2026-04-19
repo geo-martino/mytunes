@@ -1,4 +1,4 @@
-from typing import ClassVar, Self, Annotated
+from typing import ClassVar, Self, Annotated, Any
 
 from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
 
@@ -102,11 +102,11 @@ class Track[RT: Artist, AT: Album, GT: Genre](
         return self.name == other.name and self_artists & item_artists and self.album.name == other.album.name
 
 
-class HasTracks[TK, TV: Track](AttributeModel):
+class HasTracks[TT: Track](AttributeModel):
     """A mixin class to add a `tracks` field to a model."""
-    tracks: Annotated[UniqueSequence[TK, TV], Attribute()] = Field(
+    tracks: Annotated[UniqueSequence[Any, TT], Attribute()] = Field(
         description="The tracks in this collection",
-        default_factory=UniqueSequence[TK, TV],
+        default_factory=UniqueSequence[Any, TT],
         frozen=True,
         repr=False,
     )
@@ -127,11 +127,11 @@ class HasTracks[TK, TV: Track](AttributeModel):
         return max(values) if values else None
 
 
-class HasMutableTracks[TK, TV: Track](HasTracks[TK, TV]):
+class HasMutableTracks[TT: Track](HasTracks[TT]):
     """A mixin class to add a mutable `tracks` field to a model."""
-    tracks: Annotated[MutableUniqueSequence[TK, TV], Attribute()] = Field(
+    tracks: Annotated[MutableUniqueSequence[Any, TT], Attribute()] = Field(
         description="The tracks in this collection",
-        default_factory=MutableUniqueSequence[TK, TV],
+        default_factory=MutableUniqueSequence[Any, TT],
         frozen=True,
         repr=False,
     )

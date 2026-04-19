@@ -15,11 +15,11 @@ from mytunes._models.sequence import UniqueSequence
 from mytunes.exception import MyTunesValidationError
 
 
-class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Genre, HasLength):
+class GenreCollection[TT: Track](CollectionModel[TT], HasTracks[TT], Genre, HasLength):
     """Represents a genre collection and its properties."""
 
     @property
-    def _items(self) -> UniqueSequence[TK, TV]:
+    def _items(self) -> UniqueSequence[Any, TT]:
         return self.tracks
 
     @model_validator(mode="before")
@@ -75,7 +75,7 @@ class GenreCollection[TK, TV: Track](CollectionModel[TV], HasTracks[TK, TV], Gen
 
 
 class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
-    GenreCollection[UT, TT],
+    GenreCollection[TT],
     RemoteGenre[UT],
     RemoteCollection[UT, TT,  CT],
 ):

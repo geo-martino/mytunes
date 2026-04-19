@@ -20,7 +20,7 @@ class TestHasGenres(NoUniqueKeyTester):
     def test_from_string(self, genres: list[Genre]):
         genre = HasGenres._join_tags(genre.name for genre in genres)
         model = HasGenres(genre=genre)
-        assert [genre.name for genre in model.genres] == [genre.name for genre in genres]
+        assert sorted(genre.name for genre in model.genres) == sorted(set(genre.name for genre in genres))
 
     def test_to_string(self, genres: list[Genre]):
         genre = HasGenres._join_tags(genre.name for genre in genres)

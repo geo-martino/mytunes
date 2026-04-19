@@ -1,5 +1,6 @@
-from typing import ClassVar, Annotated, Self
+from typing import ClassVar, Annotated, Self, Any
 
+from mytunes._models.sequence import UniqueSequence, MutableUniqueSequence
 from pydantic import Field, field_validator, computed_field, validate_call
 
 from mytunes._models import ResourceModel
@@ -42,7 +43,7 @@ class Album[RT: Artist, GT: Genre](
     @classmethod
     def _validate_artists[T](cls, value: T) -> T | list:
         match value:
-            case list() if all(isinstance(item, list) for item in value):
+            case list() | UniqueSequence() if all(isinstance(item, list) for item in value):
                 value = [v for val in value for v in val]
         return value
 
@@ -52,7 +53,7 @@ class Album[RT: Artist, GT: Genre](
         match value:
             case str():
                 value = bool(value)
-            case list():
+            case list() | UniqueSequence():
                 value = bool(next(iter(value), None))
 
         return value
@@ -99,9 +100,9 @@ class HasAlbum[AT: Album](AttributeModel):
 
 
 class HasAlbums[AT: Album](HasSeparableTags):
-    albums: Annotated[list[AT], Attribute()] = Field(
+    albums: Annotated[MutableUniqueSequence[Any, AT], Attribute()] = Field(
         description="The albums associated with this resource.",
-        default_factory=list,
+        default_factory=MutableUniqueSequence[Any, AT],
         validation_alias="album",
         repr=False,
     )

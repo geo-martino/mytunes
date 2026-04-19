@@ -26,8 +26,8 @@ from ...._models.sequence import MutableUniqueSequence, UniqueSequence
 class LocalPlaylistFile[TF: Filter](
     IsLocalFile,
     LocalCollection[LocalTrack],
-    MutablePlaylist[URI, LocalTrack[mutagen.FileType]],
-    HasLocalTracks[URI, LocalTrack[mutagen.FileType]],
+    MutablePlaylist[LocalTrack[mutagen.FileType]],
+    HasLocalTracks[LocalTrack[mutagen.FileType]],
     metaclass=makecls()
 ):
     _original: MutableUniqueSequence[str, LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)

@@ -21,9 +21,7 @@ class TestLibrary(NoUniqueKeyTester):
 
         backup = model.dump()
         assert len(backup["playlists"]) == len(model.playlists)
-        for pl_id, pl_backup in backup["playlists"].items():
-            pl = model.playlists[pl_backup["uri"]]
-
+        for pl, pl_backup in zip(playlists, backup["playlists"]):
             assert isinstance(pl_backup, dict)
 
             assert "name" in pl_backup and isinstance(pl_backup["name"], str)

@@ -16,10 +16,10 @@ from mytunes._models.sequence import UniqueSequence
 from mytunes.exception import MyTunesValidationError
 
 
-class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](CollectionModel[TV], HasTracks[TK, TV], Album[RT, GT]):
+class AlbumCollection[TT: Track, RT: Artist, GT: Genre](CollectionModel[TT], HasTracks[TT], Album[RT, GT]):
 
     @property
-    def _items(self) -> UniqueSequence[TK, TV]:
+    def _items(self) -> UniqueSequence[Any, TT]:
         return self.tracks
 
     @model_validator(mode="before")
@@ -72,7 +72,7 @@ class AlbumCollection[TK, TV: Track, RT: Artist, GT: Genre](CollectionModel[TV],
 
 
 class RemoteAlbumCollection[UT: URI, TT: RemoteTrack, RT: RemoteArtist, GT: RemoteGenre, CT: PageCursor](
-    AlbumCollection[UT, TT, RT, GT],
+    AlbumCollection[TT, RT, GT],
     RemoteAlbum[URI, RT, GT],
     RemoteCollection[UT, TT, CT],
 ):

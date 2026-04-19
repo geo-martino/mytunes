@@ -12,8 +12,8 @@ from ..._models.properties.uri import URI
 # noinspection PyFinal
 @final
 class LocalAlbumCollection[TT: LocalTrack, RT: LocalArtist, GT: LocalGenre](
-    HasLocalTracks[URI, TT],
-    AlbumCollection[URI, TT, RT, GT],
+    HasLocalTracks[TT],
+    AlbumCollection[TT, RT, GT],
     LocalAlbum[RT, GT],
     LocalCollection[TT]
 ):

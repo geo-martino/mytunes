@@ -32,8 +32,8 @@ from ...._models.result import Result
 
 @final
 class LocalLibrary(
-    HasLocalTracks[URI, LocalTrack],
-    MutableLibrary[URI, LocalTrack, URI | Path, LocalPlaylist],
+    HasLocalTracks[LocalTrack],
+    MutableLibrary[LocalTrack, LocalPlaylist],
     LocalCollection[LocalTrack],
 ):
     """
@@ -347,11 +347,10 @@ class LocalLibrary(
             async with self.concurrency:
                 return pl.name, await pl.save(dry_run=dry_run)
 
-        self._logger.info(f"Saving {self.playlists.count} playlists in {self.source} {self.type}", header=2)
+        total = len(self.playlists)
+        self._logger.info(f"Saving {total} playlists in {self.source} {self.type}", header=2)
 
-        task_id = self._progress.add_task(
-            description=f"Updating {self.source} playlists", total=self.playlists.count
-        )
+        task_id = self._progress.add_task(description=f"Updating {self.source} playlists", total=total)
         results = await self._run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
         return dict(results)
 

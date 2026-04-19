@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload
+from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload, Any
 
 from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
 from pydantic.json_schema import JsonSchemaValue
@@ -24,7 +24,7 @@ from mytunes._models.properties.image import HasImages
 from mytunes._models.properties.length import HasLength
 from mytunes._models.properties.name import HasName
 from mytunes._models.properties.uri import URI
-from mytunes._models.sequence import UniqueSequence
+from mytunes._models.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.compare import ComparerFilter
@@ -34,8 +34,8 @@ if TYPE_CHECKING:
         PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 
 
-class Playlist[TK, TV: Track](
-    CollectionModel[TV], HasTracks[TK, TV], HasName, HasLength, HasImages, ResourceModel, metaclass=makecls()
+class Playlist[TT: Track](
+    CollectionModel[TT], HasTracks[TT], HasName, HasLength, HasImages, ResourceModel, metaclass=makecls()
 ):
     """Represents a playlist collection and its properties."""
     type: ClassVar[str] = "playlist"
@@ -46,12 +46,12 @@ class Playlist[TK, TV: Track](
     )
 
     @property
-    def _items(self) -> UniqueSequence[TK, TV]:
+    def _items(self) -> UniqueSequence[TT]:
         return self.tracks
 
 
-class MutablePlaylist[TK, TV: Track](HasMutableTracks[TK, TV], Playlist[TK, TV]):
-    def merge(self, other: HasTracks[TK, TV] | Playlist, reference: HasTracks[TK, TV] | None = None) -> None:
+class MutablePlaylist[TT: Track](HasMutableTracks[TT], Playlist[TT]):
+    def merge(self, other: HasTracks[TT] | Playlist, reference: HasTracks[TT] | None = None) -> None:
         """
         Merge two playlists together by merging tracks and properties.
 
@@ -68,60 +68,61 @@ class MutablePlaylist[TK, TV: Track](HasMutableTracks[TK, TV], Playlist[TK, TV])
 type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 
 
-def _get_playlists_map_from_merge_input[TK, TV](
-        playlists: MergePlaylistsType[TK, TV] | None
-) -> MutableUniqueMapping[TK, TV] | None:
+def _get_playlists_map_from_merge_input[PT](
+        playlists: MergePlaylistsType[PT] | None
+) -> MutableUniqueSequence[Any, PT] | None:
+    print(type(playlists))
     match playlists:
         case None:
             return
-        case MutableUniqueMapping():
+        case MutableUniqueSequence():
             return playlists
         case HasMutablePlaylists():
             return playlists.playlists
         case HasPlaylists():
-            return MutableUniqueMapping(playlists.playlists)
+            return MutableUniqueSequence(playlists.playlists)
         case _:
-            return MutableUniqueMapping(playlists)
+            return MutableUniqueSequence(playlists)
 
 
-type MergePlaylistsTypeAnnotated[TK, TV] = Annotated[
-    MutableUniqueMapping[TK, TV] | None,
+type MergePlaylistsTypeAnnotated[PT] = Annotated[
+    MutableUniqueSequence[Any, PT] | None,
     BeforeValidator(_get_playlists_map_from_merge_input)
 ]
 
 
-class HasPlaylists[TK, TV: Playlist](AttributeModel):
+class HasPlaylists[PT: Playlist](AttributeModel):
     """A mixin class to add a `playlists` field to a model."""
-    playlists: Annotated[UniqueMapping[TK, TV], Attribute()] = Field(
+    playlists: Annotated[UniqueSequence[Any, PT], Attribute()] = Field(
         description="The playlists in this collection",
-        default_factory=UniqueMapping[TK, TV],
+        default_factory=UniqueSequence[Any, PT],
         frozen=True,
         repr=False,
     )
 
 
-class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
+class HasMutablePlaylists[PT: MutablePlaylist](HasPlaylists[PT]):
     """A mixin class to add a mutable `playlists` field to a model."""
-    playlists: Annotated[MutableUniqueMapping[TK, TV], Attribute()] = Field(
+    playlists: Annotated[MutableUniqueSequence[Any, PT], Attribute()] = Field(
         description="The playlists in this collection",
-        default_factory=MutableUniqueMapping[TK, TV],
+        default_factory=MutableUniqueSequence[Any, PT],
         frozen=True,
         repr=False,
     )
 
     @overload
     def merge_playlists(
-            self, other: MergePlaylistsType[TK, TV], reference: MergePlaylistsType[TK, TV] = None
+            self, other: MergePlaylistsType[PT], reference: MergePlaylistsType[PT] = None
     ) -> None: ...
 
     @overload
     def merge_playlists(
-            self, other: MergePlaylistsTypeAnnotated[TK, TV], reference: MergePlaylistsTypeAnnotated[TK, TV] = None
+            self, other: MergePlaylistsTypeAnnotated[PT], reference: MergePlaylistsTypeAnnotated[PT] = None
     ) -> None: ...
 
     @validate_call
     def merge_playlists(
-            self, other: MergePlaylistsTypeAnnotated[TK, TV], reference: MergePlaylistsTypeAnnotated[TK, TV] = None
+            self, other: MergePlaylistsTypeAnnotated[PT], reference: MergePlaylistsTypeAnnotated[PT] = None
     ) -> None:
         """
         Merge playlists from given list/map/library to this library.
@@ -134,9 +135,9 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
         :param other: The playlists to merge into the current playlists.
         :param reference: The reference playlists to refer to when merging.
         """
-        for name, playlist in other.items():
+        for playlist in other:
             if playlist not in self.playlists:
-                self.playlists.add(deepcopy(playlist))
+                self.playlists.append(deepcopy(playlist))
                 continue
 
             reference_playlist = reference.get(playlist) if reference else None
@@ -145,7 +146,7 @@ class HasMutablePlaylists[TK, TV: MutablePlaylist](HasPlaylists[TK, TV]):
 
 # noinspection PyAbstractClass
 class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
-    Playlist[UT, TT], RemoteCollection[UT, TT, CT], metaclass=makecls()
+    Playlist[TT], RemoteCollection[UT, TT, CT], metaclass=makecls()
 ):
     owner: Annotated[OT, Attribute()] = Field(
         description="The owner of this playlist.",
@@ -197,7 +198,7 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
 
 
 class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
-    MutablePlaylist[UT, TT], RemotePlaylist[UT, TT, OT, CT]
+    MutablePlaylist[TT], RemotePlaylist[UT, TT, OT, CT]
 ):
     @model_validator(mode="after")
     def _validate_mutability(self, info: ValidationInfo) -> Self:

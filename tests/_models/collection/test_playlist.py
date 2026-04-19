@@ -56,14 +56,16 @@ class TestHasMutablePlaylists(BaseModelTester):
         return [MutablePlaylist(**pl.model_dump()) for pl in playlists]
 
     def test_get_playlists_map_from_merge_input(self, model: HasMutablePlaylists):
-        adapter = TypeAdapter(MergePlaylistsTypeAnnotated)
+        adapter = TypeAdapter(MergePlaylistsTypeAnnotated[MutablePlaylist])
         assert adapter.validate_python(None) is None
+
         playlists = model.playlists
         assert adapter.validate_python(playlists) is playlists
         assert adapter.validate_python(model) is playlists
 
-        assert adapter.validate_python(dict(playlists)) is not playlists
-        assert adapter.validate_python(dict(playlists)) == playlists
+        result = adapter.validate_python(list(playlists))
+        assert result is not playlists
+        assert result == playlists
 
     def test_merge_playlists(self, model: HasMutablePlaylists, playlists: list[MutablePlaylist], mocker: MockerFixture):
         initial, other, overlap = split_list(playlists, 2, 6)

@@ -15,7 +15,7 @@ from ..._models.sequence import UniqueSequence
 
 
 @final
-class Folder[TT: LocalTrack](HasLocalTracks[URI, TT], LocalCollection[TT], HasName, HasLength):
+class Folder[TT: LocalTrack](HasLocalTracks[TT], LocalCollection[TT], HasName, HasLength):
     """Represents a folder collection and its properties."""
     __final__ = True
 

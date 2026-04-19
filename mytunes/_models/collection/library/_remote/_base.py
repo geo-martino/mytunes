@@ -50,7 +50,7 @@ class RemoteLibrary[
     GT: RemoteGenre,
     UT: RemoteUser,
 ](
-    Library[UT, TT, UT, PT], RemoteModel, HasAPI[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
+    Library[TT, PT], RemoteModel, HasAPI[API], HasArtists[RT], HasAlbums[AT], HasGenres[GT],
 ):
     @property
     def user(self) -> Annotated[UT | None, Attribute()]:

@@ -287,9 +287,10 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_create_playlist: Mock,
             faker: Faker
     ):
+        model.playlists.replace(playlists)
         expected = faker.random_element(playlists)
         model.playlists.remove(expected)
-        assert expected.name not in model.playlists
+        assert expected not in model.playlists
 
         name = expected.name
         description = expected.description
@@ -299,7 +300,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_create_playlist.assert_called_once_with(name=name, description=description, public=public)
 
         assert playlist is expected
-        assert playlist.uri in model.playlists
+        assert playlist in model.playlists
 
     @pytest.fixture
     def mock_sync_properties(self, model: RemoteMutableLibrary) -> Generator[Mock]:
@@ -321,7 +322,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_semaphore: Mock,
             faker: Faker,
     ):
-        model.playlists.update(playlists)
+        model.playlists.extend(playlists)
 
         results = await model.sync_playlists()
         assert len(results) == len(playlists)

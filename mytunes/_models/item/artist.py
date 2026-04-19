@@ -1,5 +1,6 @@
-from typing import ClassVar, Annotated, Self
+from typing import ClassVar, Annotated, Self, Any
 
+from mytunes._models.sequence import MutableUniqueSequence
 from pydantic import Field, field_validator, validate_call
 
 from mytunes._models import ResourceModel
@@ -22,9 +23,9 @@ class Artist[GT: Genre](HasGenres[GT], HasName, HasRating, ResourceModel, metacl
 
 
 class HasArtists[RT: Artist](HasSeparableTags):
-    artists: Annotated[list[RT], Attribute()] = Field(
+    artists: Annotated[MutableUniqueSequence[Any, RT], Attribute()] = Field(
         description="The artists associated with this resource.",
-        default_factory=list,
+        default_factory=MutableUniqueSequence[Any, RT],
         validation_alias="artist",
     )
 

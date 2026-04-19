@@ -10,6 +10,6 @@ from ..._models.properties.uri import URI
 # noinspection PyFinal
 @final
 class LocalGenreCollection[TT: LocalTrack](
-    HasLocalTracks[URI, TT], GenreCollection[URI, TT], LocalGenre, LocalCollection[TT]
+    HasLocalTracks[TT], GenreCollection[TT], LocalGenre, LocalCollection[TT]
 ):
     __final__ = True

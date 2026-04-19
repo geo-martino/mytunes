@@ -86,8 +86,8 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
     def from_library(
             cls,
             tracks: Iterable[T],
-            playlists: Iterable[Playlist[Any, T]],
-            albums: Iterable[AlbumCollection[Any, T, Any, Any]]
+            playlists: Iterable[Playlist[T]],
+            albums: Iterable[AlbumCollection[T, Any, Any]]
     ) -> Self:
         """Create a result from the given library items."""
         return cls(
