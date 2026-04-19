@@ -5,6 +5,7 @@ from typing import Any
 import pydantic
 import pytest
 from faker import Faker
+from mytunes.local._collection.playlist import LocalPlaylistFile
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
@@ -236,6 +237,24 @@ class TestMutableUniqueMapping:
         # doesn't fail when removing non-existing resource
         assert models[0] not in mapping
         mapping.remove(models[0])
+
+    def test_remove_on_unique_key_change(self, models: list[ResourceModel], faker: Faker):
+        initial = [
+            LocalPlaylistFile(path=faker.file_path()),
+            LocalPlaylistFile(path=faker.file_path()),
+            LocalPlaylistFile(path=faker.file_path()),
+        ]
+        mapping = MutableUniqueMapping(initial)
+        assert len(mapping) == sum(len(it.unique_keys) for it in initial)
+
+        model = choice(list(mapping.values()))
+        assert model in mapping
+
+        model.path = faker.file_path()  # change unique key
+        mapping.remove(model)
+        assert model not in mapping
+        assert all(key not in mapping._items for key in model.unique_keys)
+        assert len(mapping) == sum(len(it.unique_keys) for it in initial) - len(model.unique_keys)
 
     def test_clear(self, models: list[ResourceModel]):
         initial = models[2:]
