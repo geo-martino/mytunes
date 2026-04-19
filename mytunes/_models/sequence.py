@@ -1,3 +1,4 @@
+import itertools
 from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterator
 from contextlib import suppress
 from typing import Any, Self, overload, get_args
@@ -39,7 +40,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return core_schema.no_info_after_validator_function(
             function=cls._construct,
             schema=handler(schema),
-            serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x._items)
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda x: list(x.unique))
         )
 
     @classmethod
@@ -59,28 +60,27 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         elif isinstance(items, Mapping):
             items = items.values()
 
-        self._items: list[TV] = list(items)
-        self._items_mapped: MutableUniqueMapping[TK, TV] = MutableUniqueMapping(self._items)
+        self._items_mapped: MutableUniqueMapping[TK, TV] = MutableUniqueMapping(items)
 
     def __repr__(self):
-        return repr(self._items)
+        return repr(f"{type(self).__name__}(count={len(self)})")
 
     def __len__(self):
-        return len(self._items)
+        return self._items_mapped.count
 
     def __iter__(self):
-        return iter(self._items)
+        return self.unique
 
     def __eq__(self, other: Self):
         """Matching type and all keys in this mapping present in the other mapping"""
         if self is other:
             return True
         elif isinstance(other, Sequence):
-            return self._items == other
+            return list(self.unique) == other
         elif not isinstance(other, type(self)):
             return super().__eq__(other)
 
-        return self._items == other._items
+        return self._items_mapped == other._items_mapped
 
     def __ne__(self, other: Self):
         return not self.__eq__(other)
@@ -97,10 +97,22 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __getitem__(self, index: int | slice | TK | TV) -> TV | list[TV]:
-        if isinstance(index, int | slice):
-            with suppress(IndexError):
-                return self._items[index]
-        return self._items_mapped[index]
+        match index:
+            case int() if index < len(self):
+                items = enumerate(self._items_mapped.unique)
+                if index < 0:
+                    # TODO: this is inefficient, improve performance
+                    items = reversed(list(items))
+
+                current_idx, current_item = next(iter(items))
+                while current_idx < index:
+                    current_idx, current_item = next(iter(items))
+
+                return current_item
+            case slice():
+                return list(self._items_mapped.unique)[index]
+            case _:
+                return self._items_mapped[index]
 
     @property
     def unique(self) -> Iterator[TV]:
@@ -113,7 +125,23 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
 
     def copy(self) -> Self:
         """Return a shallow copy of this sequence"""
-        return type(self)(self._items.copy())
+        return type(self)(self.unique)
+
+    def _extend(self, __iterable: Iterable[TV]) -> None:
+        """
+        Add many items to the end of this sequence.
+        This allows for privately extending the sequence with a new set of items,
+        without exposing the full extending interface to users.
+        """
+        self._items_mapped.update(__iterable)
+
+    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV]) -> None:
+        """
+        Replace all items in this sequence.
+        This allows for privately replacing the sequence with a new set of items,
+        without exposing the full sequence interface to users.
+        """
+        self._items_mapped.replace(__m)
 
     @validate_call
     def intersection(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
@@ -122,7 +150,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
 
         (i.e. all items that are in both this collection and the ``other`` collection).
         """
-        return tuple(item for item in self._items if item in other)
+        return tuple(item for item in self if item in other)
 
     @validate_call
     def difference(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
@@ -131,7 +159,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
 
         (i.e. all items that are in this collection but not the ``other`` collection).
         """
-        return tuple(item for item in self._items if item not in other)
+        return tuple(item for item in self if item not in other)
 
     @validate_call
     def outer_difference(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
@@ -141,29 +169,6 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         (i.e. all items that are in the ``other`` collection but not in this collection).
         """
         return tuple(item for item in other if item not in self)
-
-    def _extend(self, __iterable: Iterable[TV], allow_duplicates: bool = True) -> None:
-        """
-        Add many items to the end of this sequence.
-        This allows for privately extending the sequence with a new set of items,
-        without exposing the full extending interface to users.
-        """
-        if not allow_duplicates:
-            __iterable = (item for item in __iterable if item not in self._items_mapped)
-
-        items = list(__iterable)
-        self._items.extend(items)
-        self._items_mapped.update(items)
-
-    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV], allow_duplicates: bool = True) -> None:
-        """
-        Replace all items in this sequence.
-        This allows for privately replacing the sequence with a new set of items,
-        without exposing the full sequence interface to users.
-        """
-        self._items.clear()
-        self._items_mapped.clear()
-        self._extend(__m, allow_duplicates=allow_duplicates)
 
 
 class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], MutableSequence[TV]):
@@ -179,32 +184,22 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __setitem__(self, index: int | slice, value: TV | Iterable[TV]):
-        if isinstance(value, Iterator):
-            # when index is slice, __value is Iterator which exhausts before being added to _items_mapped
-            value = list(value)
-            self._items[index] = iter(value)
-        else:
-            self._items[index] = value
+        if isinstance(index, int):
+            return self.insert(index, value)
 
-        if isinstance(value, ResourceModel):
-            self._items_mapped.add(value)
-        else:
-            self._items_mapped.update(value)
+        items = list(self._items_mapped.unique)
+        items = items[index.start:] + list(value) + items[index.start:index.stop]
+        self._replace(items)
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __delitem__(self, index: int | slice) -> None:
-        if isinstance(item := self[index], ResourceModel):  # index is an int
-            # noinspection PyArgumentList
-            self.remove(item)
-            return
-
-        for it in item:  # index is a slice
-            # noinspection PyArgumentList
-            self.remove(it)
+        # noinspection PyArgumentList
+        self.remove(self[index])
 
     @validate_call
     def __add__(self, other: Iterable[TV]):
-        items = self._items.copy()
+        items = self.copy()
+        # noinspection PyArgumentList
         items.extend(other)
         return items
 
@@ -216,23 +211,23 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
 
     @validate_call
     def __sub__(self, other: Iterable[TV]):
-        items = self._items.copy()
-        for item in other:
-            items.remove(item)
+        items = self.copy()
+        # noinspection PyArgumentList
+        items.remove(other)
         return items
 
     @validate_call
     def __isub__(self, other: Iterable[TV]):
-        for item in other:
-            # noinspection PyArgumentList
-            self.remove(item)
+        # noinspection PyArgumentList
+        self.remove(other)
         return self
 
     @validate_call
     def __or__(self, other: Sequence[TV]) -> Self:
         items = self.copy()
         # noinspection PyArgumentList
-        return items.merge(other)
+        items.merge(other)
+        return items
 
     @validate_call
     def __ior__(self, other: Sequence[TV]) -> Self:
@@ -241,28 +236,23 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         return self
 
     @validate_call
-    def append(self, __object: TV, allow_duplicates: bool = True) -> None:
+    def append(self, __object: TV) -> None:
         """Add an item to the end of this sequence"""
-        if not allow_duplicates and __object in self._items_mapped:
-            return
-
-        self._items.append(__object)
         self._items_mapped.add(__object)
 
     @validate_call
-    def extend(self, __iterable: Iterable[TV], allow_duplicates: bool = True) -> None:
+    def extend(self, __iterable: Iterable[TV]) -> None:
         """Add many items to the end of this sequence"""
-        self._extend(__iterable, allow_duplicates)
+        self._extend(__iterable)
 
     @validate_call
-    def insert(self, __index: int, __object: TV, allow_duplicates: bool = True) -> None:
+    def insert(self, __index: int, __object: TV) -> None:
         """Insert the item at the given index"""
-        if not allow_duplicates and __object in self._items_mapped:
-            return
+        items = list(self._items_mapped.unique)
+        items.insert(__index, __object)
+        self._items_mapped.replace(items)
 
-        self._items.insert(__index, __object)
-        self._items_mapped.add(__object)
-
+    # noinspection PyArgumentList
     @validate_call
     def merge(self, other: Sequence[TV], reference: Sequence[TV] | None = None) -> None:
         """
@@ -280,37 +270,32 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         """
         if reference is None:
             # noinspection PyArgumentList
-            self.extend(other, allow_duplicates=False)
+            self.extend(other)
             return
 
-        for item in reference:
-            if item not in other and item in self:
-                # noinspection PyArgumentList
-                self.remove(item)
-
-        # noinspection PyTypeChecker,PyArgumentList
-        self.extend(type(self).outer_difference(reference, other), allow_duplicates=False)
+        self.remove(item for item in reference if item not in other and item in self)
+        # noinspection PyTypeChecker
+        self.extend(type(self).outer_difference(reference, other))
 
     @validate_call
-    def remove(self, __value: TV | Sequence[TV]) -> None:
+    def remove(self, __value: TV | Iterable[TV]) -> None:
         """Remove one item from this sequence"""
         if isinstance(__value, ResourceModel):
             __value = (__value,)
 
         for item in __value:
-            self._items.remove(item)
             del self._items_mapped[item]
 
     def clear(self) -> None:
         """Remove all items from this sequence"""
-        self._items.clear()
         self._items_mapped.clear()
 
     # @validate_call  # doesn't work with Iterables
-    def replace(self, __iterable: Iterable[TV], allow_duplicates: bool = True) -> None:
+    def replace(self, __iterable: Iterable[TV]) -> None:
         """Replace all items in this sequence"""
-        self._replace(__iterable, allow_duplicates)
+        self._replace(__iterable)
 
     def sort(self, key=None, reverse: bool = False) -> None:
         """Sort the items in this sequence in place"""
-        self._items.sort(key=key, reverse=reverse)
+        items = sorted(self.unique, key=key, reverse=reverse)
+        self._items_mapped.replace(items)

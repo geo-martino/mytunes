@@ -18,7 +18,7 @@ class TestUniqueSequence:
     @pytest.fixture
     def sequence(self, models: list[ResourceModel]) -> UniqueSequence:
         sequence = UniqueSequence(models)
-        assert sequence._items
+        assert len(sequence)
         return sequence
 
     @pytest.fixture(scope="class")
@@ -80,12 +80,12 @@ class TestUniqueSequence:
         assert model in sequence
         assert all(key in sequence for key in model.unique_keys)
 
-        assert sequence._items in sequence
-        assert (key for model in sequence._items for key in model.unique_keys) in sequence
+        assert list(sequence) in sequence
+        assert (key for model in sequence for key in model.unique_keys) in sequence
 
     def test_collection_methods(self, sequence: UniqueSequence, models: list[ResourceModel]):
         assert len(sequence) == len(models)
-        assert list(iter(sequence)) == sequence._items
+        assert list(iter(sequence)) == list(sequence.unique)
 
     def test_equality(self, sequence: UniqueSequence, models: list[ResourceModel]):
         assert sequence is not UniqueSequence(models)
@@ -99,8 +99,8 @@ class TestUniqueSequence:
         sequence_copy = sequence.copy()
         assert isinstance(sequence_copy, sequence.__class__)
         assert sequence_copy is not sequence
-        assert sequence_copy._items is not sequence._items
-        assert sequence_copy._items == sequence._items
+        assert sequence_copy._items_mapped is not sequence._items_mapped
+        assert sequence_copy._items_mapped == sequence._items_mapped
 
     def test_getitem(self, sequence: UniqueSequence, models: list[ResourceModel]):
         assert sequence[0] == models[0]
@@ -182,7 +182,7 @@ class TestMutableUniqueSequence:
         with pytest.raises(ValidationError):
             sequence.remove(artist)
 
-    def test_setitem(self, models: list[ResourceModel]):
+    def test_setitem(self, models: list[ResourceModel], faker: Faker):
         initial, other = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
 
@@ -191,13 +191,16 @@ class TestMutableUniqueSequence:
 
         sequence[0] = model
         assert model in sequence
-        assert sequence._items[0] == model
+        assert sequence[0] == model
         assert all(key in sequence._items_mapped for key in model.unique_keys)
 
-        sequence[0:2] = initial[1:3]
-        assert all(m in sequence for m in initial[1:3])
-        assert sequence._items[0:2] == initial[1:3]
-        assert all(key in sequence._items_mapped for m in initial[1:3] for key in m.unique_keys)
+        extra = faker.random_elements(sequence, length=2, unique=True)
+        expected = [item for item in extra if item not in sequence]
+
+        sequence[0:2] = extra
+        assert all(m in sequence for m in extra)
+        assert sequence[0:len(expected)] == expected + sequence[0:len(expected)]
+        assert all(key in sequence._items_mapped for m in extra for key in m.unique_keys)
 
     def test_setitem_fails(self, models: list[ResourceModel]):
         initial = models[:3]
@@ -211,7 +214,7 @@ class TestMutableUniqueSequence:
         model = models[0]
         assert model in sequence
 
-        del sequence[sequence._items.index(model)]
+        del sequence[sequence.index(model)]
         assert model not in sequence
         assert all(key not in sequence._items_mapped for key in model.unique_keys)
 
@@ -229,84 +232,76 @@ class TestMutableUniqueSequence:
         sequence = MutableUniqueSequence(initial)
         original = sequence.copy()
 
-        assert sequence + sequence == sequence._items + sequence._items
+        assert sequence + sequence == list(original)
         assert sequence - sequence == []
-        assert sequence._items == original._items
+        assert sequence == original
         assert sequence._items_mapped == original._items_mapped
 
         sequence += other
         assert len(sequence) == len(original) + len(other)
-        assert sequence._items != original._items
         assert sequence._items_mapped != original._items_mapped
         assert all(key in sequence._items_mapped for m in other for key in m.unique_keys)
 
         sequence -= original
         assert len(sequence) == len(other)
-        assert sequence._items == other
+        assert sequence == other
         assert all(key in sequence._items_mapped for m in other for key in m.unique_keys)
 
     def test_append(self, models: list[ResourceModel]):
         initial = models[3:]
         sequence = MutableUniqueSequence(initial)
-        original_length = len(sequence._items)
 
         model = models[0]
         assert model not in sequence
 
         sequence.append(model)
-        assert len(sequence) == original_length + 1
-        assert model in sequence
-        assert sequence._items[-1] == model
+        assert list(sequence) == initial + [model]
         assert all(key in sequence._items_mapped for key in model.unique_keys)
+
         expected_keys = set(sequence._items_mapped)
 
-        # adds duplicates
+        # skips duplicates
         sequence.append(model)
-        assert len(sequence) == original_length + 2
-        assert sequence._items[-1] == model
-        assert sequence._items[-2] == model
+        assert list(sequence) == initial + [model]
         assert sequence._items_mapped.keys() == expected_keys
 
     def test_extend(self, models: list[ResourceModel]):
         initial, other = split_list(models, 2)
         sequence = MutableUniqueSequence(initial)
-        original_length = len(sequence._items)
+        original_length = len(sequence)
         assert all(m not in sequence for m in other)
 
         sequence.extend(other)
         assert len(sequence) == original_length + len(other)
         assert all(m in sequence for m in other)
-        assert sequence._items[-len(other):] == other
+        assert sequence[-len(other):] == other
         assert all(key in sequence._items_mapped for m in other for key in m.unique_keys)
+
         expected_keys = set(sequence._items_mapped)
 
-        # adds duplicates
+        # skips duplicates
         sequence.extend(other)
-        assert len(sequence) == original_length + 2 * len(other)
-        assert sequence._items[-len(other):] == other
-        assert sequence._items[-len(other) * 2:-len(other)] == other
+        assert len(sequence) == original_length + len(other)
+        assert sequence[-len(other):] == other
         assert sequence._items_mapped.keys() == expected_keys
 
     def test_insert(self, models: list[ResourceModel]):
         initial = models[3:]
         sequence = MutableUniqueSequence(initial)
-        original_length = len(sequence._items)
+        unique = list(sequence)
 
         model = models[0]
         assert model not in sequence
 
         sequence.insert(2, model)
-        assert len(sequence) == original_length + 1
-        assert model in sequence
-        assert sequence._items[2] == model
+        assert list(sequence) == unique[:2] + [model] + unique[2:]
         assert all(key in sequence._items_mapped for key in model.unique_keys)
+
         expected_keys = set(sequence._items_mapped)
 
-        # adds duplicates
+        # skips duplicates
         sequence.insert(2, model)
-        assert len(sequence) == original_length + 2
-        assert sequence._items[2] == model
-        assert sequence._items[3] == model
+        assert list(sequence) == unique[:2] + [model] + unique[2:]
         assert sequence._items_mapped.keys() == expected_keys
 
     def test_merge_without_reference(self, models: list[ResourceModel]):
@@ -354,15 +349,15 @@ class TestMutableUniqueSequence:
         assert model in sequence
 
         sequence.remove(model)
-        assert model not in sequence._items
+        assert model not in sequence
         assert all(key not in sequence._items_mapped for key in model.unique_keys)
 
     def test_clear(self, models: list[ResourceModel]):
         initial = models[3:]
         sequence = MutableUniqueSequence(initial)
-        assert sequence._items
+        assert len(sequence)
         assert sequence._items_mapped
 
         sequence.clear()
-        assert not sequence._items
+        assert not len(sequence)
         assert not sequence._items_mapped
