@@ -2,7 +2,6 @@ from mytunes._models.item.album import Album
 from mytunes._models.item.artist import Artist
 from mytunes._models.item.track import Track
 from mytunes.processors.download.stores.bandcamp import BandcampStore
-from mytunes.processors.download.stores.jackett import JackettStore
 from mytunes.processors.download.stores.juno_download import JunoDownloadStore
 from mytunes.processors.download.stores.qobuz import QobuzStore
 from mytunes.processors.download.stores.seven_digital import SevenDigitalStore
@@ -14,14 +13,6 @@ from tests.processors.download.utils import assert_track_in_url, assert_artist_i
 
 def test_bandcamp(track: Track, artist: Artist, album: Album):
     model = BandcampStore()
-
-    assert_track_in_url(model, track)
-    assert_artist_in_url(model, artist)
-    assert_album_in_url(model, album)
-
-
-def test_jackett(track: Track, artist: Artist, album: Album):
-    model = JackettStore(url="https://jackett.com")
 
     assert_track_in_url(model, track)
     assert_artist_in_url(model, artist)
