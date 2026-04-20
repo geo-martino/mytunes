@@ -27,20 +27,20 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
-from ...._models import BaseModel, ResourceModel, makecls
-from ...._models.collection.library import Library
-from ...._models.item.track import Track, HasMutableTracks
-from ...._models.metadata import TagAttribute
-from ...._models.properties.asynch import SemaphoreT
-from ...._models.properties.audio import HasAudioProperties
-from ...._models.properties.date import HasAddedDate, HasPlayedDate
-from ...._models.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from ...._models.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
-from ...._models.properties.logger import HasLogger, HasProgress
-from ...._models.properties.name import HasName
-from ...._models.properties.order import Position
-from ...._models.properties.uri import HasMutableURI, URI
-from ...._models.sequence import UniqueSequence
+from mytunes.properties.asynch import SemaphoreT
+from mytunes.properties.audio import HasAudioProperties
+from mytunes.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
+from mytunes.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
+from mytunes.properties.logger import HasLogger, HasProgress
+from mytunes.properties.name import HasName
+from mytunes.properties.order import Position
+from mytunes.properties.uri import HasMutableURI, URI
+from ...._base import BaseModel, makecls
+from ...._base.resource import ResourceModel
+from mytunes.core.library import Library
+from mytunes.core.track import Track, HasMutableTracks
+from ...._base.attribute import TagAttribute
 
 
 class TagContext(BaseModel):

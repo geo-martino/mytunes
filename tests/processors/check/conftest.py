@@ -5,16 +5,16 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from mytunes._models.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
     PlaylistBatchWriteEndpoints
-from mytunes._models.collection import CollectionModel
-from mytunes._models.collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
-from mytunes._models.cursors import InitialCursor
-from mytunes._models.item.track import Track, RemoteTrack
-from mytunes._models.item.user import RemoteUser
-from mytunes._models.properties.order import Position
+from mytunes.core._collection import CollectionModel
+from mytunes.core._collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
+from mytunes.core.cursors import InitialCursor
+from mytunes.core._item.track import Track, RemoteTrack
+from mytunes.core._item.user import RemoteUser
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import NameScorer
+from mytunes.properties.order import Position
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
 

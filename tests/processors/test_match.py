@@ -7,17 +7,17 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from mytunes._models.collection.album import AlbumCollection
-from mytunes._models.item.album import HasAlbums, Album
-from mytunes._models.item.artist import HasArtists, Artist
-from mytunes._models.item.track import Track
-from mytunes._models.properties.date import HasReleaseDate
-from mytunes._models.properties.length import HasLength, Length
-from mytunes._models.properties.name import HasName
+from mytunes.core._collection.album import AlbumCollection
+from mytunes.core._item.album import HasAlbums, Album
+from mytunes.core._item.artist import HasArtists, Artist
+from mytunes.core._item.track import Track
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import Scorer
 from mytunes.processors.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
 from mytunes.processors.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
+from mytunes.properties.date import HasReleaseDate
+from mytunes.properties.length import HasLength, Length
+from mytunes.properties.name import HasName
 from tests.testers import BaseModelTester
 
 

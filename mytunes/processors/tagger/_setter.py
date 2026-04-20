@@ -10,7 +10,8 @@ from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, CollectionValue, HasCondition
 from .._types import _ATTRIBUTE_FIELD_TYPE
-from ..._models import AttributeModel, BaseModel, ModelMetaclass
+from ..._base import BaseModel, ModelMetaclass
+from ..._base.attribute import AttributeModel
 
 
 class SetterMetaclass(ModelMetaclass):

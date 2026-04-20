@@ -9,7 +9,6 @@ from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeV
     ModelWrapValidatorHandler, ValidationError, validate_call
 from termcolor import colored
 
-from mytunes._models.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes._types import to_set
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
@@ -17,17 +16,17 @@ from mytunes.local._collection.album import LocalAlbumCollection
 from mytunes.local._collection.artist import LocalArtistCollection
 from mytunes.local._collection.folder import Folder
 from mytunes.local._collection.genre import LocalGenreCollection
+from mytunes.local._collection.library.result import LibraryURIsResult
 from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
 from mytunes.local._collection.playlist.result import LoadPlaylistResult
 from mytunes.logger import STAT
 from mytunes.processors.filters import Filter
 from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.sort import ItemSorter
-from .result import LibraryURIsResult
+from mytunes.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
+from mytunes.result import Result
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
-from ...._models.collection.library import MutableLibrary
-from ...._models.properties.uri import URI
-from ...._models.result import Result
+from mytunes.core.library import MutableLibrary
 
 
 @final

@@ -11,10 +11,10 @@ from mytunes.processors._flow import SkipPage
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.formatter import ModelFormatter
+from mytunes.properties.name import HasName
+from mytunes.properties.uri import URI, HasMutableURI
+from mytunes.result import LogFormatter
 from ..._base.inputs import OptionsProcessor
-from ...._models.properties.name import HasName
-from ...._models.properties.uri import URI, HasMutableURI
-from ...._models.result import LogFormatter
 
 
 class InputMatch[IT: HasMutableURI](CheckerMatch[IT], OptionsProcessor):

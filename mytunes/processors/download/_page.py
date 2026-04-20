@@ -9,7 +9,7 @@ from yarl import URL
 
 from mytunes._types import HttpURL
 from .._base.inputs import PageProcessor
-from ..._models import AttributeModel
+from ..._base.attribute import AttributeModel
 
 
 class StorePausePage[IT: AttributeModel](PageProcessor):

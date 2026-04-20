@@ -1,6 +1,6 @@
 from p0 import *
 
-from mytunes.libraries.remote.core.library import RemoteLibrary
+from mytunes.libraries.remote._core.library import RemoteLibrary
 
 
 async def load_artists(library: RemoteLibrary) -> None:

@@ -11,8 +11,7 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from mytunes._models.collection.playlist import Playlist
-from mytunes._models.properties.path import PathStemMapper, SystemPaths
+from mytunes.core._collection.playlist import Playlist
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import LoadPlaylistResult
@@ -21,6 +20,7 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.processors.filters.values import NameFilter
+from mytunes.properties.path import PathStemMapper, SystemPaths
 from tests.testers import NoUniqueKeyTester
 
 

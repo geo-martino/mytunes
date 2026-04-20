@@ -5,13 +5,13 @@ import pytest
 from faker import Faker
 from pydantic import Json, ValidationError
 
-from mytunes._models.collection import RemoteCollection
-from mytunes._models.item.artist import HasArtists
-from mytunes._models.item.genre import HasGenres
-from mytunes._models.properties.image import HasImages
-from mytunes._models.properties.length import HasLength
-from mytunes._models.properties.name import HasName
-from mytunes._models.properties.uri import HasURI
+from mytunes.core._collection import RemoteCollection
+from mytunes.core._item.artist import HasArtists
+from mytunes.core._item.genre import HasGenres
+from mytunes.properties.image import HasImages
+from mytunes.properties.length import HasLength
+from mytunes.properties.name import HasName
+from mytunes.properties.uri import HasURI
 from mytunes.spotify import SpotifyResource
 from mytunes.spotify._properties.rating import HasSpotifyRating
 from mytunes.spotify._properties.stats import HasFollowers

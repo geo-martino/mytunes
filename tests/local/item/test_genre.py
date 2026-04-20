@@ -1,6 +1,6 @@
 import pytest
 
-from mytunes._models.item.genre import Genre
+from mytunes.core._item.genre import Genre
 from mytunes.local._item.genre import LocalGenre
 from tests.testers import UniqueKeyTester
 

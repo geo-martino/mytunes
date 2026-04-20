@@ -2,8 +2,8 @@ from p0 import *
 
 from collections.abc import Collection
 
-from mytunes.libraries.core.collection import MyTunesCollection
-from mytunes.libraries.remote.core.factory import RemoteObjectFactory
+from mytunes.libraries._core.collection import MyTunesCollection
+from mytunes.libraries.remote._core.factory import RemoteObjectFactory
 from mytunes.processors.search import RemoteItemSearcher
 from mytunes.processors.check import RemoteItemChecker
 from mytunes.processors.match import ItemMatcher

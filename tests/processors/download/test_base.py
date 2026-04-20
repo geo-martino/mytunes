@@ -9,10 +9,10 @@ from faker import Faker
 from pytest_mock import MockerFixture
 
 from mytunes import MODULE_ROOT
-from mytunes._models.collection.playlist import Playlist, MutablePlaylist
-from mytunes._models.item.album import Album
-from mytunes._models.item.artist import Artist
-from mytunes._models.item.track import Track
+from mytunes.core._collection.playlist import Playlist, MutablePlaylist
+from mytunes.core._item.album import Album
+from mytunes.core._item.artist import Artist
+from mytunes.core._item.track import Track
 from mytunes.processors.download import StoreManager
 from mytunes.processors.download._page import StorePausePage
 from mytunes.processors.download.stores import GeneralAudioStore

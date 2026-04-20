@@ -4,7 +4,7 @@ from random import choice
 import pytest
 from faker import Faker
 
-from mytunes._models.api import RemoteAPI
+from mytunes.core.api import RemoteAPI
 from mytunes.local._item.track import LocalTrack
 from tests.remote import MockRemoteAPI
 

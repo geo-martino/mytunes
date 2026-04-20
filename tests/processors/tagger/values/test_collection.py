@@ -1,9 +1,9 @@
 import pytest
 from faker import Faker
 
-from mytunes._models.item.track import Track
-from mytunes._models.properties.order import Position
+from mytunes.core._item.track import Track
 from mytunes.processors.tagger.values._collection import MinValue, MaxValue
+from mytunes.properties.order import Position
 from tests.testers import BaseModelTester
 
 

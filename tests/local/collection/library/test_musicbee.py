@@ -9,12 +9,12 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from mytunes._models.properties.path import PathStemMapper, SystemPath
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.library.musicbee import XMLLibraryParser
 from mytunes.local._item.track import LocalTrack
 from mytunes.local.exception import FileDoesNotExistError
+from mytunes.properties.path import PathStemMapper, SystemPath
 from tests.testers import BaseModelTester, NoUniqueKeyTester
 
 try:

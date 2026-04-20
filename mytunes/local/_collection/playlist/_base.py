@@ -6,7 +6,6 @@ from typing import Any, Annotated
 import mutagen
 from pydantic import Field, model_validator, PrivateAttr
 
-from mytunes._models.properties.path import PathMapper
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.playlist.result import LimitResult, SortResult, LoadPlaylistResult, SavePlaylistResult
 from mytunes.processors.filters import Filter
@@ -14,13 +13,13 @@ from mytunes.processors.filters.composite import CompositeFilter, CompositeResul
     IncludeExcludeResult
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
+from mytunes.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
+from mytunes.properties.path import PathMapper
 from ..._item.track import LocalTrack, HasLocalTracks
-from ...._models import makecls
-from ...._models.collection.playlist import MutablePlaylist
-from ...._models.metadata import UniqueAttribute
-from ...._models.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
-from ...._models.properties.uri import URI
-from ...._models.sequence import MutableUniqueSequence, UniqueSequence
+from mytunes.core.playlist import MutablePlaylist
+from ...._base import makecls
+from ...._base.resource import UniqueAttribute
+from mytunes.core.sequence import MutableUniqueSequence, UniqueSequence
 
 
 class LocalPlaylistFile[TF: Filter](

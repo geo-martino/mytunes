@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from mytunes._models.item.track import Track
+from mytunes.core._item.track import Track
 from mytunes.processors.tagger import Tagger, ValueSetter
 from mytunes.processors.tagger.values import FixedValue
 from tests.testers import BaseModelTester

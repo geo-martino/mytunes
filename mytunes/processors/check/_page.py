@@ -9,19 +9,19 @@ from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
 from termcolor import colored
 
 from mytunes.exception import MyTunesError, MyTunesValidationError
+from mytunes.properties.asynch import HasAsyncOperations
+from mytunes.properties.name import HasName
+from mytunes.properties.uri import HasURI, URI
 from .._base.inputs import PageProcessor
 from ..formatter import CollectionFormatter
-from ..._models.api import RemoteAPI, HasAPI, HasLibraryEndpoints
-from ..._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
+from mytunes.core.api import RemoteAPI, HasAPI, HasLibraryEndpoints
+from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
     HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
-from ..._models.collection import CollectionModel
-from ..._models.collection.playlist import RemoteMutablePlaylist, RemotePlaylist
-from ..._models.cursors import InitialCursor
-from ..._models.item.user import RemoteUser
-from ..._models.properties.asynch import HasAsyncOperations
-from ..._models.properties.name import HasName
-from ..._models.properties.uri import HasURI, URI
-from ..._models.remote import RemoteResource
+from mytunes.core.collection import CollectionModel
+from mytunes.core.playlist import RemoteMutablePlaylist, RemotePlaylist
+from mytunes.core.cursors import InitialCursor
+from mytunes.core.user import RemoteUser
+from mytunes.core.remote import RemoteResource
 
 type _ApiT = RemoteAPI | HasPlaylistEndpoints[
     PlaylistReadWriteEndpoints |

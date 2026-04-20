@@ -1,4 +1,4 @@
-from .._models import BaseModel
+from .._base import BaseModel
 
 
 class LocalModel(BaseModel):

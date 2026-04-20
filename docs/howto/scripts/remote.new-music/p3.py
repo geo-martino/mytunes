@@ -2,7 +2,7 @@ from p2 import *
 
 from datetime import date
 
-from mytunes.libraries.remote.core.object import RemoteAlbum
+from mytunes.libraries.remote._core.object import RemoteAlbum
 
 
 def match_date(alb: RemoteAlbum, start: date, end: date) -> bool:

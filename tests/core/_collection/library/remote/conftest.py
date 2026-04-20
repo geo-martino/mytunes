@@ -1,0 +1,12 @@
+from collections.abc import Generator
+from unittest.mock import Mock, patch
+
+import pytest
+
+from mytunes.core.api import BatchReadAllEndpoints
+
+
+@pytest.fixture
+def mock_get_all() -> Generator[Mock]:
+    with patch.object(BatchReadAllEndpoints, "get_all") as mock_get_all:
+        yield mock_get_all

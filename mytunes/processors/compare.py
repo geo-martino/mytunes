@@ -10,7 +10,7 @@ from functools import cached_property
 from types import NoneType
 from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final, TypeAlias
 
-from mytunes._models.sequence import UniqueSequence
+from mytunes.core.sequence import UniqueSequence
 from pydantic import Field, TypeAdapter, model_validator, ValidationError
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
@@ -23,12 +23,12 @@ from mytunes.processors.time import TimeMapper
 from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
 from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_MAP, _ATTRIBUTE_FIELD_TYPE, \
     ItemCollection
-from .._models import AttributeModel
-from .._models.item.track import Track
-from .._models.properties.audio import HasAudioProperties
-from .._models.properties.date import HasAddedDate, HasPlayedDate
-from .._models.properties.file import IsLocalFile
-from .._models.properties.name import HasName
+from .._base.attribute import AttributeModel
+from mytunes.core.track import Track
+from mytunes.properties.audio import HasAudioProperties
+from mytunes.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.properties.file import IsLocalFile
+from mytunes.properties.name import HasName
 
 
 @final

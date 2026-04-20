@@ -2,11 +2,11 @@ import pytest
 from aiohttp.web_protocol import RequestHandler
 from faker import Faker
 
-from mytunes._models import ResourceModel
-from mytunes._models.collection.playlist import Playlist
-from mytunes._models.item.album import Album
-from mytunes._models.item.artist import Artist
-from mytunes._models.item.track import Track
+from mytunes._base.resource import ResourceModel
+from mytunes.core._collection.playlist import Playlist
+from mytunes.core._item.album import Album
+from mytunes.core._item.artist import Artist
+from mytunes.core._item.track import Track
 # noinspection PyProtectedMember
 from mytunes.spotify._api.search import SpotifySearchEndpoints
 from mytunes.spotify._item.artist import SpotifyArtist

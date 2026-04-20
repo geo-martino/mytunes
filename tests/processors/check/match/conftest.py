@@ -7,18 +7,18 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from faker import Faker
 
-from mytunes._models import ResourceModel
-from mytunes._models.api import RemoteAPI
-from mytunes._models.api.playlist import PlaylistReadWriteEndpoints
-from mytunes._models.collection import CollectionModel
-from mytunes._models.collection.playlist import RemoteMutablePlaylist
-from mytunes._models.item.genre import Genre
-from mytunes._models.item.track import Track
-from mytunes._models.properties.name import HasName
-from mytunes._models.properties.order import Position
-from mytunes._models.properties.uri import HasMutableURI, HasImmutableURI, HasURI
+from mytunes._base.resource import ResourceModel
+from mytunes.core.api import RemoteAPI
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
+from mytunes.core._collection import CollectionModel
+from mytunes.core._collection.playlist import RemoteMutablePlaylist
+from mytunes.core._item.genre import Genre
+from mytunes.core._item.track import Track
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
+from mytunes.properties.name import HasName
+from mytunes.properties.order import Position
+from mytunes.properties.uri import HasMutableURI, HasImmutableURI, HasURI
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI
 

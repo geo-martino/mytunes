@@ -5,8 +5,8 @@ from pydantic import Field
 
 from mytunes._types import TO_TUPLE
 from mytunes.exception import MyTunesValueError
-from ..._models.properties.uri import HasURI
-from ..._models.result import Result, LenLogFormatter
+from mytunes.properties.uri import HasURI
+from mytunes.result import Result, LenLogFormatter
 
 
 class CheckResult[T: HasURI](Result):

@@ -7,7 +7,7 @@ from pydantic import Field, validate_call, computed_field
 from mytunes._types import StrippedString, TO_TUPLE
 from mytunes.processors.filters._base import Filter
 from mytunes.processors.filters.compare import ComparerFilter
-from ..._models.result import CountResult, LenLogFormatter, LogPosition
+from mytunes.result import CountResult, LenLogFormatter, LogPosition
 
 
 # noinspection PyAbstractClass

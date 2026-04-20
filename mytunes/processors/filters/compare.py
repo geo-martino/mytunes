@@ -6,7 +6,7 @@ from mytunes._types import TO_TUPLE
 from mytunes.exception import MyTunesValidationError
 from pydantic import Field, field_validator, field_serializer, validate_call, ValidationError, model_validator
 
-from ..._models import ResourceModel
+from ..._base.resource import ResourceModel
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters._base import Filter
 

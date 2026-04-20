@@ -12,10 +12,11 @@ from pydantic.alias_generators import to_snake
 
 from mytunes._types import LowerSnakeCase
 from mytunes.exception import MyTunesTypeError, MyTunesAttributeError
-from .._models import ResourceModel, IntEnumModel
-from .._models.item.album import HasAlbum
-from .._models.properties.file import IsFile
-from .._models.properties.length import HasLength
+from .._base.enum import IntEnumModel
+from .._base.resource import ResourceModel
+from mytunes.core.album import HasAlbum
+from mytunes.properties.file import IsFile
+from mytunes.properties.length import HasLength
 from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
 from mytunes.processors.sort import ItemSorter
 

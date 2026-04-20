@@ -10,15 +10,16 @@ from termcolor import colored
 
 from mytunes._types import TO_LIST
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError
-from .._models import BaseModel, ResourceModel
-from .._models.collection import CollectionModel
-from .._models.item.album import HasAlbum
-from .._models.item.artist import HasArtists
-from .._models.properties.date import HasReleaseDate
-from .._models.properties.length import HasLength
-from .._models.properties.name import HasName
-from .._models.properties.order import Position, HasTrackPosition
-from .._models.properties.uri import HasImmutableURI, HasMutableURI
+from .._base import BaseModel
+from .._base.resource import ResourceModel
+from mytunes.core.collection import CollectionModel
+from mytunes.core.album import HasAlbum
+from mytunes.core.artist import HasArtists
+from mytunes.properties.date import HasReleaseDate
+from mytunes.properties.length import HasLength
+from mytunes.properties.name import HasName
+from mytunes.properties.order import Position, HasTrackPosition
+from mytunes.properties.uri import HasImmutableURI, HasMutableURI
 from .._utils import truncate_string
 
 FIELDS = Literal[

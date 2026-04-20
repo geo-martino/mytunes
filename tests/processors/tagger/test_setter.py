@@ -3,8 +3,8 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 
-from mytunes._models import AttributeModel
-from mytunes._models.item.track import Track
+from mytunes._base.attribute import AttributeModel
+from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._setter import ValueSetter, GroupedSetter, SortedSetter, IncrementalSetter

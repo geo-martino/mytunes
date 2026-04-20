@@ -13,15 +13,17 @@ from pydantic import Field, field_validator, field_serializer, model_validator
 from mytunes.exception import MyTunesValueError, MyTunesAttributeError
 from ._base import Processor
 from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE, ItemCollection
-from .._models import ResourceModel, IntEnumModel, AttributeModel
-from .._models.item.artist import HasArtists
-from .._models.item.track import Track
-from .._models.properties.audio import HasAudioProperties
-from .._models.properties.date import HasAddedDate, HasPlayedDate
-from .._models.properties.file import IsLocalFile
-from .._models.properties.name import HasName
-from .._models.properties.rating import HasRating
-from .._models.sequence import UniqueSequence
+from .._base.attribute import AttributeModel
+from .._base.enum import IntEnumModel
+from .._base.resource import ResourceModel
+from mytunes.core.artist import HasArtists
+from mytunes.core.track import Track
+from mytunes.properties.audio import HasAudioProperties
+from mytunes.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.properties.file import IsLocalFile
+from mytunes.properties.name import HasName
+from mytunes.properties.rating import HasRating
+from mytunes.core.sequence import UniqueSequence
 
 
 class ShuffleMode(IntEnumModel):

@@ -18,7 +18,6 @@ from pydantic.alias_generators import to_pascal, to_snake
 from pydantic.fields import FieldInfo, PrivateAttr
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
 
-from mytunes._models.properties.path import PathMapper
 from mytunes._types import StrippedString, TO_LIST, to_list
 from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.local._collection.playlist import LocalPlaylist
@@ -29,11 +28,12 @@ from mytunes.processors.filters.composite import GroupResult, GroupFilter
 from mytunes.processors.filters.values import PathFilter
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
+from mytunes.properties.path import PathMapper
+from mytunes.result import LogFormatter
 from ..._item.track import LocalTrack
-from ...._models import BaseModel
-from ...._models.result import LogFormatter
-from ...._models.sequence import MutableUniqueSequence
+from ...._base import BaseModel
 from ....logger import STAT
+from mytunes.core.sequence import MutableUniqueSequence
 
 try:
     import xmltodict

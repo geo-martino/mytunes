@@ -6,9 +6,9 @@ from mytunes._types import LowerStrippedString, Number
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from mytunes.processors.score._base import Scorer
-from ..._models.item.album import HasAlbum
-from ..._models.item.artist import HasArtists
-from ..._models.properties.name import HasName
+from mytunes.properties.name import HasName
+from mytunes.core.album import HasAlbum
+from mytunes.core.artist import HasArtists
 
 
 # noinspection PyAbstractClass

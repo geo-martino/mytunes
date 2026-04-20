@@ -5,11 +5,12 @@ from typing import Union, Annotated
 from pydantic import AliasChoices, Field
 
 from mytunes.processors.filters import Filter
+from mytunes.properties.logger import HasLogger, HasProgress
+from mytunes.result import Result, MapLogFormatter
 from ._setter import Setter
 from .._base import Processor
-from ..._models import AttributeModel, ResourceModel
-from ..._models.properties.logger import HasLogger, HasProgress
-from ..._models.result import Result, MapLogFormatter
+from ..._base.attribute import AttributeModel
+from ..._base.resource import ResourceModel
 from ..._types import TO_TUPLE
 from ...logger import Logger
 

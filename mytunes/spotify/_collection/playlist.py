@@ -15,9 +15,9 @@ from .._properties.date import HasSpotifyAddedDate
 from .._properties.images import HasSpotifyImages
 from .._properties.stats import HasFollowers
 from .._properties.uri import SpotifyResourceURI
-from ..._models.collection.playlist import RemotePlaylist, RemoteMutablePlaylist
-from ..._models.metadata import Attribute
-from ..._models.sequence import UniqueSequence, MutableUniqueSequence
+from mytunes.core.playlist import RemotePlaylist, RemoteMutablePlaylist
+from ..._base.attribute import Attribute
+from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 
 
 @final

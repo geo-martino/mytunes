@@ -5,9 +5,9 @@ from pydantic import Field
 
 from mytunes._types import Number
 from mytunes.processors.clean import TagCleaner
+from mytunes.properties.logger import HasLogger
+from mytunes.properties.name import HasName
 from .._base import Processor
-from ..._models.properties.logger import HasLogger
-from ..._models.properties.name import HasName
 
 
 # noinspection PyAbstractClass

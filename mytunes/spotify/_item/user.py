@@ -7,8 +7,8 @@ from mytunes.spotify._base import SpotifyResource
 from .._properties.images import HasSpotifyImages
 from .._properties.stats import HasFollowers
 from .._properties.uri import SpotifyUserURI
-from ..._models.item.user import RemoteUser
-from ..._models.metadata import Attribute
+from mytunes.core.user import RemoteUser
+from ..._base.attribute import Attribute
 
 
 @final

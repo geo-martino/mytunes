@@ -5,8 +5,7 @@ from .._item.album import LocalAlbum
 from .._item.artist import LocalArtist
 from .._item.genre import LocalGenre
 from .._item.track import LocalTrack, HasLocalTracks
-from ..._models.collection.album import AlbumCollection
-from ..._models.properties.uri import URI
+from mytunes.core.album import AlbumCollection
 
 
 # noinspection PyFinal

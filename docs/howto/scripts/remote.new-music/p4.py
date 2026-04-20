@@ -1,7 +1,7 @@
 from p3 import *
 
-from mytunes.libraries.remote.core.types import RemoteObjectType
-from mytunes.libraries.remote.core.object import RemoteAlbum
+from mytunes.libraries.remote._core.types import RemoteObjectType
+from mytunes.libraries.remote._core.object import RemoteAlbum
 
 
 async def get_albums(library: RemoteLibrary, start: date, end: date) -> list[RemoteAlbum]:

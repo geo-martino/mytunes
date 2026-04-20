@@ -12,13 +12,13 @@ from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 
-from mytunes._models.properties.date import SparseDate
-from mytunes._models.properties.music import KeySignature
-from mytunes._models.properties.order import Position
-from mytunes._models.properties.uri import URI
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import TagContext
 from mytunes.local._item.track.flac import FLAC
+from mytunes.properties.date import SparseDate
+from mytunes.properties.music import KeySignature
+from mytunes.properties.order import Position
+from mytunes.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
 
 

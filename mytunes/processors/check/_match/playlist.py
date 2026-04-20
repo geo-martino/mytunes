@@ -4,8 +4,8 @@ from copy import copy
 
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check.result import CheckResult
-from ...._models.properties.uri import HasURI, HasMutableURI
-from ...._models.sequence import UniqueSequence
+from mytunes.properties.uri import HasURI, HasMutableURI
+from mytunes.core.sequence import UniqueSequence
 
 
 class PlaylistMatch[IT: HasMutableURI](CheckerMatch[IT]):

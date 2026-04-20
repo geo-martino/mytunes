@@ -6,12 +6,12 @@ from pydantic import Field, model_validator
 from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValidationError
 from mytunes.local._collection._base import LocalCollection
+from mytunes.properties.length import HasLength
+from mytunes.properties.name import HasName
+from mytunes.properties.uri import URI
 from .._item.track import LocalTrack, HasLocalTracks
-from ..._models.metadata import Attribute
-from ..._models.properties.length import HasLength
-from ..._models.properties.name import HasName
-from ..._models.properties.uri import URI
-from ..._models.sequence import UniqueSequence
+from ..._base.attribute import Attribute
+from mytunes.core.sequence import UniqueSequence
 
 
 @final

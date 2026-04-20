@@ -7,9 +7,9 @@ from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._properties.uri import SpotifyResourceURI
-from ..._models.api.items import HasArtistEndpoints
-from ..._models.collection.artist import RemoteArtistCollection
-from ..._models.metadata import Attribute
+from ...core.api.items import HasArtistEndpoints
+from mytunes.core.artist import RemoteArtistCollection
+from ..._base.attribute import Attribute
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember

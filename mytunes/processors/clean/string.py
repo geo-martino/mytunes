@@ -2,15 +2,15 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
-from mytunes._models.sequence import UniqueSequence
 from pydantic import Field, validate_call
 
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean._base import TagCleaner
-from ..._models import AttributeModel
-from ..._models.item.album import HasAlbum, Album
-from ..._models.item.artist import HasArtists, Artist
-from ..._models.properties.name import HasName
+from mytunes.properties.name import HasName
+from mytunes.core.sequence import UniqueSequence
+from ..._base.attribute import AttributeModel
+from mytunes.core.album import HasAlbum, Album
+from mytunes.core.artist import HasArtists, Artist
 
 
 class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):

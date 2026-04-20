@@ -2,8 +2,7 @@ from typing import Annotated
 
 from pydantic import Field, NonNegativeInt, AliasPath
 
-from ..._models import AttributeModel
-from ..._models.metadata import Attribute
+from ..._base.attribute import AttributeModel, Attribute
 
 
 class HasFollowers(AttributeModel):

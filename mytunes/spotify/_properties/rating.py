@@ -2,8 +2,8 @@ from typing import Annotated
 
 from pydantic import Field
 
-from ..._models.metadata import Attribute
-from ..._models.properties.rating import HasRating, Rating
+from mytunes.properties.rating import HasRating, Rating
+from ..._base.attribute import Attribute
 
 
 class HasSpotifyRating(HasRating):

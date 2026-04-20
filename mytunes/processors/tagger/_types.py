@@ -3,8 +3,8 @@ from typing import Literal
 from pydantic.fields import FieldInfo
 
 from .._types import get_tag_from_expected, _ATTRIBUTE_FIELD_TYPES
-from ..._models import AttributeModel
-from ...exception import MyTunesTypeError
+from ..._base.attribute import AttributeModel
+from mytunes.exception import MyTunesTypeError
 
 
 def get_writeable_tag_attributes_map[T](expected: type[T] | None = None) -> dict[str, type[T]]:

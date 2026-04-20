@@ -5,6 +5,10 @@ from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFl
     ModelWrapValidatorHandler, model_validator
 
 from mytunes.exception import MyTunesValidationError
+from mytunes.properties.audio import Decibels
+from mytunes.properties.date import SparseDate, HasAddedDate
+from mytunes.properties.length import Length, HasLength
+from mytunes.properties.order import Position
 from mytunes.spotify._base import SpotifyResource, SpotifyModel
 from mytunes.spotify._item.album import SpotifyAlbum
 from mytunes.spotify._item.artist import SpotifyArtist
@@ -14,17 +18,13 @@ from .._properties.images import HasSpotifyImages
 from .._properties.music import HasSpotifyKeySignature
 from .._properties.rating import HasSpotifyRating
 from .._properties.uri import SpotifyResourceURI
-from ..._models import BaseModel
-from ..._models.item.track import RemoteTrack
-from ..._models.metadata import Attribute
-from ..._models.properties.audio import Decibels
-from ..._models.properties.date import SparseDate, HasAddedDate
-from ..._models.properties.length import Length, HasLength
-from ..._models.properties.order import Position
+from ..._base import BaseModel
+from mytunes.core.track import RemoteTrack
+from ..._base.attribute import Attribute
 from ..._types import HttpURL
 
 if TYPE_CHECKING:
-    from ..._models.api.items import HasTrackEndpoints
+    from ...core.api.items import HasTrackEndpoints
     # noinspection PyProtectedMember
     from mytunes.spotify._api.track import SpotifyTrackEndpoints
 

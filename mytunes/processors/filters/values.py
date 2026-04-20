@@ -5,12 +5,11 @@ from typing import Annotated, Any, Self, final
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
 
 from mytunes._types import TO_SET, StrippedString, DEFAULT_IF_NONE
-from mytunes.exception import MyTunesTypeError
-from ..._models import BaseModel
-from ..._models.properties.file import IsLocalFile
-from ..._models.properties.path import PathInputType
-from mytunes._models.properties.path import PathMapper
-from ..._models.properties.name import HasName
+from ..._base import BaseModel
+from mytunes.properties.file import IsLocalFile
+from mytunes.properties.path import PathInputType
+from mytunes.properties.path import PathMapper
+from mytunes.properties.name import HasName
 from mytunes.processors.filters._base import Filter
 
 

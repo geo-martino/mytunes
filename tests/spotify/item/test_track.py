@@ -1,9 +1,9 @@
 import pytest
 from faker import Faker
 
-from mytunes._models.properties.audio import Decibels
-from mytunes._models.properties.length import Length
-from mytunes._models.properties.music import KeySignature
+from mytunes.properties.audio import Decibels
+from mytunes.properties.length import Length
+from mytunes.properties.music import KeySignature
 from mytunes.spotify import API_URL
 # noinspection PyProtectedMember
 from mytunes.spotify._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis, \

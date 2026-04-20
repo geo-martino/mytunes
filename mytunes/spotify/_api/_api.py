@@ -11,11 +11,11 @@ from mytunes.spotify._api.playlist import SpotifyPlaylistEndpoints
 from mytunes.spotify._api.search import SpotifySearchEndpoints
 from mytunes.spotify._api.track import SpotifyTrackEndpoints
 from mytunes.spotify._api.user import SpotifyUserEndpoints
-from ..._models.api import RemoteAPI, HasCache
-from ..._models.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
-from ..._models.api.playlist import HasPlaylistEndpoints
-from ..._models.api.search import HasSearchEndpoints
-from ..._models.api.user import HasUserEndpoints
+from ...core.api import RemoteAPI, HasCache
+from ...core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
+from ...core.api.playlist import HasPlaylistEndpoints
+from ...core.api.search import HasSearchEndpoints
+from ...core.api.user import HasUserEndpoints
 
 
 class SpotifyAPI(

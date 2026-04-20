@@ -8,7 +8,7 @@ from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoint
 from .._collection.album import SpotifyAlbumCollection
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
-from ..._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
+from ...core.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
     ItemReadEndpoints, CollectionReadEndpoints
 
 

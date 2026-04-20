@@ -10,7 +10,7 @@ from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.processors._types import _ATTRIBUTE_FIELD_MAP
 from mytunes.processors.tagger.values._fields import FieldValue
 from ._base import Value
-from ...._models import AttributeModel
+from ...._base.attribute import AttributeModel
 
 
 # noinspection PyAbstractClass

@@ -5,8 +5,8 @@ from pydantic import Field, AliasPath
 
 from mytunes._types import String
 from mytunes.spotify import SpotifyModel
-from .._models.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
-from .._models.metadata import Attribute
+from ..core.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
+from .._base.attribute import Attribute
 
 
 # noinspection PyAbstractClass

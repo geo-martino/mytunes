@@ -4,10 +4,10 @@ from typing import Literal, ClassVar, Union, final
 from pydantic import Field
 from yarl import URL
 
-from ...._models import ResourceModel
-from ...._models.item.album import Album
-from ...._models.item.artist import Artist
-from ...._models.item.track import Track
+from ...._base.resource import ResourceModel
+from mytunes.core.album import Album
+from mytunes.core.artist import Artist
+from mytunes.core.track import Track
 from mytunes.processors.download.stores._base import AudioStore, HasLocale
 from mytunes.processors.download.stores.exception import StoreTypeError
 

@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from mytunes._models.item.track import Track
+from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.tagger.values import FixedValue
 from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue

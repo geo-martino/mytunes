@@ -2,12 +2,12 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from mytunes._models.collection import CollectionModel
-from mytunes._models.collection.playlist import RemoteMutablePlaylist
-from mytunes._models.properties.uri import HasURI
+from mytunes.core._collection import CollectionModel
+from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
+from mytunes.properties.uri import HasURI
 from tests.testers import UniqueKeyTester
 
 

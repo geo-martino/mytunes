@@ -3,14 +3,15 @@ from abc import abstractmethod
 from collections.abc import Sequence, Iterable, Collection, Mapping
 from typing import ClassVar, Literal, Any, Union, get_args, Annotated, final, Self
 
-from mytunes._models.sequence import UniqueSequence
+from mytunes.core.sequence import UniqueSequence
 from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter
 from yarl import URL
 
 from mytunes._types import StrippedString, HttpURL
-from ...._models import BaseModel, ResourceModel
-from ...._models import ModelMetaclass
-from ...._models.properties.name import HasName
+from ...._base import BaseModel
+from ...._base.resource import ResourceModel
+from ...._base import ModelMetaclass
+from mytunes.properties.name import HasName
 from mytunes.processors.clean.string import NameCleaner
 from mytunes.processors.download.stores.exception import StoreError
 

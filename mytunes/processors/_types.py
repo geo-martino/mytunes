@@ -1,16 +1,15 @@
-from collections.abc import Iterable
 from typing import Literal, get_type_hints
 
 from pydantic.fields import FieldInfo
 
-from .._models import AttributeModel
+from .._base.attribute import AttributeModel
 from mytunes._types import get_base_types
-from .._models.item.track import Track
-from .._models.properties.audio import HasAudioProperties
-from .._models.properties.date import HasAddedDate, HasPlayedDate
-from .._models.properties.file import IsLocalFile
-from .._models.sequence import UniqueSequence
-from ..exception import MyTunesTypeError
+from mytunes.core.track import Track
+from mytunes.properties.audio import HasAudioProperties
+from mytunes.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.properties.file import IsLocalFile
+from mytunes.core.sequence import UniqueSequence
+from mytunes.exception import MyTunesTypeError
 
 
 ItemCollection = set | tuple | list | UniqueSequence

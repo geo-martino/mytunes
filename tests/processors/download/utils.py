@@ -3,9 +3,9 @@ from urllib.parse import unquote
 
 from yarl import URL
 
-from mytunes._models.item.album import Album
-from mytunes._models.item.artist import Artist
-from mytunes._models.item.track import Track
+from mytunes.core._item.album import Album
+from mytunes.core._item.artist import Artist
+from mytunes.core._item.track import Track
 from mytunes.processors.download.stores import AudioStore
 
 

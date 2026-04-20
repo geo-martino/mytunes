@@ -8,9 +8,9 @@ from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
-from ..._models.collection.album import RemoteAlbumCollection
-from ..._models.metadata import Attribute
-from ..._models.sequence import UniqueSequence
+from mytunes.core.album import RemoteAlbumCollection
+from ..._base.attribute import Attribute
+from mytunes.core.sequence import UniqueSequence
 
 
 # noinspection PyFinal

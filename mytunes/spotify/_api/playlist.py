@@ -8,6 +8,8 @@ from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from mytunes.exception import RequestError
+from mytunes.properties.image import ImageSource, PILImageFileT
+from mytunes.properties.uri import HasURI
 from mytunes.spotify import API_URL
 from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
 from mytunes.spotify._api._types import SpotifyApiURL, SpotifyApiURISequence, SpotifyApiURI
@@ -15,12 +17,10 @@ from mytunes.spotify.user import SpotifyUser
 from .._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from .._item.track import SpotifyTrack, SpotifyPlaylistTrack
 from .._properties.uri import SpotifyResourceURI
-from ..._models.api import HasLibraryEndpoints
-from ..._models.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
-from ..._models.api.types import ApiURISchema, ApiURLSchema
-from ..._models.cursors import PageCursor, HasPageCursor
-from ..._models.properties.image import ImageSource, PILImageFileT
-from ..._models.properties.uri import HasURI
+from ...core.api import HasLibraryEndpoints
+from ...core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
+from ...core.api.types import ApiURISchema, ApiURLSchema
+from ...core.cursors import PageCursor, HasPageCursor
 
 
 @final

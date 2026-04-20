@@ -8,9 +8,9 @@ from pydantic.dataclasses import dataclass
 
 from mytunes._types import get_base_types
 from mytunes.exception import MyTunesValidationError, ModelError
-from ._base import Processor
-from ..._models import ModelMetaclass
-from ..._models.metadata import Attribute
+from mytunes.processors._base import Processor
+from ..._base import ModelMetaclass
+from ..._base.attribute import Attribute
 
 
 # noinspection PyPep8Naming

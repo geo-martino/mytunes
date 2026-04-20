@@ -4,10 +4,10 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from mytunes._models.properties.path import PathStemMapper
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.playlist import LocalPlaylistFile
+from mytunes.properties.path import PathStemMapper
 from tests.testers import UniqueKeyTester
 
 

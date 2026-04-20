@@ -13,12 +13,12 @@ from mytunes._types import get_base_types
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
-from ...._models.metadata import TagAttribute
-from ...._models.properties.date import SparseDate
-from ...._models.properties.image import ImageFile, ImageURL
-from ...._models.properties.music import KeySignature
-from ...._models.properties.order import Position
-from ...._models.properties.rating import Rating
+from mytunes.properties.date import SparseDate
+from mytunes.properties.image import ImageFile, ImageURL
+from mytunes.properties.music import KeySignature
+from mytunes.properties.order import Position
+from mytunes.properties.rating import Rating
+from ...._base.attribute import TagAttribute
 
 
 @final

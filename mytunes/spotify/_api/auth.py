@@ -11,7 +11,7 @@ from yarl import URL
 
 from mytunes.spotify import SpotifyModel, API_URL
 from mytunes.spotify.exception import SpotifyAuthenticationError
-from ..._models.api import RemoteAuthoriser
+from ...core.api import RemoteAuthoriser
 
 
 class SpotifyAuthoriser(RemoteAuthoriser[AuthorisationCodeFlow], SpotifyModel):

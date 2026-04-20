@@ -4,8 +4,8 @@ from typing import Annotated, Self
 from pydantic import Field
 
 from mytunes._types import TO_TUPLE
+from mytunes.result import TotalCountResult, LenLogFormatter
 from ..._item.track import LocalTrack
-from ...._models.result import TotalCountResult, LenLogFormatter
 
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):

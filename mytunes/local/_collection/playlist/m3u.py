@@ -9,11 +9,11 @@ from pydantic import Field, NonNegativeInt
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import SortResult, LoadPlaylistResult, SavePlaylistResult
 from mytunes.processors.filters.values import PathFilter
+from mytunes.properties.path import PathInputType
+from mytunes.result import LogFormatter
 from ..._item.track import LocalTrack, LOCAL_TRACK_ADAPTER
-from ...._models.properties.path import PathInputType
-from ...._models.result import LogFormatter
-from ...._models.sequence import MutableUniqueSequence
 from ....logger import STAT
+from mytunes.core.sequence import MutableUniqueSequence
 
 
 class SyncM3UResult(SavePlaylistResult):

@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from mytunes._models.item.genre import Genre
+from mytunes.core._item.genre import Genre
 from mytunes.spotify._item.genre import SpotifyGenre
 from tests.spotify.testers import SpotifyResourceTester
 

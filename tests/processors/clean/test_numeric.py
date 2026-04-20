@@ -4,12 +4,12 @@ from unittest.mock import patch, MagicMock
 import pytest
 from faker import Faker
 
-from mytunes._models.item.album import HasAlbum, Album
-from mytunes._models.item.track import Track
-from mytunes._models.properties.length import HasLength
+from mytunes.core._item.album import HasAlbum, Album
+from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
+from mytunes.properties.length import HasLength
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

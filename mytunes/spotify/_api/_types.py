@@ -1,6 +1,6 @@
+from mytunes.properties.uri import HasURI
 from .._properties.uri import SpotifyResourceURI
-from ..._models.api.types import ApiURL, ApiURI, ApiURISequence
-from ..._models.properties.uri import HasURI
+from ...core.api.types import ApiURL, ApiURI, ApiURISequence
 
 type SpotifyApiURL[MT: HasURI] = ApiURL[SpotifyResourceURI, MT]
 type SpotifyApiURI[MT: HasURI] = ApiURI[SpotifyResourceURI, MT]

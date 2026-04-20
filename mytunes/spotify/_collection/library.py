@@ -9,7 +9,7 @@ from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._item.track import SpotifyTrack
 from .._properties.stats import HasFollowers
-from ..._models.collection.library import RemoteMutableLibrary
+from mytunes.core.library import RemoteMutableLibrary
 
 
 @final

@@ -1,6 +1,6 @@
 from mytunes.local._base import LocalModel
 
-from ..._models.collection import CollectionModel
+from mytunes.core.collection import CollectionModel
 
 
 # noinspection PyAbstractClass

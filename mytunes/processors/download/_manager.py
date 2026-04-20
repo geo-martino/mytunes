@@ -14,10 +14,10 @@ from mytunes.processors.download._page import StorePausePage
 from mytunes.processors.download.stores import AudioStore
 from .._base import Processor
 from .._flow import SkipPage, QuitImmediately
-from ..._models import ResourceModel
-from ..._models.collection import CollectionModel
-from ..._models.properties.logger import HasLogger, HasProgress
-from ..._models.properties.order import Position
+from ..._base.resource import ResourceModel
+from mytunes.core.collection import CollectionModel
+from mytunes.properties.logger import HasLogger, HasProgress
+from mytunes.properties.order import Position
 
 
 class StoreManager(Processor, HasLogger, HasProgress):

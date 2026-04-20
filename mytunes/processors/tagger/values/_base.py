@@ -4,7 +4,7 @@ from typing import Any, final
 from pydantic import Field, AliasChoices
 
 from mytunes.processors.filters import Filter
-from ...._models import BaseModel
+from ...._base import BaseModel
 from ...._types import StrippedString
 
 

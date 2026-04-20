@@ -6,8 +6,8 @@ from faker import Faker
 from pydantic import ValidationError
 from yarl import URL
 
-from mytunes._models.item.artist import Artist
-from mytunes._models.item.track import Track
+from mytunes.core._item.artist import Artist
+from mytunes.core._item.track import Track
 from mytunes.processors.clean.string import NameCleaner
 from mytunes.processors.download.stores import AudioStore
 from mytunes.processors.download.stores._base import HasLocale, GeneralAudioStore

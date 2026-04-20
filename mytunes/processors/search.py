@@ -8,21 +8,20 @@ from termcolor import colored
 from mytunes._types import TO_TUPLE
 from mytunes.processors.match import Matcher
 from ._base import Processor
-from .._models import ResourceModel
-from .._models.api import RemoteAPI, HasAPI
-from .._models.api.search import HasSearchEndpoints
-from .._models.collection import CollectionModel, RemoteCollection
-from .._models.collection.album import AlbumCollection
+from .._base.resource import ResourceModel
+from ..core.api import RemoteAPI, HasAPI
+from ..core.api.search import HasSearchEndpoints
+from mytunes.core.collection import CollectionModel, RemoteCollection
+from mytunes.core.album import AlbumCollection
 from mytunes.exception import MyTunesValidationError
-from .._models.properties.asynch import HasAsyncOperations
-from .._models.properties.file import IsFile, IsLocalFile
-from .._models.properties.logger import HasProgress, HasLogger
-from .._models.properties.name import HasName
-from .._models.properties.uri import HasURI, HasMutableURI
-from .._models.remote import RemoteResource
-from .._models.result import TotalCountResult, LenLogFormatter
+from mytunes.properties.asynch import HasAsyncOperations
+from mytunes.properties.file import IsFile, IsLocalFile
+from mytunes.properties.logger import HasProgress, HasLogger
+from mytunes.properties.name import HasName
+from mytunes.properties.uri import HasURI, HasMutableURI
+from ..core.remote import RemoteResource
+from mytunes.result import TotalCountResult, LenLogFormatter
 from .._utils import truncate_string
-from ..logger import REPORT
 
 
 class SearchResult[T: Any](TotalCountResult):

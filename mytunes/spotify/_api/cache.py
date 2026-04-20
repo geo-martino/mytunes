@@ -8,8 +8,8 @@ from aiorequestful.types import MethodInput
 from pydantic import ValidationError
 from yarl import URL
 
+from mytunes.properties.uri import URI
 from mytunes.spotify import SpotifyModel
-from ..._models.properties.uri import URI
 
 
 # TODO: drop this on aiorequestful v2

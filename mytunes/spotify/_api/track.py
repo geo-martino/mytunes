@@ -8,9 +8,9 @@ from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoint
 from mytunes.spotify._api._types import SpotifyApiURI, SpotifyApiURISequence
 from .._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis
 from .._properties.uri import SpotifyResourceURI
-from ..._models.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+from ...core.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
     BatchReadEndpoints
-from ..._models.api.types import ApiURISchema
+from ...core.api.types import ApiURISchema
 
 
 @final

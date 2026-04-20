@@ -14,9 +14,10 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from mytunes._models import BaseModel, ResourceModel
-from mytunes._models.api import Endpoints
-from mytunes._models.properties.uri import URI
+from mytunes._base import BaseModel
+from mytunes._base.resource import ResourceModel
+from mytunes.core.api import Endpoints
+from mytunes.properties.uri import URI
 from tests.remote import SimpleURI, MockRemoteResource, MockIndexCursor
 
 

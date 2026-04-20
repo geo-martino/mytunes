@@ -6,7 +6,7 @@ from mytunes.spotify import API_URL
 from mytunes.spotify._api._base import SpotifyEndpoints
 from mytunes.spotify.user import SpotifyUser
 from .._properties.uri import SpotifyUserURI
-from ..._models.api.user import UserEndpoints
+from ...core.api.user import UserEndpoints
 
 
 @final

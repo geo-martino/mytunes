@@ -1,11 +1,9 @@
 import pytest
-from mytunes._models import ResourceModel
-from mytunes._models.collection.playlist import RemotePlaylist, Playlist
-from mytunes._models.item.album import RemoteAlbum
-from mytunes._models.item.artist import RemoteArtist
-from mytunes._models.item.track import RemoteTrack, Track
+
+from mytunes._base.resource import ResourceModel
+from mytunes.core._collection.playlist import RemotePlaylist, Playlist
+from mytunes.core._item.track import RemoteTrack, Track
 from mytunes.local._collection.playlist import LocalPlaylist
-from mytunes.local._item import LocalAlbum, LocalArtist
 from mytunes.local._item.track import LocalTrack
 
 
@@ -33,7 +31,9 @@ def test_registry_has_unique_attributes(model_type: type[ResourceModel]):
     assert all(kls.__unique_attributes__ for kls in model_type.registered_submodels)
 
     common_unique_attributes = {attr for kls in model_type.registered_submodels for attr in kls.__unique_attributes__}
+    print(common_unique_attributes)
     for kls in model_type.registered_submodels:
         common_unique_attributes &= kls.__unique_attributes__
+        print(common_unique_attributes, kls.__unique_attributes__)
 
     assert common_unique_attributes
