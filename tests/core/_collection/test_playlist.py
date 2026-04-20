@@ -3,6 +3,7 @@ from typing import get_args, Any
 from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
+from aiorequestful.auth import Authoriser
 from faker import Faker
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
@@ -17,6 +18,7 @@ from mytunes.core._item.track import RemoteTrack
 from mytunes.core._item.user import RemoteUser
 from mytunes.core.api import RemoteAPI, CollectionWriteEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
+from mytunes.core.api.user import UserEndpoints
 from mytunes.core.cursors import PageCursor
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
@@ -143,8 +145,12 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
             assert model == RemoteMutablePlaylist.model_validate(model, context=context)
 
     @pytest.fixture
-    def api(self) -> RemoteAPI:
-        return MockRemoteAPI()
+    def api(self, *_) -> Generator[RemoteAPI]:
+        with (
+            patch.object(Authoriser, "authorise", new_callable=AsyncMock),
+            patch.object(UserEndpoints, "get_me", return_value=None, new_callable=AsyncMock)
+        ):
+            yield MockRemoteAPI()
 
     @pytest.fixture
     def mock_modify(self) -> Generator[Mock]:

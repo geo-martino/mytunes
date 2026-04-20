@@ -32,10 +32,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
         source: ClassVar[str] = MockRemoteLibrary.source
 
     @pytest.fixture
-    def api(self) -> RemoteAPI:
-        return MockRemoteAPI()
-
-    @pytest.fixture
     def model(self, api: RemoteAPI) -> RemoteMutableLibrary:
         return self.MockRemoteMutableLibrary(api=api)
 

@@ -123,7 +123,7 @@ class URI(RootModel[str]):
             )
 
         # noinspection PyTypeChecker
-        classes = [klass for klass in kls.registered_submodels if klass._source.casefold() == source.casefold()]
+        classes = {klass for klass in kls.registered_submodels if klass._source.casefold() == source.casefold()}
         if not classes:
             raise MyTunesTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 

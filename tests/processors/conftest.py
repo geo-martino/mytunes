@@ -1,10 +1,14 @@
+from collections.abc import Generator
 from pathlib import Path
 from random import choice
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from aiorequestful.auth import Authoriser
 from faker import Faker
 
 from mytunes.core.api import RemoteAPI
+from mytunes.core.api.user import UserEndpoints
 from mytunes.local._item.track import LocalTrack
 from tests.remote import MockRemoteAPI
 
@@ -30,5 +34,9 @@ def local_tracks(faker: Faker, tmp_path: Path) -> list[LocalTrack]:
 
 
 @pytest.fixture(scope="session")
-def api() -> RemoteAPI:
-    return MockRemoteAPI()
+def api() -> Generator[RemoteAPI]:
+    with (
+        patch.object(Authoriser, "authorise", new_callable=AsyncMock),
+        patch.object(UserEndpoints, "get_me", return_value=None, new_callable=AsyncMock)
+    ):
+        yield MockRemoteAPI()

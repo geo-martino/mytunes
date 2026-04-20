@@ -411,6 +411,9 @@ class TestEndpoints(EndpointsTester):
     ):
         items, cursor = await model._get_all_items_by_pagination(url_cursors[0], path=items_key)
 
+        # FIXME: the types have slightly different names so it fails...
+        print(type(cursor), cursor)
+        print(type(index_cursors[-1]), index_cursors[-1])
         assert cursor == index_cursors[-1]
         mock_pagination.assert_called_once_with(url_cursors[0], path=items_key)
         mock_generation.assert_called_once_with(index_cursors[1], path=items_key, adapter=None)

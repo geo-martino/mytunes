@@ -1,7 +1,7 @@
 import functools
 from abc import abstractmethod
 from collections.abc import Mapping, Callable
-from contextlib import suppress
+from contextlib import suppress, AbstractAsyncContextManager
 from typing import Self, Any, Annotated
 
 from aiorequestful.auth import Authoriser
@@ -100,6 +100,14 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
     api: Annotated[API, Attribute()] = Field(
         description="The API client model used to interact with the remote service."
     )
+
+    async def __aenter__(self) -> Self:
+        await self.api.__aenter__()
+        return await super().__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.api.__aexit__(exc_type, exc_val, exc_tb)
+        return await super().__aexit__(exc_type, exc_val, exc_tb)
 
     @staticmethod
     def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:

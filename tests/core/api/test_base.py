@@ -3,6 +3,7 @@ from typing import ClassVar
 from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
+from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import ValidationError
@@ -12,6 +13,7 @@ from mytunes.core.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, E
 from mytunes.core.api.items import HasTrackEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
+from mytunes.core.api.user import UserEndpoints
 from tests.remote import SimpleURI, MockRemoteAuthoriser, MockItemEndpoints, MockRemoteAPI
 from tests.testers import BaseModelTester
 
@@ -27,8 +29,12 @@ def handler(authoriser: RemoteAuthoriser) -> RequestHandler:
 
 
 @pytest.fixture
-def api() -> RemoteAPI:
-    return MockRemoteAPI()
+def api() -> Generator[RemoteAPI]:
+    with (
+        patch.object(Authoriser, "authorise", new_callable=AsyncMock),
+        patch.object(UserEndpoints, "get_me", return_value=None, new_callable=AsyncMock)
+    ):
+        yield MockRemoteAPI()
 
 
 @pytest.fixture

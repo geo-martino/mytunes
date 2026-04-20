@@ -11,6 +11,7 @@ from pydantic import Field, NonNegativeInt, model_validator, ValidationError, Ty
 from mytunes._types import String, HttpURL
 from mytunes.core.remote import RemoteModel
 from mytunes.exception import MyTunesTypeError, CursorError, CursorResponseError
+from mytunes.logger import Logger
 
 _HTTP_ADAPTER = TypeAdapter(HttpURL)
 
@@ -93,15 +94,16 @@ class PageCursor(RemoteModel):
         # avoid taking any subclasses of the InitialCursor since they will cause infinite loops
         # when trying to get the next page of items
         # noinspection PyTypeChecker
-        classes = [
+        classes = {
             kls for kls in PageCursor.registered_submodels
             if kls.source.casefold() == cls.source.casefold() and not issubclass(kls, InitialCursor)
-        ]
+        }
         if not classes:
             raise CursorResponseError(f"No registered cursor models found for source {cls.source!r}.")
 
         # prioritise iterable cursors since they can be used for more efficient concurrent pagination
-        classes.sort(key=lambda kls: issubclass(kls, IterablePageCursor), reverse=True)
+        classes = list(classes)
+        classes.sort(key=lambda kls: (issubclass(kls, IterablePageCursor), kls is cls), reverse=True)
 
         if len(classes) == 1:  # attempting to set union_mode fails on a single class
             adapter = TypeAdapter(classes[0])
@@ -291,8 +293,9 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
             cls, responses: list[T], path: str | AliasPath | AliasChoices,
     ) -> list[Self]:
         cursors: list[Self] = [cls.get_cursor_from_response(response, path) for response in responses]
-        if not all(isinstance(cursor, cls) for cursor in cursors):
-            raise MyTunesTypeError(f"All cursors in the responses must be {cls.__name__!r} types.")
+        if not all(isinstance(cursor, IndexCursor) for cursor in cursors):
+            types = Logger.format_list_to_string(sorted({type(cursor).__name__ for cursor in cursors}))
+            raise MyTunesTypeError(f"All cursors in the responses must be {cls.__name__!r} types: {types}")
 
         offsets = [cursor.offset for cursor in cursors]
         responses_copy = responses.copy()  # needed to avoid modifying the original list when sorting
@@ -391,7 +394,7 @@ class InitialCursor(_HasLimitParam):
             )
 
         # noinspection PyTypeChecker
-        classes = [kls for kls in cls.registered_submodels if kls.source.casefold() == source.casefold()]
+        classes = {kls for kls in cls.registered_submodels if kls.source.casefold() == source.casefold()}
         if not classes:
             raise MyTunesTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 

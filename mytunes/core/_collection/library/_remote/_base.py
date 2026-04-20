@@ -65,14 +65,6 @@ class RemoteLibrary[
             return source
         return f"{self.user.name}'s {source}"
 
-    async def __aenter__(self) -> Self:
-        await self.api.__aenter__()
-        return await super().__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.api.__aexit__(exc_type, exc_val, exc_tb)
-        return await super().__aexit__(exc_type, exc_val, exc_tb)
-
     async def load(self):
         self._logger.info(f"Loading {self._log_name} library", header=1)
 

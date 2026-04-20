@@ -31,9 +31,7 @@ def test_registry_has_unique_attributes(model_type: type[ResourceModel]):
     assert all(kls.__unique_attributes__ for kls in model_type.registered_submodels)
 
     common_unique_attributes = {attr for kls in model_type.registered_submodels for attr in kls.__unique_attributes__}
-    print(common_unique_attributes)
     for kls in model_type.registered_submodels:
         common_unique_attributes &= kls.__unique_attributes__
-        print(common_unique_attributes, kls.__unique_attributes__)
 
     assert common_unique_attributes

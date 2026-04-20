@@ -1,7 +1,8 @@
-from collections.abc import Collection
-from unittest.mock import Mock
+from collections.abc import Collection, Generator
+from unittest.mock import Mock, patch
 
 import pytest
+from aiorequestful.auth import Authoriser
 
 from mytunes.core._collection.library import RemoteLibrary
 from mytunes.core._collection.playlist import RemotePlaylist
@@ -17,10 +18,6 @@ from tests.testers import BaseModelTester
 
 
 class TestRemoteLibrary(BaseModelTester):
-
-    @pytest.fixture
-    def api(self) -> RemoteAPI:
-        return MockRemoteAPI()
 
     @pytest.fixture
     def model(self, api: RemoteAPI, user: RemoteUser) -> RemoteLibrary:
