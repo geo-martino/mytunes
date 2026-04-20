@@ -115,7 +115,7 @@ class Logger(logging.Logger):
 
     # need to override each func to ensure args actually get passed to _log as expected
     def debug(self, *args, **kwargs) -> None:
-        if not self.isEnabledFor(logging.DEBUG):
+        if self.isEnabledFor(logging.DEBUG):
             self._log(logging.DEBUG, *args, **kwargs)
 
     def stat(self, *args, **kwargs) -> None:
