@@ -115,8 +115,11 @@ class LocalLibrary(
             await self.load_tracks()
             playlist_results = await self.load_playlists()
 
+        self._logger.print_line(STAT)
         self._log_playlist_load(playlist_results)
+        self._logger.print_line(STAT)
         self._log_library_uris()
+        self._logger.print_line(STAT)
 
     def _log_library_uris(self):
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
@@ -125,7 +128,7 @@ class LocalLibrary(
         results["TRACKS"] = self._generate_track_uris_results()
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table)
 
     def _log_errors(self, message: str = "Could not load") -> None:
         if len(self.errors) == 0:
@@ -197,6 +200,7 @@ class LocalLibrary(
     def log_tracks(self) -> None:
         self._logger.print_line(STAT)
         self._log_track_uris()
+        self._logger.print_line(STAT)
 
     def _log_track_uris(self) -> None:
         result = self._generate_track_uris_results()
@@ -204,7 +208,6 @@ class LocalLibrary(
         table = result.generate_table(results={key: result})
 
         self._logger.stat(table)
-        self._logger.print_line(STAT)
 
     def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
         source = self.tracks_context.remote_source
@@ -311,14 +314,16 @@ class LocalLibrary(
         self._logger.print_line(STAT)
         if results:
             self._log_playlist_load(results)
+            self._logger.print_line(STAT)
+
         self._log_playlist_uris()
+        self._logger.print_line(STAT)
 
     def _log_playlist_load(self, results: dict[str, LoadPlaylistResult]) -> None:
         header = f"{self.source.upper()} PLAYLISTS LOADED"
         table = LoadPlaylistResult.generate_table(results=results, header=header)
 
         self._logger.stat(table)
-        self._logger.print_line(STAT)
 
     def _log_playlist_uris(self) -> None:
         results = self._generate_playlist_uris_results()
@@ -326,7 +331,6 @@ class LocalLibrary(
         table = LibraryURIsResult.generate_table(results=results, header=header)
 
         self._logger.stat(table)
-        self._logger.print_line(STAT)
 
     def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
         source = self.tracks_context.remote_source

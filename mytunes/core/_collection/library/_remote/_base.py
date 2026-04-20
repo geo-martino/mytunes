@@ -275,8 +275,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} ARTISTS"
         table = result.generate_table(results={key: result})
 
-        self._logger.stat(table)
-        self._logger.print_line(STAT)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     def _generate_artist_results(self) -> RemoteArtistsResult[RT]:
         return RemoteArtistsResult(artists=self.artists)
@@ -338,8 +337,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} ALBUMS"
         table = result.generate_table(results={key: result})
 
-        self._logger.stat(table)
-        self._logger.print_line(STAT)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     def _generate_album_results(self) -> RemoteAlbumsResult[AT]:
         return RemoteAlbumsResult(albums=self.albums)

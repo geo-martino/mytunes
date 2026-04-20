@@ -186,6 +186,4 @@ class M3U(LocalPlaylist[PathFilter]):
     def log_save(self, result: SyncM3UResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncM3UResult.generate_table(results={self.name: result})
-
-        self._logger.stat(table)
-        self._logger.print_line(STAT)
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
