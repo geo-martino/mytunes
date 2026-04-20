@@ -7,7 +7,7 @@ __all__ = [
     LocalPlaylistFile.__name__,
 ]
 
-# we must import all the supported formats here so that they are registered in the registry
+# must import all the supported formats here so that they are registered in the registry
 from .m3u import M3U
 from .xautopf import XAutoPF
 
