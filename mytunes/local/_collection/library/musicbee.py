@@ -21,8 +21,8 @@ from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._collection.library._base import LocalLibrary
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local.exception import XMLReaderError, FileDoesNotExistError
-from mytunes.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from mytunes.properties.path import PathStemMapper, SystemPath, SystemPaths
+from mytunes.core.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
+from mytunes.core.properties.path import PathStemMapper, SystemPath, SystemPaths
 from ..._item.track import LocalTrack
 from ...._base import BaseModel, makecls
 

@@ -16,11 +16,11 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
-from mytunes.properties.file import IsLocalFile
+from mytunes.core.properties.file import IsLocalFile
 from mytunes._types import StrippedString, UpperSnakeCase, HttpURL
 from mytunes.exception import MyTunesValidationError
-from .._base import BaseModel
-from .._base.attribute import AttributeModel, Attribute
+from ..._base import BaseModel
+from ..._base.attribute import AttributeModel, Attribute
 
 
 class _ImageFileSchema:

@@ -4,9 +4,9 @@ from pydantic import Field, EmailStr
 
 from mytunes._types import StrippedString
 from mytunes.core.remote import RemoteResource
-from mytunes.properties.image import HasImages
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import URI
+from mytunes.core.properties.image import HasImages
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import URI
 
 if TYPE_CHECKING:
     from mytunes.core.api.user import HasUserEndpoints, UserEndpoints

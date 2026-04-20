@@ -18,10 +18,10 @@ from mytunes.exception import MyTunesValueError
 from mytunes.local._item import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.track import LocalTrack, TagContext, HasLocalTracks
-from mytunes.properties.file import IsLocalFile
-from mytunes.properties.image import ImageFile
-from mytunes.properties.length import HasLength
-from mytunes.properties.uri import HasMutableURI, URI
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.image import ImageFile
+from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.uri import HasMutableURI, URI
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester, assert_validator_skips
 from tests.utils import split_list

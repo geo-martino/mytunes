@@ -20,7 +20,7 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.processors.filters.values import NameFilter
-from mytunes.properties.path import PathStemMapper, SystemPaths
+from mytunes.core.properties.path import PathStemMapper, SystemPaths
 from tests.testers import NoUniqueKeyTester
 
 

@@ -18,7 +18,7 @@ from mytunes.core.remote import RemoteResource
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
 from mytunes.processors.search import Searcher, SearchResult
-from mytunes.properties.uri import HasMutableURI
+from mytunes.core.properties.uri import HasMutableURI
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor
 from tests.testers import BaseModelTester

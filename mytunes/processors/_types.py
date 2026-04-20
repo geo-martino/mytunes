@@ -5,9 +5,9 @@ from pydantic.fields import FieldInfo
 from .._base.attribute import AttributeModel
 from mytunes._types import get_base_types
 from mytunes.core.track import Track
-from mytunes.properties.audio import HasAudioProperties
-from mytunes.properties.date import HasAddedDate, HasPlayedDate
-from mytunes.properties.file import IsLocalFile
+from mytunes.core.properties.audio import HasAudioProperties
+from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesTypeError
 

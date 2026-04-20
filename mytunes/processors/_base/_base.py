@@ -4,8 +4,8 @@ Base classes for all processors in this module. Also contains decorators for use
 from collections.abc import Iterable
 from typing import Any
 
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import HasURI
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import HasURI
 from ..._base import BaseModel
 
 

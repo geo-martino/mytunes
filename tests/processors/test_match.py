@@ -15,9 +15,9 @@ from mytunes.processors.match import Matcher
 from mytunes.processors.score import Scorer
 from mytunes.processors.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
 from mytunes.processors.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
-from mytunes.properties.date import HasReleaseDate
-from mytunes.properties.length import HasLength, Length
-from mytunes.properties.name import HasName
+from mytunes.core.properties.date import HasReleaseDate
+from mytunes.core.properties.length import HasLength, Length
+from mytunes.core.properties.name import HasName
 from tests.testers import BaseModelTester
 
 

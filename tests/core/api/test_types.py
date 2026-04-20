@@ -7,7 +7,7 @@ from yarl import URL
 
 # noinspection PyProtectedMember
 from mytunes.core.api.types import ApiURLSchema, ApiURISchema
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from tests.remote import SimpleURI, MockRemoteResource
 
 

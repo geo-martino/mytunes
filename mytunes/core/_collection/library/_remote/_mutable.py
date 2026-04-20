@@ -17,7 +17,7 @@ from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpo
 from mytunes.exception import MyTunesTypeError
 from mytunes.logger import STAT
 from mytunes.processors.filters.compare import ComparerFilter
-from mytunes.properties.uri import HasURI, URI
+from mytunes.core.properties.uri import HasURI, URI
 from ...._item.album import RemoteAlbum
 from ...._item.artist import RemoteArtist
 from ...._item.genre import RemoteGenre

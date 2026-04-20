@@ -9,7 +9,7 @@ from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
-from mytunes.properties.length import HasLength
+from mytunes.core.properties.length import HasLength
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

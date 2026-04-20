@@ -3,7 +3,7 @@ from asyncio import Semaphore
 import pytest
 from pydantic import TypeAdapter
 
-from mytunes.properties.asynch import SemaphoreT
+from mytunes.core.properties.asynch import SemaphoreT
 
 
 class TestSemaphoreSchema:

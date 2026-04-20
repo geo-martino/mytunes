@@ -8,13 +8,13 @@ from mytunes.core.api import ItemReadEndpoints
 from mytunes.core.api.items import HasAlbumEndpoints
 from mytunes.core.remote import RemoteResource
 from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
-from mytunes.properties.date import HasReleaseDate
-from mytunes.properties.image import HasImages
-from mytunes.properties.length import HasLength
-from mytunes.properties.name import HasName
-from mytunes.properties.rating import HasRating
-from mytunes.properties.tag import HasSeparableTags
-from mytunes.properties.uri import URI
+from mytunes.core.properties.date import HasReleaseDate
+from mytunes.core.properties.image import HasImages
+from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.rating import HasRating
+from mytunes.core.properties.tag import HasSeparableTags
+from mytunes.core.properties.uri import URI
 from ..._base import makecls
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 from ..._base.resource import ResourceModel

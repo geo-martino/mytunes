@@ -1,7 +1,7 @@
 from collections.abc import Collection
 
 from mytunes.core._collection import SyncRemoteResult
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 
 
 def assert_sync_items_result(

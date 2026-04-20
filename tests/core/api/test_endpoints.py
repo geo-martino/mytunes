@@ -24,8 +24,8 @@ from mytunes.core.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
 from mytunes.core.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from mytunes.core.remote import RemoteModel, RemoteResource
 from mytunes.exception import APIModelError
-from mytunes.properties.image import ImageURL, ImageFile
-from mytunes.properties.uri import URI
+from mytunes.core.properties.image import ImageURL, ImageFile
+from mytunes.core.properties.uri import URI
 from tests.remote import SimpleURI, CallbackResult, MockRemoteResource, MockRemoteCollection, MockIndexCursor, \
     MockKeyCursor, MockUrlCursor, MockInitialCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester

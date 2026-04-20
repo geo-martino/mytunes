@@ -4,7 +4,7 @@ from typing import Self, Annotated, Any
 
 from pydantic import Field, model_validator
 
-from .._base.attribute import AttributeModel, Attribute
+from ..._base.attribute import AttributeModel, Attribute
 from mytunes._types import StrippedString
 
 

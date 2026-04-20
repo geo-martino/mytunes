@@ -12,10 +12,10 @@ from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track.mp3 import MP3
 from mytunes.processors.compare import Comparer, _ATTRIBUTE_FIELD_MAP
 from mytunes.processors.time import TimeMapper
-from mytunes.properties.date import SparseDate
-from mytunes.properties.length import Length
-from mytunes.properties.music import KeySignature
-from mytunes.properties.order import Position
+from mytunes.core.properties.date import SparseDate
+from mytunes.core.properties.length import Length
+from mytunes.core.properties.music import KeySignature
+from mytunes.core.properties.order import Position
 from tests.testers import BaseModelTester
 
 

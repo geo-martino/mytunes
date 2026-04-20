@@ -7,8 +7,8 @@ from mytunes._types import Number
 from mytunes.core.album import HasAlbum
 from mytunes.core.collection import CollectionModel
 from mytunes.processors.clean._base import TagCleaner
-from mytunes.properties.date import HasReleaseDate, SparseDate
-from mytunes.properties.length import HasLength, Length
+from mytunes.core.properties.date import HasReleaseDate, SparseDate
+from mytunes.core.properties.length import HasLength, Length
 from ..._base.attribute import AttributeModel
 
 

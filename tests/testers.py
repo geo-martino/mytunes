@@ -17,7 +17,7 @@ from yarl import URL
 from mytunes._base import BaseModel
 from mytunes._base.resource import ResourceModel
 from mytunes.core.api import Endpoints
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from tests.remote import SimpleURI, MockRemoteResource, MockIndexCursor
 
 

@@ -9,8 +9,8 @@ from mytunes.core.api.items import HasGenreEndpoints
 from mytunes.core.cursors import PageCursor
 from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesValidationError
-from mytunes.properties.length import HasLength
-from mytunes.properties.uri import URI
+from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.uri import URI
 from .._item.genre import Genre, RemoteGenre
 from .._item.track import Track, HasTracks, RemoteTrack
 

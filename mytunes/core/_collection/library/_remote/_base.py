@@ -17,7 +17,7 @@ from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAll
 from mytunes.core.api.user import HasUserEndpoints
 from mytunes.core.remote import RemoteModel
 from mytunes.logger import STAT
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from mytunes.result import Result
 from ...._item.album import RemoteAlbum, HasAlbums
 from ...._item.artist import RemoteArtist, HasArtists

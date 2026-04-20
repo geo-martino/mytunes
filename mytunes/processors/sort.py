@@ -18,11 +18,11 @@ from .._base.enum import IntEnumModel
 from .._base.resource import ResourceModel
 from mytunes.core.artist import HasArtists
 from mytunes.core.track import Track
-from mytunes.properties.audio import HasAudioProperties
-from mytunes.properties.date import HasAddedDate, HasPlayedDate
-from mytunes.properties.file import IsLocalFile
-from mytunes.properties.name import HasName
-from mytunes.properties.rating import HasRating
+from mytunes.core.properties.audio import HasAudioProperties
+from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.rating import HasRating
 from mytunes.core.sequence import UniqueSequence
 
 

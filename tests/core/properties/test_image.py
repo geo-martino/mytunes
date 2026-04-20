@@ -10,7 +10,7 @@ from aiohttp import ClientSession
 from faker import Faker
 
 from mytunes.exception import MyTunesValueError
-from mytunes.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
+from mytunes.core.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
 from tests.remote import CallbackResult
 from tests.testers import BaseModelTester
 

@@ -11,8 +11,8 @@ from mytunes.core.api._endpoints import Endpoints, HasEndpoints
 from mytunes.core.remote import RemoteResource
 from mytunes.exception import MyTunesTypeError, RequestError
 from mytunes.processors.clean.string import NameCleaner
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import URI
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import URI
 from ..._base.resource import ResourceModel
 
 

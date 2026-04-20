@@ -9,7 +9,7 @@ from mytunes.core.api.items import HasAlbumEndpoints
 from mytunes.core.cursors import PageCursor
 from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesValidationError
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from .._item.album import Album, RemoteAlbum
 from .._item.artist import Artist, RemoteArtist
 from .._item.genre import Genre, RemoteGenre

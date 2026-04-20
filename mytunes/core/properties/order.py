@@ -6,7 +6,7 @@ from typing import Any, Self, ClassVar, Annotated
 from aiorequestful.types import Number
 from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ConfigDict
 
-from .._base.attribute import AttributeModel, Attribute, TagAttribute
+from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 from mytunes.exception import MyTunesValidationError
 
 

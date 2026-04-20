@@ -6,7 +6,7 @@ from faker import Faker
 from mytunes.core._collection.album import AlbumCollection
 from mytunes.core._item.album import Album
 from mytunes.core._item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
-from mytunes.properties.order import Position
+from mytunes.core.properties.order import Position
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester, UniqueKeyTester
 

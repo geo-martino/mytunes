@@ -17,8 +17,8 @@ from mutagen.asf import ASFUnicodeAttribute, ASFByteArrayAttribute
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import TagContext
 from mytunes.local._item.track.wma import WMA
-from mytunes.properties.order import Position
-from mytunes.properties.uri import URI
+from mytunes.core.properties.order import Position
+from mytunes.core.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 from tests.testers import assert_validator_skips
 

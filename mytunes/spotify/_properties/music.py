@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import model_validator
 
-from mytunes.properties.music import KeySignature, HasKeySignature
+from mytunes.core.properties.music import KeySignature, HasKeySignature
 
 
 class HasSpotifyKeySignature(HasKeySignature):

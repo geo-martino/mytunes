@@ -9,8 +9,8 @@ from termcolor import colored
 
 from mytunes.processors._base import Processor
 from mytunes.processors._flow import SkipPage, QuitImmediately
-from mytunes.properties.logger import HasLogger, HasProgress
-from mytunes.properties.order import Position
+from mytunes.core.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.order import Position
 from mytunes.result import LogFormatter
 
 

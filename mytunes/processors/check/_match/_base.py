@@ -7,8 +7,8 @@ from pydantic import Field, InstanceOf, OnErrorOmit
 from mytunes.processors.check._page import CheckerPage, _ApiT
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
-from mytunes.properties.logger import HasLogger
-from mytunes.properties.uri import HasURI, HasMutableURI, HasImmutableURI
+from mytunes.core.properties.logger import HasLogger
+from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from ..._base import Processor
 
 

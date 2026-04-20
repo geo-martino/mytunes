@@ -6,7 +6,7 @@ from typing import Any, Self
 from pydantic import ValidationError, ConfigDict
 
 from mytunes._types import Number
-from .._base import RootModel
+from ..._base import RootModel
 
 
 @total_ordering

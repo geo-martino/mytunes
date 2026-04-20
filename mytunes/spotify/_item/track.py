@@ -6,10 +6,10 @@ from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFl
 
 from mytunes.core.track import RemoteTrack
 from mytunes.exception import MyTunesValidationError
-from mytunes.properties.audio import Decibels
-from mytunes.properties.date import SparseDate, HasAddedDate
-from mytunes.properties.length import Length, HasLength
-from mytunes.properties.order import Position
+from mytunes.core.properties.audio import Decibels
+from mytunes.core.properties.date import SparseDate, HasAddedDate
+from mytunes.core.properties.length import Length, HasLength
+from mytunes.core.properties.order import Position
 from mytunes.spotify._base import SpotifyResource, SpotifyModel
 from mytunes.spotify._item.album import SpotifyAlbum
 from mytunes.spotify._item.artist import SpotifyArtist

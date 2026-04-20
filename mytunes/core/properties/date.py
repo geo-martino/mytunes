@@ -7,7 +7,7 @@ from typing import Annotated, Any, Self
 
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ValidationError, ConfigDict
 
-from .._base.attribute import AttributeModel, Attribute, TagAttribute
+from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 from mytunes.exception import MyTunesValidationError
 
 _DATA_ADAPTER = TypeAdapter[date](date)

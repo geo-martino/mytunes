@@ -21,7 +21,7 @@ from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.genre import Genre
 from mytunes.core._item.track import Track
-from mytunes.properties.image import ImageURL, ImageFile
+from mytunes.core.properties.image import ImageURL, ImageFile
 
 
 @pytest.fixture(scope="session")
@@ -88,21 +88,6 @@ def playlist(faker: Faker) -> Playlist:
 @pytest.fixture
 def playlists(faker: Faker) -> list[Playlist]:
     return [MutablePlaylist(name=faker.sentence().rstrip(".")) for _ in range(faker.random_int(10, 30))]
-
-
-@pytest.fixture
-def model(models: list[ResourceModel]) -> ResourceModel:
-    return choice(models)
-
-
-@pytest.fixture
-def models(
-        tracks: list[Track],
-        artists: list[Artist],
-        albums: list[Album],
-        playlists: list[Playlist]
-) -> list[ResourceModel]:
-    return [*tracks, *artists, *albums, *playlists]
 
 
 @pytest.fixture

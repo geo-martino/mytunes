@@ -5,7 +5,7 @@ from typing import Union, Annotated
 from pydantic import AliasChoices, Field
 
 from mytunes.processors.filters import Filter
-from mytunes.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.result import Result, MapLogFormatter
 from ._setter import Setter
 from .._base import Processor

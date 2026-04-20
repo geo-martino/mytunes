@@ -19,7 +19,7 @@ from mytunes.exception import MyTunesError
 # noinspection PyProtectedMember
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.formatter import CollectionFormatter
-from mytunes.properties.order import Position
+from mytunes.core.properties.order import Position
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

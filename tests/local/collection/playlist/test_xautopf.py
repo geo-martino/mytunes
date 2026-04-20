@@ -23,7 +23,7 @@ from mytunes.processors.filters.composite import GroupFilter
 from mytunes.processors.filters.values import PathFilter
 from mytunes.processors.limit import LimitType, ItemLimiter
 from mytunes.processors.sort import ShuffleMode, ItemSorter
-from mytunes.properties.path import PathMapper
+from mytunes.core.properties.path import PathMapper
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.testers import BaseModelTester
 

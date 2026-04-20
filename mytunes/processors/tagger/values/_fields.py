@@ -6,8 +6,8 @@ from pydantic import Field, NonNegativeInt, PositiveInt, validate_call, model_va
 from typing_inspection.typing_objects import is_typevar
 
 from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
-from mytunes.properties.file import IsLocalFile
-from mytunes.properties.order import Position
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.order import Position
 from ._base import HasCondition, Value
 from ...._base import BaseModel, ModelMetaclass
 from ...._base.attribute import AttributeModel

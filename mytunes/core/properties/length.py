@@ -8,8 +8,8 @@ from typing import Annotated, Self
 
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator
 
-from .._base.attribute import AttributeModel, Attribute
-from mytunes.properties._base import NumberModel
+from ..._base.attribute import AttributeModel, Attribute
+from mytunes.core.properties._base import NumberModel
 from mytunes._types import Number
 
 

@@ -16,8 +16,8 @@ from .._base import Processor
 from .._flow import SkipPage, QuitImmediately
 from ..._base.resource import ResourceModel
 from mytunes.core.collection import CollectionModel
-from mytunes.properties.logger import HasLogger, HasProgress
-from mytunes.properties.order import Position
+from mytunes.core.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.order import Position
 
 
 class StoreManager(Processor, HasLogger, HasProgress):

@@ -12,8 +12,8 @@ from mytunes import MODULE_ROOT
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
-from mytunes.properties.length import Length
-from mytunes.properties.order import Position
+from mytunes.core.properties.length import Length
+from mytunes.core.properties.order import Position
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

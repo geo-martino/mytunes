@@ -11,7 +11,7 @@ from mytunes._types import StrippedString, HttpURL
 from ...._base import BaseModel
 from ...._base.resource import ResourceModel
 from ...._base import ModelMetaclass
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 from mytunes.processors.clean.string import NameCleaner
 from mytunes.processors.download.stores.exception import StoreError
 

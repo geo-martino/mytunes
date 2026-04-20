@@ -15,10 +15,10 @@ from faker import Faker
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import TagContext
 from mytunes.local._item.track.flac import FLAC
-from mytunes.properties.date import SparseDate
-from mytunes.properties.music import KeySignature
-from mytunes.properties.order import Position
-from mytunes.properties.uri import URI
+from mytunes.core.properties.date import SparseDate
+from mytunes.core.properties.music import KeySignature
+from mytunes.core.properties.order import Position
+from mytunes.core.properties.uri import URI
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
 
 

@@ -18,10 +18,10 @@ from mytunes.core.cursors import PageCursor
 from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.compare import ComparerFilter
-from mytunes.properties.image import HasImages
-from mytunes.properties.length import HasLength
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import URI
+from mytunes.core.properties.image import HasImages
+from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import URI
 from .._item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from .._item.user import RemoteUser
 from ..._base import makecls

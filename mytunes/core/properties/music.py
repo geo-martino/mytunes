@@ -4,8 +4,8 @@ from typing import ClassVar, Annotated, Any
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
 
-from .._base import BaseModel
-from .._base.attribute import AttributeModel, Attribute
+from ..._base import BaseModel
+from ..._base.attribute import AttributeModel, Attribute
 
 
 class KeySignature(BaseModel):

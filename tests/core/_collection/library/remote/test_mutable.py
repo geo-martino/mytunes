@@ -20,7 +20,7 @@ from mytunes.core._item.artist import Artist, RemoteArtist
 from mytunes.core._item.track import RemoteTrack, Track
 from mytunes.core.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from tests.core._collection.library.remote.utils import MockRemoteLibrary
 from tests.core._collection.utils import assert_sync_items_result
 from tests.remote import SimpleURI, MockRemoteAPI

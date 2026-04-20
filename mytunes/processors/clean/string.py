@@ -9,7 +9,7 @@ from mytunes.core.artist import HasArtists, Artist
 from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean._base import TagCleaner
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 from ..._base.attribute import AttributeModel
 
 

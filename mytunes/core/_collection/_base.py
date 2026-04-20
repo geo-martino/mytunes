@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from mytunes.core.cursors import PageCursor, HasPageCursor, InitialCursor
 from mytunes.core.remote import RemoteResource
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from ..._base import BaseModel
 from ..._base.resource import ResourceModel
 

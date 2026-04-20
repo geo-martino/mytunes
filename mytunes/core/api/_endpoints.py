@@ -26,9 +26,9 @@ from mytunes.core.remote import RemoteModel, RemoteResource
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError, ModelError, RequestError, APIModelError, \
     CursorResponseError
 from mytunes.logger import Logger
-from mytunes.properties.image import ImageSource, PILImageFileT, ImageURL
-from mytunes.properties.logger import HasLogger, HasProgress
-from mytunes.properties.uri import URI, HasURI
+from mytunes.core.properties.image import ImageSource, PILImageFileT, ImageURL
+from mytunes.core.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.uri import URI, HasURI
 from .._collection import RemoteCollection
 from .._context import RemoteModelContext
 from ..._base import BaseModel

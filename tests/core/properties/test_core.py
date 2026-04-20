@@ -3,8 +3,8 @@ from random import choice
 import pytest
 from faker import Faker
 
-from mytunes.properties import NumberModel
-from mytunes.properties.tag import HasSeparableTags
+from mytunes.core.properties import NumberModel
+from mytunes.core.properties.tag import HasSeparableTags
 from tests.testers import BaseModelTester
 
 

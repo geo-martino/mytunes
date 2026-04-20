@@ -4,7 +4,7 @@ import pytest
 from pydantic import InstanceOf
 
 from mytunes.processors.score import Scorer
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 from tests.testers import BaseModelTester
 
 

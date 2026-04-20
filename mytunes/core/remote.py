@@ -3,7 +3,7 @@ from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 
 from pydantic import Field
 
-from mytunes.properties.uri import URI, HasImmutableURI
+from mytunes.core.properties.uri import URI, HasImmutableURI
 from .._base import BaseModel, makecls
 from .._base.resource import UniqueAttribute
 

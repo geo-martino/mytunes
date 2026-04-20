@@ -11,7 +11,7 @@ from mytunes.core._item.user import RemoteUser
 from mytunes.core.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
     PlaylistReadWriteEndpoints
 from mytunes.core.remote import RemoteResource
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from tests.remote import SimpleURI, MockRemoteResource, MockUrlCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester
 

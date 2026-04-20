@@ -6,7 +6,7 @@ from mytunes.local.genre import *  # type: ignore[import]
 from mytunes.local.library import *  # type: ignore[import]
 from mytunes.local.playlist import *  # type: ignore[import]
 from mytunes.local.track import *  # type: ignore[import]
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from mytunes.spotify import *  # type: ignore[import]
 from mytunes.spotify.album import *  # type: ignore[import]
 from mytunes.spotify.artist import *  # type: ignore[import]

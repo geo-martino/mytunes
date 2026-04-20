@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from mytunes.properties.date import SparseDate
+from mytunes.core.properties.date import SparseDate
 from mytunes.spotify._item.album import SpotifyAlbum
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester

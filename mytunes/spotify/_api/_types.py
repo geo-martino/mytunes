@@ -1,4 +1,4 @@
-from mytunes.properties.uri import HasURI
+from mytunes.core.properties.uri import HasURI
 from .._properties.uri import SpotifyResourceURI
 from ...core.api.types import ApiURL, ApiURI, ApiURISequence
 

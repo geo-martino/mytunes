@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from mytunes.properties.date import SparseDate
+from mytunes.core.properties.date import SparseDate
 from tests.testers import BaseModelTester
 
 

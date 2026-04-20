@@ -5,7 +5,7 @@ from typing import ClassVar, Any
 
 from pydantic import PrivateAttr
 
-from .._base.attribute import AttributeModel
+from ..._base.attribute import AttributeModel
 from mytunes._types import String
 
 

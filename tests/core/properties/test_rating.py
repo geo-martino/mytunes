@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from mytunes.properties.rating import Rating
+from mytunes.core.properties.rating import Rating
 from tests.testers import BaseModelTester
 
 

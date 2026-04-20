@@ -1,7 +1,7 @@
 import pytest
 from faker import Faker
 
-from mytunes.properties.music import KeySignature
+from mytunes.core.properties.music import KeySignature
 from tests.testers import BaseModelTester
 
 

@@ -6,7 +6,7 @@ from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 
-from .._base.attribute import AttributeModel
+from ..._base.attribute import AttributeModel
 
 
 class _SemaphoreSchema:

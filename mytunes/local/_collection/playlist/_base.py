@@ -15,8 +15,8 @@ from mytunes.processors.filters.composite import CompositeFilter, CompositeResul
     IncludeExcludeResult
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
-from mytunes.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
-from mytunes.properties.path import PathMapper
+from mytunes.core.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
+from mytunes.core.properties.path import PathMapper
 from ..._item.track import LocalTrack, HasLocalTracks
 from ...._base import makecls
 from ...._base.resource import UniqueAttribute

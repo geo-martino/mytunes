@@ -10,9 +10,9 @@ from pydantic import PrivateAttr, computed_field, model_validator, field_validat
 from pydantic_core.core_schema import ValidationInfo
 from yarl import URL
 
-from .._base import BaseModel, RootModel, makecls
-from .._base.attribute import AttributeModel, Attribute
-from .._base.resource import ResourceModel, UniqueAttribute
+from ..._base import BaseModel, RootModel, makecls
+from ..._base.attribute import AttributeModel, Attribute
+from ..._base.resource import ResourceModel, UniqueAttribute
 from mytunes._types import StrippedString, TO_SET, HttpURL
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError
 
@@ -40,7 +40,7 @@ class URI(RootModel[str]):
     @model_validator(mode="before")
     @classmethod
     def _validate_unavailable[T](cls, value: T, info: ValidationInfo) -> T | str:
-        from ..core._context import RemoteModelContext  # avoid circular import
+        from ...core._context import RemoteModelContext  # avoid circular import
 
         # create an unavailable URI is the value is None
         if value is not None or not isinstance(context := info.context, RemoteModelContext) or not context.type:

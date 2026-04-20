@@ -9,7 +9,7 @@ from faker import Faker
 
 from mytunes.local._collection.playlist.m3u import M3U, SyncM3UResult
 from mytunes.local._item.track import LocalTrack
-from mytunes.properties.path import PathMapper
+from mytunes.core.properties.path import PathMapper
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.testers import BaseModelTester
 

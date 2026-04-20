@@ -8,8 +8,8 @@ import mutagen
 from pydantic import Field, model_validator, Tag, Discriminator
 
 from mytunes.exception import MyTunesTypeError
-from .._base import BaseModel
-from .._base.attribute import AttributeMetaclass, Attribute
+from ..._base import BaseModel
+from ..._base.attribute import AttributeMetaclass, Attribute
 
 
 class FileMetaclass(AttributeMetaclass):

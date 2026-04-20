@@ -8,8 +8,8 @@ from typing import final, Any, Annotated
 
 from pydantic import Field, field_validator, ValidationError
 
-from .._base import BaseModel
-from mytunes.properties.file import IsLocalFile
+from ..._base import BaseModel
+from mytunes.core.properties.file import IsLocalFile
 from mytunes._types import TO_SET
 from mytunes.exception import MyTunesValidationError, MyTunesError
 

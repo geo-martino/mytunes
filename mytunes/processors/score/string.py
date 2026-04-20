@@ -8,7 +8,7 @@ from mytunes.core.artist import HasArtists
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from mytunes.processors.score._base import Scorer
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 
 
 # noinspection PyAbstractClass

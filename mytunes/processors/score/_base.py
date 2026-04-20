@@ -5,8 +5,8 @@ from pydantic import Field
 
 from mytunes._types import Number
 from mytunes.processors.clean import TagCleaner
-from mytunes.properties.logger import HasLogger
-from mytunes.properties.name import HasName
+from mytunes.core.properties.logger import HasLogger
+from mytunes.core.properties.name import HasName
 from .._base import Processor
 
 

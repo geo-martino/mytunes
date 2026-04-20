@@ -7,7 +7,7 @@ from mytunes.core._item.album import HasAlbum
 from mytunes.core._item.artist import HasArtists, Artist
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 from tests.testers import BaseModelTester
 
 

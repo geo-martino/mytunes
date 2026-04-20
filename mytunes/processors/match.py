@@ -9,8 +9,8 @@ from mytunes.processors.score.string import StringScorer, NameScorer
 from ._base import Processor
 from .._base.attribute import AttributeModel
 from mytunes.core.collection import CollectionModel
-from mytunes.properties.logger import HasLogger
-from mytunes.properties.name import HasName
+from mytunes.core.properties.logger import HasLogger
+from mytunes.core.properties.name import HasName
 
 
 class Matcher(Processor, HasLogger):

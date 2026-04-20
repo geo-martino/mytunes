@@ -14,11 +14,11 @@ from ..core.api.search import HasSearchEndpoints
 from mytunes.core.collection import CollectionModel, RemoteCollection
 from mytunes.core.album import AlbumCollection
 from mytunes.exception import MyTunesValidationError
-from mytunes.properties.asynch import HasAsyncOperations
-from mytunes.properties.file import IsFile, IsLocalFile
-from mytunes.properties.logger import HasProgress, HasLogger
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import HasURI, HasMutableURI
+from mytunes.core.properties.asynch import HasAsyncOperations
+from mytunes.core.properties.file import IsFile, IsLocalFile
+from mytunes.core.properties.logger import HasProgress, HasLogger
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import HasURI, HasMutableURI
 from ..core.remote import RemoteResource
 from mytunes.result import TotalCountResult, LenLogFormatter
 from .._utils import truncate_string

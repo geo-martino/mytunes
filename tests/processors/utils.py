@@ -9,7 +9,7 @@ from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import Playlist
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 
 
 class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):

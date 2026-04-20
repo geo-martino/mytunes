@@ -29,15 +29,15 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
-from mytunes.properties.asynch import SemaphoreT
-from mytunes.properties.audio import HasAudioProperties
-from mytunes.properties.date import HasAddedDate, HasPlayedDate
-from mytunes.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from mytunes.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
-from mytunes.properties.logger import HasLogger, HasProgress
-from mytunes.properties.name import HasName
-from mytunes.properties.order import Position
-from mytunes.properties.uri import HasMutableURI, URI
+from mytunes.core.properties.asynch import SemaphoreT
+from mytunes.core.properties.audio import HasAudioProperties
+from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.core.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
+from mytunes.core.properties.image import FileEmbeddedImage, ImageSource, PILImageFileT
+from mytunes.core.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.order import Position
+from mytunes.core.properties.uri import HasMutableURI, URI
 from ...._base import BaseModel, makecls
 from ...._base.attribute import TagAttribute
 from ...._base.resource import ResourceModel

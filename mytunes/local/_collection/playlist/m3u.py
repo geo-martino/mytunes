@@ -10,7 +10,7 @@ from mytunes.core.sequence import MutableUniqueSequence
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import SortResult, LoadPlaylistResult, SavePlaylistResult
 from mytunes.processors.filters.values import PathFilter
-from mytunes.properties.path import PathInputType
+from mytunes.core.properties.path import PathInputType
 from mytunes.result import LogFormatter
 from ..._item.track import LocalTrack, LOCAL_TRACK_ADAPTER
 from ....logger import STAT

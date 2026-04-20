@@ -15,11 +15,11 @@ from .._base.resource import ResourceModel
 from mytunes.core.collection import CollectionModel
 from mytunes.core.album import HasAlbum
 from mytunes.core.artist import HasArtists
-from mytunes.properties.date import HasReleaseDate
-from mytunes.properties.length import HasLength
-from mytunes.properties.name import HasName
-from mytunes.properties.order import Position, HasTrackPosition
-from mytunes.properties.uri import HasImmutableURI, HasMutableURI
+from mytunes.core.properties.date import HasReleaseDate
+from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.order import Position, HasTrackPosition
+from mytunes.core.properties.uri import HasImmutableURI, HasMutableURI
 from .._utils import truncate_string
 
 FIELDS = Literal[

@@ -14,7 +14,7 @@ from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibrar
 from mytunes.core.cursors import InitialCursor
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import NameScorer
-from mytunes.properties.order import Position
+from mytunes.core.properties.order import Position
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
 

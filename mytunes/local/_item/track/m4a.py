@@ -15,10 +15,10 @@ from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
-from mytunes.properties.date import SparseDate
-from mytunes.properties.image import ImageURL, ImageFile
-from mytunes.properties.music import KeySignature
-from mytunes.properties.order import Position
+from mytunes.core.properties.date import SparseDate
+from mytunes.core.properties.image import ImageURL, ImageFile
+from mytunes.core.properties.music import KeySignature
+from mytunes.core.properties.order import Position
 from ...._base.attribute import TagAttribute
 
 

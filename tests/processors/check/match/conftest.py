@@ -16,9 +16,9 @@ from mytunes.core.api import RemoteAPI
 from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
-from mytunes.properties.name import HasName
-from mytunes.properties.order import Position
-from mytunes.properties.uri import HasMutableURI, HasImmutableURI, HasURI
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.order import Position
+from mytunes.core.properties.uri import HasMutableURI, HasImmutableURI, HasURI
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI
 

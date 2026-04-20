@@ -7,9 +7,9 @@ from mytunes.core.api import ItemReadEndpoints
 from mytunes.core.api.items import HasGenreEndpoints
 from mytunes.core.remote import RemoteResource
 from mytunes.core.sequence import MutableUniqueSequence
-from mytunes.properties.name import HasName
-from mytunes.properties.tag import HasSeparableTags
-from mytunes.properties.uri import URI
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.tag import HasSeparableTags
+from mytunes.core.properties.uri import URI
 from ..._base import makecls
 from ..._base.attribute import Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute

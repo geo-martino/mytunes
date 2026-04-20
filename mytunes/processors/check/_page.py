@@ -17,9 +17,9 @@ from mytunes.core.playlist import RemoteMutablePlaylist, RemotePlaylist
 from mytunes.core.remote import RemoteResource
 from mytunes.core.user import RemoteUser
 from mytunes.exception import MyTunesError, MyTunesValidationError
-from mytunes.properties.asynch import HasAsyncOperations
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import HasURI, URI
+from mytunes.core.properties.asynch import HasAsyncOperations
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import HasURI, URI
 from .._base.inputs import PageProcessor
 from ..formatter import CollectionFormatter
 

@@ -29,7 +29,7 @@ from mytunes.processors.filters.composite import GroupResult, GroupFilter
 from mytunes.processors.filters.values import PathFilter
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
-from mytunes.properties.path import PathMapper
+from mytunes.core.properties.path import PathMapper
 from mytunes.result import LogFormatter
 from ..._item.track import LocalTrack
 from ...._base import BaseModel

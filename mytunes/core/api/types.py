@@ -12,7 +12,7 @@ from yarl import URL
 from mytunes._types import get_generic, HttpURL
 from mytunes.core.remote import RemoteModel
 from mytunes.exception import MyTunesValidationError, ModelError, RequestError
-from mytunes.properties.uri import URI, HasURI, HasImmutableURI
+from mytunes.core.properties.uri import URI, HasURI, HasImmutableURI
 
 
 class _ApiSchemaBase[UT: URI, MT: HasURI]:

@@ -20,7 +20,7 @@ from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEnd
 from mytunes.core.cursors import PageCursor
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from tests.core._collection.testers import RemoteCollectionTester
 from tests.core._collection.utils import assert_sync_items_result
 from tests.remote import SimpleURI, MockRemoteAPI

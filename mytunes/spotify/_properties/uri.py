@@ -4,7 +4,7 @@ from pydantic import field_validator, model_validator
 from yarl import URL
 
 from mytunes.exception import MyTunesValidationError
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from mytunes.spotify._url import API_URL, PUBLIC_URL
 
 

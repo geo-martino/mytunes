@@ -8,10 +8,10 @@ from pydantic import Json, ValidationError
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._item.artist import HasArtists
 from mytunes.core._item.genre import HasGenres
-from mytunes.properties.image import HasImages
-from mytunes.properties.length import HasLength
-from mytunes.properties.name import HasName
-from mytunes.properties.uri import HasURI
+from mytunes.core.properties.image import HasImages
+from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import HasURI
 from mytunes.spotify import SpotifyResource
 from mytunes.spotify._properties.rating import HasSpotifyRating
 from mytunes.spotify._properties.stats import HasFollowers

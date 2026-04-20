@@ -25,10 +25,10 @@ from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_
     ItemCollection
 from .._base.attribute import AttributeModel
 from mytunes.core.track import Track
-from mytunes.properties.audio import HasAudioProperties
-from mytunes.properties.date import HasAddedDate, HasPlayedDate
-from mytunes.properties.file import IsLocalFile
-from mytunes.properties.name import HasName
+from mytunes.core.properties.audio import HasAudioProperties
+from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.name import HasName
 
 
 @final

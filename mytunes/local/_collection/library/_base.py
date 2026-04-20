@@ -24,7 +24,7 @@ from mytunes.logger import STAT
 from mytunes.processors.filters import Filter
 from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.sort import ItemSorter
-from mytunes.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
+from mytunes.core.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes.result import Result
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 

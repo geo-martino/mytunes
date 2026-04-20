@@ -16,8 +16,8 @@ from mytunes._types import get_generic
 from mytunes.core.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from mytunes.core.remote import RemoteModel
 from mytunes.exception import EndpointsError
-from mytunes.properties.logger import HasLogger
-from mytunes.properties.uri import URI
+from mytunes.core.properties.logger import HasLogger
+from mytunes.core.properties.uri import URI
 from .._context import RemoteModelContext
 from ..._base.attribute import AttributeModel, Attribute
 

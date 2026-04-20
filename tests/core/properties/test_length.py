@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from mytunes.properties.length import Length
+from mytunes.core.properties.length import Length
 from tests.testers import BaseModelTester
 
 

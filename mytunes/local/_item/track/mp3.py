@@ -16,12 +16,12 @@ from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._base import TagContext
 from mytunes.local._item.track._types import ItemSequence
-from mytunes.properties.date import SparseDate
-from mytunes.properties.image import ImageURL, ImageFile
-from mytunes.properties.music import KeySignature
-from mytunes.properties.name import HasName
-from mytunes.properties.order import Position
-from mytunes.properties.rating import Rating
+from mytunes.core.properties.date import SparseDate
+from mytunes.core.properties.image import ImageURL, ImageFile
+from mytunes.core.properties.music import KeySignature
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.order import Position
+from mytunes.core.properties.rating import Rating
 from ...._base.attribute import TagAttribute
 
 

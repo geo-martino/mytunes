@@ -12,7 +12,7 @@ from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesValueError
-from mytunes.properties.uri import URI, HasMutableURI, HasImmutableURI
+from mytunes.core.properties.uri import URI, HasMutableURI, HasImmutableURI
 from tests.remote import SimpleURI
 from tests.testers import BaseModelTester, UniqueKeyTester
 

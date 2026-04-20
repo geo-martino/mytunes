@@ -14,7 +14,7 @@ from mytunes.processors.check._match.inputs import InputMatch
 from mytunes.processors.check._match.playlist import PlaylistMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.check.result import CheckResult
-from mytunes.properties.name import HasName
+from mytunes.core.properties.name import HasName
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

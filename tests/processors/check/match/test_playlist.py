@@ -9,7 +9,7 @@ from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.processors.check._match.playlist import PlaylistMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
-from mytunes.properties.uri import HasURI, HasMutableURI, HasImmutableURI
+from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from tests.processors.check.match.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list

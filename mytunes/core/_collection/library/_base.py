@@ -9,8 +9,8 @@ from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutable
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.composite import IncludeExcludeFilter
 from mytunes.processors.filters.values import NameFilter
-from mytunes.properties.asynch import HasAsyncOperations
-from mytunes.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.asynch import HasAsyncOperations
+from mytunes.core.properties.logger import HasLogger, HasProgress
 from ..._item.track import Track, HasTracks, HasMutableTracks
 from ...._base.attribute import AttributeMetaclass
 from ...._base.resource import ResourceModel, ResourceMetaclass

@@ -10,7 +10,7 @@ from mytunes.core.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadE
     BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
     BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
 from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
-from mytunes.properties.uri import URI
+from mytunes.core.properties.uri import URI
 from .._collection.playlist import RemotePlaylist
 from .._item.track import RemoteTrack
 from .._item.user import RemoteUser

@@ -6,8 +6,8 @@ from typing import Literal
 import pytest
 from faker import Faker
 
-from mytunes.properties.file import IsLocalFile
-from mytunes.properties.path import PathMapper, PathStemMapper
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.path import PathMapper, PathStemMapper
 from tests.testers import BaseModelTester
 
 SYSTEM_TYPES = Literal["linux", "windows"]

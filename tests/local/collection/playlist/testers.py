@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from mytunes.local._collection.playlist import LocalPlaylist
-from mytunes.properties.path import PathStemMapper
+from mytunes.core.properties.path import PathStemMapper
 from mytunes.result import Result
 from tests.testers import UniqueKeyTester
 

@@ -3,7 +3,7 @@ from typing import final, Annotated
 from pydantic import Field, field_validator
 
 from mytunes.core.album import RemoteAlbum
-from mytunes.properties.date import SparseDate
+from mytunes.core.properties.date import SparseDate
 from mytunes.spotify._base import SpotifyResource
 from mytunes.spotify._item.artist import SpotifyArtist
 from mytunes.spotify._item.genre import SpotifyGenre

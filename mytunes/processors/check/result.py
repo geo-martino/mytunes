@@ -5,7 +5,7 @@ from pydantic import Field
 
 from mytunes._types import TO_TUPLE
 from mytunes.exception import MyTunesValueError
-from mytunes.properties.uri import HasURI
+from mytunes.core.properties.uri import HasURI
 from mytunes.result import Result, LenLogFormatter
 
 

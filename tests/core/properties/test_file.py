@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 
 from mytunes.exception import MyTunesTypeError
-from mytunes.properties.file import IsLocalFile
+from mytunes.core.properties.file import IsLocalFile
 from tests.testers import BaseModelTester
 
 
