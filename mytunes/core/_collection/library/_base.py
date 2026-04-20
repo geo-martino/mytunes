@@ -98,6 +98,12 @@ class Library[TT: Track, PT: Playlist](
         """Log stats on currently loaded playlists"""
         raise NotImplementedError
 
+    def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        return
+
 
 # noinspection PyAbstractClass
 class MutableLibrary[TT: Track, PT: Playlist](
