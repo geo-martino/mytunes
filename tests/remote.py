@@ -10,19 +10,19 @@ from pydantic import Field, AliasPath, PositiveInt
 from yarl import URL
 
 from mytunes._base.resource import ResourceModel
+from mytunes.core._collection import RemoteCollection
+from mytunes.core._collection.playlist import Playlist, RemotePlaylist
+from mytunes.core._item.album import Album, RemoteAlbum
+from mytunes.core._item.artist import Artist, RemoteArtist
+from mytunes.core._item.track import Track, RemoteTrack
+from mytunes.core._item.user import RemoteUser
 from mytunes.core.api import HasEndpoints, RemoteAuthoriser, BatchReadAllEndpoints, BatchWriteEndpoints, \
     BatchReadEndpoints, HasLibraryEndpoints, RemoteAPI
 from mytunes.core.api.items import HasTrackEndpoints, HasArtistEndpoints, HasAlbumEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, HasPlaylistEndpoints
 from mytunes.core.api.search import SearchEndpoints, HasSearchEndpoints
 from mytunes.core.api.user import UserEndpoints, HasUserEndpoints
-from mytunes.core._collection import RemoteCollection
-from mytunes.core._collection.playlist import Playlist, RemotePlaylist
 from mytunes.core.cursors import IndexCursor, KeyCursor, UrlCursor
-from mytunes.core._item.album import Album, RemoteAlbum
-from mytunes.core._item.artist import Artist, RemoteArtist
-from mytunes.core._item.track import Track, RemoteTrack
-from mytunes.core._item.user import RemoteUser
 from mytunes.core.remote import RemoteResource
 from mytunes.properties.name import HasName
 from mytunes.properties.uri import URI

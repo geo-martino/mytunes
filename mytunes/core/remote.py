@@ -3,9 +3,9 @@ from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 
 from pydantic import Field
 
+from mytunes.properties.uri import URI, HasImmutableURI
 from .._base import BaseModel, makecls
 from .._base.resource import UniqueAttribute
-from mytunes.properties.uri import URI, HasImmutableURI
 
 if TYPE_CHECKING:
     from mytunes.core.api import HasEndpoints

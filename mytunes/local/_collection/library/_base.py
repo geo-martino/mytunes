@@ -10,6 +10,7 @@ from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeV
 from termcolor import colored
 
 from mytunes._types import to_set
+from mytunes.core.library import MutableLibrary
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.album import LocalAlbumCollection
@@ -26,7 +27,6 @@ from mytunes.processors.sort import ItemSorter
 from mytunes.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes.result import Result
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
-from mytunes.core.library import MutableLibrary
 
 
 @final

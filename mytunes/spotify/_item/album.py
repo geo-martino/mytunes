@@ -2,6 +2,7 @@ from typing import final, Annotated
 
 from pydantic import Field, field_validator
 
+from mytunes.core.album import RemoteAlbum
 from mytunes.properties.date import SparseDate
 from mytunes.spotify._base import SpotifyResource
 from mytunes.spotify._item.artist import SpotifyArtist
@@ -9,7 +10,6 @@ from mytunes.spotify._item.genre import SpotifyGenre
 from .._properties.images import HasSpotifyImages
 from .._properties.rating import HasSpotifyRating
 from .._properties.uri import SpotifyResourceURI
-from mytunes.core.album import RemoteAlbum
 from ..._base.attribute import Attribute
 
 

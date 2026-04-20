@@ -5,9 +5,9 @@ from typing import Any, cast, ClassVar
 from pydantic import Field, ConfigDict
 from pydantic.dataclasses import dataclass
 
+from mytunes._base._base import ModelMetaclass, BaseModel
 from mytunes._base.attribute import Attribute
 from mytunes.exception import ModelError
-from mytunes._base._base import ModelMetaclass, BaseModel
 
 
 @dataclass(config=ConfigDict(frozen=True))

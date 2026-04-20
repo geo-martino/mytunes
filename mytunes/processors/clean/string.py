@@ -4,13 +4,13 @@ from typing import Any
 
 from pydantic import Field, validate_call
 
+from mytunes.core.album import HasAlbum, Album
+from mytunes.core.artist import HasArtists, Artist
+from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.clean._base import TagCleaner
 from mytunes.properties.name import HasName
-from mytunes.core.sequence import UniqueSequence
 from ..._base.attribute import AttributeModel
-from mytunes.core.album import HasAlbum, Album
-from mytunes.core.artist import HasArtists, Artist
 
 
 class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):

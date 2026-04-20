@@ -5,9 +5,9 @@ from faker import Faker
 from pydantic import ValidationError
 
 from mytunes.core._collection.artist import ArtistCollection, RemoteArtistCollection
-from mytunes.core.cursors import PageCursor
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
+from mytunes.core.cursors import PageCursor
 from tests.core._collection.testers import RemoteCollectionTester
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester

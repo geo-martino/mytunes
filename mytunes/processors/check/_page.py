@@ -8,20 +8,20 @@ from aiorequestful.exception import HTTPError
 from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
 from termcolor import colored
 
+from mytunes.core.api import RemoteAPI, HasAPI, HasLibraryEndpoints
+from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
+    HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
+from mytunes.core.collection import CollectionModel
+from mytunes.core.cursors import InitialCursor
+from mytunes.core.playlist import RemoteMutablePlaylist, RemotePlaylist
+from mytunes.core.remote import RemoteResource
+from mytunes.core.user import RemoteUser
 from mytunes.exception import MyTunesError, MyTunesValidationError
 from mytunes.properties.asynch import HasAsyncOperations
 from mytunes.properties.name import HasName
 from mytunes.properties.uri import HasURI, URI
 from .._base.inputs import PageProcessor
 from ..formatter import CollectionFormatter
-from mytunes.core.api import RemoteAPI, HasAPI, HasLibraryEndpoints
-from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
-    HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
-from mytunes.core.collection import CollectionModel
-from mytunes.core.playlist import RemoteMutablePlaylist, RemotePlaylist
-from mytunes.core.cursors import InitialCursor
-from mytunes.core.user import RemoteUser
-from mytunes.core.remote import RemoteResource
 
 type _ApiT = RemoteAPI | HasPlaylistEndpoints[
     PlaylistReadWriteEndpoints |

@@ -19,21 +19,21 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
-from ..._base import BaseModel
-from ..._base.resource import ResourceModel
-from .._context import RemoteModelContext
+from mytunes._types import get_generic, get_generics, get_generic_type, get_bases
 from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
-from .._collection import RemoteCollection
 from mytunes.core.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from mytunes.core.remote import RemoteModel, RemoteResource
-from mytunes._types import get_generic, get_generics, get_generic_type, get_bases
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError, ModelError, RequestError, APIModelError, \
     CursorResponseError
 from mytunes.logger import Logger
 from mytunes.properties.image import ImageSource, PILImageFileT, ImageURL
 from mytunes.properties.logger import HasLogger, HasProgress
 from mytunes.properties.uri import URI, HasURI
+from .._collection import RemoteCollection
+from .._context import RemoteModelContext
+from ..._base import BaseModel
 from ..._base import ModelMetaclass
+from ..._base.resource import ResourceModel
 
 
 class EndpointsMetaclass(ModelMetaclass):

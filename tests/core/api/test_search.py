@@ -7,9 +7,9 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from pydantic import PositiveInt, AliasPath, AliasChoices
 
-from mytunes.core.api.search import SearchEndpoints
 from mytunes.core._item.album import RemoteAlbum
 from mytunes.core._item.track import Track, RemoteTrack
+from mytunes.core.api.search import SearchEndpoints
 from mytunes.core.remote import RemoteResource
 from tests.remote import MockSearchEndpoints
 from tests.testers import EndpointsTester

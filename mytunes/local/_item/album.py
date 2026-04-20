@@ -1,9 +1,9 @@
 from typing import final
 
+from mytunes.core.album import Album
 from mytunes.local._base import LocalModel
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
-from mytunes.core.album import Album
 
 
 @final

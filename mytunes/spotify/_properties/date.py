@@ -3,8 +3,8 @@ from typing import Self
 
 from pydantic import model_validator
 
-from mytunes.properties.date import HasAddedDate
 from mytunes.core.collection import RemoteCollection
+from mytunes.properties.date import HasAddedDate
 
 
 class HasSpotifyAddedDate(HasAddedDate):

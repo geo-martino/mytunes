@@ -8,25 +8,25 @@ from pydantic import Field, validate_call, BeforeValidator, computed_field, Posi
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
-from ..._base import makecls
-from ..._base.attribute import AttributeModel, Attribute
-from ..._base.resource import ResourceModel
-from mytunes.core._context import RemoteModelContext
-from mytunes.core.api import HasLibraryEndpoints
+from mytunes._types import StrippedString
 from mytunes.core._collection import SyncRemoteResult
 from mytunes.core._collection._base import CollectionModel, RemoteCollection
 from mytunes.core._collection._sync import SYNC_TYPE, get_sync_items
+from mytunes.core._context import RemoteModelContext
+from mytunes.core.api import HasLibraryEndpoints
 from mytunes.core.cursors import PageCursor
-from .._item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
-from .._item.user import RemoteUser
-from mytunes._types import StrippedString
+from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.compare import ComparerFilter
 from mytunes.properties.image import HasImages
 from mytunes.properties.length import HasLength
 from mytunes.properties.name import HasName
 from mytunes.properties.uri import URI
-from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
+from .._item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
+from .._item.user import RemoteUser
+from ..._base import makecls
+from ..._base.attribute import AttributeModel, Attribute
+from ..._base.resource import ResourceModel
 
 if TYPE_CHECKING:
     from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadEndpoints, \

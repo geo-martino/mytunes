@@ -2,11 +2,11 @@ from abc import abstractmethod
 from collections.abc import Collection, Iterator
 from typing import TYPE_CHECKING
 
-from ..._base import BaseModel
-from ..._base.resource import ResourceModel
 from mytunes.core.cursors import PageCursor, HasPageCursor, InitialCursor
 from mytunes.core.remote import RemoteResource
 from mytunes.properties.uri import URI
+from ..._base import BaseModel
+from ..._base.resource import ResourceModel
 
 if TYPE_CHECKING:
     from mytunes.core.api import HasEndpoints

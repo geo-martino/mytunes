@@ -1,7 +1,7 @@
 from typing import final
 
-from mytunes.local._base import LocalModel
 from mytunes.core.genre import Genre
+from mytunes.local._base import LocalModel
 
 
 @final

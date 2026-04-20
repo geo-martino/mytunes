@@ -1,10 +1,10 @@
 from typing import final
 
+from mytunes.core.artist import ArtistCollection
 from mytunes.local._collection._base import LocalCollection
 from .._item.album import LocalAlbum
 from .._item.artist import LocalArtist
 from .._item.genre import LocalGenre
-from mytunes.core.artist import ArtistCollection
 
 
 # noinspection PyFinal

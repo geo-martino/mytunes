@@ -11,8 +11,6 @@ from pytest_mock import MockerFixture
 from yarl import URL
 
 from mytunes import MODULE_ROOT
-from mytunes.core.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
-from mytunes.core.api.playlist import PlaylistLibraryEndpoints
 from mytunes.core._collection._sync import SYNC_TYPE
 from mytunes.core._collection.library import RemoteMutableLibrary
 from mytunes.core._collection.library._remote._base import RemotePlaylistDump
@@ -20,6 +18,8 @@ from mytunes.core._collection.playlist import RemoteMutablePlaylist, RemotePlayl
 from mytunes.core._item.album import Album, RemoteAlbum
 from mytunes.core._item.artist import Artist, RemoteArtist
 from mytunes.core._item.track import RemoteTrack, Track
+from mytunes.core.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
+from mytunes.core.api.playlist import PlaylistLibraryEndpoints
 from mytunes.properties.uri import URI
 from tests.core._collection.library.remote.utils import MockRemoteLibrary
 from tests.core._collection.utils import assert_sync_items_result

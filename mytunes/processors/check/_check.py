@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence, AsyncGenerator
 from pydantic import Field, PositiveInt
 from termcolor import colored
 
+from mytunes.core.collection import CollectionModel
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
@@ -18,7 +19,6 @@ from ._page import CheckerPage, _ApiT
 from .._base import Processor
 from ..._base.resource import ResourceModel
 from ...core.api import HasAPI
-from mytunes.core.collection import CollectionModel
 
 
 class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperations):

@@ -8,12 +8,12 @@ from pytest_mock import MockerFixture
 
 from mytunes._base import makecls
 from mytunes._base.resource import ResourceModel
-from mytunes.core.api import RemoteAPI
-from mytunes.core.api.search import SearchEndpoints
 from mytunes.core._collection import CollectionModel, RemoteCollection
 from mytunes.core._collection.album import AlbumCollection
 from mytunes.core._item.album import Album
 from mytunes.core._item.track import Track, RemoteTrack
+from mytunes.core.api import RemoteAPI
+from mytunes.core.api.search import SearchEndpoints
 from mytunes.core.remote import RemoteResource
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer

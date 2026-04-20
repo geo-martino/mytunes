@@ -4,6 +4,7 @@ from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self, Any
 from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, \
     ModelWrapValidatorHandler, model_validator
 
+from mytunes.core.track import RemoteTrack
 from mytunes.exception import MyTunesValidationError
 from mytunes.properties.audio import Decibels
 from mytunes.properties.date import SparseDate, HasAddedDate
@@ -19,7 +20,6 @@ from .._properties.music import HasSpotifyKeySignature
 from .._properties.rating import HasSpotifyRating
 from .._properties.uri import SpotifyResourceURI
 from ..._base import BaseModel
-from mytunes.core.track import RemoteTrack
 from ..._base.attribute import Attribute
 from ..._types import HttpURL
 

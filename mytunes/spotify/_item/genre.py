@@ -1,7 +1,7 @@
 from typing import final
 
-from mytunes.spotify import SpotifyModel
 from mytunes.core.genre import RemoteGenre
+from mytunes.spotify import SpotifyModel
 
 
 @final

@@ -5,13 +5,13 @@ import pytest
 from faker import Faker
 from yarl import URL
 
-from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
-    PlaylistBatchWriteEndpoints
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
-from mytunes.core.cursors import InitialCursor
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.core._item.user import RemoteUser
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
+    PlaylistBatchWriteEndpoints
+from mytunes.core.cursors import InitialCursor
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import NameScorer
 from mytunes.properties.order import Position

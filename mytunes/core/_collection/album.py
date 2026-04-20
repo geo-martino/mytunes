@@ -3,17 +3,17 @@ from typing import Self, Any
 
 from pydantic import model_validator, computed_field, PositiveInt, validate_call
 
+from mytunes.core._collection._base import RemoteCollection, CollectionModel
 from mytunes.core.api import CollectionReadEndpoints
 from mytunes.core.api.items import HasAlbumEndpoints
-from mytunes.core._collection._base import RemoteCollection, CollectionModel
 from mytunes.core.cursors import PageCursor
+from mytunes.core.sequence import UniqueSequence
+from mytunes.exception import MyTunesValidationError
+from mytunes.properties.uri import URI
 from .._item.album import Album, RemoteAlbum
 from .._item.artist import Artist, RemoteArtist
 from .._item.genre import Genre, RemoteGenre
 from .._item.track import Track, HasTracks, RemoteTrack
-from mytunes.exception import MyTunesValidationError
-from mytunes.properties.uri import URI
-from mytunes.core.sequence import UniqueSequence
 
 
 class AlbumCollection[TT: Track, RT: Artist, GT: Genre](CollectionModel[TT], HasTracks[TT], Album[RT, GT]):

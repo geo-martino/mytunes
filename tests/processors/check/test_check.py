@@ -6,8 +6,8 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from mytunes.core.api import RemoteAPI
 from mytunes.core._item.track import RemoteTrack
+from mytunes.core.api import RemoteAPI
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check import Checker
 from mytunes.processors.check._match.inputs import InputMatch

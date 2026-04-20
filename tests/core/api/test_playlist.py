@@ -6,10 +6,10 @@ from aiorequestful.request import RequestHandler
 from faker import Faker
 from yarl import URL
 
-from mytunes.core.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
-    PlaylistReadWriteEndpoints
 from mytunes.core._collection.playlist import RemotePlaylist, Playlist
 from mytunes.core._item.user import RemoteUser
+from mytunes.core.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
+    PlaylistReadWriteEndpoints
 from mytunes.core.remote import RemoteResource
 from mytunes.properties.uri import URI
 from tests.remote import SimpleURI, MockRemoteResource, MockUrlCursor

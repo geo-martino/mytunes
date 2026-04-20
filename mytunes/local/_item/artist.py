@@ -1,8 +1,8 @@
 from typing import final
 
+from mytunes.core.artist import Artist
 from mytunes.local._base import LocalModel
 from mytunes.local._item.genre import LocalGenre
-from mytunes.core.artist import Artist
 
 
 @final

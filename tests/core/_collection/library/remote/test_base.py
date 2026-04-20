@@ -3,13 +3,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from mytunes.core.api import RemoteAPI
 from mytunes.core._collection.library import RemoteLibrary
 from mytunes.core._collection.playlist import RemotePlaylist
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core._item.user import RemoteUser
+from mytunes.core.api import RemoteAPI
 from mytunes.core.remote import RemoteResource
 from tests.core._collection.library.remote.utils import MockRemoteLibrary
 from tests.remote import MockRemoteAPI

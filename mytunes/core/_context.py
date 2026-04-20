@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from .._base import BaseModel
 from ._item.user import RemoteUser
+from .._base import BaseModel
 
 
 class RemoteModelContext(BaseModel):

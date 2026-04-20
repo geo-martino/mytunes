@@ -3,11 +3,6 @@ from typing import Annotated, Self, Any, TypedDict
 
 import tabulate
 
-from mytunes.core.api import RemoteAPI, HasLibraryEndpoints, BatchReadAllEndpoints, \
-    CollectionReadEndpoints, HasAPI
-from mytunes.core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
-from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAllEndpoints, PlaylistReadWriteEndpoints
-from mytunes.core.api.user import HasUserEndpoints
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.album import RemoteAlbumCollection
 from mytunes.core._collection.artist import RemoteArtistCollection
@@ -15,16 +10,21 @@ from mytunes.core._collection.library import Library
 from mytunes.core._collection.library._remote._result import RemoteTracksResult, RemoteArtistsResult, \
     RemoteAlbumsResult, RemotePlaylistsResult
 from mytunes.core._collection.playlist import RemotePlaylist
+from mytunes.core.api import RemoteAPI, HasLibraryEndpoints, BatchReadAllEndpoints, \
+    CollectionReadEndpoints, HasAPI
+from mytunes.core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
+from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAllEndpoints, PlaylistReadWriteEndpoints
+from mytunes.core.api.user import HasUserEndpoints
+from mytunes.core.remote import RemoteModel
+from mytunes.logger import STAT
+from mytunes.properties.uri import URI
+from mytunes.result import Result
 from ...._item.album import RemoteAlbum, HasAlbums
 from ...._item.artist import RemoteArtist, HasArtists
 from ...._item.genre import RemoteGenre, HasGenres
 from ...._item.track import RemoteTrack
 from ...._item.user import RemoteUser
 from ....._base.attribute import Attribute
-from mytunes.core.remote import RemoteModel
-from mytunes.logger import STAT
-from mytunes.properties.uri import URI
-from mytunes.result import Result
 
 
 class RemotePlaylistDump[UT: URI](TypedDict):

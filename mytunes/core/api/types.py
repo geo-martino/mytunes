@@ -9,8 +9,8 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema, CoreSchema
 from yarl import URL
 
-from mytunes.core.remote import RemoteModel
 from mytunes._types import get_generic, HttpURL
+from mytunes.core.remote import RemoteModel
 from mytunes.exception import MyTunesValidationError, ModelError, RequestError
 from mytunes.properties.uri import URI, HasURI, HasImmutableURI
 

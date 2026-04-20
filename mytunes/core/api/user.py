@@ -4,8 +4,8 @@ from pydantic import Field, PrivateAttr
 from yarl import URL
 
 from mytunes.core.api import Endpoints, HasEndpoints
-from .._item.user import RemoteUser
 from mytunes.properties.uri import URI
+from .._item.user import RemoteUser
 
 
 class UserEndpoints[UT: URI, RT: RemoteUser](Endpoints[UT, RT]):

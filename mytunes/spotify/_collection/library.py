@@ -1,5 +1,6 @@
 from typing import final
 
+from mytunes.core.library import RemoteMutableLibrary
 from mytunes.spotify import SpotifyModel
 from mytunes.spotify._collection.playlist import SpotifyPlaylist
 from mytunes.spotify.user import SpotifyUser
@@ -9,7 +10,6 @@ from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._item.track import SpotifyTrack
 from .._properties.stats import HasFollowers
-from mytunes.core.library import RemoteMutableLibrary
 
 
 @final

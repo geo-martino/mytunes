@@ -2,8 +2,8 @@ from typing import ClassVar, TYPE_CHECKING, Self
 
 from pydantic import Field, EmailStr
 
-from mytunes.core.remote import RemoteResource
 from mytunes._types import StrippedString
+from mytunes.core.remote import RemoteResource
 from mytunes.properties.image import HasImages
 from mytunes.properties.name import HasName
 from mytunes.properties.uri import URI

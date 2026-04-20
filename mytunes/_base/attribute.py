@@ -5,12 +5,11 @@ from typing import Any, cast, Self, get_type_hints
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
-
 from pydantic.fields import FieldInfo
 
+from mytunes._base._base import BaseModel, ModelMetaclass
 from mytunes._types import get_base_types
 from mytunes.exception import MyTunesAttributeError, ModelError
-from mytunes._base._base import BaseModel, ModelMetaclass
 
 
 @dataclass(config=ConfigDict(frozen=True))

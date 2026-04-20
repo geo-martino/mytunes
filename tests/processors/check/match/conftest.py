@@ -8,12 +8,12 @@ import pytest
 from faker import Faker
 
 from mytunes._base.resource import ResourceModel
-from mytunes.core.api import RemoteAPI
-from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core._item.genre import Genre
 from mytunes.core._item.track import Track
+from mytunes.core.api import RemoteAPI
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
 from mytunes.properties.name import HasName

@@ -10,11 +10,11 @@ from aiorequestful.exception import HTTPError
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from mytunes.core.api import RemoteAPI
-from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core._item.track import RemoteTrack
+from mytunes.core.api import RemoteAPI
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.exception import MyTunesError
 # noinspection PyProtectedMember
 from mytunes.processors.check._page import CheckerPage

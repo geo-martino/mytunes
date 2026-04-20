@@ -3,16 +3,16 @@ from typing import Any, Self
 
 from pydantic import model_validator, validate_call
 
+from mytunes.core._collection._base import RemoteCollection, CollectionModel
 from mytunes.core.api import CollectionReadEndpoints
 from mytunes.core.api.items import HasGenreEndpoints
-from mytunes.core._collection._base import RemoteCollection, CollectionModel
 from mytunes.core.cursors import PageCursor
-from .._item.genre import Genre, RemoteGenre
-from .._item.track import Track, HasTracks, RemoteTrack
+from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesValidationError
 from mytunes.properties.length import HasLength
 from mytunes.properties.uri import URI
-from mytunes.core.sequence import UniqueSequence
+from .._item.genre import Genre, RemoteGenre
+from .._item.track import Track, HasTracks, RemoteTrack
 
 
 class GenreCollection[TT: Track](CollectionModel[TT], HasTracks[TT], Genre, HasLength):

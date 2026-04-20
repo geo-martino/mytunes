@@ -2,13 +2,12 @@ from typing import ClassVar, Annotated, Self, Any
 
 from pydantic import Field, field_validator, computed_field, validate_call
 
-from ..._base import makecls
-from ..._base.resource import ResourceModel
-from mytunes.core.api import ItemReadEndpoints
-from mytunes.core.api.items import HasAlbumEndpoints
 from mytunes.core._item.artist import HasArtists, Artist, RemoteArtist
 from mytunes.core._item.genre import HasGenres, Genre, RemoteGenre
+from mytunes.core.api import ItemReadEndpoints
+from mytunes.core.api.items import HasAlbumEndpoints
 from mytunes.core.remote import RemoteResource
+from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes.properties.date import HasReleaseDate
 from mytunes.properties.image import HasImages
 from mytunes.properties.length import HasLength
@@ -16,8 +15,9 @@ from mytunes.properties.name import HasName
 from mytunes.properties.rating import HasRating
 from mytunes.properties.tag import HasSeparableTags
 from mytunes.properties.uri import URI
-from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
+from ..._base import makecls
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
+from ..._base.resource import ResourceModel
 
 
 class Album[RT: Artist, GT: Genre](

@@ -12,14 +12,14 @@ from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, InstanceOf, Field, ValidationError, ConfigDict
 
-from ..._base.attribute import AttributeModel, Attribute
-from .._context import RemoteModelContext
+from mytunes._types import get_generic
 from mytunes.core.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from mytunes.core.remote import RemoteModel
-from mytunes._types import get_generic
 from mytunes.exception import EndpointsError
 from mytunes.properties.logger import HasLogger
 from mytunes.properties.uri import URI
+from .._context import RemoteModelContext
+from ..._base.attribute import AttributeModel, Attribute
 
 
 # noinspection PyAbstractClass

@@ -20,6 +20,8 @@ from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
 from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
 
 from mytunes._types import StrippedString, to_list
+from mytunes.core.library import Library
+from mytunes.core.track import Track, HasMutableTracks
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._base import LocalModel
 from mytunes.local._item.album import LocalAlbum
@@ -37,10 +39,8 @@ from mytunes.properties.name import HasName
 from mytunes.properties.order import Position
 from mytunes.properties.uri import HasMutableURI, URI
 from ...._base import BaseModel, makecls
-from ...._base.resource import ResourceModel
-from mytunes.core.library import Library
-from mytunes.core.track import Track, HasMutableTracks
 from ...._base.attribute import TagAttribute
+from ...._base.resource import ResourceModel
 
 
 class TagContext(BaseModel):

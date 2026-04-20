@@ -1,14 +1,12 @@
-import itertools
 from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterator
-from contextlib import suppress
 from typing import Any, Self, overload, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
 from pydantic_core import core_schema, CoreSchema
 
-from .._base.resource import ResourceModel
 from mytunes.core.mapping import MutableUniqueMapping
 from mytunes.exception import MyTunesValidationError
+from .._base.resource import ResourceModel
 
 
 class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):

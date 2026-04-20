@@ -2,15 +2,15 @@ from typing import final, Self, Annotated
 
 from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
 
+from mytunes.core.album import RemoteAlbumCollection
+from mytunes.core.sequence import UniqueSequence
 from mytunes.spotify.cursors import SpotifyIndexCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
-from mytunes.core.album import RemoteAlbumCollection
 from ..._base.attribute import Attribute
-from mytunes.core.sequence import UniqueSequence
 
 
 # noinspection PyFinal

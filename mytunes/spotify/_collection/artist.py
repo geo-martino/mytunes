@@ -2,14 +2,14 @@ from typing import final, Annotated, TYPE_CHECKING
 
 from pydantic import Field, AliasPath, model_validator
 
+from mytunes.core.artist import RemoteArtistCollection
 from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.genre import SpotifyGenre
 from .._properties.uri import SpotifyResourceURI
-from ...core.api.items import HasArtistEndpoints
-from mytunes.core.artist import RemoteArtistCollection
 from ..._base.attribute import Attribute
+from ...core.api.items import HasArtistEndpoints
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember

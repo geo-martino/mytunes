@@ -8,16 +8,16 @@ from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
 from mytunes import MODULE_ROOT
-from mytunes.core._context import RemoteModelContext
-from mytunes.core.api import RemoteAPI, CollectionWriteEndpoints
-from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 # noinspection PyProtectedMember
 from mytunes.core._collection._sync import SYNC_TYPE
 from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists, MutablePlaylist, \
     MergePlaylistsTypeAnnotated, RemotePlaylist, RemoteMutablePlaylist
-from mytunes.core.cursors import PageCursor
+from mytunes.core._context import RemoteModelContext
 from mytunes.core._item.track import RemoteTrack
 from mytunes.core._item.user import RemoteUser
+from mytunes.core.api import RemoteAPI, CollectionWriteEndpoints
+from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
+from mytunes.core.cursors import PageCursor
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
 from mytunes.properties.uri import URI

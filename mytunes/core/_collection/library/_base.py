@@ -4,16 +4,16 @@ from typing import Any, ClassVar, Self, Annotated, Union
 
 from pydantic import Field, Tag, Discriminator
 
-from ...._base.attribute import AttributeMetaclass
-from ...._base.resource import ResourceModel, ResourceMetaclass
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
-from ..._item.track import Track, HasTracks, HasMutableTracks
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.composite import IncludeExcludeFilter
 from mytunes.processors.filters.values import NameFilter
 from mytunes.properties.asynch import HasAsyncOperations
 from mytunes.properties.logger import HasLogger, HasProgress
+from ..._item.track import Track, HasTracks, HasMutableTracks
+from ...._base.attribute import AttributeMetaclass
+from ...._base.resource import ResourceModel, ResourceMetaclass
 
 
 class HasTracksAndPlaylists[TT: Track, PT: Playlist](

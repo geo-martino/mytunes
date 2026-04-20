@@ -4,6 +4,7 @@ from typing import ClassVar, Any, Self, final, Annotated
 from pydantic import Field, model_validator
 
 from mytunes._types import StrippedString
+from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesValidationError
 from mytunes.local._collection._base import LocalCollection
 from mytunes.properties.length import HasLength
@@ -11,7 +12,6 @@ from mytunes.properties.name import HasName
 from mytunes.properties.uri import URI
 from .._item.track import LocalTrack, HasLocalTracks
 from ..._base.attribute import Attribute
-from mytunes.core.sequence import UniqueSequence
 
 
 @final

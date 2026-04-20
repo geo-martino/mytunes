@@ -13,15 +13,15 @@ from pydantic import AliasPath, TypeAdapter, AliasChoices
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from mytunes.core._context import RemoteModelContext
-from mytunes.core.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
-    BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import RemotePlaylist
-from mytunes.core.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
+from mytunes.core._context import RemoteModelContext
 from mytunes.core._item.album import RemoteAlbum
 from mytunes.core._item.artist import RemoteArtist
 from mytunes.core._item.track import RemoteTrack
+from mytunes.core.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
+    BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
+from mytunes.core.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from mytunes.core.remote import RemoteModel, RemoteResource
 from mytunes.exception import APIModelError
 from mytunes.properties.image import ImageURL, ImageFile
