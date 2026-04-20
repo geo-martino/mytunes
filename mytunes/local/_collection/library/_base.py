@@ -1,5 +1,5 @@
 import itertools
-from collections.abc import Generator, Iterable, Collection, Sequence
+from collections.abc import Generator, Iterable, Collection, Sequence, Mapping
 from pathlib import Path, PurePath
 from typing import Annotated, ClassVar, final, Any, Self
 
@@ -19,7 +19,7 @@ from mytunes.local._collection.folder import Folder
 from mytunes.local._collection.genre import LocalGenreCollection
 from mytunes.local._collection.library.result import LibraryURIsResult
 from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
-from mytunes.local._collection.playlist.result import LoadPlaylistResult
+from mytunes.local._collection.playlist.result import LoadPlaylistResult, SavePlaylistResult
 from mytunes.logger import STAT
 from mytunes.processors.filters import Filter
 from mytunes.processors.filters.values import ValueFilter
@@ -339,7 +339,7 @@ class LocalLibrary(
             for playlist in self.playlists.unique
         }
 
-    async def save_playlists(self, dry_run: bool = False) -> dict[str, Result]:
+    async def save_playlists(self, dry_run: bool = False) -> dict[str, SavePlaylistResult]:
         """
         Save associated tracks and settings (if applicable) for all playlists in this library.
 
@@ -356,6 +356,13 @@ class LocalLibrary(
         task_id = self._progress.add_task(description=f"Updating {self.source} playlists", total=total)
         results = await self._run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
         return dict(results)
+
+    def log_save_playlists_results(self, results: Mapping[str, SavePlaylistResult]) -> None:
+        """Log the given results of saving playlists."""
+        header = f"{self.source.upper()} PLAYLISTS SAVED"
+        table = SavePlaylistResult.generate_table(results=results, header=header)
+
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
     ###########################################################################
     ## Collections

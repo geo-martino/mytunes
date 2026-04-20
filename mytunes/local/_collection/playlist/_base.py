@@ -20,6 +20,7 @@ from mytunes.core.properties.path import PathMapper
 from ..._item.track import LocalTrack, HasLocalTracks
 from ...._base import makecls
 from ...._base.resource import UniqueAttribute
+from mytunes.core.properties.uri import HasMutableURI
 
 
 class LocalPlaylistFile[TF: Filter](
@@ -27,6 +28,7 @@ class LocalPlaylistFile[TF: Filter](
     LocalCollection[LocalTrack],
     MutablePlaylist[LocalTrack[mutagen.FileType]],
     HasLocalTracks[LocalTrack[mutagen.FileType]],
+    HasMutableURI,
     metaclass=makecls()
 ):
     _original: MutableUniqueSequence[str, LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)
