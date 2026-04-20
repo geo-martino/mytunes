@@ -32,10 +32,7 @@ class InputProcessor(Processor, HasLogger):
             formatter = self.input_formatter
 
         log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
-        option = self._logger.input(log, choices=choices)
-
-        self._logger.debug(f"User input: {option}")
-        return option
+        return self._logger.input(log, choices=choices)
 
 
 # noinspection PyAbstractClass
