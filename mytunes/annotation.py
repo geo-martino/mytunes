@@ -15,6 +15,12 @@ from mytunes.spotify.library import *  # type: ignore[import]
 from mytunes.spotify.playlist import *  # type: ignore[import]
 from mytunes.spotify.track import *  # type: ignore[import]
 from mytunes.spotify.user import *  # type: ignore[import]
+# already annotations
+from mytunes._types import Character, StrippedCharacter, String, StrippedString  # type: ignore[import]
+from mytunes._types import LowerStrippedString, UpperStrippedString  # type: ignore[import]
+from mytunes._types import LowerSnakeCase, UpperSnakeCase, ListWithValues  # type: ignore[import]
+from mytunes._types import Number, ListWithValues  # type: ignore[import]
+from mytunes._types import TO_SET, TO_TUPLE, TO_LIST, DEFAULT_IF_NONE, HttpURL  # type: ignore[import]
 # types to be converted to annotations
 from ._base import BaseModel
 from ._base.attribute import AttributeModel

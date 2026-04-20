@@ -33,9 +33,10 @@ type UpperSnakeCase = Annotated[
     StringConstraints(min_length=1, strip_whitespace=True, to_upper=True),
     BeforeValidator(to_snake),
 ]
-type ListWithValues[T] = Annotated[list[T], MinLen(1)]
 
 type Number = int | float
+
+type ListWithValues[T] = Annotated[list[T], MinLen(1)]
 
 
 ###########################################################################
