@@ -22,7 +22,11 @@ class Genre(HasName, ResourceModel, metaclass=makecls()):
     name: Annotated[StrippedString, UniqueAttribute()] = Field(
         description="The name of this genre.",
         alias="genre",
+        frozen=True,
     )
+
+    def __hash__(self) -> int:
+        return hash(self.name)
 
 
 class HasGenres[GT: Genre](HasSeparableTags):

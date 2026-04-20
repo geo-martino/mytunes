@@ -69,7 +69,7 @@ class TestPositionValue(BaseModelTester):
 
     def test_applies_filter(self, track: Track, position: Position):
         track.disc = position
-        condition = ValueFilter(values={track.name})
+        condition = ValueFilter(values={track.track})
         assert not condition.check(track.disc)
 
         model = PositionValue(field="disc", condition=condition)

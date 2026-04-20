@@ -13,6 +13,7 @@ from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
+from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
 from ...._models.metadata import TagAttribute
 from ...._models.properties.date import SparseDate
@@ -152,7 +153,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     @field_validator("genres", mode="before")
     @classmethod
     def _deserialize_free_form_fields[T:  Iterable](cls, value: T) -> T | list[str]:
-        if not isinstance(value, tuple | list):
+        if not isinstance(value, ItemSequence):
             return value
         return list(map(cls._deserialize_free_form_field, value))
 

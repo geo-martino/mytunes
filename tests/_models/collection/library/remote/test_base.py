@@ -5,7 +5,7 @@ import pytest
 
 from mytunes._models.api import RemoteAPI
 from mytunes._models.collection.library import RemoteLibrary
-from mytunes._models.collection.playlist import Playlist
+from mytunes._models.collection.playlist import Playlist, RemotePlaylist
 from mytunes._models.item.album import Album
 from mytunes._models.item.artist import Artist
 from mytunes._models.item.track import Track
@@ -38,10 +38,9 @@ class TestRemoteLibrary(BaseModelTester):
         assert sorted(item.uri for item in loaded_items) == expected_uris
 
     async def test_load_playlists(
-            self, model: RemoteLibrary, playlists: list[Playlist], user: RemoteUser, mock_get_all: Mock
+            self, model: RemoteLibrary, playlists: list[RemotePlaylist], user: RemoteUser, mock_get_all: Mock
     ):
-        for pl in playlists:
-            pl.owner = user
+        playlists = [pl.model_copy(update=dict(owner=user)) for pl in playlists]
 
         mock_get_all.return_value = playlists
         assert await model.load_playlists()

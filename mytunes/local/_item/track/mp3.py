@@ -15,6 +15,7 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._base import TagContext
+from mytunes.local._item.track._types import ItemSequence
 from ...._models.metadata import TagAttribute
 from ...._models.properties.date import SparseDate
 from ...._models.properties.image import ImageURL, ImageFile
@@ -182,7 +183,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
             return data
 
         for tag_id, tag_value in copy(data).items():
-            if not isinstance(tag_value, tuple | list):
+            if not isinstance(tag_value, ItemSequence):
                 continue
 
             for i, frame in enumerate(tag_value, 1):
@@ -226,7 +227,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     def _deserialize_text_frames[T](cls, value: T | Iterable[mutagen.id3.TextFrame]) -> T | list[str]:
         if value is None:
             return value
-        if not isinstance(value, tuple | list):
+        if not isinstance(value, ItemSequence):
             value = [value]
 
         return list(map(cls._deserialize_text_frame, value))
@@ -275,7 +276,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     ) -> T | InstanceOf[mutagen.id3.TextFrame]:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return handler(value)
-        if not isinstance(value, tuple | list):
+        if not isinstance(value, ItemSequence):
             value = [value]
 
         frame_cls = self._get_frame_class(info)

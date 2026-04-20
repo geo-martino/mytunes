@@ -11,15 +11,15 @@ class TestPosition(BaseModelTester):
     def model(self) -> Position:
         return Position()
 
-    def test_from_number(self, model: Position, faker: Faker):
+    def test_from_number(self, faker: Faker):
         number = faker.random_int(1, 10)
-        model = model.model_validate(number)
+        model = Position.model_validate(number)
         assert model.number == number
         assert model.total is None
 
-    def test_from_numbers(self, model: Position):
+    def test_from_numbers(self):
         number = (10,)
-        model = model.model_validate(number)
+        model = Position.model_validate(number)
         assert model.number == 10
         assert model.total is None
 
@@ -28,9 +28,9 @@ class TestPosition(BaseModelTester):
         assert model.number == 10
         assert model.total == 20
 
-    def test_from_string(self, model: Position, faker: Faker):
+    def test_from_string(self, faker: Faker):
         numbers = "10"
-        model = model.model_validate(numbers)
+        model = Position.model_validate(numbers)
         assert model.number == 10
         assert model.total is None
 
@@ -44,48 +44,41 @@ class TestPosition(BaseModelTester):
         assert model.number == 10
         assert model.total == 20
 
-    def test_number_cannot_exceed_total(self, model: Position):
-        model.total = 5
+    def test_number_cannot_exceed_total(self, faker: Faker):
+        number = faker.random_int(1, 10)
         with pytest.raises(ValidationError):
-            model.number = model.total + 1
+            Position(number=number, total=number - 1)
 
-        with pytest.raises(ValidationError):
-            Position(number=5, total=4)
-
-    def test_numbers_property(self, model: Position):
-        model.number = 10
-        model.total = 20
+    def test_numbers_property(self):
+        model = Position(number=10, total=20)
         assert model.numbers == (10, 20)
 
-        model.total = None
+        model = Position(number=10, total=None)
         assert model.numbers == (10,)
 
-        model.number = None
-        model.total = 20
+        model = Position(number=None, total=20)
         assert model.numbers == ()
 
-    def test_to_string(self, model: Position):
-        model.number = 10
-        model.zero_fill = 2
+    def test_to_string(self):
+        model = Position(number=10, zero_fill=2)
         assert str(model) == "10"
 
-        model.total = 20
-        model.zero_fill = 4
+        model = Position(number=10, total=20, zero_fill=4)
         assert str(model) == "0010/0020"
 
-        model.total = 200
-        model.zero_fill = True  # zero fill to the length of the total
+        # zero fill to the length of the total
+        model = Position(number=10, total=200, zero_fill=True)
         assert str(model) == "010/200"
 
-        model.number = None
+        model = Position(number=None, total=200, zero_fill=True)
         assert str(model) == ""
 
-    def test_to_int(self, model: Position):
-        model.number = 6
+    def test_to_int(self):
+        model = Position(number=6, total=10)
         assert int(model) == 6
 
-    def test_ordering(self, model: Position, faker: Faker):
-        model.number = faker.random_int(1, 10)
+    def test_ordering(self, faker: Faker):
+        model = Position(number=faker.random_int(1, 10), total=10)
         assert model == model.number
         assert model < model.number + 2
         assert model > model.number - 2

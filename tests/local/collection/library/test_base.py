@@ -288,16 +288,18 @@ class TestLocalLibrary(NoUniqueKeyTester):
 
     def test_artists(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks.replace(tracks)
-        expected_artists = len(set(artist.name for track in model.tracks for artist in track.artists))
+        expected = len(set(artist.name for track in model.tracks for artist in track.artists))
+        assert expected
 
         artists = list(model.artists)
-        assert len(artists) == expected_artists > 0
+        assert len(artists) == expected > 0
         assert all(artist.count > 0 for artist in artists)
 
     def test_genres(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks.replace(tracks)
-        expected_genres = len(set(genre.name for track in model.tracks for genre in track.genres))
+        expected = len(set(genre.name for track in model.tracks for genre in track.genres))
+        assert expected
 
         genres = list(model.genres)
-        assert len(genres) == expected_genres > 0
+        assert len(genres) == expected > 0
         assert all(genre.count > 0 for genre in genres)

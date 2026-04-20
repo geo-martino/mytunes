@@ -71,7 +71,6 @@ type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 def _get_playlists_map_from_merge_input[PT](
         playlists: MergePlaylistsType[PT] | None
 ) -> MutableUniqueSequence[Any, PT] | None:
-    print(type(playlists))
     match playlists:
         case None:
             return

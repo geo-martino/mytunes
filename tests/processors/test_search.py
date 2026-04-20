@@ -6,14 +6,14 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from mytunes._models import ResourceModel
+from mytunes._models import ResourceModel, makecls
 from mytunes._models.api import RemoteAPI
 from mytunes._models.api.search import SearchEndpoints
 from mytunes._models.collection import CollectionModel, RemoteCollection
 from mytunes._models.collection.album import AlbumCollection
 from mytunes._models.item.album import Album
 from mytunes._models.item.track import Track, RemoteTrack
-from mytunes._models.properties.uri import HasURI
+from mytunes._models.properties.uri import HasURI, HasMutableURI
 from mytunes._models.remote import RemoteResource
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
@@ -120,12 +120,14 @@ class SearcherTester(metaclass=ABCMeta):
 
 class TestSearcher(SearcherTester, BaseModelTester):
     @pytest.fixture
-    def item(self, items: list[ResourceModel], faker: Faker) -> ResourceModel:
+    def item(self, items: list[HasMutableURI], faker: Faker) -> HasMutableURI:
         return faker.random_element(items)
 
     @pytest.fixture
-    def items(self, tracks: list[Track]) -> list[ResourceModel]:
-        return tracks
+    def items(self, tracks: list[Track]) -> list[HasMutableURI]:
+        class TrackWithURI(Track, HasMutableURI, metaclass=makecls()):
+            pass
+        return [TrackWithURI.model_validate(track.model_dump()) for track in tracks]
 
     @pytest.fixture
     def query_results(self, faker: Faker) -> list[RemoteTrack]:
@@ -136,7 +138,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
             for _ in range(faker.random_int(5, 15))
         ]
 
-    def test_skip_if_has_uri(self, model: Searcher, item: ResourceModel, match: RemoteResource):
+    def test_skip_if_has_uri(self, model: Searcher, item: HasMutableURI, match: RemoteResource):
         assert match.uri is not None
 
         model.skip_if_has_uri = False
@@ -147,12 +149,12 @@ class TestSearcher(SearcherTester, BaseModelTester):
         assert not model._should_skip(item)
         assert model._should_skip(match)
 
-    async def test_query(self, model: Searcher, item: ResourceModel, mock_query_item: Mock):
+    async def test_query(self, model: Searcher, item: HasMutableURI, mock_query_item: Mock):
         model.skip_if_has_uri = False
         assert await model._query(item) == mock_query_item.return_value
 
     async def test_query_returns_no_results(
-            self, model: Searcher, item: ResourceModel, mock_query_item: Mock, faker: Faker
+            self, model: Searcher, item: HasMutableURI, mock_query_item: Mock, faker: Faker
     ):
         mock_query_item.return_value = []
         assert await model._query(item) is None
@@ -160,7 +162,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_split_items(
             self,
             model: Searcher,
-            items: list[ResourceModel],
+            items: list[HasMutableURI],
             mock_skip_random: tuple[Mock, list, list],
             faker: Faker,
     ):
@@ -173,7 +175,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_match_item_skips(
             self,
             model: Searcher,
-            item: ResourceModel,
+            item: HasMutableURI,
             query_results: list[RemoteTrack],
             mock_match: Mock,
             mocker: MockerFixture,
@@ -187,7 +189,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_match_item(
             self,
             model: Searcher,
-            item: ResourceModel,
+            item: HasMutableURI,
             query_results: list[RemoteTrack],
             mock_match: Mock,
             mocker: MockerFixture,
@@ -200,7 +202,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_match_items(
             self,
             model: Searcher,
-            items: list[ResourceModel],
+            items: list[HasMutableURI],
             query_results: list[RemoteResource],
             mock_match_random: tuple[Mock, list, list, list],
             faker: Faker,
@@ -240,7 +242,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_pop_match_from_results_skips(
             self,
             model: Searcher,
-            item: ResourceModel,
+            item: HasMutableURI,
             query_results: list[RemoteTrack],
             matcher: Matcher,
             mock_matcher_match: Mock
@@ -258,7 +260,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_pop_match_from_results_no_matcher(
             self,
             model: Searcher,
-            item: ResourceModel,
+            item: HasMutableURI,
             query_results: list[RemoteTrack],
             matcher: Matcher,
             mock_matcher_match: Mock,
@@ -273,7 +275,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
     def test_pop_match_from_results_with_matcher(
             self,
             model: Searcher,
-            item: ResourceModel,
+            item: HasMutableURI,
             match: RemoteResource,
             query_results: list[RemoteTrack],
             matcher: Matcher,
@@ -287,7 +289,7 @@ class TestSearcher(SearcherTester, BaseModelTester):
         assert match not in query_results
 
     def test_assign_attributes_from_match(
-            self, model: Searcher, item: ResourceModel, match: RemoteTrack, mocker: MockerFixture
+            self, model: Searcher, item: HasMutableURI, match: RemoteTrack, mocker: MockerFixture
     ):
         model.assign_uri = False
         mock_assign_uri = mocker.spy(model, "_assign_uri_from_match")
@@ -299,14 +301,17 @@ class TestSearcher(SearcherTester, BaseModelTester):
         model._assign_attributes_from_match(item, match)
         mock_assign_uri.assert_called_once_with(item, match)
 
-    def test_assign_uri_from_match_skips(self, model: Searcher, item: ResourceModel, match: RemoteTrack):
-        # nothing happens because item does not have a URI field
-        assert not isinstance(item, HasURI)
+    def test_assign_uri_from_match_skips(self, model: Searcher, match: RemoteTrack, query_results: list[RemoteTrack]):
+        # nothing happens because item does not have a mutable URI field
+        item = next(it for it in query_results if it.uri != match.uri)
+        assert not isinstance(item, HasMutableURI)
+
         model._assign_uri_from_match(item, match)
+        assert item.uri != match.uri
 
-    def test_assign_uri_from_match(self, model: Searcher, query_results: list[RemoteTrack], match: RemoteTrack):
-        item = next(result for result in query_results if result is not match)
-
+    def test_assign_uri_from_match(
+            self, model: Searcher, item: HasMutableURI, query_results: list[RemoteTrack], match: RemoteTrack
+    ):
         assert item.uri != match.uri
         model._assign_uri_from_match(item, match)
         assert item.uri == match.uri

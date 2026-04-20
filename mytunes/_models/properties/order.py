@@ -4,7 +4,7 @@ from functools import total_ordering
 from typing import Any, Self, ClassVar, Annotated
 
 from aiorequestful.types import Number
-from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
+from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ConfigDict
 
 from mytunes._models.metadata import TagAttribute, Attribute
 from mytunes.exception import MyTunesValidationError
@@ -85,9 +85,6 @@ class Position(AttributeModel):
 
     def __int__(self):
         return self.number
-
-    def __hash__(self) -> int:
-        return hash((self.number or 0, self.total or 0, self.zero_fill))
 
     def __eq__(self, other: Any) -> bool:
         return other is not None and self.number == int(other)

@@ -115,7 +115,7 @@ class TestItemSorter(BaseModelTester):
         assert tracks_with_ignore_words == tracks_sorted
 
     def test_group_by_field(self, tracks: list[LocalTrack]):
-        expected_keys = {track.disc for track in tracks}
+        expected_keys = {str(track.disc) for track in tracks}
         assert len(expected_keys) > 1
 
         groups = ItemSorter.group_by_field(tracks, "disc")

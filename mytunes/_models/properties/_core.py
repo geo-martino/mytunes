@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import total_ordering
 from typing import Any, Self
 
-from pydantic import ValidationError
+from pydantic import ValidationError, ConfigDict
 
 from mytunes._types import Number
 from .._base import RootModel
@@ -11,6 +11,8 @@ from .._base import RootModel
 
 @total_ordering
 class NumberModel[T: Number](RootModel[T]):
+    model_config = ConfigDict(frozen=True)
+
     def __int__(self):
         return int(self.root)
 

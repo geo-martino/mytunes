@@ -9,8 +9,8 @@ class TestKeySignature(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> KeySignature:
         return KeySignature(
-            root=faker.random_int(min=0, max=len(KeySignature._root_notes) - 1),
-            mode=faker.boolean(),
+            root=faker.random_int(0, len(KeySignature._root_notes) - 1),
+            mode=faker.random_int(0, 1),
         )
 
     def test_from_key(self, model: KeySignature):
@@ -24,43 +24,28 @@ class TestKeySignature(BaseModelTester):
         assert model.mode == 1
         assert model.key == "Fm"
 
-    def test_from_key_with_sharp_or_flat(self, model: KeySignature):
-        model = model.model_validate("F#")
+    def test_from_key_with_sharp_or_flat(self):
+        model = KeySignature.model_validate("F#")
         assert model.root == 6
         assert model.mode == 0
         assert model.key == "F#/Gb"
 
-        model.key = "Bbm"
+        model = KeySignature.model_validate("Bbm")
         assert model.root == 10
         assert model.mode == 1
         assert model.key == "A#m/Bbm"
 
-        model.key = "G#m/Abm"
+        model = KeySignature.model_validate("G#m/Abm")
         assert model.root == 8
         assert model.mode == 1
         assert model.key == "G#m/Abm"
 
     def test_key_property(self, model: KeySignature):
-        model.root = 5
-        model.mode = False
+        model = KeySignature(root=5, mode=0)
         assert model.key == str(model) == "F"
 
-        model.mode = True
+        model = KeySignature(root=5, mode=1)
         assert model.key == str(model) == "Fm"
-
-    def test_set_by_key_signature(self, model: KeySignature):
-        model.mode = False
-        model.root = "Gm"
-        assert model.root == 7
-        assert not model.mode  # remains unchanged
-
-        model.mode = "Am"
-        assert model.root == 7  # remains unchanged
-        assert model.mode
-
-        model.key = "Cm"
-        assert model.root == 0
-        assert model.mode
 
     def test_to_string(self, model: KeySignature):
         assert str(model) == model.key

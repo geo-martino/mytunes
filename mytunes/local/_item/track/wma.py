@@ -14,6 +14,7 @@ from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
+from mytunes.local._item.track._types import ItemSequence
 from ...._models.metadata import TagAttribute
 from ...._models.properties.date import SparseDate
 from ...._models.properties.image import ImageURL, ImageFile
@@ -195,7 +196,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     )
     @classmethod
     def _deserialize_unicode_attributes[T](cls, value: T) -> T | list[str]:
-        if not isinstance(value, tuple | list):
+        if not isinstance(value, ItemSequence):
             return value
         return list(map(cls._deserialize_unicode_attribute, value))
 
@@ -234,7 +235,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     ) -> T | InstanceOf[mutagen.asf.ASFUnicodeAttribute]:
         if not info.by_alias or info.mode == "json":
             return handler(value)
-        if not isinstance(value, tuple | list):
+        if not isinstance(value, ItemSequence):
             value = [value]
 
         value = self._join_split_tags(value)
@@ -244,7 +245,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     def _serialize_unicode_attributes(
             self, value: Iterable[str | HasName], handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> list:
-        if not isinstance(value, tuple | list):
+        if not isinstance(value, ItemSequence):
             value = [value]
 
         # noinspection PyTypeChecker

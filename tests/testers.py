@@ -51,6 +51,17 @@ class BaseModelTester(metaclass=ABCMeta):
         else:
             assert type(model) not in type(model).registered_submodels
 
+    @staticmethod
+    def test_frozen_on_hashable(model: BaseModel):
+        if not isinstance(model, Hashable):
+            return pytest.skip(f"{type(model).__name__} is not Hashable, skipping test")
+
+        has_frozen_fields = (
+            model.model_config.get("frozen"),
+            *(field.frozen for field in model.model_fields.values())
+        )
+        assert any(has_frozen_fields)
+
 
 class NoUniqueKeyTester(BaseModelTester, metaclass=ABCMeta):
     """Generic base class for testing :py:class:`.ResourceModel` implementations"""
@@ -59,7 +70,7 @@ class NoUniqueKeyTester(BaseModelTester, metaclass=ABCMeta):
     def test_check_unique_keys(model: BaseModel):
         """Test that the unique keys are set correctly"""
         if not isinstance(model, ResourceModel):
-            return pytest.skip("Model is not a ResourceModel, skipping unique key test")
+            return pytest.skip(f"{type(model).__name__} is not a ResourceModel, skipping unique key test")
 
         assert not model.__unique_attributes__, "Unique attributes are not set on the test models"
         assert model.unique_keys == {id(model)}, "ID not found in unique keys"

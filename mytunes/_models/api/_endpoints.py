@@ -600,7 +600,7 @@ class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource]
 
         if isinstance(collection, RemoteCollection):
             items = itertools.chain.from_iterable((collection.items, items))
-            collection.cursor = cursor
+            collection.__dict__["cursor"] = cursor
 
         return list(items)
 

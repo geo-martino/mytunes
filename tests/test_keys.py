@@ -1,9 +1,9 @@
 import pytest
 from mytunes._models import ResourceModel
-from mytunes._models.collection.playlist import RemotePlaylist
+from mytunes._models.collection.playlist import RemotePlaylist, Playlist
 from mytunes._models.item.album import RemoteAlbum
 from mytunes._models.item.artist import RemoteArtist
-from mytunes._models.item.track import RemoteTrack
+from mytunes._models.item.track import RemoteTrack, Track
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._item import LocalAlbum, LocalArtist
 from mytunes.local._item.track import LocalTrack
@@ -19,6 +19,21 @@ from mytunes.local._item.track import LocalTrack
         # (LocalArtist, RemoteArtist),
     ]
 )
-def test_overlapping_unique_keys_in_types(source: ResourceModel, target: ResourceModel):
+def test_common_unique_attributes(source: ResourceModel, target: ResourceModel):
     """Needed to ensure all supported `merge_...` operations work correctly."""
     assert source.__unique_attributes__ & target.__unique_attributes__
+
+
+# TODO: this shouldn't pass if the above test fails
+#  passes because not all final classes are registered when test is called
+#  either restructure to fix or import final classes manually
+@pytest.mark.parametrize("model_type", [Track, Playlist])
+def test_registry_has_unique_attributes(model_type: type[ResourceModel]):
+    """Needed to ensure comparison across libraries work correctly."""
+    assert all(kls.__unique_attributes__ for kls in model_type.registered_submodels)
+
+    common_unique_attributes = {attr for kls in model_type.registered_submodels for attr in kls.__unique_attributes__}
+    for kls in model_type.registered_submodels:
+        common_unique_attributes &= kls.__unique_attributes__
+
+    assert common_unique_attributes

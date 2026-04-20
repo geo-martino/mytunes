@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Annotated, Any
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, ConfigDict
 
 from mytunes._models.metadata import Attribute
 from .._base import BaseModel
@@ -11,6 +11,8 @@ from .._base.attribute import AttributeModel
 
 class KeySignature(BaseModel):
     """Represents a key signature."""
+    model_config = ConfigDict(frozen=True)
+
     _root_notes: ClassVar[tuple[str, ...]] = (
         "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"
     )
@@ -20,6 +22,7 @@ class KeySignature(BaseModel):
     )
     mode: Annotated[int, Field(ge=0, le=1)] = Field(
         description="The mode of this track.",
+        default=0,
     )
 
     @model_validator(mode="before")

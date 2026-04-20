@@ -2,7 +2,7 @@
 Processor that sorts the given collection of items based on given configuration.
 """
 import re
-from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence
+from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collection, Iterator, MutableSequence, Hashable
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
@@ -12,7 +12,7 @@ from pydantic import Field, field_validator, field_serializer, model_validator
 
 from mytunes.exception import MyTunesValueError, MyTunesAttributeError
 from ._base import Processor
-from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
+from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE, ItemCollection
 from .._models import ResourceModel, IntEnumModel, AttributeModel
 from .._models.item.artist import HasArtists
 from .._models.item.track import Track
@@ -21,6 +21,7 @@ from .._models.properties.date import HasAddedDate, HasPlayedDate
 from .._models.properties.file import IsLocalFile
 from .._models.properties.name import HasName
 from .._models.properties.rating import HasRating
+from .._models.sequence import UniqueSequence
 
 
 class ShuffleMode(IntEnumModel):
@@ -197,9 +198,9 @@ class ItemSorter(Processor):
         :param ignore_words: The words to ignore at the beginning of a string when sorting string values.
         :return: Map of grouped items.
         """
-        grouped: dict[Any, list[T]] = {}
+        grouped: dict[Hashable, list[T]] = {}
 
-        def get_value(val: Any) -> Any:
+        def get_value(val: Any) -> Hashable:
             """Get the value to group by from the given value ``val``"""
             match val:
                 case str() | HasName():
@@ -208,14 +209,16 @@ class ItemSorter(Processor):
                     if ignore_words:
                         val = cls._strip_words(val, words=ignore_words, strip_special_chars=False)
                     val = val.casefold()
-                case _:
+                case _ if isinstance(val, ItemCollection):
                     pass
+                case _ if not isinstance(val, Hashable):
+                    val = str(val)
 
             return val
 
-        def group(it: Any, val: Any) -> None:
+        def group(it: Any, val: Hashable) -> None:
             """Group items by the given value ``v``"""
-            if isinstance(val, list):
+            if isinstance(val, ItemCollection):
                 for v in val:
                     group(it=it, val=get_value(v))
                 return
@@ -288,7 +291,7 @@ class ItemSorter(Processor):
         if isinstance(nested, MutableMapping):
             for key, value in nested.items():
                 cls._flatten_groups(value, previous=previous)
-        elif isinstance(nested, (list, set, tuple)):
+        elif isinstance(nested, ItemCollection):
             previous.extend(nested)
         else:
             previous.append(nested)

@@ -1,5 +1,5 @@
 from pathlib import Path
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, Hashable
 from typing import Annotated, Any, Self, final
 
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
@@ -14,7 +14,7 @@ from ..._models.properties.name import HasName
 from mytunes.processors.filters._base import Filter
 
 
-class ValueFilter[IT](Filter[IT]):
+class ValueFilter[IT: Hashable](Filter[IT]):
     """Filter based on a defined list of values."""
     values: Annotated[set[IT], TO_SET] = Field(
         description="Set of values to filter against",
@@ -34,9 +34,8 @@ class ValueFilter[IT](Filter[IT]):
             return values
         return {"values": values}
 
-    @validate_call
-    def check(self, item: IT, reference: IT | None = None) -> bool:
-        return item in self.values
+    def check(self, item: Any, reference: Any | None = None) -> bool:
+        return isinstance(item, Hashable) and item in self.values
 
     def __iter__(self):
         return iter(self.values)

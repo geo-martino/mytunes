@@ -60,7 +60,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
             return self
 
         if self.track is not None:
-            self.track.total = total
+            self.track.__dict__["total"] = total
         elif self.track is None:
             self.__dict__["track"] = Position(total=total)
 
@@ -76,7 +76,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
             return self
 
         if self.disc is not None:
-            self.disc.total = total
+            self.disc.__dict__["total"] = total
         elif self.disc is None:
             self.__dict__["disc"] = Position(total=total)
 

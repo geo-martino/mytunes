@@ -6,7 +6,7 @@ from copy import copy
 from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Annotated, TYPE_CHECKING, cast, Union
 
-from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict
 from pydantic_core.core_schema import ValidationInfo
 from yarl import URL
 
@@ -22,7 +22,9 @@ from .._base.attribute import AttributeModel
 # noinspection PyAbstractClass
 @total_ordering
 class URI(RootModel[str]):
-    """Stores a URI for a resource from a specific remote repository."""
+    """Stores a URI for a resource from a specific remote service."""
+    model_config = ConfigDict(frozen=True)
+
     _source: ClassVar[str] = PrivateAttr(
         # description=(
         #     "The remote repository that the URI is from. "
@@ -54,14 +56,14 @@ class URI(RootModel[str]):
 
         if self.source.casefold() != self._source.casefold():
             raise MyTunesValidationError(
-                f"Given URI does not belong to this {self._source!r} repository type. Found: {self.source!r}"
+                f"Given URI is not valid for the {self._source!r} service. Found: {self.source!r}"
             )
         return self
 
     @property
     @abstractmethod
     def source(self) -> str:
-        """The remote repository that this URI is from."""
+        """The remote service that this URI is from."""
         raise NotImplementedError
 
     @property
@@ -110,7 +112,7 @@ class URI(RootModel[str]):
 
     @property
     def exists(self) -> bool:
-        """Whether this URI relates to a resource which actually exists in the remote repository."""
+        """Whether this URI relates to a resource which actually exists in the remote service."""
         return self.id != self._unavailable_id
 
     @classmethod
@@ -132,7 +134,7 @@ class URI(RootModel[str]):
     def __str__(self) -> str:
         return str(self.root)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.root)
 
     def __eq__(self, other: str | URI):
@@ -191,7 +193,7 @@ class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
 
 class HasImmutableURI[UT: URI](HasURI):
     uri: Annotated[URI, UniqueAttribute()] = Field(
-        description="The URI for this resource on the remote repository",
+        description="The URI for this resource on the remote service",
         frozen=True,
         default=None,
     )
@@ -219,7 +221,7 @@ class HasImmutableURI[UT: URI](HasURI):
 class HasMutableURI(HasURI):
     source: Annotated[str | None, Attribute()] = Field(
         description=(
-            "The type of remote repository this resource is associated with. "
+            "The type of remote service this resource is associated with. "
             "This is used to extract the appropriate URI from a list of available URIs "
             "and validate incoming URIs contain one URI from the correct source."
         ),

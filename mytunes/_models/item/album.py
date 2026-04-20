@@ -43,7 +43,7 @@ class Album[RT: Artist, GT: Genre](
     @classmethod
     def _validate_artists[T](cls, value: T) -> T | list:
         match value:
-            case list() | UniqueSequence() if all(isinstance(item, list) for item in value):
+            case list() | UniqueSequence() if all(isinstance(item, list | UniqueSequence) for item in value):
                 value = [v for val in value for v in val]
         return value
 

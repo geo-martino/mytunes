@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 from mytunes._models import BaseModel
 from mytunes._models._metaclass import makecls
@@ -20,7 +20,11 @@ class RemoteModel(BaseModel):
 
 # noinspection PyAbstractClass
 class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=makecls()):
-    uri: Annotated[UT, UniqueAttribute()]
+    # we just need to make this field required
+    uri: Annotated[UT, UniqueAttribute()] = Field(
+        description="The URI for this resource on the remote service.",
+        frozen=True,
+    )
 
     def __hash__(self):
         return hash(self.uri)

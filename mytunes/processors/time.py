@@ -93,9 +93,6 @@ class TimeMapper(DynamicProcessor):
     def __str__(self) -> str:
         return str(self.key)
 
-    def __hash__(self) -> int:
-        return hash((self.unit, self.amount, self.add))
-
     def apply[T: date | datetime](self, value: T) -> T:
         """Apply the time delta to the given date or datetime."""
         return self._processor_method(value)

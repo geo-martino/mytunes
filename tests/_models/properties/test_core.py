@@ -13,11 +13,11 @@ class TestNumberModel(BaseModelTester):
     def model(self) -> NumberModel:
         return NumberModel(123.45)
 
-    def test_to_number(self, model: NumberModel):
-        model.root = 123.45
+    def test_to_number(self):
+        model = NumberModel.model_validate(123.45)
         assert int(model) == 123
 
-        model.root = 123
+        model = NumberModel.model_validate(123)
         assert float(model) == 123.0
 
     def test_ordering(self, model: NumberModel):

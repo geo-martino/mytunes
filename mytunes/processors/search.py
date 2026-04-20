@@ -18,7 +18,7 @@ from .._models.properties.asynch import HasAsyncOperations
 from .._models.properties.file import IsFile, IsLocalFile
 from .._models.properties.logger import HasProgress, HasLogger
 from .._models.properties.name import HasName
-from .._models.properties.uri import HasURI
+from .._models.properties.uri import HasURI, HasMutableURI
 from .._models.remote import RemoteResource
 from .._models.result import TotalCountResult, LenLogFormatter
 from .._utils import truncate_string
@@ -352,13 +352,13 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         return valid, invalid
 
-    def _match_item[T: RemoteResource](self, item: ResourceModel, results: MutableSequence[T]) -> T | None:
+    def _match_item[T: RemoteResource](self, item: HasMutableURI, results: MutableSequence[T]) -> T | None:
         match = self._pop_match_from_results(item, results)
         if match is not None:
             self._assign_attributes_from_match(item, match)
         return match
 
-    def _pop_match_from_results[T: HasURI](self, item: T, results: MutableSequence[T]) -> T | None:
+    def _pop_match_from_results[T: HasURI](self, item: HasMutableURI, results: MutableSequence[T]) -> T | None:
         if not results:
             return
 
@@ -376,12 +376,12 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         return match
 
-    def _assign_attributes_from_match[T: ResourceModel](self, item: T, match: T) -> None:
+    def _assign_attributes_from_match(self, item: HasMutableURI, match: HasURI) -> None:
         if self.assign_uri:
             self._assign_uri_from_match(item, match)
 
-    def _assign_uri_from_match[T: ResourceModel](self, item: T, match: T) -> None:
-        if not isinstance(item, HasURI) or not isinstance(match, HasURI) or not match.has_uri:
+    def _assign_uri_from_match(self, item: HasMutableURI, match: HasURI) -> None:
+        if not isinstance(item, HasMutableURI) or not isinstance(match, HasURI) or not match.has_uri:
             return
 
         if item.uri != match.uri:

@@ -14,11 +14,8 @@ class TestSparseDate(BaseModelTester):
         return SparseDate(year=faker.year())
 
     def test_validate_month_not_set_when_day_set(self, model: SparseDate, faker: Faker):
-        model.month = None
-        model.day = None
-
-        with pytest.raises(ValidationError):
-            model.day = faker.random_int(min=1, max=28)
+        with pytest.raises(ValidationError, match="Cannot set day"):
+            SparseDate(year=faker.year(), day=faker.random_int(min=1, max=28))
 
     def test_from_date(self, model: SparseDate):
         model = model.model_validate("2025-03-01")
@@ -43,26 +40,23 @@ class TestSparseDate(BaseModelTester):
         assert model.day is None
 
     def test_date_property(self, model: SparseDate, faker: Faker):
-        model.month = None
-        model.day = None
+        model = SparseDate(year=faker.year())
         assert model.date is None
 
-        model.month = faker.random_int(min=1, max=12)
+        model = SparseDate(year=model.year, month=faker.random_int(min=1, max=12))
         assert model.date is None
 
-        model.day = faker.random_int(min=1, max=28)
+        model = SparseDate(year=model.year, month=model.month, day=faker.random_int(min=1, max=28))
         assert model.date == date(year=model.year, month=model.month, day=model.day)
 
     def test_to_string(self, model: SparseDate):
-        model.year = 2025
-        model.month = 3
-        model.day = 1
+        model = SparseDate(year=2025, month=3, day=1)
         assert str(model) == "2025-03-01"
 
-        model.day = None
+        model = SparseDate(year=model.year, month=model.month)
         assert str(model) == "2025-03"
 
-        model.month = None
+        model = SparseDate(year=model.year)
         assert str(model) == "2025"
 
     def test_equality(self):

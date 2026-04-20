@@ -81,7 +81,7 @@ class SpotifyTrack(
         if self.track is None:
             self.track = Position()
 
-        self.track.total = track_total
+        self.track.__dict__["total"] = track_total
         return self
 
     @model_validator(mode="after")

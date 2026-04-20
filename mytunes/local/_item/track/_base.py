@@ -25,6 +25,7 @@ from mytunes.local._base import LocalModel
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
+from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
 from ...._models import BaseModel, ResourceModel, makecls
 from ...._models.collection.library import Library
@@ -39,6 +40,7 @@ from ...._models.properties.logger import HasLogger, HasProgress
 from ...._models.properties.name import HasName
 from ...._models.properties.order import Position
 from ...._models.properties.uri import HasMutableURI, URI
+from ...._models.sequence import UniqueSequence
 
 
 class TagContext(BaseModel):
@@ -273,7 +275,7 @@ class LocalTrack[FT: FileType](
     )
     @staticmethod
     def _extract_first_value_from_sequence[T](value: Sequence[T]) -> T:
-        if isinstance(value, tuple | list) and len(value) >= 1:
+        if isinstance(value, ItemSequence) and len(value) >= 1:
             value = value[0]
         return value
 
@@ -283,7 +285,7 @@ class LocalTrack[FT: FileType](
     )
     @staticmethod
     def _extract_first_value_from_single_sequence[T](value: Sequence[T]) -> T:
-        if isinstance(value, tuple | list) and len(value) == 1:
+        if isinstance(value, ItemSequence) and len(value) == 1:
             value = value[0]
         return value
 
@@ -307,7 +309,7 @@ class LocalTrack[FT: FileType](
     )
     @classmethod
     def _split_joined_tags[T: str](cls, value: T) -> T | list[str]:
-        if not isinstance(value, tuple | list) or not all(isinstance(v, str) for v in value):
+        if not isinstance(value, ItemSequence) or not all(isinstance(v, str) for v in value):
             return value
         return list(itertools.chain.from_iterable(map(cls._separate_tags, value)))
 
@@ -363,7 +365,7 @@ class LocalTrack[FT: FileType](
         for key, val in data.items():
             if isinstance(val, bool):  # never convert bools to list of bools
                 continue
-            if not isinstance(val, (tuple, list)):
+            if not isinstance(val, ItemSequence):
                 data[key] = [val]
 
     @model_validator(mode="after")
@@ -394,7 +396,7 @@ class LocalTrack[FT: FileType](
     @field_validator("images", mode="before")
     @classmethod
     def _map_images[T](cls, images: Iterable) -> T | dict[str, ImageSource]:
-        if not isinstance(images, tuple | list):
+        if not isinstance(images, ItemSequence):
             return images
 
         mapped_images: dict[str, ImageSource] = {}

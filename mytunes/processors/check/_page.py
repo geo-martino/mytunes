@@ -188,7 +188,7 @@ class CheckerPage[API: _ApiT, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOp
             await asyncio.sleep(self.wait_after_add)
 
             # should help force an extension
-            playlist.cursor = InitialCursor.from_url(playlist.cursor.url, source=playlist.source)
+            playlist.__dict__["cursor"] = InitialCursor.from_url(playlist.cursor.url, source=playlist.source)
             await playlist.extend(self.api)  # refresh playlist items with just added URIs
 
     async def teardown_playlists(self) -> None:

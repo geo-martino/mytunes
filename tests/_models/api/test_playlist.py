@@ -91,7 +91,7 @@ class TestPlaylistBatchReadAllEndpoints(EndpointsTester):
         expected = faker.random_elements(playlists, unique=True)
         owner = expected[0].owner
         for pl in expected:
-            pl.owner = owner
+            pl.__dict__["owner"] = owner
 
         assert sorted(await model.get_by_user(user=owner)) == sorted(expected)
 

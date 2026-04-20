@@ -601,8 +601,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
             mock_get_all_items: Mock,
             faker: faker
     ):
-        collection.cursor = cursor
-        adapter = type(model).item_type_adapter
+        collection.__dict__["cursor"] = cursor
 
         expected_collection = items[:len(items) // 5]
         expected_cursor = deepcopy(cursor)

@@ -21,7 +21,8 @@ from mytunes._types import LowerSnakeCase, Number
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.time import TimeMapper
 from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
-from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_MAP, _ATTRIBUTE_FIELD_TYPE
+from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_MAP, _ATTRIBUTE_FIELD_TYPE, \
+    ItemCollection
 from .._models import AttributeModel
 from .._models.item.track import Track
 from .._models.properties.audio import HasAudioProperties
@@ -141,7 +142,7 @@ class Comparer(DynamicProcessor):
             self._convert_expected_value(self._field_type)
         elif (
                 is_typevar(self._expected_type)
-                and get_origin(self._actual_type) in (Sequence, UniqueSequence)
+                and get_origin(self._actual_type) in {Sequence, UniqueSequence}
                 and is_typevar(next(iter(get_args(self._actual_type))))
                 and (expected_type := next(iter(get_args(self._field_type)), None)) is not None
         ):
@@ -153,7 +154,7 @@ class Comparer(DynamicProcessor):
     def _convert_expected_to_sequence_when_actual_is_generic(self) -> Self:
         if (
                   is_typevar(self._actual_type)
-                  and get_origin(self._expected_type) in (set, Sequence, UniqueSequence)
+                  and get_origin(self._expected_type) in {set, Sequence, UniqueSequence}
                   and is_typevar(next(iter(get_args(self._expected_type)), None))
         ):
             expected_type = set[self._field_type]
@@ -176,7 +177,7 @@ class Comparer(DynamicProcessor):
             return
 
         # prevent strings being split into list of characters
-        if isinstance(self.expected, str) and get_origin(expected_type) in (set, tuple, list, UniqueSequence):
+        if isinstance(self.expected, str) and get_origin(expected_type) in get_args(ItemCollection):
             self.expected = (self.expected,)
 
         value = self.expected

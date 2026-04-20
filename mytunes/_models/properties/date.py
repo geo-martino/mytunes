@@ -5,7 +5,7 @@ from datetime import date, datetime
 from functools import total_ordering
 from typing import Annotated, Any, Self
 
-from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ValidationError
+from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ValidationError, ConfigDict
 
 from mytunes._models.metadata import TagAttribute, Attribute
 from .._base.attribute import AttributeModel
@@ -22,6 +22,8 @@ class SparseDate(AttributeModel):
     This allows for defining a date as just the year, or just the year and month,
     while also allowing for a full date definition of year, month, and day.
     """
+    model_config = ConfigDict(frozen=True)
+
     year: Annotated[PositiveInt, TagAttribute()] = Field(
         description="The year.",
     )

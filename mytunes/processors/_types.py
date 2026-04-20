@@ -9,7 +9,11 @@ from .._models.item.track import Track
 from .._models.properties.audio import HasAudioProperties
 from .._models.properties.date import HasAddedDate, HasPlayedDate
 from .._models.properties.file import IsLocalFile
+from .._models.sequence import UniqueSequence
 from ..exception import MyTunesTypeError
+
+
+ItemCollection = set | tuple | list | UniqueSequence
 
 
 def get_tag_attributes_map[T](expected: type[T] | None = None) -> dict[str, type[T]]:
