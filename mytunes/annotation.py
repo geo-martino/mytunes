@@ -25,20 +25,20 @@ from mytunes._types import TO_SET, TO_TUPLE, TO_LIST, DEFAULT_IF_NONE, HttpURL  
 from ._base import BaseModel
 from ._base.attribute import AttributeModel
 from ._base.resource import ResourceModel
-from .core.collection import RemoteCollection
-from .core.album import AlbumCollection, RemoteAlbumCollection
-from .core.artist import ArtistCollection, RemoteArtistCollection
-from .core.genre import GenreCollection, RemoteGenreCollection
-from .core.library import Library, MutableLibrary
-from .core.library import RemoteLibrary, RemoteMutableLibrary
-from .core.playlist import Playlist, MutablePlaylist
-from .core.playlist import RemotePlaylist, RemoteMutablePlaylist
-from .core.album import Album, RemoteAlbum
-from .core.artist import Artist, RemoteArtist
-from .core.genre import Genre, RemoteGenre
-from .core.track import Track, RemoteTrack
-from .core.user import User, RemoteUser
-from .core.remote import RemoteModel, RemoteResource
+from mytunes.core.collection import RemoteCollection
+from mytunes.core.album import AlbumCollection, RemoteAlbumCollection
+from mytunes.core.artist import ArtistCollection, RemoteArtistCollection
+from mytunes.core.genre import GenreCollection, RemoteGenreCollection
+from mytunes.core.library import Library, MutableLibrary
+from mytunes.core.library import RemoteLibrary, RemoteMutableLibrary
+from mytunes.core.playlist import Playlist, MutablePlaylist
+from mytunes.core.playlist import RemotePlaylist, RemoteMutablePlaylist
+from mytunes.core.album import Album, RemoteAlbum
+from mytunes.core.artist import Artist, RemoteArtist
+from mytunes.core.genre import Genre, RemoteGenre
+from mytunes.core.track import Track, RemoteTrack
+from mytunes.core.user import User, RemoteUser
+from mytunes.core.remote import RemoteModel, RemoteResource
 
 BaseModel = BaseModel.annotation
 AttributeModel = AttributeModel.annotation

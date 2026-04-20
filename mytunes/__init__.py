@@ -21,5 +21,5 @@ __all__ = [
     "PACKAGE_ROOT",
 ]
 
-# we must import all the supported URI formats here so that they are registered in the registry
+# must import all the supported URI formats here so that they are registered in the registry
 from .spotify.uri import SpotifyResourceURI, SpotifyUserURI
