@@ -113,6 +113,11 @@ class Logger(logging.Logger):
         if not self.compact and new_line_end:
             self.print_line(level)
 
+    # need to override each func to ensure args actually get passed to _log as expected
+    def debug(self, *args, **kwargs) -> None:
+        if not self.isEnabledFor(logging.DEBUG):
+            self._log(logging.DEBUG, *args, **kwargs)
+
     def stat(self, *args, **kwargs) -> None:
         """Log 'msg % args' with severity 'STAT'."""
         if self.isEnabledFor(STAT):
@@ -127,6 +132,22 @@ class Logger(logging.Logger):
         """Log 'msg % args' with severity 'EXTRA'."""
         if not self.isEnabledFor(EXTRA):
             self._log(EXTRA, *args, **kwargs)
+
+    def info(self, *args, **kwargs) -> None:
+        if self.isEnabledFor(logging.INFO):
+            self._log(logging.INFO, *args, **kwargs)
+
+    def warning(self, *args, **kwargs) -> None:
+        if self.isEnabledFor(logging.WARNING):
+            self._log(logging.WARNING, *args, **kwargs)
+
+    def error(self, *args, **kwargs) -> None:
+        if self.isEnabledFor(logging.ERROR):
+            self._log(logging.ERROR, *args, **kwargs)
+
+    def critical(self, *args, **kwargs) -> None:
+        if self.isEnabledFor(logging.CRITICAL):
+            self._log(logging.CRITICAL, *args, **kwargs)
 
     def print(self, *values, sep=' ', header: int | None = None, **kwargs) -> None:
         """
