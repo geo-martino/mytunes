@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from pydantic import Field
-
 from mytunes.processors.filters.composite import GroupResult, CompositeResult
 from mytunes.result import LenLogFormatter, CountResult, LogPosition
+from pydantic import Field
+
 from ..._item.track import LocalTrack
 
 

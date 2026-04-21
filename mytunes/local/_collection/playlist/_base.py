@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Any, Annotated
 
 import mutagen
-from pydantic import Field, model_validator, PrivateAttr
-
 from mytunes.core.playlist import MutablePlaylist
+from mytunes.core.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
+from mytunes.core.properties.path import PathMapper
+from mytunes.core.properties.uri import HasMutableURI
 from mytunes.core.sequence import MutableUniqueSequence, UniqueSequence
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.playlist.result import LimitResult, SortResult, LoadPlaylistResult, SavePlaylistResult
@@ -15,12 +16,11 @@ from mytunes.processors.filters.composite import CompositeFilter, CompositeResul
     IncludeExcludeResult
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
-from mytunes.core.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
-from mytunes.core.properties.path import PathMapper
+from pydantic import Field, model_validator, PrivateAttr
+
 from ..._item.track import LocalTrack, HasLocalTracks
 from ...._base import makecls
 from ...._base.resource import UniqueAttribute
-from mytunes.core.properties.uri import HasMutableURI
 
 
 class LocalPlaylistFile[TF: Filter](

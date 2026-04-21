@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Collection
 from typing import Annotated
 
-from pydantic import Discriminator, Field
+from pydantic import Field
 
 from .._base import Processor
 from ..._base.discriminator import DiscriminatorModel, DiscriminatorAttribute

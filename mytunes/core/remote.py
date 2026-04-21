@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 
+from mytunes.core.properties.uri import URI, HasImmutableURI
 from pydantic import Field
 
-from mytunes.core.properties.uri import URI, HasImmutableURI
 from .._base import BaseModel, makecls
 from .._base.resource import UniqueAttribute
 

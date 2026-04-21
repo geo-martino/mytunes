@@ -4,6 +4,7 @@ from mytunes.core.library import RemoteMutableLibrary
 from mytunes.spotify import SpotifyModel
 from mytunes.spotify._collection.playlist import SpotifyPlaylist
 from mytunes.spotify.user import SpotifyUser
+
 from .._api import SpotifyAPI
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist

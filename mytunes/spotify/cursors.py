@@ -1,10 +1,10 @@
 # TODO: move this on aiorequestful v2
 from typing import final, Annotated
 
-from pydantic import Field, AliasPath
-
 from mytunes._types import String
 from mytunes.spotify import SpotifyModel
+from pydantic import Field, AliasPath
+
 from .._base.attribute import Attribute
 from ..core.cursors import PageCursor, KeyCursor, IndexCursor, UrlCursor, InitialCursor
 

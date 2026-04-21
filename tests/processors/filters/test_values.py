@@ -20,7 +20,7 @@ class TestValueFilter(FilterTester):
 
     def test_from_values(self, model: ValueFilter, faker: Faker):
         values = faker.words()
-        assert model.__class__.model_validate(values) == model.__class__(values=set(values))
+        assert model.__class__.model_validate(values) == model.__class__(values=tuple(values))
 
     def test_equality(self, model: ValueFilter, faker: Faker):
         assert model == deepcopy(model)
@@ -35,7 +35,7 @@ class TestValueFilter(FilterTester):
         values = list(model.values)
         assert all(model.check(value) for value in values)
 
-        values_missing = {faker.pystr(30, 50) for _ in range(10)} - model.values
+        values_missing = {faker.pystr(30, 50) for _ in range(10)} - set(model.values)
         assert not any(model.check(value) for value in values_missing)
 
     def test_apply_on_empty_filter(self, model: ValueFilter):

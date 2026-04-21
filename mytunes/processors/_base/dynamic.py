@@ -3,12 +3,12 @@ from functools import partial, update_wrapper, cached_property
 from types import NoneType
 from typing import Optional, Callable, Any, cast, Self
 
-from pydantic import ConfigDict, model_validator
-from pydantic.dataclasses import dataclass
-
 from mytunes._types import get_base_types
 from mytunes.exception import MyTunesValidationError, ModelError
 from mytunes.processors._base import Processor
+from pydantic import ConfigDict, model_validator
+from pydantic.dataclasses import dataclass
+
 from ..._base import ModelMetaclass
 from ..._base.attribute import Attribute
 

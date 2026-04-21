@@ -1,16 +1,12 @@
 import itertools
-from collections.abc import Generator, Iterable, Collection, Sequence, Mapping
+from collections.abc import Generator, Iterable, Collection, Sequence
 from pathlib import Path, PurePath
 from typing import Annotated, ClassVar, final, Any, Self
 
 import tabulate
 from mutagen import MutagenError
-from pydantic import Field, field_validator, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
-    ModelWrapValidatorHandler, ValidationError, validate_call
-from termcolor import colored
-
-from mytunes._types import to_set
 from mytunes.core.library import MutableLibrary
+from mytunes.core.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.album import LocalAlbumCollection
@@ -21,11 +17,12 @@ from mytunes.local._collection.library.result import LibraryURIsResult
 from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
 from mytunes.local._collection.playlist.result import LoadPlaylistResult, SavePlaylistResult
 from mytunes.logger import STAT
-from mytunes.processors.filters import Filter
-from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.sort import ItemSorter
-from mytunes.core.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes.result import Result
+from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
+    ModelWrapValidatorHandler, ValidationError, validate_call
+from termcolor import colored
+
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 
 

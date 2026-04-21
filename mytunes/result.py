@@ -2,14 +2,14 @@ import re
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
+from mytunes._types import StrippedString
+from mytunes._utils import truncate_string
+from mytunes.exception import MyTunesTypeError
 from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
 from tabulate import tabulate
 from termcolor import colored
 
-from mytunes._types import StrippedString
-from mytunes._utils import truncate_string
-from mytunes.exception import MyTunesTypeError
 from ._base import BaseModel
 from ._base.attribute import Attribute
 

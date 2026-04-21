@@ -1,11 +1,11 @@
 from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterator
 from typing import Any, Self, overload, get_args
 
+from mytunes.core.mapping import MutableUniqueMapping
+from mytunes.exception import MyTunesValidationError
 from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
 from pydantic_core import core_schema, CoreSchema
 
-from mytunes.core.mapping import MutableUniqueMapping
-from mytunes.exception import MyTunesValidationError
 from .._base.resource import ResourceModel
 
 

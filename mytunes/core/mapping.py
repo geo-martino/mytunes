@@ -1,10 +1,10 @@
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashable
 from typing import Self, Any, get_args
 
+from mytunes.exception import MyTunesKeyError, MyTunesValidationError
 from pydantic import GetCoreSchemaHandler, validate_call
 from pydantic_core import core_schema, CoreSchema
 
-from mytunes.exception import MyTunesKeyError, MyTunesValidationError
 from .._base.resource import ResourceModel
 
 

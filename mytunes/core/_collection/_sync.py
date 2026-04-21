@@ -1,12 +1,11 @@
 from collections.abc import Collection
 from typing import Literal, Annotated
 
-from pydantic import NonNegativeInt, Field
-from pydantic.json_schema import JsonSchemaValue
-
 from mytunes.exception import RequestError
 from mytunes.logger import Logger
 from mytunes.result import LogFormatter, CountResult, MapLogFormatter
+from pydantic import NonNegativeInt, Field
+from pydantic.json_schema import JsonSchemaValue
 
 
 class SyncRemoteResult(CountResult):

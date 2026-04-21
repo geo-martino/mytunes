@@ -1,13 +1,13 @@
 from collections.abc import Iterable, Sequence
 from typing import Annotated, Any, Self
 
-from pydantic import Field, computed_field
-
 from mytunes._types import TO_TUPLE
 from mytunes.core._collection.album import AlbumCollection, RemoteAlbumCollection
 from mytunes.core._collection.artist import RemoteArtistCollection
 from mytunes.core._collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
 from mytunes.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter
+from pydantic import Field, computed_field
+
 from ...._item.album import RemoteAlbum
 from ...._item.artist import RemoteArtist
 from ...._item.track import RemoteTrack, HasTracks

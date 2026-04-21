@@ -1,14 +1,13 @@
 from typing import Literal, Any, final, Self
 
-from pydantic import Field, model_validator
-
 from mytunes._types import LowerStrippedString, Number
 from mytunes.core.album import HasAlbum
 from mytunes.core.artist import HasArtists
+from mytunes.core.properties.name import HasName
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.clean.string import StringCleaner, NameCleaner, ArtistCleaner, AlbumCleaner
 from mytunes.processors.score._base import Scorer
-from mytunes.core.properties.name import HasName
+from pydantic import Field, model_validator
 
 
 # noinspection PyAbstractClass

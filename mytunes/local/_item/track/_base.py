@@ -13,22 +13,8 @@ import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from mutagen import FileType
-from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
-    field_serializer, BeforeValidator, TypeAdapter, ValidationError
-# noinspection PyProtectedMember
-from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
-from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
-
 from mytunes._types import StrippedString, to_list
 from mytunes.core.library import Library
-from mytunes.core.track import Track, HasMutableTracks
-from mytunes.exception import MyTunesTypeError, MyTunesValueError
-from mytunes.local._base import LocalModel
-from mytunes.local._item.album import LocalAlbum
-from mytunes.local._item.artist import LocalArtist
-from mytunes.local._item.genre import LocalGenre
-from mytunes.local._item.track._types import ItemSequence
-from mytunes.local.exception import FileError
 from mytunes.core.properties.asynch import SemaphoreT
 from mytunes.core.properties.audio import HasAudioProperties
 from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
@@ -38,6 +24,20 @@ from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasMutableURI, URI
+from mytunes.core.track import Track, HasMutableTracks
+from mytunes.exception import MyTunesTypeError, MyTunesValueError
+from mytunes.local._base import LocalModel
+from mytunes.local._item.album import LocalAlbum
+from mytunes.local._item.artist import LocalArtist
+from mytunes.local._item.genre import LocalGenre
+from mytunes.local._item.track._types import ItemSequence
+from mytunes.local.exception import FileError
+from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
+    field_serializer, BeforeValidator, TypeAdapter, ValidationError
+# noinspection PyProtectedMember
+from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
+from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
+
 from ...._base import BaseModel, makecls
 from ...._base.attribute import TagAttribute
 from ...._base.resource import ResourceModel

@@ -3,12 +3,12 @@ from copy import copy
 from pathlib import Path
 from typing import Any, final, Literal
 
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.order import Position
+from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE, ItemCollection
 from pydantic import Field, NonNegativeInt, PositiveInt, validate_call, model_validator
 from typing_inspection.typing_objects import is_typevar
 
-from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE, ItemCollection
-from mytunes.core.properties.file import IsLocalFile
-from mytunes.core.properties.order import Position
 from ._base import HasCondition, Value
 from ...._base import BaseModel
 from ...._base.attribute import AttributeModel

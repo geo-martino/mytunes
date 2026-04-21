@@ -1,11 +1,10 @@
 from typing import Literal, final
 
-from pydantic import Field, PositiveInt, PositiveFloat
-
 from mytunes._types import Number
 from mytunes.processors.clean.numeric import NumericCleaner, LengthCleaner, ReleaseYearCleaner, \
     TotalItemsCleaner
 from mytunes.processors.score._base import Scorer
+from pydantic import Field, PositiveInt, PositiveFloat
 
 
 # noinspection PyAbstractClass

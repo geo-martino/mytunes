@@ -1,10 +1,10 @@
 from pathlib import Path
-from collections.abc import Iterable, Iterator, Mapping, Hashable
+from collections.abc import Iterable, Iterator, Mapping, Hashable, Collection, Sequence
 from typing import Annotated, Any, Self, final, Literal
 
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
 
-from mytunes._types import TO_SET, StrippedString, DEFAULT_IF_NONE
+from mytunes._types import StrippedString, TO_SET, TO_TUPLE, DEFAULT_IF_NONE
 from ..._base import BaseModel
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.path import PathInputType
@@ -15,7 +15,7 @@ from mytunes.processors.filters._base import Filter
 
 class _ValueFilter[FT: str, IT: Hashable](Filter[FT, IT]):
     """Filter based on a defined list of values."""
-    values: Annotated[set[IT], TO_SET] = Field(
+    values: Annotated[Sequence[IT], TO_TUPLE] = Field(
         description="Set of values to filter against",
         default_factory=set,
     )
@@ -34,7 +34,7 @@ class _ValueFilter[FT: str, IT: Hashable](Filter[FT, IT]):
         return {"values": values}
 
     def check(self, item: Any, reference: Any | None = None) -> bool:
-        return isinstance(item, Hashable) and item in self.values
+        return item in self.values
 
     def __iter__(self):
         return iter(self.values)
@@ -81,7 +81,8 @@ class NameFilter(_ValueFilter[Literal["name", "names"], str]):
 
     @validate_call
     def check[T: str | HasName](self, item: T, reference: T | None = None) -> bool:
-        return self._extract_value_from_model(item) in self.values
+        name = self._extract_value_from_model(item)
+        return isinstance(name, Hashable) and super().check(name, reference=reference)
 
 
 @final
@@ -119,14 +120,21 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
         return set(map(Path, paths))
 
     @field_validator("values", mode="before", check_fields=True)
-    @staticmethod
-    def _extract_values_from_models(values: Iterable[Any]) -> Iterator[str]:
-        return (str(value.path) if isinstance(value, IsLocalFile) else value for value in values)
+    @classmethod
+    def _extract_values_from_models(cls, values: Iterable[Any]) -> set[str]:
+        return set(map(cls._extract_value_from_model, values))
 
-    @field_validator("values", mode="before", check_fields=True)
     @staticmethod
-    def _extract_values_from_paths(values: Iterable[Any]) -> Iterator[str]:
-        return (str(value) if isinstance(value, Path) else value for value in values)
+    def _extract_value_from_model(item: Any) -> str:
+        match item:
+            case str():
+                return item
+            case Path():
+                return str(item)
+            case IsLocalFile():
+                return str(item.path)
+            case _:
+                return item
 
     @model_validator(mode="after")
     def _unmap_paths(self) -> Self:
@@ -140,4 +148,6 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
 
     @validate_call
     def check(self, item: PathInputType, reference: PathInputType | None = None) -> bool:
-        return self.path_mapper.unmap(item, check_existence=False) in self.values
+        path = self._extract_value_from_model(item)
+        path = self.path_mapper.unmap(path, check_existence=False)
+        return isinstance(path, Hashable) and super().check(path, reference=reference)

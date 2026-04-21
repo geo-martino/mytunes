@@ -56,7 +56,7 @@ class TestIncludeExcludeFilter(FilterTester):
         assert not model.apply(model.exclude.values)
 
     def test_match(self, model: IncludeExcludeFilter):
-        values = model.include.values | model.exclude.values
+        values = set(model.include.values) | set(model.exclude.values)
 
         result = model.match(values=values)
         assert sorted(result.included) == sorted(model.include.values)

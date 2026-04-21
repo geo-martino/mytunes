@@ -2,10 +2,10 @@ from collections import Counter
 from collections.abc import MutableSequence, Collection, Iterable
 from copy import copy
 
+from mytunes.core.properties.uri import HasURI, HasMutableURI
 from mytunes.core.sequence import UniqueSequence
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check.result import CheckResult
-from mytunes.core.properties.uri import HasURI, HasMutableURI
 
 
 class PlaylistMatch[IT: HasMutableURI](CheckerMatch[IT]):

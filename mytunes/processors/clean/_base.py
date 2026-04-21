@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Any
 
 from mytunes.exception import MyTunesTypeError
+
 from .._base import Processor
 from ..._base.attribute import AttributeModel
 

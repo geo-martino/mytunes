@@ -1,13 +1,9 @@
 from typing import ClassVar, Annotated, Self, Any
 
-from pydantic import Field, field_validator, computed_field, validate_call
-
 from mytunes.core._item.artist import HasArtists, Artist, RemoteArtist
 from mytunes.core._item.genre import HasGenres, Genre, RemoteGenre
 from mytunes.core.api import ItemReadEndpoints
 from mytunes.core.api.items import HasAlbumEndpoints
-from mytunes.core.remote import RemoteResource
-from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes.core.properties.date import HasReleaseDate
 from mytunes.core.properties.image import HasImages
 from mytunes.core.properties.length import HasLength
@@ -15,6 +11,10 @@ from mytunes.core.properties.name import HasName
 from mytunes.core.properties.rating import HasRating
 from mytunes.core.properties.tag import HasSeparableTags
 from mytunes.core.properties.uri import URI
+from mytunes.core.remote import RemoteResource
+from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
+from pydantic import Field, field_validator, computed_field, validate_call
+
 from ..._base import makecls
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 from ..._base.resource import ResourceModel

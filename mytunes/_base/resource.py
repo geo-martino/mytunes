@@ -1,13 +1,12 @@
 from collections.abc import Hashable
 from functools import cached_property
-from typing import Any, cast, ClassVar, Annotated, Self
-
-from pydantic import Field, ConfigDict
-from pydantic.dataclasses import dataclass
+from typing import Any, cast, ClassVar
 
 from mytunes._base._base import ModelMetaclass, BaseModel
 from mytunes._base.attribute import Attribute
 from mytunes.exception import ModelError
+from pydantic import Field, ConfigDict
+from pydantic.dataclasses import dataclass
 
 
 @dataclass(config=ConfigDict(frozen=True))

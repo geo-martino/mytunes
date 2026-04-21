@@ -1,18 +1,18 @@
 import itertools
 from collections.abc import Sequence, AsyncGenerator
 
-from pydantic import Field, PositiveInt
-from termcolor import colored
-
 from mytunes.core.collection import CollectionModel
-from mytunes.processors._flow import QuitImmediately, SkipPage
-from mytunes.processors.check.result import CheckResult
-from mytunes.processors.match import Matcher
-from mytunes.processors.score.string import NameScorer
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.logger import HasProgress
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasURI, URI
+from mytunes.processors._flow import QuitImmediately, SkipPage
+from mytunes.processors.check.result import CheckResult
+from mytunes.processors.match import Matcher
+from mytunes.processors.score.string import NameScorer
+from pydantic import Field, PositiveInt
+from termcolor import colored
+
 from ._match.inputs import InputMatch
 from ._match.playlist import PlaylistMatch
 from ._page import CheckerPage, _ApiT

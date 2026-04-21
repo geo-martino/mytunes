@@ -2,9 +2,6 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, Annotated, Union
 
 from aiorequestful.response.exception import ResponseError
-from pydantic import Field, validate_call, BeforeValidator
-from termcolor import colored
-
 from mytunes.core._collection import SyncRemoteResult
 from mytunes.core._collection._sync import SYNC_TYPE, get_sync_message, get_sync_items
 from mytunes.core._collection.library import MutableLibrary
@@ -14,11 +11,12 @@ from mytunes.core.api import RemoteAPI, HasAPI, HasLibraryEndpoints, BatchReadAl
     BatchReadEndpoints, BatchWriteEndpoints
 from mytunes.core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
-from mytunes.exception import MyTunesTypeError
-from mytunes.logger import STAT
-from mytunes.processors.filters import Filter
-from mytunes.processors.filters.compare import ComparerFilter
 from mytunes.core.properties.uri import HasURI, URI
+from mytunes.exception import MyTunesTypeError
+from mytunes.processors.filters import Filter
+from pydantic import Field, validate_call, BeforeValidator
+from termcolor import colored
+
 from ...._item.album import RemoteAlbum
 from ...._item.artist import RemoteArtist
 from ...._item.genre import RemoteGenre

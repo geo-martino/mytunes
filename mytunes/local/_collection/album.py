@@ -2,6 +2,7 @@ from typing import final
 
 from mytunes.core.album import AlbumCollection
 from mytunes.local._collection._base import LocalCollection
+
 from .._item.album import LocalAlbum
 from .._item.artist import LocalArtist
 from .._item.genre import LocalGenre

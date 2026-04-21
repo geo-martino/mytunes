@@ -1,16 +1,16 @@
 from abc import abstractmethod
-from collections.abc import Mapping, Sequence, Iterable, Collection
+from collections.abc import Mapping, Collection
 from typing import Any, ClassVar, Self, Annotated, Union
-
-from pydantic import Field, Tag, Discriminator, field_validator
 
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
+from mytunes.core.properties.asynch import HasAsyncOperations
+from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.composite import IncludeExcludeFilter
 from mytunes.processors.filters.values import NameFilter
-from mytunes.core.properties.asynch import HasAsyncOperations
-from mytunes.core.properties.logger import HasLogger, HasProgress
+from pydantic import Field, Tag, Discriminator, field_validator
+
 from ..._item.track import Track, HasTracks, HasMutableTracks
 from ...._base.attribute import AttributeMetaclass
 from ...._base.resource import ResourceModel, ResourceMetaclass

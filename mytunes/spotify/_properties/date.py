@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import Self
 
-from pydantic import model_validator
-
 from mytunes.core.collection import RemoteCollection
 from mytunes.core.properties.date import HasAddedDate
+from pydantic import model_validator
 
 
 class HasSpotifyAddedDate(HasAddedDate):

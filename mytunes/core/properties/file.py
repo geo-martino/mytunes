@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any, Annotated, Self, Union, cast
 
 import mutagen
+from mytunes.exception import MyTunesTypeError
 from pydantic import Field, model_validator, Tag, Discriminator
 
-from mytunes.exception import MyTunesTypeError
 from ..._base import BaseModel
 from ..._base.attribute import AttributeMetaclass, Attribute
 

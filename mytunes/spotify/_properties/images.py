@@ -1,8 +1,7 @@
 from typing import Any
 
-from pydantic import field_validator
-
 from mytunes.core.properties.image import HasImages
+from pydantic import field_validator
 
 
 class HasSpotifyImages(HasImages):

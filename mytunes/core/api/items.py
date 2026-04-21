@@ -1,6 +1,5 @@
-from pydantic import Field
-
 from mytunes.core.api import BatchReadAllEndpoints, BatchWriteEndpoints, HasEndpoints, Endpoints
+from pydantic import Field
 
 
 class HasLibraryEndpoints[ET: BatchReadAllEndpoints | BatchWriteEndpoints](HasEndpoints):

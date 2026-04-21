@@ -1,10 +1,10 @@
 from typing import final, Annotated
 
-from pydantic import Field
-
 from mytunes._types import StrippedString
 from mytunes.core.user import RemoteUser
 from mytunes.spotify._base import SpotifyResource
+from pydantic import Field
+
 from .._properties.images import HasSpotifyImages
 from .._properties.stats import HasFollowers
 from .._properties.uri import SpotifyUserURI

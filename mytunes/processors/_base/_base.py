@@ -6,6 +6,7 @@ from typing import Any
 
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI
+
 from ..._base import BaseModel
 
 

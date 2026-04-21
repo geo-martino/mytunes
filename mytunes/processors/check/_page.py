@@ -5,21 +5,21 @@ from copy import deepcopy
 from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
-from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
-from termcolor import colored
-
 from mytunes.core.api import RemoteAPI, HasAPI, HasLibraryEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
     HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
 from mytunes.core.collection import CollectionModel
 from mytunes.core.cursors import InitialCursor
 from mytunes.core.playlist import RemoteMutablePlaylist, RemotePlaylist
-from mytunes.core.remote import RemoteResource
-from mytunes.core.user import RemoteUser
-from mytunes.exception import MyTunesError, MyTunesValidationError
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI, URI
+from mytunes.core.remote import RemoteResource
+from mytunes.core.user import RemoteUser
+from mytunes.exception import MyTunesError, MyTunesValidationError
+from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
+from termcolor import colored
+
 from .._base.inputs import PageProcessor
 from ..formatter import CollectionFormatter
 

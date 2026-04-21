@@ -3,17 +3,17 @@ from collections.abc import Iterable
 from contextlib import suppress
 from copy import deepcopy
 
-from pydantic import Field, ValidationError
-from termcolor import colored
-
 from mytunes import PROGRAM_NAME
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.uri import URI, HasMutableURI
 from mytunes.processors._flow import SkipPage
 from mytunes.processors.check._match._base import CheckerMatch
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.formatter import ModelFormatter
-from mytunes.core.properties.name import HasName
-from mytunes.core.properties.uri import URI, HasMutableURI
 from mytunes.result import LogFormatter
+from pydantic import Field, ValidationError
+from termcolor import colored
+
 from ..._base.inputs import OptionsProcessor
 
 

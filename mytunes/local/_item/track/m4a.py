@@ -4,21 +4,21 @@ from typing import Any, ClassVar, final, Annotated
 import mutagen.id3
 import mutagen.mp4
 from PIL import ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, \
-    computed_field
-from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
-
 from mytunes._types import StrippedString, Number, DEFAULT_IF_NONE
+from mytunes.core.properties.date import SparseDate
+from mytunes.core.properties.image import ImageURL, ImageFile
+from mytunes.core.properties.music import KeySignature
+from mytunes.core.properties.order import Position
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
-from mytunes.core.properties.date import SparseDate
-from mytunes.core.properties.image import ImageURL, ImageFile
-from mytunes.core.properties.music import KeySignature
-from mytunes.core.properties.order import Position
+from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, \
+    computed_field
+from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
+
 from ...._base.attribute import TagAttribute
 
 

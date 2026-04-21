@@ -2,13 +2,13 @@ from abc import abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from typing import Any, ClassVar
 
-from pydantic import Field, InstanceOf, OnErrorOmit
-
+from mytunes.core.properties.logger import HasLogger
+from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from mytunes.processors.check._page import CheckerPage, _ApiT
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
-from mytunes.core.properties.logger import HasLogger
-from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
+from pydantic import Field, InstanceOf, OnErrorOmit
+
 from ..._base import Processor
 
 

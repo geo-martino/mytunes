@@ -2,16 +2,15 @@ import textwrap
 from abc import abstractmethod
 from typing import ClassVar
 
+from mytunes.core.properties.logger import HasLogger, HasProgress
+from mytunes.core.properties.order import Position
+from mytunes.processors._base import Processor
+from mytunes.processors._flow import SkipPage, QuitImmediately
+from mytunes.result import LogFormatter
 from pydantic import Field
 from rich.progress import TaskID
 from tabulate import tabulate
 from termcolor import colored
-
-from mytunes.processors._base import Processor
-from mytunes.processors._flow import SkipPage, QuitImmediately
-from mytunes.core.properties.logger import HasLogger, HasProgress
-from mytunes.core.properties.order import Position
-from mytunes.result import LogFormatter
 
 
 class InputProcessor(Processor, HasLogger):

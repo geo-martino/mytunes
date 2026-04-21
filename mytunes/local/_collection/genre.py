@@ -2,6 +2,7 @@ from typing import final
 
 from mytunes.core.genre import GenreCollection
 from mytunes.local._collection._base import LocalCollection
+
 from .._item.genre import LocalGenre
 from .._item.track import LocalTrack, HasLocalTracks
 

@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Annotated
 
 from aiorequestful.types import Number
+from mytunes.core.properties import NumberModel
 from pydantic import NonNegativeFloat, Field
 
 from ..._base.attribute import AttributeModel, Attribute
-from mytunes.core.properties import NumberModel
 
 
 class Rating[T: Number](NumberModel[T]):

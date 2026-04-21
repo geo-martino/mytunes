@@ -1,14 +1,14 @@
 from collections.abc import Collection
 from typing import Any
 
-from pydantic import Field, NonNegativeInt, validate_call
-
 from mytunes._types import Number
 from mytunes.core.album import HasAlbum
 from mytunes.core.collection import CollectionModel
-from mytunes.processors.clean._base import TagCleaner
 from mytunes.core.properties.date import HasReleaseDate, SparseDate
 from mytunes.core.properties.length import HasLength, Length
+from mytunes.processors.clean._base import TagCleaner
+from pydantic import Field, NonNegativeInt, validate_call
+
 from ..._base.attribute import AttributeModel
 
 

@@ -4,10 +4,10 @@ from functools import total_ordering
 from typing import Any, Self, ClassVar, Annotated
 
 from aiorequestful.types import Number
-from pydantic import PositiveInt, Field, model_validator, NonNegativeInt, ConfigDict
+from mytunes.exception import MyTunesValidationError
+from pydantic import PositiveInt, Field, model_validator, NonNegativeInt
 
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
-from mytunes.exception import MyTunesValidationError
 
 
 @total_ordering

@@ -4,10 +4,6 @@ from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload, Any
 
-from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import ValidationInfo
-
 from mytunes._types import StrippedString
 from mytunes.core._collection import SyncRemoteResult
 from mytunes.core._collection._base import CollectionModel, RemoteCollection
@@ -15,13 +11,16 @@ from mytunes.core._collection._sync import SYNC_TYPE, get_sync_items
 from mytunes.core._context import RemoteModelContext
 from mytunes.core.api import HasLibraryEndpoints
 from mytunes.core.cursors import PageCursor
-from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
-from mytunes.exception import MyTunesValidationError
-from mytunes.processors.filters.compare import ComparerFilter
 from mytunes.core.properties.image import HasImages
 from mytunes.core.properties.length import HasLength
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import URI
+from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
+from mytunes.exception import MyTunesValidationError
+from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import ValidationInfo
+
 from .._item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from .._item.user import RemoteUser
 from ..._base import makecls

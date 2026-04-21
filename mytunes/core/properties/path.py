@@ -6,12 +6,12 @@ from os import sep
 from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import final, Any, Annotated
 
+from mytunes._types import TO_SET
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.exception import MyTunesValidationError, MyTunesError
 from pydantic import Field, field_validator, ValidationError
 
 from ..._base import BaseModel
-from mytunes.core.properties.file import IsLocalFile
-from mytunes._types import TO_SET
-from mytunes.exception import MyTunesValidationError, MyTunesError
 
 type PathInputType = str | Path | IsLocalFile | None
 
