@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, final
 
 from pydantic import Field, model_validator
 
@@ -32,13 +32,19 @@ class CollectionValue[IT: AttributeModel, VT: Any](Value[Iterable[IT], VT]):
         return list(filter(None, values))
 
 
+@final
 class MinValue[IT: AttributeModel, VT: Any](CollectionValue[IT, VT]):
+    __final__ = True
+
     def get(self, items: Iterable[IT]) -> VT | None:
         values = self._get_values(items)
         return min(values) if values else None
 
 
+@final
 class MaxValue[IT: AttributeModel, VT: Any](CollectionValue[IT, VT]):
+    __final__ = True
+
     def get(self, items: Iterable[IT]) -> VT | None:
         values = self._get_values(items)
         return max(values) if values else None

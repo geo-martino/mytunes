@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Sequence, Collection, Iterable
-from typing import Any, Union
+from typing import Any, Union, final
 
 from pydantic import Field, PositiveInt
 from typing_inspection.typing_objects import is_typevar
@@ -50,7 +50,10 @@ class Setter[IT: AttributeModel, VT: Any](BaseModel, metaclass=SetterMetaclass):
         raise NotImplementedError
 
 
+@final
 class ValueSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
+    __final__ = True
+
     def set(self, item: IT, other: Collection[IT] = ()) -> bool:
         value = self.value.get(item)
         if value is None:
@@ -62,7 +65,10 @@ class ValueSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
         return True
 
 
+@final
 class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
+    __final__ = True
+
     value: CollectionValue.annotation = Field(
         description="The value getter for the tag value to set.",
     )
@@ -99,7 +105,10 @@ class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
         return filter(_is_in_group, other)
 
 
+@final
 class SortedSetter[IT: AttributeModel, VT: Any](GroupedSetter[IT, VT]):
+    __final__ = True
+
     sort_by: ItemSorter = Field(
         description="The fields to sort by.",
         default_factory=tuple,
@@ -121,7 +130,10 @@ class SortedSetter[IT: AttributeModel, VT: Any](GroupedSetter[IT, VT]):
         return True
 
 
+@final
 class IncrementalSetter[IT: AttributeModel](SortedSetter[IT, int], HasCondition[int]):
+    __final__ = True
+
     # make optional
     value: Union[CollectionValue.annotation, None] = Field(
         description="The value getter for the tag value to set.",
