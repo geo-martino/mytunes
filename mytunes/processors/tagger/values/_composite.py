@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Sequence
 from string import Formatter
-from typing import final, Self, Literal, Annotated
+from typing import final, Self, Literal, Annotated, Any
 
 from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValueError, MyTunesValidationError
@@ -15,10 +15,23 @@ from ...._base.attribute import AttributeModel
 
 # noinspection PyAbstractClass
 class CompositeValue[OT: str, IT: AttributeModel](Value[OT, IT, str]):
+    fail_on_missing: bool = Field(
+        description="Whether or not to fail on missing tag values or replace missing values with an empty string.",
+        default=False,
+    )
+
     @abstractmethod
     def get(self, item: IT) -> str:
         """Get the combined value from the given item's tags."""
         raise NotImplementedError
+
+    def _handler_invalid_fields(self, field_values: dict[str, Any]) -> None:
+        if not self.fail_on_missing:
+            field_values |= {k: v if v is not None else "" for k, v in field_values.items()}
+            return
+
+        if invalid_fields := [name for name, value in field_values.items() if value is None]:
+            raise MyTunesValueError(f"Some tag values could not be extracted: {", ".join(invalid_fields)}")
 
 
 @final
@@ -38,8 +51,7 @@ class JoinValue[IT: AttributeModel](CompositeValue[Literal["join"], IT]):
     @validate_call
     def get(self, item: IT) -> str:
         field_values = {field.field: field.get(item) for field in self.fields}
-        if invalid_fields := [name for name, value in field_values.items() if value is None]:
-            raise MyTunesValueError(f"Some tag values could not be extracted: {", ".join(invalid_fields)}")
+        self._handler_invalid_fields(field_values)
 
         return self.separator.join(field_values.values())
 
@@ -89,8 +101,7 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
     @validate_call
     def get(self, item: IT) -> str:
         """Format the template from the fields of the given item."""
-        field_values = {field.field: field.get(item) for field in self.fields}
-        if invalid_fields := [name for name, value in field_values.items() if value is None]:
-            raise MyTunesValueError(f"Some tag values could not be extracted: {", ".join(invalid_fields)}")
+        field_values: dict[str, Any] = {field.field: field.get(item) for field in self.fields}
+        self._handler_invalid_fields(field_values)
 
         return self.template.format_map(field_values)
