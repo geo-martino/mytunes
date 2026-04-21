@@ -52,7 +52,7 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
     template: StrippedString = Field(
         description="The template of the tag value.",
     )
-    fields: Sequence[Value.annotation] = Field(
+    fields: Annotated[Sequence[FixedValue | FieldValueT], BeforeValidator(from_field_names)] = Field(
         description="The fields to use to format the template.",
         default_factory=tuple,
     )
