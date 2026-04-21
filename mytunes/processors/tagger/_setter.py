@@ -61,7 +61,8 @@ class ValueSetter[IT: AttributeModel, VT: Any](Setter[Literal["value"], IT, VT])
     __final__ = True
 
     def set(self, item: IT, other: Collection[IT] = ()) -> bool:
-        value = self.value.get(item)
+        value = self.value.get(other) if isinstance(self.value, CollectionValue) else self.value.get(item)
+
         if value is None:
             return False
         if getattr(item, self.field) == value:
