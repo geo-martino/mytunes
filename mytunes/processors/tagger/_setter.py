@@ -77,7 +77,7 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
     value: CollectionValue.annotation = Field(
         description="The value getter for the tag value to set.",
     )
-    group_by: Sequence[_ATTRIBUTE_FIELD_TYPE, TO_TUPLE] = Field(
+    group_by: Annotated[Sequence[_ATTRIBUTE_FIELD_TYPE], TO_TUPLE] = Field(
         description="The fields to group by.",
         default_factory=tuple,
     )
