@@ -249,9 +249,9 @@ class LocalLibrary(
             self._logger.debug(f"Load error for playlist: {path} - {ex}")
             self.errors.append(path)
 
-    async def load_playlists(self) -> dict[str, LoadPlaylistResult]:
+    async def load_playlists(self) -> tuple[tuple[str, LoadPlaylistResult], ...]:
         if not (paths := set(self._playlist_paths)):
-            return {}
+            return tuple()
 
         self._logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
 
@@ -261,17 +261,17 @@ class LocalLibrary(
         task = self._run_tasks_async(map(self.load_playlist, paths), task_id=task_id)
 
         playlists: list[LocalPlaylist] = []
-        results: dict[str, LoadPlaylistResult] = {}
+        results: list[tuple[str, LoadPlaylistResult]] = []
         for playlist, result in await task:
             playlists.append(playlist)
-            results[playlist.name] = result
+            results.append((playlist.name, result))
 
         playlists = sorted(playlists, key=lambda x: x.name.casefold())
-        results = dict(sorted(results.items(), key=lambda x: x[0].casefold()))
+        results = sorted(results, key=lambda x: x[0].casefold())
         self.playlists.replace(playlists)
 
         self._log_errors("Could not load the following playlists")
-        return results
+        return tuple(results)
 
     @property
     def _playlist_paths(self) -> Generator[Path]:
@@ -310,7 +310,7 @@ class LocalLibrary(
 
         self._logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
-    def log_playlists(self, results: dict[str, LoadPlaylistResult] = None) -> None:
+    def log_playlists(self, results: Sequence[tuple[str, LoadPlaylistResult]] = None) -> None:
         self._logger.print_line(STAT)
         if results:
             self._log_playlist_load(results)
@@ -319,7 +319,7 @@ class LocalLibrary(
         self._log_playlist_uris()
         self._logger.print_line(STAT)
 
-    def _log_playlist_load(self, results: dict[str, LoadPlaylistResult]) -> None:
+    def _log_playlist_load(self, results: Sequence[tuple[str, LoadPlaylistResult]]) -> None:
         header = f"{self.source.upper()} PLAYLISTS LOADED"
         table = LoadPlaylistResult.generate_table(results=results, header=header)
 
@@ -357,7 +357,7 @@ class LocalLibrary(
         results = await self._run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
         return dict(results)
 
-    def log_save_playlists_results(self, results: Mapping[str, SavePlaylistResult]) -> None:
+    def log_save_playlists_results(self, results: Sequence[tuple[str, SavePlaylistResult]]) -> None:
         """Log the given results of saving playlists."""
         header = f"{self.source.upper()} PLAYLISTS SAVED"
         table = SavePlaylistResult.generate_table(results=results, header=header)

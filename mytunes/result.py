@@ -146,10 +146,17 @@ class Result(BaseModel):
     )
 
     @classmethod
-    def generate_table(cls, results: Mapping[str | None, Self | None], header: str = None) -> str:
+    def generate_table(
+            cls,
+            results: Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
+            header: str = None
+    ) -> str:
         """Generate a formatted table of stats for multiple results"""
+        if isinstance(results, Mapping):
+            results = results.items()
+
         # take key when not a Result to allow for separating lines
-        rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results.items()]
+        rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results]
         col_count = max(map(len, rows)) if rows else 0
         table = tabulate(
             rows,

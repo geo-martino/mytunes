@@ -503,9 +503,11 @@ class TestCollectionSearcher(SearcherTester):
         mock_collection_reload.assert_not_called()
         mock_collection_extend.assert_called_once_with(model.api)
 
-    async def test_search_collections(self, model: Searcher, collections: list[CollectionModel], faker: Faker):
+    async def test_search_collections(self, model: Searcher, collections: list[MockCollection], faker: Faker):
+        names = (collection.name for collection in collections)
+
         def _random_result(*_, **__) -> tuple[str, SearchResult]:
-            return faker.sentence().rstrip("."), SearchResult()
+            return next(names), SearchResult()
 
         with patch.object(
                 model, "_search_collection", side_effect=_random_result
@@ -513,6 +515,8 @@ class TestCollectionSearcher(SearcherTester):
             results = await model.search_collections(collections)
 
             assert len(results) == len(collections)
+            assert {result[0] for result in results} == {collection.name for collection in collections}
+
             assert mock_search_collection.call_count == len(collections)
 
     @pytest.fixture

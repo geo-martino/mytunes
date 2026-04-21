@@ -27,12 +27,12 @@ class TestValueSetter(BaseModelTester):
         assert track.artist == value
 
     def test_set_value_for_collection_value(self, model: ValueSetter, tracks: list[Track], faker: Faker):
+        expected = max(track.track.number for track in tracks)
+        track = faker.random_element(tracks)
+        track.track.total = None
+
         value = MaxValue(field="track.number")
         model = ValueSetter(field="track.total", value=value)
-        expected = max(track.track.number for track in tracks)
-
-        track = faker.random_element(tracks)
-        assert track.track.total != expected
 
         model.set(track, tracks)
         assert track.track.total == expected

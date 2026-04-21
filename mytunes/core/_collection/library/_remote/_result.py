@@ -62,9 +62,9 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
         )
 
     @classmethod
-    def from_playlists(cls, playlists: Iterable[RemotePlaylist[Any, T, Any, Any]]) -> dict[str, Self]:
+    def from_playlists(cls, playlists: Iterable[RemotePlaylist[Any, T, Any, Any]]) -> tuple[tuple[str, Self], ...]:
         """Create a result from the given playlists."""
-        return {pl.name: cls.from_playlist(pl) for pl in playlists}
+        return tuple((pl.name, cls.from_playlist(pl)) for pl in playlists)
 
 
 class RemoteTracksResult[T: RemoteTrack](TotalCountResult):

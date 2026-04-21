@@ -1,5 +1,5 @@
 import textwrap
-from collections.abc import Sequence, MutableSequence, Collection, Mapping, Iterable
+from collections.abc import Sequence, MutableSequence, Collection, Iterable
 from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator
@@ -234,16 +234,16 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     @validate_call
     async def search_collections[T: ResourceModel](
             self, collections: Sequence[CollectionModel]
-    ) -> dict[str, SearchResult[T]]:
+    ) -> tuple[tuple[str, SearchResult[T]], ...]:
         """Search for matches for the given collection and return the results per collection."""
         if len(collections) == 0 or sum(collection.count for collection in collections) == 0:
             self._log_skip("No collections or items to search.")
-            return {}
+            return tuple()
 
         collections, _ = self._split_items(collections)
         if not collections:
             self._log_skip(f"Cannot process of the given collections")
-            return {}
+            return tuple()
 
         self._log_start(collections, default_type="collections")
 
@@ -252,12 +252,13 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         task_id = self._progress.add_task(description=f"Searching", total=len(collections))
         results = await self._run_tasks_async(map(_search_collection, collections), task_id=task_id)
-        return dict(results)
+        return tuple(results)
 
     async def _search_collection[T: ResourceModel](
             self, collection: CollectionModel[T]
     ) -> tuple[str, SearchResult[T]]:
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
+        print(name)
 
         if self._should_search_on_items_only(collection):
             return name, await self._search_items(collection.items)
@@ -417,7 +418,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     ###########################################################################
     ## Logging
     ###########################################################################
-    def log_results(self, results: Mapping[str, SearchResult]) -> None:
+    def log_results(self, results: Sequence[tuple[str, SearchResult]]) -> None:
         """Log the given search results"""
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)

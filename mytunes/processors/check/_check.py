@@ -1,5 +1,5 @@
 import itertools
-from collections.abc import Mapping, Sequence, AsyncGenerator
+from collections.abc import Sequence, AsyncGenerator
 
 from pydantic import Field, PositiveInt
 from termcolor import colored
@@ -47,10 +47,12 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
         """The user to create playlists for."""
         return self.api.user.name if self.api.user is not None else "the current user"
 
-    async def check[T: ResourceModel](self, collections: Sequence[CollectionModel[T]]) -> dict[str, CheckResult[T]]:
+    async def check[T: ResourceModel](
+            self, collections: Sequence[CollectionModel[T]]
+    ) -> tuple[tuple[str, CheckResult[T]], ...]:
         """Check the matches for the given collection and return the results."""
         if not (collections := self._validate_collections(collections)):
-            return {}
+            return tuple()
 
         self._log_start(collections)
 
@@ -58,7 +60,7 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
         batches = list(itertools.batched(collections, self.interval))
         batch_total = len(batches)
 
-        results: dict[str, CheckResult[T]] = {}
+        results: list[tuple[str, CheckResult[T]]] = []
         for batch_number, batch in enumerate(batches, 1):
 
             page = CheckerPage(
@@ -71,8 +73,8 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
 
             try:
                 self._log_page(page)
-                async for name, result in self._check_page(page):
-                    results[name] = result
+                page_results = [(name, result) async for name, result in self._check_page(page)]
+                results.extend(page_results)
             except SkipPage:
                 self._logger.error("User triggered skip page with skip command")
                 continue
@@ -83,7 +85,7 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
                 self._logger.error("User triggered exit with KeyboardInterrupt")
                 break
 
-        return results
+        return tuple(results)
 
     async def _check_page[T: ResourceModel](
         self, page: CheckerPage[API, T]
@@ -117,7 +119,7 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
     ###########################################################################
     ## Logging + validation
     ###########################################################################
-    def log_results(self, results: Mapping[str, CheckResult]) -> None:
+    def log_results(self, results: Sequence[tuple[str, CheckResult]]) -> None:
         """Log the given check results"""
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)

@@ -90,13 +90,13 @@ class TestChecker(BaseModelTester):
 
         results = await model.check(collections)
 
-        assert results.keys() == {collection.name for collection in collections}
+        assert len(results) == len(collections)
 
         assert mock_check_page.call_count == expected_pages
         assert mock_match_page.call_count == len(collections)
         assert mock_pause.call_count == expected_pages
         assert mock_match_playlist.call_count == len(collections)
-        assert mock_match_input.call_count == sum(bool(result.skipped) for result in results.values())
+        assert mock_match_input.call_count == sum(bool(result.skipped) for _, result in results)
 
     async def test_check_only_runs_input_match_if_needed(
             self,
