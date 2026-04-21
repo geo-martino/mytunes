@@ -9,7 +9,7 @@ from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.processors._types import _ATTRIBUTE_FIELD_MAP
 from mytunes.processors.tagger.values._fields import FieldValue, from_field_names, FieldValueT
-from ._base import Value
+from ._base import Value, FixedValue
 from ...._base.attribute import AttributeModel
 
 
@@ -26,7 +26,7 @@ class JoinValue[IT: AttributeModel](CompositeValue[Literal["join"], IT]):
     """Formats a tag value according to a set of tag values to get and join with some separator."""
     __final__ = True
 
-    fields: Annotated[Sequence[FieldValueT], BeforeValidator(from_field_names)] = Field(
+    fields: Annotated[Sequence[FixedValue | FieldValueT], BeforeValidator(from_field_names)] = Field(
         description="The fields to use to get the final value.",
         default_factory=tuple,
     )
