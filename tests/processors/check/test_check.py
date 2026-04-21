@@ -4,17 +4,16 @@ from unittest.mock import Mock, patch
 
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes.core._item.track import RemoteTrack
 from mytunes.core.api import RemoteAPI
+from mytunes.core.properties.name import HasName
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check import Checker
 from mytunes.processors.check._match.inputs import InputMatch
 from mytunes.processors.check._match.playlist import PlaylistMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.check.result import CheckResult
-from mytunes.core.properties.name import HasName
+from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

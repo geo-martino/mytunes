@@ -3,9 +3,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
-
-from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.core.properties.path import PathStemMapper
+from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.result import Result
 from tests.testers import UniqueKeyTester
 

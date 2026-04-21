@@ -7,9 +7,6 @@ from unittest.mock import patch, AsyncMock, Mock
 import pytest
 from aiorequestful.response.exception import ResponseError
 from faker import Faker
-from pytest_mock import MockerFixture
-from yarl import URL
-
 from mytunes import MODULE_ROOT
 from mytunes.core._collection._sync import SYNC_TYPE
 from mytunes.core._collection.library import RemoteMutableLibrary
@@ -21,10 +18,12 @@ from mytunes.core._item.track import RemoteTrack, Track
 from mytunes.core.api import RemoteAPI, BatchWriteEndpoints, ItemReadEndpoints, BatchReadEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints
 from mytunes.core.properties.uri import URI
+from pytest_mock import MockerFixture
 from tests.core._collection.library.remote.utils import MockRemoteLibrary
 from tests.core._collection.utils import assert_sync_items_result
-from tests.remote import SimpleURI, MockRemoteAPI
+from tests.remote import SimpleURI
 from tests.testers import BaseModelTester
+from yarl import URL
 
 
 class TestRemoteMutableLibrary(BaseModelTester):

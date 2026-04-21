@@ -3,11 +3,10 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from pydantic import ValidationError
-
 from mytunes.core._collection.genre import GenreCollection, RemoteGenreCollection
 from mytunes.core._item.track import Track
 from mytunes.core.cursors import PageCursor
+from pydantic import ValidationError
 from tests.core._collection.testers import RemoteCollectionTester
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester

@@ -2,7 +2,6 @@ from random import choice
 from typing import final, Annotated
 
 import pytest
-
 from mytunes.processors._base.dynamic import DynamicProcessor, processormethod, ProcessorAttribute
 from tests.testers import BaseModelTester
 

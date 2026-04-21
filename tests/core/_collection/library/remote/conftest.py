@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from aiorequestful.auth import Authoriser
-
 from mytunes.core.api import BatchReadAllEndpoints, RemoteAPI
 from mytunes.core.api.user import UserEndpoints
 from remote import MockRemoteAPI

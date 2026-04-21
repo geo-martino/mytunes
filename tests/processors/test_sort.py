@@ -5,11 +5,10 @@ from random import choice, shuffle, sample
 
 import pytest
 from faker import Faker
-
+from mytunes.core.properties.order import Position
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.track import LocalTrack
 from mytunes.processors.sort import ItemSorter, ShuffleMode
-from mytunes.core.properties.order import Position
 from tests.testers import BaseModelTester
 
 

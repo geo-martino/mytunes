@@ -8,9 +8,8 @@ import pytest
 from PIL.ImageFile import ImageFile as PILImageFile
 from aiohttp import ClientSession
 from faker import Faker
-
-from mytunes.exception import MyTunesValueError
 from mytunes.core.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
+from mytunes.exception import MyTunesValueError
 from tests.remote import CallbackResult
 from tests.testers import BaseModelTester
 

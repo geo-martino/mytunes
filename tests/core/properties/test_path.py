@@ -5,7 +5,6 @@ from typing import Literal
 
 import pytest
 from faker import Faker
-
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.path import PathMapper, PathStemMapper
 from tests.testers import BaseModelTester

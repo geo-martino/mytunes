@@ -10,15 +10,14 @@ import pytest
 from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
-from yarl import URL
-
 from mytunes._base import BaseModel
 from mytunes._base.resource import ResourceModel
 from mytunes.core.api import Endpoints
 from mytunes.core.properties.uri import URI
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from tests.remote import SimpleURI, MockRemoteResource, MockIndexCursor
+from yarl import URL
 
 
 def assert_validator_skips[T](func: Callable[[T], T], value: T):

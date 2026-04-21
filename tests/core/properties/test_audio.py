@@ -5,7 +5,6 @@ import mutagen
 import mutagen.wave
 import pytest
 from faker import Faker
-
 from mytunes.core.properties.audio import Decibels, HasAudioProperties, AudioProperties
 from tests.testers import BaseModelTester
 

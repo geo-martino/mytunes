@@ -5,12 +5,11 @@ from typing import Any
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter, ValidationError
-
 from mytunes._base.resource import ResourceModel
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
+from pydantic import TypeAdapter, ValidationError
 from tests.utils import split_list
 
 

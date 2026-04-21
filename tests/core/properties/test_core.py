@@ -2,7 +2,6 @@ from random import choice
 
 import pytest
 from faker import Faker
-
 from mytunes.core.properties import NumberModel
 from mytunes.core.properties.tag import HasSeparableTags
 from tests.testers import BaseModelTester

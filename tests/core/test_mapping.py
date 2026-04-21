@@ -5,15 +5,14 @@ from typing import Any
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter, ValidationError
-from pytest_mock import MockerFixture
-
 from mytunes._base.resource import ResourceModel
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.mapping import UniqueMapping, MutableUniqueMapping
 from mytunes.exception import MyTunesKeyError
 from mytunes.local._collection.playlist import LocalPlaylistFile
+from pydantic import TypeAdapter, ValidationError
+from pytest_mock import MockerFixture
 
 
 class TestUniqueMapping:

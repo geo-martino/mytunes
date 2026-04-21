@@ -2,12 +2,11 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-
 from mytunes.core._item.track import Track
-from mytunes.processors.filters.values import ValueFilter
-from mytunes.processors.tagger.values._fields import FieldValue, PositionValue, PathValue
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.order import Position
+from mytunes.processors.filters.values import ValueFilter
+from mytunes.processors.tagger.values._fields import FieldValue, PositionValue, PathValue
 from tests.testers import BaseModelTester
 
 

@@ -4,8 +4,6 @@ from unittest.mock import Mock, patch, AsyncMock, MagicMock
 
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes._base import makecls
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection import CollectionModel, RemoteCollection
@@ -14,11 +12,12 @@ from mytunes.core._item.album import Album
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.core.api import RemoteAPI
 from mytunes.core.api.search import SearchEndpoints
+from mytunes.core.properties.uri import HasMutableURI
 from mytunes.core.remote import RemoteResource
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
 from mytunes.processors.search import Searcher, SearchResult
-from mytunes.core.properties.uri import HasMutableURI
+from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor
 from tests.testers import BaseModelTester

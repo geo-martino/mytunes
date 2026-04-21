@@ -6,14 +6,13 @@ import pytest
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import ValidationError
-
 from mytunes.core._item.user import RemoteUser
 from mytunes.core.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, Endpoints, HasAPI
 from mytunes.core.api.items import HasTrackEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
 from mytunes.core.api.user import UserEndpoints
+from pydantic import ValidationError
 from tests.remote import SimpleURI, MockRemoteAuthoriser, MockItemEndpoints, MockRemoteAPI
 from tests.testers import BaseModelTester
 

@@ -1,14 +1,13 @@
 import pytest
 from faker import Faker
-from pydantic import ValidationError
-from yarl import URL
-
 from mytunes.core._context import RemoteModelContext
 from mytunes.spotify._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from mytunes.spotify.user import SpotifyUser
+from pydantic import ValidationError
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
+from yarl import URL
 
 
 class TestSpotifyPlaylist(SpotifyResourceTester):

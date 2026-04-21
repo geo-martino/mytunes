@@ -3,13 +3,12 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-
+from mytunes.core.properties.date import SparseDate
 from mytunes.local._item.track import LocalTrack
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
 from mytunes.processors.filters.composite import IncludeExcludeFilter, GroupFilter
 from mytunes.processors.filters.values import ValueFilter, PathFilter
-from mytunes.core.properties.date import SparseDate
 from tests.processors.filters.testers import FilterTester
 
 

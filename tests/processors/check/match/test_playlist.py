@@ -3,13 +3,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
+from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from mytunes.processors.check._match.playlist import PlaylistMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.match import Matcher
-from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
+from pytest_mock import MockerFixture
 from tests.processors.check.match.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list

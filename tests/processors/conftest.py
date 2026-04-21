@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from aiorequestful.auth import Authoriser
 from faker import Faker
-
 from mytunes.core.api import RemoteAPI
 from mytunes.core.api.user import UserEndpoints
 from mytunes.local._item.track import LocalTrack

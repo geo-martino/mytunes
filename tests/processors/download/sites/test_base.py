@@ -3,17 +3,16 @@ from unittest.mock import patch, PropertyMock, MagicMock
 
 import pytest
 from faker import Faker
-from pydantic import ValidationError
-from yarl import URL
-
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.processors.clean.string import NameCleaner
 from mytunes.processors.download.stores import AudioStore
 from mytunes.processors.download.stores._base import HasLocale, GeneralAudioStore
 from mytunes.processors.download.stores.exception import StoreError
+from pydantic import ValidationError
 from tests.processors.download.utils import assert_value_in_url, assert_value_not_in_url
 from tests.testers import BaseModelTester
+from yarl import URL
 
 
 class TestAudioStore(BaseModelTester):

@@ -9,10 +9,6 @@ from PIL import Image, ImageFile as PILImageFile
 from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import AliasPath, TypeAdapter, AliasChoices
-from pytest_mock import MockerFixture
-from yarl import URL
-
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import RemotePlaylist
 from mytunes.core._context import RemoteModelContext
@@ -22,13 +18,16 @@ from mytunes.core._item.track import RemoteTrack
 from mytunes.core.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
 from mytunes.core.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
-from mytunes.core.remote import RemoteModel, RemoteResource
-from mytunes.exception import APIModelError
 from mytunes.core.properties.image import ImageURL, ImageFile
 from mytunes.core.properties.uri import URI
+from mytunes.core.remote import RemoteModel, RemoteResource
+from mytunes.exception import APIModelError
+from pydantic import AliasPath, TypeAdapter, AliasChoices
+from pytest_mock import MockerFixture
 from tests.remote import SimpleURI, CallbackResult, MockRemoteResource, MockRemoteCollection, MockIndexCursor, \
     MockKeyCursor, MockUrlCursor, MockInitialCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester
+from yarl import URL
 
 
 class TestEndpointsMetaclass:

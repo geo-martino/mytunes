@@ -3,16 +3,15 @@ from random import choice
 
 import pytest
 from faker import Faker
-from pydantic import ValidationError
-from yarl import URL
-
 from mytunes.core._collection.playlist import Playlist
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 # noinspection PyProtectedMember
 from mytunes.spotify._properties.uri import SpotifyURIBase, SpotifyResourceURI, SpotifyUserURI
+from pydantic import ValidationError
 from tests.testers import BaseModelTester
+from yarl import URL
 
 
 class SpotifyURITester(BaseModelTester, metaclass=ABCMeta):

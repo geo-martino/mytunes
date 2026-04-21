@@ -1,10 +1,9 @@
 from typing import Annotated
 
 import pytest
-from pydantic import computed_field
-
 from mytunes._base.attribute import AttributeModel, Attribute
 from mytunes.exception import MyTunesAttributeError
+from pydantic import computed_field
 from tests.testers import BaseModelTester
 
 

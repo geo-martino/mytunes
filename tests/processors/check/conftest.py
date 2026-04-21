@@ -3,8 +3,6 @@ from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from faker import Faker
-from yarl import URL
-
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
 from mytunes.core._item.track import Track, RemoteTrack
@@ -12,11 +10,12 @@ from mytunes.core._item.user import RemoteUser
 from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
     PlaylistBatchWriteEndpoints
 from mytunes.core.cursors import InitialCursor
+from mytunes.core.properties.order import Position
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import NameScorer
-from mytunes.core.properties.order import Position
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
+from yarl import URL
 
 
 @pytest.fixture

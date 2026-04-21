@@ -5,12 +5,11 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
-from pydantic import PositiveInt, AliasPath, AliasChoices
-
 from mytunes.core._item.album import RemoteAlbum
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.core.api.search import SearchEndpoints
 from mytunes.core.remote import RemoteResource
+from pydantic import PositiveInt, AliasPath, AliasChoices
 from tests.remote import MockSearchEndpoints
 from tests.testers import EndpointsTester
 

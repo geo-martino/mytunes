@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from pydantic import StringConstraints
-
 from mytunes._types import get_base_types
+from pydantic import StringConstraints
 
 
 ###########################################################################

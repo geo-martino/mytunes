@@ -6,8 +6,6 @@ from unittest.mock import patch, Mock
 import pytest
 from _pytest.logging import LogCaptureFixture
 from faker import Faker
-from pytest_mock import MockerFixture
-
 from mytunes import MODULE_ROOT
 from mytunes.core._collection.playlist import Playlist, MutablePlaylist
 from mytunes.core._item.album import Album
@@ -20,6 +18,7 @@ from mytunes.processors.download.stores.bandcamp import BandcampStore
 from mytunes.processors.download.stores.juno_download import JunoDownloadStore
 from mytunes.processors.download.stores.qobuz import QobuzStore
 from mytunes.processors.download.stores.seven_digital import SevenDigitalStore
+from pytest_mock import MockerFixture
 from tests.testers import BaseModelTester
 from tests.utils import patch_input
 
