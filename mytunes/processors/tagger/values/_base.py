@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, final, Literal, Annotated
+from typing import Any, final, Literal, Annotated, Union
 
 from pydantic import Field, AliasChoices
 
@@ -22,7 +22,7 @@ class Value[OT: str, IT: BaseModel, VT: Any](DiscriminatorModel):
 
 
 class HasCondition[VT: Any](BaseModel):
-    condition: Filter | None = Field(
+    condition: Union[Filter.annotation, None] = Field(
         description="The condition that the tag value should meet in order to be returned.",
         default=None,
         validation_alias=AliasChoices("condition", "when", "if")
