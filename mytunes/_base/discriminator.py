@@ -4,6 +4,7 @@ from typing import Any, cast, ClassVar, get_args, Self, Annotated
 
 from pydantic import Field, ConfigDict
 from pydantic.dataclasses import dataclass
+from pydantic.fields import FieldInfo
 
 from mytunes._base._base import ModelMetaclass, BaseModel
 from mytunes._base.attribute import Attribute
@@ -53,6 +54,9 @@ class DiscriminatorMetaclass(ModelMetaclass):
     def annotation(cls) -> Self:
         if not cls.registered_submodels:
             return cls
+        if not cls.__discriminator_field__:
+            raise ModelError(f"Cannot generated annotation for {cls.__name__!r}: no discriminator field defined.")
+
         return Annotated[
             super().annotation,
             Field(discriminator=cls.__discriminator_field__)
@@ -70,9 +74,10 @@ class DiscriminatorModel(BaseModel, metaclass=DiscriminatorMetaclass):
     __final__ = False
 
     def __init__(self, /, **data: Any) -> None:
-        if self.__final__:
-            discriminator_type = type(self).model_fields[self.__discriminator_field__].annotation
+        field: FieldInfo = type(self).model_fields[key := self.__discriminator_field__]
+        if self.__final__ and field.is_required() and self._get_value_from_data(data, key) is None:
+            discriminator_type = field.annotation
             discriminator_value = next(iter(get_args(discriminator_type)))
-            data[self.__discriminator_field__] = discriminator_value
+            data[key] = discriminator_value
 
         super().__init__(**data)

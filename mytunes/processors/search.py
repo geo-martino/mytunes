@@ -258,7 +258,6 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
             self, collection: CollectionModel[T]
     ) -> tuple[str, SearchResult[T]]:
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
-        print(name)
 
         if self._should_search_on_items_only(collection):
             return name, await self._search_items(collection.items)

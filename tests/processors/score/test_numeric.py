@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from typing import Literal
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
@@ -25,7 +26,7 @@ class TestStringScoreReducer(BaseModelTester):
         _calculate_score=MagicMock(),
     )
     def model(self) -> RangeScorer:
-        return RangeScorer[InstanceOf[Mock]](type="test", cleaner=Mock(), range=10)
+        return RangeScorer[Literal["test"], InstanceOf[Mock]](type="test", cleaner=Mock(), range=10)
 
     def test_calculate_score(self, model: RangeScorer, faker: Faker):
         model.range = 10

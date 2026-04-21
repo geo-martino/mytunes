@@ -9,7 +9,7 @@ from mytunes.processors.score._base import Scorer
 
 
 # noinspection PyAbstractClass
-class NumericScorer[CT: NumericCleaner](Scorer[CT]):
+class NumericScorer[ST: str, CT: NumericCleaner](Scorer[ST, CT]):
 
     @staticmethod
     def _calculate_difference_score[T: Number](value: T, other: T | None, max_range: T = None) -> float:
@@ -21,7 +21,7 @@ class NumericScorer[CT: NumericCleaner](Scorer[CT]):
 
 
 # noinspection PyAbstractClass
-class RangeScorer[CT: NumericCleaner](NumericScorer[CT]):
+class RangeScorer[ST: str, CT: NumericCleaner](NumericScorer[ST, CT]):
     range: PositiveInt | PositiveFloat | None = Field(
         description=(
             "The range within which the score will be calculated. "
@@ -36,31 +36,23 @@ class RangeScorer[CT: NumericCleaner](NumericScorer[CT]):
 
 
 @final
-class LengthScorer(RangeScorer[LengthCleaner]):
+class LengthScorer(RangeScorer[Literal["length"], LengthCleaner]):
     """Score items by comparing lengths. Score=0 when either value is None."""
     __final__ = True
 
-    type: Literal["length"] = "length"
-    cleaner: LengthCleaner = LengthCleaner()
-
 
 @final
-class ReleaseYearScorer(RangeScorer[ReleaseYearCleaner]):
+class ReleaseYearScorer(RangeScorer[Literal["release_year"], ReleaseYearCleaner]):
     """Score items by comparing release years. Score=0 when either value is None."""
     __final__ = True
 
-    type: Literal["release_year"] = "release_year"
-    cleaner: ReleaseYearCleaner = ReleaseYearCleaner()
     range: PositiveInt = 10
 
 
 @final
-class TotalItemsScorer(NumericScorer[NumericCleaner]):
+class TotalItemsScorer(NumericScorer[Literal["total_items"], TotalItemsCleaner]):
     """Score collections by comparing total items count. Score=0 when either value is None."""
     __final__ = True
-
-    type: Literal["total_items"] = "total_items"
-    cleaner: TotalItemsCleaner = TotalItemsCleaner()
 
     def _calculate_score(self, value: int, other: int | None) -> float:
         return self._calculate_difference_score(value, other)

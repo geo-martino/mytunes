@@ -1,23 +1,25 @@
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Annotated
 
-from pydantic import Field
+from pydantic import Field, Discriminator, AliasChoices
+from pydantic.fields import FieldInfo
 
 from mytunes._types import Number
 from mytunes.processors.clean import TagCleaner
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.name import HasName
 from .._base import Processor
+from ..._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 
 
 # noinspection PyAbstractClass
-class Scorer[C: TagCleaner](Processor, HasLogger):
+class Scorer[ST: str, CT: TagCleaner](Processor, DiscriminatorModel, HasLogger):
     """Scores the similarity between two items based on a specific tag."""
 
-    type: str = Field(
+    type: Annotated[ST, DiscriminatorAttribute()] = Field(
         description="The type of score this is.",
     )
-    cleaner: C = Field(
+    cleaner: CT = Field(
         description="The cleaner to use for cleaning the tag value before scoring.",
     )
     weight: Number = Field(
@@ -35,6 +37,13 @@ class Scorer[C: TagCleaner](Processor, HasLogger):
         ge=0,
         le=1,
     )
+
+    def __init__(self, /, **data: Any) -> None:
+        cleaner_field: FieldInfo = type(self).model_fields[key := "cleaner"]
+        if self.__final__ and cleaner_field.is_required() and self._get_value_from_data(data, key) is None:
+            data[key] = cleaner_field.annotation()
+
+        super().__init__(**data)
 
     def can_score(self, item: Any, skip_on_exact_type: bool = False) -> bool:
         """Check whether the item is scorable by this scorer."""

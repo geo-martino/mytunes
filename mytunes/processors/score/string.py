@@ -12,12 +12,12 @@ from mytunes.core.properties.name import HasName
 
 
 # noinspection PyAbstractClass
-class StringScorer[CT: StringCleaner](Scorer[CT]):
+class StringScorer[ST: str, CT: StringCleaner](Scorer[ST, CT]):
     pass
 
 
 # noinspection PyAbstractClass
-class StringScoreReducer[CT: StringCleaner](StringScorer[CT]):
+class StringScoreReducer[ST: str, CT: StringCleaner](StringScorer[ST, CT]):
     reduce_on_phrases: set[LowerStrippedString] = Field(
         description=(
             "A set of phrases which, if found in one value but not the other and vice-versa, "
@@ -62,12 +62,9 @@ class StringScoreReducer[CT: StringCleaner](StringScorer[CT]):
 
 
 @final
-class KaraokeScorer(StringScorer[NameCleaner]):
+class KaraokeScorer(StringScorer[Literal["karaoke"], NameCleaner]):
     """Score an item by checking whether its metadata indicates it is a karaoke track."""
     __final__ = True
-
-    type: Literal["is_karaoke"] = "is_karaoke"
-    cleaner: NameCleaner = NameCleaner()
 
     karaoke_phrases: set[LowerStrippedString] = Field(
         description=(
@@ -114,12 +111,9 @@ class KaraokeScorer(StringScorer[NameCleaner]):
 
 
 @final
-class NameScorer(StringScoreReducer[NameCleaner]):
+class NameScorer(StringScoreReducer[Literal["name", "title"], NameCleaner]):
     """Score items by comparing names. Score=0 when either value is None."""
     __final__ = True
-
-    type: Literal["name", "title"] = "name"
-    cleaner: NameCleaner = NameCleaner()
 
     def _calculate_score(self, value: str, other: str | None) -> float:
         if not value or not other:
@@ -132,12 +126,9 @@ class NameScorer(StringScoreReducer[NameCleaner]):
 
 
 @final
-class ArtistScorer(StringScorer[ArtistCleaner]):
+class ArtistScorer(StringScorer[Literal["artist"], ArtistCleaner]):
     """Score items by comparing artists. Score=0 when either value is None."""
     __final__ = True
-
-    type: Literal["artist"] = "artist"
-    cleaner: ArtistCleaner = ArtistCleaner()
 
     scale_on_many_artists: bool = Field(
         description=(
@@ -166,12 +157,9 @@ class ArtistScorer(StringScorer[ArtistCleaner]):
 
 
 @final
-class AlbumScorer(StringScoreReducer[AlbumCleaner]):
+class AlbumScorer(StringScoreReducer[Literal["album"], AlbumCleaner]):
     """Score items by comparing album names. Score=0 when either value is None."""
     __final__ = True
-
-    type: Literal["album"] = "album"
-    cleaner: AlbumCleaner = AlbumCleaner()
 
     def _calculate_score(self, value: str, other: str) -> Number:
         if not value or not other:

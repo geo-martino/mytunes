@@ -1,3 +1,4 @@
+from typing import Literal
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
@@ -16,7 +17,7 @@ class TestScorer(BaseModelTester):
         _calculate_score=MagicMock(),
     )
     def model(self) -> Scorer:
-        return Scorer[InstanceOf[Mock]](type="test", cleaner=Mock())
+        return Scorer[Literal["test"], InstanceOf[Mock]](type="test", cleaner=Mock())
 
     def test_score(self, model: Scorer):
         model.cleaner.clean = Mock(side_effect=lambda x: x.name)

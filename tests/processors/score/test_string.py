@@ -1,5 +1,6 @@
 from abc import ABCMeta
 from random import choice
+from typing import Literal
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
@@ -37,7 +38,7 @@ class TestStringScoreReducer(BaseModelTester):
         _calculate_score=MagicMock(),
     )
     def model(self) -> StringScoreReducer:
-        return StringScoreReducer[InstanceOf[Mock]](type="test", cleaner=Mock())
+        return StringScoreReducer[Literal["test"], InstanceOf[Mock]](type="test", cleaner=Mock())
 
     def test_reduce_score_skips(self, model: StringScoreReducer, faker: Faker):
         score = faker.random_int()
