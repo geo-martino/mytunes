@@ -146,7 +146,7 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
             return wrapper
         return decorator
 
-    def _validate_endpoints[T](self, key: str, expected: type[T], context: str, name: str = "") -> T | None:
+    def _validate_endpoints[T](self, key: str | None, expected: type[T], context: str, name: str = "") -> T | None:
         api = self._get_endpoints(self.api, key)
         if isinstance(api, expected):
             return api
