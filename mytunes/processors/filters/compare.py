@@ -12,7 +12,7 @@ from mytunes.processors.filters._base import Filter
 
 
 @final
-class ComparerFilter[IT: str | ResourceModel](Filter[Literal["compare", "comparer"], IT]):
+class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     __final__ = True
 

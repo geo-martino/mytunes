@@ -37,7 +37,7 @@ class CompositeResult[IT: Any](CountResult):
         raise NotImplementedError
 
 
-class CompositeFilter[FT: str, IT](Filter[FT, IT], Collection[Filter[Any, IT]]):
+class CompositeFilter[FT: str, IT: Any](Filter[FT, IT], Collection[Filter[Any, IT]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 
     @property

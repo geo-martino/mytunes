@@ -13,7 +13,7 @@ from mytunes.core.properties.name import HasName
 from mytunes.processors.filters._base import Filter
 
 
-class _ValueFilter[FT: str, IT](Filter[FT, IT]):
+class _ValueFilter[FT: str, IT: Any](Filter[FT, IT]):
     """Filter based on a defined list of values."""
     values: Annotated[Sequence[IT], TO_TUPLE] = Field(
         description="Set of values to filter against",
@@ -50,7 +50,7 @@ class _ValueFilter[FT: str, IT](Filter[FT, IT]):
 
 
 @final
-class ValueFilter[IT](_ValueFilter[Literal["value", "values"], IT]):
+class ValueFilter[IT: Any](_ValueFilter[Literal["value", "values"], IT]):
     __final__ = True
 
 

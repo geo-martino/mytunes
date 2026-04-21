@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Collection
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -9,7 +9,7 @@ from ..._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 
 
 # noinspection PyAbstractClass
-class Filter[FT: str, IT](Processor, DiscriminatorModel):
+class Filter[FT: str, IT: Any](Processor, DiscriminatorModel):
     """Base class for all filters."""
 
     type: Annotated[FT, DiscriminatorAttribute()] = Field(
