@@ -9,7 +9,7 @@ from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_valid
     field_validator, field_serializer, NonNegativeFloat, computed_field
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
-from mytunes._types import StrippedString
+from mytunes._types import StrippedString, DEFAULT_IF_NONE
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
@@ -113,9 +113,13 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         validation_alias=AliasChoices("COMM", "COMMENT"),
         serialization_alias="COMM",
     )
-    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
+    images: Annotated[
+        MutableMapping[str, ImageFile | ImageURL | EmbeddedImage],
+        TagAttribute(),
+        DEFAULT_IF_NONE,
+    ] = Field(
         description="Images associated with this track.",
-        default=None,
+        default_factory=dict,
         alias=EmbeddedImage.alias,
     )
 

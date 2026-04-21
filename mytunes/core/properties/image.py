@@ -17,7 +17,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
 from mytunes.core.properties.file import IsLocalFile
-from mytunes._types import StrippedString, UpperSnakeCase, HttpURL
+from mytunes._types import StrippedString, UpperSnakeCase, HttpURL, DEFAULT_IF_NONE
 from mytunes.exception import MyTunesValidationError
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel, Attribute
@@ -251,15 +251,10 @@ class ImageURL(ImageSource):
 
 class HasImages(AttributeModel):
     """Represents a resource that has associated images."""
-    images: Annotated[MutableMapping[str, ImageFile | ImageURL], Attribute()] = Field(
+    images: Annotated[MutableMapping[str, ImageFile | ImageURL], Attribute(), DEFAULT_IF_NONE] = Field(
         description="Images associated with this resource mapped to their type.",
         default_factory=dict,
     )
-
-    @field_validator("images", mode="before", check_fields=True)
-    @classmethod
-    def _from_none[T](cls, images: T | None) -> T | dict[str, Any]:
-        return images if images is not None else {}
 
     @field_validator("images", mode="before", check_fields=True)
     @classmethod

@@ -50,8 +50,8 @@ class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT]):
         return self.value
 
 
-def from_fixed_value[T](value: T) -> T | dict[str, Any]:
+def from_fixed_value[T](value: T) -> T | FixedValue:
     """Validator to assign a set of fields to a FieldValue operation."""
     if not isinstance(value, str | int | float | bool | set | tuple | list):
         return value
-    return {FixedValue.__discriminator_field__: "fixed", "value": value}
+    return FixedValue(value=value)

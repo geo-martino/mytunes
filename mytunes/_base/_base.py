@@ -48,14 +48,22 @@ class ModelMetaclass(PydanticModelMetaclass):
         #  same class definitions can have different hashes
         #  This isn't usually an issue in production but can causes equality checks to fail when comparing
         #  two of the same class definitions with different hashes
-        #  So we only add a class to the registry by comparing on fully-qualified name instead of relying on hashes
 
+        # skip if any models with the same module stem are already registered
         def _get_fqn(kls: type[Any]) -> str:
             return kls.__module__ + "." + kls.__name__
 
-        fqn = _get_fqn(cls)
-        registered_fqns = map(_get_fqn, cls.__model_registry__)
-        if any(registered.endswith(fqn) or fqn.endswith(registered) for registered in registered_fqns):
+        name = _get_fqn(cls)
+        if any(fqn.endswith(name) or name.endswith(fqn) for fqn in map(_get_fqn, cls.__model_registry__)):
+            return
+
+        # skip if any models with the same namespace are registered
+        # this avoid registering the same models with differing type var definitions
+        def _get_namespace(kls: ModelMetaclass) -> dict:
+            return kls.__pydantic_parent_namespace__
+
+        namespace = _get_namespace(cls)
+        if any(namespace == ns for ns in map(_get_namespace, cls.__model_registry__)):
             return
 
         cls.__model_registry__.add(cls)

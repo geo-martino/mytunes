@@ -9,7 +9,7 @@ from pydantic import Field, AliasChoices, model_validator, field_serializer, mod
     NonNegativeFloat, ConfigDict
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
-from mytunes._types import get_base_types
+from mytunes._types import get_base_types, DEFAULT_IF_NONE
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
@@ -101,9 +101,13 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         validation_alias=AliasChoices("comment", "description"),
         alias="comment",
     )
-    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
+    images: Annotated[
+        MutableMapping[str, ImageFile | ImageURL | EmbeddedImage],
+        TagAttribute(),
+        DEFAULT_IF_NONE,
+    ] = Field(
         description="Images associated with this track.",
-        default=None,
+        default_factory=dict,
     )
 
     @classmethod

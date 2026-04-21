@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping, Collection, Sequence
 from contextlib import suppress
-from typing import Self, Any, final, Annotated
+from typing import Self, Any, final, Annotated, Literal
 
 from mytunes._types import TO_TUPLE
 from mytunes.exception import MyTunesValidationError
@@ -12,7 +12,7 @@ from mytunes.processors.filters._base import Filter
 
 
 @final
-class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
+class ComparerFilter[IT: str | ResourceModel](Filter[Literal["compare", "comparer"], IT]):
     """Filter based on a defined map of :py:class:`Comparer` objects mapped to additional ."""
     __final__ = True
 
@@ -50,6 +50,7 @@ class ComparerFilter[IT: str | ResourceModel](Filter[IT]):
             case Collection() if data and all(isinstance(value, Mapping) for value in data):
                 return dict(comparers=[Comparer.model_validate(value) for value in data])
 
+        data[cls.__discriminator_field__] = "compare"
         return data
 
     @model_validator(mode="after")

@@ -75,15 +75,6 @@ class LocalLibrary(
         """List of errors encountered while loading the library."""
         return self._errors
 
-    @field_validator("playlist_filter", mode="before", check_fields=True)
-    @staticmethod
-    def _convert_playlist_names_to_filter[T: str | Iterable[str]](names: T) -> T | ValueFilter[str]:
-        if not names or isinstance(names, Filter):
-            return names
-
-        names = to_set(names)
-        return ValueFilter(values=names)
-
     @model_validator(mode="wrap")
     @classmethod
     def _extract_path_map_from_system_paths(

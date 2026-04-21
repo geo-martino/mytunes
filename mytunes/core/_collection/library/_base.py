@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence, Iterable, Collection
 from typing import Any, ClassVar, Self, Annotated, Union
 
-from pydantic import Field, Tag, Discriminator
+from pydantic import Field, Tag, Discriminator, field_validator
 
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
@@ -14,6 +14,7 @@ from mytunes.core.properties.logger import HasLogger, HasProgress
 from ..._item.track import Track, HasTracks, HasMutableTracks
 from ...._base.attribute import AttributeMetaclass
 from ...._base.resource import ResourceModel, ResourceMetaclass
+from ....processors.filters import ComparerFilter, Filter
 
 
 class HasTracksAndPlaylists[TT: Track, PT: Playlist](
@@ -64,11 +65,23 @@ class Library[TT: Track, PT: Playlist](
         description="The name of the source of this library.",
     )
 
-    playlist_filter: NameFilter | IncludeExcludeFilter[PT, NameFilter, NameFilter] | None = Field(
+    playlist_filter: Annotated[
+        NameFilter | IncludeExcludeFilter[PT, NameFilter, NameFilter] | ComparerFilter[str],
+        Field(discriminator=Filter.__discriminator_field__),
+    ] | None = Field(
         description="The filter to apply when loading playlists. Filters playlist by name.",
         default=None,
         repr=False,
     )
+
+    @field_validator("playlist_filter", mode="before", check_fields=True)
+    @classmethod
+    def _filter_from_names[T](cls, data: T | str | Collection[str]) -> T | NameFilter:
+        if isinstance(data, str):
+            data = (data,)
+        if not isinstance(data, Collection) or not all(isinstance(it, str) for it in data):
+            return data
+        return NameFilter(values=data)
 
     @abstractmethod
     async def load(self):

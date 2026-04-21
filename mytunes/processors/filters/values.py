@@ -1,6 +1,6 @@
 from pathlib import Path
 from collections.abc import Iterable, Iterator, Mapping, Hashable
-from typing import Annotated, Any, Self, final
+from typing import Annotated, Any, Self, final, Literal
 
 from pydantic import BeforeValidator, Field, model_validator, validate_call, field_validator
 
@@ -13,7 +13,7 @@ from mytunes.core.properties.name import HasName
 from mytunes.processors.filters._base import Filter
 
 
-class ValueFilter[IT: Hashable](Filter[IT]):
+class _ValueFilter[FT: str, IT: Hashable](Filter[FT, IT]):
     """Filter based on a defined list of values."""
     values: Annotated[set[IT], TO_SET] = Field(
         description="Set of values to filter against",
@@ -50,7 +50,12 @@ class ValueFilter[IT: Hashable](Filter[IT]):
 
 
 @final
-class NameFilter(ValueFilter[str]):
+class ValueFilter[IT: Hashable](_ValueFilter[Literal["value", "values"], IT]):
+    __final__ = True
+
+
+@final
+class NameFilter(_ValueFilter[Literal["name", "names"], str]):
     """Filter based on a defined list of name values."""
     __final__ = True
 
@@ -61,7 +66,7 @@ class NameFilter(ValueFilter[str]):
 
     @field_validator("values", mode="before", check_fields=True)
     @classmethod
-    def _extract_values_from_models(cls, values: Iterable[Any]) -> Iterator[str]:
+    def _extract_values_from_models(cls, values: Iterable[Any]) -> set[str]:
         return set(map(cls._extract_value_from_model, values))
 
     @staticmethod
@@ -80,7 +85,7 @@ class NameFilter(ValueFilter[str]):
 
 
 @final
-class PathFilter(ValueFilter[str]):
+class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
     """Filter based on a defined list of path values."""
     __final__ = True
 

@@ -8,7 +8,7 @@ from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_
     computed_field
 from pydantic_core.core_schema import FieldSerializationInfo, SerializerFunctionWrapHandler, SerializationInfo
 
-from mytunes._types import StrippedString, Number
+from mytunes._types import StrippedString, Number, DEFAULT_IF_NONE
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
@@ -109,9 +109,13 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default_factory=list,
         alias="©cmt"
     )
-    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
+    images: Annotated[
+        MutableMapping[str, ImageFile | ImageURL | EmbeddedImage],
+        TagAttribute(),
+        DEFAULT_IF_NONE,
+    ] = Field(
         description="Images associated with this track.",
-        default=None,
+        default_factory=dict,
         alias=EmbeddedImage.alias,
     )
 

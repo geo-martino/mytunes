@@ -9,7 +9,7 @@ from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_
     InstanceOf, computed_field
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
-from mytunes._types import StrippedString
+from mytunes._types import StrippedString, DEFAULT_IF_NONE
 from mytunes.local._item.album import LocalAlbum
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
@@ -144,9 +144,13 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         validation_alias=AliasChoices("WM/Comments", "Description"),
         serialization_alias="WM/Comments",
     )
-    images: Annotated[MutableMapping[str, ImageFile | ImageURL | EmbeddedImage] | None, TagAttribute()] = Field(
+    images: Annotated[
+        MutableMapping[str, ImageFile | ImageURL | EmbeddedImage],
+        TagAttribute(),
+        DEFAULT_IF_NONE,
+    ] = Field(
         description="Images associated with this track.",
-        default=None,
+        default_factory=dict,
         alias=EmbeddedImage.alias,
     )
 

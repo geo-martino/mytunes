@@ -1,7 +1,8 @@
 from abc import abstractmethod
+from collections.abc import MutableMapping
 from typing import Any, Annotated
 
-from pydantic import Field, Discriminator, AliasChoices
+from pydantic import Field, Discriminator, AliasChoices, model_validator
 from pydantic.fields import FieldInfo
 
 from mytunes._types import Number
@@ -38,12 +39,18 @@ class Scorer[ST: str, CT: TagCleaner](Processor, DiscriminatorModel, HasLogger):
         le=1,
     )
 
-    def __init__(self, /, **data: Any) -> None:
-        cleaner_field: FieldInfo = type(self).model_fields[key := "cleaner"]
-        if self.__final__ and cleaner_field.is_required() and self._get_value_from_data(data, key) is None:
-            data[key] = cleaner_field.annotation()
+    @model_validator(mode="before")
+    @classmethod
+    def _add_cleaner_value[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
+        if not isinstance(data, MutableMapping) or not cls.__final__:
+            return data
 
-        super().__init__(**data)
+        field: FieldInfo = cls.model_fields[key := "cleaner"]
+        if not field.is_required() or cls._get_value_from_data(data, key) is not None:
+            return data
+
+        data[key] = field.annotation()
+        return data
 
     def can_score(self, item: Any, skip_on_exact_type: bool = False) -> bool:
         """Check whether the item is scorable by this scorer."""

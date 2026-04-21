@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Collection, Iterator, Sequence
-from typing import Any, final, Annotated
+from typing import Any, final, Annotated, Literal
 
 from pydantic import Field, validate_call, computed_field
 
@@ -37,7 +37,7 @@ class CompositeResult[IT: Any](CountResult):
         raise NotImplementedError
 
 
-class CompositeFilter[IT](Filter[IT], Collection[Filter[IT]]):
+class CompositeFilter[FT: str, IT](Filter[FT, IT], Collection[Filter[Any, IT]]):
     """Composite filter which filters based on many :py:class:`Filter` objects"""
 
     @property
@@ -112,10 +112,7 @@ class IncludeExcludeResult[IT: Any](CompositeResult[IT]):
         return [it for it in self.included if it not in self.excluded]
 
 
-@final
-class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
-    __final__ = True
-
+class _IncludeExcludeFilter[FT: str, IT, IF: Filter, EF: Filter](CompositeFilter[FT, IT]):
     include: IF = Field(
         description="Filter for items to include",
         default=(),
@@ -156,6 +153,13 @@ class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](CompositeFilter[IT]):
         ))
 
 
+@final
+class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](
+    _IncludeExcludeFilter[Literal["include", "exclude", "include exclude"], IT, IF, EF]
+):
+    __final__ = True
+
+
 class GroupResult[IT: Any](IncludeExcludeResult[IT]):
     compared: Annotated[
         Sequence[IT],
@@ -191,9 +195,10 @@ class GroupResult[IT: Any](IncludeExcludeResult[IT]):
         return [track for track in [*self.compared, *self.included, *self.grouped] if track not in self.excluded]
 
 
-# noinspection PyFinal
 @final
-class GroupFilter[IT, IF: Filter, EF: Filter](IncludeExcludeFilter[IT, IF, EF]):
+class GroupFilter[IT, IF: Filter, EF: Filter](
+    _IncludeExcludeFilter[Literal["group", "grouped"], IT, IF, EF]
+):
     """
     Filter which matches based on include, exclude and comparer filters,
     with additional option for including a given tag grouping.

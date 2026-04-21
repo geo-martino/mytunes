@@ -1,12 +1,20 @@
 from abc import abstractmethod
 from collections.abc import Collection
+from typing import Annotated
+
+from pydantic import Discriminator, Field
 
 from .._base import Processor
+from ..._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 
 
 # noinspection PyAbstractClass
-class Filter[IT](Processor):
+class Filter[FT: str, IT](Processor, DiscriminatorModel):
     """Base class for all filters."""
+
+    type: Annotated[FT, DiscriminatorAttribute()] = Field(
+        description="The type of this filter."
+    )
 
     @property
     @abstractmethod

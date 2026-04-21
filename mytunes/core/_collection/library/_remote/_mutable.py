@@ -1,5 +1,5 @@
 from collections.abc import Collection, Mapping, Sequence
-from typing import Any, Literal, Annotated
+from typing import Any, Literal, Annotated, Union
 
 from aiorequestful.response.exception import ResponseError
 from pydantic import Field, validate_call, BeforeValidator
@@ -16,6 +16,7 @@ from mytunes.core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTra
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
 from mytunes.exception import MyTunesTypeError
 from mytunes.logger import STAT
+from mytunes.processors.filters import Filter
 from mytunes.processors.filters.compare import ComparerFilter
 from mytunes.core.properties.uri import HasURI, URI
 from ...._item.album import RemoteAlbum
@@ -36,7 +37,7 @@ class RemoteMutableLibrary[
 ](
     MutableLibrary[TT, PT], RemoteLibrary[API, TT, PT, RT, AT, GT, UT]
 ):
-    sync_filter: ComparerFilter | None = Field(
+    sync_filter: Union[Filter.annotation, None] = Field(
         description=(
             "The filter to apply when syncing items to the library. "
             "Only items matching the filter will be added when syncing."
@@ -339,7 +340,7 @@ class RemoteMutableLibrary[
                 remote.tracks.replace(pl.tracks)
 
                 properties = await remote.sync_properties(api, dry_run=dry_run)
-                result = await remote.sync_items(api, kind=kind, items_filter=self.sync_filter, dry_run=dry_run)
+                result = await remote.sync_items(api, kind=kind, sync_filter=self.sync_filter, dry_run=dry_run)
 
                 return pl.name, result.model_copy(update=dict(properties=properties))
 

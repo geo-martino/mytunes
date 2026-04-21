@@ -27,6 +27,7 @@ from .._item.user import RemoteUser
 from ..._base import makecls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel
+from ...processors.filters import Filter
 
 if TYPE_CHECKING:
     from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadEndpoints, \
@@ -244,7 +245,7 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
             self,
             api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints],
             kind: SYNC_TYPE = "new",
-            items_filter: ComparerFilter | None = None,
+            sync_filter: Filter[Any, str] | None = None,
             dry_run: bool = False,
     ) -> SyncRemoteResult:
         """
@@ -259,11 +260,11 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
         :param api: The API to use for synchronisation.
         :param kind: Sync option for the remote playlist. See description.
         :param dry_run: Run function, but do not modify the remote playlists at all.
-        :param items_filter: An optional filter to apply to items before syncing.
+        :param sync_filter: An optional filter to apply to items before syncing.
             Only items that pass the filter will be synced.
         :return: The sync result.
         """
-        tracks = items_filter.apply(self.tracks) if items_filter else self.tracks
+        tracks = sync_filter.apply(self.tracks) if sync_filter else self.tracks
         initial = [track.uri for track in tracks if track.uri]
         remote = await self._get_remote_uris(api)
         add, remove, unchanged = get_sync_items(kind, initial=initial, remote=remote)

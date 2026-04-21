@@ -1,8 +1,8 @@
-from collections.abc import Hashable
+from collections.abc import Hashable, Mapping, MutableMapping
 from functools import cached_property
 from typing import Any, cast, ClassVar, get_args, Self, Annotated
 
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, model_validator
 from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
 
@@ -73,11 +73,19 @@ class DiscriminatorModel(BaseModel, metaclass=DiscriminatorMetaclass):
     """
     __final__ = False
 
-    def __init__(self, /, **data: Any) -> None:
-        field: FieldInfo = type(self).model_fields[key := self.__discriminator_field__]
-        if self.__final__ and field.is_required() and self._get_value_from_data(data, key) is None:
-            discriminator_type = field.annotation
-            discriminator_value = next(iter(get_args(discriminator_type)))
-            data[key] = discriminator_value
+    @model_validator(mode="before")
+    @classmethod
+    def _add_discriminator_value[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
+        """This should only be called when calling the model directly, not on union validation."""
+        if not isinstance(data, MutableMapping) or not cls.__final__ or not (key := cls.__discriminator_field__):
+            return data
 
-        super().__init__(**data)
+        field: FieldInfo = cls.model_fields[key]
+        if not field.is_required() or cls._get_value_from_data(data, key) is not None:
+            return data
+
+        discriminator_type = field.annotation
+        discriminator_value = next(iter(get_args(discriminator_type)))
+        data[key] = discriminator_value
+
+        return data

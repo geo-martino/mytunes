@@ -65,13 +65,13 @@ class FieldValue[IT: AttributeModel, VT: Any](_FieldValue[Literal["field"], IT, 
     __final__ = True
 
 
-def from_field_names[T](fields: T | Sequence[str]) -> T | list[dict[str, Any]]:
+def from_field_names[T](fields: T | Sequence[str]) -> T | list[FieldValue]:
     """Validator to assign a set of fields to a FieldValue operation."""
     if isinstance(fields, str):
         fields = [fields]
     if not isinstance(fields, ItemCollection):
         return fields
-    return [{Value.__discriminator_field__: "field", "field": field} for field in fields]
+    return [FieldValue(field=field) for field in fields]
 
 
 @final
