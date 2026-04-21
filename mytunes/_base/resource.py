@@ -1,6 +1,6 @@
 from collections.abc import Hashable
 from functools import cached_property
-from typing import Any, cast, ClassVar
+from typing import Any, cast, ClassVar, Annotated, Self
 
 from pydantic import Field, ConfigDict
 from pydantic.dataclasses import dataclass
@@ -20,7 +20,6 @@ class ResourceMetaclass(ModelMetaclass):
     Metaclass for creating resource models for this package.
 
     Expands on base model metaclass to add support for:
-    - Updating the discriminated union annotation to use the `type` field as a discriminator for subclasses.
     - Merging the configured unique attributes from all subclasses.
     """
 
@@ -49,7 +48,7 @@ class ResourceModel(BaseModel, metaclass=ResourceMetaclass):
     A base class for creating resource models in this package.
 
     Expands on the base model to add support for:
-    - The `type` field which can be used as a discriminator for subclasses in the discriminated union annotation.
+    - The `type` field to identify the type of this model.
     - Returning field values which correspond to the unique keys of the resource.
     - Equality comparison of models based on their unique keys.
     """

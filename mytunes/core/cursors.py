@@ -94,15 +94,14 @@ class PageCursor(RemoteModel):
         # avoid taking any subclasses of the InitialCursor since they will cause infinite loops
         # when trying to get the next page of items
         # noinspection PyTypeChecker
-        classes = {
+        classes = [
             kls for kls in PageCursor.registered_submodels
             if kls.source.casefold() == cls.source.casefold() and not issubclass(kls, InitialCursor)
-        }
+        ]
         if not classes:
             raise CursorResponseError(f"No registered cursor models found for source {cls.source!r}.")
 
         # prioritise iterable cursors since they can be used for more efficient concurrent pagination
-        classes = list(classes)
         classes.sort(key=lambda kls: (issubclass(kls, IterablePageCursor), kls is cls), reverse=True)
 
         if len(classes) == 1:  # attempting to set union_mode fails on a single class

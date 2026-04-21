@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Sequence, Collection, Iterable
-from typing import Any, Union, final
+from typing import Any, Union, final, Annotated, Literal
 
 from pydantic import Field, PositiveInt
 from typing_inspection.typing_objects import is_typevar
@@ -10,11 +10,12 @@ from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, CollectionValue, HasCondition
 from .._types import _ATTRIBUTE_FIELD_TYPE
-from ..._base import BaseModel, ModelMetaclass
+from ..._base import BaseModel
 from ..._base.attribute import AttributeModel
+from ..._base.discriminator import DiscriminatorMetaclass, DiscriminatorAttribute, DiscriminatorModel
 
 
-class SetterMetaclass(ModelMetaclass):
+class SetterMetaclass(DiscriminatorMetaclass):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         # set appropriate field types from the generic type
         base = next((base for base in bases if isinstance(base, mcs) and issubclass(base, BaseModel)), None)
@@ -35,8 +36,12 @@ class SetterMetaclass(ModelMetaclass):
 
 
 # noinspection PyAbstractClass
-class Setter[IT: AttributeModel, VT: Any](BaseModel, metaclass=SetterMetaclass):
+class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass=SetterMetaclass):
     """Sets tags on items according to some rules."""
+    operation: Annotated[OT, DiscriminatorAttribute()] = Field(
+        description="The name of this operation."
+    )
+
     field: _WRITEABLE_ATTRIBUTE_FIELD_TYPE = Field(
         description="The field to set the tag value to.",
     )
@@ -51,7 +56,7 @@ class Setter[IT: AttributeModel, VT: Any](BaseModel, metaclass=SetterMetaclass):
 
 
 @final
-class ValueSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
+class ValueSetter[IT: AttributeModel, VT: Any](Setter[Literal["value"], IT, VT]):
     __final__ = True
 
     def set(self, item: IT, other: Collection[IT] = ()) -> bool:
@@ -65,10 +70,7 @@ class ValueSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
         return True
 
 
-@final
-class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
-    __final__ = True
-
+class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
     value: CollectionValue.annotation = Field(
         description="The value getter for the tag value to set.",
     )
@@ -106,9 +108,11 @@ class GroupedSetter[IT: AttributeModel, VT: Any](Setter[IT, VT]):
 
 
 @final
-class SortedSetter[IT: AttributeModel, VT: Any](GroupedSetter[IT, VT]):
+class GroupSetter[OT: str, IT: AttributeModel, VT: Any](_GroupSetter[Literal["group"], IT, VT]):
     __final__ = True
 
+
+class _SortSetter[OT: str, IT: AttributeModel, VT: Any](_GroupSetter[OT, IT, VT]):
     sort_by: ItemSorter = Field(
         description="The fields to sort by.",
         default_factory=tuple,
@@ -131,7 +135,12 @@ class SortedSetter[IT: AttributeModel, VT: Any](GroupedSetter[IT, VT]):
 
 
 @final
-class IncrementalSetter[IT: AttributeModel](SortedSetter[IT, int], HasCondition[int]):
+class SortSetter[IT: AttributeModel, VT: Any](_SortSetter[Literal["sort"], IT, VT]):
+    __final__ = True
+
+
+@final
+class IncrementalSetter[IT: AttributeModel](_SortSetter[Literal["incremental"], IT, int], HasCondition[int]):
     __final__ = True
 
     # make optional

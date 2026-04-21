@@ -1,7 +1,7 @@
 import locale as locale_module
 from abc import abstractmethod
 from collections.abc import Sequence, Iterable, Collection, Mapping
-from typing import ClassVar, Literal, Any, Union, get_args, Annotated, final, Self
+from typing import ClassVar, Literal, Union, Annotated, final
 
 from mytunes.core.sequence import UniqueSequence
 from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter
@@ -9,40 +9,19 @@ from yarl import URL
 
 from mytunes._types import StrippedString, HttpURL
 from ...._base import BaseModel
+from ...._base.discriminator import DiscriminatorAttribute, DiscriminatorModel
 from ...._base.resource import ResourceModel
-from ...._base import ModelMetaclass
 from mytunes.core.properties.name import HasName
 from mytunes.processors.clean.string import NameCleaner
 from mytunes.processors.download.stores.exception import StoreError
 
 
-class AudioStoreMetaclass(ModelMetaclass):
-    @property
-    def annotation(cls) -> Self:
-        if not cls.registered_submodels:
-            return cls
-        return Annotated[
-            super().annotation,
-            Field(discriminator="name"),
-        ]
-
-
 # noinspection PyAbstractClass
-class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
+class AudioStore[T: str](DiscriminatorModel):
     """Formats the url for an online store for querying and purchasing audio files."""
-    __final__ = False  # WORKAROUND: for typing on __init__
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (ResourceModel,)
 
-    def __init__(self, /, **data: Any) -> None:
-        if not self.__final__:
-            super().__init__(**data)
-            return
-
-        name = next(iter(get_args(type(self).model_fields["name"].annotation)))
-        data.pop("name", None)
-        super().__init__(name=name, **data)
-
-    name: T = Field(
+    name: Annotated[T, DiscriminatorAttribute()] = Field(
         description="The name of the store",
     )
     fields: Sequence[StrippedString] = Field(
@@ -140,7 +119,7 @@ class AudioStore[T: str](BaseModel, metaclass=AudioStoreMetaclass):
         raise NotImplementedError
 
 
-class HasLocale(BaseModel, metaclass=AudioStoreMetaclass):
+class HasLocale(BaseModel):
     locale: Literal[*list(locale_module.locale_alias.values())] = Field(
         description="The locale of the store to access.",
         default=locale_module.getdefaultlocale()[0],

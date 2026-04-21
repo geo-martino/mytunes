@@ -7,7 +7,7 @@ from mytunes._base.attribute import AttributeModel
 from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
-from mytunes.processors.tagger._setter import ValueSetter, GroupedSetter, SortedSetter, IncrementalSetter
+from mytunes.processors.tagger._setter import ValueSetter, GroupSetter, SortSetter, IncrementalSetter
 from mytunes.processors.tagger.values import FixedValue, MinValue
 from tests.testers import BaseModelTester
 
@@ -27,7 +27,7 @@ class TestValueSetter(BaseModelTester):
 
 
 class GroupedSetterTester(BaseModelTester):
-    def test_validates_item_in_group(self, model: GroupedSetter, tracks: list[Track], faker: Faker):
+    def test_validates_item_in_group(self, model: GroupSetter, tracks: list[Track], faker: Faker):
         track = faker.random_element(tracks)
         with patch.object(AttributeModel, "__setattr__"):
             model.set(track, tracks)  # should pass
@@ -37,7 +37,7 @@ class GroupedSetterTester(BaseModelTester):
             model.set(track, tracks)
 
     def test_set_value_with_group(
-            self, model: GroupedSetter, tracks: list[Track], tracks_group: list[Track], faker: Faker
+            self, model: GroupSetter, tracks: list[Track], tracks_group: list[Track], faker: Faker
     ):
         track = faker.random_element(tracks_group)
         expected = min(track.track.number for track in tracks_group)
@@ -49,10 +49,10 @@ class GroupedSetterTester(BaseModelTester):
 
 class TestGroupedSetter(GroupedSetterTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> GroupedSetter:
-        return GroupedSetter(field="track", value=MinValue(field="track"))
+    def model(self, faker: Faker) -> GroupSetter:
+        return GroupSetter(field="track", value=MinValue(field="track"))
 
-    def test_set_value(self, model: GroupedSetter, tracks: list[Track], faker: Faker):
+    def test_set_value(self, model: GroupSetter, tracks: list[Track], faker: Faker):
         track = faker.random_element(tracks)
         expected = min(track.track.number for track in tracks)
 
@@ -62,17 +62,17 @@ class TestGroupedSetter(GroupedSetterTester):
 
 class TestSortedSetter(GroupedSetterTester):
     @pytest.fixture
-    def model(self, faker: Faker) -> SortedSetter:
-        return SortedSetter(field="track.number", value=MinValue(field="track.number"))
+    def model(self, faker: Faker) -> SortSetter:
+        return SortSetter(field="track.number", value=MinValue(field="track.number"))
 
-    def test_set_value(self, model: SortedSetter, tracks: list[Track], faker: Faker):
+    def test_set_value(self, model: SortSetter, tracks: list[Track], faker: Faker):
         track = faker.random_element(tracks)
         expected = min(track.track.number for track in tracks)
 
         model.set(track, tracks)
         assert track.track.number == expected
 
-    def test_set_value_with_sort(self, model: SortedSetter, tracks: list[Track], faker: Faker):
+    def test_set_value_with_sort(self, model: SortSetter, tracks: list[Track], faker: Faker):
         track = faker.random_element(tracks)
         expected = min([track.track.number for track in tracks])
 

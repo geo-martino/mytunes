@@ -34,9 +34,31 @@ class ModelMetaclass(PydanticModelMetaclass):
 
         if cls.__final__:
             cls._validate_all_class_vars_set()
-            cls.__model_registry__.add(cls)
+            cls._add_to_registry()
 
         return cls
+
+    def __hash__(cls) -> int:
+        hsh = super().__hash__()
+        #print(cls, hsh, cls.__module__)
+        return hsh
+
+    def _add_to_registry(cls) -> None:
+        # WORKAROUND: hashes for classes are different depending on how they are imported meaning two of the
+        #  same class definitions can have different hashes
+        #  This isn't usually an issue in production but can causes equality checks to fail when comparing
+        #  two of the same class definitions with different hashes
+        #  So we only add a class to the registry by comparing on fully-qualified name instead of relying on hashes
+
+        def _get_fqn(kls: type[Any]) -> str:
+            return kls.__module__ + "." + kls.__name__
+
+        fqn = _get_fqn(cls)
+        registered_fqns = map(_get_fqn, cls.__model_registry__)
+        if any(registered.endswith(fqn) or fqn.endswith(registered) for registered in registered_fqns):
+            return
+
+        cls.__model_registry__.add(cls)
 
     def _validate_all_class_vars_set(cls) -> None:
         """Validate that all class variables defined on this model and its subclasses are set."""

@@ -1,19 +1,21 @@
+from collections.abc import Sequence
 from copy import copy
 from pathlib import Path
-from typing import Any, final
+from typing import Any, final, Literal
 
 from pydantic import Field, NonNegativeInt, PositiveInt, validate_call, model_validator
 from typing_inspection.typing_objects import is_typevar
 
-from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE
+from mytunes.processors._types import get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE, ItemCollection
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.order import Position
 from ._base import HasCondition, Value
-from ...._base import BaseModel, ModelMetaclass
+from ...._base import BaseModel
 from ...._base.attribute import AttributeModel
+from ...._base.discriminator import DiscriminatorMetaclass
 
 
-class FieldValueMetaclass(ModelMetaclass):
+class FieldValueMetaclass(DiscriminatorMetaclass):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any):
         # set appropriate field types from the generic type
         base = next((base for base in bases if isinstance(base, mcs) and issubclass(base, BaseModel)), None)
@@ -32,10 +34,10 @@ class FieldValueMetaclass(ModelMetaclass):
         return get_tag_attributes_type(generic)
 
 
-@final
-class FieldValue[IT: AttributeModel, VT: Any](Value[IT, VT], HasCondition[VT], metaclass=FieldValueMetaclass):
-    """Gets tag values according to some rules."""
-    __final__ = True
+class _FieldValue[OT: str, IT: AttributeModel, VT: Any](
+    Value[OT, IT, VT], HasCondition[VT], metaclass=FieldValueMetaclass
+):
+    """Gets tag values from another field on the same item."""
 
     field: _ATTRIBUTE_FIELD_TYPE = Field(
         description="The field from which to get a tag value from.",
@@ -58,8 +60,22 @@ class FieldValue[IT: AttributeModel, VT: Any](Value[IT, VT], HasCondition[VT], m
         return getattr(item, self.field)
 
 
+def from_field_names[T](fields: T | Sequence[str]) -> T | list[dict[str, Any]]:
+    """Validator to assign a set of fields to a FieldValue operation."""
+    if isinstance(fields, str):
+        fields = [fields]
+    if not isinstance(fields, ItemCollection):
+        return fields
+    return [{Value.__discriminator_field__: "field", "field": field} for field in fields]
+
+
 @final
-class PositionValue[IT: AttributeModel](FieldValue[IT, Position]):
+class FieldValue[IT: AttributeModel, VT: Any](_FieldValue[Literal["field"], IT, VT]):
+    __final__ = True
+
+
+@final
+class PositionValue[IT: AttributeModel](_FieldValue[Literal["position"], IT, Position]):
     """Gets a position tag according to some rules."""
     __final__ = True
 
@@ -79,7 +95,7 @@ class PositionValue[IT: AttributeModel](FieldValue[IT, Position]):
 
 
 @final
-class PathValue[IT: IsLocalFile](FieldValue[IT, Path]):
+class PathValue[IT: IsLocalFile](_FieldValue[Literal["path"], IT, Path]):
     """Gets a position tag according to some rules."""
     __final__ = True
 

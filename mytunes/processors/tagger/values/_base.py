@@ -1,15 +1,20 @@
 from abc import abstractmethod
-from typing import Any, final
+from typing import Any, final, Literal, Annotated
 
 from pydantic import Field, AliasChoices
 
 from mytunes.processors.filters import Filter
 from ...._base import BaseModel
+from ...._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 from ...._types import StrippedString
 
 
 # noinspection PyAbstractClass
-class Value[IT: BaseModel, VT: Any](BaseModel):
+class Value[OT: str, IT: BaseModel, VT: Any](DiscriminatorModel):
+    operation: Annotated[OT, DiscriminatorAttribute()] = Field(
+        description="The name of this operation."
+    )
+
     @abstractmethod
     def get(self, item: IT) -> VT:
         """Get the value of a tag from the item."""
@@ -28,7 +33,7 @@ class HasCondition[VT: Any](BaseModel):
 
 
 @final
-class FixedValue[VT: Any](Value[BaseModel, VT]):
+class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT]):
     """Always returns a fixed tag value."""
     __final__ = True
 

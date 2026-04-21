@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, final
+from typing import Any, final, Literal
 
 from pydantic import Field, model_validator
 
@@ -10,7 +10,7 @@ from ...._base.attribute import AttributeModel
 
 
 # noinspection PyAbstractClass
-class CollectionValue[IT: AttributeModel, VT: Any](Value[Iterable[IT], VT]):
+class CollectionValue[OT: str, IT: AttributeModel, VT: Any](Value[OT, Iterable[IT], VT]):
     field: _ATTRIBUTE_FIELD_TYPE = Field(
         description="The field from which to get a tag value from.",
     )
@@ -33,7 +33,7 @@ class CollectionValue[IT: AttributeModel, VT: Any](Value[Iterable[IT], VT]):
 
 
 @final
-class MinValue[IT: AttributeModel, VT: Any](CollectionValue[IT, VT]):
+class MinValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["min"], IT, VT]):
     __final__ = True
 
     def get(self, items: Iterable[IT]) -> VT | None:
@@ -42,7 +42,7 @@ class MinValue[IT: AttributeModel, VT: Any](CollectionValue[IT, VT]):
 
 
 @final
-class MaxValue[IT: AttributeModel, VT: Any](CollectionValue[IT, VT]):
+class MaxValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["max"], IT, VT]):
     __final__ = True
 
     def get(self, items: Iterable[IT]) -> VT | None:

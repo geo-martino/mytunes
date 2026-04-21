@@ -1,11 +1,11 @@
-from ._setter import ValueSetter, GroupedSetter, SortedSetter, IncrementalSetter
+from ._setter import ValueSetter, GroupSetter, SortSetter, IncrementalSetter
 from ._tagger import Tagger
 
 __all__ = [
     Tagger.__name__,
     ValueSetter.__name__,
-    GroupedSetter.__name__,
-    SortedSetter.__name__,
+    GroupSetter.__name__,
+    SortSetter.__name__,
     IncrementalSetter.__name__,
 ]
 

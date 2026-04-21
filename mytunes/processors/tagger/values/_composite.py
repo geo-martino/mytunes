@@ -1,20 +1,20 @@
 from abc import abstractmethod
 from collections.abc import Sequence
 from string import Formatter
-from typing import final, Self
+from typing import final, Self, Literal, Annotated
 
-from pydantic import Field, model_validator, ValidationError, validate_call
+from pydantic import Field, model_validator, ValidationError, validate_call, BeforeValidator
 
 from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.processors._types import _ATTRIBUTE_FIELD_MAP
-from mytunes.processors.tagger.values._fields import FieldValue
+from mytunes.processors.tagger.values._fields import FieldValue, from_field_names
 from ._base import Value
 from ...._base.attribute import AttributeModel
 
 
 # noinspection PyAbstractClass
-class CompositeValue[IT: AttributeModel](Value[IT, str]):
+class CompositeValue[OT: str, IT: AttributeModel](Value[OT, IT, str]):
     @abstractmethod
     def get(self, item: IT) -> str:
         """Get the combined value from the given item's tags."""
@@ -22,11 +22,11 @@ class CompositeValue[IT: AttributeModel](Value[IT, str]):
 
 
 @final
-class JoinValue[IT: AttributeModel](CompositeValue[IT]):
+class JoinValue[IT: AttributeModel](CompositeValue[Literal["join"], IT]):
     """Formats a tag value according to a set of tag values to get and join with some separator."""
     __final__ = True
 
-    fields: Sequence[FieldValue.annotation] = Field(
+    fields: Annotated[Sequence[FieldValue.annotation], BeforeValidator(from_field_names)] = Field(
         description="The fields to use to get the final value.",
         default_factory=tuple,
     )
@@ -45,7 +45,7 @@ class JoinValue[IT: AttributeModel](CompositeValue[IT]):
 
 
 @final
-class TemplateValue[IT: AttributeModel](CompositeValue[IT]):
+class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT]):
     """Formats a tag value according to a template of tag values to get."""
     __final__ = True
 
