@@ -27,7 +27,7 @@ class CompositeValue[OT: str, IT: AttributeModel](Value[OT, IT, str]):
 
     def _handler_invalid_fields(self, field_values: dict[str, Any]) -> None:
         if not self.fail_on_missing:
-            field_values |= {k: v if v is not None else "" for k, v in field_values.items()}
+            field_values |= {field: value if value is not None else "" for field, value in field_values.items()}
             return
 
         if invalid_fields := [name for name, value in field_values.items() if value is None]:
@@ -83,6 +83,8 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
                 except ValidationError:
                     unrecognised_fields.append(name)
 
+            self.__dict__["template"] = self.template.replace(name, name.replace(".", "_"))
+
         if unrecognised_fields:
             errors = ", ".join(unrecognised_fields)
             expected = ", ".join(_ATTRIBUTE_FIELD_MAP)
@@ -104,4 +106,5 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
         field_values: dict[str, Any] = {field.field: field.get(item) for field in self.fields}
         self._handler_invalid_fields(field_values)
 
+        field_values = {field.replace(".", "_"): value for field, value in field_values.items()}
         return self.template.format_map(field_values)

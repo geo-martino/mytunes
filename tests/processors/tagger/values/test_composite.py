@@ -2,6 +2,7 @@ import pytest
 from faker import Faker
 
 from mytunes.core._item.track import Track
+from mytunes.core.properties.order import Position
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.tagger.values import FixedValue
 from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue
@@ -50,9 +51,19 @@ class TestTemplateValue(BaseModelTester):
         model = TemplateValue(template="{name} {sep} {artist}", fields=[FixedValue(name="sep", value="-")])
         assert model.get(track) == expected
 
+    def test_get_value_for_nested_fields(self, track: Track, faker: Faker):
+        track.disc = Position(number=faker.random_int())
+        track.track = Position(number=faker.random_int())
+        expected = f"{track.disc.number}-{track.track.number} {track.name}"
+
+        model = TemplateValue(
+            template="{disc.number}{sep}{track.number} {name}", fields=[FixedValue(name="sep", value="-")]
+        )
+        assert model.get(track) == expected
+
     def test_get_value_fails_on_missing(self, track: Track, faker: Faker):
         assert track.key is None
 
-        model = TemplateValue(template="{name} - {key}")
+        model = TemplateValue(template="{name} - {key}", fail_on_missing=True)
         with pytest.raises(MyTunesValueError):
             model.get(track)
