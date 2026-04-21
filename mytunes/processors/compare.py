@@ -309,13 +309,13 @@ class Comparer(DynamicProcessor):
     def _matches_reg_ex(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False
-        return bool(re.search(expected, actual))
+        return bool(re.search(expected, str(actual)))
 
     @processormethod
     def _matches_reg_ex_ignore_case(self, actual: str | None, expected: re.Pattern | None) -> bool:
         if actual is None or expected is None:
             return False
-        return bool(re.search(expected, actual, flags=re.I))
+        return bool(re.search(expected, str(actual), flags=re.I))
 
     def __eq__(self, item: Any):
         return isinstance(item, type(self)) and all((
