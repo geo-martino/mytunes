@@ -33,7 +33,7 @@ class HasCondition[VT: Any](BaseModel):
 
 
 @final
-class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT]):
+class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT], HasCondition[VT]):
     """Always returns a fixed tag value."""
     __final__ = True
 
@@ -46,8 +46,8 @@ class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT]):
         description="The value of the fixed value.",
     )
 
-    def get(self, item: Any) -> VT:
-        return self.value
+    def get(self, item: Any) -> VT | None:
+        return self.value if self._check(item) else None
 
 
 def from_fixed_value[T](value: T) -> T | FixedValue:
