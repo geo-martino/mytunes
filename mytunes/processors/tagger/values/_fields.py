@@ -60,6 +60,11 @@ class _FieldValue[OT: str, IT: AttributeModel, VT: Any](
         return getattr(item, self.field)
 
 
+@final
+class FieldValue[IT: AttributeModel, VT: Any](_FieldValue[Literal["field"], IT, VT]):
+    __final__ = True
+
+
 def from_field_names[T](fields: T | Sequence[str]) -> T | list[dict[str, Any]]:
     """Validator to assign a set of fields to a FieldValue operation."""
     if isinstance(fields, str):
@@ -67,11 +72,6 @@ def from_field_names[T](fields: T | Sequence[str]) -> T | list[dict[str, Any]]:
     if not isinstance(fields, ItemCollection):
         return fields
     return [{Value.__discriminator_field__: "field", "field": field} for field in fields]
-
-
-@final
-class FieldValue[IT: AttributeModel, VT: Any](_FieldValue[Literal["field"], IT, VT]):
-    __final__ = True
 
 
 @final

@@ -37,9 +37,10 @@ class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT]):
     """Always returns a fixed tag value."""
     __final__ = True
 
-    field: StrippedString = Field(
+    field: StrippedString | None = Field(
         description="The name of the fixed value.",
         alias="name",
+        default=None
     )
     value: VT = Field(
         description="The value of the fixed value.",
@@ -47,3 +48,10 @@ class FixedValue[VT: Any](Value[Literal["fixed"], BaseModel, VT]):
 
     def get(self, item: Any) -> VT:
         return self.value
+
+
+def from_fixed_value[T](value: T) -> T | dict[str, Any]:
+    """Validator to assign a set of fields to a FieldValue operation."""
+    if not isinstance(value, str | int | float | bool | set | tuple | list):
+        return value
+    return {FixedValue.__discriminator_field__: "fixed", "value": value}

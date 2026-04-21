@@ -2,13 +2,14 @@ from abc import abstractmethod
 from collections.abc import Sequence, Collection, Iterable
 from typing import Any, Union, final, Annotated, Literal
 
-from pydantic import Field, PositiveInt
+from pydantic import Field, PositiveInt, BeforeValidator
 from typing_inspection.typing_objects import is_typevar
 
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, CollectionValue, HasCondition
+from .values._base import from_fixed_value
 from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel
@@ -45,7 +46,7 @@ class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass
     field: _WRITEABLE_ATTRIBUTE_FIELD_TYPE = Field(
         description="The field to set the tag value to.",
     )
-    value: Value.annotation = Field(
+    value: Annotated[Value.annotation, BeforeValidator(from_fixed_value)] = Field(
         description="The value getter for the tag value to set.",
     )
 

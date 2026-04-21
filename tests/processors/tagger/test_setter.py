@@ -18,12 +18,12 @@ class TestValueSetter(BaseModelTester):
         return ValueSetter(field="artist", value=FixedValue(name="name", value=faker.name()))
 
     def test_set_value(self, model: ValueSetter, track: Track, faker: Faker):
-        fixed_value = FixedValue(name="name", value=faker.name())
-        model = ValueSetter(field="artist", value=fixed_value)
+        value = faker.name()
+        model = ValueSetter(field="artist", value=value)
 
-        assert track.artist != fixed_value.value
+        assert track.artist != value
         model.set(track)
-        assert track.artist == fixed_value.value
+        assert track.artist == value
 
 
 class GroupedSetterTester(BaseModelTester):
