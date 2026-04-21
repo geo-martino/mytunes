@@ -83,8 +83,6 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
                 except ValidationError:
                     unrecognised_fields.append(name)
 
-            self.__dict__["template"] = self.template.replace(name, name.replace(".", "_"))
-
         if unrecognised_fields:
             errors = ", ".join(unrecognised_fields)
             expected = ", ".join(_ATTRIBUTE_FIELD_MAP)
@@ -100,11 +98,20 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
 
         return self
 
+    @model_validator(mode="after")
+    def _map_nested_fields_notation(self) -> Self:
+        # needed as format_map doesn't recognise keys with dots in them
+        field_names = set(name for _, name, _, _ in Formatter().parse(self.template) if name is not None)
+        for name in field_names:
+            self.__dict__["template"] = self.template.replace(name, name.replace(".", "_"))
+        return self
+
     @validate_call
     def get(self, item: IT) -> str:
         """Format the template from the fields of the given item."""
         field_values: dict[str, Any] = {field.field: field.get(item) for field in self.fields}
         self._handler_invalid_fields(field_values)
 
+        # needed as format_map doesn't recognise keys with dots in them
         field_values = {field.replace(".", "_"): value for field, value in field_values.items()}
         return self.template.format_map(field_values)

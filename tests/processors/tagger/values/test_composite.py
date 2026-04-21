@@ -25,7 +25,7 @@ class TestJoinValue(BaseModelTester):
     def test_get_value_fails_on_missing(self, track: Track, faker: Faker):
         assert track.key is None
 
-        model = JoinValue(fields=["name", "key"])
+        model = JoinValue(fields=["name", "key"], fail_on_missing=True)
         with pytest.raises(MyTunesValueError):
             model.get(track)
 
