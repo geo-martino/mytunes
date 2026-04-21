@@ -217,7 +217,7 @@ class TestGroupFilter(FilterTester):
         assert sorted(result.included, key=self.get_path) == sorted(tracks_include, key=self.get_path)
         assert not result.excluded
         assert not result.compared
-        # TODO: flakey assertion - very rare
+        # FIXME: flakey assertion - very rare
         assert sorted(result.grouped, key=self.get_path) == sorted(tracks_name[1:], key=self.get_path)
 
     def test_match_with_group_by_released_at(

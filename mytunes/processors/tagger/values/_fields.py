@@ -71,7 +71,7 @@ def from_field_names[T](fields: T | Sequence[str]) -> T | list[FieldValue]:
         fields = [fields]
     if not isinstance(fields, ItemCollection):
         return fields
-    return [FieldValue(field=field) for field in fields]
+    return [FieldValue(field=field) if isinstance(field, str) else field for field in fields]
 
 
 @final
@@ -113,3 +113,6 @@ class PathValue[IT: IsLocalFile](_FieldValue[Literal["path"], IT, Path]):
         if self.parent is not None:
             value = value.parts[-self.parent - 1]
         return value if self._check(value) else None
+
+
+type FieldValueT = _FieldValue.annotation
