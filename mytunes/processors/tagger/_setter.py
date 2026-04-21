@@ -14,6 +14,7 @@ from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel
 from ..._base.discriminator import DiscriminatorMetaclass, DiscriminatorAttribute, DiscriminatorModel
+from ..._types import TO_TUPLE
 
 
 class SetterMetaclass(DiscriminatorMetaclass):
@@ -76,7 +77,7 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
     value: CollectionValue.annotation = Field(
         description="The value getter for the tag value to set.",
     )
-    group_by: Sequence[_ATTRIBUTE_FIELD_TYPE] = Field(
+    group_by: Sequence[_ATTRIBUTE_FIELD_TYPE, TO_TUPLE] = Field(
         description="The fields to group by.",
         default_factory=tuple,
     )
