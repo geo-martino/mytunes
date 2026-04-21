@@ -279,11 +279,11 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         Match original and current tracks again on current conditions to check for differences
         between compare, include and exclude settings.
         """
-        if self.matcher is None or not self.matcher.ready:
+        if not self.matcher:
             return
 
         track_paths = set(track.path for track in self.tracks)
-        if not self.matcher.compare or not self.matcher.compare.ready:
+        if not self.matcher.compare:
             # no compare conditions so all tracks are included, none are excluded
             self.matcher.include.paths = track_paths
             self.matcher.exclude.paths = {}
@@ -581,7 +581,7 @@ class _XMLCondition(_XMLBaseModel):
         self.and_conditions = None
         self.or_conditions = None
 
-        if not isinstance(comparers, ComparerFilter) or not comparers.ready:
+        if not isinstance(comparers, ComparerFilter) or not comparers:
             return self
 
         sub = _XMLConditions.model_validate(comparers)

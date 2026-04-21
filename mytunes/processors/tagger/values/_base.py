@@ -29,7 +29,7 @@ class HasCondition[VT: Any](BaseModel):
     )
 
     def _check(self, value: VT) -> bool:
-        return self.condition is None or not self.condition.ready or self.condition.check(value)
+        return self.condition is None or not self.condition or self.condition.check(value)
 
 
 @final

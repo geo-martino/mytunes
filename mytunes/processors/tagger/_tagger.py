@@ -1,6 +1,6 @@
 from collections.abc import Sequence, Collection, Iterable
 from functools import partial
-from typing import Union, Annotated
+from typing import Union, Annotated, Self, Mapping
 
 from pydantic import AliasChoices, Field
 
@@ -16,8 +16,11 @@ from ...core.properties.name import HasName
 from ...logger import Logger
 
 
-class TaggerResult(Result):
-    fields: Annotated[
+class TaggerResult[IT: AttributeModel](Result):
+    item: IT = Field(
+        description="The item with missing tags.",
+    )
+    tags: Annotated[
         Sequence[str],
         TO_TUPLE,
         MapLogFormatter(
@@ -27,9 +30,35 @@ class TaggerResult(Result):
             include_name_in_log=False,
         ),
     ] = Field(
-        description="The fields that were modified.",
+        description="The tags that were modified on the item.",
         default_factory=tuple
     )
+
+    @classmethod
+    def generate_table(
+            cls,
+            results: Sequence[Self] | Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
+            header: str = None
+    ) -> str:
+        if isinstance(results, Mapping):
+            return super().generate_table(results=results, header=header)
+
+        results_mapped: list[tuple[str, TaggerResult]] = []
+        for result in results:
+            if not isinstance(result, TaggerResult):
+                results_mapped.append(result)
+
+            match result.item:
+                case HasName():
+                    key = result.item.name
+                case ResourceModel() if result.item.unique_keys:
+                    key = next(map(str, sorted(result.item.unique_keys, key=lambda k: isinstance(k, str))), None)
+                case _:
+                    key = str(id(result.item))
+
+            results_mapped.append((key, result))
+
+        return super().generate_table(results=results_mapped, header=header)
 
 
 class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
@@ -42,48 +71,31 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         validation_alias=AliasChoices("fields", "rules"),
     )
 
-    def set_tags_to_items(self, items: Iterable[IT]) -> tuple[tuple[str, TaggerResult], ...]:
+    def set_tags_to_items(self, items: Iterable[IT]) -> tuple[TaggerResult[IT], ...]:
         """Apply setters to the item from the collection."""
         items = list(self.filter_items(items))
 
         task_id = self._progress.add_task(description="Applying tags to items", total=len(items))
-        tasks = (partial(self._set_tags_to_item_with_key, item=item, collection=items) for item in items)
+        tasks = (partial(self.set_tags_to_item, item=item, collection=items) for item in items)
         results = tuple(self._run_tasks(tasks, task_id=task_id))
 
         return results
 
     def filter_items(self, items: Iterable[IT]) -> Iterable[IT]:
         """Apply the item filter to the items provided (if applicable)."""
-        if self.filter is None or not self.filter.ready:
-            return items
-        return filter(self.filter.check, items)
+        return filter(self.filter.check, items) if self.filter else items
 
-    def _set_tags_to_item_with_key(self, item: IT, collection: Collection[IT]) -> tuple[str, TaggerResult] | None:
-        result = self.set_tags_to_item(item, collection)
-        if not result:
-            return
-
-        match item:
-            case HasName():
-                key = item.name
-            case ResourceModel() if item.unique_keys:
-                key = next(map(str, sorted(item.unique_keys, key=lambda k: isinstance(k, str))), None)
-            case _:
-                key = str(id(item))
-
-        return key, result
-
-    def set_tags_to_item(self, item: IT, collection: Collection[IT]) -> TaggerResult:
+    def set_tags_to_item(self, item: IT, collection: Collection[IT]) -> TaggerResult[IT]:
         """Apply setters to the item from the collection."""
-        fields = []
+        tags = []
         for setter in self.setters:
             is_set = setter.set(item, collection)
             if is_set:
-                fields.append(setter.field)
+                tags.append(setter.field)
 
-        return TaggerResult(fields=fields)
+        return TaggerResult(item=item, tags=tags)
 
-    def log_results(self, results: Sequence[tuple[str, TaggerResult]]) -> None:
+    def log_results(self, results: Sequence[TaggerResult]) -> None:
         """Log the given tagger results"""
         header = "TAGGER RESULTS"
         table = TaggerResult.generate_table(results=results, header=header)

@@ -48,7 +48,7 @@ class CompositeFilter[FT: str, IT](Filter[FT, IT], Collection[Filter[Any, IT]]):
 
     @property
     def ready(self):
-        return any(filter_.ready for filter_ in self.filters)
+        return any(self.filters)
 
     def apply(self, values: Collection[IT], reference: IT | None = None) -> list[IT]:
         return self.match(values=values, reference=reference).combined
@@ -129,7 +129,7 @@ class _IncludeExcludeFilter[FT: str, IT, IF: Filter, EF: Filter](CompositeFilter
     @validate_call
     def check(self, item: IT, reference: IT | None = None) -> bool:
         match = self.include.check(item, reference=reference)
-        if self.exclude.ready:
+        if self.exclude:
             match &= not self.exclude.check(item, reference=reference)
         return match
 
@@ -142,7 +142,7 @@ class _IncludeExcludeFilter[FT: str, IT, IF: Filter, EF: Filter](CompositeFilter
             return IncludeExcludeResult()
 
         included = tuple(self.include.apply(values))
-        excluded = self.exclude.apply(values) if self.exclude.ready else ()
+        excluded = self.exclude.apply(values) if self.exclude else ()
 
         return IncludeExcludeResult(included=included, excluded=excluded)
 
@@ -223,7 +223,7 @@ class GroupFilter[IT, IF: Filter, EF: Filter](
             return False
 
         match = self.include.check(item, reference=reference)
-        if self.compare.ready:
+        if self.compare:
             match |= self.compare.check(item, reference=reference)
 
         return match  # cannot apply group_by logic as it depends on the full set of values
@@ -237,10 +237,10 @@ class GroupFilter[IT, IF: Filter, EF: Filter](
             return GroupResult()
 
         included = tuple(self.include.apply(values))
-        excluded = self.exclude.apply(values) if self.exclude.ready else ()
+        excluded = self.exclude.apply(values) if self.exclude else ()
 
         compared = ()
-        if self.compare.ready:
+        if self.compare:
             # use object id matching to filter out already included items
             # doing this because using Pydantic __contains__ comparison between models is too slow
             included_ids = {id(item) for item in included}
