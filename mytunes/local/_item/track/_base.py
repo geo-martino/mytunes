@@ -668,12 +668,14 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
 
         self._logger.info(message, header=2)
 
-    def log_save_tracks_results(self, results: Mapping[Path, Iterable[str]]) -> None:
+    def log_save_tracks_results(self, results: Mapping[Path, Iterable[str]], dry_run: bool = False) -> None:
         """Log the given results of saving tracks."""
         self._logger.print_line(DEBUG)
 
         for path, tags in results.items():
-            if tags:
+            if tags and dry_run:
+                self._logger.debug(f"Would have updated {path.name} with tags: {', '.join(tags)}")
+            elif tags:
                 self._logger.debug(f"Updated {path.name} with tags: {', '.join(tags)}")
             else:
                 self._logger.debug(f"No tags updated for {path.name}")
