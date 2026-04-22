@@ -27,7 +27,7 @@ from .._utils import truncate_string
 class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
     """Stores the results of the searching process."""
     matches: Annotated[
-        Sequence[IT],
+        Sequence[MT],
         TO_TUPLE,
         LenLogFormatter(condition=lambda x: False),  # never log this attribute
     ] = Field(
@@ -38,7 +38,7 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
         default_factory=tuple
     )
     matched: Annotated[
-        Sequence[MT],
+        Sequence[IT],
         TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
