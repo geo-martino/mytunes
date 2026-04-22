@@ -69,7 +69,10 @@ class OptionsProcessor(InputProcessor):
             )
             rows.append(row)
 
-        header = f"{self._header}\n\n" if header is True and self._header else header or ""
+        if header is True and self._header:
+            header = self._header
+
+        header = f"{self._header}\n\n" if header else ""
         sub_header = colored("Enter one of the following", "cyan") + ":\n"
         log = header + sub_header + tabulate(
             rows,
