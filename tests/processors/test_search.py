@@ -99,6 +99,7 @@ class SearcherTester(metaclass=ABCMeta):
 
     @staticmethod
     def assert_random_match_result(
+            name: str,
             items: Collection,
             result: SearchResult,
             matches: Collection,
@@ -112,6 +113,7 @@ class SearcherTester(metaclass=ABCMeta):
         assert len(matched) + len(unmatched) == len(items)
 
         assert result == SearchResult(
+            name=name,
             matches=matches,
             matched=matched,
             unmatched=unmatched,
@@ -213,11 +215,13 @@ class TestSearcher(SearcherTester, BaseModelTester):
         valid = faker.random_elements(items, unique=True)
         invalid = [item for item in items if item not in valid]
 
-        expected = SearchResult(unmatched=tuple(items), skipped=tuple(invalid))
-        assert model._match_items(items, [], skipped=invalid) == expected
+        name = faker.name()
+        expected = SearchResult(name=name, unmatched=tuple(items), skipped=tuple(invalid))
+        assert model._match_items(items, [], skipped=invalid, name=name) == expected
 
-        result = model._match_items(valid, query_results, skipped=invalid)
+        result = model._match_items(valid, query_results, skipped=invalid, name=name)
         self.assert_random_match_result(
+            name=name,
             items=valid,
             result=result,
             matches=matches,
@@ -356,12 +360,14 @@ class TestItemSearcher(SearcherTester):
         mock_skip_random, valid, invalid = mock_skip_random
         mock_match_random, matches, matched, unmatched = mock_match_random
 
-        result = await model.search_items(items)
+        name = faker.name()
+        result = await model.search_items(items, name=name)
 
         assert mock_skip_random.call_count == len(items)
         assert mock_query_item.call_count == len(valid)
 
         self.assert_random_match_result(
+            name=name,
             items=valid,
             result=result,
             matches=matches,
@@ -391,13 +397,14 @@ class TestItemSearcher(SearcherTester):
         invalid = [item for item in items if item not in valid]
 
         result_to_search = SearchResult(
-            matches=items_matches, matched=items_matched, unmatched=valid, skipped=invalid
+            name=faker.name(), matches=items_matches, matched=items_matched, unmatched=valid, skipped=invalid
         )
         result = await model._search_from_result(result_to_search)
 
         assert mock_query_item.call_count == len(valid)
 
         self.assert_random_match_result(
+            name=result_to_search.name,
             items=valid,
             result=result,
             matches=matches,
@@ -506,8 +513,8 @@ class TestCollectionSearcher(SearcherTester):
     async def test_search_collections(self, model: Searcher, collections: list[MockCollection], faker: Faker):
         names = (collection.name for collection in collections)
 
-        def _random_result(*_, **__) -> tuple[str, SearchResult]:
-            return next(names), SearchResult()
+        def _random_result(*_, **__) -> SearchResult:
+            return SearchResult(name=next(names))
 
         with patch.object(
                 model, "_search_collection", side_effect=_random_result
@@ -515,7 +522,7 @@ class TestCollectionSearcher(SearcherTester):
             results = await model.search_collections(collections)
 
             assert len(results) == len(collections)
-            assert {result[0] for result in results} == {collection.name for collection in collections}
+            assert {result.name for result in results} == {collection.name for collection in collections}
 
             assert mock_search_collection.call_count == len(collections)
 
@@ -525,18 +532,21 @@ class TestCollectionSearcher(SearcherTester):
             yield mock_items_only
 
     @pytest.fixture
-    def mock_search_items(self, model: Searcher) -> Generator[Mock]:
-        with patch.object(model, "_search_items", return_value=SearchResult()) as mock_search_items:
+    def mock_search_items(self, model: Searcher, faker: Faker) -> Generator[Mock]:
+        result = SearchResult(name=faker.name())
+        with patch.object(model, "_search_items", return_value=result) as mock_search_items:
             yield mock_search_items
 
     @pytest.fixture
-    def mock_search_from_result(self, model: Searcher) -> Generator[Mock]:
-        with patch.object(model, "_search_from_result", return_value=SearchResult()) as mock_search_from_result:
+    def mock_search_from_result(self, model: Searcher, faker: Faker) -> Generator[Mock]:
+        result = SearchResult(name=faker.name())
+        with patch.object(model, "_search_from_result", return_value=result) as mock_search_from_result:
             yield mock_search_from_result
 
     @pytest.fixture
-    def mock_match_items(self, model: Searcher, match: RemoteCollection) -> Generator[Mock]:
-        with patch.object(model, "_match_items", return_value=SearchResult()) as mock_match:
+    def mock_match_items(self, model: Searcher, match: RemoteCollection, faker: Faker) -> Generator[Mock]:
+        result = SearchResult(name=faker.name())
+        with patch.object(model, "_match_items", return_value=result) as mock_match:
             yield mock_match
 
     async def test_search_collection_on_items_only(
@@ -605,7 +615,7 @@ class TestCollectionSearcher(SearcherTester):
     async def test_search_collection_keeps_searching_for_items(
             self,
             model: Searcher,
-            collection: CollectionModel,
+            collection: MockCollection,
             tracks: list[Track],
             match: RemoteCollection,
             mock_search_items_only: Mock,
@@ -618,7 +628,7 @@ class TestCollectionSearcher(SearcherTester):
         mock_search_items_only.return_value = False
         mock_match.return_value = match
 
-        mock_match_items.return_value = SearchResult(unmatched=tracks)
+        mock_match_items.return_value = SearchResult(name=collection.name, unmatched=tracks)
         model.keep_matching_collection_items = True
 
         await model.search_collection(collection)

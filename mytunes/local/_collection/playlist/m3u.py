@@ -121,7 +121,7 @@ class M3U(LocalPlaylist[PathFilter]):
         if not paths:  # clear on empty playlist file
             self.tracks.clear()
             self._original.clear()
-            return LoadPlaylistResult()
+            return LoadPlaylistResult(name=self.name)
 
         self.matcher: PathFilter = PathFilter(values=set(paths), path_mapper=self.path_mapper)
 
@@ -147,7 +147,9 @@ class M3U(LocalPlaylist[PathFilter]):
         limit_result = self._limit_tracks(tracks=match_result.combined, ignore=paths)
         sort_result = self._sort_tracks(tracks=limit_result.limited, paths=paths)
 
-        result = LoadPlaylistResult.from_results(match=match_result, limit=limit_result, sort=sort_result)
+        result = LoadPlaylistResult.from_results(
+            name=self.name, match=match_result, limit=limit_result, sort=sort_result
+        )
         self.tracks.replace(result.tracks)
 
         return result

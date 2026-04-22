@@ -287,3 +287,28 @@ class TotalCountResult(CountResult):
     def _get_total_cell(cls, total: int) -> str:
         value = cls._total_value_formatter.get_value(total)
         return cls._get_field_cell(value, "total", formatters=[cls._total_value_formatter])
+
+
+class NamedResult(Result):
+    name: str = Field(
+        description="The name of the collection"
+    )
+
+    @classmethod
+    def generate_table(
+            cls,
+            results: Sequence[Self] | Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
+            header: str = None
+    ) -> str:
+        if isinstance(results, Mapping):
+            return super().generate_table(results=results, header=header)
+
+        results_mapped: list[tuple[str, cls]] = []
+        for result in results:
+            if not isinstance(result, cls):
+                results_mapped.append(result)
+                continue
+
+            results_mapped.append((result.name, result))
+
+        return super().generate_table(results=results_mapped, header=header)

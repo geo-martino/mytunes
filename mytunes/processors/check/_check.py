@@ -73,7 +73,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     @_validate_collections
     async def check_collections[T: HasURI](
             self, collections: Sequence[CollectionModel[T]]
-    ) -> tuple[tuple[str, CheckResult[T]], ...]:
+    ) -> tuple[CheckResult[T], ...]:
         """
         Check the matches for the items in the given collections using only user input
         for checking and setting matches.
@@ -83,7 +83,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         batches = list(itertools.batched(collections, self.interval))
         batch_total = len(batches)
 
-        results: list[tuple[str, CheckResult[T]]] = []
+        results: list[CheckResult[T]] = []
         for batch_number, batch in enumerate(batches, 1):
             page = PlaylistsPage(
                 position=Position(number=batch_number, total=batch_total, zero_fill=True),
@@ -110,7 +110,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     @_validate_collections
     async def check_collections_on_playlists[T: HasURI](
             self, collections: Sequence[CollectionModel[T]]
-    ) -> tuple[tuple[str, CheckResult[T]], ...]:
+    ) -> tuple[CheckResult[T], ...]:
         """
         Check the matches for the items in the given collections by creating temporary playlists
         on the remote service for checking and setting matches.
@@ -121,7 +121,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         batches = list(itertools.batched(collections, self.interval))
         batch_total = len(batches)
 
-        results: list[tuple[str, CheckResult[T]]] = []
+        results: list[CheckResult[T]] = []
         for batch_number, batch in enumerate(batches, 1):
             page = PlaylistsPage(
                 position=Position(number=batch_number, total=batch_total, zero_fill=True),
@@ -146,9 +146,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
 
         return tuple(results)
 
-    async def _check_playlist_page[T: HasURI](
-        self, page: PlaylistsPage[API, T]
-    ) -> tuple[tuple[str, CheckResult[T]], ...]:
+    async def _check_playlist_page[T: HasURI](self, page: PlaylistsPage[API, T]) -> tuple[CheckResult[T], ...]:
         self._log_page(page)
 
         with self._pause_progress():
@@ -190,7 +188,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     ###########################################################################
     ## Logging + validation
     ###########################################################################
-    def log_results(self, results: Sequence[tuple[str, CheckResult]]) -> None:
+    def log_results(self, results: Sequence[CheckResult]) -> None:
         """Log the given check results"""
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)

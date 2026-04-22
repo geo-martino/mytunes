@@ -47,6 +47,7 @@ class TaggerResult[IT: AttributeModel](Result):
         for result in results:
             if not isinstance(result, TaggerResult):
                 results_mapped.append(result)
+                continue
 
             match result.item:
                 case HasName():

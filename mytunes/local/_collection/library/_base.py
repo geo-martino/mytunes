@@ -237,7 +237,7 @@ class LocalLibrary(
             self._logger.debug(f"Load error for playlist: {path} - {ex}")
             self.errors.append(path)
 
-    async def load_playlists(self) -> tuple[tuple[str, LoadPlaylistResult], ...]:
+    async def load_playlists(self) -> tuple[LoadPlaylistResult, ...]:
         if not (paths := set(self._playlist_paths)):
             return tuple()
 
@@ -249,13 +249,13 @@ class LocalLibrary(
         task = self._run_tasks_async(map(self.load_playlist, paths), task_id=task_id)
 
         playlists: list[LocalPlaylist] = []
-        results: list[tuple[str, LoadPlaylistResult]] = []
+        results: list[LoadPlaylistResult] = []
         for playlist, result in await task:
             playlists.append(playlist)
-            results.append((playlist.name, result))
+            results.append(result)
 
         playlists = sorted(playlists, key=lambda x: x.name.casefold())
-        results = sorted(results, key=lambda x: x[0].casefold())
+        results = sorted(results, key=lambda x: x.name.casefold())
         self.playlists.replace(playlists)
 
         self._log_errors("Could not load the following playlists")
@@ -307,7 +307,7 @@ class LocalLibrary(
         self._log_playlist_uris()
         self._logger.print_line(STAT)
 
-    def _log_playlist_load(self, results: Sequence[tuple[str, LoadPlaylistResult]]) -> None:
+    def _log_playlist_load(self, results: Sequence[LoadPlaylistResult]) -> None:
         header = f"{self.source.upper()} PLAYLISTS LOADED"
         table = LoadPlaylistResult.generate_table(results=results, header=header)
 

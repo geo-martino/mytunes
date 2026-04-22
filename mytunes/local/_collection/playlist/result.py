@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import Field
 
 from mytunes.processors.filters.composite import GroupResult, CompositeResult
-from mytunes.result import LenLogFormatter, CountResult, LogPosition
+from mytunes.result import LenLogFormatter, CountResult, LogPosition, NamedResult
 from ..._item.track import LocalTrack
 
 
@@ -37,7 +37,7 @@ class SortResult(CountResult):
     )
 
 
-class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult):
+class LoadPlaylistResult(NamedResult, GroupResult[LocalTrack], LimitResult):
     tracks: Annotated[
         tuple[LocalTrack, ...],
         LogPosition(position=50),
@@ -55,6 +55,7 @@ class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult):
     @classmethod
     def from_results(
             cls,
+            name: str,
             match: CompositeResult[LocalTrack] | None = None,
             limit: LimitResult | None = None,
             sort: SortResult | None = None,
@@ -63,7 +64,7 @@ class LoadPlaylistResult(GroupResult[LocalTrack], LimitResult):
         match = {key: val for key, val in (match.__dict__ or {}).items() if not key.startswith("_")}
         limit = {key: val for key, val in (limit.__dict__ or {}).items() if not key.startswith("_")}
         # just take the sorted list as the final tracks as that's always the last step in the load
-        return cls(**match, **limit, tracks=sort.sorted)
+        return cls(name=name, **match, **limit, tracks=sort.sorted)
 
 
 class SavePlaylistResult(CountResult):

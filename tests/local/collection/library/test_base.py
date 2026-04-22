@@ -119,7 +119,8 @@ class TestLocalLibrary(NoUniqueKeyTester):
         pl_mapped = {pl.path: pl for pl in playlists}
 
         async def _load_playlist(path: Path) -> tuple[LocalPlaylist, LoadPlaylistResult]:
-            return pl_mapped[path], LoadPlaylistResult()
+            playlist = pl_mapped[path]
+            return playlist, LoadPlaylistResult(name=playlist.name)
 
         with patch.object(LocalLibrary, "load_playlist", side_effect=_load_playlist) as mock_load:
             yield mock_load

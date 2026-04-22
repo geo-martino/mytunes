@@ -76,7 +76,7 @@ class PlaylistMatch[IT: HasMutableURI](_BaseMatch[IT]):
         if not added and not removed and not missing:
             message = "Playlist unchanged and no missing URIs, skipping match"
             self._log_skip(message)
-            return CheckResult(unchanged=unchanged, unavailable=unavailable, skipped=missing)
+            return CheckResult(name=self.name, unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
         missing += removed
         for item in missing:
@@ -86,20 +86,22 @@ class PlaylistMatch[IT: HasMutableURI](_BaseMatch[IT]):
         if not missing:
             message = "No items changed in playlist and no items with missing matches, skipping match"
             self._log_skip(message)
-            return CheckResult(unchanged=unchanged, unavailable=unavailable)
+            return CheckResult(name=self.name, unchanged=unchanged, unavailable=unavailable)
 
         if not added:
             message = "No items added, skipping match"
             self._log_skip(message)
-            return CheckResult(unchanged=unchanged, unavailable=unavailable, skipped=missing)
+            return CheckResult(name=self.name, unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
         if not any(isinstance(item, HasMutableURI) for item in missing):
             message = "No items with mutable URIs to match with added items, skipping match"
             self._log_skip(message)
-            return CheckResult(unchanged=unchanged, unavailable=unavailable, skipped=missing)
+            return CheckResult(name=self.name, unchanged=unchanged, unavailable=unavailable, skipped=missing)
 
         changed = self._match_items_with_others(items=missing, others=added)
-        return CheckResult(changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=missing)
+        return CheckResult(
+            name=self.name, changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=missing
+        )
 
     def _compare_items[RT: HasURI](
             self, items: Collection[IT], others: Collection[RT]
@@ -193,7 +195,7 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
         if not missing:
             message = "No items with mutable URIs to match to input, skipping match"
             self._log_skip(message)
-            return CheckResult()
+            return CheckResult(name=self.name)
 
         self._log_debug(f"Getting user input for {len(missing)} items")
         self._print_help_text(header=self._get_header(len(missing)))
@@ -219,8 +221,7 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
 
         return cls.input_formatter.__class__(**kwargs, width=width or None)
 
-    @staticmethod
-    def _compare_uri_changes(initial: Iterable[IT], changes: Iterable[IT]) -> CheckResult[IT]:
+    def _compare_uri_changes(self, initial: Iterable[IT], changes: Iterable[IT]) -> CheckResult[IT]:
         changed = []
         unchanged = []
         unavailable = []
@@ -236,7 +237,9 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
             else:
                 changed.append(change)
 
-        return CheckResult(changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=skipped)
+        return CheckResult(
+            name=self.name, changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=skipped
+        )
 
     ###########################################################################
     ## Pause page

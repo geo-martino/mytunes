@@ -1,15 +1,15 @@
-from collections.abc import Sequence
-from typing import Annotated
+from collections.abc import Sequence, Mapping
+from typing import Annotated, Self
 
 from pydantic import Field
 
 from mytunes._types import TO_TUPLE
 from mytunes.core.properties.uri import HasURI
 from mytunes.exception import MyTunesValueError
-from mytunes.result import Result, LenLogFormatter
+from mytunes.result import Result, LenLogFormatter, NamedResult
 
 
-class CheckResult[T: HasURI](Result):
+class CheckResult[T: HasURI](NamedResult):
     """Stores the results of the searching process."""
     changed: Annotated[
         Sequence[T],
@@ -82,6 +82,7 @@ class CheckResult[T: HasURI](Result):
                 raise MyTunesValueError("Other result must contain all items in this result's skipped items")
 
         return CheckResult(
+            name=self.name,
             changed=list(self.changed) + list(other.changed),
             unchanged=list(self.unchanged) + list(other.unchanged),
             unavailable=list(self.unavailable) + list(other.unavailable),

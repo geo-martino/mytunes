@@ -1,5 +1,5 @@
 import textwrap
-from collections.abc import Sequence, MutableSequence, Collection, Iterable
+from collections.abc import Sequence, MutableSequence, Collection, Iterable, Mapping
 from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator
@@ -20,11 +20,11 @@ from mytunes.core.properties.logger import HasProgress, HasLogger
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI, HasMutableURI
 from ..core.remote import RemoteResource
-from mytunes.result import TotalCountResult, LenLogFormatter
+from mytunes.result import NamedResult, TotalCountResult, LenLogFormatter
 from .._utils import truncate_string
 
 
-class SearchResult[T: Any](TotalCountResult):
+class SearchResult[T: Any](NamedResult, TotalCountResult):
     """Stores the results of the searching process."""
     matches: Annotated[
         Sequence[T],
@@ -167,16 +167,16 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         return await self._query_and_match(item)
 
     @validate_call
-    async def search_items[T: ResourceModel](self, items: Sequence[T]) -> SearchResult[T]:
+    async def search_items[T: ResourceModel](self, items: Sequence[T], name: str = "items") -> SearchResult[T]:
         """Search for matches for the given items and return the results."""
         if len(items) == 0:
             self._log_skip("No items to search.")
-            return SearchResult()
+            return SearchResult(name=name)
 
         self._log_start(items, default_type="items")
-        return await self._search_items(items)
+        return await self._search_items(items, name=name)
 
-    async def _search_items[T: ResourceModel](self, items: Iterable[T]) -> SearchResult[T]:
+    async def _search_items[T: ResourceModel](self, items: Iterable[T], name: str) -> SearchResult[T]:
         matches = []
         matched = []
         unmatched = []
@@ -194,14 +194,14 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         task_id = self._progress.add_task(description=f"Searching", total=len(items))
         await self._run_tasks_async(map(_search_and_match_item, items), task_id=task_id)
 
-        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
+        return SearchResult(name=name, matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
 
     def _match_items[T: ResourceModel](
-            self, items: Iterable[T], results: Iterable[T], skipped: Iterable[T] = ()
+            self, items: Iterable[T], results: Iterable[T], skipped: Iterable[T], name: str
     ) -> SearchResult[T]:
         results = list(results)
         if not results:
-            return SearchResult(unmatched=tuple(items), skipped=tuple(skipped))
+            return SearchResult(name=name, unmatched=tuple(items), skipped=tuple(skipped))
 
         matched = []
         matches = []
@@ -215,7 +215,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
             else:
                 unmatched.append(item)
 
-        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
+        return SearchResult(name=name, matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
 
     ###########################################################################
     ## Search: collections
@@ -228,13 +228,12 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
             return
 
         self._log_start([collection], default_type="collection")
-        _, result = await self._search_collection(collection)
-        return result
+        return await self._search_collection(collection)
 
     @validate_call
     async def search_collections[T: ResourceModel](
             self, collections: Sequence[CollectionModel]
-    ) -> tuple[tuple[str, SearchResult[T]], ...]:
+    ) -> tuple[SearchResult[T], ...]:
         """Search for matches for the given collection and return the results per collection."""
         if len(collections) == 0 or sum(collection.total for collection in collections) == 0:
             self._log_skip("No collections or items to search.")
@@ -247,7 +246,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         self._log_start(collections, default_type="collections")
 
-        async def _search_collection(collection: CollectionModel[T]) -> tuple[str, SearchResult[T]]:
+        async def _search_collection(collection: CollectionModel[T]) -> SearchResult[T]:
             return await self._search_collection(collection)
 
         task_id = self._progress.add_task(description=f"Searching", total=len(collections))
@@ -256,24 +255,24 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
     async def _search_collection[T: ResourceModel](
             self, collection: CollectionModel[T]
-    ) -> tuple[str, SearchResult[T]]:
+    ) -> SearchResult[T]:
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
 
         if self._should_search_on_items_only(collection):
-            return name, await self._search_items(collection.items)
+            return await self._search_items(collection.items, name=name)
         collection: ResourceModel | CollectionModel  # type checked in the above condition
 
         match = await self._query_and_match(collection)
         match = await self._extend_collection_items(match)
         if match is None or not isinstance(match, CollectionModel):
-            return name, await self._search_items(collection.items)
+            return await self._search_items(collection.items, name=name)
 
         items, skipped = self._split_items(collection.items)
-        result = self._match_items(items, list(match.items), skipped)
+        result = self._match_items(items, list(match.items), skipped=skipped, name=name)
         if self.keep_matching_collection_items and result.unmatched:
             result = await self._search_from_result(result)
 
-        return name, result
+        return result
 
     async def _search_from_result[T: ResourceModel](self, result: SearchResult[T]) -> SearchResult[T]:
         # attempt to search for the unmatched items from the given search result
@@ -301,7 +300,9 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         task_id = self._progress.add_task(description=f"Searching", total=len(result.unmatched))
         await self._run_tasks_async(map(_search_and_match_item, result.unmatched), task_id=task_id)
 
-        return SearchResult(matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped)
+        return SearchResult(
+            name=result.name, matches=matches, matched=matched, unmatched=unmatched, skipped=result.skipped
+        )
 
     async def _extend_collection_items[T: RemoteResource | RemoteCollection](self, collection: T) -> T:
         if not isinstance(collection, RemoteCollection):
@@ -417,7 +418,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     ###########################################################################
     ## Logging
     ###########################################################################
-    def log_results(self, results: Sequence[tuple[str, SearchResult]]) -> None:
+    def log_results(self, results: Sequence[SearchResult]) -> None:
         """Log the given search results"""
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)

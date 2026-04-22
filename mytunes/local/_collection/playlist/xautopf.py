@@ -214,7 +214,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         limit_result = self._limit_tracks(tracks=match_result.combined, ignore=self.matcher.exclude.values)
         sort_result = self._sort_tracks(tracks=limit_result.limited)
 
-        result = LoadPlaylistResult.from_results(match=match_result, limit=limit_result, sort=sort_result)
+        result = LoadPlaylistResult.from_results(
+            name=self.name, match=match_result, limit=limit_result, sort=sort_result
+        )
         self.tracks.replace(result.tracks)
         self._original = self.tracks.copy()
 

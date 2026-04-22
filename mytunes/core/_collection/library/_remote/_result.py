@@ -7,7 +7,7 @@ from mytunes._types import TO_TUPLE
 from mytunes.core._collection.album import AlbumCollection, RemoteAlbumCollection
 from mytunes.core._collection.artist import RemoteArtistCollection
 from mytunes.core._collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
-from mytunes.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter
+from mytunes.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter, NamedResult
 from ...._item.album import RemoteAlbum
 from ...._item.artist import RemoteArtist
 from ...._item.track import RemoteTrack, HasTracks
@@ -22,7 +22,7 @@ _log_formatters = [
 ]
 
 
-class RemotePlaylistsResult[T: RemoteTrack](CountResult):
+class RemotePlaylistsResult[T: RemoteTrack](NamedResult, CountResult):
     owner: Annotated[
         str,
         LogFormatter(colour="magenta", max_width=20, include_name_in_log=False)
@@ -56,15 +56,16 @@ class RemotePlaylistsResult[T: RemoteTrack](CountResult):
     def from_playlist(cls, playlist: RemotePlaylist[Any, T, Any, Any]) -> Self:
         """Create a result from the given playlist."""
         return cls(
+            name=playlist.name,
             tracks=playlist.tracks,
             owner=playlist.owner.name,
             writeable=isinstance(playlist, RemoteMutablePlaylist)
         )
 
     @classmethod
-    def from_playlists(cls, playlists: Iterable[RemotePlaylist[Any, T, Any, Any]]) -> tuple[tuple[str, Self], ...]:
+    def from_playlists(cls, playlists: Iterable[RemotePlaylist[Any, T, Any, Any]]) -> tuple[Self, ...]:
         """Create a result from the given playlists."""
-        return tuple((pl.name, cls.from_playlist(pl)) for pl in playlists)
+        return tuple(map(cls.from_playlist, playlists))
 
 
 class RemoteTracksResult[T: RemoteTrack](TotalCountResult):

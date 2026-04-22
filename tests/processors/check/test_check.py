@@ -110,6 +110,7 @@ class TestChecker(BaseModelTester):
         # force playlist matches to always return valid result
         def _return_valid_playlist_match[T](items: Collection[T]) -> CheckResult[T]:
             return CheckResult(
+                name=faker.name(),
                 changed=faker.random_elements(items, unique=True),
                 unchanged=faker.random_elements(items, unique=True),
             )
