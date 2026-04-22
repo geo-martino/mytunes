@@ -2,14 +2,14 @@ from collections.abc import Sequence
 from collections.abc import Sequence
 from typing import ClassVar
 
-from pydantic import Field
+from pydantic import Field, InstanceOf
 from termcolor import colored
 
 from mytunes import PROGRAM_NAME
 from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasMutableURI, URI
-from mytunes.processors.check._input.page import _ApiT
+from mytunes.processors.check._input.page import _ApiT, InputPage
 from mytunes.processors.check._match import BaseInputMatch
 from mytunes.processors.formatter import ModelFormatter
 from mytunes.result import LogFormatter
@@ -18,8 +18,18 @@ from mytunes.result import LogFormatter
 class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
     _method: ClassVar[str] = "INPUT"
 
+    # WORKAROUND: use `InstanceOf` here to prevent revalidation
+    #  which creates a new page hence not preserving current page state
+    #  Could alternatively drop the generics, not sure what is best...
+    page: InstanceOf[InputPage[_ApiT, IT]] = Field(
+        description="The state of the current page"
+    )
+
     @property
     def name(self) -> str:
+        if self.page.name is not None:
+            return self.page.name
+
         name = f"{self.page.source} items"
         if self.page.username is not None:
             name = f"{self.page.username}'s {name}"

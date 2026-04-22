@@ -17,5 +17,8 @@ class TestInputMatch(InputMatchTester):
         return InputMatch(page=page)
 
     @pytest.fixture
-    def page(self, position: Position, missing_items: Sequence[HasMutableURI], api: RemoteAPI) -> InputPage:
-        return InputPage(position=position, api=api, items=missing_items)
+    def page(
+            self, position: Position, missing_items: Sequence[HasMutableURI], api: RemoteAPI, faker: Faker
+    ) -> InputPage:
+        name = faker.name()
+        return InputPage(name=name, position=position, api=api, items=missing_items)

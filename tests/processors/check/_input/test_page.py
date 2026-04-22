@@ -13,8 +13,11 @@ from utils import patch_input
 
 class TestInputPage(BaseModelTester):
     @pytest.fixture
-    def model(self, position: Position, missing_items: Sequence[HasMutableURI], api: RemoteAPI) -> InputPage:
-        return InputPage(position=position, api=api, items=missing_items)
+    def model(
+            self, position: Position, missing_items: Sequence[HasMutableURI], api: RemoteAPI, faker: Faker
+    ) -> InputPage:
+        name = faker.name()
+        return InputPage(name=name, position=position, api=api, items=missing_items)
 
     async def test_pause(self, model: InputPage, faker: Faker):
         with patch_input(iter(["y"])):

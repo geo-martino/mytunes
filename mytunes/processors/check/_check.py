@@ -75,11 +75,11 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         return _wrapper
 
     @_validate_items
-    async def check_items[T: HasURI](self, items: Sequence[T]) -> CheckResult[T] | None:
+    async def check_items[T: HasURI](self, items: Sequence[T], name: str | None = None) -> CheckResult[T] | None:
         """Check the matches for the items using only user input for checking and setting matches."""
         self._log_start(items)
 
-        page = InputPage(api=self.api, items=items, concurrency=self.concurrency)
+        page = InputPage(name=name, api=self.api, items=items, concurrency=self.concurrency)
 
         try:
             async with page:
