@@ -112,13 +112,11 @@ class SearcherTester(metaclass=ABCMeta):
         assert len(matches) == len(matched)
         assert len(matched) + len(unmatched) == len(items)
 
-        assert result == SearchResult(
-            name=name,
-            matches=matches,
-            matched=matched,
-            unmatched=unmatched,
-            skipped=skipped,
-        )
+        assert result.name == name
+        assert result.matches == tuple(matches)
+        assert result.matched == tuple(matched)
+        assert result.unmatched == tuple(unmatched)
+        assert result.skipped == tuple(skipped)
 
 
 class TestSearcher(SearcherTester, BaseModelTester):

@@ -1,5 +1,4 @@
-import textwrap
-from collections.abc import Sequence, MutableSequence, Collection, Iterable, Mapping
+from collections.abc import Sequence, MutableSequence, Collection, Iterable
 from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator
@@ -9,17 +8,17 @@ from mytunes._types import TO_TUPLE
 from mytunes.processors.match import Matcher
 from ._base import Processor
 from .._base.resource import ResourceModel
-from ..core.api import RemoteAPI, HasAPI
-from ..core.api.search import HasSearchEndpoints
+from mytunes.core.api import RemoteAPI, HasAPI
+from mytunes.core.api.search import HasSearchEndpoints
 from mytunes.core.collection import CollectionModel, RemoteCollection
 from mytunes.core.album import AlbumCollection
 from mytunes.exception import MyTunesValidationError, MyTunesValueError
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.file import IsFile, IsLocalFile
-from mytunes.core.properties.logger import HasProgress, HasLogger
+from mytunes.core.properties.logger import HasProgress
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI, HasMutableURI
-from ..core.remote import RemoteResource
+from mytunes.core.remote import RemoteResource
 from mytunes.result import NamedResult, TotalCountResult, LenLogFormatter
 from .._utils import truncate_string
 
@@ -68,6 +67,7 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
     )
     skipped: Annotated[
         Sequence[IT],
+        TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -241,7 +241,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
             else:
                 unmatched.append(item)
 
-        return SearchResult(name=name, matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
+        return SearchResult(name=name, matches=matches, matched=matched, unmatched=unmatched, skipped=tuple(skipped))
 
     ###########################################################################
     ## Search: collections
@@ -378,13 +378,13 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         return valid, invalid
 
-    def _match_item[T: RemoteResource](self, item: HasMutableURI, results: MutableSequence[T]) -> T | None:
+    def _match_item[T: RemoteResource](self, item: ResourceModel, results: MutableSequence[T]) -> T | None:
         match = self._pop_match_from_results(item, results)
         if match is not None:
             self._assign_attributes_from_match(item, match)
         return match
 
-    def _pop_match_from_results[T: HasURI](self, item: HasMutableURI, results: MutableSequence[T]) -> T | None:
+    def _pop_match_from_results[T: ResourceModel](self, item: T, results: MutableSequence[T]) -> T | None:
         if not results:
             return
 
@@ -402,8 +402,8 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         return match
 
-    def _assign_attributes_from_match(self, item: HasMutableURI, match: HasURI) -> None:
-        if self.assign_uri:
+    def _assign_attributes_from_match[T: ResourceModel](self, item: T, match: T) -> None:
+        if self.assign_uri and isinstance(item, HasMutableURI) and isinstance(match, HasURI):
             self._assign_uri_from_match(item, match)
 
     def _assign_uri_from_match(self, item: HasMutableURI, match: HasURI) -> None:
