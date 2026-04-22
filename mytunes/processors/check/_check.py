@@ -195,7 +195,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         for matcher in matchers:
             next_result = await matcher.match(items)
             items = next_result.skipped
-            result = next_result if result is None else result.merge_results(next_result)
+            result = next_result if result is None else result.merge(next_result)
 
             if not items:
                 break

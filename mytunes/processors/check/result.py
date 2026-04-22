@@ -64,7 +64,7 @@ class CheckResult[T: HasURI](NamedResult):
         default_factory=tuple
     )
 
-    def merge_results(self, other: CheckResult[T]) -> CheckResult[T]:
+    def merge(self, other: CheckResult[T]) -> CheckResult[T]:
         """
         Merge another result into this one and return the merged result.
         The other result should only contain items that are in the skipped category as

@@ -85,7 +85,7 @@ class SearchResult[T: Any](NamedResult, TotalCountResult):
             raise MyTunesValidationError("The number of matches must be equal to the number of matched items.")
         return self
 
-    def merge_results(self, other: SearchResult[T]) -> SearchResult[T]:
+    def merge(self, other: SearchResult[T]) -> SearchResult[T]:
         """
         Merge another result into this one and return the merged result.
         The other result should only contain items that are in the unmatched category as
