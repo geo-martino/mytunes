@@ -300,4 +300,5 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
         await model.sync_items(api, sync_filter=items_filter)
 
         result = mock_get_sync_items.call_args.kwargs["initial"]
+        # FIXME: flakey assertion - very very rare
         assert sorted(result) == sorted(track.uri for track in expected)

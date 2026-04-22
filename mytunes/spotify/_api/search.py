@@ -10,7 +10,7 @@ from mytunes.core.track import Track
 from mytunes.exception import RequestError
 from mytunes.spotify import API_URL, SpotifyResource
 from mytunes.spotify._api._base import SpotifyEndpoints
-from .._collection.playlist import SpotifyPlaylist
+from .._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._item.track import SpotifyTrack
@@ -19,7 +19,7 @@ from ..._base.resource import ResourceModel
 from ...core.api.search import SearchEndpoints
 
 type _SearchT = Track | Album | Artist | Playlist
-type _ReturnT = SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist
+type _ReturnT = SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist | SpotifyMutablePlaylist
 
 
 @final
