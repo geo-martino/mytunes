@@ -24,10 +24,10 @@ from mytunes.result import NamedResult, TotalCountResult, LenLogFormatter
 from .._utils import truncate_string
 
 
-class SearchResult[T: Any](NamedResult, TotalCountResult):
+class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
     """Stores the results of the searching process."""
     matches: Annotated[
-        Sequence[T],
+        Sequence[IT],
         TO_TUPLE,
         LenLogFormatter(condition=lambda x: False),  # never log this attribute
     ] = Field(
@@ -38,7 +38,7 @@ class SearchResult[T: Any](NamedResult, TotalCountResult):
         default_factory=tuple
     )
     matched: Annotated[
-        Sequence[T],
+        Sequence[MT],
         TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
@@ -54,7 +54,7 @@ class SearchResult[T: Any](NamedResult, TotalCountResult):
         default_factory=tuple
     )
     unmatched: Annotated[
-        Sequence[T],
+        Sequence[IT],
         TO_TUPLE,
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
@@ -67,7 +67,7 @@ class SearchResult[T: Any](NamedResult, TotalCountResult):
         default_factory=tuple
     )
     skipped: Annotated[
-        Sequence[T],
+        Sequence[IT],
         LenLogFormatter(
             width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
         ),
@@ -85,7 +85,7 @@ class SearchResult[T: Any](NamedResult, TotalCountResult):
             raise MyTunesValidationError("The number of matches must be equal to the number of matched items.")
         return self
 
-    def merge(self, other: SearchResult[T]) -> SearchResult[T]:
+    def merge(self, other: SearchResult[IT, MT]) -> SearchResult[IT, MT]:
         """
         Merge another result into this one and return the merged result.
         The other result should only contain items that are in the unmatched category as
@@ -193,7 +193,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         return await self._query_and_match(item)
 
     @validate_call
-    async def search_items[T: ResourceModel](self, items: Sequence[T], name: str = "items") -> SearchResult[T]:
+    async def search_items[T: ResourceModel](self, items: Sequence[T], name: str = "items") -> SearchResult[T, Any]:
         """Search for matches for the given items and return the results."""
         if len(items) == 0:
             self._log_skip("No items to search.")
@@ -202,7 +202,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
         self._log_start(items, default_type="items")
         return await self._search_items(items, name=name)
 
-    async def _search_items[T: ResourceModel](self, items: Iterable[T], name: str) -> SearchResult[T]:
+    async def _search_items[T: ResourceModel](self, items: Iterable[T], name: str) -> SearchResult[T, Any]:
         matches = []
         matched = []
         unmatched = []
@@ -222,9 +222,9 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         return SearchResult(name=name, matches=matches, matched=matched, unmatched=unmatched, skipped=skipped)
 
-    def _match_items[T: ResourceModel](
-            self, items: Iterable[T], results: Iterable[T], skipped: Iterable[T], name: str
-    ) -> SearchResult[T]:
+    def _match_items[IT: ResourceModel, RT: RemoteResource](
+            self, items: Iterable[IT], results: Iterable[RT], skipped: Iterable[IT], name: str
+    ) -> SearchResult[IT, RT]:
         results = list(results)
         if not results:
             return SearchResult(name=name, unmatched=tuple(items), skipped=tuple(skipped))
@@ -247,7 +247,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     ## Search: collections
     ###########################################################################
     @validate_call
-    async def search_collection[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T] | None:
+    async def search_collection[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T, Any] | None:
         """Search for matches for the given collection and return the results."""
         if self._should_skip(collection):
             self._log_skip(f"Cannot process {self._get_item_log_name(collection)}")
@@ -259,7 +259,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     @validate_call
     async def search_collections[T: ResourceModel](
             self, collections: Sequence[CollectionModel]
-    ) -> tuple[SearchResult[T], ...]:
+    ) -> tuple[SearchResult[T, Any], ...]:
         """Search for matches for the given collection and return the results per collection."""
         if len(collections) == 0 or sum(collection.total for collection in collections) == 0:
             self._log_skip("No collections or items to search.")
@@ -272,7 +272,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         self._log_start(collections, default_type="collections")
 
-        async def _search_collection(collection: CollectionModel[T]) -> SearchResult[T]:
+        async def _search_collection(collection: CollectionModel[T]) -> SearchResult[T, Any]:
             return await self._search_collection(collection)
 
         task_id = self._progress.add_task(description=f"Searching", total=len(collections))
@@ -281,7 +281,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
     async def _search_collection[T: ResourceModel](
             self, collection: CollectionModel[T]
-    ) -> SearchResult[T]:
+    ) -> SearchResult[T, Any]:
         name = collection.name if isinstance(collection, HasName) else str(id(collection))
 
         if self._should_search_on_items_only(collection):
@@ -300,7 +300,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
         return result
 
-    async def _search_from_result[T: ResourceModel](self, result: SearchResult[T]) -> SearchResult[T]:
+    async def _search_from_result[T: ResourceModel](self, result: SearchResult[T, Any]) -> SearchResult[T, Any]:
         # attempt to search for the unmatched items from the given search result
         # we pop items from the result lists as we go to match the same order as the given items
         # for consistency in ordering
