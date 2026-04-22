@@ -102,9 +102,9 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
             if item not in unmatched:
                 raise MyTunesValueError("Other result must contain all items in this result's unmatched items")
 
-        skipped = list(self.skipped)
+        skipped = [it for it in self.skipped if it not in other.matched]
         for item in other.skipped:
-            if item not in skipped:
+            if item not in skipped and item not in self.matched:
                 skipped.append(item)
 
         return SearchResult(
