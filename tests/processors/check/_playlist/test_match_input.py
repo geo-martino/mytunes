@@ -14,87 +14,17 @@ from mytunes.processors.check._playlist.match import InputMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
 from mytunes.result import LogFormatter
+from processors.check.testers import InputMatchTester
 from tests.processors.check._playlist.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list, patch_input
 
 
-class TestInputMatch(UniqueKeyTester):
+class TestInputMatch(InputMatchTester, UniqueKeyTester):
     @pytest.fixture
     def model(self, page: PlaylistsPage, playlist: RemoteMutablePlaylist, matcher: Matcher) -> InputMatch:
         return InputMatch(page=page, uri=playlist.uri, matcher=matcher)
-
-    @pytest.fixture(autouse=True)
-    def mock_uri_adapter(self) -> Generator[Mock]:
-        adapter = TypeAdapter(SimpleURI)
-        with patch.object(URI, "get_adapter_for_source", return_value=adapter) as mock_adapter:
-            yield mock_adapter
-
-    ###########################################################################
-    ## Utilities
-    ###########################################################################
-    def test_configure_formatter_for_items(
-            self, model: InputMatch, available_items: list[HasNameAndImmutableURI], faker: Faker
-    ):
-        width = max(len(item.name) for item in available_items)
-        InputMatch.input_formatter = LogFormatter(
-            width=faker.random_int(),
-            max_width=None,
-        )
-
-        formatter = model._configure_formatter_for_items(available_items)
-        assert formatter.width == width
-
-        width = max(width - faker.random_int(1, width), 3)
-        InputMatch.input_formatter = LogFormatter(
-            width=faker.random_int(),
-            max_width=width,
-        )
-        formatter = model._configure_formatter_for_items(available_items)
-        assert formatter.width == width
-
-    ###########################################################################
-    ## Comparers
-    ###########################################################################
-    def test_compare_uri_changes(self, model: InputMatch, mutable_items: list[HasNameAndMutableURI], faker: Faker):
-        initial = mutable_items
-
-        for change in faker.random_elements(initial, unique=True):
-            if faker.boolean():
-                change.uri = SimpleURI.create_unavailable(kind=change.type)
-            else:
-                del change.uri
-
-        changed = []
-        unchanged = []
-        unavailable = []
-        skipped = []
-
-        changes = deepcopy(mutable_items)
-        for change in changes:
-            if change.has_uri is not None:
-                unchanged.append(change)
-                continue
-
-            if faker.boolean():
-                change.uri = SimpleURI.create_random(kind=change.type)
-                changed.append(change)
-                assert change.has_uri is True
-            elif faker.boolean():
-                change.uri = SimpleURI.create_unavailable(kind=change.type)
-                unavailable.append(change)
-                assert change.has_uri is False
-            else:
-                skipped.append(change)
-                assert change.has_uri is None
-
-        result = model._compare_uri_changes(initial, changes)
-
-        assert sorted(result.changed) == sorted(changed)
-        assert sorted(result.unchanged) == sorted(unchanged)
-        assert sorted(result.unavailable) == sorted(unavailable)
-        assert sorted(result.skipped) == sorted(skipped)
 
     ###########################################################################
     ## Match helpers
@@ -143,108 +73,8 @@ class TestInputMatch(UniqueKeyTester):
     ## Match main
     ###########################################################################
     @pytest.fixture
-    def mock_match_item_with_input(self, model: InputMatch, mocker: MockerFixture) -> Mock:
-        return mocker.spy(model, '_match_item_with_input')
-
-    @pytest.fixture
     def mock_match_item_with_playlist(self, model: InputMatch, mocker: MockerFixture) -> Mock:
         return mocker.spy(model, '_match_item_with_playlist')
-
-    @pytest.fixture
-    def mock_compare_uri_changes(self, model: InputMatch, mocker: MockerFixture) -> Mock:
-        return mocker.spy(model, '_compare_uri_changes')
-
-    async def test_match_skips_on_no_missing_items(
-            self,
-            model: InputMatch,
-            mutable_items: list[HasNameAndMutableURI],
-            mock_match_item_with_input: Mock,
-            mock_match_item_with_playlist: Mock,
-            mock_compare_uri_changes: Mock,
-            faker: Faker,
-    ):
-        result = await model.match(mutable_items)
-
-        assert not result.changed
-        assert not result.unchanged
-        assert not result.unavailable
-        assert not result.skipped
-
-        mock_match_item_with_input.assert_not_called()
-        mock_match_item_with_playlist.assert_not_called()
-        mock_compare_uri_changes.assert_not_called()
-
-    async def test_match_skips(
-            self,
-            model: InputMatch,
-            missing_items: list[HasNameAndMutableURI],
-            mock_match_item_with_input: Mock,
-            mock_match_item_with_playlist: Mock,
-            mock_compare_uri_changes: Mock,
-    ):
-        kind = missing_items[0].type
-        inputs = [
-            SimpleURI.create_random(kind),
-            "h",
-            SimpleURI.create_random(kind),
-            "s",
-        ]
-
-        with patch_input(iter(inputs)):
-            result = await model.match(missing_items)
-
-        assert len(result.changed) == 2
-        assert not result.unchanged
-        assert not result.unavailable
-        assert len(result.skipped) == len(missing_items) - len(result.changed)
-
-        assert mock_match_item_with_input.call_count == 3  # quits early
-        mock_match_item_with_playlist.assert_not_called()
-        mock_compare_uri_changes.assert_called_once()
-
-    async def test_match_quits(
-            self,
-            model: InputMatch,
-            missing_items: list[HasNameAndMutableURI],
-            mock_match_item_with_input: Mock,
-            mock_match_item_with_playlist: Mock,
-            mock_compare_uri_changes: Mock,
-    ):
-        kind = missing_items[0].type
-        inputs = [
-            SimpleURI.create_random(kind),
-            "h",
-            SimpleURI.create_random(kind),
-            "q",
-        ]
-
-        with patch_input(iter(inputs)), pytest.raises(QuitImmediately):
-            await model.match(missing_items)
-
-        assert mock_match_item_with_input.call_count == 3  # quits early
-        mock_match_item_with_playlist.assert_not_called()
-        mock_compare_uri_changes.assert_not_called()  # doesn't produce a result
-
-    async def test_match_assigns_uris(
-            self,
-            model: InputMatch,
-            missing_items: list[HasNameAndMutableURI],
-            mock_match_item_with_input: Mock,
-            mock_match_item_with_playlist: Mock,
-            mock_compare_uri_changes: Mock,
-    ):
-        uris = [SimpleURI.create_random(kind=item.type) for item in missing_items]
-        with patch_input(iter(uris)):
-            result = await model.match(missing_items)
-
-        assert sorted(result.changed) == sorted(missing_items)
-        assert not result.unchanged
-        assert not result.unavailable
-        assert not result.skipped
-
-        assert mock_match_item_with_input.call_count == len(missing_items)
-        mock_match_item_with_playlist.assert_not_called()
-        mock_compare_uri_changes.assert_called_once()
 
     async def test_match_skips_all(
             self,
@@ -305,44 +135,4 @@ class TestInputMatch(UniqueKeyTester):
         # only tried the first few items, didn't match with playlist then skipped the rest
         assert mock_match_item_with_input.call_count == 3 + len(result.unavailable)
         assert mock_match_item_with_playlist.call_count == 3  # called for each input
-        mock_compare_uri_changes.assert_called_once()
-
-    async def test_match_complex_assignment(
-            self,
-            model: InputMatch,
-            missing_items: list[HasNameAndMutableURI],
-            mock_match_item_with_input: Mock,
-            mock_match_item_with_playlist: Mock,
-            mock_compare_uri_changes: Mock,
-    ):
-        kind = missing_items[0].type
-        inputs = [
-            "h",
-            "invalid_input",
-            "",
-            "n",
-            SimpleURI.create_random(kind),
-            "h",
-            "u",
-            SimpleURI.create_unavailable(kind),
-            "n",
-            "h",
-            "invalid_input",
-            "n",
-            SimpleURI.create_unavailable(kind),
-            "invalid_input",
-            SimpleURI.create_random(kind),
-            "na",
-        ]
-
-        with patch_input(iter(inputs)):
-            result = await model.match(missing_items)
-
-        assert len(result.changed) == 2
-        assert not result.unchanged
-        assert len(result.unavailable) == 3
-        assert len(result.skipped) == len(missing_items) - len(result.changed) - len(result.unavailable)
-
-        assert mock_match_item_with_input.call_count == len(missing_items)
-        mock_match_item_with_playlist.assert_not_called()
         mock_compare_uri_changes.assert_called_once()

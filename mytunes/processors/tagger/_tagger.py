@@ -8,7 +8,7 @@ from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.processors.filters import Filter
 from mytunes.result import Result, MapLogFormatter
 from ._setter import Setter
-from .._base import Processor
+from mytunes.processors import Processor
 from ..._base.attribute import AttributeModel
 from ..._base.resource import ResourceModel
 from ..._types import TO_TUPLE

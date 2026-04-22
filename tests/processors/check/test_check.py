@@ -1,22 +1,26 @@
+import itertools
 import math
-from collections.abc import Generator, Collection
+from collections.abc import Generator, Collection, Sequence
 from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
+from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core._item.track import RemoteTrack
 from mytunes.core.api import RemoteAPI
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.core.properties.name import HasName
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check import Checker
-from mytunes.processors.check._playlist.match import PlaylistMatch, InputMatch
+from mytunes.processors.check._playlist.match import SyncMatch, InputMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.check.result import CheckResult
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
+from utils import patch_input
 
 
 class TestChecker(BaseModelTester):
@@ -38,8 +42,8 @@ class TestChecker(BaseModelTester):
             yield mock_pause
 
     @pytest.fixture(autouse=True)
-    def mock_playlist_match(self, mocker: MockerFixture) -> Mock:
-        return mocker.spy(PlaylistMatch, "match")
+    def mock_sync_match(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(SyncMatch, "match")
 
     @pytest.fixture(autouse=True)
     def mock_input_match(self, mocker: MockerFixture) -> Mock:
@@ -82,7 +86,7 @@ class TestChecker(BaseModelTester):
             mock_check_playlist_page: Mock,
             mock_match_playlist_page: Mock,
             mock_pause: Mock,
-            mock_playlist_match: Mock,
+            mock_sync_match: Mock,
             mock_input_match: Mock,
     ):
         model.interval = len(collections) // 4
@@ -95,7 +99,7 @@ class TestChecker(BaseModelTester):
         assert mock_check_playlist_page.call_count == expected_pages
         assert mock_match_playlist_page.call_count == len(collections)
         assert mock_pause.call_count == expected_pages
-        assert mock_playlist_match.call_count == len(collections)
+        assert mock_sync_match.call_count == len(collections)
         assert mock_input_match.call_count == sum(bool(result.skipped) for _, result in results)
 
     async def test_check_collections_on_playlists_only_runs_input_match_if_needed(
@@ -103,38 +107,38 @@ class TestChecker(BaseModelTester):
             model: Checker,
             collections: list[MockCollection],
             tracks: list[RemoteTrack],
-            mock_playlist_match: Mock,
+            mock_sync_match: Mock,
             mock_input_match: Mock,
             faker: Faker,
     ):
         # force playlist matches to always return valid result
-        def _return_valid_playlist_match[T](items: Collection[T]) -> CheckResult[T]:
+        def _return_valid_sync_match[T](items: Collection[T]) -> CheckResult[T]:
             return CheckResult(
                 name=faker.name(),
                 changed=faker.random_elements(items, unique=True),
                 unchanged=faker.random_elements(items, unique=True),
             )
 
-        with patch.object(PlaylistMatch, "match", side_effect=_return_valid_playlist_match):
+        with patch.object(SyncMatch, "match", side_effect=_return_valid_sync_match):
             await model.check_collections_on_playlists(collections)
 
         await model.check_collections_on_playlists(collections)
 
-        assert mock_playlist_match.call_count == len(collections)
+        assert mock_sync_match.call_count == len(collections)
         mock_input_match.assert_not_called()
 
     async def test_check_collections_on_playlists_skips_match(
             self,
             model: Checker,
             collections: list[MockCollection],
-            mock_playlist_match: Mock,
+            mock_sync_match: Mock,
             mock_input_match: Mock,
             faker: Faker,
     ):
         with patch.object(PlaylistsPage, "pause", side_effect=SkipPage):
             await model.check_collections_on_playlists(collections)
 
-            mock_playlist_match.assert_not_called()
+            mock_sync_match.assert_not_called()
             mock_input_match.assert_not_called()
 
     async def test_check_collections_on_playlists_quits_match(
@@ -143,17 +147,244 @@ class TestChecker(BaseModelTester):
             collections: list[MockCollection],
             mock_check_playlist_page: Mock,
             mock_match_playlist_page: Mock,
-            mock_playlist_match: Mock,
+            mock_sync_match: Mock,
             mock_input_match: Mock,
             faker: Faker,
     ):
-        exception = faker.random_element((KeyboardInterrupt, QuitImmediately))
-
-        with patch.object(PlaylistsPage, "pause", side_effect=exception) as mock_pause:
+        with patch.object(PlaylistsPage, "pause", side_effect=QuitImmediately) as mock_pause:
             await model.check_collections_on_playlists(collections)
 
             mock_check_playlist_page.assert_called_once()
             mock_match_playlist_page.assert_not_called()
             mock_pause.assert_called_once()
-            mock_playlist_match.assert_not_called()
+            mock_sync_match.assert_not_called()
             mock_input_match.assert_not_called()
+
+
+class TestCheckerPause:
+    @pytest.fixture
+    def model(self, api: RemoteAPI) -> Checker:
+        return Checker(api=api)
+
+    @pytest.fixture
+    def pages(self, model: Checker, collections: list[CollectionModel]) -> int:
+        total = len(collections)
+        model.interval = total // 4
+        return math.ceil(total / model.interval)
+
+    @pytest.fixture(autouse=True)
+    def mock_get_playlist_items(self, tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock]:
+        def _random_tracks(*_, **__) -> Sequence[RemoteTrack]:
+            return faker.random_elements(tracks)
+
+        with patch.object(
+                PlaylistReadWriteEndpoints, "get_all", side_effect=_random_tracks, new_callable=AsyncMock
+        ) as mock_get_all:
+            yield mock_get_all
+
+    @pytest.fixture
+    def mock_pause(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(PlaylistsPage, "pause")
+
+    @pytest.fixture
+    def mock_playlist_links(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(PlaylistsPage, "_print_playlist_links")
+
+    @pytest.fixture
+    def mock_playlist_items(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(PlaylistsPage, "_print_playlist_items")
+
+    @pytest.fixture
+    def mock_teardown_playlists(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(PlaylistsPage, "teardown_playlists")
+
+    @staticmethod
+    def assert_pause_calls(
+            model: Checker,
+            inputs: Sequence[str],
+            pages: int,
+            names: Collection[str],
+            mock_pause: Mock,
+            mock_playlist_links: Mock,
+            mock_playlist_items: Mock,
+            mock_teardown_playlists: Mock,
+    ):
+        inputs = list(inputs)
+
+        if "q" in inputs:
+            inputs = inputs[:inputs.index("q") + 1]
+
+        if inputs.count("") >= pages:
+            index = 0
+            count = 1
+
+            while count < pages:
+                index = inputs.index("", index) + 1
+                count += 1
+
+            inputs = inputs[:index + 1]
+
+        expected_pages = min(pages, inputs.count("") + inputs.count("q") + inputs.count("s"))
+        expected_help = expected_pages + inputs.count("h")
+
+        names = {name.casefold() for name in names}
+        expected_playlist_items = sum(val.casefold() in names for val in inputs)
+        expected_playlist_links = inputs.count("l")
+
+        assert mock_pause.call_count == expected_pages
+        assert mock_playlist_links.call_count == expected_playlist_links
+        assert mock_playlist_items.call_count == expected_playlist_items
+        assert mock_teardown_playlists.call_count == expected_pages
+
+    ###########################################################################
+    ## Tests
+    ###########################################################################
+    async def test_pages(
+            self,
+            model: Checker,
+            collections: list[MockCollection],
+            pages: int,
+            mock_pause: Mock,
+            mock_playlist_links: Mock,
+            mock_playlist_items: Mock,
+            mock_teardown_playlists: Mock,
+    ):
+        inputs = [""] * pages + ["h"] + ["invalid_input"]  # add some other random inputs
+        with patch_input(iter(inputs)):
+            await model.check_collections_on_playlists(collections)
+
+        self.assert_pause_calls(
+            model,
+            inputs=inputs,
+            pages=pages,
+            names={coll.name for coll in collections},
+            mock_pause=mock_pause,
+            mock_playlist_links=mock_playlist_links,
+            mock_playlist_items=mock_playlist_items,
+            mock_teardown_playlists=mock_teardown_playlists,
+        )
+
+    async def test_pause_prints_help(
+            self,
+            model: Checker,
+            collections: list[MockCollection],
+            pages: int,
+            mock_pause: Mock,
+            mock_playlist_links: Mock,
+            mock_playlist_items: Mock,
+            mock_teardown_playlists: Mock,
+    ):
+        inputs = ["h", "h", "", "h", "", "h"] + [""] * pages
+        with patch_input(iter(inputs)):
+            await model.check_collections_on_playlists(collections)
+
+        self.assert_pause_calls(
+            model,
+            inputs=inputs,
+            pages=pages,
+            names={coll.name for coll in collections},
+            mock_pause=mock_pause,
+            mock_playlist_links=mock_playlist_links,
+            mock_playlist_items=mock_playlist_items,
+            mock_teardown_playlists=mock_teardown_playlists,
+        )
+
+    async def test_pause_skips(
+            self,
+            model: Checker,
+            collections: list[MockCollection],
+            pages: int,
+            mock_pause: Mock,
+            mock_playlist_links: Mock,
+            mock_playlist_items: Mock,
+            mock_teardown_playlists: Mock,
+    ):
+        inputs = ["", "h", "", "s", "h"] + [""] * pages
+        with patch_input(iter(inputs)):
+            await model.check_collections_on_playlists(collections)
+
+        self.assert_pause_calls(
+            model,
+            inputs=inputs,
+            pages=pages,
+            names={coll.name for coll in collections},
+            mock_pause=mock_pause,
+            mock_playlist_links=mock_playlist_links,
+            mock_playlist_items=mock_playlist_items,
+            mock_teardown_playlists=mock_teardown_playlists,
+        )
+
+    async def test_pause_quits(
+            self,
+            model: Checker,
+            collections: list[MockCollection],
+            pages: int,
+            mock_pause: Mock,
+            mock_playlist_links: Mock,
+            mock_playlist_items: Mock,
+            mock_teardown_playlists: Mock,
+    ):
+        inputs = ["", "h", "", "q"]
+        with patch_input(iter(inputs)):
+            await model.check_collections_on_playlists(collections)
+
+        self.assert_pause_calls(
+            model,
+            inputs=inputs,
+            pages=pages,
+            names={coll.name for coll in collections},
+            mock_pause=mock_pause,
+            mock_playlist_links=mock_playlist_links,
+            mock_playlist_items=mock_playlist_items,
+            mock_teardown_playlists=mock_teardown_playlists,
+        )
+
+    async def test_pause_print_playlist(
+            self,
+            model: Checker,
+            collections: list[MockCollection],
+            playlists: list[RemoteMutablePlaylist],
+            pages: int,
+            mock_get_playlist_items: Mock,
+            mock_pause: Mock,
+            mock_playlist_links: Mock,
+            mock_playlist_items: Mock,
+            mock_teardown_playlists: Mock,
+            faker: Faker,
+    ):
+        playlist_names = (
+            faker.random_element({pl.name, pl.name.lower(), pl.name.title(), pl.name.upper()})
+            for pl in playlists
+        )
+        playlist_name_groups = list(itertools.batched(playlist_names, model.interval))
+
+        inputs = [
+            "",  # move to page 2
+            "l",
+            faker.random_element(playlist_name_groups[1]),  # select from page 2
+            "l",
+            "",  # move to page 3
+            faker.random_element(playlist_name_groups[2]),  # select from page 3
+            "l",
+            "l",
+            "",  # move to page 4
+            "q",
+        ]
+
+        with patch_input(iter(inputs)):
+            await model.check_collections_on_playlists(collections)
+
+        self.assert_pause_calls(
+            model,
+            inputs=inputs,
+            pages=pages,
+            names={coll.name for coll in collections},
+            mock_pause=mock_pause,
+            mock_playlist_links=mock_playlist_links,
+            mock_playlist_items=mock_playlist_items,
+            mock_teardown_playlists=mock_teardown_playlists,
+        )
+
+        # assert explicitly to be sure
+        assert mock_playlist_links.call_count == 4
+        assert mock_playlist_items.call_count == 2

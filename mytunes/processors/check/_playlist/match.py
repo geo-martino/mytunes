@@ -1,12 +1,9 @@
-import sys
 from collections import Counter
-from collections.abc import MutableSequence, Collection, Iterable
-from contextlib import suppress
+from collections.abc import MutableSequence, Collection, Iterable, Sequence
 from copy import copy
-from copy import deepcopy
 from typing import ClassVar
 
-from pydantic import Field, ValidationError
+from pydantic import Field
 from pydantic import InstanceOf
 from termcolor import colored
 
@@ -14,20 +11,17 @@ from mytunes import PROGRAM_NAME
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasImmutableURI
 from mytunes.core.properties.uri import HasURI, HasMutableURI
-from mytunes.core.properties.uri import URI
 from mytunes.core.sequence import UniqueSequence
-from mytunes.processors._flow import SkipPage
+from mytunes.processors.check._match import BaseMatch, BaseInputMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage, _ApiT
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.formatter import ModelFormatter
 from mytunes.processors.match import Matcher
 from mytunes.result import LogFormatter
-from mytunes.processors.check._match import CheckerMatch
-from ..._base.inputs import OptionsProcessor
 
 
 # noinspection PyAbstractClass
-class _BaseMatch[IT: HasMutableURI](CheckerMatch[_ApiT, IT], HasImmutableURI):
+class _PlaylistMatch[IT: HasMutableURI](BaseMatch[_ApiT, IT], HasImmutableURI):
     type: ClassVar[str] = "playlist"
 
     # WORKAROUND: use `InstanceOf` here to prevent revalidation
@@ -63,10 +57,10 @@ class _BaseMatch[IT: HasMutableURI](CheckerMatch[_ApiT, IT], HasImmutableURI):
         return match
 
 
-class PlaylistMatch[IT: HasMutableURI](_BaseMatch[IT]):
-    _method: ClassVar[str] = "PLAYLIST"
+class SyncMatch[IT: HasMutableURI](_PlaylistMatch[IT]):
+    _method: ClassVar[str] = "PLAYLIST_SYNC"
 
-    async def match(self, items: Collection[IT]) -> CheckResult[IT]:
+    async def match(self, items: Sequence[IT]) -> CheckResult[IT]:
         """Match the given that have missing URIs with items in the current playlist."""
         self._logger.info(f"Checking for changes to items in {self.page.source} playlist: {self.name}", header=2)
 
@@ -104,7 +98,7 @@ class PlaylistMatch[IT: HasMutableURI](_BaseMatch[IT]):
         )
 
     def _compare_items[RT: HasURI](
-            self, items: Collection[IT], others: Collection[RT]
+            self, items: Sequence[IT], others: Sequence[RT]
     ) -> tuple[list[RT], list[IT], list[IT], list[IT], list[IT]]:
         valid_items = self.get_valid_items(items)
         items_unique = UniqueSequence(valid_items)
@@ -177,8 +171,8 @@ class PlaylistMatch[IT: HasMutableURI](_BaseMatch[IT]):
         return changed
 
 
-class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
-    _method: ClassVar[str] = "INPUT"
+class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT]):
+    _method: ClassVar[str] = "PLAYLIST_INPUT"
 
     item_formatter: ModelFormatter = Field(
         description="The formatter to use for formatting info about the item to print.",
@@ -189,65 +183,9 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
         )
     )
 
-    async def match(self, items: Collection[IT]) -> CheckResult[IT]:
-        """Match the given items that have missing URIs with user input."""
-        missing = self.get_missing_items(items)
-        if not missing:
-            message = "No items with mutable URIs to match to input, skipping match"
-            self._log_skip(message)
-            return CheckResult(name=self.name)
-
-        self._log_debug(f"Getting user input for {len(missing)} items")
-        self._print_help_text(header=self._get_header(len(missing)))
-
-        initial = deepcopy(missing)
-        formatter = self._configure_formatter_for_items(missing)
-        option = None
-
-        with suppress(SkipPage):  # suppress so we can still compare changes and return a result
-            for item in missing:
-                option = await self._match_item_with_input(item, others=items, option=option, formatter=formatter)
-
-        return self._compare_uri_changes(initial=initial, changes=missing)
-
-    @classmethod
-    def _configure_formatter_for_items(cls, items: Iterable) -> LogFormatter:
-        width = min(
-            max(len(item.name) if isinstance(item, HasName) else 0 for item in items),
-            cls.input_formatter.max_width or sys.maxsize,
-        )
-        kwargs = vars(cls.input_formatter)
-        kwargs.pop("width", None)
-
-        return cls.input_formatter.__class__(**kwargs, width=width or None)
-
-    def _compare_uri_changes(self, initial: Iterable[IT], changes: Iterable[IT]) -> CheckResult[IT]:
-        changed = []
-        unchanged = []
-        unavailable = []
-        skipped = []
-
-        for init, change in zip(initial, changes, strict=True):
-            if init.has_uri is not False and change.has_uri is False:
-                unavailable.append(change)
-            elif init.has_uri is None and change.has_uri is None:
-                skipped.append(change)
-            elif init.uri == change.uri:
-                unchanged.append(change)
-            else:
-                changed.append(change)
-
-        return CheckResult(
-            name=self.name, changed=changed, unchanged=unchanged, unavailable=unavailable, skipped=skipped
-        )
-
-    ###########################################################################
-    ## Pause page
-    ###########################################################################
-    def _get_header(self, count: int) -> str:
-        message = f"The following {count} items were removed and/or matches were not found."
-        name = colored(self.name, "blue", attrs=["bold"])
-        return f"{name}: {message}"
+    @property
+    def _header(self) -> str:
+        return "The following {count} items were removed and/or matches were not found"
 
     @property
     def _options(self) -> dict[str | None, str]:
@@ -269,7 +207,7 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
         }
 
     async def _match_item_with_input(
-            self, item: IT, others: Collection[IT], option: str | None, formatter: LogFormatter
+            self, item: IT, others: Sequence[IT], option: str | None, formatter: LogFormatter
     ) -> str | None:
         name = item.name if isinstance(item, HasName) else str(id(item))
         input_requested = option is None
@@ -308,7 +246,6 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
                         return option
 
                 case value if (input_uri := self._create_uri(value, kind=item.type)) is not None:
-                    # set uri from input
                     item.uri = input_uri
                     break
 
@@ -317,21 +254,7 @@ class InputMatch[IT: HasMutableURI](_BaseMatch[IT], OptionsProcessor):
 
             option = None
 
-    def _set_unavailable_uri(self, item: IT) -> None:
-        item.uri = self._create_uri(None, kind=item.type)
-        messages = [f"Marking {item.type} as unavailable", f"URI={item.uri}"]
-        self._log_debug(messages, item=item, pad="<")
-
-    def _drop_uri(self, item: IT) -> None:
-        del item.uri
-        self._log_debug(f"Marking {item.type} as missing", item=item, pad="<")
-
-    def _create_uri(self, value: str | None, kind: str) -> URI | None:
-        with suppress(ValidationError):
-            return self.page.api.create_uri(value=value, kind=kind)
-        return None
-
-    def _match_item_with_playlist(self, item: IT, others: Collection[IT]) -> bool:
+    def _match_item_with_playlist(self, item: IT, others: Sequence[IT]) -> bool:
         items = self.page.get_stored_playlist_items(self.uri)
 
         # don't match with items that have already been matched

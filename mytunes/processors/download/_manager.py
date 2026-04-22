@@ -12,7 +12,7 @@ from yarl import URL
 from mytunes._types import StrippedString
 from mytunes.processors.download._page import StorePausePage
 from mytunes.processors.download.stores import AudioStore
-from .._base import Processor
+from mytunes.processors import Processor
 from .._flow import SkipPage, QuitImmediately
 from ..._base.resource import ResourceModel
 from mytunes.core.collection import CollectionModel
@@ -106,9 +106,6 @@ class StoreManager(Processor, HasLogger, HasProgress):
                 continue
             except QuitImmediately:
                 self._logger.error("User triggered exit with quit command")
-                break
-            except KeyboardInterrupt:
-                self._logger.error("User triggered exit with KeyboardInterrupt")
                 break
 
     def _format_urls_for_items[T: ResourceModel](

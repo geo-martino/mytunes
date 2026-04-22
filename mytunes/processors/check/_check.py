@@ -1,26 +1,30 @@
 import functools
 import itertools
-from collections.abc import Sequence, AsyncGenerator, Callable, Collection
+from collections.abc import Sequence, Callable, Collection
 from typing import Any
 
 from pydantic import Field, PositiveInt
 from termcolor import colored
 
+from mytunes.core.api import RemoteAPI, HasAPI, Endpoints
+from mytunes.core.api.user import HasUserEndpoints
 from mytunes.core.collection import CollectionModel
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.logger import HasProgress
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasURI, URI, HasMutableURI
 from mytunes.processors._flow import QuitImmediately, SkipPage
+from mytunes.processors.check._match import BaseMatch
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
-from mytunes.processors.check._match import CheckerMatch
+from ._input.page import InputPage
+from ._page import CheckerPage
+from ._playlist.match import SyncMatch, InputMatch as PlaylistInputMatch
+from ._input.match import InputMatch as SimpleInputMatch
 from ._playlist.page import PlaylistsPage
-from ._playlist.match import PlaylistMatch, InputMatch
-from .._base import Processor
-from mytunes.core.api import RemoteAPI, HasAPI, Endpoints
-from mytunes.core.api.user import HasUserEndpoints
+from mytunes.processors import Processor
+from ...annotation import ResourceModel
 
 
 class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOperations):
@@ -30,12 +34,12 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     matcher: Matcher = Field(
         description=(
             "The matcher to use for confirming closest matches returned by the API "
-            "when comparing changes in playlists"
+            "when comparing changes in playlists on collection matching."
         ),
         default=Matcher(scorers=[NameScorer()]),
     )
     interval: PositiveInt = Field(
-        description="The number of playlists to create before pausing for user input.",
+        description="The number of collections to process before pausing for user input when matching collections.",
         default=10,
     )
 
@@ -50,6 +54,56 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         user = self.api.user if isinstance(self.api, Endpoints | HasUserEndpoints) else None
         return user.name if user is not None else "the current user"
 
+    ###########################################################################
+    ## Item match
+    ###########################################################################
+    @staticmethod
+    def _validate_items[T](func: Callable[Any, T]) -> Callable[Any, T]:
+        async def _invalid_response() -> T:
+            return None
+
+        @functools.wraps(func)
+        def _wrapper(self: Checker, items: Sequence[ResourceModel]) -> T:
+            items = [item for item in items if isinstance(item, HasURI)]
+
+            if len(items) == 0:
+                self._logger.extra(colored("No valid items to check.", "yellow"))
+                return _invalid_response()
+
+            return func(self, items)
+
+        return _wrapper
+
+    @_validate_items
+    async def check_items[T: HasURI](self, items: Sequence[T]) -> CheckResult[T] | None:
+        """Check the matches for the items using only user input for checking and setting matches."""
+        self._log_start(items)
+
+        page = InputPage(api=self.api, items=items, concurrency=self.concurrency)
+
+        try:
+            async with page:
+                return await self._check_item_page(page)
+        except SkipPage:
+            self._logger.error("User triggered skip page with skip command")
+        except QuitImmediately:
+            self._logger.error("User triggered exit with quit command")
+
+    async def _check_item_page[T: HasURI](self, page: InputPage[API, T]) -> CheckResult[T] | None:
+        self._log_page(page)
+
+        with self._pause_progress():
+            all_valid = await page.pause()
+
+        matcher = SimpleInputMatch(page=page)
+        if all_valid:
+            return CheckResult(name=matcher.name, unchanged=page.items)
+
+        await self._match([matcher], items=page.items)
+
+    ###########################################################################
+    ## Playlist match
+    ###########################################################################
     @staticmethod
     def _validate_collections[T](func: Callable[Any, T]) -> Callable[Any, T]:
         async def _invalid_response() -> T:
@@ -71,43 +125,6 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         return _wrapper
 
     @_validate_collections
-    async def check_collections[T: HasURI](
-            self, collections: Sequence[CollectionModel[T]]
-    ) -> tuple[CheckResult[T], ...]:
-        """
-        Check the matches for the items in the given collections using only user input
-        for checking and setting matches.
-        """
-        self._log_start(collections)
-
-        batches = list(itertools.batched(collections, self.interval))
-        batch_total = len(batches)
-
-        results: list[CheckResult[T]] = []
-        for batch_number, batch in enumerate(batches, 1):
-            page = PlaylistsPage(
-                position=Position(number=batch_number, total=batch_total, zero_fill=True),
-                api=self.api,
-                collections=batch,
-                concurrency=self.concurrency,
-            )
-
-            try:
-                async with page:
-                    results += await self._check_playlist_page(page)
-            except SkipPage:
-                self._logger.error("User triggered skip page with skip command")
-                continue
-            except QuitImmediately:
-                self._logger.error("User triggered exit with quit command")
-                break
-            except KeyboardInterrupt:
-                self._logger.error("User triggered exit with KeyboardInterrupt")
-                break
-
-        return tuple(results)
-
-    @_validate_collections
     async def check_collections_on_playlists[T: HasURI](
             self, collections: Sequence[CollectionModel[T]]
     ) -> tuple[CheckResult[T], ...]:
@@ -126,7 +143,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             page = PlaylistsPage(
                 position=Position(number=batch_number, total=batch_total, zero_fill=True),
                 api=self.api,
-                collections=batch,
+                items=batch,
                 task_id=task_id,
                 concurrency=self.concurrency,
             )
@@ -139,9 +156,6 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
                 continue
             except QuitImmediately:
                 self._logger.error("User triggered exit with quit command")
-                break
-            except KeyboardInterrupt:
-                self._logger.error("User triggered exit with KeyboardInterrupt")
                 break
 
         return tuple(results)
@@ -163,15 +177,18 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     async def _match_playlist[T: HasMutableURI](self, page: PlaylistsPage[API, T], uri: URI) -> CheckResult[T]:
         items = page.get_collection_items(uri)
         matchers = [
-            PlaylistMatch(page=page, uri=uri, matcher=self.matcher),
-            InputMatch(page=page, uri=uri, matcher=self.matcher),
+            SyncMatch(page=page, uri=uri, matcher=self.matcher),
+            PlaylistInputMatch(page=page, uri=uri, matcher=self.matcher),
         ]
 
-        return await self._match(matchers, items)
+        return await self._match(matchers, items=items)
 
+    ###########################################################################
+    ## Common functionality
+    ###########################################################################
     @staticmethod
     async def _match[T: HasMutableURI](
-            matchers: Sequence[CheckerMatch[API, T]], items: Collection[T]
+            matchers: Sequence[BaseMatch[API, T]], items: Collection[T]
     ) -> CheckResult[T] | None:
         result: CheckResult[T] | None = None
 
@@ -203,6 +220,6 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         )
         self._logger.info(message, header=1)
 
-    def _log_page(self, page: PlaylistsPage) -> None:
+    def _log_page(self, page: CheckerPage) -> None:
         message = f"Creating {page.total} {self.source} playlists for {self.username}"
         self._logger.info(message, header=2)

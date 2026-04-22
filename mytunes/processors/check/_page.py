@@ -2,20 +2,20 @@ from collections.abc import Sequence
 
 from pydantic import Field, field_validator
 
+from ..._base.resource import ResourceModel
 from mytunes.core.api import RemoteAPI, HasAPI, Endpoints
-from mytunes.core.collection import CollectionModel
+from mytunes.core.api.user import HasUserEndpoints
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.uri import HasURI
 from mytunes.core.user import RemoteUser
 from mytunes.exception import MyTunesValidationError
-from .._base.inputs import PageProcessor
-from mytunes.core.api.user import HasUserEndpoints
+from mytunes.processors import PageProcessor
 
 
 # noinspection PyAbstractClass
-class CollectionsPage[API: RemoteAPI, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOperations):
-    collections: Sequence[CollectionModel] = Field(
-        description="The collections to be checked on this page."
+class CheckerPage[API: RemoteAPI, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOperations):
+    items: Sequence[ResourceModel] = Field(
+        description="The items to be checked on this page."
     )
 
     @field_validator("api", mode="after")
@@ -32,11 +32,15 @@ class CollectionsPage[API: RemoteAPI, CT: HasURI](PageProcessor, HasAPI[API], Ha
         return self.api.source
 
     @property
-    def user(self) -> RemoteUser | None:
+    def username(self) -> str | None:
         """The user to create playlists for."""
-        return self.api.user if isinstance(self.api, Endpoints | HasUserEndpoints) else None
+        if not isinstance(self.api, Endpoints | HasUserEndpoints):
+            return None
+
+        user = self.api.user
+        return user.name if isinstance(user, RemoteUser) else None
 
     @property
     def total(self) -> int:
         """The number of collections to be checked."""
-        return len(self.collections)
+        return len(self.items)

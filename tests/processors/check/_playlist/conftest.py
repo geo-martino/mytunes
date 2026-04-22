@@ -1,4 +1,4 @@
-from collections.abc import Generator, Collection
+from collections.abc import Generator, Collection, Sequence
 from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar
@@ -31,8 +31,8 @@ PlaylistsPage.wait_after_add = 0
 
 
 @pytest.fixture
-def page(position: Position, collections: Collection[CollectionModel], api: RemoteAPI) -> PlaylistsPage:
-    return PlaylistsPage(position=position, api=api, collections=collections)
+def page(position: Position, collections: Sequence[CollectionModel], api: RemoteAPI) -> PlaylistsPage:
+    return PlaylistsPage(position=position, api=api, items=collections)
 
 
 @pytest.fixture

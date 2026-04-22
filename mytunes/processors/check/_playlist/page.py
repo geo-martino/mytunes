@@ -18,7 +18,7 @@ from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI, URI
 from mytunes.core.remote import RemoteResource
 from mytunes.exception import MyTunesError, MyTunesValidationError
-from mytunes.processors.check._page import CollectionsPage
+from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.formatter import CollectionFormatter
 
 type _ApiT = RemoteAPI | HasPlaylistEndpoints[
@@ -27,9 +27,13 @@ type _ApiT = RemoteAPI | HasPlaylistEndpoints[
 ]
 
 
-class PlaylistsPage[API: _ApiT, CT: HasURI](CollectionsPage[API, CT]):
+class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
     #: The time to wait after adding tracks to a playlist on setup.
     wait_after_add: ClassVar[PositiveFloat] = 0.8
+
+    items: Sequence[CollectionModel] = Field(
+        description="The collections to be checked on this page."
+    )
 
     _collections: MutableMapping[URI, CollectionModel[CT]] = PrivateAttr(
         # description="The collections currently being checked mapped to the URIs of the active playlists.",
@@ -134,7 +138,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CollectionsPage[API, CT]):
     ###########################################################################
     async def setup_playlists(self) -> None:
         """Set up the playlists for the given collections and store their state."""
-        tasks = map(self._setup_playlist, self.collections)
+        tasks = map(self._setup_playlist, self.items)
         remove = self.position.number == self.position.total
         await self._run_tasks_async(tasks, task_id=self.task_id, remove=remove)
 
@@ -259,7 +263,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CollectionsPage[API, CT]):
     ###########################################################################
     @property
     def _header(self) -> str:
-        source = f"{self.user.name}'s {self.source} library" if self.user is not None else self.source
+        source = f"{self.username}'s {self.source} library" if self.username is not None else self.source
         header = f"{len(self._playlists)} temporary playlists created on {source}. "
         header += f"You may now check the items in each playlist on {self.source}."
         return colored(header, "blue", attrs=["bold"])

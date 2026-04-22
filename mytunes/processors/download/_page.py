@@ -8,7 +8,7 @@ from termcolor import colored
 from yarl import URL
 
 from mytunes._types import HttpURL
-from .._base.inputs import PageProcessor
+from mytunes.processors import PageProcessor
 from ..._base.attribute import AttributeModel
 
 

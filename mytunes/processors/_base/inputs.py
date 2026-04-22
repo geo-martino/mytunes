@@ -122,8 +122,9 @@ class OptionsProcessor(InputProcessor):
 
 class PageProcessor(OptionsProcessor, HasProgress):
     """Processor that runs in pages, getting user input and printing formatted options text to the terminal."""
-    position: Position = Field(
-        description="The current position of this page in the process."
+    position: Position | None = Field(
+        description="The current position of this page in the process.",
+        default=None
     )
     task_id: TaskID | None = Field(
         description=(
@@ -141,5 +142,8 @@ class PageProcessor(OptionsProcessor, HasProgress):
             self, text: str | None = None, formatter: LogFormatter | None = None, choices: list[str] | None = None
     ) -> str | None:
         if text is None:  # change the default text
-            text = f"Enter ({self.position})"
+            text = "Enter"
+        if self.position is not None:
+            text += f" ({self.position})"
+
         return super()._get_user_input(text=text, formatter=formatter, choices=choices)

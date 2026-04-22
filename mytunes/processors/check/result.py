@@ -1,12 +1,12 @@
-from collections.abc import Sequence, Mapping
-from typing import Annotated, Self
+from collections.abc import Sequence
+from typing import Annotated
 
 from pydantic import Field
 
 from mytunes._types import TO_TUPLE
 from mytunes.core.properties.uri import HasURI
 from mytunes.exception import MyTunesValueError
-from mytunes.result import Result, LenLogFormatter, NamedResult
+from mytunes.result import LenLogFormatter, NamedResult
 
 
 class CheckResult[T: HasURI](NamedResult):

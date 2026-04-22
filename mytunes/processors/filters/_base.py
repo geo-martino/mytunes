@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
-from .._base import Processor
+from mytunes.processors import Processor
 from ..._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 
 

@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
-from mytunes.processors.check._playlist.match import PlaylistMatch
+from mytunes.processors.check._playlist.match import SyncMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
 from tests.processors.check._playlist.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
@@ -15,13 +15,13 @@ from tests.testers import UniqueKeyTester
 from tests.utils import split_list
 
 
-class TestPlaylistMatch(UniqueKeyTester):
+class TestSyncMatch(UniqueKeyTester):
     @pytest.fixture
-    def model(self, page: PlaylistsPage, playlist: RemoteMutablePlaylist, matcher: Matcher) -> PlaylistMatch:
-        return PlaylistMatch(page=page, uri=playlist.uri, matcher=matcher)
+    def model(self, page: PlaylistsPage, playlist: RemoteMutablePlaylist, matcher: Matcher) -> SyncMatch:
+        return SyncMatch(page=page, uri=playlist.uri, matcher=matcher)
 
     @pytest.fixture
-    def mock_match_items_with_others(self, model: PlaylistMatch, mocker: MockerFixture) -> Mock:
+    def mock_match_items_with_others(self, model: SyncMatch, mocker: MockerFixture) -> Mock:
         return mocker.spy(model, "_match_items_with_others")
 
     ###########################################################################
@@ -29,7 +29,7 @@ class TestPlaylistMatch(UniqueKeyTester):
     ###########################################################################
     def test_compare_items(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             mutable_items: list[HasMutableURI],
             unavailable_items: list[HasMutableURI],
             missing_items: list[HasMutableURI],
@@ -53,7 +53,7 @@ class TestPlaylistMatch(UniqueKeyTester):
 
     def test_compare_duplicate_items(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             available_items: list[HasURI],
             faker: Faker,
     ):
@@ -78,7 +78,7 @@ class TestPlaylistMatch(UniqueKeyTester):
     ###########################################################################
     def test_match_items_with_others(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             mutable_items: list[HasMutableURI],
             mock_match: Mock,
             faker: Faker,
@@ -116,7 +116,7 @@ class TestPlaylistMatch(UniqueKeyTester):
 
     def test_match_items_with_others_skips_immutable_items(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             mutable_items: list[HasMutableURI],
             available_items: list[HasImmutableURI],
             mocker: MockerFixture,
@@ -133,7 +133,7 @@ class TestPlaylistMatch(UniqueKeyTester):
     ###########################################################################
     async def test_match_skips_on_no_changes(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             playlist: RemoteMutablePlaylist,
             mutable_items: list[HasNameAndMutableURI],
             unavailable_items: list[HasNameAndMutableURI],
@@ -151,7 +151,7 @@ class TestPlaylistMatch(UniqueKeyTester):
 
     async def test_match_skips_on_none_added(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             mutable_items: list[HasNameAndMutableURI],
             unavailable_items: list[HasNameAndMutableURI],
             mock_get_playlist_items: Mock,
@@ -173,7 +173,7 @@ class TestPlaylistMatch(UniqueKeyTester):
 
     async def test_match(
             self,
-            model: PlaylistMatch,
+            model: SyncMatch,
             mutable_items: list[HasNameAndMutableURI],
             unavailable_items: list[HasNameAndImmutableURI],
             mock_get_playlist_items: Mock,

@@ -21,11 +21,12 @@ from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.formatter import CollectionFormatter
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
+from utils import patch_input
 
 
 @pytest.fixture
 def model(position: Position, api: RemoteAPI, collections: Sequence[CollectionModel]) -> PlaylistsPage:
-    return PlaylistsPage(position=position, api=api, collections=collections)
+    return PlaylistsPage(position=position, api=api, items=collections)
 
 
 class TestPlaylistManagement(BaseModelTester):
@@ -334,3 +335,15 @@ class TestPause:
 
         await model._print_playlist_items(playlist)
         assert mock_format.call_count == 2
+
+    async def test_pause(
+            self, model: PlaylistsPage, playlist: RemoteMutablePlaylist, mocker: MockerFixture, faker: Faker
+    ):
+        mock_print_links = mocker.spy(model, "_print_playlist_links")
+        mock_print_items = mocker.spy(model, "_print_playlist_items")
+
+        with patch_input(iter(["l", playlist.name, "l", "invalid input", ""])):
+            await model.pause()
+
+        assert mock_print_links.call_count == 2
+        mock_print_items.assert_called_once()
