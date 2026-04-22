@@ -13,7 +13,7 @@ from ..core.api import RemoteAPI, HasAPI
 from ..core.api.search import HasSearchEndpoints
 from mytunes.core.collection import CollectionModel, RemoteCollection
 from mytunes.core.album import AlbumCollection
-from mytunes.exception import MyTunesValidationError
+from mytunes.exception import MyTunesValidationError, MyTunesValueError
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.file import IsFile, IsLocalFile
 from mytunes.core.properties.logger import HasProgress, HasLogger
@@ -84,6 +84,32 @@ class SearchResult[T: Any](NamedResult, TotalCountResult):
         if len(self.matches) != len(self.matched):
             raise MyTunesValidationError("The number of matches must be equal to the number of matched items.")
         return self
+
+    def merge_results(self, other: SearchResult[T]) -> SearchResult[T]:
+        """
+        Merge another result into this one and return the merged result.
+        The other result should only contain items that are in the unmatched category as
+        the other categories should contain items which do not reduce between operations.
+        """
+        unmatched = list(self.unmatched)
+
+        for item in other.matched:
+            if item not in unmatched:
+                raise MyTunesValueError("Can only merge with results which update the unmatched items of this result")
+            unmatched.remove(item)
+
+        for item in other.unmatched:
+            if item not in unmatched:
+                raise MyTunesValueError("Other result must contain all items in this result's unmatched items")
+
+        return SearchResult(
+            name=self.name,
+            matches=list(self.matches) + list(other.matches),
+            matched=list(self.matched) + list(other.matched),
+            unmatched=unmatched,
+            skipped=list(self.skipped) + list(other.skipped),
+        )
+
 
 
 type _ApiT = RemoteAPI | HasSearchEndpoints
