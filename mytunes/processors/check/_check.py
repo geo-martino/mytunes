@@ -205,8 +205,11 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     ###########################################################################
     ## Logging + validation
     ###########################################################################
-    def log_results(self, results: Sequence[CheckResult]) -> None:
+    def log_results(self, results: CheckResult | Sequence[CheckResult]) -> None:
         """Log the given check results"""
+        if isinstance(results, CheckResult):
+            results = [results]
+
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)
 

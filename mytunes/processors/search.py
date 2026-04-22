@@ -418,8 +418,11 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     ###########################################################################
     ## Logging
     ###########################################################################
-    def log_results(self, results: Sequence[SearchResult]) -> None:
+    def log_results(self, results: SearchResult | Sequence[SearchResult]) -> None:
         """Log the given search results"""
+        if isinstance(results, SearchResult):
+            results = [results]
+
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)
 
