@@ -1,5 +1,7 @@
 from typing import ClassVar, Annotated, Self, Any
 
+from pydantic import Field, field_validator, validate_call
+
 from mytunes._types import to_list
 from mytunes.core._item.genre import HasGenres, Genre, RemoteGenre
 from mytunes.core.api import ItemReadEndpoints
@@ -10,8 +12,6 @@ from mytunes.core.properties.tag import HasSeparableTags
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
 from mytunes.core.sequence import MutableUniqueSequence
-from pydantic import Field, field_validator, validate_call
-
 from ..._base import makecls
 from ..._base.attribute import Attribute
 from ..._base.resource import ResourceModel

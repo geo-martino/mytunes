@@ -5,14 +5,15 @@ from unittest.mock import Mock, AsyncMock, patch
 
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
+
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core._item.track import RemoteTrack
 from mytunes.core.api import RemoteAPI
 from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.processors.check import Checker
-from mytunes.processors.check._page import CheckerPage
-from pytest_mock import MockerFixture
+from mytunes.processors.check._playlist.page import PlaylistsPage
 from tests.processors.utils import MockCollection
 from tests.utils import patch_input
 
@@ -40,19 +41,19 @@ class TestCheckerPause:
 
     @pytest.fixture
     def mock_pause(self, mocker: MockerFixture) -> Mock:
-        return mocker.spy(CheckerPage, "pause")
+        return mocker.spy(PlaylistsPage, "pause")
 
     @pytest.fixture
     def mock_playlist_links(self, mocker: MockerFixture) -> Mock:
-        return mocker.spy(CheckerPage, "_print_playlist_links")
+        return mocker.spy(PlaylistsPage, "_print_playlist_links")
 
     @pytest.fixture
     def mock_playlist_items(self, mocker: MockerFixture) -> Mock:
-        return mocker.spy(CheckerPage, "_print_playlist_items")
+        return mocker.spy(PlaylistsPage, "_print_playlist_items")
 
     @pytest.fixture
     def mock_teardown_playlists(self, mocker: MockerFixture) -> Mock:
-        return mocker.spy(CheckerPage, "teardown_playlists")
+        return mocker.spy(PlaylistsPage, "teardown_playlists")
 
     @staticmethod
     def assert_pause_calls(
@@ -107,7 +108,7 @@ class TestCheckerPause:
     ):
         inputs = [""] * pages + ["h"] + ["invalid_input"]  # add some other random inputs
         with patch_input(iter(inputs)):
-            await model.check(collections)
+            await model.check_collections_on_playlists(collections)
 
         self.assert_pause_calls(
             model,
@@ -132,7 +133,7 @@ class TestCheckerPause:
     ):
         inputs = ["h", "h", "", "h", "", "h"] + [""] * pages
         with patch_input(iter(inputs)):
-            await model.check(collections)
+            await model.check_collections_on_playlists(collections)
 
         self.assert_pause_calls(
             model,
@@ -157,7 +158,7 @@ class TestCheckerPause:
     ):
         inputs = ["", "h", "", "s", "h"] + [""] * pages
         with patch_input(iter(inputs)):
-            await model.check(collections)
+            await model.check_collections_on_playlists(collections)
 
         self.assert_pause_calls(
             model,
@@ -182,7 +183,7 @@ class TestCheckerPause:
     ):
         inputs = ["", "h", "", "q"]
         with patch_input(iter(inputs)):
-            await model.check(collections)
+            await model.check_collections_on_playlists(collections)
 
         self.assert_pause_calls(
             model,
@@ -228,7 +229,7 @@ class TestCheckerPause:
         ]
 
         with patch_input(iter(inputs)):
-            await model.check(collections)
+            await model.check_collections_on_playlists(collections)
 
         self.assert_pause_calls(
             model,

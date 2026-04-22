@@ -23,9 +23,11 @@ class TestHasGenres(NoUniqueKeyTester):
         assert sorted(genre.name for genre in model.genres) == sorted(set(genre.name for genre in genres))
 
     def test_to_string(self, genres: list[Genre]):
-        genre = HasGenres._join_tags(genre.name for genre in genres)
+        expected = {genre.name for genre in genres}
+
         model = HasGenres(genre=genres)
-        assert model.genre == genre
+        result = {name.rstrip("".join(model._tag_sep)) for name in model.genre.split()}
+        assert result == expected
 
     def test_set_genres_on_property(self, model: HasGenres, genres: list[Genre]):
         model.genre = genres

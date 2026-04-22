@@ -2,6 +2,7 @@ from collections.abc import Collection
 from unittest.mock import Mock
 
 import pytest
+
 from mytunes.core._collection.library import RemoteLibrary
 from mytunes.core._collection.playlist import RemotePlaylist
 from mytunes.core._item.album import Album

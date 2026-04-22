@@ -1,13 +1,14 @@
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+from yarl import URL
+
 from mytunes.core._context import RemoteModelContext
 from mytunes.spotify._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from mytunes.spotify.user import SpotifyUser
-from pydantic import ValidationError
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyResourceTester
-from yarl import URL
 
 
 class TestSpotifyPlaylist(SpotifyResourceTester):
@@ -60,7 +61,6 @@ class TestSpotifyPlaylist(SpotifyResourceTester):
 
         assert isinstance(model.cursor, SpotifyInitialCursor)
         assert model.cursor.url == URL(f"{payload["href"]}/items")
-        assert model.total > 0
         assert model.cursor.total > 0
 
     def test_validate_mutability(self, model: SpotifyPlaylist, generator: SpotifyPayloadGenerator):

@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from mytunes.core.cursors import PageCursor, HasPageCursor, InitialCursor
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
-
 from ..._base import BaseModel
 from ..._base.resource import ResourceModel
 
@@ -28,7 +27,7 @@ class CollectionModel[IT: ResourceModel](BaseModel):
         return iter(self._items)
 
     @property
-    def count(self) -> int:
+    def total(self) -> int:
         """The number of items currently stored in this collection."""
         return len(self._items)
 
@@ -42,7 +41,7 @@ class RemoteCollection[UT: URI, IT: RemoteResource, CT: PageCursor](
         """Whether this collection has all items loaded."""
         if self.cursor.total is None:
             return None
-        return self.count == self.cursor.total
+        return self.total == self.cursor.total
 
     @abstractmethod
     def _clear(self) -> None:

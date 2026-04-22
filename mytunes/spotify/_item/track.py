@@ -1,6 +1,9 @@
 from datetime import datetime
 from typing import final, ClassVar, Annotated, TYPE_CHECKING, Self, Any
 
+from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, \
+    ModelWrapValidatorHandler, model_validator
+
 from mytunes.core.properties.audio import Decibels
 from mytunes.core.properties.date import SparseDate, HasAddedDate
 from mytunes.core.properties.length import Length, HasLength
@@ -12,9 +15,6 @@ from mytunes.spotify._item.album import SpotifyAlbum
 from mytunes.spotify._item.artist import SpotifyArtist
 from mytunes.spotify._item.genre import SpotifyGenre
 from mytunes.spotify.exception import SpotifyError
-from pydantic import Field, AliasChoices, AliasPath, field_validator, PositiveFloat, PositiveInt, \
-    ModelWrapValidatorHandler, model_validator
-
 from .._properties.images import HasSpotifyImages
 from .._properties.music import HasSpotifyKeySignature
 from .._properties.rating import HasSpotifyRating

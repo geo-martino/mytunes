@@ -5,6 +5,10 @@ from typing import Annotated, ClassVar, final, Any, Self
 
 import tabulate
 from mutagen import MutagenError
+from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
+    ModelWrapValidatorHandler, ValidationError, validate_call
+from termcolor import colored
+
 from mytunes.core.library import MutableLibrary
 from mytunes.core.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
 from mytunes.exception import MyTunesError, MyTunesValueError
@@ -19,10 +23,6 @@ from mytunes.local._collection.playlist.result import LoadPlaylistResult, SavePl
 from mytunes.logger import STAT
 from mytunes.processors.sort import ItemSorter
 from mytunes.result import Result
-from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
-    ModelWrapValidatorHandler, ValidationError, validate_call
-from termcolor import colored
-
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 
 

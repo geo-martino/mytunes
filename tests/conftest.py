@@ -14,6 +14,7 @@ from PIL import Image, ImageFile as PILImageFile
 # noinspection PyProtectedMember
 from aiohttp import ClientSession
 from faker import Faker
+
 from mytunes.core._collection.playlist import Playlist, MutablePlaylist
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist

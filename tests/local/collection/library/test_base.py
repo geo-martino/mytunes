@@ -8,6 +8,9 @@ from unittest.mock import patch, Mock
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
+
 from mytunes.core._collection.playlist import Playlist
 from mytunes.core.properties.path import PathStemMapper, SystemPaths
 from mytunes.local._collection.library import LocalLibrary
@@ -18,8 +21,6 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.processors.filters.values import NameFilter
-from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
 from tests.testers import NoUniqueKeyTester
 
 
@@ -277,14 +278,14 @@ class TestLocalLibrary(NoUniqueKeyTester):
 
         folders = list(model.folders)
         assert len(folders) == len(set(track_folders)) > 0
-        assert all(folder.count > 0 for folder in folders)
+        assert all(folder.total > 0 for folder in folders)
 
     def test_albums(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks.replace(tracks)
 
         albums = list(model.albums)
         assert len(albums) == len(set(track.album.name for track in model.tracks)) > 0
-        assert all(album.count > 0 for album in albums)
+        assert all(album.total > 0 for album in albums)
 
     def test_artists(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks.replace(tracks)
@@ -293,7 +294,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
 
         artists = list(model.artists)
         assert len(artists) == expected > 0
-        assert all(artist.count > 0 for artist in artists)
+        assert all(artist.total > 0 for artist in artists)
 
     def test_genres(self, model: LocalLibrary, tracks: list[LocalTrack], track_folders: list[Path]):
         model.tracks.replace(tracks)
@@ -302,4 +303,4 @@ class TestLocalLibrary(NoUniqueKeyTester):
 
         genres = list(model.genres)
         assert len(genres) == expected > 0
-        assert all(genre.count > 0 for genre in genres)
+        assert all(genre.total > 0 for genre in genres)

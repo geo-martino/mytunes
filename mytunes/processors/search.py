@@ -236,7 +236,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
             self, collections: Sequence[CollectionModel]
     ) -> tuple[tuple[str, SearchResult[T]], ...]:
         """Search for matches for the given collection and return the results per collection."""
-        if len(collections) == 0 or sum(collection.count for collection in collections) == 0:
+        if len(collections) == 0 or sum(collection.total for collection in collections) == 0:
             self._log_skip("No collections or items to search.")
             return tuple()
 

@@ -11,14 +11,14 @@ import aiofiles
 import aiohttp
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from mytunes._types import StrippedString, UpperSnakeCase, HttpURL, DEFAULT_IF_NONE
-from mytunes.core.properties.file import IsLocalFile
-from mytunes.exception import MyTunesValidationError
 from pydantic import Field, PositiveInt, field_validator, model_validator, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.functional_validators import ModelWrapValidatorHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
+from mytunes._types import StrippedString, UpperSnakeCase, HttpURL, DEFAULT_IF_NONE
+from mytunes.core.properties.file import IsLocalFile
+from mytunes.exception import MyTunesValidationError
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel, Attribute
 

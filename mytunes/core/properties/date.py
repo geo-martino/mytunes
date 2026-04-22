@@ -5,9 +5,9 @@ from datetime import date, datetime
 from functools import total_ordering
 from typing import Annotated, Any, Self
 
-from mytunes.exception import MyTunesValidationError
 from pydantic import PositiveInt, Field, model_validator, TypeAdapter, NonNegativeInt, ValidationError, ConfigDict
 
+from mytunes.exception import MyTunesValidationError
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 
 _DATA_ADAPTER = TypeAdapter[date](date)

@@ -2,15 +2,16 @@ import textwrap
 from abc import abstractmethod
 from typing import ClassVar
 
+from pydantic import Field
+from rich.progress import TaskID
+from tabulate import tabulate
+from termcolor import colored
+
 from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.core.properties.order import Position
 from mytunes.processors._base import Processor
 from mytunes.processors._flow import SkipPage, QuitImmediately
 from mytunes.result import LogFormatter
-from pydantic import Field
-from rich.progress import TaskID
-from tabulate import tabulate
-from termcolor import colored
 
 
 class InputProcessor(Processor, HasLogger):
@@ -49,7 +50,7 @@ class OptionsProcessor(InputProcessor):
             "h": "Show this dialogue again",
         }
 
-    def _print_help_text(self, with_header: bool = True) -> None:
+    def _print_help_text(self, header: str | bool = True) -> None:
         """Format help text with a given mapping of options. Add an option header to include before options."""
         options = self._options | OptionsProcessor._options.fget(self)
 
@@ -68,7 +69,7 @@ class OptionsProcessor(InputProcessor):
             )
             rows.append(row)
 
-        header = f"{self._header}\n\n" if with_header and self._header else ""
+        header = f"{self._header}\n\n" if header is True and self._header else header or ""
         sub_header = colored("Enter one of the following", "cyan") + ":\n"
         log = header + sub_header + tabulate(
             rows,
@@ -100,7 +101,7 @@ class OptionsProcessor(InputProcessor):
         """
         match option:
             case "h":
-                self._print_help_text(with_header=False)
+                self._print_help_text(header=False)
                 return True
 
             case "s" if "s" in self._options:
@@ -131,7 +132,7 @@ class PageProcessor(OptionsProcessor, HasProgress):
     @abstractmethod
     def pause(self) -> None:
         """Pause the process and prompt the user for input to proceed."""
-        self._print_help_text(with_header=True)
+        self._print_help_text(header=True)
 
     def _get_user_input(
             self, text: str | None = None, formatter: LogFormatter | None = None, choices: list[str] | None = None

@@ -6,12 +6,12 @@ from copy import copy
 from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Annotated, TYPE_CHECKING, cast, Union
 
-from mytunes._types import StrippedString, TO_SET, HttpURL
-from mytunes.exception import MyTunesTypeError, MyTunesValidationError
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict
 from pydantic_core.core_schema import ValidationInfo
 from yarl import URL
 
+from mytunes._types import StrippedString, TO_SET, HttpURL
+from mytunes.exception import MyTunesTypeError, MyTunesValidationError
 from ..._base import BaseModel, RootModel, makecls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute

@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from faker import Faker
+
 from mytunes import MODULE_ROOT
 # noinspection PyProtectedMember
 from mytunes.core._collection._sync import get_sync_items, get_sync_items_for_add, get_sync_items_for_refresh, \

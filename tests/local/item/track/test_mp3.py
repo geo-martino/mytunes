@@ -10,6 +10,7 @@ import pytest
 from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
+
 from mytunes.core.properties.uri import URI
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.track import TagContext

@@ -8,6 +8,8 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 from aiorequestful.exception import HTTPError
 from faker import Faker
+from pytest_mock import MockerFixture
+
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core._item.track import RemoteTrack
@@ -15,26 +17,24 @@ from mytunes.core.api import RemoteAPI
 from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.core.properties.order import Position
 from mytunes.exception import MyTunesError
-# noinspection PyProtectedMember
-from mytunes.processors.check._page import CheckerPage
+from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.formatter import CollectionFormatter
-from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 
 
 @pytest.fixture
-def model(position: Position, api: RemoteAPI, collections: Sequence[CollectionModel]) -> CheckerPage:
-    return CheckerPage(position=position, api=api, collections=collections)
+def model(position: Position, api: RemoteAPI, collections: Sequence[CollectionModel]) -> PlaylistsPage:
+    return PlaylistsPage(position=position, api=api, collections=collections)
 
 
 class TestPlaylistManagement(BaseModelTester):
     @pytest.fixture
-    def model(self, model: CheckerPage) -> CheckerPage:
+    def model(self, model: PlaylistsPage) -> PlaylistsPage:
         return model
 
     @pytest.fixture
-    def playlist_properties(self, model: CheckerPage, faker: Faker) -> dict[str, Any]:
+    def playlist_properties(self, model: PlaylistsPage, faker: Faker) -> dict[str, Any]:
         properties = faker.pydict()
         properties.pop("name", None)  # name is not allowed as a key
         model.additional_properties = properties
@@ -42,7 +42,7 @@ class TestPlaylistManagement(BaseModelTester):
 
     @staticmethod
     async def assert_create_playlist(
-            model: CheckerPage, collection: MockCollection, playlist: RemoteMutablePlaylist
+            model: PlaylistsPage, collection: MockCollection, playlist: RemoteMutablePlaylist
     ) -> None:
         assert not model._playlists
 
@@ -62,7 +62,7 @@ class TestPlaylistManagement(BaseModelTester):
     ###########################################################################
     async def test_get_playlist(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             collection: MockCollection,
             playlists: list[RemoteMutablePlaylist],
             tracks: list[RemoteTrack],
@@ -83,7 +83,7 @@ class TestPlaylistManagement(BaseModelTester):
 
     async def test_create_playlist(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             collection: MockCollection,
             playlists: list[RemoteMutablePlaylist],
             playlist_properties: dict[str, Any],
@@ -102,14 +102,14 @@ class TestPlaylistManagement(BaseModelTester):
 
     async def test_setup_playlists_fails(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlists: list[RemoteMutablePlaylist],
             collections: list[CollectionModel],
             mocker: MockerFixture,
             faker: Faker,
     ):
         mock_gather = mocker.spy(asyncio, "gather")
-        mock_teardown_playlists = mocker.spy(CheckerPage, "teardown_playlists")
+        mock_teardown_playlists = mocker.spy(PlaylistsPage, "teardown_playlists")
 
         async def _random_exception(*_, **__):
             if faker.boolean():
@@ -132,7 +132,7 @@ class TestPlaylistManagement(BaseModelTester):
 
     async def test_delete_playlists(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlists: list[RemoteMutablePlaylist],
             collections: list[CollectionModel],
             tracks: list[RemoteTrack],
@@ -153,7 +153,7 @@ class TestPlaylistManagement(BaseModelTester):
 
     async def test_restore_playlist(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlist: RemoteMutablePlaylist,
             collection: CollectionModel,
             tracks: list[RemoteTrack],
@@ -176,16 +176,16 @@ class TestPlaylistManagement(BaseModelTester):
         assert playlist.uri not in model._playlists_initial
 
     @pytest.fixture
-    def mock_delete_playlists(self, model: CheckerPage, mocker: MockerFixture) -> Mock:
+    def mock_delete_playlists(self, model: PlaylistsPage, mocker: MockerFixture) -> Mock:
         return mocker.spy(model, "_delete_playlists")
 
     @pytest.fixture
-    def mock_restore_playlist(self, model: CheckerPage, mocker: MockerFixture) -> Mock:
+    def mock_restore_playlist(self, model: PlaylistsPage, mocker: MockerFixture) -> Mock:
         return mocker.spy(model, "_restore_playlist")
 
     async def test_teardown_playlists_skips(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlists: list[RemoteMutablePlaylist],
             mock_delete_playlists: Mock,
             mock_restore_playlist: Mock,
@@ -205,7 +205,7 @@ class TestPlaylistManagement(BaseModelTester):
 
     async def test_teardown_playlists(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlists: list[RemoteMutablePlaylist],
             collections: list[CollectionModel],
             mock_delete_playlists: Mock,
@@ -219,8 +219,8 @@ class TestPlaylistManagement(BaseModelTester):
         model._playlists = {pl.uri: pl for pl in playlists}
         model._playlists_initial = {pl.uri: pl for pl in playlists}
 
-        expected_delete = [pl for pl in playlists if pl.count == 0]
-        expected_restore = [pl for pl in playlists if pl.count > 0]
+        expected_delete = [pl for pl in playlists if pl.total == 0]
+        expected_restore = [pl for pl in playlists if pl.total > 0]
 
         await model.teardown_playlists()
 
@@ -236,7 +236,7 @@ class TestPlaylistManagement(BaseModelTester):
     ###########################################################################
     def test_basic_getters(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlist: RemoteMutablePlaylist,
             collection: CollectionModel,
             tracks: list[RemoteTrack],
@@ -258,21 +258,16 @@ class TestPlaylistManagement(BaseModelTester):
         assert model.get_initial_playlist_items(playlist.uri) == list(playlist_initial.items)
 
     async def test_get_current_playlist_items(
-            self,
-            model: CheckerPage,
-            playlist: RemoteMutablePlaylist,
-            collection: CollectionModel,
-            tracks: list[RemoteTrack],
-            mock_get_playlist_items: Mock,
+            self, model: PlaylistsPage, playlist: RemoteMutablePlaylist, mock_get_playlist_items: Mock,
     ):
         result = await model.get_current_playlist_items(playlist.uri)
 
-        assert result == tracks
+        assert result == mock_get_playlist_items.return_value
         mock_get_playlist_items.assert_called_once_with(playlist)
 
     async def test_refresh_playlist_items(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlist: RemoteMutablePlaylist,
             tracks: list[RemoteTrack],
             mock_get_playlist_items: Mock,
@@ -283,18 +278,18 @@ class TestPlaylistManagement(BaseModelTester):
         model._playlists[playlist.uri] = playlist
 
         await model.refresh_playlist_items(playlist.uri)
-        assert playlist.count != len(initial)
+        assert playlist.total != len(initial)
         assert playlist.tracks != initial
 
 
-class TestPausePages:
+class TestPause:
     @pytest.fixture
     def model(
         self,
-        model: CheckerPage,
+        model: PlaylistsPage,
         playlists: list[RemoteMutablePlaylist],
         collections: list[CollectionModel],
-    ) -> CheckerPage:
+    ) -> PlaylistsPage:
         model._collections = {pl.uri: coll for pl, coll in zip(playlists, collections)}
         model._playlists = {pl.uri: pl for pl in playlists}
         model._playlists_initial = {pl.uri: deepcopy(pl) for pl in playlists}
@@ -313,7 +308,7 @@ class TestPausePages:
 
     async def test_print_playlist_items_no_changes(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlist: RemoteMutablePlaylist,
             mock_get_playlist_items: Mock,
             mocker: MockerFixture,
@@ -328,7 +323,7 @@ class TestPausePages:
 
     async def test_print_playlist_items_with_changes(
             self,
-            model: CheckerPage,
+            model: PlaylistsPage,
             playlist: RemoteMutablePlaylist,
             tracks: list[RemoteTrack],
             mock_get_playlist_items: Mock,

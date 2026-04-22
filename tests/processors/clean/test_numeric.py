@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from faker import Faker
+
 from mytunes.core._item.album import HasAlbum, Album
 from mytunes.core._item.track import Track
 from mytunes.core.properties.length import HasLength
@@ -99,5 +100,5 @@ class TestTotalItemsCleaner(NumericCleanerTester):
     def test_get_item_value(self, model: TotalItemsCleaner, tracks: list[Track], faker: Faker):
         item = MockCollection(name=faker.name(), all_items=tracks)
 
-        assert model._get_item_value(item) == item.count == len(tracks)
-        assert model._get_item_value(list(item.items)) == item.count == len(tracks)
+        assert model._get_item_value(item) == item.total == len(tracks)
+        assert model._get_item_value(list(item.items)) == item.total == len(tracks)

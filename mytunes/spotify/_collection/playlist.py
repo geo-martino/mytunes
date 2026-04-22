@@ -2,16 +2,16 @@ import sys
 from collections.abc import MutableMapping, Mapping
 from typing import final, Annotated, Self, Literal, Any
 
+from pydantic import AliasPath, Field, model_validator, NonNegativeInt
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import ValidationInfo
+
 from mytunes.core.playlist import RemotePlaylist, RemoteMutablePlaylist
 from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes.exception import MyTunesValidationError
 from mytunes.spotify import SpotifyResource
 from mytunes.spotify.cursors import SpotifyIndexCursor, SpotifyInitialCursor
 from mytunes.spotify.user import SpotifyUser
-from pydantic import AliasPath, Field, model_validator, NonNegativeInt
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core.core_schema import ValidationInfo
-
 from .._item.track import SpotifyPlaylistTrack
 from .._properties.date import HasSpotifyAddedDate
 from .._properties.images import HasSpotifyImages
@@ -47,10 +47,6 @@ class SpotifyPlaylist(
         repr=False,
     )
 
-    total: Annotated[NonNegativeInt, Attribute()] = Field(
-        description="The total number of tracks in this playlist.",
-        validation_alias=AliasPath("items", "total")
-    )
     # getting current user's library playlists return a 'starter' cursor of just the URL and total
     # we therefore need to support an InitialCursor here to support this
     cursor: Annotated[SpotifyIndexCursor | SpotifyInitialCursor, Attribute()] = Field(

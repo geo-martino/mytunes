@@ -1,11 +1,12 @@
 from typing import ClassVar, TYPE_CHECKING, Self
 
+from pydantic import Field, EmailStr
+
 from mytunes._types import StrippedString
 from mytunes.core.properties.image import HasImages
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
-from pydantic import Field, EmailStr
 
 if TYPE_CHECKING:
     from mytunes.core.api.user import HasUserEndpoints, UserEndpoints

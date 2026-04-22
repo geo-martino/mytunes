@@ -1,5 +1,8 @@
 from typing import ClassVar, final, Any
 
+from pydantic import PositiveInt, validate_call, AliasPath
+from yarl import URL
+
 from mytunes.core.album import Album
 from mytunes.core.artist import Artist
 from mytunes.core.playlist import Playlist
@@ -7,9 +10,6 @@ from mytunes.core.track import Track
 from mytunes.exception import RequestError
 from mytunes.spotify import API_URL, SpotifyResource
 from mytunes.spotify._api._base import SpotifyEndpoints
-from pydantic import PositiveInt, validate_call, AliasPath
-from yarl import URL
-
 from .._collection.playlist import SpotifyPlaylist
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist

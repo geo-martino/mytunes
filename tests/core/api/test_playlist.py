@@ -4,6 +4,8 @@ from unittest.mock import patch, Mock, AsyncMock
 import pytest
 from aiorequestful.request import RequestHandler
 from faker import Faker
+from yarl import URL
+
 from mytunes.core._collection.playlist import RemotePlaylist, Playlist
 from mytunes.core._item.user import RemoteUser
 from mytunes.core.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
@@ -12,7 +14,6 @@ from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
 from tests.remote import SimpleURI, MockRemoteResource, MockUrlCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester
-from yarl import URL
 
 
 @pytest.fixture

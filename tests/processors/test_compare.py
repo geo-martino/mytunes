@@ -5,6 +5,8 @@ from random import sample
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.length import Length
 from mytunes.core.properties.music import KeySignature
@@ -14,7 +16,6 @@ from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track.mp3 import MP3
 from mytunes.processors.compare import Comparer, _ATTRIBUTE_FIELD_MAP
 from mytunes.processors.time import TimeMapper
-from pydantic import ValidationError
 from tests.testers import BaseModelTester
 
 

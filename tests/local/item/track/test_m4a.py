@@ -10,6 +10,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile as PILImageFile
 from faker import Faker
 from mutagen.mp4 import MP4FreeForm, MP4Cover
+
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.music import KeySignature
 from mytunes.core.properties.order import Position

@@ -5,6 +5,9 @@ from unittest.mock import patch, AsyncMock, Mock
 import pytest
 from aiorequestful.auth import Authoriser
 from faker import Faker
+from pydantic import TypeAdapter, ValidationError
+from pytest_mock import MockerFixture
+
 from mytunes import MODULE_ROOT
 # noinspection PyProtectedMember
 from mytunes.core._collection._sync import SYNC_TYPE
@@ -20,8 +23,6 @@ from mytunes.core.cursors import PageCursor
 from mytunes.core.properties.uri import URI
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
-from pydantic import TypeAdapter, ValidationError
-from pytest_mock import MockerFixture
 from tests.core._collection.testers import RemoteCollectionTester
 from tests.core._collection.utils import assert_sync_items_result
 from tests.remote import SimpleURI, MockRemoteAPI

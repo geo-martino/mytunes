@@ -2,13 +2,13 @@ from abc import abstractmethod
 from collections.abc import Sequence, Collection, Iterable
 from typing import Any, Union, final, Annotated, Literal
 
+from pydantic import Field, PositiveInt, BeforeValidator
+from typing_inspection.typing_objects import is_typevar
+
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, CollectionValue, HasCondition
-from pydantic import Field, PositiveInt, BeforeValidator
-from typing_inspection.typing_objects import is_typevar
-
 from .values._base import from_fixed_value
 from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel

@@ -6,6 +6,9 @@ from unittest.mock import Mock, patch, MagicMock
 
 from aiorequestful.auth import Authoriser
 from faker import Faker
+from pydantic import Field, AliasPath, PositiveInt
+from yarl import URL
+
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import Playlist, RemotePlaylist
@@ -23,8 +26,6 @@ from mytunes.core.cursors import IndexCursor, KeyCursor, UrlCursor
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
-from pydantic import Field, AliasPath, PositiveInt
-from yarl import URL
 
 
 class CallbackResult:

@@ -2,8 +2,9 @@ from datetime import date, timedelta
 
 import pytest
 from faker import Faker
-from mytunes.core.properties.date import SparseDate
 from pydantic import ValidationError
+
+from mytunes.core.properties.date import SparseDate
 from tests.testers import BaseModelTester
 
 

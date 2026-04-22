@@ -2,12 +2,13 @@ from abc import ABCMeta, abstractmethod
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
+from yarl import URL
+
 # noinspection PyProtectedMember
 from mytunes.core.api.types import ApiURLSchema, ApiURISchema
 from mytunes.core.properties.uri import URI
-from pydantic import TypeAdapter
 from tests.remote import SimpleURI, MockRemoteResource
-from yarl import URL
 
 
 class ApiSchemaTester[T](metaclass=ABCMeta):

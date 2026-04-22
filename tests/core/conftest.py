@@ -2,6 +2,7 @@ from random import choice
 
 import pytest
 from faker import Faker
+
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection.playlist import Playlist
 from mytunes.core._item.album import Album

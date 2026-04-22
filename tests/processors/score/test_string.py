@@ -5,12 +5,13 @@ from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 from faker import Faker
+from pydantic import InstanceOf
+from pytest_mock import MockerFixture
+
 from mytunes.core._item.track import Track
 from mytunes.processors.score.string import StringScorer, StringScoreReducer, KaraokeScorer, NameScorer, \
     ArtistScorer, \
     AlbumScorer
-from pydantic import InstanceOf
-from pytest_mock import MockerFixture
 from tests.testers import BaseModelTester
 
 

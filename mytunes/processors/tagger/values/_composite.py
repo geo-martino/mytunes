@@ -3,12 +3,12 @@ from collections.abc import Sequence
 from string import Formatter
 from typing import final, Self, Literal, Annotated, Any
 
+from pydantic import Field, model_validator, ValidationError, validate_call, BeforeValidator
+
 from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.processors._types import _ATTRIBUTE_FIELD_MAP
 from mytunes.processors.tagger.values._fields import FieldValue, from_field_names, FieldValueT
-from pydantic import Field, model_validator, ValidationError, validate_call, BeforeValidator
-
 from ._base import Value, FixedValue
 from ...._base.attribute import AttributeModel
 

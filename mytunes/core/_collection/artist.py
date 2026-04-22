@@ -1,6 +1,8 @@
 from collections.abc import MutableMapping, Sequence
 from typing import Any, Self
 
+from pydantic import model_validator, validate_call
+
 from mytunes.core._collection._base import RemoteCollection, CollectionModel
 from mytunes.core._collection.album import AlbumCollection
 from mytunes.core.api import CollectionReadEndpoints
@@ -8,8 +10,6 @@ from mytunes.core.api.items import HasArtistEndpoints
 from mytunes.core.cursors import PageCursor
 from mytunes.core.properties.uri import URI
 from mytunes.exception import MyTunesValidationError
-from pydantic import model_validator, validate_call
-
 from .._item.album import HasAlbums, Album, RemoteAlbum
 from .._item.artist import Artist, RemoteArtist
 from .._item.genre import Genre, RemoteGenre

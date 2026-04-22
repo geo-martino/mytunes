@@ -13,6 +13,12 @@ import mutagen
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from mutagen import FileType
+from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
+    field_serializer, BeforeValidator, TypeAdapter, ValidationError
+# noinspection PyProtectedMember
+from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
+from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
+
 from mytunes._types import StrippedString, to_list
 from mytunes.core.library import Library
 from mytunes.core.properties.asynch import SemaphoreT
@@ -32,12 +38,6 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
-from pydantic import field_validator, model_validator, validate_call, AliasChoices, ModelWrapValidatorHandler, \
-    field_serializer, BeforeValidator, TypeAdapter, ValidationError
-# noinspection PyProtectedMember
-from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
-from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
-
 from ...._base import BaseModel, makecls
 from ...._base.attribute import TagAttribute
 from ...._base.resource import ResourceModel

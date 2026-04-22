@@ -3,19 +3,23 @@ from unittest.mock import patch, Mock, AsyncMock
 
 import pytest
 from faker import Faker
+from yarl import URL
+
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import RemotePlaylist, Playlist, RemoteMutablePlaylist
+from mytunes.core._item.genre import Genre
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.core._item.user import RemoteUser
 from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
     PlaylistBatchWriteEndpoints
 from mytunes.core.cursors import InitialCursor
 from mytunes.core.properties.order import Position
+from mytunes.core.properties.uri import HasImmutableURI, HasMutableURI
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import NameScorer
+from processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
-from yarl import URL
 
 
 @pytest.fixture
@@ -26,11 +30,6 @@ def tracks(tracks: list[Track], faker: Faker) -> list[RemoteTrack]:
             uri=SimpleURI.create_random(RemoteTrack.type))
         for track in tracks
     ]
-
-
-@pytest.fixture
-def collection(collections: list[CollectionModel], faker: Faker) -> CollectionModel:
-    return faker.random_element(collections)
 
 
 @pytest.fixture
@@ -63,8 +62,42 @@ def playlists(playlists: list[Playlist], faker: Faker) -> list[RemoteMutablePlay
 
 
 @pytest.fixture
-def playlist(playlists: list[RemoteMutablePlaylist], faker: Faker) -> RemoteMutablePlaylist:
-    return faker.random_element(playlists)
+def available_items(faker: Faker) -> list[HasImmutableURI]:
+    return [
+        HasNameAndImmutableURI(name=faker.name(), uri=SimpleURI.create_random(Track.type))
+        for _ in range(faker.random_int(10, 30))
+    ]
+
+
+@pytest.fixture
+def mutable_items(faker: Faker) -> list[HasMutableURI]:
+    return [
+        HasNameAndMutableURI(name=faker.name(), uri=SimpleURI.create_random(Track.type))
+        for _ in range(faker.random_int(10, 30))
+    ]
+
+
+@pytest.fixture
+def unavailable_items(faker: Faker) -> list[HasMutableURI]:
+    return [
+        HasNameAndMutableURI(name=faker.name(), uri=SimpleURI.create_unavailable(Track.type))
+        for _ in range(faker.random_int(5, 20))
+    ]
+
+
+@pytest.fixture
+def missing_items(faker: Faker) -> list[HasMutableURI]:
+    missing = [
+        HasNameAndMutableURI(name=faker.name(), uri=None)
+        for _ in range(faker.random_int(10, 30))
+    ]
+
+    return missing
+
+
+@pytest.fixture
+def invalid_items(faker: Faker) -> list[Genre]:
+    return [Genre(name=faker.name()) for _ in range(faker.random_int(5, 20))]
 
 
 @pytest.fixture
@@ -72,11 +105,6 @@ def position(faker: Faker) -> Position:
     count = faker.random_int(1, 100)
     total = faker.random_int(count, 101)
     return Position(number=count, total=total)
-
-
-@pytest.fixture
-def matcher() -> Matcher:
-    return Matcher(scorers=[NameScorer()])
 
 
 @pytest.fixture(autouse=True)
@@ -137,9 +165,9 @@ def mock_sync_playlist() -> Generator[Mock]:
 
 
 @pytest.fixture(autouse=True)
-def mock_get_playlist_items(tracks: list[RemoteTrack], faker: Faker) -> Generator[Mock]:
+def mock_get_playlist_items(available_items: list[HasURI], faker: Faker) -> Generator[Mock]:
     with patch.object(
-            PlaylistReadWriteEndpoints, "get_all", return_value=tracks, new_callable=AsyncMock
+            PlaylistReadWriteEndpoints, "get_all", return_value=available_items, new_callable=AsyncMock
     ) as mock_get_all:
         yield mock_get_all
 

@@ -2,9 +2,10 @@ from typing import Literal
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
+from pydantic import InstanceOf
+
 from mytunes.core.properties.name import HasName
 from mytunes.processors.score import Scorer
-from pydantic import InstanceOf
 from tests.testers import BaseModelTester
 
 

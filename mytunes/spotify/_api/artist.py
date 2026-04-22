@@ -1,12 +1,12 @@
 from typing import ClassVar, final, Literal, Any, get_args
 
-from mytunes.spotify import API_URL
-from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
-from mytunes.spotify.cursors import SpotifyInitialCursor
 from pydantic import AliasPath, validate_call
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
+from mytunes.spotify import API_URL
+from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
+from mytunes.spotify.cursors import SpotifyInitialCursor
 from .._collection.artist import SpotifyArtistCollection
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist

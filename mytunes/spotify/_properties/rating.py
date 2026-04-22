@@ -1,8 +1,8 @@
 from typing import Annotated
 
-from mytunes.core.properties.rating import HasRating, Rating
 from pydantic import Field
 
+from mytunes.core.properties.rating import HasRating, Rating
 from ..._base.attribute import Attribute
 
 

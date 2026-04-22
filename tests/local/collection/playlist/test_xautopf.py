@@ -5,6 +5,10 @@ from random import choice
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter, ValidationError
+from pydantic.alias_generators import to_pascal
+from pytest_mock import MockerFixture
+
 from mytunes.core._item.track import Track
 from mytunes.core.properties.path import PathMapper
 from mytunes.exception import MyTunesValueError
@@ -20,9 +24,6 @@ from mytunes.processors.filters.composite import GroupFilter
 from mytunes.processors.filters.values import PathFilter
 from mytunes.processors.limit import LimitType, ItemLimiter
 from mytunes.processors.sort import ShuffleMode, ItemSorter
-from pydantic import TypeAdapter, ValidationError
-from pydantic.alias_generators import to_pascal
-from pytest_mock import MockerFixture
 from tests.local.collection.playlist.testers import LocalPlaylistTester
 from tests.testers import BaseModelTester
 

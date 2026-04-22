@@ -1,10 +1,11 @@
 from typing import Self, Any, final, ClassVar
 
+from pydantic import field_validator, model_validator
+from yarl import URL
+
 from mytunes.core.properties.uri import URI
 from mytunes.exception import MyTunesValidationError
 from mytunes.spotify._url import API_URL, PUBLIC_URL
-from pydantic import field_validator, model_validator
-from yarl import URL
 
 
 class SpotifyURIBase(URI):

@@ -1,8 +1,8 @@
 from typing import Literal
 
-from mytunes.exception import MyTunesTypeError
 from pydantic.fields import FieldInfo
 
+from mytunes.exception import MyTunesTypeError
 from .._types import get_tag_from_expected, _ATTRIBUTE_FIELD_TYPES
 from ..._base.attribute import AttributeModel
 

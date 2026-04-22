@@ -5,10 +5,11 @@ from typing import Any
 
 from aiorequestful.cache.backend.base import ResponseRepositorySettings
 from aiorequestful.types import MethodInput
-from mytunes.core.properties.uri import URI
-from mytunes.spotify import SpotifyModel
 from pydantic import ValidationError
 from yarl import URL
+
+from mytunes.core.properties.uri import URI
+from mytunes.spotify import SpotifyModel
 
 
 # TODO: drop this on aiorequestful v2

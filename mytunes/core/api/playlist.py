@@ -1,16 +1,16 @@
 from collections.abc import Sequence
 from typing import ClassVar, overload
 
+from pydantic import validate_call, Field, PositiveInt, PrivateAttr
+from pydantic.json_schema import JsonSchemaValue
+from yarl import URL
+
 from mytunes.core.api import HasLibraryEndpoints
 from mytunes.core.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
     BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
 from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
 from mytunes.core.properties.uri import URI
-from pydantic import validate_call, Field, PositiveInt, PrivateAttr
-from pydantic.json_schema import JsonSchemaValue
-from yarl import URL
-
 from .._collection.playlist import RemotePlaylist
 from .._item.track import RemoteTrack
 from .._item.user import RemoteUser

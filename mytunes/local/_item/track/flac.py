@@ -5,6 +5,10 @@ from typing import Any, final, Annotated
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
+from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
+    NonNegativeFloat, ConfigDict
+from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
+
 from mytunes._types import get_base_types, DEFAULT_IF_NONE
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.image import ImageFile, ImageURL
@@ -14,10 +18,6 @@ from mytunes.core.properties.rating import Rating
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
-from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    NonNegativeFloat, ConfigDict
-from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
-
 from ...._base.attribute import TagAttribute
 
 
@@ -138,7 +138,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
                 # look for total number from 2nd alias choice onward
                 next(aliases)
 
-            values.extend(filter(None, (data.pop(alias, None) for alias in aliases)))
+            values += filter(None, (data.pop(alias, None) for alias in aliases))
             values[:] = list(map(cls._extract_first_value_from_sequence, values))
             if len(values) > 1:
                 # if multiple values with divider, assume first is position, second is total

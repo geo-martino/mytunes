@@ -3,6 +3,8 @@ from typing import ClassVar
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection.playlist import Playlist
 from mytunes.core._context import RemoteModelContext
@@ -11,7 +13,6 @@ from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.properties.uri import URI, HasMutableURI, HasImmutableURI
 from mytunes.exception import MyTunesValueError
-from pydantic import ValidationError
 from tests.remote import SimpleURI
 from tests.testers import BaseModelTester, UniqueKeyTester
 

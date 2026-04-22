@@ -1,8 +1,9 @@
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes.spotify._properties.uri import SpotifyUserURI, SpotifyResourceURI
 from mytunes.spotify.user import SpotifyUser
-from pydantic import ValidationError
 from tests.spotify.generator import SpotifyPayloadGenerator
 from tests.spotify.testers import SpotifyModelTester
 from tests.testers import UniqueKeyTester

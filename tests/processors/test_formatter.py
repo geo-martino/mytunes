@@ -5,14 +5,15 @@ from unittest.mock import patch, Mock
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+from pytest_mock import MockerFixture
+
 from mytunes import MODULE_ROOT
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.properties.length import Length
 from mytunes.core.properties.order import Position
 from mytunes.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
-from pydantic import ValidationError
-from pytest_mock import MockerFixture
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 

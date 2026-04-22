@@ -1,11 +1,12 @@
 from typing import Any
 from urllib.parse import unquote
 
+from yarl import URL
+
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.processors.download.stores import AudioStore
-from yarl import URL
 
 
 def assert_value_in_url(url: URL, value: Any):

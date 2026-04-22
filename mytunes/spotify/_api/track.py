@@ -1,11 +1,11 @@
 from typing import ClassVar, final
 
-from mytunes.spotify import API_URL
-from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
-from mytunes.spotify._api._types import SpotifyApiURI, SpotifyApiURISequence
 from pydantic import AliasPath, PositiveInt
 from yarl import URL
 
+from mytunes.spotify import API_URL
+from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoints
+from mytunes.spotify._api._types import SpotifyApiURI, SpotifyApiURISequence
 from .._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis
 from .._properties.uri import SpotifyResourceURI
 from ...core.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
@@ -61,7 +61,7 @@ class SpotifyTrackEndpoints(
         for batch in self._batch_values(ids, limit):
             params = {"ids": ",".join(batch)}
             response = await self._handler.get(url, params=params)
-            items.extend(map(SpotifyAudioFeatures.model_validate, response["audio_features"]))
+            items += map(SpotifyAudioFeatures.model_validate, response["audio_features"])
 
         return items
 

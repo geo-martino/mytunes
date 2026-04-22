@@ -1,27 +1,29 @@
+import functools
 import itertools
-from collections.abc import Sequence, AsyncGenerator
+from collections.abc import Sequence, AsyncGenerator, Callable, Collection
+from typing import Any
+
+from pydantic import Field, PositiveInt
+from termcolor import colored
 
 from mytunes.core.collection import CollectionModel
 from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.logger import HasProgress
 from mytunes.core.properties.order import Position
-from mytunes.core.properties.uri import HasURI, URI
+from mytunes.core.properties.uri import HasURI, URI, HasMutableURI
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
-from pydantic import Field, PositiveInt
-from termcolor import colored
-
-from ._match.inputs import InputMatch
-from ._match.playlist import PlaylistMatch
-from ._page import CheckerPage, _ApiT
+from mytunes.processors.check._match import CheckerMatch
+from ._playlist.page import PlaylistsPage
+from ._playlist.match import PlaylistMatch, InputMatch
 from .._base import Processor
-from ..._base.resource import ResourceModel
-from ...core.api import HasAPI
+from mytunes.core.api import RemoteAPI, HasAPI, Endpoints
+from mytunes.core.api.user import HasUserEndpoints
 
 
-class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperations):
+class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOperations):
     api: API = Field(
         description="The API to use for checking matches.",
     )
@@ -45,36 +47,54 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
     @property
     def username(self) -> str:
         """The user to create playlists for."""
-        return self.api.user.name if self.api.user is not None else "the current user"
+        user = self.api.user if isinstance(self.api, Endpoints | HasUserEndpoints) else None
+        return user.name if user is not None else "the current user"
 
-    async def check[T: ResourceModel](
-            self, collections: Sequence[CollectionModel[T]]
-    ) -> tuple[tuple[str, CheckResult[T]], ...]:
-        """Check the matches for the given collection and return the results."""
-        if not (collections := self._validate_collections(collections)):
+    @staticmethod
+    def _validate_collections[T](func: Callable[Any, T]) -> Callable[Any, T]:
+        async def _invalid_response() -> T:
             return tuple()
 
+        @functools.wraps(func)
+        def _wrapper(self: Checker, collections: Sequence[CollectionModel]) -> T:
+            collections = [
+                coll for coll in collections
+                if coll.total > 0 and any(isinstance(item, HasURI) for item in coll.items)
+            ]
+
+            if len(collections) == 0:
+                self._logger.extra(colored("No valid collections or items to check.", "yellow"))
+                return _invalid_response()
+
+            return func(self, collections)
+
+        return _wrapper
+
+    @_validate_collections
+    async def check_collections[T: HasURI](
+            self, collections: Sequence[CollectionModel[T]]
+    ) -> tuple[tuple[str, CheckResult[T]], ...]:
+        """
+        Check the matches for the items in the given collections using only user input
+        for checking and setting matches.
+        """
         self._log_start(collections)
 
-        task_id = self._progress.add_task(description="Creating playlists", total=len(collections))
         batches = list(itertools.batched(collections, self.interval))
         batch_total = len(batches)
 
         results: list[tuple[str, CheckResult[T]]] = []
         for batch_number, batch in enumerate(batches, 1):
-
-            page = CheckerPage(
+            page = PlaylistsPage(
                 position=Position(number=batch_number, total=batch_total, zero_fill=True),
                 api=self.api,
                 collections=batch,
-                task_id=task_id,
                 concurrency=self.concurrency,
             )
 
             try:
-                self._log_page(page)
-                page_results = [(name, result) async for name, result in self._check_page(page)]
-                results.extend(page_results)
+                async with page:
+                    results += await self._check_playlist_page(page)
             except SkipPage:
                 self._logger.error("User triggered skip page with skip command")
                 continue
@@ -87,34 +107,85 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
 
         return tuple(results)
 
-    async def _check_page[T: ResourceModel](
-        self, page: CheckerPage[API, T]
-    ) -> AsyncGenerator[tuple[str, CheckResult[T]]]:
-        async with page:
-            with self._pause_progress():
-                await page.pause()
+    @_validate_collections
+    async def check_collections_on_playlists[T: HasURI](
+            self, collections: Sequence[CollectionModel[T]]
+    ) -> tuple[tuple[str, CheckResult[T]], ...]:
+        """
+        Check the matches for the items in the given collections by creating temporary playlists
+        on the remote service for checking and setting matches.
+        """
+        self._log_start(collections)
 
-            task_id = self._progress.add_task("Matching changes", total=page.count)
-            for name, uri in zip(page.names, page.uris, strict=True):
-                result = await self._match_page(page, uri=uri)
-                yield name, result
+        task_id = self._progress.add_task(description="Creating playlists", total=len(collections))
+        batches = list(itertools.batched(collections, self.interval))
+        batch_total = len(batches)
 
-                self._progress.advance(task_id)
+        results: list[tuple[str, CheckResult[T]]] = []
+        for batch_number, batch in enumerate(batches, 1):
+            page = PlaylistsPage(
+                position=Position(number=batch_number, total=batch_total, zero_fill=True),
+                api=self.api,
+                collections=batch,
+                task_id=task_id,
+                concurrency=self.concurrency,
+            )
 
-            self._progress.remove_task(task_id)
+            try:
+                async with page:
+                    results += await self._check_playlist_page(page)
+            except SkipPage:
+                self._logger.error("User triggered skip page with skip command")
+                continue
+            except QuitImmediately:
+                self._logger.error("User triggered exit with quit command")
+                break
+            except KeyboardInterrupt:
+                self._logger.error("User triggered exit with KeyboardInterrupt")
+                break
 
-    async def _match_page[T: ResourceModel](self, page: CheckerPage[API, T], uri: URI) -> CheckResult[T]:
-        items = page.get_collection_items(uri)
-        matcher = PlaylistMatch(page=page, items=items, uri=uri, matcher=self.matcher)
-        playlist_result = await matcher.match()
-        if not playlist_result.skipped:
-            return playlist_result
+        return tuple(results)
+
+    async def _check_playlist_page[T: HasURI](
+        self, page: PlaylistsPage[API, T]
+    ) -> tuple[tuple[str, CheckResult[T]], ...]:
+        self._log_page(page)
 
         with self._pause_progress():
-            matcher = InputMatch(page=page, items=playlist_result.skipped, uri=uri, matcher=self.matcher)
-            input_result = await matcher.match()
+            await page.pause()
 
-        return playlist_result.merge_results(input_result)
+        async def _match_playlist(uri: URI) -> tuple[str, CheckResult[T]]:
+            name = page.get_playlist_name(uri)
+            return name, await self._match_playlist(page=page, uri=uri)
+
+        task_id = self._progress.add_task("Matching changes", total=page.total)
+        results = await self._run_tasks_async(map(_match_playlist, page.uris), task_id=task_id)
+        return tuple(results)
+
+    async def _match_playlist[T: HasMutableURI](self, page: PlaylistsPage[API, T], uri: URI) -> CheckResult[T]:
+        items = page.get_collection_items(uri)
+        matchers = [
+            PlaylistMatch(page=page, uri=uri, matcher=self.matcher),
+            InputMatch(page=page, uri=uri, matcher=self.matcher),
+        ]
+
+        return await self._match(matchers, items)
+
+    @staticmethod
+    async def _match[T: HasMutableURI](
+            matchers: Sequence[CheckerMatch[API, T]], items: Collection[T]
+    ) -> CheckResult[T] | None:
+        result: CheckResult[T] | None = None
+
+        for matcher in matchers:
+            next_result = await matcher.match(items)
+            items = next_result.skipped
+            result = next_result if result is None else result.merge_results(next_result)
+
+            if not items:
+                break
+
+        return result
 
     ###########################################################################
     ## Logging + validation
@@ -134,16 +205,6 @@ class Checker[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperation
         )
         self._logger.info(message, header=1)
 
-    def _log_page(self, page: CheckerPage) -> None:
-        message = f"Creating {page.count} {self.source} playlists for {self.username}"
+    def _log_page(self, page: PlaylistsPage) -> None:
+        message = f"Creating {page.total} {self.source} playlists for {self.username}"
         self._logger.info(message, header=2)
-
-    def _validate_collections(self, collections: Sequence[CollectionModel]) -> Sequence[CollectionModel]:
-        collections = [
-            coll for coll in collections
-            if coll.count > 0 and any(isinstance(item, HasURI) for item in coll.items)
-        ]
-        if len(collections) == 0:
-            self._logger.extra(colored("No valid collections or items to check.", "yellow"))
-
-        return collections

@@ -157,9 +157,8 @@ class Matcher(Processor, HasLogger):
             others = list(other.items) if isinstance(other, CollectionModel) else []
             self._log_score_items(item, items, others)
 
-            collection_scores = self._score_items(items, others)
-            scores.extend(collection_scores)
-            weight += item.count
+            scores += self._score_items(items, others)
+            weight += item.total
 
         return sum(scores) / weight
 

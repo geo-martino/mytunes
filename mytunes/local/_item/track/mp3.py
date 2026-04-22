@@ -5,6 +5,10 @@ from typing import Any, ClassVar, final, Annotated
 import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
+from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
+    field_validator, field_serializer, NonNegativeFloat, computed_field
+from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
+
 from mytunes._types import StrippedString, DEFAULT_IF_NONE
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.image import ImageURL, ImageFile
@@ -18,10 +22,6 @@ from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._base import TagContext
 from mytunes.local._item.track._types import ItemSequence
-from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer, NonNegativeFloat, computed_field
-from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
-
 from ...._base.attribute import TagAttribute
 
 

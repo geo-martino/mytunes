@@ -6,6 +6,7 @@ from aiohttp import ClientSession
 from aiorequestful.auth import Authoriser
 from aiorequestful.request import RequestHandler
 from faker import Faker
+
 from mytunes.core.api.user import UserEndpoints
 from mytunes.spotify._api import SpotifyAPI
 from tests.spotify.generator import SpotifyPayloadGenerator

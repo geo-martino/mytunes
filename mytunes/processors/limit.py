@@ -92,11 +92,11 @@ class ItemLimiter(DynamicProcessor):
         items_limit = self._get_items_to_limit(items, ignore)
         match self.kind:
             case LimitType.ITEMS:
-                items.extend(items_limit[:self.limit_by])
+                items += items_limit[:self.limit_by]
             case LimitType.ALBUMS:
-                items.extend(self._limit_on_albums(items_limit))
+                items += self._limit_on_albums(items_limit)
             case _:
-                items.extend(self._limit_on_numeric(items_limit))
+                items += self._limit_on_numeric(items_limit)
 
     @staticmethod
     def _get_items_to_limit[T](items: MutableSequence[T], ignore: Collection[T] = ()) -> list[T]:

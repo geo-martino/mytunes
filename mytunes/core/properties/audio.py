@@ -2,10 +2,10 @@ from functools import total_ordering
 from typing import Any, Annotated
 
 import mutagen
-from mytunes.core.properties._base import NumberModel
-from mytunes.core.properties.length import HasLength
 from pydantic import Field, PositiveInt, PositiveFloat, model_validator, ConfigDict
 
+from mytunes.core.properties._base import NumberModel
+from mytunes.core.properties.length import HasLength
 from ..._base.attribute import AttributeModel, Attribute
 
 

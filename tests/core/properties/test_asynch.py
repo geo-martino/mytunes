@@ -1,8 +1,9 @@
 from asyncio import Semaphore
 
 import pytest
-from mytunes.core.properties.asynch import SemaphoreT
 from pydantic import TypeAdapter
+
+from mytunes.core.properties.asynch import SemaphoreT
 
 
 class TestSemaphoreSchema:

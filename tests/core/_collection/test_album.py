@@ -2,11 +2,12 @@ from random import sample
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
+
 from mytunes.core._collection.album import AlbumCollection, RemoteAlbumCollection
 from mytunes.core._item.album import Album
 from mytunes.core._item.track import Track
 from mytunes.core.cursors import PageCursor
-from pydantic import ValidationError
 from tests.core._collection.testers import RemoteCollectionTester
 from tests.remote import SimpleURI
 from tests.testers import NoUniqueKeyTester
@@ -51,7 +52,7 @@ class TestAlbumCollection(NoUniqueKeyTester):
             track.album = album
 
         collection = AlbumCollection(**album.model_dump(), tracks=tracks)
-        assert collection.count == len(tracks)
+        assert collection.total == len(tracks)
 
 
 class TestRemoteAlbumCollection(RemoteCollectionTester):

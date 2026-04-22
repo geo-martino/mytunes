@@ -1,10 +1,10 @@
 from collections.abc import Sequence, Iterable
 from typing import Annotated, Self
 
-from mytunes._types import TO_TUPLE
-from mytunes.result import TotalCountResult, LenLogFormatter
 from pydantic import Field
 
+from mytunes._types import TO_TUPLE
+from mytunes.result import TotalCountResult, LenLogFormatter
 from ..._item.track import LocalTrack
 
 

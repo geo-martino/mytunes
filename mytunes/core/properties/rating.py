@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Annotated
 
 from aiorequestful.types import Number
-from mytunes.core.properties import NumberModel
 from pydantic import NonNegativeFloat, Field
 
+from mytunes.core.properties import NumberModel
 from ..._base.attribute import AttributeModel, Attribute
 
 

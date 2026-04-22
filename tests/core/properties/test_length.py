@@ -2,8 +2,9 @@ from datetime import timedelta
 
 import pytest
 from faker import Faker
-from mytunes.core.properties.length import Length
 from pydantic import ValidationError
+
+from mytunes.core.properties.length import Length
 from tests.testers import BaseModelTester
 
 

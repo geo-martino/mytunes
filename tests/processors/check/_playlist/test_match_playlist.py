@@ -3,27 +3,22 @@ from unittest.mock import Mock, patch
 
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
+
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
-from mytunes.processors.check._match.playlist import PlaylistMatch
-from mytunes.processors.check._page import CheckerPage
+from mytunes.processors.check._playlist.match import PlaylistMatch
+from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
-from pytest_mock import MockerFixture
-from tests.processors.check.match.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
+from tests.processors.check._playlist.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list
 
 
 class TestPlaylistMatch(UniqueKeyTester):
     @pytest.fixture
-    def model(
-            self,
-            page: CheckerPage,
-            playlist: RemoteMutablePlaylist,
-            mutable_items: list[HasNameAndMutableURI],
-            matcher: Matcher,
-    ) -> PlaylistMatch:
-        return PlaylistMatch(page=page, items=mutable_items, uri=playlist.uri, matcher=matcher)
+    def model(self, page: PlaylistsPage, playlist: RemoteMutablePlaylist, matcher: Matcher) -> PlaylistMatch:
+        return PlaylistMatch(page=page, uri=playlist.uri, matcher=matcher)
 
     @pytest.fixture
     def mock_match_items_with_others(self, model: PlaylistMatch, mocker: MockerFixture) -> Mock:
@@ -45,10 +40,10 @@ class TestPlaylistMatch(UniqueKeyTester):
         expected_unchanged, expected_removed = split_list(initial, 2)
         current = expected_unchanged + expected_added
 
-        model.items = initial + unavailable_items + missing_items
+        items = initial + unavailable_items + missing_items
         mock_get_playlist_items.return_value = current
 
-        added, removed, unchanged, unavailable, missing = model._compare_items(current)
+        added, removed, unchanged, unavailable, missing = model._compare_items(items, others=current)
 
         assert added == expected_added
         assert removed == expected_removed
@@ -144,10 +139,8 @@ class TestPlaylistMatch(UniqueKeyTester):
             unavailable_items: list[HasNameAndMutableURI],
             mock_match_items_with_others: Mock,
     ):
-        model.items = mutable_items + unavailable_items
-
-        with patch.object(CheckerPage, "get_current_playlist_items", return_value=mutable_items):
-            result = await model.match()
+        with patch.object(PlaylistsPage, "get_current_playlist_items", return_value=mutable_items):
+            result = await model.match(mutable_items + unavailable_items)
 
         assert not result.changed
         assert sorted(result.unchanged) == sorted(mutable_items)
@@ -166,10 +159,10 @@ class TestPlaylistMatch(UniqueKeyTester):
             faker: Faker,
     ):
         unchanged, removed = split_list(mutable_items, 2)
-        model.items = unchanged + removed + unavailable_items
+        items = unchanged + removed + unavailable_items
         mock_get_playlist_items.return_value = unchanged
 
-        result = await model.match()
+        result = await model.match(items)
 
         assert not result.changed
         assert sorted(result.unchanged) == sorted(unchanged)
@@ -196,9 +189,7 @@ class TestPlaylistMatch(UniqueKeyTester):
             del item.uri
             items.append(item)
 
-        model.items = items
-
-        result = await model.match()
+        result = await model.match(items)
 
         assert sorted(result.changed) == sorted(added)
         assert sorted(result.unchanged) == sorted(unchanged)

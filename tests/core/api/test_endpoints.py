@@ -9,6 +9,10 @@ from PIL import Image, ImageFile as PILImageFile
 from aiohttp import ClientSession
 from aiorequestful.request import RequestHandler
 from faker import Faker
+from pydantic import AliasPath, TypeAdapter, AliasChoices
+from pytest_mock import MockerFixture
+from yarl import URL
+
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import RemotePlaylist
 from mytunes.core._context import RemoteModelContext
@@ -22,12 +26,9 @@ from mytunes.core.properties.image import ImageURL, ImageFile
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel, RemoteResource
 from mytunes.exception import APIModelError
-from pydantic import AliasPath, TypeAdapter, AliasChoices
-from pytest_mock import MockerFixture
 from tests.remote import SimpleURI, CallbackResult, MockRemoteResource, MockRemoteCollection, MockIndexCursor, \
     MockKeyCursor, MockUrlCursor, MockInitialCursor
 from tests.testers import URI_TYPE_CONVERTERS, EndpointsTester
-from yarl import URL
 
 
 class TestEndpointsMetaclass:
@@ -617,7 +618,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
             assert result == items
 
             # sets provided cursor to current position - limit when missing items
-            assert cursor.offset == max(0, collection.count - cursor.limit)
+            assert cursor.offset == max(0, collection.total - cursor.limit)
             assert collection.cursor is not cursor
             assert collection.cursor is expected_cursor
 

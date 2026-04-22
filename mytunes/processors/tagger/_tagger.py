@@ -2,11 +2,11 @@ from collections.abc import Sequence, Collection, Iterable, Mapping
 from functools import partial
 from typing import Union, Annotated, Self
 
+from pydantic import AliasChoices, Field
+
 from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.processors.filters import Filter
 from mytunes.result import Result, MapLogFormatter
-from pydantic import AliasChoices, Field
-
 from ._setter import Setter
 from .._base import Processor
 from ..._base.attribute import AttributeModel

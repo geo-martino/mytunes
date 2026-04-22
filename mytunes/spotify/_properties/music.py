@@ -1,8 +1,9 @@
 from collections.abc import MutableMapping
 from typing import Any
 
-from mytunes.core.properties.music import KeySignature, HasKeySignature
 from pydantic import model_validator
+
+from mytunes.core.properties.music import KeySignature, HasKeySignature
 
 
 class HasSpotifyKeySignature(HasKeySignature):

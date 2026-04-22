@@ -3,6 +3,8 @@ from collections.abc import Collection
 
 import pytest
 from faker import Faker
+from pydantic import Json, ValidationError
+
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._item.artist import HasArtists
 from mytunes.core._item.genre import HasGenres
@@ -14,7 +16,6 @@ from mytunes.spotify import SpotifyResource
 from mytunes.spotify._properties.rating import HasSpotifyRating
 from mytunes.spotify._properties.stats import HasFollowers
 from mytunes.spotify._properties.uri import SpotifyUserURI
-from pydantic import Json, ValidationError
 from tests.testers import UniqueKeyTester, BaseModelTester
 
 
