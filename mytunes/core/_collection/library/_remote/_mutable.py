@@ -116,7 +116,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Sync
     ###########################################################################
-    async def sync(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncRemoteResult]:
+    async def sync(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> tuple[SyncRemoteResult, ...]:
         """
         Synchronise all items in this library with the remote service.
 
@@ -132,16 +132,17 @@ class RemoteMutableLibrary[
         """
         self._logger.info(f"Synchronising {self._log_name} library", header=1)
 
+        results: list[SyncRemoteResult] = []
         with self._progress:
-            results = await self.sync_playlists(kind=kind, dry_run=dry_run)
-            results["TRACKS"] = await self.sync_tracks(kind=kind, dry_run=dry_run)
-            results["ARTISTS"] = await self.sync_artists(kind=kind, dry_run=dry_run)
-            results["ALBUMS"] = await self.sync_albums(kind=kind, dry_run=dry_run)
+            results.extend(await self.sync_playlists(kind=kind, dry_run=dry_run))
+            results.append(await self.sync_tracks(kind=kind, dry_run=dry_run))
+            results.append(await self.sync_artists(kind=kind, dry_run=dry_run))
+            results.append(await self.sync_albums(kind=kind, dry_run=dry_run))
 
-        return results
+        return tuple(results)
 
     @validate_call
-    def log_sync_results(self, results: Mapping[str, SyncRemoteResult]) -> None:
+    def log_sync_results(self, results: Sequence[SyncRemoteResult]) -> None:
         """Log stats from the given sync playlist results"""
         header = f"{self._log_name.upper()} SYNC RESULTS"
         table = SyncRemoteResult.generate_table(results=results, header=header)
@@ -254,7 +255,7 @@ class RemoteMutableLibrary[
         added = await api.library.add_many(add) if not dry_run else len(add)
 
         return SyncRemoteResult(
-            name=items_type.rstrip("s") + "s",
+            name=f"{items_type.rstrip("s")}s".upper(),
             start=len(remote),
             added=added,
             removed=removed,
@@ -354,7 +355,7 @@ class RemoteMutableLibrary[
     ## Restore library items
     ###########################################################################
     @validate_call
-    async def restore(self, backup: RemoteLibraryDump[URI], dry_run: bool = False) -> dict[str, SyncRemoteResult]:
+    async def restore(self, backup: RemoteLibraryDump[URI], dry_run: bool = False) -> tuple[SyncRemoteResult, ...]:
         """
         Restore library from a backup.
 
@@ -363,19 +364,19 @@ class RemoteMutableLibrary[
         :return: The results of the restore as a mapping of item type to either a sync result
             or a mapping of playlist name to a sync result.
         """
-        results: dict[str, SyncRemoteResult] = {}
+        results: list[SyncRemoteResult] = []
 
         with self._progress:
-            if "tracks" in backup:
-                results["tracks"] = await self.restore_tracks(backup["tracks"], dry_run=dry_run)
-            if "artists" in backup:
-                results["artists"] = await self.restore_artists(backup["artists"], dry_run=dry_run)
-            if "albums" in backup:
-                results["albums"] = await self.restore_albums(backup["albums"], dry_run=dry_run)
             if "playlists" in backup:
-                results |= await self.restore_playlists(backup["playlists"], dry_run=dry_run)
+                results.extend(await self.restore_playlists(backup["playlists"], dry_run=dry_run))
+            if "tracks" in backup:
+                results.append(await self.restore_tracks(backup["tracks"], dry_run=dry_run))
+            if "artists" in backup:
+                results.append(await self.restore_artists(backup["artists"], dry_run=dry_run))
+            if "albums" in backup:
+                results.append(await self.restore_albums(backup["albums"], dry_run=dry_run))
 
-        return results
+        return tuple(results)
 
     @staticmethod
     def _extract_uris_from_backup(backup: Any, key: Literal["tracks", "artists", "albums"]) -> tuple[str | URI, ...]:
