@@ -1,5 +1,6 @@
 import textwrap
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import ClassVar
 
 from pydantic import Field
@@ -115,9 +116,13 @@ class OptionsProcessor(InputProcessor):
 
         return False
 
-    def _log_unrecognised_input(self, value: str, help_key: str = "h") -> None:
-        message = f"Unrecognised input: {value!r}. Enter {help_key!r} for valid options."
-        self._logger.warning(colored(message, "red"))
+    def _log_unrecognised_input(self, value: str | Sequence[str], help_key: str = "h") -> None:
+        if isinstance(value, str):
+            value = [value]
+
+        for val in value:
+            message = f"Unrecognised input: {val!r}. Enter {help_key!r} for valid options."
+            self._logger.warning(colored(message, "red"))
 
 
 class PageProcessor(OptionsProcessor, HasProgress):

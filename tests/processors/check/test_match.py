@@ -153,12 +153,13 @@ class TestBaseInputMatch(BaseModelTester):
 
     def test_set_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
         uri = SimpleURI.create_random(kind=item.type)
+
         assert model._set_uri(item, str(uri)) is None
         assert item.uri == uri
         assert item.has_uri is True
 
     def test_set_uri_skips_invalid_value(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
-        assert isinstance(model._set_uri(item, "not a uri"), str)
+        assert model._set_uri(item, "not a uri") is not None
         assert item.uri is None
         assert item.has_uri is None
 
@@ -169,7 +170,7 @@ class TestBaseInputMatch(BaseModelTester):
 
         uri = SimpleURI.create_random(kind=other_type)
 
-        assert isinstance(model._set_uri(item, str(uri)), str)
+        assert model._set_uri(item, str(uri)) is not None
         assert item.uri is None
         assert item.has_uri is None
 
