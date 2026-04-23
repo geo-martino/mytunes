@@ -15,8 +15,7 @@ from mytunes.core.api import RemoteAPI
 from mytunes.core.api.playlist import PlaylistReadWriteEndpoints
 from mytunes.core.properties.name import HasName
 from mytunes.processors._flow import QuitImmediately, SkipPage
-from mytunes.processors.check import Checker
-from mytunes.processors.check._check import ItemChecker, CollectionChecker
+from mytunes.processors.check._check import Checker, ItemChecker, CollectionChecker
 from mytunes.processors.check._input.match import InputMatch as SimpleInputMatch
 from mytunes.processors.check._input.page import InputPage
 from mytunes.processors.check._playlist.match import SyncMatch, InputMatch as PlaylistInputMatch

@@ -285,7 +285,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
 
 class ItemSearcher[API: _ApiT](Searcher[API]):
     @validate_call
-    async def search_item[T: ResourceModel](self, item: T) -> T | None:
+    async def search[T: ResourceModel](self, item: T) -> T | None:
         """Search for matches for the given item and return the matching result if found"""
         if self._should_skip(item):
             self._log_skip(f"Cannot process {self._get_item_log_name(item)}")
@@ -295,7 +295,7 @@ class ItemSearcher[API: _ApiT](Searcher[API]):
         return await self._query_and_match(item)
 
     @validate_call
-    async def search_items[T: ResourceModel](self, items: Sequence[T], name: str = "items") -> SearchResult[T, Any]:
+    async def search_many[T: ResourceModel](self, items: Sequence[T], name: str = "items") -> SearchResult[T, Any]:
         """Search for matches for the given items and return the results."""
         if len(items) == 0:
             self._log_skip("No items to search.")
@@ -334,7 +334,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
     )
 
     @validate_call
-    async def search_collection[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T, Any] | None:
+    async def search[T: ResourceModel](self, collection: CollectionModel) -> SearchResult[T, Any] | None:
         """Search for matches for the given collection and return the results."""
         if self._should_skip(collection):
             self._log_skip(f"Cannot process {self._get_item_log_name(collection)}")
@@ -344,7 +344,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
         return await self._search_collection(collection)
 
     @validate_call
-    async def search_collections[T: ResourceModel](
+    async def search_many[T: ResourceModel](
             self, collections: Sequence[CollectionModel]
     ) -> tuple[SearchResult[T, Any], ...]:
         """Search for matches for the given collection and return the results per collection."""

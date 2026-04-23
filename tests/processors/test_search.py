@@ -308,17 +308,17 @@ class TestItemSearcher(SearcherTester):
             for _ in range(faker.random_int(5, 15))
         ]
 
-    async def test_search_item(
+    async def test_search(
             self, model: ItemSearcher, items: list[Track], mock_query_item: Mock, mock_match: Mock
     ):
         model.matcher = Matcher(scorers=[NameScorer()])
         item = items[0]
 
-        assert await model.search_item(item) is mock_match.return_value
+        assert await model.search(item) is mock_match.return_value
         mock_query_item.assert_called_once_with(item)
         mock_match.assert_called_once_with(item, mock_query_item.return_value)
 
-    async def test_search_items(
+    async def test_search_many(
             self,
             model: ItemSearcher,
             items: list[Track],
@@ -332,7 +332,7 @@ class TestItemSearcher(SearcherTester):
         mock_match_random, matches, matched, unmatched = mock_match_random
 
         name = faker.name()
-        result = await model.search_items(items, name=name)
+        result = await model.search_many(items, name=name)
 
         assert mock_skip_random.call_count == len(items)
         assert mock_query_item.call_count == len(valid)
@@ -524,24 +524,6 @@ class TestCollectionSearcher(SearcherTester):
         mock_collection_reload.assert_not_called()
         mock_collection_extend.assert_called_once_with(model.api)
 
-    async def test_search_collections(
-            self, model: CollectionSearcher, collections: list[MockCollection], faker: Faker
-    ):
-        names = (collection.name for collection in collections)
-
-        def _random_result(*_, **__) -> SearchResult:
-            return SearchResult(name=next(names))
-
-        with patch.object(
-                model, "_search_collection", side_effect=_random_result
-        ) as mock_search_collection:
-            results = await model.search_collections(collections)
-
-            assert len(results) == len(collections)
-            assert {result.name for result in results} == {collection.name for collection in collections}
-
-            assert mock_search_collection.call_count == len(collections)
-
     @pytest.fixture
     def mock_search_items_only(self, model: CollectionSearcher) -> Generator[Mock]:
         with patch.object(model, "_should_search_on_items_only", return_value=False) as mock_items_only:
@@ -565,7 +547,7 @@ class TestCollectionSearcher(SearcherTester):
         with patch.object(model, "_match_items", return_value=result) as mock_match:
             yield mock_match
 
-    async def test_search_collection_on_items_only(
+    async def test_search_on_items_only(
             self,
             model: CollectionSearcher,
             collection: CollectionModel,
@@ -577,7 +559,7 @@ class TestCollectionSearcher(SearcherTester):
             mock_search_from_result: Mock,
     ):
         mock_search_items_only.return_value = True
-        await model.search_collection(collection)
+        await model.search(collection)
 
         mock_query_item.assert_not_called()
         mock_match.assert_not_called()
@@ -585,7 +567,7 @@ class TestCollectionSearcher(SearcherTester):
         mock_match_items.assert_not_called()
         mock_search_from_result.assert_not_called()
 
-    async def test_search_collection_not_found(
+    async def test_search_not_found(
             self,
             model: CollectionSearcher,
             collection: CollectionModel,
@@ -598,7 +580,7 @@ class TestCollectionSearcher(SearcherTester):
     ):
         mock_search_items_only.return_value = False
         mock_match.return_value = None
-        await model.search_collection(collection)
+        await model.search(collection)
 
         mock_query_item.assert_called_once()
         mock_match.assert_called_once()
@@ -606,7 +588,7 @@ class TestCollectionSearcher(SearcherTester):
         mock_match_items.assert_not_called()
         mock_search_from_result.assert_not_called()
 
-    async def test_search_collection_found(
+    async def test_search_found(
             self,
             model: CollectionSearcher,
             collection: CollectionModel,
@@ -620,7 +602,7 @@ class TestCollectionSearcher(SearcherTester):
     ):
         mock_search_items_only.return_value = False
         mock_match.return_value = match
-        await model.search_collection(collection)
+        await model.search(collection)
 
         mock_query_item.assert_called_once()
         mock_match.assert_called_once()
@@ -628,7 +610,7 @@ class TestCollectionSearcher(SearcherTester):
         mock_match_items.assert_called_once()
         mock_search_from_result.assert_not_called()
 
-    async def test_search_collection_keeps_searching_for_items(
+    async def test_search_keeps_searching_for_items(
             self,
             model: CollectionSearcher,
             collection: MockCollection,
@@ -647,10 +629,28 @@ class TestCollectionSearcher(SearcherTester):
         mock_match_items.return_value = SearchResult(name=collection.name, unmatched=tracks)
         model.keep_matching_collection_items = True
 
-        await model.search_collection(collection)
+        await model.search(collection)
 
         mock_query_item.assert_called_once()
         mock_match.assert_called_once()
         mock_search_items.assert_not_called()
         mock_match_items.assert_called_once()
         mock_search_from_result.assert_called_once()
+
+    async def test_search_many(
+            self, model: CollectionSearcher, collections: list[MockCollection], faker: Faker
+    ):
+        names = (collection.name for collection in collections)
+
+        def _random_result(*_, **__) -> SearchResult:
+            return SearchResult(name=next(names))
+
+        with patch.object(
+                model, "_search_collection", side_effect=_random_result
+        ) as mock_search_collection:
+            results = await model.search_many(collections)
+
+            assert len(results) == len(collections)
+            assert {result.name for result in results} == {collection.name for collection in collections}
+
+            assert mock_search_collection.call_count == len(collections)
