@@ -77,7 +77,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     @_validate_items
     async def check_items[T: HasURI](self, items: Sequence[T], name: str | None = None) -> CheckResult[T] | None:
         """Check the matches for the items using only user input for checking and setting matches."""
-        self._log_start(items)
+        self._log_item_start(items)
 
         page = InputPage(name=name, api=self.api, items=items, concurrency=self.concurrency)
 
@@ -90,8 +90,6 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             self._logger.error("User triggered exit with quit command")
 
     async def _check_item_page[T: HasURI](self, page: InputPage[API, T]) -> CheckResult[T] | None:
-        self._log_page(page)
-
         with self._pause_progress():
             all_valid = await page.pause()
 
@@ -132,7 +130,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         Check the matches for the items in the given collections by creating temporary playlists
         on the remote service for checking and setting matches.
         """
-        self._log_start(collections)
+        self._log_playlist_start(collections)
 
         task_id = self._progress.add_task(description="Creating playlists", total=len(collections))
         batches = list(itertools.batched(collections, self.interval))
@@ -161,7 +159,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         return tuple(results)
 
     async def _check_playlist_page[T: HasURI](self, page: PlaylistsPage[API, T]) -> tuple[CheckResult[T], ...]:
-        self._log_page(page)
+        self._log_playlist_page(page)
 
         with self._pause_progress():
             await page.pause()
@@ -215,14 +213,19 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
 
         self._logger.report(table, new_line_start=True, new_line_end=True)
 
-    def _log_start(self, collections: Sequence[CollectionModel]) -> None:
+    def _log_item_start(self, items: Sequence[ResourceModel]) -> None:
+        types = self._logger.format_types_to_string(items)
+        message = f"Checking matches for {len(items)} {types}"
+        self._logger.info(message, header=1)
+
+    def _log_playlist_start(self, collections: Sequence[CollectionModel]) -> None:
         types = self._logger.format_types_to_string(collections)
         message = (
-            f"Checking items in {len(collections)} {types} by creating "
+            f"Checking matches for items for {len(collections)} {types} by creating "
             f"temporary {self.source} playlists for {self.username}"
         )
         self._logger.info(message, header=1)
 
-    def _log_page(self, page: CheckerPage) -> None:
+    def _log_playlist_page(self, page: CheckerPage) -> None:
         message = f"Creating {page.total} {self.source} playlists for {self.username}"
         self._logger.info(message, header=2)
