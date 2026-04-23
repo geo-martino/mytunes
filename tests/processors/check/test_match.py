@@ -14,7 +14,7 @@ from mytunes.processors.check._match import BaseMatch, BaseInputMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.result import LogFormatter
 from processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
-from remote import SimpleURI
+from tests.remote import SimpleURI, URI_TYPES
 from tests.testers import BaseModelTester
 
 
@@ -78,6 +78,10 @@ class TestBaseInputMatch(BaseModelTester):
     def model(self, page: CheckerPage) -> BaseInputMatch:
         # noinspection PyAbstractClass
         return BaseInputMatch(page=page)
+
+    @pytest.fixture
+    def item(self, missing_items: list[HasNameAndMutableURI], faker: Faker) -> HasNameAndMutableURI:
+        return faker.random_element(missing_items)
 
     ###########################################################################
     ## Utilities
@@ -147,3 +151,36 @@ class TestBaseInputMatch(BaseModelTester):
         assert sorted(result.unavailable) == sorted(unavailable)
         assert sorted(result.skipped) == sorted(skipped)
 
+    def test_set_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
+        uri = SimpleURI.create_random(kind=item.type)
+        assert model._set_uri(item, str(uri))
+        assert item.uri == uri
+        assert item.has_uri is True
+
+    def test_set_uri_skips_invalid_value(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
+        assert not model._set_uri(item, "not a uri")
+        assert item.uri is None
+        assert item.has_uri is None
+
+    def test_set_uri_skips_invalid_type(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
+        other_type = faker.random_element(URI_TYPES)
+        while other_type == item.type:
+            other_type = faker.random_element(URI_TYPES)
+
+        uri = SimpleURI.create_random(kind=other_type)
+
+        assert not model._set_uri(item, str(uri))
+        assert item.uri is None
+        assert item.has_uri is None
+
+    def test_set_unavailable_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
+        assert model._set_unavailable_uri(item)
+        assert item.uri is None
+        assert item.has_uri is False
+
+    def test_drop_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
+        item.uri = SimpleURI.create_random(kind=item.type)
+
+        assert model._drop_uri(item)
+        assert item.uri is None
+        assert item.has_uri is None

@@ -18,12 +18,7 @@ from tests.testers import BaseModelTester, UniqueKeyTester
 
 
 class MockHasImmutableURI(HasImmutableURI[SimpleURI]):
-    type: ClassVar[str] = choice((
-        Track.type,
-        Album.type,
-        Artist.type,
-        Playlist.type,
-    ))
+    type: ClassVar[str] = choice(URI_TYPES)
 
 
 class MockHasMutableURI(HasMutableURI):
@@ -133,7 +128,11 @@ class TestHasImmutableURI(UniqueKeyTester):
             model.uri = uri
 
     def test_validate_uri_matches_type(self, model: HasImmutableURI, faker: Faker):
-        uri = SimpleURI.create_random(choice(URI_TYPES))
+        other_type = choice(URI_TYPES)
+        while other_type == model.type:
+            other_type = choice(URI_TYPES)
+
+        uri = SimpleURI.create_random(other_type)
 
         with pytest.raises(ValidationError):
             MockHasImmutableURI(uri=uri)

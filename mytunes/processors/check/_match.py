@@ -154,14 +154,19 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
     def _set_uri(self, item: IT, value: str | None) -> bool:
         with suppress(ValidationError):
             uri = self.page.api.create_uri(value=value, kind=item.type)
+            if uri.type != item.type:
+                self._log_debug(f"Invalid URI type: {item.type}", item=item)
+                return False
+
             self._log_debug(f"Setting {item.type} URI: {str(uri)}", item=item, pad="<")
             item.uri = uri
             return True
         return False
 
-    def _set_unavailable_uri(self, item: IT) -> None:
-        self._set_uri(item, value=None)
+    def _set_unavailable_uri(self, item: IT) -> bool:
+        return self._set_uri(item, value=None)
 
-    def _drop_uri(self, item: IT) -> None:
+    def _drop_uri(self, item: IT) -> bool:
         self._log_debug(f"Marking {item.type} as missing", item=item, pad="<")
         del item.uri
+        return True
