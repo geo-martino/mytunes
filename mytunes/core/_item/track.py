@@ -1,6 +1,6 @@
 from typing import ClassVar, Self, Annotated, Any
 
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call, OnErrorOmit
 
 from mytunes.core._item.album import HasAlbum, Album, RemoteAlbum
 from mytunes.core._item.artist import HasArtists, Artist, RemoteArtist
@@ -103,9 +103,9 @@ class Track[RT: Artist, AT: Album, GT: Genre](
 
 class HasTracks[TT: Track](AttributeModel):
     """A mixin class to add a `tracks` field to a model."""
-    tracks: Annotated[UniqueSequence[Any, TT], Attribute()] = Field(
+    tracks: Annotated[UniqueSequence[TT], Attribute()] = Field(
         description="The tracks in this collection",
-        default_factory=UniqueSequence[Any, TT],
+        default_factory=UniqueSequence[TT],
         frozen=True,
         repr=False,
     )
@@ -128,9 +128,9 @@ class HasTracks[TT: Track](AttributeModel):
 
 class HasMutableTracks[TT: Track](HasTracks[TT]):
     """A mixin class to add a mutable `tracks` field to a model."""
-    tracks: Annotated[MutableUniqueSequence[Any, TT], Attribute()] = Field(
+    tracks: Annotated[MutableUniqueSequence[TT], Attribute()] = Field(
         description="The tracks in this collection",
-        default_factory=MutableUniqueSequence[Any, TT],
+        default_factory=MutableUniqueSequence[TT],
         frozen=True,
         repr=False,
     )

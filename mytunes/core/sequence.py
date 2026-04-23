@@ -9,7 +9,7 @@ from mytunes.exception import MyTunesValidationError
 from .._base.resource import ResourceModel
 
 
-class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
+class UniqueSequence[IT: ResourceModel](Sequence[IT]):
     """
     Stores :py:class:`ResourceModel` items with optimisations
     to execute functionality on the sequence according to the item's unique keys.
@@ -19,16 +19,13 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         args = get_args(source)
         if args:
-            keys_schema = handler.generate_schema(args[0])
-            values_schema = handler.generate_schema(args[1])
+            values_schema = handler.generate_schema(args[0])
         else:
-            keys_schema = core_schema.any_schema()
             values_schema = core_schema.is_instance_schema(ResourceModel)
 
         schema = core_schema.union_schema([
             core_schema.is_instance_schema(cls),
             values_schema,
-            core_schema.dict_schema(keys_schema=keys_schema, values_schema=values_schema),
             core_schema.set_schema(values_schema),
             core_schema.tuple_variable_schema(values_schema),
             core_schema.list_schema(values_schema),
@@ -52,13 +49,13 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
                 return cls(value)
         raise MyTunesValidationError(f"Invalid value: {value}")
 
-    def __init__(self, items: Iterable[TV] | Mapping[Any, TV] = None):
+    def __init__(self, items: Iterable[IT] | Mapping[Any, IT] = None):
         if items is None:
             items = ()
         elif isinstance(items, Mapping):
             items = items.values()
 
-        self._items_mapped: MutableUniqueMapping[TK, TV] = MutableUniqueMapping(items)
+        self._items_mapped: MutableUniqueMapping[Any, IT] = MutableUniqueMapping(items)
 
     def __repr__(self):
         return repr(f"{type(self).__name__}(count={len(self)})")
@@ -84,17 +81,17 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return not self.__eq__(other)
 
     @validate_call
-    def __contains__(self, __item: TK | TV | Iterable[TK | TV]) -> bool:
+    def __contains__(self, __item: IT | Iterable[OnErrorOmit[IT | Any]] | Any) -> bool:
         return __item in self._items_mapped
 
     @overload
-    def __getitem__(self, index: int) -> TV: ...
+    def __getitem__(self, index: int) -> IT: ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[TV]: ...
+    def __getitem__(self, index: slice) -> list[IT]: ...
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def __getitem__(self, index: int | slice | TK | TV) -> TV | list[TV]:
+    def __getitem__(self, index: int | slice | IT | Any) -> IT | list[IT]:
         match index:
             case int() if index < len(self):
                 items = enumerate(self._items_mapped.unique)
@@ -113,14 +110,14 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
                 return self._items_mapped[index]
 
     @validate_call
-    def __add__(self, other: Iterable[TV]):
+    def __add__(self, other: Iterable[OnErrorOmit[IT]]):
         items = self.copy()
         # noinspection PyArgumentList
         items._extend(other)
         return items
 
     @validate_call
-    def __sub__(self, other: Iterable[TV]):
+    def __sub__(self, other: Iterable[OnErrorOmit[IT]]):
         items = self.copy()
         # noinspection PyArgumentList
         for it in other:
@@ -128,18 +125,18 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return items
 
     @validate_call
-    def __or__(self, other: Sequence[OnErrorOmit[TV]]) -> Self:
+    def __or__(self, other: Sequence[OnErrorOmit[IT]]) -> Self:
         items = self.copy()
         # noinspection PyArgumentList
         items._extend(other)
         return items
 
     @property
-    def unique(self) -> Iterator[TV]:
+    def unique(self) -> Iterator[IT]:
         """The unique items in this sequence"""
         yield from self._items_mapped.unique
 
-    def get(self, key: TK | TV, default: TV | None = None) -> TV | None:
+    def get(self, key: IT | Any, default: IT | None = None) -> IT | None:
         """Get an item by its key, returning `default` if not found."""
         return self._items_mapped.get(key, default)
 
@@ -147,7 +144,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         """Return a shallow copy of this sequence"""
         return type(self)(self.unique)
 
-    def _extend(self, __iterable: Iterable[TV]) -> None:
+    def _extend(self, __iterable: Iterable[IT]) -> None:
         """
         Add many items to the end of this sequence.
         This allows for privately extending the sequence with a new set of items,
@@ -155,7 +152,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         """
         self._items_mapped.update(__iterable)
 
-    def _replace(self, __m: Iterable[TV] | Mapping[TK | TV, TV]) -> None:
+    def _replace(self, __m: Iterable[IT] | Mapping[Any, IT]) -> None:
         """
         Replace all items in this sequence.
         This allows for privately replacing the sequence with a new set of items,
@@ -164,7 +161,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         self._items_mapped.replace(__m)
 
     @validate_call
-    def intersection(self, other: Sequence[OnErrorOmit[TV]] | set[OnErrorOmit[TV]]) -> tuple[TV, ...]:
+    def intersection(self, other: Sequence[OnErrorOmit[IT]] | set[OnErrorOmit[IT]]) -> tuple[IT, ...]:
         """
         Return the intersection between the items in this collection and an ``other`` collection as a new list.
 
@@ -173,7 +170,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return tuple(item for item in self if item in other)
 
     @validate_call
-    def difference(self, other: Sequence[OnErrorOmit[TV]] | set[OnErrorOmit[TV]]) -> tuple[TV, ...]:
+    def difference(self, other: Sequence[OnErrorOmit[IT]] | set[OnErrorOmit[IT]]) -> tuple[IT, ...]:
         """
         Return the difference between the items in this collection and an ``other`` collection as a new list.
 
@@ -182,7 +179,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return tuple(item for item in self if item not in other)
 
     @validate_call
-    def outer_difference(self, other: Sequence[OnErrorOmit[TV]] | set[OnErrorOmit[TV]]) -> tuple[TV, ...]:
+    def outer_difference(self, other: Sequence[OnErrorOmit[IT]] | set[OnErrorOmit[IT]]) -> tuple[IT, ...]:
         """
         Return the outer difference between the items in this collection and an ``other`` collection as a new list.
 
@@ -191,19 +188,19 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return tuple(item for item in other if item not in self)
 
 
-class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], MutableSequence[TV]):
+class MutableUniqueSequence[IT: ResourceModel](UniqueSequence[IT], MutableSequence[IT]):
     """
     Stores :py:class:`ResourceModel` items with optimisations
     to execute functionality on the sequence according to the item's unique keys.
     """
     @overload
-    def __setitem__(self, index: int, value: TV) -> None: ...
+    def __setitem__(self, index: int, value: IT) -> None: ...
 
     @overload
-    def __setitem__(self, index: slice, value: Iterable[TV]) -> None: ...
+    def __setitem__(self, index: slice, value: Iterable[IT]) -> None: ...
 
     @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-    def __setitem__(self, index: int | slice, value: TV | Iterable[TV]):
+    def __setitem__(self, index: int | slice, value: IT | Iterable[OnErrorOmit[IT]]):
         if isinstance(index, int):
             return self.insert(index, value)
 
@@ -217,35 +214,35 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         self.remove(self[index])
 
     @validate_call
-    def __iadd__(self, other: Iterable[TV]):
+    def __iadd__(self, other: Iterable[OnErrorOmit[IT]]):
         # noinspection PyArgumentList
         self.extend(other)
         return self
 
     @validate_call
-    def __isub__(self, other: Iterable[TV]):
+    def __isub__(self, other: Iterable[OnErrorOmit[IT]]):
         # noinspection PyArgumentList
         self.remove(other)
         return self
 
     @validate_call
-    def __ior__(self, other: Sequence[OnErrorOmit[TV]]) -> Self:
+    def __ior__(self, other: Sequence[OnErrorOmit[IT]]) -> Self:
         # noinspection PyArgumentList
         self.merge(other)
         return self
 
     @validate_call
-    def append(self, __object: TV) -> None:
+    def append(self, __object: IT) -> None:
         """Add an item to the end of this sequence"""
         self._items_mapped.add(__object)
 
     @validate_call
-    def extend(self, __iterable: Iterable[TV]) -> None:
+    def extend(self, __iterable: Iterable[OnErrorOmit[IT]]) -> None:
         """Add many items to the end of this sequence"""
         self._extend(__iterable)
 
     @validate_call
-    def insert(self, __index: int, __object: TV) -> None:
+    def insert(self, __index: int, __object: IT) -> None:
         """Insert the item at the given index"""
         items = list(self._items_mapped.unique)
         items.insert(__index, __object)
@@ -253,7 +250,7 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
 
     # noinspection PyArgumentList
     @validate_call
-    def merge(self, other: Sequence[OnErrorOmit[TV]], reference: Sequence[OnErrorOmit[TV]] | None = None) -> None:
+    def merge(self, other: Sequence[OnErrorOmit[IT]], reference: Sequence[OnErrorOmit[IT]] | None = None) -> None:
         """
         Merge this sequence with another collection.
 
@@ -277,7 +274,7 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         self.extend(type(self).outer_difference(reference, other))
 
     @validate_call
-    def remove(self, __value: TV | Iterable[TV]) -> None:
+    def remove(self, __value: IT | Iterable[OnErrorOmit[IT]]) -> None:
         """Remove one item from this sequence"""
         if isinstance(__value, ResourceModel):
             __value = (__value,)
@@ -289,8 +286,8 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         """Remove all items from this sequence"""
         self._items_mapped.clear()
 
-    # @validate_call  # doesn't work with Iterables
-    def replace(self, __iterable: Iterable[TV]) -> None:
+    @validate_call
+    def replace(self, __iterable: Iterable[OnErrorOmit[IT]]) -> None:
         """Replace all items in this sequence"""
         self._replace(__iterable)
 

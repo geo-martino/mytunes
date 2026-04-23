@@ -19,7 +19,7 @@ from .._item.track import Track, HasTracks, RemoteTrack
 class AlbumCollection[TT: Track, RT: Artist, GT: Genre](CollectionModel[TT], HasTracks[TT], Album[RT, GT]):
 
     @property
-    def _items(self) -> UniqueSequence[Any, TT]:
+    def _items(self) -> UniqueSequence[TT]:
         return self.tracks
 
     @model_validator(mode="before")

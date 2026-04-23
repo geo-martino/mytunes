@@ -19,6 +19,7 @@ from ..._base.resource import ResourceModel
 from ...core.api.search import SearchEndpoints
 
 type _SearchT = Track | Album | Artist | Playlist
+# need to specify exact types
 type _ReturnT = SpotifyTrack | SpotifyAlbum | SpotifyArtist | SpotifyPlaylist | SpotifyMutablePlaylist
 
 

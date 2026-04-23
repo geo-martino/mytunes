@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload, Any
 
-from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
+from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator, OnErrorOmit
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
@@ -68,7 +68,7 @@ type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
 
 def _get_playlists_map_from_merge_input[PT](
         playlists: MergePlaylistsType[PT] | None
-) -> MutableUniqueSequence[Any, PT] | None:
+) -> MutableUniqueSequence[PT] | None:
     match playlists:
         case None:
             return
@@ -83,16 +83,16 @@ def _get_playlists_map_from_merge_input[PT](
 
 
 type MergePlaylistsTypeAnnotated[PT] = Annotated[
-    MutableUniqueSequence[Any, PT] | None,
+    MutableUniqueSequence[PT] | None,
     BeforeValidator(_get_playlists_map_from_merge_input)
 ]
 
 
 class HasPlaylists[PT: Playlist](AttributeModel):
     """A mixin class to add a `playlists` field to a model."""
-    playlists: Annotated[UniqueSequence[Any, PT], Attribute()] = Field(
+    playlists: Annotated[UniqueSequence[PT], Attribute()] = Field(
         description="The playlists in this collection",
-        default_factory=UniqueSequence[Any, PT],
+        default_factory=UniqueSequence[PT],
         frozen=True,
         repr=False,
     )
@@ -100,9 +100,9 @@ class HasPlaylists[PT: Playlist](AttributeModel):
 
 class HasMutablePlaylists[PT: MutablePlaylist](HasPlaylists[PT]):
     """A mixin class to add a mutable `playlists` field to a model."""
-    playlists: Annotated[MutableUniqueSequence[Any, PT], Attribute()] = Field(
+    playlists: Annotated[MutableUniqueSequence[PT], Attribute()] = Field(
         description="The playlists in this collection",
-        default_factory=MutableUniqueSequence[Any, PT],
+        default_factory=MutableUniqueSequence[PT],
         frozen=True,
         repr=False,
     )

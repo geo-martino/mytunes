@@ -19,7 +19,7 @@ class GenreCollection[TT: Track](CollectionModel[TT], HasTracks[TT], Genre, HasL
     """Represents a genre collection and its properties."""
 
     @property
-    def _items(self) -> UniqueSequence[Any, TT]:
+    def _items(self) -> UniqueSequence[TT]:
         return self.tracks
 
     @model_validator(mode="before")

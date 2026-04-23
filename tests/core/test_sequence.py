@@ -40,7 +40,7 @@ class TestUniqueSequence:
         assert adapter.validate_python(tuple(models)) == sequence, "Failed to validate tuple of models"
 
     def test_validate_pydantic_schema_on_generics(self, tracks: list[Track], artists: list[Artist]):
-        adapter = TypeAdapter(UniqueSequence[Any, Track])
+        adapter = TypeAdapter(UniqueSequence[Track])
         assert adapter.validate_python(tracks) == UniqueSequence(tracks), "Failed to validate list of tracks"
 
         with pytest.raises(ValidationError):
@@ -62,7 +62,7 @@ class TestUniqueSequence:
         # https://github.com/pydantic/pydantic/issues/7796
     )
     def test_validates_generic_types_when_accessing(self, tracks: list[Track], artist: Artist, artists: list[Artist]):
-        sequence = UniqueSequence[int, Track](tracks)
+        sequence = UniqueSequence[Track](tracks)
 
         with pytest.raises(ValidationError):
             assert artist in sequence
@@ -152,7 +152,7 @@ class TestMutableUniqueSequence:
         # https://github.com/pydantic/pydantic/issues/7796
     )
     def test_validates_generic_types_when_mutating(self, tracks: list[Track], artist: Artist, artists: list[Artist]):
-        sequence = MutableUniqueSequence[int, Track](tracks)
+        sequence = MutableUniqueSequence[Track](tracks)
 
         with pytest.raises(ValidationError):
             sequence[0] = artist

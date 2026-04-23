@@ -31,7 +31,7 @@ class LocalPlaylistFile[TF: Filter](
     HasMutableURI,
     metaclass=makecls()
 ):
-    _original: MutableUniqueSequence[str, LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)
+    _original: MutableUniqueSequence[LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)
 
     # override to apply uniqueness metadata
     path: Annotated[Path, UniqueAttribute()] = Field(

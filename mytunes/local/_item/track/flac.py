@@ -19,6 +19,7 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from ...._base.attribute import TagAttribute
+from ....core.sequence import MutableUniqueSequence
 
 
 @final
@@ -58,12 +59,12 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
             return picture
 
-    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
+    artists: Annotated[MutableUniqueSequence[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="artist",
     )
-    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
+    genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         alias="genre",

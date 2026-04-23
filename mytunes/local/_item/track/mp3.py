@@ -23,6 +23,7 @@ from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._base import TagContext
 from mytunes.local._item.track._types import ItemSequence
 from ...._base.attribute import TagAttribute
+from ....core.sequence import MutableUniqueSequence
 
 
 @final
@@ -61,7 +62,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         default=None,
         alias="TIT2",
     )
-    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
+    artists: Annotated[MutableUniqueSequence[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="TPE1",
@@ -71,7 +72,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         default=None,
         alias="TALB",
     )
-    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
+    genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         alias="TCON",

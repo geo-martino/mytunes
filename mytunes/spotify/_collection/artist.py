@@ -10,6 +10,7 @@ from .._item.genre import SpotifyGenre
 from .._properties.uri import SpotifyResourceURI
 from ..._base.attribute import Attribute
 from ...core.api.items import HasArtistEndpoints
+from ...core.sequence import MutableUniqueSequence
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember
@@ -24,7 +25,7 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
 ):
     __final__ = True
 
-    albums: Annotated[list[AT], Attribute()] = Field(
+    albums: Annotated[MutableUniqueSequence[AT], Attribute()] = Field(
         description="The albums associated with this artist.",
         default_factory=list,
         validation_alias=AliasPath("albums", "items"),

@@ -1,6 +1,6 @@
 from typing import ClassVar, Annotated, Self, Any
 
-from pydantic import Field, field_validator, computed_field, validate_call
+from pydantic import Field, field_validator, computed_field, validate_call, OnErrorOmit
 
 from mytunes.core._item.artist import HasArtists, Artist, RemoteArtist
 from mytunes.core._item.genre import HasGenres, Genre, RemoteGenre
@@ -99,9 +99,9 @@ class HasAlbum[AT: Album](AttributeModel):
 
 
 class HasAlbums[AT: Album](HasSeparableTags):
-    albums: Annotated[MutableUniqueSequence[Any, AT], Attribute()] = Field(
+    albums: Annotated[MutableUniqueSequence[AT], Attribute()] = Field(
         description="The albums associated with this resource.",
-        default_factory=MutableUniqueSequence[Any, AT],
+        default_factory=MutableUniqueSequence[AT],
         validation_alias="album",
         repr=False,
     )

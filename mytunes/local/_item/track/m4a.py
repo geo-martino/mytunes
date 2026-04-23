@@ -20,6 +20,7 @@ from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
 from ...._base.attribute import TagAttribute
+from ....core.sequence import MutableUniqueSequence
 
 
 @final
@@ -63,7 +64,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias="©nam"
     )
-    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
+    artists: Annotated[MutableUniqueSequence[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="©ART"
@@ -73,7 +74,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias="©alb"
     )
-    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
+    genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("©gen", "gnre", "----:com.apple.iTunes:GENRE"),

@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashable
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashable, Collection, Sequence
 from typing import Self, Any, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call
@@ -79,8 +79,8 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
     def __ne__(self, other: Self):
         return not self.__eq__(other)
 
-    # @validate_call  # not currently working with generics
-    def __contains__(self, __item: TK | TV | Iterable[TK | TV]) -> bool:
+    @validate_call  # this needs to be Sequence to prevent recursion errors
+    def __contains__(self, __item: TK | TV | Sequence[TK | TV]) -> bool:
         if isinstance(__item, ResourceModel):
             return any(key in self._items for key in __item.unique_keys)
         if isinstance(__item, Hashable) and __item in self._items:

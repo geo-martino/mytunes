@@ -1,6 +1,6 @@
 from typing import ClassVar, Annotated, Self, Any
 
-from pydantic import Field, field_validator, validate_call
+from pydantic import Field, field_validator, validate_call, OnErrorOmit
 
 from mytunes._types import StrippedString
 from mytunes.core.api import ItemReadEndpoints
@@ -30,9 +30,9 @@ class Genre(HasName, ResourceModel, metaclass=makecls()):
 
 
 class HasGenres[GT: Genre](HasSeparableTags):
-    genres: Annotated[MutableUniqueSequence[Any, GT], Attribute()] = Field(
+    genres: Annotated[MutableUniqueSequence[GT], Attribute()] = Field(
         description="The genres associated with this resource.",
-        default_factory=MutableUniqueSequence[Any, GT],
+        default_factory=MutableUniqueSequence[GT],
         validation_alias="genre",
     )
 

@@ -2,7 +2,7 @@ import sys
 from collections.abc import MutableMapping, Mapping
 from typing import final, Annotated, Self, Literal, Any
 
-from pydantic import AliasPath, Field, model_validator
+from pydantic import AliasPath, Field, model_validator, OnErrorOmit
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 
@@ -39,9 +39,9 @@ class SpotifyPlaylist(
         default=False,
     )
 
-    tracks: Annotated[UniqueSequence[str, SpotifyPlaylistTrack], Attribute()] = Field(
+    tracks: Annotated[UniqueSequence[SpotifyPlaylistTrack], Attribute()] = Field(
         description="The tracks in this playlist.",
-        default_factory=UniqueSequence[str, SpotifyPlaylistTrack],
+        default_factory=UniqueSequence[SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items"),
         frozen=True,
         repr=False,
@@ -88,9 +88,9 @@ class SpotifyMutablePlaylist(
 ):
     __final__ = True
 
-    tracks: Annotated[MutableUniqueSequence[str, SpotifyPlaylistTrack], Attribute()] = Field(
+    tracks: Annotated[MutableUniqueSequence[SpotifyPlaylistTrack], Attribute()] = Field(
         description="The tracks in this playlist.",
-        default_factory=MutableUniqueSequence[str, SpotifyPlaylistTrack],
+        default_factory=MutableUniqueSequence[SpotifyPlaylistTrack],
         validation_alias=AliasPath("items", "items"),
         repr=False,
     )

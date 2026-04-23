@@ -1,6 +1,6 @@
 from typing import final, Self, Annotated
 
-from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
+from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator, OnErrorOmit
 
 from mytunes.core.album import RemoteAlbumCollection
 from mytunes.core.sequence import UniqueSequence
@@ -21,9 +21,9 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
 ):
     __final__ = True
 
-    tracks: Annotated[UniqueSequence[str, SpotifyTrack], Attribute()] = Field(
+    tracks: Annotated[UniqueSequence[SpotifyTrack], Attribute()] = Field(
         description="The tracks on this album.",
-        default_factory=UniqueSequence[str, SpotifyTrack],
+        default_factory=UniqueSequence[SpotifyTrack],
         validation_alias=AliasPath("tracks", "items"),
         repr=False,
     )

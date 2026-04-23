@@ -28,7 +28,7 @@ class Folder[TT: LocalTrack](HasLocalTracks[TT], LocalCollection[TT], HasName, H
     )
 
     @property
-    def _items(self) -> UniqueSequence[URI, TT]:
+    def _items(self) -> UniqueSequence[TT]:
         return self.tracks
 
     @model_validator(mode="before")

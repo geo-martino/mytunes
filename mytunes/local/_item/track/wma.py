@@ -21,6 +21,7 @@ from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._types import ItemSequence
 from ...._base.attribute import TagAttribute
+from ....core.sequence import MutableUniqueSequence
 
 
 @final
@@ -97,7 +98,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default=None,
         alias="Title"
     )
-    artists: Annotated[list[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
+    artists: Annotated[MutableUniqueSequence[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
         description="The artists featured on this track.",
         default_factory=list,
         alias="Author"
@@ -107,7 +108,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default=None,
         alias="WM/AlbumTitle"
     )
-    genres: Annotated[list[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
+    genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         alias="WM/Genre"

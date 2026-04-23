@@ -1,6 +1,6 @@
 from typing import ClassVar, Annotated, Self, Any
 
-from pydantic import Field, field_validator, validate_call
+from pydantic import Field, field_validator, validate_call, OnErrorOmit
 
 from mytunes._types import to_list
 from mytunes.core._item.genre import HasGenres, Genre, RemoteGenre
@@ -23,9 +23,9 @@ class Artist[GT: Genre](HasGenres[GT], HasName, HasRating, ResourceModel, metacl
 
 
 class HasArtists[RT: Artist](HasSeparableTags):
-    artists: Annotated[MutableUniqueSequence[Any, RT], Attribute()] = Field(
+    artists: Annotated[MutableUniqueSequence[RT], Attribute()] = Field(
         description="The artists associated with this resource.",
-        default_factory=MutableUniqueSequence[Any, RT],
+        default_factory=MutableUniqueSequence[RT],
         validation_alias="artist",
     )
 
