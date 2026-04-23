@@ -566,7 +566,7 @@ class RemoteMutableLibrary[
     ) -> tuple[SyncRemoteResult, ...]:
         """
         Restore playlists from a backup dump.
-        This function updates the remote service and reloads this library's playlists after restoring.
+        This function updates the remote service, but does not update this object's state.
 
         Playlists may be in the form of either:
             * A sequence of dictionaries where dictionary is ``{<Dump of playlist data>}``
@@ -591,7 +591,6 @@ class RemoteMutableLibrary[
         )
         results = await self._run_tasks_async(map(_restore_playlist, playlists), task_id=task_id)
 
-        await self.load_playlists()
         return tuple(results)
 
     async def _restore_playlist(
