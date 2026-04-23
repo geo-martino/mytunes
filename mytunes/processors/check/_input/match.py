@@ -52,8 +52,8 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
             self, item: IT, others: Sequence[IT], option: str | None, formatter: LogFormatter
     ) -> str | None:
         name = item.name if isinstance(item, HasName) else str(id(item))
-        uri = item.uri if item.has_uri else "NO MATCH"
-        text = f"{name} - {uri}"
+        uri = colored(item.uri, "green") if item.has_uri else colored("NO MATCH", "red")
+        text = f"{name} | {uri}"
 
         while option or (option := self._get_user_input(text, formatter=formatter)):
             match option.casefold():
