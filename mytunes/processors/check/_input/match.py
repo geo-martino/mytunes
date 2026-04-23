@@ -6,7 +6,7 @@ from termcolor import colored
 
 from mytunes import PROGRAM_NAME
 from mytunes.core.properties.name import HasName
-from mytunes.core.properties.uri import HasMutableURI
+from mytunes.core.properties.uri import HasMutableURI, URI
 from mytunes.processors.check._input.page import _ApiT, InputPage
 from mytunes.processors.check._match import BaseInputMatch
 from mytunes.result import LogFormatter
@@ -52,10 +52,16 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
             self, item: IT, others: Sequence[IT], option: str | None, formatter: LogFormatter
     ) -> str | None:
         name = item.name if isinstance(item, HasName) else str(id(item))
-        uri = colored(item.uri, "green") if item.has_uri else colored("NO MATCH", "red")
-        text = f"{name} | {uri}"
+        if item.has_uri and isinstance(uri := item.uri, URI):
+            url = colored(str(uri.public_url), "blue")
+            uri = colored(uri, "green")
+            log_parts = [uri, url]
+        else:
+            log_parts = [colored("NO MATCH", "red")]
 
-        while option or (option := self._get_user_input(text, formatter=formatter)):
+        self._logger.print(" | ".join((formatter.get_value(name), *log_parts)))
+
+        while option or (option := self._get_user_input(name, formatter=formatter)):
             log = option
             match option.casefold():
                 case "u":
