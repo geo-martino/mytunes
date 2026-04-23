@@ -12,7 +12,7 @@ from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.properties.uri import URI, HasMutableURI, HasImmutableURI
-from mytunes.exception import MyTunesValueError
+from mytunes.exception import MyTunesValueError, MyTunesValidationError, MyTunesTypeError
 from tests.remote import SimpleURI, URI_TYPES
 from tests.testers import BaseModelTester, UniqueKeyTester
 
@@ -31,9 +31,9 @@ def uri(faker: Faker) -> SimpleURI:
 
 
 @pytest.fixture
-def uris(models: list[ResourceModel], faker: Faker) -> list[SimpleURI]:
+def uris(models: list[ResourceModel], uri: URI, faker: Faker) -> list[SimpleURI]:
     seen = set()
-    uris = []
+    uris = [uri]
 
     for model in range(faker.random_int(5, 10)):
         source = None
@@ -50,18 +50,28 @@ def uris(models: list[ResourceModel], faker: Faker) -> list[SimpleURI]:
     return uris
 
 
+@pytest.fixture
+def uri_with_other_source(uri: URI, uris: list[URI]) -> URI:
+    return next(u for u in uris if u.source != uri.source)
+
+
+@pytest.fixture
+def uri_with_other_type(uri: URI, faker: Faker) -> SimpleURI:
+    other_type = choice(URI_TYPES)
+    while other_type == uri.type:
+        other_type = choice(URI_TYPES)
+
+    return SimpleURI.create_random(other_type)
+
+
 class TestURI(BaseModelTester):
     @pytest.fixture
     def model(self, uri: SimpleURI) -> URI:
         return uri
 
-    def test_validate_source(self, model: URI, faker: Faker):
-        source = faker.word()
-        while source == model.source:
-            source = faker.word()
-
+    def test_validate_source(self, model: URI, uri_with_other_source: URI):
         with pytest.raises(ValidationError):
-            model.model_validate(":".join((source, model.type, faker.pystr())))
+            model.model_validate(str(uri_with_other_source))
 
     def test_validate_type(self, model: URI, faker: Faker):
         kind = faker.word()
@@ -93,26 +103,23 @@ class TestURI(BaseModelTester):
         assert model._unavailable_id in str(model)
         assert not model.exists
 
-    def test_equality(self, model: SimpleURI):
-        other_type = choice(URI_TYPES)
-        while other_type == model.type:
-            other_type = choice(URI_TYPES)
+    def test_equality(self, model: SimpleURI, uri_with_other_type: URI):
 
         assert model == model
         assert model == str(model)
         assert model == model.model_validate(str(model))
 
         assert model != model.model_validate(":".join((model.source, model.type, "different_id")))
-        assert model != model.model_validate(":".join((model.source, other_type, model.id)))
+        assert model != model.model_validate(str(uri_with_other_type))
 
         assert model == model.id
         assert model != model.model_validate(":".join((model.source, model.type, "different_id"))).id
 
         assert model == model.public_url
-        assert model != model.model_validate(":".join((model.source, other_type, model.id))).public_url
+        assert model != model.model_validate(str(uri_with_other_type)).public_url
 
         assert model == model.api_url
-        assert model != model.model_validate(":".join((model.source, other_type, model.id))).api_url
+        assert model != model.model_validate(str(uri_with_other_type)).api_url
 
 
 class TestHasImmutableURI(UniqueKeyTester):
@@ -127,15 +134,9 @@ class TestHasImmutableURI(UniqueKeyTester):
         with pytest.raises(ValidationError):
             model.uri = uri
 
-    def test_validate_uri_matches_type(self, model: HasImmutableURI, faker: Faker):
-        other_type = choice(URI_TYPES)
-        while other_type == model.type:
-            other_type = choice(URI_TYPES)
-
-        uri = SimpleURI.create_random(other_type)
-
+    def test_validate_uri_matches_type(self, model: HasImmutableURI, uri_with_other_type: URI, faker: Faker):
         with pytest.raises(ValidationError):
-            MockHasImmutableURI(uri=uri)
+            MockHasImmutableURI(uri=uri_with_other_type)
 
     def test_equality(self, model: HasImmutableURI, uri: URI):
         assert model == model
@@ -150,8 +151,8 @@ class TestHasImmutableURI(UniqueKeyTester):
 
 class TestHasMutableURI(UniqueKeyTester):
     @pytest.fixture
-    def model(self, uris: list[URI]) -> HasMutableURI:
-        return MockHasMutableURI(source=choice(uris).source, uris=uris)
+    def model(self, uri: URI, uris: list[URI]) -> HasMutableURI:
+        return MockHasMutableURI(source=uri.source, uris=uris)
 
     def test_validates_uris_are_from_unique_sources(self, uris: list[URI]):
         uri = choice(uris)
@@ -162,14 +163,12 @@ class TestHasMutableURI(UniqueKeyTester):
         with pytest.raises(ValidationError):
             MockHasMutableURI(uris=[*uris, new_uri])
 
-    def test_validate_uri_matches_type(self, faker: Faker):
-        uri = SimpleURI.create_random(choice(URI_TYPES))
+    def test_validate_uri_matches_type(self, model: MockHasMutableURI, uri_with_other_type: URI, uris: list[URI]):
+        with pytest.raises(ValidationError):
+            MockHasMutableURI(uri=uri_with_other_type)
 
         with pytest.raises(ValidationError):
-            MockHasMutableURI(uri=uri)
-
-        with pytest.raises(ValidationError):
-            MockHasMutableURI(uris=[uri])
+            MockHasMutableURI(uris=[uri_with_other_type])
 
     def test_uri_on_init(self, uri: URI):
         model = MockHasMutableURI(uri=uri)
@@ -205,13 +204,25 @@ class TestHasMutableURI(UniqueKeyTester):
         assert old_uri not in model.uris
         assert old_uri not in model.unique_keys
 
-    def test_set_uri_validates_type(self, model: HasMutableURI, uris: list[URI]):
-        different_uri = next(uri for uri in uris if uri.source != model.source)
+    def test_set_uri_as_unavailable(self, model: HasMutableURI, uris: list[URI]):
+        assert model.uri is not None
 
-        with pytest.raises(MyTunesValueError):
+        model.uri = None
+        assert model.uri is None
+        assert model.has_uri is False
+
+    def test_set_uri_validates_source(self, model: HasMutableURI, uri_with_other_source: URI, uris: list[URI]):
+        with pytest.raises(MyTunesTypeError):
             model.uri = str(model.uri)
-        with pytest.raises(MyTunesValueError):
-            model.uri = different_uri
+
+        with pytest.raises(MyTunesTypeError):
+            model.uri = uri_with_other_source
+
+    def test_set_uri_validates_type(self, model: HasMutableURI, uri_with_other_type: URI, uris: list[URI]):
+        with pytest.raises(MyTunesTypeError):
+            model.uri = str(model.uri)
+        with pytest.raises(MyTunesTypeError):
+            model.uri = uri_with_other_type
 
     def test_set_uri_sets_source(self, model: HasMutableURI, uri: URI):
         model.source = None  # no current source, should set source from URI

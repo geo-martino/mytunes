@@ -93,7 +93,7 @@ class UniqueKeyTester(BaseModelTester, metaclass=ABCMeta):
             assert value in model.unique_keys, f"Value {value} not found in unique keys"
             assert isinstance(value, Hashable)
 
-            with suppress(AttributeError, ValueError):
+            with suppress(ValueError):
                 setattr(model, key, None)
                 assert value not in model.unique_keys, f"Value {value} should not be in unique keys after removing it"
 

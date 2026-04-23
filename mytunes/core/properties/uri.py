@@ -299,13 +299,21 @@ class HasMutableURI(HasURI):
 
     @uri.setter
     def uri(self, value: URI | None):
+        if value is None:
+            if self.uri is None:
+                return
+            value = self.uri.from_id(None, self.type)  # mark unavailable
+
         if not isinstance(value, URI):
-            raise MyTunesValidationError("URI must be a URI instance")
+            raise MyTunesTypeError("URI must be a URI instance")
+
+        if self.source is not None and value.source.casefold() != self.source.casefold():
+            raise MyTunesTypeError(f"Cannot set URI from {value.source!r} to {self.source!r}")
+        if value.type != self.type:
+            raise MyTunesTypeError(f"Cannot set URI of type {value.type!r} for type {self.type!r}")
 
         if self.source is None:
             self.source = value.source.casefold()
-        elif value.source.casefold() != self.source.casefold():
-            raise MyTunesValidationError(f"Cannot set URI from {value.source} to {self.source}")
 
         for existing in copy(self.uris):
             if existing.source.casefold() == value.source.casefold():

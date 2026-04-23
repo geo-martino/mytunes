@@ -11,6 +11,7 @@ from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI, HasMutableURI, URI
+from mytunes.exception import MyTunesTypeError
 from mytunes.processors import OptionsProcessor
 from mytunes.processors import Processor
 from mytunes.processors._flow import SkipPage
@@ -152,14 +153,9 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         return f"{name}: {message}"
 
     def _set_uri(self, item: IT, value: str | None) -> bool:
-        with suppress(ValidationError):
-            uri = self.page.api.create_uri(value=value, kind=item.type)
-            if uri.type != item.type:
-                self._log_debug(f"Invalid URI type: {item.type}", item=item)
-                return False
-
-            self._log_debug(f"Setting {item.type} URI: {str(uri)}", item=item, pad="<")
-            item.uri = uri
+        with suppress(ValidationError, MyTunesTypeError):
+            item.uri = self.page.api.create_uri(value=value, kind=item.type)
+            self._log_debug(f"Setting {item.type} URI: {str(item.uri)}", item=item, pad="<")
             return True
         return False
 

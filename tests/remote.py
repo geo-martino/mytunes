@@ -85,10 +85,12 @@ class SimpleURI(URI):
 
     @classmethod
     def create_unavailable(cls, kind: str) -> Self:
-        return cls.from_id(value=cls._unavailable_id, kind=kind)
+        return cls.from_id(value=None, kind=kind)
 
     @classmethod
-    def from_id[T](cls, value: T, kind: str) -> T | Self:
+    def from_id[T](cls, value: T | None, kind: str) -> T | Self:
+        if value is None:
+            value = cls._unavailable_id
         uri = ":".join((cls._source.lower(), kind, str(value)))
         return cls(uri)
 
