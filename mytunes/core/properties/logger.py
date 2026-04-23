@@ -53,13 +53,13 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
         return await super().__aexit__(exc_type, exc_val, exc_tb)
 
     @contextmanager
-    def _pause_progress(self) -> Generator[None]:
+    def _pause_progress(self) -> Generator[bool]:
         restart = False
         if self._progress.live.is_started:
             self._progress.stop()
             restart = True
 
-        yield
+        yield restart
 
         if restart:
             self._progress.start()

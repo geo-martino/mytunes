@@ -190,15 +190,16 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         result: CheckResult[T] | None = None
 
         for matcher in matchers:
+            pause_progress = self._pause_progress()
             if isinstance(matcher, BaseInputMatch):
-                self._pause_progress().__enter__()
+                pause_progress.__enter__()
 
             next_result = await matcher.match(items)
             items = next_result.skipped
             result = next_result if result is None else result.merge(next_result)
 
             if isinstance(matcher, BaseInputMatch):
-                self._pause_progress().__exit__(None, None, None)
+                pause_progress.__exit__(None, None, None)
 
             if not items:
                 break
