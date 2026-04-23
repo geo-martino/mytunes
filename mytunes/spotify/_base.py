@@ -1,11 +1,12 @@
 from typing import ClassVar
 
 from ._properties.uri import SpotifyURIBase
+from ._url import SOURCE_NAME
 from ..core.remote import RemoteModel, RemoteResource
 
 
 class SpotifyModel(RemoteModel):
-    source: ClassVar[str] = "Spotify"
+    source: ClassVar[str] = SOURCE_NAME
 
 
 # noinspection PyAbstractClass

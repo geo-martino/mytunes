@@ -261,7 +261,7 @@ class HasMutableURI(HasURI):
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
         if self.source is None and len(set(source := uri.source for uri in self.uris)) == 1:
-            self.__dict__["source"] = source.casefold()
+            self.__dict__["source"] = source
         return self
 
     @field_validator("uris", mode="after", check_fields=True)
@@ -313,7 +313,7 @@ class HasMutableURI(HasURI):
             raise MyTunesTypeError(f"Cannot set URI of type {value.type!r} for type {self.type!r}")
 
         if self.source is None:
-            self.source = value.source.casefold()
+            self.source = value.source
 
         for existing in copy(self.uris):
             if existing.source.casefold() == value.source.casefold():
@@ -338,4 +338,6 @@ class HasMutableURI(HasURI):
 
     @property
     def has_uri(self) -> bool | None:
-        return next((uri.exists for uri in self.uris if uri.source == self.source), None)
+        if self.source is None:
+            return None
+        return next((uri.exists for uri in self.uris if uri.source.casefold() == self.source.casefold()), None)

@@ -373,7 +373,7 @@ class LocalTrack[FT: FileType](
         if not isinstance(context := info.context, TagContext):
             return self
         if context.remote_source and context.remote_source.casefold() != (self.source or "").casefold():
-            self.source = context.remote_source.casefold()
+            self.source = context.remote_source
 
         if not (values := getattr(self, context.map_uri_to_field, [])):
             return self
