@@ -90,7 +90,9 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             self._logger.error("User triggered exit with quit command")
 
     async def _check_item_page[T: HasURI](self, page: InputPage[API, T]) -> CheckResult[T] | None:
-        all_valid = await page.pause()
+        with self._pause_progress():
+            all_valid = await page.pause()
+
         if all_valid:
             return CheckResult(name=page.name, unchanged=page.items)
 
