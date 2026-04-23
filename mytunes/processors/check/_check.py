@@ -15,7 +15,7 @@ from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasURI, URI, HasMutableURI
 from mytunes.processors import Processor
 from mytunes.processors._flow import QuitImmediately, SkipPage
-from mytunes.processors.check._match import BaseMatch
+from mytunes.processors.check._match import BaseMatch, BaseInputMatch
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
@@ -90,13 +90,11 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             self._logger.error("User triggered exit with quit command")
 
     async def _check_item_page[T: HasURI](self, page: InputPage[API, T]) -> CheckResult[T] | None:
-        with self._pause_progress():
-            all_valid = await page.pause()
+        all_valid = await page.pause()
+        if all_valid:
+            return CheckResult(name=page.name, unchanged=page.items)
 
         matcher = SimpleInputMatch(page=page)
-        if all_valid:
-            return CheckResult(name=matcher.name, unchanged=page.items)
-
         await self._match_items([matcher], items=page.items)
 
     ###########################################################################
@@ -184,16 +182,21 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     ###########################################################################
     ## Common functionality
     ###########################################################################
-    @staticmethod
     async def _match_items[T: HasMutableURI](
-            matchers: Sequence[BaseMatch[API, T]], items: Collection[T]
+            self, matchers: Sequence[BaseMatch[API, T]], items: Collection[T]
     ) -> CheckResult[T] | None:
         result: CheckResult[T] | None = None
 
         for matcher in matchers:
+            if isinstance(matcher, BaseInputMatch) and not self._progress.finished:
+                self._progress.stop()
+
             next_result = await matcher.match(items)
             items = next_result.skipped
             result = next_result if result is None else result.merge(next_result)
+
+            if isinstance(matcher, BaseInputMatch) and not self._progress.finished:
+                self._progress.start()
 
             if not items:
                 break
