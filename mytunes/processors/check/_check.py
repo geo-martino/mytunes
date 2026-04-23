@@ -13,17 +13,17 @@ from mytunes.core.properties.asynch import HasAsyncOperations
 from mytunes.core.properties.logger import HasProgress
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasURI, URI, HasMutableURI
+from mytunes.processors import Processor
 from mytunes.processors._flow import QuitImmediately, SkipPage
 from mytunes.processors.check._match import BaseMatch
 from mytunes.processors.check.result import CheckResult
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
+from ._input.match import InputMatch as SimpleInputMatch
 from ._input.page import InputPage
 from ._page import CheckerPage
 from ._playlist.match import SyncMatch, InputMatch as PlaylistInputMatch
-from ._input.match import InputMatch as SimpleInputMatch
 from ._playlist.page import PlaylistsPage
-from mytunes.processors import Processor
 from ...annotation import ResourceModel
 
 

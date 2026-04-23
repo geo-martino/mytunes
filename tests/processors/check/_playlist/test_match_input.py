@@ -1,21 +1,16 @@
-from collections.abc import Generator
 from copy import deepcopy
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from faker import Faker
-from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
 from mytunes.core._collection.playlist import RemoteMutablePlaylist
-from mytunes.core.properties.uri import URI
-from mytunes.processors._flow import QuitImmediately
 from mytunes.processors.check._playlist.match import InputMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
-from mytunes.result import LogFormatter
 from processors.check.testers import InputMatchTester
-from tests.processors.check._playlist.conftest import HasNameAndMutableURI, HasNameAndImmutableURI
+from tests.processors.check._playlist.utils import HasNameAndMutableURI
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list, patch_input

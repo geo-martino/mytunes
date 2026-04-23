@@ -1,7 +1,6 @@
 import asyncio
 from collections.abc import Iterable, Collection, Sequence
 from collections.abc import MutableMapping
-from copy import deepcopy
 from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
@@ -156,7 +155,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
 
             self._collections[playlist.uri] = collection
             self._playlists[playlist.uri] = playlist
-            self._playlists_initial[playlist.uri] = deepcopy(playlist)
+            self._playlists_initial[playlist.uri] = playlist.model_copy(deep=True)
 
             # empty the playlist
             if playlist.total:
@@ -322,7 +321,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
             self._logger.print_line()
             return
 
-        playlist = deepcopy(playlist)
+        playlist = playlist.model_copy(deep=True)
         playlist.tracks.replace(items)
 
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])

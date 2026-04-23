@@ -2,7 +2,6 @@ from collections.abc import Sequence
 
 import pytest
 
-from mytunes.core._collection import CollectionModel
 from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasMutableURI

@@ -8,8 +8,8 @@ from pydantic.fields import FieldInfo
 from mytunes._types import Number
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.name import HasName
-from mytunes.processors.clean import TagCleaner
 from mytunes.processors import Processor
+from mytunes.processors.clean import TagCleaner
 from ..._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 
 

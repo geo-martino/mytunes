@@ -360,5 +360,4 @@ class TestInitialCursor(BaseModelTester):
         return InitialCursor(url=faker.url())
 
     def test_next(self, model: InitialCursor):
-        assert model.next == model
-        assert model.next is not model
+        assert model.next is model

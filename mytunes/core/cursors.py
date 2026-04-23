@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from collections.abc import MutableMapping, Mapping, Generator
 from contextlib import suppress
-from copy import deepcopy
 from functools import total_ordering
 from typing import ClassVar, Any, Self, Union, Annotated
 
@@ -401,4 +400,4 @@ class InitialCursor(_HasLimitParam):
     
     @property
     def next(self) -> Self | None:
-        return deepcopy(self)
+        return self

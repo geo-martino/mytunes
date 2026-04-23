@@ -10,7 +10,7 @@ from mytunes.core.properties.uri import HasURI, HasMutableURI, HasImmutableURI
 from mytunes.processors.check._playlist.match import SyncMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
-from tests.processors.check._playlist.conftest import HasNameAndImmutableURI, HasNameAndMutableURI
+from tests.processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list
 

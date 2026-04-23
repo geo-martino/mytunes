@@ -2,7 +2,6 @@ import sys
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence, Collection
 from contextlib import suppress
-from copy import deepcopy
 from typing import Any, ClassVar
 
 from pydantic import Field, InstanceOf, OnErrorOmit, validate_call, ValidationError
@@ -13,11 +12,11 @@ from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.uri import HasURI, HasMutableURI, URI
 from mytunes.processors import OptionsProcessor
+from mytunes.processors import Processor
 from mytunes.processors._flow import SkipPage
 from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.check.result import CheckResult
 from mytunes.result import LogFormatter
-from mytunes.processors import Processor
 
 
 # noinspection PyAbstractClass
@@ -97,7 +96,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         self._log_debug(f"Getting user input for {len(missing)} items")
         self._print_help_text(header=self._get_header(len(missing)))
 
-        initial = deepcopy(missing)
+        initial = [it.model_copy(deep=True) for it in missing]
         formatter = self._configure_formatter_for_items(missing)
         option = None
 

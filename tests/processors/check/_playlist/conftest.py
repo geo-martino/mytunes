@@ -1,31 +1,19 @@
 from collections.abc import Generator, Collection, Sequence
 from copy import deepcopy
-from functools import total_ordering
-from typing import ClassVar
-from unittest.mock import patch, Mock, AsyncMock
+from unittest.mock import patch, Mock
 
 import pytest
 from faker import Faker
-from yarl import URL
 
-from mytunes._base.resource import ResourceModel
 from mytunes.core._collection import CollectionModel
-from mytunes.core._collection.playlist import RemoteMutablePlaylist, Playlist, RemotePlaylist
-from mytunes.core._item.genre import Genre
-from mytunes.core._item.track import Track
-from mytunes.core._item.user import RemoteUser
+from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.core.api import RemoteAPI
-from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistBatchWriteEndpoints, PlaylistLibraryEndpoints
-from mytunes.core.cursors import InitialCursor
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.order import Position
-from mytunes.core.properties.uri import HasMutableURI, HasImmutableURI, HasURI
+from mytunes.core.properties.uri import HasMutableURI
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
 from mytunes.processors.score import NameScorer
-from processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
-from tests.processors.utils import MockCollection
-from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor
 
 PlaylistsPage.wait_after_add = 0
 

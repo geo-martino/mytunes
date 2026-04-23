@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from copy import deepcopy
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload, Any
 
 from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
@@ -135,7 +134,7 @@ class HasMutablePlaylists[PT: MutablePlaylist](HasPlaylists[PT]):
         """
         for playlist in other:
             if playlist not in self.playlists:
-                self.playlists.append(deepcopy(playlist))
+                self.playlists.append(playlist.model_copy(deep=True))
                 continue
 
             reference_playlist = reference.get(playlist) if reference else None

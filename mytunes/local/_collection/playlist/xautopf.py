@@ -242,9 +242,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         if self._xml is None:
             self._xml = _XMLRoot()
 
-        initial_xml = deepcopy(self._xml)
+        initial_xml = self._xml.model_copy(deep=True)
         initial_tracks = self._original.copy()
-        xml = self._xml if not dry_run else deepcopy(self._xml)
+        xml = self._xml if not dry_run else self._xml.model_copy(deep=True)
 
         xml.smart_playlist.source.description = self.description
 

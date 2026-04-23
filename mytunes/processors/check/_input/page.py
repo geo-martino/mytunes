@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from pydantic import field_validator, Field
+from pydantic import Field
 from termcolor import colored
 
 from mytunes.core.api import RemoteAPI

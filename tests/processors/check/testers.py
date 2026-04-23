@@ -1,29 +1,15 @@
+from abc import ABCMeta
+from collections.abc import Generator
+from unittest.mock import patch, Mock
+
+import pytest
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from testers import BaseModelTester
-
-from abc import ABCMeta
-from collections.abc import Collection, Sequence, Generator
-from copy import deepcopy
-from unittest.mock import patch, MagicMock, PropertyMock, Mock
-
-import pytest
-from faker import Faker
-
-from mytunes._base.resource import ResourceModel
-from mytunes.core._collection import CollectionModel
-from mytunes.core._collection.playlist import RemoteMutablePlaylist
-from mytunes.core.api import RemoteAPI
-from mytunes.core.properties.order import Position
-from mytunes.core.properties.uri import HasURI, HasMutableURI, URI
+from mytunes.core.properties.uri import URI
 from mytunes.processors._flow import QuitImmediately
-from mytunes.processors.check._match import BaseMatch, BaseInputMatch
-from mytunes.processors.check._page import CheckerPage
-from mytunes.processors.match import Matcher
-from mytunes.result import LogFormatter
-from processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
-from processors.utils import MockCollection
+from mytunes.processors.check._match import BaseInputMatch
+from processors.check._playlist.utils import HasNameAndMutableURI
 from remote import SimpleURI
 from tests.testers import BaseModelTester
 from utils import patch_input
