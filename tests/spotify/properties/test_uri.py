@@ -38,6 +38,9 @@ class TestSpotifyURIBase(SpotifyURITester):
         return SpotifyURIBase(uri_value)
 
     def test_validate_uri_length(self, kind: str, id_value: str):
+        with pytest.raises(ValidationError, match="No type found"):  # too short
+            SpotifyURIBase("spotify")
+
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. Expected format"):  # too short
             SpotifyURIBase(f"spotify:{kind}")
 

@@ -50,10 +50,12 @@ class URI(RootModel[str]):
 
     @model_validator(mode="after")
     def _validate_source(self) -> Self:
-        if not isinstance(self.root, str):
-            raise MyTunesValidationError(f"URI root must be a string, got {type(self.root).__name__!r}")
+        try:
+            source = self.source
+        except Exception:
+            raise MyTunesValidationError(f"No source found.")
 
-        if self.source.casefold() != self._source.casefold():
+        if source.casefold() != self._source.casefold():
             raise MyTunesValidationError(
                 f"Given URI is not valid for the {self._source!r} service. Found: {self.source!r}"
             )
@@ -65,13 +67,15 @@ class URI(RootModel[str]):
 
     @model_validator(mode="after")
     def _validate_type(self) -> Self:
-        if not isinstance(self.root, str):
-            raise MyTunesValidationError(f"URI root must be a string, got {type(self.root).__name__!r}")
+        try:
+            kind = self.type
+        except Exception:
+            raise MyTunesValidationError(f"No type found.")
 
-        if self.type not in self._valid_types:
+        if kind not in self._valid_types:
             types = Logger.format_list_to_string(sorted(self._valid_types))
             raise MyTunesValidationError(
-                f"Given URI is not for an accepted resource type. Accepted types: {types} | Found: {self.type!r}"
+                f"Given URI is not for an accepted resource type. Accepted types: {types} | Found: {kind!r}"
             )
 
         return self

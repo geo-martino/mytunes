@@ -1,6 +1,6 @@
 from typing import Self, Any, final, ClassVar
 
-from pydantic import field_validator, model_validator, ModelWrapValidatorHandler
+from pydantic import field_validator, model_validator
 from yarl import URL
 
 from mytunes.core.album import Album
@@ -32,13 +32,15 @@ class SpotifyURIBase(URI):
     def id(self) -> str:
         return self._parts[2]
 
-    @model_validator(mode="wrap")  # wrap because it needs to be executed before any parent validators
-    @classmethod
-    def _validate_uri_length(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        self = handler(data)
+    @model_validator(mode="after")
+    def _validate_uri_length(self) -> Self:
         if len(self._parts) != 3:
             raise MyTunesValidationError("Invalid Spotify URI format. Expected format: spotify:{type}:{id}")
         return self
+
+    @model_validator(mode="after")  # override to ensure this validation happens after length validation
+    def _validate_type(self) -> Self:
+        return super()._validate_type()
 
     @classmethod
     def from_id(cls, value: Any, kind: str) -> Self:
