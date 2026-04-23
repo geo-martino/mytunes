@@ -147,7 +147,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         raise NotImplementedError
 
     def _get_header(self, count: int) -> str:
-        message = self._header.format(count)
+        message = self._header.format(count=count)
         name = colored(self.name, "blue", attrs=["bold"])
         return f"{name}: {message}"
 
