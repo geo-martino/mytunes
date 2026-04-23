@@ -83,11 +83,13 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
 
         try:
             async with page:
-                return await self._check_item_page(page)
+                result = await self._check_item_page(page)
         except SkipPage:
             self._logger.error("User triggered skip page with skip command")
         except QuitImmediately:
             self._logger.error("User triggered exit with quit command")
+
+        return result
 
     async def _check_item_page[T: HasURI](self, page: InputPage[API, T]) -> CheckResult[T] | None:
         with self._pause_progress():
@@ -97,7 +99,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             return CheckResult(name=page.name, unchanged=page.items)
 
         matcher = SimpleInputMatch(page=page)
-        await self._match_items([matcher], items=page.items)
+        return await self._match_items([matcher], items=page.items)
 
     ###########################################################################
     ## Playlist match

@@ -44,7 +44,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
             "u": f"Mark item as 'Unavailable on {self.page.source}'",
             "n": f"Leave item with no URI. ({PROGRAM_NAME} will still attempt to find this item at the next run)",
             "s": "Skip checking process for all current items",
-            "q": "Skip checking process for all current items and quit check",
+            "q": "Skip checking process for all current items and quit check. No results will be returned.",
             None: colored("OR enter a custom URI/URL/ID for this item", "white")
         }
 

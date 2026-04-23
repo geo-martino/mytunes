@@ -195,6 +195,7 @@ class TestGroupFilter(FilterTester):
             tracks_exclude: list[LocalTrack],
     ):
         result = model.match(values=tracks)
+        # FIXME: flakey assertion - very very rare
         assert sorted(result.included, key=self.get_path) == sorted(tracks_include, key=self.get_path)
         assert sorted(result.excluded, key=self.get_path) == sorted(tracks_exclude, key=self.get_path)
         compared_expected = tracks_name + [tr for tr in tracks_released_at if tr not in tracks_name]

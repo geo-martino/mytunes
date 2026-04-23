@@ -202,7 +202,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
                 "If a match for an item cannot be found, stop and prompt the user again."
             ),
             "s": "Skip checking process for all current playlists",
-            "q": "Skip checking process for all current playlists and quit check",
+            "q": "Skip checking process for all current playlists and quit check.  No results will be returned.",
             None: colored("OR enter a custom URI/URL/ID for this item", "white")
         }
 
