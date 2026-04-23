@@ -44,7 +44,7 @@ class SpotifyURIBase(URI):
 
     @classmethod
     def from_id(cls, value: Any, kind: str) -> Self:
-        uri = ":".join((cls._source.lower(), kind, str(value)))
+        uri = ":".join((cls._source.casefold(), kind, str(value)))
         return cls(uri)
 
     @property
@@ -70,7 +70,7 @@ class SpotifyURIBase(URI):
             return value
 
         version, kind, id_value, *_ = path_parts
-        return ":".join((cls._source.lower(), kind.rstrip("s"), str(id_value)))
+        return ":".join((cls._source.casefold(), kind.rstrip("s"), str(id_value)))
 
     @property
     def public_url(self) -> URL:
@@ -95,7 +95,7 @@ class SpotifyURIBase(URI):
             return value
 
         kind, id_value, *_ = path_parts
-        return ":".join((cls._source.lower(), kind, str(id_value)))
+        return ":".join((cls._source.casefold(), kind, str(id_value)))
 
 
 @final

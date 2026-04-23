@@ -6,8 +6,7 @@ from copy import copy
 from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Annotated, TYPE_CHECKING, cast, Union
 
-from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict, \
-    ModelWrapValidatorHandler, ValidationError
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict
 from pydantic_core.core_schema import ValidationInfo
 from yarl import URL
 
@@ -39,19 +38,15 @@ class URI(RootModel[str]):
         default="unavailable",
     )
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def _validate_from_id[T](cls, value: T, handler: ModelWrapValidatorHandler[Self], info: ValidationInfo) -> Self:
+    def _validate_unavailable[T](cls, value: T, info: ValidationInfo) -> T | str:
         from ...core._context import RemoteModelContext  # avoid circular import
-        if not isinstance(context := info.context, RemoteModelContext) or not context.type:
-            return handler(value)
 
-        try:
-            return handler(value)
-        except ValidationError:
-            if value is None:  # create an unavailable URI if the value is None
-                value = cls._unavailable_id
-            return cls.from_id(value, kind=context.type)
+        # create an unavailable URI is the value is None
+        if value is not None or not isinstance(context := info.context, RemoteModelContext) or not context.type:
+            return value
+        return cls.from_id(cls._unavailable_id, kind=context.type).root
 
     @model_validator(mode="after")
     def _validate_source(self) -> Self:

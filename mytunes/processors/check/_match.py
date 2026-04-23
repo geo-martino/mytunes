@@ -152,7 +152,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         name = colored(self.name, "blue", attrs=["bold"])
         return f"{name}: {message}"
 
-    def _set_uri(self, item: IT, value: str | None) -> str | list[str] | None:
+    def _set_uri(self, item: IT, value: str | None) -> str | set[str] | None:
         try:
             item.uri = self.page.api.create_uri(value=value, kind=item.type)
             self._log_debug(f"Setting {item.type} URI: {str(item.uri)}", item=item, pad="<")
@@ -160,7 +160,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         except MyTunesTypeError as exc:
             return str(exc)
         except ValidationError as exc:
-            return [error["msg"] for error in exc.errors(include_url=False, include_input=False)]
+            return {error["msg"] for error in exc.errors(include_url=False, include_input=False)}
 
     def _set_unavailable_uri(self, item: IT) -> str | None:
         return self._set_uri(item, value=None)

@@ -58,7 +58,7 @@ URI_TYPES = (Track.type, Album.type, Artist.type, Playlist.type, Genre.type, Use
 @final
 class SimpleURI(URI):
     __final__ = True
-    _source = "remote"
+    _source = "Remote"
 
     @property
     def _valid_types(self) -> set[str]:
@@ -91,7 +91,7 @@ class SimpleURI(URI):
     def from_id[T](cls, value: T | None, kind: str) -> T | Self:
         if value is None:
             value = cls._unavailable_id
-        uri = ":".join((cls._source.lower(), kind, str(value)))
+        uri = ":".join((cls._source.casefold(), kind, str(value)))
         return cls(uri)
 
     @property
@@ -113,7 +113,7 @@ class SimpleURI(URI):
         if not isinstance(value, URL):
             return value
 
-        return ":".join((cls._source.lower(), *value.path.lstrip("/").split("/")[-2:]))
+        return ":".join((cls._source.casefold(), *value.path.lstrip("/").split("/")[-2:]))
 
 
 class MockRemoteResource(RemoteResource[SimpleURI]):

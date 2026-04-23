@@ -1,6 +1,6 @@
 import textwrap
 from abc import abstractmethod
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 from typing import ClassVar
 
 from pydantic import Field
@@ -116,7 +116,7 @@ class OptionsProcessor(InputProcessor):
 
         return False
 
-    def _log_unrecognised_input(self, value: str | Sequence[str], help_key: str = "h") -> None:
+    def _log_unrecognised_input(self, value: str | Iterable[str], help_key: str = "h") -> None:
         if isinstance(value, str):
             value = [value]
 
