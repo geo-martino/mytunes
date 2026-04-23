@@ -450,8 +450,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         async def _get_response(value: T) -> tuple[T, JsonSchemaValue | None]:
             return value, await repository.get_response(("GET", value))
 
-        bar = self._run_tasks_async(map(_get_response, values))
-        results = dict(await bar)
+        results = dict(await self._run_tasks_async(map(_get_response, values)))
 
         retrieved_count = sum(result is not None for result in results.values())
         messages = [

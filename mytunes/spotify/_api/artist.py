@@ -1,6 +1,6 @@
 from typing import ClassVar, final, Literal, Any, get_args
 
-from pydantic import AliasPath, validate_call
+from pydantic import AliasPath, validate_call, OnErrorOmit
 from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
@@ -75,7 +75,7 @@ class SpotifyArtistEndpoints(
 
     @validate_call
     async def get_all(
-            self, collection: SpotifyArtistCollection | PageCursor, types: set[_ALBUM_TYPE] = _ALL_ALBUM_TYPES,
+            self, collection: SpotifyArtistCollection | PageCursor, types: set[OnErrorOmit[_ALBUM_TYPE]] = _ALL_ALBUM_TYPES,
     ) -> list[SpotifyAlbum]:
         match collection:
             case PageCursor() as cursor:

@@ -6,10 +6,10 @@ from pydantic.json_schema import JsonSchemaValue
 
 from mytunes.exception import RequestError
 from mytunes.logger import Logger
-from mytunes.result import LogFormatter, CountResult, MapLogFormatter
+from mytunes.result import LogFormatter, CountResult, MapLogFormatter, NamedResult
 
 
-class SyncRemoteResult(CountResult):
+class SyncRemoteResult(NamedResult, CountResult):
     """Stores the results of a sync with a remote service."""
     start: Annotated[
         NonNegativeInt,

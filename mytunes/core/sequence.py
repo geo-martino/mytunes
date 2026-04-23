@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Iterable, Sequence, MutableSequence, Iterator
 from typing import Any, Self, overload, get_args
 
-from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict
+from pydantic import GetCoreSchemaHandler, validate_call, ConfigDict, OnErrorOmit
 from pydantic_core import core_schema, CoreSchema
 
 from mytunes.core.mapping import MutableUniqueMapping
@@ -112,6 +112,28 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
             case _:
                 return self._items_mapped[index]
 
+    @validate_call
+    def __add__(self, other: Iterable[TV]):
+        items = self.copy()
+        # noinspection PyArgumentList
+        items._extend(other)
+        return items
+
+    @validate_call
+    def __sub__(self, other: Iterable[TV]):
+        items = self.copy()
+        # noinspection PyArgumentList
+        for it in other:
+            del items._items_mapped[it]
+        return items
+
+    @validate_call
+    def __or__(self, other: Sequence[OnErrorOmit[TV]]) -> Self:
+        items = self.copy()
+        # noinspection PyArgumentList
+        items._extend(other)
+        return items
+
     @property
     def unique(self) -> Iterator[TV]:
         """The unique items in this sequence"""
@@ -142,7 +164,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         self._items_mapped.replace(__m)
 
     @validate_call
-    def intersection(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
+    def intersection(self, other: Sequence[OnErrorOmit[TV]] | set[OnErrorOmit[TV]]) -> tuple[TV, ...]:
         """
         Return the intersection between the items in this collection and an ``other`` collection as a new list.
 
@@ -151,7 +173,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return tuple(item for item in self if item in other)
 
     @validate_call
-    def difference(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
+    def difference(self, other: Sequence[OnErrorOmit[TV]] | set[OnErrorOmit[TV]]) -> tuple[TV, ...]:
         """
         Return the difference between the items in this collection and an ``other`` collection as a new list.
 
@@ -160,7 +182,7 @@ class UniqueSequence[TK, TV: ResourceModel](Sequence[TV]):
         return tuple(item for item in self if item not in other)
 
     @validate_call
-    def outer_difference(self, other: Sequence[TV] | set[TV]) -> tuple[TV, ...]:
+    def outer_difference(self, other: Sequence[OnErrorOmit[TV]] | set[OnErrorOmit[TV]]) -> tuple[TV, ...]:
         """
         Return the outer difference between the items in this collection and an ``other`` collection as a new list.
 
@@ -195,24 +217,10 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         self.remove(self[index])
 
     @validate_call
-    def __add__(self, other: Iterable[TV]):
-        items = self.copy()
-        # noinspection PyArgumentList
-        items.extend(other)
-        return items
-
-    @validate_call
     def __iadd__(self, other: Iterable[TV]):
         # noinspection PyArgumentList
         self.extend(other)
         return self
-
-    @validate_call
-    def __sub__(self, other: Iterable[TV]):
-        items = self.copy()
-        # noinspection PyArgumentList
-        items.remove(other)
-        return items
 
     @validate_call
     def __isub__(self, other: Iterable[TV]):
@@ -221,14 +229,7 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
         return self
 
     @validate_call
-    def __or__(self, other: Sequence[TV]) -> Self:
-        items = self.copy()
-        # noinspection PyArgumentList
-        items.merge(other)
-        return items
-
-    @validate_call
-    def __ior__(self, other: Sequence[TV]) -> Self:
+    def __ior__(self, other: Sequence[OnErrorOmit[TV]]) -> Self:
         # noinspection PyArgumentList
         self.merge(other)
         return self
@@ -252,7 +253,7 @@ class MutableUniqueSequence[TK, TV: ResourceModel](UniqueSequence[TK, TV], Mutab
 
     # noinspection PyArgumentList
     @validate_call
-    def merge(self, other: Sequence[TV], reference: Sequence[TV] | None = None) -> None:
+    def merge(self, other: Sequence[OnErrorOmit[TV]], reference: Sequence[OnErrorOmit[TV]] | None = None) -> None:
         """
         Merge this sequence with another collection.
 

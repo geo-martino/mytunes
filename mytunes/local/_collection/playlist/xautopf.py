@@ -13,7 +13,7 @@ from typing import Any, Self, Literal, Annotated, ClassVar, final
 
 import aiofiles
 from pydantic import Field, field_validator, model_validator, ConfigDict, model_serializer, \
-    field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices
+    field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices, validate_call
 from pydantic.alias_generators import to_pascal, to_snake
 from pydantic.fields import FieldInfo, PrivateAttr
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
@@ -125,6 +125,7 @@ class SyncXAutoPFResult(SavePlaylistResult):
     @classmethod
     def from_xml(
             cls,
+            name: str,
             initial_tracks: MutableSequence[LocalTrack],
             initial_xml: _XMLRoot,
             final_tracks: MutableSequence[LocalTrack],
@@ -133,6 +134,7 @@ class SyncXAutoPFResult(SavePlaylistResult):
     ) -> Self:
         """Create a sync result from the given XML objects."""
         return cls(
+            name=name,
             start=len(initial_tracks),
             start_included=len(initial_xml.smart_playlist.source.exceptions_include or ()),
             start_excluded=len(initial_xml.smart_playlist.source.exceptions or ()),
@@ -227,6 +229,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             tracks = list(MutableUniqueSequence(tracks).unique)
         return super()._limit_tracks(tracks=tracks, ignore=ignore)
 
+    @validate_call
     def log_load(self, result: GroupResult) -> None:
         """Log the given results of loading tracks."""
         table = GroupResult.generate_table(results={self.name: result})
@@ -265,6 +268,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
         reference = self._get_reference_for_last_played_track(initial_tracks + self.tracks)
         return SyncXAutoPFResult.from_xml(
+            name=self.name,
             initial_xml=initial_xml,
             initial_tracks=initial_tracks,
             final_xml=xml,
@@ -305,6 +309,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             excluded = self.matcher.exclude.path_mapper.unmap_many(excluded, check_existence=False)
         self.matcher.exclude.values &= set(map(str, excluded))
 
+    @validate_call
     def log_save(self, result: SyncXAutoPFResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncXAutoPFResult.generate_table(results={self.name: result})

@@ -18,6 +18,7 @@ class TestSyncM3UResult(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SyncM3UResult:
         return SyncM3UResult(
+            name=faker.name(),
             start=faker.random_int(0, 100),
             added=faker.random_int(0, 100),
             removed=faker.random_int(0, 100),
@@ -27,11 +28,13 @@ class TestSyncM3UResult(BaseModelTester):
         )
 
     def test_from_paths(self, faker: Faker):
+        name = faker.name()
         paths_initial = [Path(faker.file_path()) for _ in range(10)]
         paths_final = paths_initial[:5] + [Path(faker.file_path()) for _ in range(7)]
 
-        result = SyncM3UResult.from_paths(paths_initial, paths_final)
+        result = SyncM3UResult.from_paths(name, initial=paths_initial, final=paths_final)
 
+        assert result.name == name
         assert result.start == len(paths_initial)
         assert result.added == 7
         assert result.removed == 5

@@ -269,7 +269,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
     async def test_save_playlists(self, model: LocalLibrary, playlists: list[LocalPlaylist]):
         model.playlists.extend(playlists)
         results = await model.save_playlists(dry_run=True)
-        assert list(results.keys()) == [pl.name for pl in playlists]
+        assert [result.name for result in results] == [pl.name for pl in playlists]
 
     ###########################################################################
     ## Collections

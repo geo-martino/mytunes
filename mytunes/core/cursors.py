@@ -287,8 +287,8 @@ class IndexCursor(IterablePageCursor, ReversiblePageCursor, _HasLimitParam):
         self.offset = max(0, offset)
 
     @classmethod
-    def sort_responses[T: dict[str, Any]](
-            cls, responses: list[T], path: str | AliasPath | AliasChoices,
+    def sort_responses(
+            cls, responses: list[dict[str, Any]], path: str | AliasPath | AliasChoices,
     ) -> list[Self]:
         cursors: list[Self] = [cls.get_cursor_from_response(response, path) for response in responses]
         if not all(isinstance(cursor, IndexCursor) for cursor in cursors):

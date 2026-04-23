@@ -1,7 +1,7 @@
 from collections.abc import Sequence, MutableSequence, Collection, Iterable
 from typing import Self, Any, Annotated
 
-from pydantic import Field, validate_call, model_validator, field_validator
+from pydantic import Field, validate_call, model_validator, field_validator, OnErrorOmit
 from termcolor import colored
 
 from mytunes._types import TO_TUPLE
@@ -245,7 +245,8 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasProgress, HasAsyncOperatio
     ###########################################################################
     ## Logging
     ###########################################################################
-    def log_results(self, results: SearchResult | Sequence[SearchResult]) -> None:
+    @validate_call
+    def log_results(self, results: SearchResult | Sequence[OnErrorOmit[SearchResult]]) -> None:
         """Log the given search results"""
         if isinstance(results, SearchResult):
             results = [results]

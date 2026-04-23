@@ -209,7 +209,7 @@ class TestCollectionChecker(CheckerTester):
         assert mock_match_page.call_count == len(collections)
         assert mock_pause.call_count == expected_pages
         assert mock_sync_match.call_count == len(collections)
-        assert mock_input_match.call_count == sum(bool(result.skipped) for _, result in results)
+        assert mock_input_match.call_count == sum(bool(result.skipped) for result in results)
 
     async def test_check_only_runs_input_match_if_needed(
             self,

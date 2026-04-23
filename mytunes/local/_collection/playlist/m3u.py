@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
 import aiofiles
-from pydantic import Field, NonNegativeInt
+from pydantic import Field, NonNegativeInt, validate_call
 
 from mytunes.core.properties.path import PathInputType
 from mytunes.core.sequence import MutableUniqueSequence
@@ -73,7 +73,7 @@ class SyncM3UResult(SavePlaylistResult):
     )
 
     @classmethod
-    def from_paths(cls, initial: Sequence[Path], final: Sequence[Path]) -> Self:
+    def from_paths(cls, name: str, initial: Sequence[Path], final: Sequence[Path]) -> Self:
         initial_counts = Counter(initial)
         final_counts = Counter(final)
 
@@ -82,6 +82,7 @@ class SyncM3UResult(SavePlaylistResult):
         intersection = initial_counts & final_counts
 
         return cls(
+            name=name,
             start=len(initial),
             added=added,
             removed=removed,
@@ -182,8 +183,9 @@ class M3U(LocalPlaylist[PathFilter]):
             self._original = self.tracks.copy()  # update original tracks to newly library tracks
 
         final_paths = list(map(Path, self.path_mapper.unmap_many(self.tracks, check_existence=False)))
-        return SyncM3UResult.from_paths(start_paths, final_paths)
+        return SyncM3UResult.from_paths(self.name, initial=start_paths, final=final_paths)
 
+    @validate_call
     def log_save(self, result: SyncM3UResult) -> None:
         """Log the given results of matching tracks."""
         table = SyncM3UResult.generate_table(results={self.name: result})

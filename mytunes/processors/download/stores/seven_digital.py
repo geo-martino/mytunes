@@ -1,7 +1,7 @@
 from collections.abc import Collection, Sequence
 from typing import Literal, ClassVar, Union, final
 
-from pydantic import Field
+from pydantic import Field, OnErrorOmit
 from yarl import URL
 
 from ...._base.resource import ResourceModel
@@ -12,13 +12,14 @@ from mytunes.processors.download.stores._base import AudioStore, HasLocale
 from mytunes.processors.download.stores.exception import StoreTypeError
 
 
+
 @final
 class SevenDigitalStore(AudioStore[Literal["7digital"]], HasLocale):
     __final__ = True
 
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (Track, Artist, Album)
 
-    audio_types: Sequence[Literal[2, 9, 12, 16, 17, 19, 20]] = Field(
+    audio_types: Sequence[OnErrorOmit[Literal[2, 9, 12, 16, 17, 19, 20]]] = Field(
         description="The audio type codes to search for.",
         default=(2, 9, 12, 16, 17, 19, 20),
     )

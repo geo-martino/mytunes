@@ -33,6 +33,7 @@ class TestSyncXAutoPFResult(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SyncXAutoPFResult:
         return SyncXAutoPFResult(
+            name=faker.name(),
             start=faker.random_int(0, 100),
             start_included=faker.random_int(0, 100),
             start_excluded=faker.random_int(0, 100),
@@ -75,21 +76,22 @@ class TestSyncXAutoPFResult(BaseModelTester):
         initial_tracks = tracks[5:29]
         final_tracks = tracks[:12] + tracks[23:27]
 
-        result = SyncXAutoPFResult.from_xml(initial_tracks, initial_xml, final_tracks, final_xml)
-        assert result == SyncXAutoPFResult(
-            start=len(initial_tracks),
-            start_included=len(initial_matcher.include.values),
-            start_excluded=len(initial_matcher.exclude.values),
-            start_compared=15,
-            start_limit=20,
-            start_sort=True,
-            final=len(final_tracks),
-            final_included=len(final_matcher.include.values),
-            final_excluded=len(final_matcher.exclude.values),
-            final_compared=12,
-            final_limit=15,
-            final_sort=True,
-        )
+        name = faker.name()
+        result = SyncXAutoPFResult.from_xml(name, initial_tracks, initial_xml, final_tracks, final_xml)
+
+        assert result.name == name
+        assert result.start == len(initial_tracks)
+        assert result.start_included == len(initial_matcher.include.values)
+        assert result.start_excluded == len(initial_matcher.exclude.values)
+        assert result.start_compared == 15
+        assert result.start_limit == 20
+        assert result.start_sort
+        assert result.final == len(final_tracks)
+        assert result.final_included == len(final_matcher.include.values)
+        assert result.final_excluded == len(final_matcher.exclude.values)
+        assert result.final_compared == 12
+        assert result.final_limit == 15
+        assert result.final_sort
 
 
 @pytest.fixture

@@ -668,6 +668,7 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
 
         self._logger.info(message, header=2)
 
+    @validate_call
     def log_save_tracks_results(self, results: Mapping[Path, Iterable[str]], dry_run: bool = False) -> None:
         """Log the given results of saving tracks."""
         self._logger.print_line(DEBUG)

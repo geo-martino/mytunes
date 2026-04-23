@@ -2,7 +2,7 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, Annotated, Union
 
 from aiorequestful.response.exception import ResponseError
-from pydantic import Field, validate_call, BeforeValidator
+from pydantic import Field, validate_call, BeforeValidator, OnErrorOmit
 from termcolor import colored
 
 from mytunes.core._collection import SyncRemoteResult
@@ -55,7 +55,7 @@ class RemoteMutableLibrary[
         ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
         ("tracks.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
-    async def add_tracks(self, uris: Sequence[URI | HasURI]) -> None:
+    async def add_tracks(self, uris: Sequence[OnErrorOmit[URI | HasURI]]) -> None:
         """Add library tracks to the library."""
         api: HasTrackEndpoints[BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="tracks", api=api.tracks)
@@ -69,7 +69,7 @@ class RemoteMutableLibrary[
         ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
         ("artists.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
-    async def add_artists(self, uris: Sequence[RT | HasURI]) -> None:
+    async def add_artists(self, uris: Sequence[OnErrorOmit[URI | HasURI]]) -> None:
         """Add library artists to the library."""
         api: HasArtistEndpoints[BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="artists", api=api.artists)
@@ -83,7 +83,7 @@ class RemoteMutableLibrary[
         ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
         ("albums.library", BatchWriteEndpoints, "writing data for library {type}s"),
     )
-    async def add_albums(self, uris: Sequence[RT | HasURI]) -> None:
+    async def add_albums(self, uris: Sequence[OnErrorOmit[URI | HasURI]]) -> None:
         """Add library albums to the library."""
         api: HasAlbumEndpoints[BatchReadEndpoints | HasLibraryEndpoints[BatchWriteEndpoints]] = self.api
         items = await self._add_library_items(items=uris, items_type="albums", api=api.albums)
@@ -140,6 +140,7 @@ class RemoteMutableLibrary[
 
         return results
 
+    @validate_call
     def log_sync_results(self, results: Mapping[str, SyncRemoteResult]) -> None:
         """Log stats from the given sync playlist results"""
         header = f"{self._log_name.upper()} SYNC RESULTS"
@@ -253,6 +254,7 @@ class RemoteMutableLibrary[
         added = await api.library.add_many(add) if not dry_run else len(add)
 
         return SyncRemoteResult(
+            name=items_type.rstrip("s") + "s",
             start=len(remote),
             added=added,
             removed=removed,
@@ -307,7 +309,7 @@ class RemoteMutableLibrary[
         ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
         ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
     )
-    async def sync_playlists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> dict[str, SyncRemoteResult]:
+    async def sync_playlists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> tuple[SyncRemoteResult, ...]:
         """
         Synchronise the items of playlists in this library with the remote service.
 
@@ -332,7 +334,7 @@ class RemoteMutableLibrary[
         message = f"Synchronising {len(playlists)} playlists on {self._log_name} library: {message_context}"
         self._logger.info(message, header=1)
 
-        async def _sync_playlist[T: RemoteMutablePlaylist](pl: T) -> tuple[str, SyncRemoteResult]:
+        async def _sync_playlist[T: RemoteMutablePlaylist](pl: T) -> SyncRemoteResult:
             async with self.concurrency:
                 remote: T = await api.playlists.library.get_or_create(pl.name)
                 remote.tracks.replace(pl.tracks)
@@ -340,13 +342,13 @@ class RemoteMutableLibrary[
                 properties = await remote.sync_properties(api, dry_run=dry_run)
                 result = await remote.sync_items(api, kind=kind, sync_filter=self.sync_filter, dry_run=dry_run)
 
-                return pl.name, result.model_copy(update=dict(properties=properties))
+                return result.model_copy(update=dict(properties=properties))
 
         task_id = self._progress.add_task(
             description=f"Synchronising {self.source} playlists", total=len(playlists),
         )
         results = await self._run_tasks_async(map(_sync_playlist, playlists), task_id=task_id)
-        return dict(results)
+        return tuple(results)
 
     ###########################################################################
     ## Restore library items
@@ -559,7 +561,7 @@ class RemoteMutableLibrary[
             self,
             playlists: Annotated[Sequence[RemotePlaylistDump[URI]], BeforeValidator(_extract_playlists_from_backup)],
             dry_run: bool = False,
-    ) -> dict[str, SyncRemoteResult]:
+    ) -> tuple[SyncRemoteResult, ...]:
         """
         Restore playlists from a backup dump.
         This function updates the remote service and reloads this library's playlists after restoring.
@@ -575,11 +577,12 @@ class RemoteMutableLibrary[
         """
         self._logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
 
-        def _restore_playlist(dump: dict[str, Any]):
+        async def _restore_playlist(dump: RemotePlaylistDump) -> SyncRemoteResult | None:
+            dump = dict(dump)
             name = dump.pop("name")
             uri = dump.pop("uri")
             items = dump.pop("items")
-            return self._restore_playlist(uri=uri, name=name, items=items, properties=dump, dry_run=dry_run)
+            return await self._restore_playlist(uri=uri, name=name, items=items, properties=dump, dry_run=dry_run)
 
         task_id = self._progress.add_task(
             description=f"Restoring {self.source} playlists", total=len(playlists),
@@ -587,7 +590,7 @@ class RemoteMutableLibrary[
         results = await self._run_tasks_async(map(_restore_playlist, playlists), task_id=task_id)
 
         await self.load_playlists()
-        return dict(results)
+        return tuple(results)
 
     async def _restore_playlist(
             self,
@@ -596,7 +599,7 @@ class RemoteMutableLibrary[
             items: Sequence[str | URI],
             properties: Mapping[str, Any],
             dry_run: bool = False,
-    ) -> tuple[str, SyncRemoteResult] | None:
+    ) -> SyncRemoteResult | None:
         api: (
             HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]] |
             HasTrackEndpoints[BatchReadEndpoints]
@@ -614,7 +617,8 @@ class RemoteMutableLibrary[
                     playlist = await api.playlists.library.create(name=name, **properties)
                 else:
                     item_count = len(items)
-                    return name, SyncRemoteResult(
+                    return SyncRemoteResult(
+                        name=name,
                         start=0,
                         added=item_count,
                         removed=0,
@@ -629,4 +633,4 @@ class RemoteMutableLibrary[
 
             playlist.tracks.replace(await api.tracks.get_many(items))
 
-            return playlist.name, await playlist.sync_items(api=api, kind="refresh", dry_run=dry_run)
+            return await playlist.sync_items(api=api, kind="refresh", dry_run=dry_run)

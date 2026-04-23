@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
-from pydantic import ConfigDict, Field, PositiveInt
+from pydantic import ConfigDict, Field, PositiveInt, validate_call
 from pydantic.dataclasses import dataclass
 from tabulate import tabulate
 from termcolor import colored
@@ -12,6 +12,8 @@ from mytunes._utils import truncate_string
 from mytunes.exception import MyTunesTypeError
 from ._base import BaseModel
 from ._base.attribute import Attribute
+from ._base.resource import ResourceModel
+from .core.properties.name import HasName
 
 
 @dataclass(config=ConfigDict(frozen=True))
@@ -310,5 +312,38 @@ class NamedResult(Result):
                 continue
 
             results_mapped.append((result.name, result))
+
+        return super().generate_table(results=results_mapped, header=header)
+
+
+class ItemResult[IT](Result):
+    item: IT = Field(
+        description="The item with missing tags.",
+    )
+
+    @classmethod
+    def generate_table(
+            cls,
+            results: Sequence[Self] | Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
+            header: str = None
+    ) -> str:
+        if isinstance(results, Mapping):
+            return super().generate_table(results=results, header=header)
+
+        results_mapped: list[tuple[str, cls]] = []
+        for result in results:
+            if not isinstance(result, cls):
+                results_mapped.append(result)
+                continue
+
+            match result.item:
+                case HasName():
+                    key = result.item.name
+                case ResourceModel() if result.item.unique_keys:
+                    key = next(map(str, sorted(result.item.unique_keys, key=lambda k: isinstance(k, str))), None)
+                case _:
+                    key = str(id(result.item))
+
+            results_mapped.append((key, result))
 
         return super().generate_table(results=results_mapped, header=header)

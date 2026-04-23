@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections.abc import Sequence, Callable, Collection
 from typing import Any
 
-from pydantic import Field, PositiveInt
+from pydantic import Field, PositiveInt, OnErrorOmit, validate_call
 from termcolor import colored
 
 from mytunes.core.api import RemoteAPI, HasAPI, Endpoints
@@ -77,7 +77,8 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
     ###########################################################################
     ## Logging
     ###########################################################################
-    def log_results(self, results: CheckResult | Sequence[CheckResult]) -> None:
+    @validate_call
+    def log_results(self, results: CheckResult | Sequence[OnErrorOmit[CheckResult]]) -> None:
         """Log the given check results"""
         if isinstance(results, CheckResult):
             results = [results]
@@ -228,15 +229,14 @@ class CollectionChecker[API: RemoteAPI](Checker[API]):
         with self._pause_progress():
             await page.pause()
 
-        async def _match_page(uri: URI) -> tuple[str, CheckResult[T]]:
-            name = page.get_playlist_name(uri)
-            return name, await self._match_page(page=page, uri=uri)
+        async def _match_page(uri: URI) -> CheckResult[T]:
+            return await self._match_page(page=page, uri=uri)
 
         task_id = self._progress.add_task("Matching changes", total=page.total)
         results = await self._run_tasks_async(map(_match_page, page.uris), task_id=task_id)
         return tuple(results)
 
-    async def _match_page[T: HasMutableURI](self, page: PlaylistsPage[API, T], uri: URI) -> CheckResult[T]:
+    async def _match_page[T: HasMutableURI](self, page: PlaylistsPage[API, T], uri: URI, **__) -> CheckResult[T]:
         items = page.get_collection_items(uri)
         matchers = [
             SyncMatch(page=page, uri=uri, matcher=self.matcher),

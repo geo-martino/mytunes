@@ -6,7 +6,7 @@ from typing import Annotated, ClassVar, final, Any, Self
 import tabulate
 from mutagen import MutagenError
 from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
-    ModelWrapValidatorHandler, ValidationError, validate_call
+    ModelWrapValidatorHandler, ValidationError, validate_call, OnErrorOmit
 from termcolor import colored
 
 from mytunes.core.library import MutableLibrary
@@ -298,7 +298,8 @@ class LocalLibrary(
 
         self._logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
 
-    def log_playlists(self, results: Sequence[tuple[str, LoadPlaylistResult]] = None) -> None:
+    @validate_call
+    def log_playlists(self, results: Sequence[OnErrorOmit[LoadPlaylistResult]] = None) -> None:
         self._logger.print_line(STAT)
         if results:
             self._log_playlist_load(results)
@@ -327,25 +328,26 @@ class LocalLibrary(
             for playlist in self.playlists.unique
         }
 
-    async def save_playlists(self, dry_run: bool = False) -> dict[str, SavePlaylistResult]:
+    async def save_playlists(self, dry_run: bool = False) -> tuple[SavePlaylistResult, ...]:
         """
         Save associated tracks and settings (if applicable) for all playlists in this library.
 
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: A map of the playlist name to the results of its sync as a :py:class:`Result` object.
         """
-        async def _save_playlist(pl: LocalPlaylist) -> tuple[str, Result]:
+        async def _save_playlist(pl: LocalPlaylist) -> SavePlaylistResult:
             async with self.concurrency:
-                return pl.name, await pl.save(dry_run=dry_run)
+                return await pl.save(dry_run=dry_run)
 
         total = len(self.playlists)
         self._logger.info(f"Saving {total} playlists in {self.source} {self.type}", header=2)
 
         task_id = self._progress.add_task(description=f"Updating {self.source} playlists", total=total)
         results = await self._run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
-        return dict(results)
+        return tuple(results)
 
-    def log_save_playlists_results(self, results: Sequence[tuple[str, SavePlaylistResult]]) -> None:
+    @validate_call
+    def log_save_playlists_results(self, results: Sequence[OnErrorOmit[SavePlaylistResult]]) -> None:
         """Log the given results of saving playlists."""
         header = f"{self.source.upper()} PLAYLISTS SAVED"
         table = SavePlaylistResult.generate_table(results=results, header=header)

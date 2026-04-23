@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from pydantic import Field
+from pydantic import Field, OnErrorOmit
 from termcolor import colored
 
 from mytunes.core.api import RemoteAPI
@@ -15,7 +15,7 @@ class InputPage[API: RemoteAPI, CT: HasURI](CheckerPage[_ApiT, CT]):
     name: str = Field(
         description="The name for this set of items.",
     )
-    items: Sequence[CT] = Field(
+    items: Sequence[OnErrorOmit[CT]] = Field(
         description="The items to be checked on this page."
     )
 

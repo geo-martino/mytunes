@@ -67,6 +67,6 @@ class LoadPlaylistResult(NamedResult, GroupResult[LocalTrack], LimitResult):
         return cls(name=name, **match, **limit, tracks=sort.sorted)
 
 
-class SavePlaylistResult(CountResult):
+class SavePlaylistResult(NamedResult, CountResult):
     """The result of saving a playlist."""
     pass
