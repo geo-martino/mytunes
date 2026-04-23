@@ -73,8 +73,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
                     self._drop_uri(item)
                     return option
 
-                case value if (input_uri := self._create_uri(value, kind=item.type)) is not None:
-                    item.uri = input_uri
+                case value if self._set_uri(item, value=value):
                     break
 
                 case _:

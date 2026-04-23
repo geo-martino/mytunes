@@ -151,16 +151,17 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         name = colored(self.name, "blue", attrs=["bold"])
         return f"{name}: {message}"
 
+    def _set_uri(self, item: IT, value: str | None) -> bool:
+        with suppress(ValidationError):
+            uri = self.page.api.create_uri(value=value, kind=item.type)
+            self._log_debug(f"Setting {item.type} URI: {str(uri)}", item=item, pad="<")
+            item.uri = uri
+            return True
+        return False
+
     def _set_unavailable_uri(self, item: IT) -> None:
-        item.uri = self._create_uri(None, kind=item.type)
-        messages = [f"Marking {item.type} as unavailable", f"URI={item.uri}"]
-        self._log_debug(messages, item=item, pad="<")
+        self._set_uri(item, value=None)
 
     def _drop_uri(self, item: IT) -> None:
-        del item.uri
         self._log_debug(f"Marking {item.type} as missing", item=item, pad="<")
-
-    def _create_uri(self, value: str | None, kind: str) -> URI | None:
-        with suppress(ValidationError):
-            return self.page.api.create_uri(value=value, kind=kind)
-        return None
+        del item.uri
