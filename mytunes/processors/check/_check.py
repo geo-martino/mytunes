@@ -63,14 +63,14 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             return None
 
         @functools.wraps(func)
-        def _wrapper(self: Checker, items: Sequence[ResourceModel]) -> T:
+        def _wrapper(self: Checker, items: Sequence, *args, **kwargs) -> T:
             items = [item for item in items if isinstance(item, HasURI)]
 
             if len(items) == 0:
                 self._logger.extra(colored("No valid items to check.", "yellow"))
                 return _invalid_response()
 
-            return func(self, items)
+            return func(self, items, *args, **kwargs)
 
         return _wrapper
 
@@ -110,7 +110,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             return tuple()
 
         @functools.wraps(func)
-        def _wrapper(self: Checker, collections: Sequence[CollectionModel]) -> T:
+        def _wrapper(self: Checker, collections: Sequence[CollectionModel], *args, **kwargs) -> T:
             collections = [
                 coll for coll in collections
                 if coll.total > 0 and any(isinstance(item, HasURI) for item in coll.items)
@@ -120,7 +120,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
                 self._logger.extra(colored("No valid collections or items to check.", "yellow"))
                 return _invalid_response()
 
-            return func(self, collections)
+            return func(self, collections, *args, **kwargs)
 
         return _wrapper
 
