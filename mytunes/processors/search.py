@@ -88,7 +88,7 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
     def merge(self, other: SearchResult[IT, MT]) -> SearchResult[IT, MT]:
         """
         Merge another result into this one and return the merged result.
-        The other result should only contain items that are in the unmatched and skipped categories as
+        The other result should only contain items that are in the unmatched category as
         the other categories should contain items which do not reduce between operations.
         """
         unmatched = list(self.unmatched)
@@ -102,17 +102,12 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
             if item not in unmatched:
                 raise MyTunesValueError("Other result must contain all items in this result's unmatched items")
 
-        skipped = [it for it in self.skipped if it not in other.matched]
-        for item in other.skipped:
-            if item not in skipped and item not in self.matched:
-                skipped.append(item)
-
         return SearchResult(
             name=self.name,
             matches=list(self.matches) + list(other.matches),
             matched=list(self.matched) + list(other.matched),
             unmatched=unmatched,
-            skipped=skipped,
+            skipped=list(self.skipped) + list(other.skipped),
         )
 
 
