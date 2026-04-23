@@ -19,7 +19,6 @@ from mytunes.processors.check import Checker
 from mytunes.processors.check._check import ItemChecker, CollectionChecker
 from mytunes.processors.check._input.match import InputMatch as SimpleInputMatch
 from mytunes.processors.check._input.page import InputPage
-from mytunes.processors.check._page import CheckerPage
 from mytunes.processors.check._playlist.match import SyncMatch, InputMatch as PlaylistInputMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.check.result import CheckResult

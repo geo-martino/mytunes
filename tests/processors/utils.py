@@ -6,9 +6,6 @@ from typing import ClassVar
 from mytunes._base import makecls
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection import CollectionModel
-from mytunes.core._collection.playlist import Playlist
-from mytunes.core._item.album import Album
-from mytunes.core._item.artist import Artist
 from mytunes.core.properties.name import HasName
 from tests.remote import URI_TYPES
 

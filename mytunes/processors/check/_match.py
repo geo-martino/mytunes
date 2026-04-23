@@ -10,7 +10,7 @@ from termcolor import colored
 from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.name import HasName
-from mytunes.core.properties.uri import HasURI, HasMutableURI, URI
+from mytunes.core.properties.uri import HasURI, HasMutableURI
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors import OptionsProcessor
 from mytunes.processors import Processor
