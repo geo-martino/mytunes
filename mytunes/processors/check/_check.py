@@ -97,7 +97,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
         if all_valid:
             return CheckResult(name=matcher.name, unchanged=page.items)
 
-        await self._match([matcher], items=page.items)
+        await self._match_items([matcher], items=page.items)
 
     ###########################################################################
     ## Playlist match
@@ -179,13 +179,13 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOpera
             PlaylistInputMatch(page=page, uri=uri, matcher=self.matcher),
         ]
 
-        return await self._match(matchers, items=items)
+        return await self._match_items(matchers, items=items)
 
     ###########################################################################
     ## Common functionality
     ###########################################################################
     @staticmethod
-    async def _match[T: HasMutableURI](
+    async def _match_items[T: HasMutableURI](
             matchers: Sequence[BaseMatch[API, T]], items: Collection[T]
     ) -> CheckResult[T] | None:
         result: CheckResult[T] | None = None
