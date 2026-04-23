@@ -51,7 +51,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
     async def _match_item_with_input(
             self, item: IT, others: Sequence[IT], option: str | None, formatter: LogFormatter
     ) -> str | None:
-        self._log_match(item, formatter)
+        name = self._log_match(item, formatter)
 
         while option or (option := self._get_user_input(name, formatter=formatter)):
             log = option
@@ -80,7 +80,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
 
             option = None
 
-    def _log_match(self, item: IT, formatter: LogFormatter) -> None:
+    def _log_match(self, item: IT, formatter: LogFormatter) -> str:
         name = item.name if isinstance(item, HasName) else str(id(item))
         sep = colored(" | ", "white", attrs=["bold"])
 
@@ -92,3 +92,5 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
             log_parts = [colored("NO MATCH", "red")]
 
         self._logger.print(sep.join((formatter.get_value(name), *log_parts)))
+
+        return name
