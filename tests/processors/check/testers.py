@@ -65,7 +65,7 @@ class InputMatchTester(BaseModelTester, metaclass=ABCMeta):
             "s",
         ]
 
-        with patch_input(iter(inputs)):
+        with patch_input(inputs):
             result = await model.match(missing_items)
 
         assert len(result.changed) == 2
@@ -91,7 +91,7 @@ class InputMatchTester(BaseModelTester, metaclass=ABCMeta):
             "q",
         ]
 
-        with patch_input(iter(inputs)), pytest.raises(QuitImmediately):
+        with patch_input(inputs), pytest.raises(QuitImmediately):
             await model.match(missing_items)
 
         assert mock_match_item_with_input.call_count == 3  # quits early
@@ -105,7 +105,7 @@ class InputMatchTester(BaseModelTester, metaclass=ABCMeta):
             mock_compare_uri_changes: Mock,
     ):
         uris = [SimpleURI.create_random(kind=item.type) for item in missing_items]
-        with patch_input(iter(uris)):
+        with patch_input(uris):
             result = await model.match(missing_items)
 
         assert sorted(result.changed) == sorted(missing_items)
@@ -142,7 +142,7 @@ class InputMatchTester(BaseModelTester, metaclass=ABCMeta):
             "s",
         ]
 
-        with patch_input(iter(inputs)):
+        with patch_input(inputs):
             result = await model.match(missing_items)
 
         assert len(result.changed) == 2

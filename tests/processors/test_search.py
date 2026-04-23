@@ -18,7 +18,7 @@ from mytunes.core.properties.uri import HasMutableURI
 from mytunes.core.remote import RemoteResource
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
-from mytunes.processors.search import Searcher, SearchResult
+from mytunes.processors.search import Searcher, SearchResult, ItemSearcher, CollectionSearcher
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockRemoteResource, MockRemoteCollection, MockUrlCursor
 from tests.testers import BaseModelTester
@@ -27,8 +27,12 @@ from tests.utils import split_list
 
 class SearcherTester(metaclass=ABCMeta):
     @pytest.fixture
-    def model(self, api: RemoteAPI) -> Searcher:
-        return Searcher(api=api)
+    def items(self, tracks: list[Track], faker: Faker) -> list[HasMutableURI]:
+        class TrackWithURI(Track, HasMutableURI, metaclass=makecls()):
+            pass
+
+        tracks = faker.random_elements(tracks, length=len(tracks) // 2, unique=True)
+        return [TrackWithURI.model_validate(track.model_dump()) for track in tracks]
 
     @abstractmethod
     def query_results(self, faker: Faker) -> list:
@@ -121,14 +125,12 @@ class SearcherTester(metaclass=ABCMeta):
 
 class TestSearcher(SearcherTester, BaseModelTester):
     @pytest.fixture
-    def item(self, items: list[HasMutableURI], faker: Faker) -> HasMutableURI:
-        return faker.random_element(items)
+    def model(self, api: RemoteAPI) -> Searcher:
+        return Searcher(api=api)
 
     @pytest.fixture
-    def items(self, tracks: list[Track]) -> list[HasMutableURI]:
-        class TrackWithURI(Track, HasMutableURI, metaclass=makecls()):
-            pass
-        return [TrackWithURI.model_validate(track.model_dump()) for track in tracks]
+    def item(self, items: list[HasMutableURI], faker: Faker) -> HasMutableURI:
+        return faker.random_element(items)
 
     @pytest.fixture
     def query_results(self, faker: Faker) -> list[RemoteTrack]:
@@ -199,35 +201,6 @@ class TestSearcher(SearcherTester, BaseModelTester):
 
         assert model._match_item(item, query_results) == mock_match.return_value
         mock_assign_attributes.assert_called_once_with(item, mock_match.return_value)
-
-    def test_match_items(
-            self,
-            model: Searcher,
-            items: list[HasMutableURI],
-            query_results: list[RemoteResource],
-            mock_match_random: tuple[Mock, list, list, list],
-            faker: Faker,
-    ):
-        mock_match_random, matches, matched, unmatched = mock_match_random
-
-        valid = faker.random_elements(items, unique=True)
-        invalid = [item for item in items if item not in valid]
-
-        name = faker.name()
-        expected = SearchResult(name=name, unmatched=tuple(items), skipped=tuple(invalid))
-        assert model._match_items(items, [], skipped=invalid, name=name) == expected
-
-        result = model._match_items(valid, query_results, skipped=invalid, name=name)
-        self.assert_random_match_result(
-            name=name,
-            items=valid,
-            result=result,
-            matches=matches,
-            matched=matched,
-            unmatched=unmatched,
-            skipped=invalid,
-            mock_match_random=mock_match_random,
-        )
 
     @pytest.fixture
     def matcher(self, model: Searcher, faker: Faker) -> Matcher:
@@ -323,8 +296,8 @@ class TestSearcher(SearcherTester, BaseModelTester):
 class TestItemSearcher(SearcherTester):
     """Test item search functionality only"""
     @pytest.fixture
-    def items(self, tracks: list[Track]) -> list[Track]:
-        return tracks[:len(tracks) // 2]
+    def model(self, api: RemoteAPI) -> ItemSearcher:
+        return ItemSearcher(api=api)
 
     @pytest.fixture
     def query_results(self, faker: Faker) -> list[RemoteTrack]:
@@ -336,7 +309,7 @@ class TestItemSearcher(SearcherTester):
         ]
 
     async def test_search_item(
-            self, model: Searcher, items: list[Track], mock_query_item: Mock, mock_match: Mock
+            self, model: ItemSearcher, items: list[Track], mock_query_item: Mock, mock_match: Mock
     ):
         model.matcher = Matcher(scorers=[NameScorer()])
         item = items[0]
@@ -347,7 +320,7 @@ class TestItemSearcher(SearcherTester):
 
     async def test_search_items(
             self,
-            model: Searcher,
+            model: ItemSearcher,
             items: list[Track],
             query_results: list[RemoteTrack],
             mock_query_item: Mock,
@@ -375,21 +348,60 @@ class TestItemSearcher(SearcherTester):
             mock_match_random=mock_match_random,
         )
 
+
+class TestCollectionSearcher(SearcherTester):
+    @pytest.fixture
+    def model(self, api: RemoteAPI) -> CollectionSearcher:
+        return CollectionSearcher(api=api)
+
+    """Test collection search functionality only"""
+    @pytest.fixture
+    def collection(self, collections: list[CollectionModel], faker: Faker) -> CollectionModel:
+        return faker.random_element(collections)
+
+    @pytest.fixture
+    def collections(self, tracks: list[Track], faker: Faker) -> list[CollectionModel]:
+        return [
+            MockCollection(name=faker.sentence().rstrip("."), all_items=faker.random_elements(tracks))
+            for _ in range(faker.random_int(5, 10))
+        ]
+
+    @pytest.fixture
+    def item_results(self, faker: Faker) -> list[RemoteTrack]:
+        return [
+            RemoteTrack(
+                name=faker.name(),
+                uri=SimpleURI.create_random(Track.type))
+            for _ in range(faker.random_int(5, 15))
+        ]
+
+    @pytest.fixture
+    def query_results(self, faker: Faker) -> list[RemoteCollection]:
+        return [
+            MockRemoteCollection(
+                name=faker.name(),
+                uri=SimpleURI.create_random(MockRemoteCollection.type),
+                cursor=MockUrlCursor(url=faker.url()),
+            )
+            for _ in range(faker.random_int(5, 15))
+        ]
+
     async def test_search_from_result(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             items: list[Track],
-            query_results: list[RemoteTrack],
+            item_results: list[RemoteTrack],
             mock_query_item: Mock,
             mock_match_random: tuple[Mock, list, list, list],
             faker: Faker,
     ):
+        mock_query_item.return_value = item_results
         mock_match_random, matches, matched, unmatched = mock_match_random
 
         items_matched, items_unmatched = split_list(items, 2)
-        if len(query_results) < len(items_matched):
-            items_matched = items_matched[:len(query_results)]
-        items_matches = faker.random_elements(query_results, length=len(items_matched), unique=True)
+        if len(item_results) < len(items_matched):
+            items_matched = items_matched[:len(item_results)]
+        items_matches = faker.random_elements(item_results, length=len(items_matched), unique=True)
 
         valid = faker.random_elements(items_unmatched, unique=True)
         invalid = [item for item in items if item not in valid]
@@ -412,37 +424,41 @@ class TestItemSearcher(SearcherTester):
             mock_match_random=mock_match_random,
         )
 
+    def test_match_items(
+            self,
+            model: CollectionSearcher,
+            items: list[HasMutableURI],
+            item_results: list[RemoteResource],
+            mock_match_random: tuple[Mock, list, list, list],
+            faker: Faker,
+    ):
+        mock_match_random, matches, matched, unmatched = mock_match_random
 
-class TestCollectionSearcher(SearcherTester):
-    """Test collection search functionality only"""
-    @pytest.fixture
-    def collection(self, collections: list[CollectionModel], faker: Faker) -> CollectionModel:
-        return faker.random_element(collections)
+        valid = faker.random_elements(items, unique=True)
+        invalid = [item for item in items if item not in valid]
 
-    @pytest.fixture
-    def collections(self, tracks: list[Track], faker: Faker) -> list[CollectionModel]:
-        return [
-            MockCollection(name=faker.sentence().rstrip("."), all_items=faker.random_elements(tracks))
-            for _ in range(faker.random_int(5, 10))
-        ]
+        name = faker.name()
+        expected = SearchResult(name=name, unmatched=tuple(items), skipped=tuple(invalid))
+        assert model._match_items(items, [], skipped=invalid, name=name) == expected
 
-    @pytest.fixture
-    def query_results(self, faker: Faker) -> list[RemoteCollection]:
-        return [
-            MockRemoteCollection(
-                name=faker.name(),
-                uri=SimpleURI.create_random(MockRemoteCollection.type),
-                cursor=MockUrlCursor(url=faker.url()),
-            )
-            for _ in range(faker.random_int(5, 15))
-        ]
+        result = model._match_items(valid, item_results, skipped=invalid, name=name)
+        self.assert_random_match_result(
+            name=name,
+            items=valid,
+            result=result,
+            matches=matches,
+            matched=matched,
+            unmatched=unmatched,
+            skipped=invalid,
+            mock_match_random=mock_match_random,
+        )
 
     @patch.multiple(
         CollectionModel,
         __abstractmethods__=set(),
         _items=MagicMock(return_value=()),
     )
-    def test_collection_on_items_only(self, model: Searcher, collection: CollectionModel, faker: Faker):
+    def test_collection_on_items_only(self, model: CollectionSearcher, collection: CollectionModel, faker: Faker):
         assert isinstance(collection, ResourceModel) and isinstance(collection, CollectionModel)
         assert not model._should_search_on_items_only(collection)
         assert model._should_search_on_items_only(CollectionModel())  # not a resource model
@@ -456,7 +472,7 @@ class TestCollectionSearcher(SearcherTester):
         __abstractmethods__=set(),
         _items=MagicMock(return_value=()),
     )
-    def test_album_on_items_only(self, model: Searcher, tracks: list[Track], faker: Faker):
+    def test_album_on_items_only(self, model: CollectionSearcher, tracks: list[Track], faker: Faker):
         album = Album(name=faker.sentence().rstrip("."), compilation=False)
         for track in tracks:
             track.album = album
@@ -484,7 +500,7 @@ class TestCollectionSearcher(SearcherTester):
 
     async def test_extend_collection_with_reload(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             match: RemoteCollection,
             mock_collection_reload: Mock,
             mock_collection_extend: Mock,
@@ -498,7 +514,7 @@ class TestCollectionSearcher(SearcherTester):
 
     async def test_extend_collection_without_reload(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             match: RemoteCollection,
             mock_collection_reload: Mock,
             mock_collection_extend: Mock,
@@ -508,7 +524,9 @@ class TestCollectionSearcher(SearcherTester):
         mock_collection_reload.assert_not_called()
         mock_collection_extend.assert_called_once_with(model.api)
 
-    async def test_search_collections(self, model: Searcher, collections: list[MockCollection], faker: Faker):
+    async def test_search_collections(
+            self, model: CollectionSearcher, collections: list[MockCollection], faker: Faker
+    ):
         names = (collection.name for collection in collections)
 
         def _random_result(*_, **__) -> SearchResult:
@@ -525,31 +543,31 @@ class TestCollectionSearcher(SearcherTester):
             assert mock_search_collection.call_count == len(collections)
 
     @pytest.fixture
-    def mock_search_items_only(self, model: Searcher) -> Generator[Mock]:
+    def mock_search_items_only(self, model: CollectionSearcher) -> Generator[Mock]:
         with patch.object(model, "_should_search_on_items_only", return_value=False) as mock_items_only:
             yield mock_items_only
 
     @pytest.fixture
-    def mock_search_items(self, model: Searcher, faker: Faker) -> Generator[Mock]:
+    def mock_search_items(self, model: CollectionSearcher, faker: Faker) -> Generator[Mock]:
         result = SearchResult(name=faker.name())
         with patch.object(model, "_search_items", return_value=result) as mock_search_items:
             yield mock_search_items
 
     @pytest.fixture
-    def mock_search_from_result(self, model: Searcher, faker: Faker) -> Generator[Mock]:
+    def mock_search_from_result(self, model: CollectionSearcher, faker: Faker) -> Generator[Mock]:
         result = SearchResult(name=faker.name())
         with patch.object(model, "_search_from_result", return_value=result) as mock_search_from_result:
             yield mock_search_from_result
 
     @pytest.fixture
-    def mock_match_items(self, model: Searcher, match: RemoteCollection, faker: Faker) -> Generator[Mock]:
+    def mock_match_items(self, model: CollectionSearcher, match: RemoteCollection, faker: Faker) -> Generator[Mock]:
         result = SearchResult(name=faker.name())
         with patch.object(model, "_match_items", return_value=result) as mock_match:
             yield mock_match
 
     async def test_search_collection_on_items_only(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             collection: CollectionModel,
             mock_search_items_only: Mock,
             mock_query_item: Mock,
@@ -569,7 +587,7 @@ class TestCollectionSearcher(SearcherTester):
 
     async def test_search_collection_not_found(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             collection: CollectionModel,
             mock_search_items_only: Mock,
             mock_query_item: Mock,
@@ -590,7 +608,7 @@ class TestCollectionSearcher(SearcherTester):
 
     async def test_search_collection_found(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             collection: CollectionModel,
             match: RemoteCollection,
             mock_search_items_only: Mock,
@@ -612,7 +630,7 @@ class TestCollectionSearcher(SearcherTester):
 
     async def test_search_collection_keeps_searching_for_items(
             self,
-            model: Searcher,
+            model: CollectionSearcher,
             collection: MockCollection,
             tracks: list[Track],
             match: RemoteCollection,

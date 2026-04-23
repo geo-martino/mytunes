@@ -152,7 +152,7 @@ class TestStoreManager(BaseModelTester):
         mock_pause = mocker.spy(StorePausePage, "pause")
 
         inputs = ["r", "", "name artists", "r", "bad_tag", "r", "name bad_tag", ""] + [""] * total
-        with patch_input(iter(inputs)):
+        with patch_input(inputs):
             model.open_sites_for_items(unique_tracks)
 
         # 5 extra for 3*r input + 2*<Fields> input

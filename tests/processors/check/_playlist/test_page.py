@@ -279,7 +279,7 @@ class TestPlaylistManagement(BaseModelTester):
         model._playlists[playlist.uri] = playlist
 
         await model.refresh_playlist_items(playlist.uri)
-        assert playlist.total != len(initial)
+        assert playlist.total != len(initial)  # FIXME: flakey assertion - very rare
         assert playlist.tracks != initial
 
 
@@ -342,7 +342,7 @@ class TestPause:
         mock_print_links = mocker.spy(model, "_print_playlist_links")
         mock_print_items = mocker.spy(model, "_print_playlist_items")
 
-        with patch_input(iter(["l", playlist.name, "l", "invalid input", ""])):
+        with patch_input(["l", playlist.name, "l", "invalid input", ""]):
             await model.pause()
 
         assert mock_print_links.call_count == 2

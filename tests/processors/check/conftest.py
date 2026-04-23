@@ -14,7 +14,7 @@ from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibrar
     PlaylistBatchWriteEndpoints
 from mytunes.core.cursors import InitialCursor
 from mytunes.core.properties.order import Position
-from mytunes.core.properties.uri import HasImmutableURI, HasMutableURI
+from mytunes.core.properties.uri import HasImmutableURI, HasMutableURI, HasURI
 from processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.processors.utils import MockCollection
 from tests.remote import SimpleURI, MockUrlCursor, MockInitialCursor

@@ -79,7 +79,7 @@ class TestInputMatch(InputMatchTester, UniqueKeyTester):
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
     ):
-        with patch_input(iter(["na"])):
+        with patch_input(["na"]):
             result = await model.match(missing_items)
 
         assert not result.changed
@@ -99,7 +99,7 @@ class TestInputMatch(InputMatchTester, UniqueKeyTester):
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
     ):
-        with patch_input(iter(["ua"])):
+        with patch_input(["ua"]):
             result = await model.match(missing_items)
 
         assert not result.changed
@@ -119,7 +119,7 @@ class TestInputMatch(InputMatchTester, UniqueKeyTester):
             mock_match_item_with_playlist: Mock,
             mock_compare_uri_changes: Mock,
     ):
-        with patch_input(iter(["r", "r", "ra", "u", "n", "n", "s"])):
+        with patch_input(["r", "r", "ra", "u", "n", "n", "s"]):
             result = await model.match(missing_items)
 
         assert not result.changed

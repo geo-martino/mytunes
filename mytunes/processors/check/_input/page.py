@@ -12,7 +12,7 @@ type _ApiT = RemoteAPI
 
 
 class InputPage[API: RemoteAPI, CT: HasURI](CheckerPage[_ApiT, CT]):
-    name: str | None = Field(
+    name: str = Field(
         description="The name for this set of items.",
     )
     items: Sequence[CT] = Field(

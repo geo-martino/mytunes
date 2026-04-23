@@ -20,12 +20,12 @@ class TestInputPage(BaseModelTester):
         return InputPage(name=name, position=position, api=api, items=missing_items)
 
     async def test_pause(self, model: InputPage, faker: Faker):
-        with patch_input(iter(["y"])):
+        with patch_input(["y"]):
             assert await model.pause()
-        with patch_input(iter([faker.sentence(), "yes"])):
+        with patch_input([faker.sentence(), "yes"]):
             assert await model.pause()
 
-        with patch_input(iter(["n"])):
+        with patch_input(["n"]):
             assert not await model.pause()
-        with patch_input(iter([faker.sentence(), "no"])):
+        with patch_input([faker.sentence(), "no"]):
             assert not await model.pause()
