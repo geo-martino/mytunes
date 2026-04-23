@@ -152,19 +152,17 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         name = colored(self.name, "blue", attrs=["bold"])
         return f"{name}: {message}"
 
-    def _set_uri(self, item: IT, value: str | None) -> bool:
+    def _set_uri(self, item: IT, value: str | None) -> str | None:
         try:
             item.uri = self.page.api.create_uri(value=value, kind=item.type)
             self._log_debug(f"Setting {item.type} URI: {str(item.uri)}", item=item, pad="<")
-            return True
+            return
         except (ValidationError, MyTunesTypeError) as exc:
-            self._log_debug(f"Invalid URI: {str(exc)}", item=item)
-        return False
+            return str(exc)
 
-    def _set_unavailable_uri(self, item: IT) -> bool:
+    def _set_unavailable_uri(self, item: IT) -> str | None:
         return self._set_uri(item, value=None)
 
-    def _drop_uri(self, item: IT) -> bool:
+    def _drop_uri(self, item: IT) -> None:
         self._log_debug(f"Marking {item.type} as missing", item=item, pad="<")
         del item.uri
-        return True

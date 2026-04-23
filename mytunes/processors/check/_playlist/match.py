@@ -213,6 +213,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
         input_requested = option is None
 
         while option or (option := self._get_user_input(name, formatter=formatter)):
+            log = option
             match option.casefold():
                 case "p":
                     info = self.item_formatter.format(item)
@@ -245,11 +246,11 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
                     if self._match_item_with_playlist(item, others=others):
                         return option
 
-                case value if self._set_uri(item, value=value):
+                case value if (log := self._set_uri(item, value=value)) is None:
                     break
 
                 case _:
-                    self._log_unrecognised_input(option)
+                    self._log_unrecognised_input(log)
 
             option = None
 

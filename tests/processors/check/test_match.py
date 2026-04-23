@@ -153,12 +153,12 @@ class TestBaseInputMatch(BaseModelTester):
 
     def test_set_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
         uri = SimpleURI.create_random(kind=item.type)
-        assert model._set_uri(item, str(uri))
+        assert model._set_uri(item, str(uri)) is None
         assert item.uri == uri
         assert item.has_uri is True
 
     def test_set_uri_skips_invalid_value(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
-        assert not model._set_uri(item, "not a uri")
+        assert isinstance(model._set_uri(item, "not a uri"), str)
         assert item.uri is None
         assert item.has_uri is None
 
@@ -169,18 +169,18 @@ class TestBaseInputMatch(BaseModelTester):
 
         uri = SimpleURI.create_random(kind=other_type)
 
-        assert not model._set_uri(item, str(uri))
+        assert isinstance(model._set_uri(item, str(uri)), str)
         assert item.uri is None
         assert item.has_uri is None
 
     def test_set_unavailable_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
-        assert model._set_unavailable_uri(item)
+        assert model._set_unavailable_uri(item) is None
         assert item.uri is None
         assert item.has_uri is False
 
     def test_drop_uri(self, model: BaseInputMatch, item: HasNameAndMutableURI, faker: Faker):
         item.uri = SimpleURI.create_random(kind=item.type)
 
-        assert model._drop_uri(item)
+        assert model._drop_uri(item) is None
         assert item.uri is None
         assert item.has_uri is None

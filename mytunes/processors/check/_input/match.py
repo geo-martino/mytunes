@@ -56,6 +56,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
         text = f"{name} | {uri}"
 
         while option or (option := self._get_user_input(text, formatter=formatter)):
+            log = option
             match option.casefold():
                 case "u":
                     self._set_unavailable_uri(item)
@@ -73,10 +74,10 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
                     self._drop_uri(item)
                     return option
 
-                case value if self._set_uri(item, value=value):
+                case value if (log := self._set_uri(item, value=value)) is None:
                     break
 
                 case _:
-                    self._log_unrecognised_input(option)
+                    self._log_unrecognised_input(log)
 
             option = None
