@@ -51,15 +51,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
     async def _match_item_with_input(
             self, item: IT, others: Sequence[IT], option: str | None, formatter: LogFormatter
     ) -> str | None:
-        name = item.name if isinstance(item, HasName) else str(id(item))
-        if item.has_uri and isinstance(uri := item.uri, URI):
-            url = colored(str(uri.public_url), "blue")
-            uri = colored(uri, "green")
-            log_parts = [uri, url]
-        else:
-            log_parts = [colored("NO MATCH", "red")]
-
-        self._logger.print(" | ".join((formatter.get_value(name), *log_parts)))
+        self._log_match(item, formatter)
 
         while option or (option := self._get_user_input(name, formatter=formatter)):
             log = option
@@ -87,3 +79,16 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
                     self._log_unrecognised_input(log)
 
             option = None
+
+    def _log_match(self, item: IT, formatter: LogFormatter) -> None:
+        name = item.name if isinstance(item, HasName) else str(id(item))
+        sep = colored(" | ", "white", attrs=["bold"])
+
+        if item.has_uri and isinstance(uri := item.uri, URI):
+            url = colored(str(uri.public_url), "blue")
+            uri = colored(uri, "green")
+            log_parts = [uri, url]
+        else:
+            log_parts = [colored("NO MATCH", "red")]
+
+        self._logger.print(sep.join((formatter.get_value(name), *log_parts)))
