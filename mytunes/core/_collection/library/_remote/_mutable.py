@@ -132,14 +132,14 @@ class RemoteMutableLibrary[
         """
         self._logger.info(f"Synchronising {self._log_name} library", header=1)
 
-        results: list[SyncRemoteResult] = []
+        results: list[SyncRemoteResult | None] = []
         with self._progress:
             results.extend(await self.sync_playlists(kind=kind, dry_run=dry_run))
             results.append(await self.sync_tracks(kind=kind, dry_run=dry_run))
             results.append(await self.sync_artists(kind=kind, dry_run=dry_run))
             results.append(await self.sync_albums(kind=kind, dry_run=dry_run))
 
-        return tuple(results)
+        return tuple(tuple(filter(None, results)))
 
     @validate_call
     def log_sync_results(self, results: Sequence[SyncRemoteResult]) -> None:
@@ -364,8 +364,9 @@ class RemoteMutableLibrary[
         :return: The results of the restore as a mapping of item type to either a sync result
             or a mapping of playlist name to a sync result.
         """
-        results: list[SyncRemoteResult] = []
+        self._logger.info(f"Restoring {self._log_name} library", header=1)
 
+        results: list[SyncRemoteResult | None] = []
         with self._progress:
             if "playlists" in backup:
                 results.extend(await self.restore_playlists(backup["playlists"], dry_run=dry_run))
@@ -376,7 +377,7 @@ class RemoteMutableLibrary[
             if "albums" in backup:
                 results.append(await self.restore_albums(backup["albums"], dry_run=dry_run))
 
-        return tuple(results)
+        return tuple(filter(None, results))
 
     @staticmethod
     def _extract_uris_from_backup(backup: Any, key: Literal["tracks", "artists", "albums"]) -> tuple[str | URI, ...]:
