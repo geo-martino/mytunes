@@ -10,14 +10,11 @@ from mytunes.core._collection.playlist import Playlist
 from mytunes.core._item.album import Album
 from mytunes.core._item.artist import Artist
 from mytunes.core.properties.name import HasName
+from tests.remote import URI_TYPES
 
 
 class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):
-    type: ClassVar[str] = choice((
-        Album.type,
-        Artist.type,
-        Playlist.type,
-    ))
+    type: ClassVar[str] = choice(URI_TYPES)
 
     all_items: list = []
 

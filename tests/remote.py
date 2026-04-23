@@ -14,8 +14,9 @@ from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import Playlist, RemotePlaylist
 from mytunes.core._item.album import Album, RemoteAlbum
 from mytunes.core._item.artist import Artist, RemoteArtist
+from mytunes.core._item.genre import Genre
 from mytunes.core._item.track import Track, RemoteTrack
-from mytunes.core._item.user import RemoteUser
+from mytunes.core._item.user import RemoteUser, User
 from mytunes.core.api import HasEndpoints, RemoteAuthoriser, BatchReadAllEndpoints, BatchWriteEndpoints, \
     BatchReadEndpoints, HasLibraryEndpoints, RemoteAPI
 from mytunes.core.api.items import HasTrackEndpoints, HasArtistEndpoints, HasAlbumEndpoints
@@ -51,10 +52,17 @@ class CallbackResult:
         return lambda *_, **__: CallbackResult(body=body)
 
 
+URI_TYPES = (Track.type, Album.type, Artist.type, Playlist.type, Genre.type, User.type)
+
+
 @final
 class SimpleURI(URI):
     __final__ = True
     _source = "remote"
+
+    @property
+    def _valid_types(self) -> set[str]:
+        return set(URI_TYPES)
 
     @property
     def source(self) -> str:
@@ -71,7 +79,7 @@ class SimpleURI(URI):
     @classmethod
     def create_random(cls, kind: str | None = None) -> Self:
         if not kind:
-            kind = choice((Track.type, Album.type, Artist.type, Playlist.type))
+            kind = choice(URI_TYPES)
         value = Faker().pystr()
         return cls.from_id(value=value, kind=kind)
 
@@ -108,11 +116,7 @@ class SimpleURI(URI):
 
 class MockRemoteResource(RemoteResource[SimpleURI]):
     source: ClassVar[str] = "Remote"
-    type: ClassVar[str] = choice((
-        RemoteTrack.type,
-        RemoteAlbum.type,
-        RemoteArtist.type,
-    ))
+    type: ClassVar[str] = choice(URI_TYPES)
 
     async def reload(self, api: HasEndpoints) -> Self:
         return self

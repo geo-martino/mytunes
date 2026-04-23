@@ -15,6 +15,7 @@ from mytunes.exception import MyTunesTypeError, MyTunesValidationError
 from ..._base import BaseModel, RootModel, makecls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute
+from ...logger import Logger
 
 
 # noinspection PyAbstractClass
@@ -56,6 +57,23 @@ class URI(RootModel[str]):
             raise MyTunesValidationError(
                 f"Given URI is not valid for the {self._source!r} service. Found: {self.source!r}"
             )
+        return self
+
+    @property
+    def _valid_types(self) -> set[str]:
+        return {kls.type for kls in ResourceModel.registered_submodels}
+
+    @model_validator(mode="after")
+    def _validate_type(self) -> Self:
+        if not isinstance(self.root, str):
+            raise MyTunesValidationError(f"URI root must be a string, got {type(self.root).__name__!r}")
+
+        if self.type not in self._valid_types:
+            types = Logger.format_list_to_string(sorted(self._valid_types))
+            raise MyTunesValidationError(
+                f"Given URI is not for an accepted resource type. Accepted types: {types} | Found: {self.type!r}"
+            )
+
         return self
 
     @property

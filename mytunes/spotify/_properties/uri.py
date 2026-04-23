@@ -3,6 +3,11 @@ from typing import Self, Any, final, ClassVar
 from pydantic import field_validator, model_validator
 from yarl import URL
 
+from mytunes.core._collection.playlist import Playlist
+from mytunes.core._item.album import Album
+from mytunes.core._item.artist import Artist
+from mytunes.core._item.track import Track
+from mytunes.core._item.user import User
 from mytunes.core.properties.uri import URI
 from mytunes.exception import MyTunesValidationError
 from mytunes.spotify._url import API_URL, PUBLIC_URL
@@ -93,6 +98,10 @@ class SpotifyURIBase(URI):
 class SpotifyResourceURI(SpotifyURIBase):
     __final__ = True
 
+    @property
+    def _valid_types(self) -> set[str]:
+        return {Track.type, Album.type, Artist.type, Playlist.type}
+
     @field_validator("root", mode="after")
     @classmethod
     def _validate_id_length(cls, uri: str) -> str:
@@ -101,23 +110,15 @@ class SpotifyResourceURI(SpotifyURIBase):
             raise MyTunesValidationError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
         return uri
 
-    @model_validator(mode="after")
-    def _type_is_not_user(self) -> Self:
-        if self.type == "user":
-            raise MyTunesValidationError("Spotify user URIs are not allowed for this model.")
-        return self
-
 
 @final
 class SpotifyUserURI(SpotifyURIBase):
     __final__ = True
 
+    @property
+    def _valid_types(self) -> set[str]:
+        return {User.type}
+
     @classmethod
     def from_id(cls, value: Any, kind: str = "user") -> Self:
         return super().from_id(value, kind)
-
-    @model_validator(mode="after")
-    def _type_is_user(self) -> Self:
-        if self.type != "user":
-            raise MyTunesValidationError("Only Spotify user URIs are allowed for this model.")
-        return self

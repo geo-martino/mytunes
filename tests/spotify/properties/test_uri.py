@@ -89,7 +89,7 @@ class TestSpotifyResourceURI(SpotifyURITester):
             SpotifyResourceURI(f"spotify:{kind}:{faker.pystr(1, 21)}")
 
     def test_validate_type_is_not_user(self, id_value: str, faker: Faker):
-        with pytest.raises(ValidationError, match="Spotify user URIs are not allowed"):
+        with pytest.raises(ValidationError, match="accepted resource type"):
             SpotifyResourceURI(f"spotify:user:{id_value}")
 
 
@@ -104,5 +104,5 @@ class TestSpotifyUserURI(SpotifyURITester):
         return faker.pystr()
 
     def test_validate_type_is_user(self, id_value: str, kind: str, faker: Faker):
-        with pytest.raises(ValidationError, match="Only Spotify user URIs are allowed"):
+        with pytest.raises(ValidationError, match="accepted resource type"):
             SpotifyUserURI(f"spotify:{kind}:{id_value}")
