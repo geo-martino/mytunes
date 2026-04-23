@@ -54,9 +54,15 @@ class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager
 
     @contextmanager
     def _pause_progress(self) -> Generator[None]:
-        self._progress.stop()
+        restart = False
+        if not self._progress.live.is_started:
+            self._progress.stop()
+            restart = True
+
         yield
-        self._progress.start()
+
+        if restart:
+            self._progress.start()
 
     def _run_tasks[T](
             self,
