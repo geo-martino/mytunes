@@ -542,11 +542,32 @@ class LocalTrack[FT: FileType](
         :return: The tags that were updated on the file.
         """
         tags = self.to_tags(include=include, exclude=exclude, context=context)
+        tags = self._drop_matching_tags(file, tags)
         if not replace:
-            tags = {k: v for k, v in tags.items() if k not in file.tags}
+            tags = self._drop_existing_tags(file, tags)
 
-        file.update(tags)
+        if tags:
+            file.update(tags)
         return tags
+
+    @staticmethod
+    def _drop_matching_tags(file: FT, tags: Mapping[str, Any]) -> dict[str, Any]:
+        clean: dict[str, Any] = {}
+        for key, value in tags.items():
+            if key not in file:
+                clean[key] = value
+
+            existing = file.tags.get(key)
+            if value == existing:
+                continue
+
+            clean[key] = value
+
+        return clean
+
+    @staticmethod
+    def _drop_existing_tags(file: FT, tags: Mapping[str, Any]) -> dict[str, Any]:
+        return {k: v for k, v in tags.items() if k not in file.tags}
 
     def to_tags(
             self,

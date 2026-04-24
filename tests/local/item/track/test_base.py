@@ -348,7 +348,32 @@ class TestLocalTrack(UniqueKeyTester):
         with patch.object(LocalTrack, "to_tags", return_value=tags.copy()) as mock_to_tags:
             yield mock_to_tags
 
-    def test_update_and_replace(
+    @pytest.fixture
+    def mock_update_file(self, file: mutagen.FileType, mocker: MockerFixture) -> Mock:
+        return mocker.spy(file, "update")
+
+    def test_update_and_replace_changed(
+            self,
+            adapter: TypeAdapter[LocalTrack],
+            file: mutagen.FileType,
+            tags: dict[str, Any],
+            include_tags: Sequence[str],
+            exclude_tags: Sequence[str],
+            context: TagContext,
+            mock_to_tags: Mock,
+            mock_update_file: Mock,
+    ):
+        file.tags = dict(sample(list(tags.items()), k=4))
+        expected = {k: v for k, v in tags.items() if k not in file.tags}
+        model = adapter.validate_python(tags | dict(path=file.filename))
+
+        result = model.update(file, include=include_tags, exclude=exclude_tags, context=context, replace=True)
+        assert result == expected
+
+        mock_to_tags.assert_called_once_with(include=include_tags, exclude=exclude_tags, context=context)
+        mock_update_file.assert_called_with(expected)  # only updates differing tags
+
+    def test_update_and_replace_unchanged(
             self,
             model: LocalTrack,
             file: mutagen.FileType,
@@ -356,14 +381,13 @@ class TestLocalTrack(UniqueKeyTester):
             exclude_tags: Sequence[str],
             context: TagContext,
             mock_to_tags: Mock,
-            mocker: MockerFixture,
+            mock_update_file: Mock,
     ):
-        mock_update = mocker.spy(file, "update")
-
-        model.update(file, include=include_tags, exclude=exclude_tags, context=context, replace=True)
+        result = model.update(file, include=include_tags, exclude=exclude_tags, context=context, replace=True)
+        assert not result
 
         mock_to_tags.assert_called_once_with(include=include_tags, exclude=exclude_tags, context=context)
-        mock_update.assert_called_once_with(mock_to_tags.return_value)
+        mock_update_file.assert_not_called()  # no tags were changed from the file so no update
 
     def test_update_no_replace(
             self,
@@ -371,18 +395,17 @@ class TestLocalTrack(UniqueKeyTester):
             file: mutagen.FileType,
             tags: dict[str, Any],
             mock_to_tags: Mock,
-            mocker: MockerFixture,
+            mock_update_file: Mock,
     ):
         file.tags = dict(sample(list(tags.items()), k=4))
         expected = {k: v for k, v in tags.items() if k not in file.tags}
         model = adapter.validate_python(tags | dict(path=file.filename))
 
-        mock_update = mocker.spy(file, "update")
-
-        model.update(file, replace=False)
+        result = model.update(file, replace=False)
+        assert result == expected
 
         mock_to_tags.assert_called_once_with(include=(), exclude=(), context=None)
-        mock_update.assert_called_once_with(expected)
+        mock_update_file.assert_called_once_with(expected)
 
     @pytest.fixture
     def merge_tracks(self, tracks: list[LocalTrack], faker: Faker) -> tuple[LocalTrack, LocalTrack]:
