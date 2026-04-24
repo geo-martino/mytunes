@@ -157,6 +157,8 @@ class Result(BaseModel):
         if isinstance(results, Mapping):
             results = results.items()
 
+        results = sorted(results, key=lambda x: x[0].casefold())
+
         # take key when not a Result to allow for separating lines
         rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results]
         col_count = max(map(len, rows)) if rows else 0
