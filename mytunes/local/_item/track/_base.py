@@ -641,7 +641,7 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
         """
         async def _save_track(track: LocalTrack) -> tuple[Path, dict[str, Any]]:
             async with self.concurrency:
-                file = await track.load()
+                file = await track.load_file(track.path)
                 tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
                 if tags:
                     await track.save(dry_run=dry_run, file=file)

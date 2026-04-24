@@ -174,6 +174,10 @@ class Logger(logging.Logger):
         if text:
             text = text.strip()
 
+        # FIXME: this gives odd behaviour when used with readline
+        #  hitting backspace will delete the prompt as Prompt prints the text to stdout before calling input()
+        #  fix is to send the text to input() directly instead
+        #  https://stackoverflow.com/questions/74741650/python-readline-delete-the-printed-content-line-on-double-clicking-backspace
         Prompt.prompt_suffix = " "
         inp = Prompt.ask(text, choices=choices, default="" if choices else ..., show_default=False).strip()
         self.debug(f"User input: {inp}")

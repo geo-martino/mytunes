@@ -455,7 +455,7 @@ class TestLocalTrack(UniqueKeyTester):
 
     @pytest.fixture
     def mock_load(self, file: mutagen.FileType, tracks: list[LocalTrack]) -> Generator[Mock]:
-        with patch.object(LocalTrack, "load", return_value=file, new_callable=AsyncMock) as mock_load:
+        with patch.object(LocalTrack, "load_file", return_value=file, new_callable=AsyncMock) as mock_load:
             yield mock_load
             assert mock_load.call_count == len(tracks)
 
