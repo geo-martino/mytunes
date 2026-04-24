@@ -28,7 +28,7 @@ from ._playlist.page import PlaylistsPage
 from ...annotation import ResourceModel
 
 
-class Checker[API: RemoteAPI](Processor, HasAPI[API], HasProgress, HasAsyncOperations):
+class Checker[API: RemoteAPI](Processor, HasAPI[API], HasAsyncOperations, HasProgress):
     api: API = Field(
         description="The API to use for the associated remote service.",
     )

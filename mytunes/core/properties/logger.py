@@ -12,7 +12,7 @@ from mytunes.logger import Logger
 from ..._base import BaseModel
 
 
-class HasLogger(BaseModel):
+class HasLogger:
     """Represents a resource that has a logger."""
 
     @cached_property
@@ -20,7 +20,7 @@ class HasLogger(BaseModel):
         return logging.getLogger(__name__)
 
 
-class HasProgress(BaseModel, AbstractContextManager, AbstractAsyncContextManager):
+class HasProgress(AbstractContextManager, AbstractAsyncContextManager):
     """Represents a resource that has a progress bar logger."""
     _progress: ClassVar[Progress] = Progress(
         SpinnerColumn(),

@@ -6,11 +6,11 @@ from mytunes.core.properties.logger import HasProgress
 from tests.testers import BaseModelTester
 
 
-class TestHasProgress(BaseModelTester):
+class TestHasProgress:
     @pytest.fixture
     def model(self) -> HasProgress:
         return HasProgress()
-    
+
     def test_run_tasks_sync_gets_results(self, model: HasProgress):
         tasks = [partial(lambda x: x, i) for i in range(10)]
         task_id = model._progress.add_task("Test", total=len(tasks))
