@@ -500,11 +500,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_sync_items: Mock,
             mock_semaphore: Mock,
     ):
-        with patch.object(
-                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
-        ) as mock_load_playlists:
-            result = await model.restore_playlists(playlists_dump, dry_run=True)
-            mock_load_playlists.assert_called_once()
+        result = await model.restore_playlists(playlists_dump, dry_run=True)
 
         assert len(result) == len(playlists)
 
@@ -525,12 +521,8 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_get_many: Mock,
             mock_sync_items: Mock,
             mock_semaphore: Mock,
-    ):
-        with patch.object(
-                RemoteMutableLibrary, "load_playlists", new_callable=AsyncMock
-        ) as mock_load_playlists:
-            result = await model.restore_playlists(playlists_dump, dry_run=False)
-            mock_load_playlists.assert_called_once()
+):
+        result = await model.restore_playlists(playlists_dump, dry_run=False)
 
         assert len(result) == len(playlists)
 

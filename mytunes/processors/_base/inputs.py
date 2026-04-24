@@ -72,6 +72,8 @@ class OptionsProcessor(InputProcessor):
 
         if header is True and self._header:
             header = self._header
+        elif not isinstance(header, str):
+            header = ""
 
         header = f"{header}\n\n" if header else ""
         sub_header = colored("Enter one of the following", "cyan") + ":\n"
@@ -103,7 +105,7 @@ class OptionsProcessor(InputProcessor):
         Boolean return value indicates whether the option was handled.
         Control flow exceptions raised always need to be handled by child classes if supported.
         """
-        match option:
+        match option.casefold():
             case "h":
                 self._print_help_text(header=False)
                 return True
