@@ -13,7 +13,7 @@ from mytunes.core.properties.uri import HasURI, HasMutableURI
 from mytunes.processors.check._match import BaseMatch, BaseInputMatch
 from mytunes.processors.check._page import CheckerPage
 from mytunes.result import LogFormatter
-from processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
+from tests.processors.check._playlist.utils import HasNameAndImmutableURI, HasNameAndMutableURI
 from tests.remote import SimpleURI, URI_TYPES
 from tests.testers import BaseModelTester
 

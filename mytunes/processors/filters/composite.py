@@ -146,12 +146,6 @@ class _IncludeExcludeFilter[FT: str, IT, IF: Filter, EF: Filter](CompositeFilter
 
         return IncludeExcludeResult(included=included, excluded=excluded)
 
-    def __eq__(self, item: Any):
-        return isinstance(item, type(self)) and all((
-            self.include == item.include,
-            self.exclude == item.exclude
-        ))
-
 
 @final
 class IncludeExcludeFilter[IT, IF: Filter, EF: Filter](
@@ -264,11 +258,3 @@ class GroupFilter[IT, IF: Filter, EF: Filter](
             item for item in values
             if item not in matched and hasattr(item, self.group_by) and getattr(item, self.group_by) in tag_values
         )
-
-    def __eq__(self, item: Any):
-        return isinstance(item, type(self)) and all((
-            self.include == item.include,
-            self.exclude == item.exclude,
-            self.compare == item.compare,
-            self.group_by == item.group_by,
-        ))

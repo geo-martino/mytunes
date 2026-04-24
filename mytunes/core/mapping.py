@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashable, Collection, Sequence
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Hashable, Sequence
 from typing import Self, Any, get_args
 
 from pydantic import GetCoreSchemaHandler, validate_call

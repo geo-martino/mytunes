@@ -1,6 +1,6 @@
 from typing import final, Self, Annotated
 
-from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator, OnErrorOmit
+from pydantic import Field, AliasPath, PositiveInt, computed_field, model_validator
 
 from mytunes.core.album import RemoteAlbumCollection
 from mytunes.core.sequence import UniqueSequence

@@ -7,8 +7,8 @@ from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasMutableURI
 from mytunes.processors.check._input.page import InputPage
-from testers import BaseModelTester
-from utils import patch_input
+from tests.testers import BaseModelTester
+from tests.utils import patch_input
 
 
 class TestInputPage(BaseModelTester):

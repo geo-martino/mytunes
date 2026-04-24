@@ -22,7 +22,6 @@ from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADA
 from mytunes.local._collection.playlist.result import LoadPlaylistResult, SavePlaylistResult
 from mytunes.logger import STAT
 from mytunes.processors.sort import ItemSorter
-from mytunes.result import Result
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 
 

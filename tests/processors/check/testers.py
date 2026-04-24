@@ -9,10 +9,10 @@ from pytest_mock import MockerFixture
 from mytunes.core.properties.uri import URI
 from mytunes.processors._flow import QuitImmediately
 from mytunes.processors.check._match import BaseInputMatch
-from processors.check._playlist.utils import HasNameAndMutableURI
-from remote import SimpleURI
+from tests.processors.check._playlist.utils import HasNameAndMutableURI
+from tests.remote import SimpleURI
 from tests.testers import BaseModelTester
-from utils import patch_input
+from tests.utils import patch_input
 
 
 class InputMatchTester(BaseModelTester, metaclass=ABCMeta):

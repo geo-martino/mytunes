@@ -9,8 +9,8 @@ from mytunes.core._collection.playlist import RemoteMutablePlaylist
 from mytunes.processors.check._playlist.match import InputMatch
 from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.match import Matcher
-from processors.check.testers import InputMatchTester
 from tests.processors.check._playlist.utils import HasNameAndMutableURI
+from tests.processors.check.testers import InputMatchTester
 from tests.remote import SimpleURI
 from tests.testers import UniqueKeyTester
 from tests.utils import split_list, patch_input

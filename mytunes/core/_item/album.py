@@ -1,6 +1,6 @@
-from typing import ClassVar, Annotated, Self, Any
+from typing import ClassVar, Annotated, Self
 
-from pydantic import Field, field_validator, computed_field, validate_call, OnErrorOmit
+from pydantic import Field, field_validator, computed_field, validate_call
 
 from mytunes.core._item.artist import HasArtists, Artist, RemoteArtist
 from mytunes.core._item.genre import HasGenres, Genre, RemoteGenre

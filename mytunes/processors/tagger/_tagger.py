@@ -1,6 +1,6 @@
-from collections.abc import Sequence, Collection, Iterable, Mapping
+from collections.abc import Sequence, Iterable
 from functools import partial
-from typing import Union, Annotated, Self
+from typing import Union, Annotated
 
 from pydantic import AliasChoices, Field, OnErrorOmit, validate_call
 

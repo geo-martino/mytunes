@@ -7,7 +7,7 @@ from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasMutableURI
 from mytunes.processors.check._input.match import InputMatch
 from mytunes.processors.check._input.page import InputPage
-from processors.check.testers import InputMatchTester
+from tests.processors.check.testers import InputMatchTester
 
 
 class TestInputMatch(InputMatchTester):

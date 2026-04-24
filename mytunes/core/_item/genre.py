@@ -1,6 +1,6 @@
-from typing import ClassVar, Annotated, Self, Any
+from typing import ClassVar, Annotated, Self
 
-from pydantic import Field, field_validator, validate_call, OnErrorOmit
+from pydantic import Field, field_validator, validate_call
 
 from mytunes._types import StrippedString
 from mytunes.core.api import ItemReadEndpoints

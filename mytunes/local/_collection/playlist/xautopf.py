@@ -625,7 +625,7 @@ class _XMLConditions(_XMLBaseModel):
 
         return ComparerFilter[LocalTrack](
             comparers=comparers,
-            nested_filteres=nested,
+            nested=nested,
             match_all=self.combine_method == "All",
             combine_all=combine
         )

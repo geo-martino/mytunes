@@ -21,7 +21,7 @@ from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.formatter import CollectionFormatter
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
-from utils import patch_input
+from tests.utils import patch_input
 
 
 @pytest.fixture

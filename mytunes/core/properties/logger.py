@@ -9,7 +9,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskPr
     TimeRemainingColumn, TaskID
 
 from mytunes.logger import Logger
-from ..._base import BaseModel
 
 
 class HasLogger:

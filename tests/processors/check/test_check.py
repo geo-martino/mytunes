@@ -23,7 +23,7 @@ from mytunes.processors.check._playlist.page import PlaylistsPage
 from mytunes.processors.check.result import CheckResult
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
-from utils import patch_input
+from tests.utils import patch_input
 
 
 class CheckerTester(BaseModelTester):

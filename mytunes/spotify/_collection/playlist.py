@@ -2,7 +2,7 @@ import sys
 from collections.abc import MutableMapping, Mapping
 from typing import final, Annotated, Self, Literal, Any
 
-from pydantic import AliasPath, Field, model_validator, OnErrorOmit
+from pydantic import AliasPath, Field, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 

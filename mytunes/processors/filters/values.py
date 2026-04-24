@@ -45,9 +45,6 @@ class _ValueFilter[FT: str, IT: Any](Filter[FT, IT]):
     def __contains__(self, item: Any):
         return item in self.values
 
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, type(self)) and self.values == other.values
-
 
 @final
 class ValueFilter[IT: Any](_ValueFilter[Literal["value", "values"], IT]):

@@ -1,6 +1,6 @@
-from typing import ClassVar, Self, Annotated, Any
+from typing import ClassVar, Self, Annotated
 
-from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call, OnErrorOmit
+from pydantic import Field, model_validator, PositiveInt, computed_field, PositiveFloat, validate_call
 
 from mytunes.core._item.album import HasAlbum, Album, RemoteAlbum
 from mytunes.core._item.artist import HasArtists, Artist, RemoteArtist

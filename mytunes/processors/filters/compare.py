@@ -20,12 +20,12 @@ class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
         description="Comparers to filter against.",
         default_factory=tuple,
     )
-    nested: Annotated[Sequence[Self | None], TO_TUPLE] | None = Field(
+    nested: Annotated[Sequence[Self | None], TO_TUPLE] = Field(
         description=(
             "Additional filters to apply in conjunction with comparers. "
             "Must match the comparers 1-to-1."
         ),
-        default=None,
+        default_factory=tuple,
         validation_alias="filters",
     )
     match_all: bool = Field(
@@ -55,7 +55,7 @@ class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
 
     @model_validator(mode="after")
     def _validate_lengths_match(self) -> Self:
-        if self.nested is None:
+        if not self.nested:
             return self
 
         if len(self.comparers) != len(self.nested):
@@ -63,6 +63,8 @@ class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
                 f"The number of comparers must match the number of nested filters when provided: "
                 f"{len(self.comparers)} != {len(self.nested)}"
             )
+
+        return self
 
     @property
     def ready(self) -> bool:
@@ -83,10 +85,3 @@ class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
             matched = (matched and match) if self.match_all else (matched or match)
 
         return matched
-
-    def __eq__(self, item: Any):
-        return isinstance(item, type(self)) and all((
-            self.comparers == item.comparers,
-            self.match_all == item.match_all,
-            self.combine_all == item.combine_all,
-        ))

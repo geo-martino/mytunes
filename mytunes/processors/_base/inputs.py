@@ -1,6 +1,6 @@
 import textwrap
 from abc import abstractmethod
-from collections.abc import Sequence, Iterable
+from collections.abc import Iterable
 from typing import ClassVar
 
 from pydantic import Field

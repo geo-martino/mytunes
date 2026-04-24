@@ -1,6 +1,5 @@
 import re
 from random import choice
-from typing import Any
 
 import pydantic
 import pytest

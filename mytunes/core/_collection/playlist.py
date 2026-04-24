@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload, Any
 
-from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator, OnErrorOmit
+from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import ValidationInfo
 

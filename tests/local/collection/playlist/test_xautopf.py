@@ -532,7 +532,7 @@ class TestXMLConditions(BaseModelTester):
     def model(self) -> _XMLConditions:
         return _XMLConditions()
 
-    def test_build_comparers(self, model: _XMLConditions, faker: Faker):
+    def test_build_filter(self, model: _XMLConditions, faker: Faker):
         condition1 = _XMLCondition(
             field="TrackNo",
             comparison="IsIn",

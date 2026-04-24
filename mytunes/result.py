@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
-from pydantic import ConfigDict, Field, PositiveInt, validate_call
+from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
 from tabulate import tabulate
 from termcolor import colored
