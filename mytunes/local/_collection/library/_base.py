@@ -152,6 +152,7 @@ class LocalLibrary(
         if not (paths := set(self._track_paths)):
             return 0
 
+        self._logger.print()
         self._logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
 
         task_id = self._progress.add_task(
@@ -240,6 +241,7 @@ class LocalLibrary(
         if not (paths := set(self._playlist_paths)):
             return tuple()
 
+        self._logger.print()
         self._logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
 
         task_id = self._progress.add_task(

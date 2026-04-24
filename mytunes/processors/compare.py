@@ -316,11 +316,3 @@ class Comparer(DynamicProcessor):
         if actual is None or expected is None:
             return False
         return bool(re.search(expected, str(actual), flags=re.I))
-
-    def __eq__(self, item: Any):
-        return isinstance(item, type(self)) and all((
-            self.condition == item.condition,
-            self.expected == item.expected,
-            self.field == item.field,
-            self.reference_required == item.reference_required,
-        ))

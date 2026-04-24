@@ -157,7 +157,7 @@ class URI(RootModel[str]):
     def __hash__(self) -> int:
         return hash(self.root)
 
-    def __eq__(self, other: str | URI):
+    def __eq__(self, other: str | URI) -> bool:
         if self is other:
             return True
         if isinstance(other, URI):
@@ -203,7 +203,7 @@ class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
         """
         raise NotImplementedError
 
-    def __eq__(self, other: HasURI):
+    def __eq__(self, other: HasURI) -> bool:
         if not isinstance(other, HasURI) or (self.uri is None and other.uri is None):
             return False
         if self is other:
