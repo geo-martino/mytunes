@@ -184,9 +184,3 @@ class M3U(LocalPlaylist[PathFilter]):
 
         final_paths = list(map(Path, self.path_mapper.deserialise_many(self.tracks, check_existence=False)))
         return SyncM3UResult.from_paths(self.name, initial=start_paths, final=final_paths)
-
-    @validate_call
-    def log_save(self, result: SyncM3UResult) -> None:
-        """Log the given results of matching tracks."""
-        table = SyncM3UResult.generate_table(results={self.name: result})
-        self._logger.stat(table, new_line_start=True, new_line_end=True)

@@ -129,7 +129,7 @@ class LocalLibrary(
         errors = list(map(lambda err: colored(err, "red"), sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
-        self._logger.warning(log, new_line_start=True, new_line_end=True)
+        self._logger.warning(log, new_line_start=True)
         self.errors.clear()
 
     ###########################################################################

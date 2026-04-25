@@ -229,12 +229,6 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
             tracks = list(MutableUniqueSequence(tracks).unique)
         return super()._limit_tracks(tracks=tracks, ignore=ignore)
 
-    @validate_call
-    def log_load(self, result: GroupResult) -> None:
-        """Log the given results of loading tracks."""
-        table = GroupResult.generate_table(results={self.name: result})
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
-
     async def save(self, dry_run: bool = False) -> SyncXAutoPFResult:
         """
         Write the tracks in this Playlist and its settings (if applicable) to file.
@@ -308,12 +302,6 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         if self.matcher.exclude.path_mapper is not None:
             excluded = self.matcher.exclude.path_mapper.deserialise_many(excluded, check_existence=False)
         self.matcher.exclude.values &= set(map(str, excluded))
-
-    @validate_call
-    def log_save(self, result: SyncXAutoPFResult) -> None:
-        """Log the given results of matching tracks."""
-        table = SyncXAutoPFResult.generate_table(results={self.name: result})
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
 
 
 class _XMLField(metaclass=ABCMeta):

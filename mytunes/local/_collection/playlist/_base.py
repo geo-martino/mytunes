@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Annotated
 
 import mutagen
-from pydantic import Field, model_validator, PrivateAttr
+from pydantic import Field, model_validator, PrivateAttr, validate_call
 
 from mytunes.core.playlist import MutablePlaylist
 from mytunes.core.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
@@ -123,6 +123,12 @@ class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteab
         """
         raise NotImplementedError
 
+    @validate_call
+    def log_load(self, result: LoadPlaylistResult) -> None:
+        """Log the given results of loading tracks."""
+        table = LoadPlaylistResult.generate_table(results={self.name: result})
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
+
     @abstractmethod
     async def save(self, dry_run: bool = False) -> SavePlaylistResult:
         """
@@ -132,3 +138,9 @@ class LocalPlaylist[TF: Filter](LocalPlaylistFile[TF], IsReadableFile, IsWriteab
         :return: :py:class:`Result` object with stats on the changes to the playlist.
         """
         raise NotImplementedError
+
+    @validate_call
+    def log_save(self, result: SavePlaylistResult) -> None:
+        """Log the given results of matching tracks."""
+        table = type(result).generate_table(results={self.name: result})
+        self._logger.stat(table, new_line_start=True, new_line_end=True)
