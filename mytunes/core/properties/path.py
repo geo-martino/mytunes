@@ -24,8 +24,6 @@ class PathMapper(BaseModel):
     Simple path mapper which extracts paths from :py:class:`File` objects.
     Can be extended by child classes for more complex mapping operations.
     """
-    __final__ = True
-
     @abstractmethod
     def serialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """Serialise the given value according to the current mapping."""
@@ -57,6 +55,8 @@ class PathMapper(BaseModel):
 
 @final
 class PathModelMapper(PathMapper):
+    __final__ = True
+
     def serialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """
         Map the given ``value`` by either extracting the path from a :py:class:`File` object,
