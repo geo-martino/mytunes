@@ -100,8 +100,7 @@ class LocalLibrary(
         return self
 
     async def load(self) -> None:
-        self._logger.print_line()
-        self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
+        self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1, new_line_start=True)
 
         with self._progress:
             await self.load_tracks()
@@ -154,7 +153,6 @@ class LocalLibrary(
             self.errors.append(path)
 
     async def load_tracks(self) -> int:
-        self._logger.print_line()
         if not (paths := set(self._track_paths)):
             return 0
 
@@ -179,7 +177,8 @@ class LocalLibrary(
         folders = self.library_folders
         folder_message = "folder" if len(folders) == 1 else "folders"
         message = f"Scanning {len(folders)} {self.source} library {folder_message} for tracks with extensions:"
-        self._logger.info(message, header=2, hidden=self._logger.format_list_to_string(extensions))
+        extensions_log = self._logger.format_list_to_string(extensions)
+        self._logger.info(message, header=2, hidden=extensions_log, new_line_start=True)
 
         for folder in folders:
             for path in folder.rglob(f"[!.]*"):
@@ -285,7 +284,8 @@ class LocalLibrary(
 
         folder_message = "folder" if len(folders) == 1 else "folders"
         message = f"Scanning {len(folders)} {self.source} library {folder_message} for playlists with extensions:"
-        self._logger.info(message, header=2, hidden=self._logger.format_list_to_string(extensions))
+        extensions_log = self._logger.format_list_to_string(extensions)
+        self._logger.info(message, header=2, hidden=extensions_log, new_line_start=True)
 
         total = 0
         filtered = 0
