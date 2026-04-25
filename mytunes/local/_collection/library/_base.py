@@ -100,7 +100,7 @@ class LocalLibrary(
         return self
 
     async def load(self) -> None:
-        self._logger.print()
+        self._logger.print_line()
         self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)
 
         with self._progress:
@@ -154,7 +154,7 @@ class LocalLibrary(
             self.errors.append(path)
 
     async def load_tracks(self) -> int:
-        self._logger.print()
+        self._logger.print_line()
         if not (paths := set(self._track_paths)):
             return 0
 
@@ -243,7 +243,7 @@ class LocalLibrary(
             self.errors.append(path)
 
     async def load_playlists(self) -> tuple[LoadPlaylistResult, ...]:
-        self._logger.print()
+        self._logger.print_line()
         if not (paths := set(self._playlist_paths)):
             return tuple()
 
