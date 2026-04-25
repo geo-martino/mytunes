@@ -9,6 +9,7 @@ from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_v
     ModelWrapValidatorHandler, ValidationError, validate_call, OnErrorOmit
 from termcolor import colored
 
+from mytunes._types import DEFAULT_IF_NONE
 from mytunes.core.library import MutableLibrary
 from mytunes.core.properties.path import PathMapper, PathParentMapper, SystemPath, SystemPaths, PathModelMapper
 from mytunes.exception import MyTunesError, MyTunesValueError
@@ -52,7 +53,7 @@ class LocalLibrary(
         description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
         default=None,
     )
-    path_mapper: PathMapper.annotation = Field(
+    path_mapper: Annotated[PathMapper.annotation, DEFAULT_IF_NONE] = Field(
         description="Mapper to use when mapping paths stored in the playlist files.",
         default_factory=PathModelMapper,
     )

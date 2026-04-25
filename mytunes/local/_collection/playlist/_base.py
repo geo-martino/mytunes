@@ -21,6 +21,7 @@ from mytunes.processors.sort import ItemSorter
 from ..._item.track import LocalTrack, HasLocalTracks
 from ...._base import makecls
 from ...._base.resource import UniqueAttribute
+from ...._types import DEFAULT_IF_NONE
 
 
 class LocalPlaylistFile[TF: Filter](
@@ -49,7 +50,7 @@ class LocalPlaylistFile[TF: Filter](
         description="ItemSorter object to use when sorting the final track list.",
         default=None,
     )
-    path_mapper: PathMapper.annotation = Field(
+    path_mapper: Annotated[PathMapper.annotation, DEFAULT_IF_NONE] = Field(
         description="Mapper to use when mapping paths stored in the playlist file.",
         default_factory=PathModelMapper,
     )

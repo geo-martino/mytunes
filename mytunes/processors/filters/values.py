@@ -91,7 +91,7 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
         description="Set of paths to filter against. These will be stored as un-mapped paths if a PathMapper is set.",
         default_factory=set,
     )
-    path_mapper: Annotated[PathMapper, DEFAULT_IF_NONE] = Field(
+    path_mapper: Annotated[PathMapper.annotation, DEFAULT_IF_NONE] = Field(
         description="Mapper to use to map paths.",
         default_factory=PathModelMapper,
     )
