@@ -6,6 +6,7 @@ import logging.config
 import logging.handlers
 import sys
 from collections.abc import Iterable
+from io import BufferedWriter
 from pathlib import Path
 from typing import Any, Annotated
 
@@ -48,9 +49,7 @@ class Logger(logging.Logger):
         handlers = []
         for handler in self.get_all_handlers():
             match handler:
-                case logging.StreamHandler() if handler not in handlers and handler.stream == sys.stdout:
-                    handlers.append(handler)
-                case RichHandler() if handler not in handlers:
+                case logging.StreamHandler() | RichHandler():
                     handlers.append(handler)
 
         return handlers
