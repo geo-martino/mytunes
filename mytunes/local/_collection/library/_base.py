@@ -242,7 +242,6 @@ class LocalLibrary(
             self.errors.append(path)
 
     async def load_playlists(self) -> tuple[LoadPlaylistResult, ...]:
-        self._logger.print_line()
         if not (paths := set(self._playlist_paths)):
             return tuple()
 
