@@ -301,12 +301,12 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         # noinspection PyTypeChecker
         included = compared | self.matcher.exclude.paths
         if self.matcher.include.path_mapper is not None:
-            included = self.matcher.include.path_mapper.unmap_many(included, check_existence=False)
+            included = self.matcher.include.path_mapper.deserialise_many(included, check_existence=False)
         self.matcher.include.values -= set(map(str, included))
 
         excluded = compared | self.matcher.include.paths
         if self.matcher.exclude.path_mapper is not None:
-            excluded = self.matcher.exclude.path_mapper.unmap_many(excluded, check_existence=False)
+            excluded = self.matcher.exclude.path_mapper.deserialise_many(excluded, check_existence=False)
         self.matcher.exclude.values &= set(map(str, excluded))
 
     @validate_call

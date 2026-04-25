@@ -142,7 +142,7 @@ class M3U(LocalPlaylist[PathFilter]):
     def _load_from_tracks(
             self, tracks: Collection[LocalTrack], paths: Sequence[PathInputType] = ()
     ) -> LoadPlaylistResult:
-        paths = self.path_mapper.map_many_to_paths(paths, check_existence=False)
+        paths = self.path_mapper.serialise_many_to_paths(paths, check_existence=False)
 
         match_result = self._match_tracks(tracks)
         limit_result = self._limit_tracks(tracks=match_result.combined, ignore=paths)
@@ -169,7 +169,7 @@ class M3U(LocalPlaylist[PathFilter]):
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: The results of the sync.
         """
-        start_paths = list(map(Path, self.path_mapper.unmap_many(self._original, check_existence=False)))
+        start_paths = list(map(Path, self.path_mapper.deserialise_many(self._original, check_existence=False)))
 
         if not dry_run:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -177,12 +177,12 @@ class M3U(LocalPlaylist[PathFilter]):
             self.filename = self.name  # renames the file if it exists
             async with aiofiles.open(self.path, "w", encoding="utf-8") as file:
                 # reassign any original folder found by the matcher and output
-                paths = self.path_mapper.unmap_many(self.tracks, check_existence=False)
+                paths = self.path_mapper.deserialise_many(self.tracks, check_existence=False)
                 await file.writelines(path.strip() + "\n" for path in paths)
 
             self._original = self.tracks.copy()  # update original tracks to newly library tracks
 
-        final_paths = list(map(Path, self.path_mapper.unmap_many(self.tracks, check_existence=False)))
+        final_paths = list(map(Path, self.path_mapper.deserialise_many(self.tracks, check_existence=False)))
         return SyncM3UResult.from_paths(self.name, initial=start_paths, final=final_paths)
 
     @validate_call

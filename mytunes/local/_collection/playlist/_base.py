@@ -8,7 +8,7 @@ from pydantic import Field, model_validator, PrivateAttr
 
 from mytunes.core.playlist import MutablePlaylist
 from mytunes.core.properties.file import IsLocalFile, IsReadableFile, IsWriteableFile
-from mytunes.core.properties.path import PathMapper
+from mytunes.core.properties.path import PathMapper, PathModelMapper
 from mytunes.core.properties.uri import HasMutableURI
 from mytunes.core.sequence import MutableUniqueSequence, UniqueSequence
 from mytunes.local._collection._base import LocalCollection
@@ -51,7 +51,7 @@ class LocalPlaylistFile[TF: Filter](
     )
     path_mapper: PathMapper.annotation = Field(
         description="Mapper to use when mapping paths stored in the playlist file.",
-        default_factory=PathMapper,
+        default_factory=PathModelMapper,
     )
 
     @model_validator(mode="before")

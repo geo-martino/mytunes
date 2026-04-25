@@ -1,5 +1,7 @@
+import functools
 import os
 import sys
+from abc import abstractmethod
 from collections.abc import Iterable, Mapping, MutableMapping
 from contextlib import suppress
 from os import sep
@@ -16,7 +18,7 @@ from ..._base import BaseModel
 type PathInputType = str | Path | IsLocalFile | None
 
 
-@final
+# noinspection PyAbstractClass
 class PathMapper(BaseModel):
     """
     Simple path mapper which extracts paths from :py:class:`File` objects.
@@ -24,111 +26,84 @@ class PathMapper(BaseModel):
     """
     __final__ = True
 
-    def map(self, value: PathInputType, check_existence: bool = False) -> str | None:
-        """
-        Map the given ``value`` by either extracting the path from a :py:class:`File` object,
-        or returning the ``value`` as is, assuming it is a string.
+    @abstractmethod
+    def serialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
+        """Serialise the given value according to the current mapping."""
+        raise NotImplementedError
 
-        :param value: The value to extract a path from.
-        :param check_existence: When True, check the path exists before returning it. If it doesn't exist, returns None.
-        :return: The path if ``check_existence`` is False, or if ``check_existence`` is True and path exists,
-            None otherwise.
-        """
-        if not value:
-            return
-
-        path = str(value.path if isinstance(value, IsLocalFile) else value)
-        if not check_existence or os.path.exists(path):
-            return path
-
-    def map_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
+    def serialise_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
         """Run :py:meth:`map` operation on many ``values`` only returning those values that are not None or empty."""
-        paths = [self.map(value=value, check_existence=check_existence) for value in values]
+        paths = [self.serialise(value=value, check_existence=check_existence) for value in values]
         return list(filter(None, paths))
 
-    def map_many_to_paths(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[Path]:
+    def serialise_many_to_paths(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[Path]:
         """Run :py:meth:`map` operation on many ``values`` only returning those values that are not None or empty."""
-        return list(map(Path, self.map_many(values, check_existence=check_existence)))
+        return list(map(Path, self.serialise_many(values, check_existence=check_existence)))
 
-    def unmap(self, value: PathInputType, check_existence: bool = False) -> str | None:
-        """
-        Map the given ``value`` by either extracting the path from a :py:class:`File` object,
-        or returning the ``value`` as is, assuming it is a string.
+    @abstractmethod
+    def deserialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
+        """Deserialise the given value according to the current mapping."""
+        raise NotImplementedError
 
-        :param value: The value to extract a path from.
-        :param check_existence: When True, check the path exists before returning it. If it doesn't exist, returns None.
-        :return: The path if ``check_existence`` is False, or if ``check_existence`` is True and path exists,
-            None otherwise.
-        """
-        if not value:
-            return
-
-        path = str(value.path if isinstance(value, IsLocalFile) else value)
-        if not check_existence or os.path.exists(path):
-            return path
-
-    def unmap_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
+    def deserialise_many(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[str]:
         """Run :py:meth:`unmap` operation on many ``values`` only returning those values that are not None or empty."""
-        paths = [self.unmap(value=value, check_existence=check_existence) for value in values]
+        paths = [self.deserialise(value=value, check_existence=check_existence) for value in values]
         return list(filter(None, paths))
 
-    def unmap_many_to_paths(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[Path]:
+    def deserialise_many_to_paths(self, values: Iterable[PathInputType], check_existence: bool = False) -> list[Path]:
         """Run :py:meth:`unmap` operation on many ``values`` only returning those values that are not None or empty."""
-        return list(map(Path, self.unmap_many(values, check_existence=check_existence)))
+        return list(map(Path, self.deserialise_many(values, check_existence=check_existence)))
 
 
-# noinspection PyFinal
 @final
-class PathStemMapper(PathMapper):
+class PathModelMapper(PathMapper):
+    def serialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
+        """
+        Map the given ``value`` by either extracting the path from a :py:class:`File` object,
+        or returning the ``value`` as is, assuming it is a string.
+
+        :param value: The value to extract a path from.
+        :param check_existence: When True, check the path exists before returning it. If it doesn't exist, returns None.
+        :return: The path if ``check_existence`` is False, or if ``check_existence`` is True and path exists,
+            None otherwise.
+        """
+        if not value:
+            return
+
+        path = str(value.path if isinstance(value, IsLocalFile) else value)
+        if not check_existence or os.path.exists(path):
+            return path
+
+    @functools.wraps(serialise)
+    def deserialise(self, *args, **kwargs) -> str | None:
+        return self.serialise(*args, **kwargs)
+
+
+@final
+class PathParentMapper(PathMapper):
     """
-    A more complex path mapper which attempts to replace the stems of paths from strings and :py:class:`File` objects.
+    A more complex path mapper which attempts to replace the parents of paths from strings and :py:class:`File` objects.
     Plus, attempts to case-correct paths.
 
     Useful for cross-platform support. Can be used to correct paths if the same file exists in
-    different locations according to different mounts and/or multiple operating systems.
+    different locations according to different mounts and/or multiple operating parents.
     """
     __final__ = True
 
-    available_paths: MutableMapping[str, str] = Field(
-        description=
-        """
-        A map of the available paths stored in this object. Simply ``{<lower-case path>: <correctly-cased path>}``.
-        When assigning new values to this property, the stored map will update itself
-        with the new values rather than overwrite.
-        """,
+    parent_serialise: Mapping[str, str] = Field(
+        description="A map of ``{<parent to be replaced>: <its replacement>}`` to be applied during serialization.",
         default_factory=dict,
+        alias="serialise",
     )
-    stem_map: MutableMapping[str, str] = Field(
-        description=
-        """
-        A map of ``{<stem to be replaced>: <its replacement>}``.
-        Assigning new values to this property updates itself
-        plus the ``stem_unmap`` property with the reverse of this map.
-        """,
+    parent_deserialise: Mapping[str, str] = Field(
+        description="A map of ``{<parent to be replaced>: <its replacement>}`` to be applied during deserialization.",
         default_factory=dict,
+        alias="deserialise",
     )
 
-    @property
-    def stem_map_reversed(self) -> dict[str, str]:
-        """
-        A map of ``{<replacement stems>: <stem to be replaced>}`` i.e. just the opposite map of ``stem_map``.
-        Assign new values to ``stem_map`` to update.
-        """
-        return dict(list(item[::-1]) for item in reversed(list(self.stem_map.items())))
-
-    @field_validator("available_paths", mode="before", check_fields=True)
+    @field_validator("parent_serialise", "parent_deserialise", mode="before", check_fields=True)
     @staticmethod
-    def _map_available_paths_from_iterable(value: Iterable[str | PurePath]) -> dict[str, str]:
-        if isinstance(value, str | PurePath):
-            value = [value]
-        elif not isinstance(value, Iterable):
-            raise MyTunesValidationError(f"Unrecognised input type: {value!r}")
-
-        return {path.casefold(): path for path in map(str, value)}
-
-    @field_validator("stem_map", mode="before", check_fields=True)
-    @staticmethod
-    def _map_stem_map_from_iterable[T: str | Path](value: Iterable[tuple[T, T]] | Mapping[T, T]) -> dict[str, str]:
+    def _map_parents_from_iterable[T: str | Path](value: Iterable[tuple[T, T]] | Mapping[T, T]) -> dict[str, str]:
         if isinstance(value, Mapping):
             value = value.items()
         elif not isinstance(value, Iterable):
@@ -136,11 +111,10 @@ class PathStemMapper(PathMapper):
 
         return {str(k): str(v) for k, v in value}
 
-    def map(self, value: PathInputType, check_existence: bool = False) -> str | None:
+    def serialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """
-        Map the given value by replacing its stem according to stored ``stem_map``,
-        correcting path separators according to the separators of the replacement stem,
-        and case correcting path from stored ``available_paths``.
+        Map the given value by replacing its parent according to stored ``parent_serialise``,
+        correcting path separators according to the separators of the replacement parent.
 
         :param value: The value to map.
         :param check_existence: When True, check the path exists before returning it. If it doesn't exist, returns None.
@@ -153,13 +127,13 @@ class PathStemMapper(PathMapper):
         path = str(value.path if isinstance(value, IsLocalFile) else value)
 
         seps = ()
-        for stem, replacement in self.stem_map.items():
-            if path.casefold().startswith(stem.casefold()):
+        for parent, replacement in self.parent_serialise.items():
+            if path.casefold().startswith(parent.casefold()):
                 if "/" in replacement and "/" not in path:
                     seps = ("\\", "/")
                 elif "\\" in replacement and "\\" not in path:
                     seps = ("/", "\\")
-                path = sep.join([replacement.rstrip("\\/"), path[len(stem):].lstrip("\\/")]).rstrip("\\/")
+                path = sep.join([replacement.rstrip("\\/"), path[len(parent):].lstrip("\\/")]).rstrip("\\/")
                 break
 
         if sep == "\\":
@@ -167,15 +141,13 @@ class PathStemMapper(PathMapper):
         if seps:
             path = path.replace(*seps)
 
-        path = self.available_paths.get(path.casefold(), path)
         if not check_existence or os.path.exists(path):
             return path
 
-    def unmap(self, value: PathInputType, check_existence: bool = False) -> str | None:
+    def deserialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """
-        Map the given value by replacing its stem according to stored ``stem_unmap``,
-        correcting path separators according to the separators of the replacement stem,
-        and case correcting path from stored ``available_paths`` (i.e. mostly the reverse of :py:meth:`map`).
+        Map the given value by replacing its parent according to stored ``parent_deserialise``,
+        correcting path separators according to the separators of the replacement parent.
 
         :param value: The value to map.
         :param check_existence: When True, check the path exists before returning it. If it doesn't exist, returns None.
@@ -188,13 +160,13 @@ class PathStemMapper(PathMapper):
         path = str(value.path if isinstance(value, IsLocalFile) else value)
 
         seps = ()
-        for stem, replacement in self.stem_map_reversed.items():
-            if path.casefold().startswith(stem.casefold()):
+        for parent, replacement in self.parent_deserialise.items():
+            if path.casefold().startswith(parent.casefold()):
                 if "/" in replacement and "/" not in path:
                     seps = ("\\", "/")
                 elif "\\" in replacement and "\\" not in path:
                     seps = ("/", "\\")
-                path = sep.join([replacement.rstrip("\\/"), path[len(stem):].lstrip("\\/")])
+                path = sep.join([replacement.rstrip("\\/"), path[len(parent):].lstrip("\\/")])
                 break
 
         if sep == "\\":
@@ -202,7 +174,6 @@ class PathStemMapper(PathMapper):
         if seps:
             path = path.replace(*seps)
 
-        path = self.available_paths.get(path.casefold(), path)
         if not check_existence or os.path.exists(path):
             return path
 

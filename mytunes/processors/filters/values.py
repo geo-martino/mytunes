@@ -7,7 +7,7 @@ from pydantic import BeforeValidator, Field, model_validator, validate_call, fie
 from mytunes._types import StrippedString, TO_SET, TO_TUPLE, DEFAULT_IF_NONE
 from ..._base import BaseModel
 from mytunes.core.properties.file import IsLocalFile
-from mytunes.core.properties.path import PathInputType
+from mytunes.core.properties.path import PathInputType, PathModelMapper
 from mytunes.core.properties.path import PathMapper
 from mytunes.core.properties.name import HasName
 from mytunes.processors.filters._base import Filter
@@ -93,7 +93,7 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
     )
     path_mapper: Annotated[PathMapper, DEFAULT_IF_NONE] = Field(
         description="Mapper to use to map paths.",
-        default_factory=PathMapper,
+        default_factory=PathModelMapper,
     )
 
     @property
@@ -101,7 +101,7 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
         """Get the values as Path objects."""
         paths = self.values
         if self.path_mapper is not None:
-            paths = self.path_mapper.map_many(paths, check_existence=False)
+            paths = self.path_mapper.serialise_many(paths, check_existence=False)
         return set(map(Path, paths))
 
     @paths.setter
@@ -113,7 +113,7 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
         """Get the values as Path objects, only returning those that exist."""
         paths = self.values
         if self.path_mapper is not None:
-            paths = filter(None, self.path_mapper.map_many(paths, check_existence=True))
+            paths = filter(None, self.path_mapper.serialise_many(paths, check_existence=True))
         return set(map(Path, paths))
 
     @field_validator("values", mode="before", check_fields=True)
@@ -138,7 +138,7 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
         if self.path_mapper is None:
             return self
 
-        values = set(self.path_mapper.unmap_many(self.values, check_existence=False))
+        values = set(self.path_mapper.deserialise_many(self.values, check_existence=False))
         if values != self.values:
             self.__dict__["values"] = values
         return self
@@ -146,5 +146,5 @@ class PathFilter(_ValueFilter[Literal["path", "paths"], str]):
     @validate_call
     def check(self, item: PathInputType, reference: PathInputType | None = None) -> bool:
         path = self._extract_value_from_model(item)
-        path = self.path_mapper.unmap(path, check_existence=False)
+        path = self.path_mapper.deserialise(path, check_existence=False)
         return isinstance(path, Hashable) and super().check(path, reference=reference)

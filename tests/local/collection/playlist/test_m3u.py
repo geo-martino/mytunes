@@ -55,11 +55,11 @@ class TestM3U(LocalPlaylistTester):
     @pytest.fixture
     def path(self, model: M3U, tracks_on_disk: list[LocalTrack], path_mapper: PathMapper) -> Path:
         """Creates an actual playlist file with some tracks on disk."""
-        track_paths = path_mapper.unmap_many(tracks_on_disk, check_existence=False)
+        track_paths = path_mapper.deserialise_many(tracks_on_disk, check_existence=False)
 
         model.path.parent.mkdir(parents=True, exist_ok=True)
         with model.path.open("w", encoding="utf-8") as file:
-            file.writelines((f"{path_mapper.unmap(path, check_existence=False)}\n" for path in track_paths))
+            file.writelines((f"{path_mapper.deserialise(path, check_existence=False)}\n" for path in track_paths))
 
         return model.path
 
@@ -70,12 +70,12 @@ class TestM3U(LocalPlaylistTester):
         """Creates mock loaders for a subset of tracks"""
         tracks = deepcopy(tracks[:len(tracks) // 3])
         for track in tracks:
-            track.path = Path(path_mapper.map(track.path, check_existence=False))
+            track.path = Path(path_mapper.serialise(track.path, check_existence=False))
             track.path.parent.mkdir(parents=True, exist_ok=True)
             track.path.touch(exist_ok=True)
 
         def _load_track(path: str | Path) -> LocalTrack:
-            return next(tr for tr in tracks if tr.path == Path(path_mapper.map(path)))
+            return next(tr for tr in tracks if tr.path == Path(path_mapper.serialise(path)))
 
         with patch.object(M3U, "_load_track", side_effect=_load_track):
             yield tracks
@@ -92,7 +92,7 @@ class TestM3U(LocalPlaylistTester):
         tracks = [track for track in deepcopy(tracks) if track.name not in tracks_on_disk_names]
 
         for track in tracks:
-            track.path = Path(path_mapper.map(track.path, check_existence=False))
+            track.path = Path(path_mapper.serialise(track.path, check_existence=False))
 
         return tracks
 
@@ -156,7 +156,7 @@ class TestM3U(LocalPlaylistTester):
             paths = [line.strip() for line in file]
 
         assert paths != [track.path for track in model.tracks]
-        assert paths == [model.path_mapper.unmap(track.path) for track in model.tracks]
+        assert paths == [model.path_mapper.deserialise(track.path) for track in model.tracks]
         self.assert_paths_are_mapped(paths)
 
     async def test_save_dry_run(self, model: M3U, tracks: list[LocalTrack]):
@@ -176,7 +176,7 @@ class TestM3U(LocalPlaylistTester):
         # add tracks that don't exist on disk to playlist file to check that remapping happens
         with path.open("a", encoding="utf-8") as file:
             file.writelines(
-                (f"{model.path_mapper.unmap(track.path, check_existence=False)}\n" for track in tracks_in_memory)
+                (f"{model.path_mapper.deserialise(track.path, check_existence=False)}\n" for track in tracks_in_memory)
             )
 
         await model.load(tracks_on_disk + tracks_in_memory[:2])

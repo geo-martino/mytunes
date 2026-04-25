@@ -18,7 +18,7 @@ from pydantic import Field, PrivateAttr, DirectoryPath, model_validator, FilePat
 
 from mytunes._types import to_set
 from mytunes.core.properties.file import IsReadableFile, IsWriteableFile, IsLocalFile
-from mytunes.core.properties.path import PathStemMapper, SystemPath, SystemPaths
+from mytunes.core.properties.path import PathParentMapper, SystemPath, SystemPaths
 from mytunes.exception import MyTunesTypeError, MyTunesValueError
 from mytunes.local._collection.library._base import LocalLibrary
 from mytunes.local._collection.playlist import LocalPlaylist
@@ -100,23 +100,6 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
             data["path"] = path.joinpath(cls._xml_library_path)
         return data
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _extract_path_map_from_system_paths(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        paths = cls._get_value_from_data(data, "musicbee_folder")
-        try:
-            paths = SystemPath.model_validate(paths)
-        except ValidationError:
-            return handler(data)
-
-        self: Self = handler(data)
-        # WORKAROUND: the musicbee folder is usually in a folder within the music library folder.
-        #  We take the parent to account for this
-        self._set_path_map_from_system_paths(paths.path.parent, [other.parent for other in paths.others])
-        return self
-
     @model_validator(mode="after")
     def _validate_settings_file_exists(self) -> Self:
         if not self.xml_settings_path.is_file():
@@ -152,7 +135,7 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         if not xml:
             xml = await self.load_settings_xml()
 
-        paths = self.path_mapper.map_many(to_set(xml.get("OrganisationMonitoredFolders", {}).get("string") or ()))
+        paths = self.path_mapper.serialise_many(to_set(xml.get("OrganisationMonitoredFolders", {}).get("string") or ()))
         self.library_folders.clear()
         self.library_folders.update(map(Path, paths))
 
@@ -209,8 +192,8 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
 
         path = track_xml["Location"]
         prefixes = {*map(str, self.library_folders), library_folder}
-        if isinstance(self.path_mapper, PathStemMapper):
-            prefixes.update(self.path_mapper.stem_map.keys())
+        if isinstance(self.path_mapper, PathParentMapper):
+            prefixes.update(self.path_mapper.parent_serialise.keys())
 
         for prefix in prefixes:
             if (track := track_map.get(path.removeprefix(prefix).casefold())) is not None:

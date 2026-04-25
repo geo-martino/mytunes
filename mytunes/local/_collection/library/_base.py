@@ -10,7 +10,7 @@ from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_v
 from termcolor import colored
 
 from mytunes.core.library import MutableLibrary
-from mytunes.core.properties.path import PathMapper, PathStemMapper, SystemPath, SystemPaths
+from mytunes.core.properties.path import PathMapper, PathParentMapper, SystemPath, SystemPaths, PathModelMapper
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.album import LocalAlbumCollection
@@ -54,7 +54,7 @@ class LocalLibrary(
     )
     path_mapper: PathMapper.annotation = Field(
         description="Mapper to use when mapping paths stored in the playlist files.",
-        default_factory=PathMapper,
+        default_factory=PathModelMapper,
     )
     tracks_context: TagContext = Field(
         description="Settings to apply when loading tracks in this library.",
@@ -70,30 +70,6 @@ class LocalLibrary(
     def errors(self) -> list[str]:
         """List of errors encountered while loading the library."""
         return self._errors
-
-    @model_validator(mode="wrap")
-    @classmethod
-    def _extract_path_map_from_system_paths(
-            cls, data: Any, handler: ModelWrapValidatorHandler[Self]
-    ) -> Self:
-        paths = cls._get_value_from_data(data, "library_folders")
-        try:
-            paths = SystemPaths.model_validate(paths)
-        except ValidationError:
-            return handler(data)
-
-        self: Self = handler(data)
-        self._set_path_map_from_system_paths(next(iter(paths.paths)), paths.others)
-        return self
-
-    def _set_path_map_from_system_paths(self, path: str | Path, others: Iterable[str | PurePath]) -> None:
-        if type(self.path_mapper) is PathMapper:
-            self.path_mapper = PathStemMapper()
-        if not isinstance(self.path_mapper, PathStemMapper):
-            return
-
-        mapped_paths = {other: str(path) for other in map(str, others)}
-        self.path_mapper.stem_map = mapped_paths | dict(self.path_mapper.stem_map)
 
     async def load(self) -> None:
         self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mytunes.core.properties.path import PathStemMapper
+from mytunes.core.properties.path import PathParentMapper
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.result import Result
 from tests.testers import UniqueKeyTester
@@ -12,9 +12,13 @@ from tests.testers import UniqueKeyTester
 
 class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
     @pytest.fixture
-    def path_mapper(self, tmp_path: Path) -> PathStemMapper:
-        """Creates a basic PathStemMapper for the given tracks."""
-        return PathStemMapper(stem_map={"folder/": str(tmp_path)})
+    def path_mapper(self, tmp_path: Path) -> PathParentMapper:
+        """Creates a basic PathParentMapper for the given tracks."""
+        parent = "folder/"
+        return PathParentMapper(
+            parent_serialise={parent: str(tmp_path)},
+            parent_deserialise={str(tmp_path): parent},
+        )
 
     @staticmethod
     async def assert_save_to_new_file(model: LocalPlaylist, path: Path) -> None:
@@ -36,7 +40,7 @@ class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
 
     @staticmethod
     def assert_paths_are_mapped(paths: Iterable[str | Path]) -> None:
-        """Asserts that all paths are correctly mapped using the PathStemMapper."""
+        """Asserts that all paths are correctly mapped using the PathParentMapper."""
         assert all(str(path).startswith("folder/") for path in paths)
 
     @classmethod

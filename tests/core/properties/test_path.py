@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from collections.abc import Collection, Iterator
 from pathlib import PurePosixPath, Path, PureWindowsPath, PurePath, PosixPath
 from random import choice
@@ -7,7 +8,7 @@ import pytest
 from faker import Faker
 
 from mytunes.core.properties.file import IsLocalFile
-from mytunes.core.properties.path import PathMapper, PathStemMapper
+from mytunes.core.properties.path import PathMapper, PathParentMapper, PathModelMapper
 from tests.testers import BaseModelTester
 
 SYSTEM_TYPES = Literal["linux", "windows"]
@@ -19,43 +20,31 @@ def _generate_file_paths(
     if system is None:
         system: SYSTEM_TYPES = "linux" if isinstance(Path.home(), PosixPath) else "windows"
 
-    path_iter = (faker.file_path(depth=4, category="audio", file_system_rule=system) for _ in range(count))
+    path_iter = (
+        Path(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule=system))
+        for _ in range(count)
+    )
     return map(PurePosixPath, path_iter) if system == "linux" else map(PureWindowsPath, path_iter)
 
 
 def _generate_directory_paths(
         faker: Faker, system: SYSTEM_TYPES = None, count: int = 20
 ) -> Iterator[PurePath]:
-    if system is None:
-        system: SYSTEM_TYPES = "linux" if isinstance(Path.home(), PosixPath) else "windows"
-
     return (path.parent for path in _generate_file_paths(faker, system=system, count=count))
 
 
-class TestPathMapper(BaseModelTester):
-    @pytest.fixture
-    def model(self, faker: Faker) -> PathMapper:
-        return PathMapper()
-
-    def test_map(self, model: PathMapper, faker: Faker):
-        expected = list(map(str, _generate_file_paths(faker)))
-        files = [choice([path, IsLocalFile(path=Path(path))]) for path in expected]
-
-        # all mapping functions produce same results
-        assert [model.map(file, check_existence=False) for file in files] == expected
-        assert model.map_many(files, check_existence=False) == expected
-        assert [model.unmap(file, check_existence=False) for file in files] == expected
-        assert model.unmap_many(files, check_existence=False) == expected
-
-    def test_checks_existence_on_non_existing_files(self, model: PathMapper, faker: Faker):
+class PathMapperTester(BaseModelTester, metaclass=ABCMeta):
+    @staticmethod
+    def test_checks_existence_on_non_existing_files(model: PathMapper, faker: Faker):
         files = [choice([str(path), IsLocalFile(path=Path(path))]) for path in _generate_file_paths(faker)]
 
-        assert not any(model.map(file, check_existence=True) for file in files)
-        assert not any(model.unmap(file, check_existence=True) for file in files)
-        assert not model.map_many(files, check_existence=True)
-        assert not model.unmap_many(files, check_existence=True)
+        assert not any(model.serialise(file, check_existence=True) for file in files)
+        assert not any(model.deserialise(file, check_existence=True) for file in files)
+        assert not model.serialise_many(files, check_existence=True)
+        assert not model.deserialise_many(files, check_existence=True)
 
-    def test_checks_existence_on_existing_files(self, model: PathMapper, faker: Faker, tmp_path: Path):
+    @staticmethod
+    def test_checks_existence_on_existing_files(model: PathMapper, faker: Faker, tmp_path: Path):
         files = [choice([str(path), IsLocalFile(path=Path(path))]) for path in _generate_file_paths(faker)]
         existing_files = [
             tmp_path.with_name(faker.file_name(category="audio")) for _ in range(faker.random_int(5, 8))
@@ -63,74 +52,100 @@ class TestPathMapper(BaseModelTester):
         for path in existing_files:
             path.touch(exist_ok=True)
 
-        result = set(model.map_many(files + existing_files, check_existence=True))
+        result = set(model.serialise_many(files + existing_files, check_existence=True))
         assert result == set(map(str, existing_files))
 
+    @staticmethod
+    def test_mapping_from_model(model: PathMapper, faker: Faker):
+        expected = list(map(str, _generate_file_paths(faker)))
+        files = [choice([path, IsLocalFile(path=Path(path))]) for path in expected]
 
-class TestPathStemMapper(TestPathMapper):
+        assert [model.serialise(file, check_existence=False) for file in files] == expected
+        assert model.serialise_many(files, check_existence=False) == expected
+        assert [model.deserialise(file, check_existence=False) for file in files] == expected
+        assert model.deserialise_many(files, check_existence=False) == expected
+
+
+class TestPathModelMapper(PathMapperTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> PathModelMapper:
+        return PathModelMapper()
+
+
+class TestPathParentMapper(PathMapperTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> PathParentMapper:
+        parents = list(_generate_directory_paths(faker, "windows"))
+        others = list(_generate_directory_paths(faker, "linux"))
+
+        parent_serialise = {parent: faker.random_element(others) for parent in parents}
+        parent_serialise = {str(k): str(v) for k, v in parent_serialise.items()}
+
+        parent_deserialise = {parent: faker.random_element(parents) for parent in others}
+        parent_deserialise = {str(k): str(v) for k, v in parent_deserialise.items()}
+
+        return PathParentMapper(parent_serialise=parent_serialise, parent_deserialise=parent_deserialise)
 
     @pytest.fixture
-    def model(self, faker: Faker) -> PathStemMapper:
-        stem_map = dict(zip(_generate_directory_paths(faker, "windows"), _generate_directory_paths(faker, "linux")))
-        available_paths = map(str, (path.joinpath(faker.file_name(category="audio")) for path in stem_map))
+    def paths(self, model: PathParentMapper, faker: Faker) -> list[str]:
+        parents = map(Path, model.parent_serialise.keys())
+        return [str(parent.joinpath(faker.file_name(category="audio"))) for parent in parents]
 
-        stem_map = dict(list(map(str, item)) for item in stem_map.items())
-        available_paths = {path.casefold(): path for path in available_paths}
-        return PathStemMapper(stem_map=stem_map, available_paths=available_paths)
-
-    def test_map_available_paths_from_iterable(self, model: PathStemMapper, faker: Faker):
-        paths = list(map(str, _generate_file_paths(faker, "windows")))
-
-        model.available_paths = paths[0]
-        assert model.available_paths == {paths[0].casefold(): paths[0]}
-
-        # noinspection PyTypeChecker
-        model.available_paths = paths
-        assert model.available_paths == {path.casefold(): path for path in paths}
-
-    def test_map_stem_map_from_iterable(self, model: PathStemMapper, faker: Faker):
+    def test_map_from_iterable(self, model: PathParentMapper, faker: Faker):
         paths = list(
-            tuple(map(str, item))
-            for item in zip(_generate_directory_paths(faker, "windows"), _generate_directory_paths(faker, "linux"))
+            zip(_generate_directory_paths(faker, "windows"), _generate_directory_paths(faker, "linux"))
         )
+        paths_as_strings = list(tuple(map(str, item)) for item in paths)
 
-        model.stem_map = paths
-        assert model.stem_map == dict(paths)
+        model.parent_serialise = paths
+        assert model.parent_serialise == dict(paths_as_strings)
 
-        model.stem_map = [(PureWindowsPath(k), PurePosixPath(v)) for k, v in paths]
-        assert model.stem_map == dict(paths)
+        model.parent_deserialise = paths
+        assert model.parent_deserialise == dict(paths_as_strings)
 
-    def test_stem_map_reversed(self, model: PathStemMapper):
-        assert model.stem_map
-        assert model.stem_map_reversed == {v: k for k, v in model.stem_map.items()}
 
-    def test_fixes_cases_using_available_paths(self, model: PathStemMapper):
-        model.stem_map.clear()
-        assert len(model.available_paths) > 3
-        available_paths = list(model.available_paths.values())
+        model.parent_serialise = paths_as_strings
+        assert model.parent_serialise == dict(paths_as_strings)
 
-        assert model.map_many([path.upper() for path in available_paths], check_existence=False) == available_paths
-        assert model.map_many([path.lower() for path in available_paths], check_existence=False) == available_paths
+        model.parent_deserialise = paths_as_strings
+        assert model.parent_deserialise == dict(paths_as_strings)
 
-    @staticmethod
-    def assert_reversible_stem_mapping(model: PathStemMapper, paths: Collection[str], expected: Collection[str]):
-        assert len(model.stem_map) > 3
-        assert len(model.available_paths) > 3
-        assert len(paths) > 3
+    def test_mapping(self, model: PathParentMapper, faker: Faker):
+        linux = Path(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux"))
 
-        results = model.map_many(paths, check_existence=False)
-        assert len(results) == len(paths)
-        for path in results:
-            assert any(path.startswith(stem) for stem in model.stem_map.values())
-            assert all(not path.startswith(stem) for stem in model.stem_map)
+        windows = PureWindowsPath(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="windows"))
+        windows = windows.parent.joinpath(linux.name)
+
+        other = Path(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux"))
+        other = other.parent.joinpath(linux.name)
+
+        model.parent_serialise = {str(linux.parent): str(windows.parent)}
+        model.parent_deserialise = {str(windows.parent): str(other.parent)}
+
+        serialised = model.serialise(str(linux), check_existence=False)
+        assert serialised == str(windows)
+
+        expected = other.parent.joinpath(linux.name)
+        assert model.deserialise(str(serialised), check_existence=False) == str(expected)
+
+    def test_mapping_many(self, model: PathParentMapper, faker: Faker):
+        parents = list(_generate_directory_paths(faker, "windows"))
+        others = list(_generate_directory_paths(faker, "linux"))
+        paths = [str(parent.joinpath(faker.file_name(category="audio"))) for parent in parents]
+
+        # ensure reversible
+        mapping = dict(zip(map(str, parents), map(str, others)))
+        mapping_reversed = dict(list(item[::-1]) for item in reversed(list(mapping.items())))
+        assert mapping == dict(list(item[::-1]) for item in reversed(list(mapping_reversed.items())))
+
+        model.parent_serialise = mapping
+        model.parent_deserialise = mapping_reversed
+
+        serialised = model.serialise_many(paths, check_existence=False)
+        assert serialised != paths
+        for path in serialised:
+            assert any(path.startswith(parent) for parent in model.parent_serialise.values())
+            assert all(not path.startswith(parent) for parent in model.parent_serialise)
             assert "\\" not in path
 
-        assert model.unmap_many([path.lower() for path in paths], check_existence=False) == list(expected)
-
-    def test_replaces_stems(self, model: PathStemMapper):
-        paths = list(model.available_paths.values())
-        self.assert_reversible_stem_mapping(model=model, paths=paths, expected=model.available_paths.values())
-
-    def test_combined(self, model: PathStemMapper):
-        paths = [path.upper() for path in model.available_paths]
-        self.assert_reversible_stem_mapping(model=model, paths=paths, expected=model.available_paths.values())
+        assert model.deserialise_many(serialised, check_existence=False) == paths

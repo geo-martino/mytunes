@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from mytunes.core.properties.path import PathStemMapper
+from mytunes.core.properties.path import PathParentMapper
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.playlist import LocalPlaylistFile
@@ -26,7 +26,7 @@ class TestLocalPlaylist(UniqueKeyTester):
 @pytest.fixture(scope="module")
 async def library() -> LocalLibrary:
     """Yields a loaded :py:class:`LocalLibrary` to supply tracks for manual checking of custom playlist files"""
-    mapper = PathStemMapper(stem_map={
+    mapper = PathParentMapper(parent_serialise={
         "/mnt/media/Music": os.getenv("TEST_PL_LIBRARY", ""),
         "../": os.getenv("TEST_PL_LIBRARY", ""),
         "M:/Music": os.getenv("TEST_PL_LIBRARY", ""),
@@ -57,7 +57,7 @@ async def test_playlist_paths_manual(library: LocalLibrary, source: Path, expect
     pl = await library.load_playlist(source)
 
     with open(expected, "r", encoding="utf-8") as file:
-        paths_expected = [library.path_mapper.map(line.strip(), check_existence=False) for line in file]
+        paths_expected = [library.path_mapper.serialise(line.strip(), check_existence=False) for line in file]
 
     paths_actual = list(map(str, (track.path for track in pl.tracks)))
     assert sorted(paths_actual) == sorted(paths_expected)
