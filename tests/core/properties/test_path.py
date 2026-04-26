@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from collections.abc import Collection, Iterator
+from collections.abc import Iterator
 from pathlib import PurePosixPath, Path, PureWindowsPath, PurePath, PosixPath
 from random import choice
 from typing import Literal

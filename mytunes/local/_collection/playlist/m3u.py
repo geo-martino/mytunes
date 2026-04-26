@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Self, final as final_decorator, Annotated
 
 import aiofiles
-from pydantic import Field, NonNegativeInt, validate_call
+from pydantic import Field, NonNegativeInt
 
 from mytunes.core.properties.path import PathInputType
 from mytunes.core.sequence import MutableUniqueSequence

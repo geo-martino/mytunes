@@ -2,7 +2,7 @@ import functools
 import os
 import sys
 from abc import abstractmethod
-from collections.abc import Iterable, Mapping, MutableMapping
+from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from os import sep
 from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath

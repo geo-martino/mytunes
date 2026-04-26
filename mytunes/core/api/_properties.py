@@ -1,16 +1,14 @@
 # TODO: drop this whole script on aiorequestful v2
-from collections.abc import Mapping, MutableMapping
-from datetime import timedelta
-from typing import Any, Annotated, Union
+from pathlib import Path
+from typing import Any, Annotated
 
-from aiorequestful.cache.backend import ResponseCache, SQLiteCache, CACHE_TYPES
+from aiorequestful.cache.backend import SQLiteCache
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
-from pydantic import PositiveInt, Field, NonNegativeFloat, GetCoreSchemaHandler, Tag, GetJsonSchemaHandler
+from pydantic import Field, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
 from mytunes._base import BaseModel
-from mytunes.exception import MyTunesValidationError
 
 
 class _GeometricCountTimerType:
@@ -105,7 +103,13 @@ class _SQLiteCacheType:
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         instance_schema = core_schema.is_instance_schema(SQLiteCache)
 
-        path_field = core_schema.str_schema()
+        to_path_field = core_schema.chain_schema([
+            core_schema.str_schema(),
+            core_schema.no_info_plain_validator_function(lambda x: Path(x)),
+        ])
+        path_field = core_schema.union_schema([
+            to_path_field, core_schema.is_instance_schema(Path)
+        ])
         expire_field = core_schema.timedelta_schema()
 
         fields_schema = core_schema.typed_dict_schema({
@@ -129,35 +133,5 @@ class _SQLiteCacheType:
     def _serialise(cache: SQLiteCache) -> JsonSchemaValue:
         return {"expire": str(cache.expire.total_seconds())}
 
+
 type ResponseCacheT = Annotated[SQLiteCache, _SQLiteCacheType]
-
-
-if __name__ == "__main__":
-    import asyncio
-    from pydantic import TypeAdapter
-
-    adapter = TypeAdapter(_GeometricCountTimerType)
-    model = adapter.validate_python({})
-    print(type(model), model.initial, model.count, model.factor)
-    model = adapter.validate_python(model)
-    print(type(model), model.initial, model.count, model.factor)
-
-    adapter = TypeAdapter(_StepCeilingTimer)
-    model = adapter.validate_python({})
-    print(type(model), model.initial, model.final, model.step)
-    model = adapter.validate_python(model)
-    print(type(model), model.initial, model.final, model.step)
-
-    print(Timers())
-
-    adapter = TypeAdapter(ResponseCacheT)
-    model: SQLiteCache = adapter.validate_python({"type": "sqlite", "path": "sqlite:///test.db"})
-    print(type(model), model, model.expire)
-
-
-    async def main():
-        async with model:
-            print(type(model), model.connection)
-
-
-    asyncio.run(main())

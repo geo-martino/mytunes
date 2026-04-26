@@ -13,7 +13,7 @@ from typing import Any, Self, Literal, Annotated, ClassVar, final
 
 import aiofiles
 from pydantic import Field, field_validator, model_validator, ConfigDict, model_serializer, \
-    field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices, validate_call
+    field_serializer, TypeAdapter, NonNegativeInt, PositiveInt, ModelWrapValidatorHandler, AliasChoices
 from pydantic.alias_generators import to_pascal, to_snake
 from pydantic.fields import FieldInfo, PrivateAttr
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
@@ -26,7 +26,7 @@ from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import LimitResult, SavePlaylistResult, LoadPlaylistResult
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters.compare import ComparerFilter
-from mytunes.processors.filters.composite import GroupResult, GroupFilter
+from mytunes.processors.filters.composite import GroupFilter
 from mytunes.processors.filters.values import PathFilter
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter

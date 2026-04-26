@@ -4,9 +4,7 @@ All classes and operations relating to the logger objects used throughout the en
 import logging
 import logging.config
 import logging.handlers
-import sys
 from collections.abc import Iterable
-from io import BufferedWriter
 from pathlib import Path
 from typing import Any, Annotated
 
