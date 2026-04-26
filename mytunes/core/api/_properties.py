@@ -18,7 +18,7 @@ class _GeometricCountTimerType:
 
         initial_field = core_schema.float_schema(ge=0)
         count_field = core_schema.union_schema([
-            core_schema.float_schema(ge=0),
+            core_schema.int_schema(ge=0),
             core_schema.none_schema(),
         ])
         factor_field = core_schema.float_schema(ge=1)
