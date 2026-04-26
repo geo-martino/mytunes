@@ -879,7 +879,10 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @property
     def _handler(self) -> RequestHandler:
-        fields = {name for name in type(self).model_fields.keys() if isinstance(getattr(self, name), Endpoints)}
+        fields = {
+            name for name in type(self).model_fields.keys()
+            if isinstance(getattr(self, name), (Endpoints, HasEndpoints))
+        }
         return next(getattr(self, name)._handler for name in fields)
 
     @model_validator(mode="wrap")
@@ -895,7 +898,10 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
 
     @model_validator(mode="after")
     def _all_handlers_are_the_same(self) -> Self:
-        fields = {name for name in type(self).model_fields.keys() if isinstance(getattr(self, name), Endpoints)}
+        fields = {
+            name for name in type(self).model_fields.keys()
+            if isinstance(getattr(self, name), (Endpoints, HasEndpoints))
+        }
         if not fields:
             return self
 

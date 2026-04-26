@@ -93,6 +93,9 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints, Timers):
     # TODO: drop this on aiorequestful v2
     @model_validator(mode="after")
     def _add_timers(self) -> Self:
+        if self._handler is None:
+            return self
+
         self._handler.retry_timer = self.retry
         self._handler.wait_timer = self.wait
         return self
