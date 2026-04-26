@@ -4,6 +4,7 @@ All classes and operations relating to the logger objects used throughout the en
 import logging
 import logging.config
 import logging.handlers
+import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, Annotated
@@ -47,7 +48,7 @@ class Logger(logging.Logger):
         handlers = []
         for handler in self.get_all_handlers():
             match handler:
-                case logging.StreamHandler() if type(handler) is logging.StreamHandler:
+                case logging.StreamHandler() if handler.stream == sys.stdout:
                     handlers.append(handler)
                 case RichHandler():
                     handlers.append(handler)
