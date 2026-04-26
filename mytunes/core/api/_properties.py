@@ -6,6 +6,7 @@ from typing import Any, Annotated, Union
 from aiorequestful.cache.backend import ResponseCache, SQLiteCache, CACHE_TYPES
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
 from pydantic import PositiveInt, Field, NonNegativeFloat, GetCoreSchemaHandler, Tag
+from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
 from mytunes._base import BaseModel
@@ -34,7 +35,14 @@ class _GeometricCountTimerType:
             core_schema.no_info_plain_validator_function(lambda data: GeometricCountTimer(**data)),
         ])
 
-        return core_schema.union_schema([instance_schema, model_schema])
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.union_schema([instance_schema, model_schema]),
+            json_schema=core_schema.plain_serializer_function_ser_schema(cls._serialise)
+        )
+
+    @staticmethod
+    def _serialise(timer: GeometricCountTimer) -> JsonSchemaValue:
+        return {"initial": timer.initial, "count": timer.count, "factor": timer.factor}
 
 
 type RetryTimerT = Annotated[GeometricCountTimer, _GeometricCountTimerType]
@@ -60,7 +68,14 @@ class _StepCeilingTimer:
             instance_schema,
         ])
 
-        return core_schema.union_schema([instance_schema, model_schema])
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.union_schema([instance_schema, model_schema]),
+            json_schema=core_schema.plain_serializer_function_ser_schema(cls._serialise)
+        )
+
+    @staticmethod
+    def _serialise(timer: StepCeilingTimer) -> JsonSchemaValue:
+        return {"initial": timer.initial, "final": timer.final, "step": timer.step}
 
 
 type WaitTimerT = Annotated[StepCeilingTimer, _StepCeilingTimer]
@@ -100,7 +115,6 @@ class _SQLiteCacheType:
 
 
 type ResponseCacheT = Annotated[SQLiteCache, _SQLiteCacheType]
-
 
 # class APICacheConfig(Instantiator[ResponseCache]):
 #     # noinspection PyTypeHints
@@ -204,8 +218,11 @@ if __name__ == "__main__":
     adapter = TypeAdapter(ResponseCacheT)
     model: SQLiteCache = adapter.validate_python({"type": "sqlite", "path": "sqlite:///test.db"})
     print(type(model), model, model.expire)
+
+
     async def main():
         async with model:
             print(type(model), model.connection)
+
 
     asyncio.run(main())
