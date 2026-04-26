@@ -24,7 +24,7 @@ from ..._base.attribute import AttributeModel, Attribute
 
 
 # noinspection PyAbstractClass
-class RemoteAuthoriser[AT: Authoriser](RemoteModel):
+class RemoteAuthoriser[AT: Authoriser](RemoteModel, Timers):
     model_config = ConfigDict(extra="forbid")
 
     cache: ResponseCacheT | None = Field(
@@ -42,7 +42,7 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
 
 
 # noinspection PyAbstractClass
-class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints, Timers):
+class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
     @classmethod
     def from_credentials(cls, credentials: Mapping[str, Any]) -> Self:
         """Create an authoriser for the API using the configured credentials."""
@@ -62,11 +62,16 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints, Timers):
 
     @classmethod
     def _create_handler(cls, authoriser: AT) -> RequestHandler:
-        return RequestHandler.create(
+        handler = RequestHandler.create(
             authoriser=authoriser.create_authoriser(),
             cache=authoriser.cache,
             payload_handler=JSONPayloadHandler()
         )
+
+        # TODO: drop this on aiorequestful v2
+        handler.retry_timer = authoriser.retry
+        handler.wait_timer = authoriser.wait
+        return handler
 
     @model_validator(mode="before")
     @classmethod
@@ -89,16 +94,6 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints, Timers):
 
         handler = cls._create_handler(value)
         return _map_handler(cls, handler)
-
-    # TODO: drop this on aiorequestful v2
-    @model_validator(mode="after")
-    def _add_timers(self) -> Self:
-        if self._handler is None:
-            return self
-
-        self._handler.retry_timer = self.retry
-        self._handler.wait_timer = self.wait
-        return self
 
     @classmethod
     def create_uri(cls, value: Any, kind: str | None = None) -> URI:
