@@ -18,6 +18,7 @@ from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel
 from mytunes.exception import EndpointsError
+from ._properties import ResponseCacheT, Timers
 from .._context import RemoteModelContext
 from ..._base.attribute import AttributeModel, Attribute
 
@@ -26,7 +27,7 @@ from ..._base.attribute import AttributeModel, Attribute
 class RemoteAuthoriser[AT: Authoriser](RemoteModel):
     model_config = ConfigDict(extra="forbid")
 
-    cache: InstanceOf[ResponseCache] | None = Field(
+    cache: ResponseCacheT | None = Field(
         description=(
             "The cache to use for storing and retrieving responses instead of requesting from the API. "
             "If not provided, the authoriser will not use caching."
@@ -41,7 +42,7 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel):
 
 
 # noinspection PyAbstractClass
-class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
+class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints, Timers):
     @classmethod
     def from_credentials(cls, credentials: Mapping[str, Any]) -> Self:
         """Create an authoriser for the API using the configured credentials."""
@@ -88,6 +89,13 @@ class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
 
         handler = cls._create_handler(value)
         return _map_handler(cls, handler)
+
+    # TODO: drop this on aiorequestful v2
+    @model_validator(mode="after")
+    def _add_timers(self) -> Self:
+        self._handler.retry_timer = self.retry
+        self._handler.wait_timer = self.wait
+        return self
 
     @classmethod
     def create_uri(cls, value: Any, kind: str | None = None) -> URI:

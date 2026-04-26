@@ -879,7 +879,8 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
     @property
     def _handler(self) -> RequestHandler:
-        return next(getattr(self, field_name)._handler for field_name in type(self).model_fields.keys())
+        fields = {name for name in type(self).model_fields.keys() if isinstance(getattr(self, name), Endpoints)}
+        return next(getattr(self, name)._handler for name in fields)
 
     @model_validator(mode="wrap")
     @classmethod
@@ -894,12 +895,12 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
 
     @model_validator(mode="after")
     def _all_handlers_are_the_same(self) -> Self:
-        fields = type(self).model_fields
+        fields = {name for name in type(self).model_fields.keys() if isinstance(getattr(self, name), Endpoints)}
         if not fields:
             return self
 
         # noinspection PyProtectedMember
-        handlers = {id(getattr(self, field_name)._handler) for field_name in fields.keys()}
+        handlers = {id(getattr(self, name)._handler) for name in fields}
         if len(handlers) != 1:
             raise MyTunesValidationError(
                 "All endpoint models must use the same request handler for API to function correctly."
