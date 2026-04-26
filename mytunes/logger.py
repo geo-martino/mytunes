@@ -47,7 +47,9 @@ class Logger(logging.Logger):
         handlers = []
         for handler in self.get_all_handlers():
             match handler:
-                case logging.StreamHandler() | RichHandler():
+                case logging.StreamHandler() if type(handler) is logging.StreamHandler:
+                    handlers.append(handler)
+                case RichHandler():
                     handlers.append(handler)
 
         return handlers
