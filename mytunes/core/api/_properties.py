@@ -5,7 +5,7 @@ from typing import Any, Annotated, Union
 
 from aiorequestful.cache.backend import ResponseCache, SQLiteCache, CACHE_TYPES
 from aiorequestful.timer import GeometricCountTimer, StepCeilingTimer
-from pydantic import PositiveInt, Field, NonNegativeFloat, GetCoreSchemaHandler, Tag
+from pydantic import PositiveInt, Field, NonNegativeFloat, GetCoreSchemaHandler, Tag, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
@@ -35,10 +35,13 @@ class _GeometricCountTimerType:
             core_schema.no_info_plain_validator_function(lambda data: GeometricCountTimer(**data)),
         ])
 
-        return core_schema.json_or_python_schema(
-            python_schema=core_schema.union_schema([instance_schema, model_schema]),
-            json_schema=core_schema.plain_serializer_function_ser_schema(cls._serialise)
-        )
+        return core_schema.union_schema([instance_schema, model_schema])
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+            cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.plain_serializer_function_ser_schema(cls._serialise))
 
     @staticmethod
     def _serialise(timer: GeometricCountTimer) -> JsonSchemaValue:
@@ -68,10 +71,13 @@ class _StepCeilingTimer:
             instance_schema,
         ])
 
-        return core_schema.json_or_python_schema(
-            python_schema=core_schema.union_schema([instance_schema, model_schema]),
-            json_schema=core_schema.plain_serializer_function_ser_schema(cls._serialise)
-        )
+        return core_schema.union_schema([instance_schema, model_schema])
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+            cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.plain_serializer_function_ser_schema(cls._serialise))
 
     @staticmethod
     def _serialise(timer: StepCeilingTimer) -> JsonSchemaValue:
@@ -82,15 +88,15 @@ type WaitTimerT = Annotated[StepCeilingTimer, _StepCeilingTimer]
 
 
 class Timers(BaseModel):
-    retry: RetryTimerT = Field(
+    retry: RetryTimerT | None = Field(
         description="Configuration for the timer that controls how long to wait "
                     "in between each successive failed request",
-        default_factory=GeometricCountTimer,
+        default=None,
     )
-    wait: WaitTimerT = Field(
+    wait: WaitTimerT | None = Field(
         description="Configuration for the timer that controls how long to wait after every request,"
                     " regardless of whether it was successful.",
-        default_factory=StepCeilingTimer,
+        default=None,
     )
 
 
@@ -113,88 +119,17 @@ class _SQLiteCacheType:
 
         return core_schema.union_schema([instance_schema, model_schema])
 
+    @classmethod
+    def __get_pydantic_json_schema__(
+            cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.plain_serializer_function_ser_schema(cls._serialise))
+
+    @staticmethod
+    def _serialise(cache: SQLiteCache) -> JsonSchemaValue:
+        return {"expire": str(cache.expire.total_seconds())}
 
 type ResponseCacheT = Annotated[SQLiteCache, _SQLiteCacheType]
-
-# class APICacheConfig(Instantiator[ResponseCache]):
-#     # noinspection PyTypeHints
-#     type: Literal[*CACHE_TYPES] | None = Field(
-#         description=f"The type of backend to connect to. Available types: {", ".join(CACHE_TYPES)}",
-#         default=None,
-#     )
-#     db: str | Path = Field(
-#         description="The DB to connect to e.g. the URI/path for connecting to an SQLite DB",
-#         default=None,
-#     )
-#     expire_after: timedelta = Field(
-#         description="The maximum permitted expiry time allowed when looking for a response in the cache. "
-#                     "Also configures the expiry time to apply for new responses when persisting to the cache. "
-#                     "Value can be a duration string i.e. [±]P[DD]DT[HH]H[MM]M[SS]S (ISO 8601 format for timedelta)",
-#         default=api_cache_defaults.get("expire")
-#     )
-#
-#     @computed_field(
-#         description="Is this cache a file system cache that exists on the local system"
-#     )
-#     @property
-#     def is_local(self) -> bool:
-#         """Is this cache a file system cache that exists on the local system"""
-#         cls = next((cls for cls in local_caches if cls.type == self.type), None)
-#         return cls is not None
-#
-#     def create(self):
-#         cls = next((cls for cls in CACHE_CLASSES if cls.type == self.type), None)
-#         return cls.connect(value=self.db, expire=self.expire_after)
-#
-#
-# class APIConfig[T: RemoteAPI](Instantiator[T], metaclass=ABCMeta):
-#     cache: APICacheConfig = Field(
-#         description="Configuration for the API cache",
-#         default_factory=APICacheConfig,
-#     )
-#     handler: APIHandlerConfig = Field(
-#         description="Configuration for the API handler",
-#         default_factory=APIHandlerConfig,
-#     )
-#     token_file_path: Path | None = Field(
-#         description="A path to save/load a response token to",
-#         default=None,
-#     )
-#
-#
-# class SpotifyAPIConfig(APIConfig[SpotifyAPI]):
-#     client_id: SecretStr = Field(
-#         description="The client ID to use when authorising requests",
-#     )
-#     client_secret: SecretStr = Field(
-#         description="The client secret to use when authorising requests",
-#     )
-#     scope: tuple[str, ...] = Field(
-#         description="The scopes to request access to",
-#         default=()
-#     )
-#
-#     # noinspection PyNestedDecorators
-#     @field_validator("client_id", "client_secret", mode="after")
-#     @classmethod
-#     def validate_secrets(cls, value: SecretStr) -> SecretStr:
-#         """Ensure the API has the correct secret credentials set."""
-#         if not value:
-#             raise ParserError("Cannot create API object without both client ID and client secret set")
-#         return value
-#
-#     def create(self):
-#         api = SpotifyAPI(
-#             client_id=self.client_id.get_secret_value(),
-#             client_secret=self.client_secret.get_secret_value(),
-#             scope=self.scope,
-#             cache=self.cache.create(),
-#             token_file_path=self.token_file_path,
-#         )
-#         api.handler.retry_timer = self.handler.retry.create()
-#         api.handler.wait_timer = self.handler.wait.create()
-#
-#         return api
 
 
 if __name__ == "__main__":

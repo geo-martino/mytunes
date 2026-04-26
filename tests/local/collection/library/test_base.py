@@ -203,8 +203,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         """Assert that the given tracks were loaded into the model"""
         paths = set(track.path for track in tracks)
 
-        # FIXME: flakey assertion - very very rare
-        assert mock_load.call_count == len(paths)
+        assert mock_load.call_count == len(paths)  # FIXME: flakey assertion - very very rare
         mock_load.assert_has_calls([mock.call(path) for path in paths], any_order=True)
 
         if len(model.tracks) == len(tracks):  # tracks are not always unique
