@@ -6,6 +6,7 @@ import logging.config
 import logging.handlers
 import sys
 from collections.abc import Iterable
+from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, Annotated
 
@@ -48,8 +49,9 @@ class Logger(logging.Logger):
         handlers = []
         for handler in self.get_all_handlers():
             match handler:
-                case logging.StreamHandler() if handler.stream == sys.stdout:
-                    handlers.append(handler)
+                case logging.StreamHandler():
+                    if isinstance(handler.stream, TextIOWrapper) and handler.stream.name == sys.stdout.name:
+                        handlers.append(handler)
                 case RichHandler():
                     handlers.append(handler)
 
