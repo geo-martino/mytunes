@@ -91,25 +91,6 @@ class TestPathParentMapper(PathMapperTester):
         parents = map(Path, model.parent_serialise.keys())
         return [str(parent.joinpath(faker.file_name(category="audio"))) for parent in parents]
 
-    def test_map_from_iterable(self, model: PathParentMapper, faker: Faker):
-        paths = list(
-            zip(_generate_directory_paths(faker, "windows"), _generate_directory_paths(faker, "linux"))
-        )
-        paths_as_strings = list(tuple(map(str, item)) for item in paths)
-
-        model.parent_serialise = paths
-        assert model.parent_serialise == dict(paths_as_strings)
-
-        model.parent_deserialise = paths
-        assert model.parent_deserialise == dict(paths_as_strings)
-
-
-        model.parent_serialise = paths_as_strings
-        assert model.parent_serialise == dict(paths_as_strings)
-
-        model.parent_deserialise = paths_as_strings
-        assert model.parent_deserialise == dict(paths_as_strings)
-
     def test_mapping(self, model: PathParentMapper, faker: Faker):
         linux = Path(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux"))
 

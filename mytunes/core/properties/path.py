@@ -79,7 +79,7 @@ class PathModelMapper(PathMapper):
         return self.serialise(*args, **kwargs)
 
 
-type ParentPathAnnotated = Annotated[str, BeforeValidator(SystemPath.get_current_system_path)]
+type ParentPathAnnotated = Annotated[str, BeforeValidator(str), BeforeValidator(SystemPath.get_current_system_path)]
 
 
 @final
@@ -103,16 +103,6 @@ class PathParentMapper(PathMapper):
         default_factory=dict,
         alias="deserialise",
     )
-
-    @field_validator("parent_serialise", "parent_deserialise", mode="before", check_fields=True)
-    @staticmethod
-    def _map_parents_from_iterable[T: str | Path](value: Iterable[tuple[T, T]] | Mapping[T, T]) -> dict[str, str]:
-        if isinstance(value, Mapping):
-            value = value.items()
-        elif not isinstance(value, Iterable):
-            raise MyTunesValidationError(f"Unrecognised input type: {value!r}")
-
-        return {str(k): str(v) for k, v in value}
 
     def serialise(self, value: PathInputType, check_existence: bool = False) -> str | None:
         """
