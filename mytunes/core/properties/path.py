@@ -8,7 +8,7 @@ from os import sep
 from pathlib import Path, PurePath, PureWindowsPath, PurePosixPath
 from typing import final, Any, Annotated
 
-from pydantic import Field, field_validator, ValidationError
+from pydantic import Field, field_validator, ValidationError, BeforeValidator
 
 from mytunes._types import TO_SET
 from mytunes.core.properties.file import IsLocalFile
@@ -79,6 +79,9 @@ class PathModelMapper(PathMapper):
         return self.serialise(*args, **kwargs)
 
 
+type ParentPathAnnotated = Annotated[str, BeforeValidator(SystemPath.get_current_system_path)]
+
+
 @final
 class PathParentMapper(PathMapper):
     """
@@ -90,12 +93,12 @@ class PathParentMapper(PathMapper):
     """
     __final__ = True
 
-    parent_serialise: Mapping[str, str] = Field(
+    parent_serialise: Mapping[ParentPathAnnotated, ParentPathAnnotated] = Field(
         description="A map of ``{<parent to be replaced>: <its replacement>}`` to be applied during serialization.",
         default_factory=dict,
         alias="serialise",
     )
-    parent_deserialise: Mapping[str, str] = Field(
+    parent_deserialise: Mapping[ParentPathAnnotated, ParentPathAnnotated] = Field(
         description="A map of ``{<parent to be replaced>: <its replacement>}`` to be applied during deserialization.",
         default_factory=dict,
         alias="deserialise",

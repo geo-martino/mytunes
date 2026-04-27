@@ -73,30 +73,6 @@ class LocalLibrary(
         """List of errors encountered while loading the library."""
         return self._errors
 
-    @model_validator(mode="after")
-    def _set_library_path_to_mapper(self) -> Self:
-        if not isinstance(self.path_mapper, PathParentMapper):
-            return self
-
-        path = str(next(iter(self.library_folders), ""))
-        if not path:
-            return self
-
-        if isinstance(mapping := self.path_mapper.parent_serialise, MutableMapping):
-            for key, val in copy(mapping).items():
-                if val:
-                    continue
-                mapping[key] = path
-
-        if isinstance(mapping := self.path_mapper.parent_deserialise, MutableMapping):
-            for key, val in copy(mapping).items():
-                if key:
-                    continue
-                mapping.pop(key)
-                mapping[path] = val
-
-        return self
-
     async def load(self) -> None:
         self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1, new_line_start=True)
 

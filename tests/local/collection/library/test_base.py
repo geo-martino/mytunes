@@ -148,31 +148,6 @@ class TestLocalLibrary(NoUniqueKeyTester):
         model = LocalLibrary(library_folders=system_paths)
         assert model.library_folders == set(library_folders)
 
-    def test_set_library_path_to_mapper(self, library_folders: list[Path], faker: Faker):
-        paths = {faker.file_path(): faker.file_path() for _ in range(faker.random_int(1, 10))}
-
-        serialise_mapping = copy(paths)
-        mapped_keys = faker.random_elements(list(serialise_mapping.keys()), unique=True)
-        for key in mapped_keys:
-            serialise_mapping[key] = ""
-
-        deserialise_mapping = copy(paths)
-        mapped_key, mapped_value = faker.random_element(deserialise_mapping.items())
-        deserialise_mapping.pop(mapped_key)
-        deserialise_mapping[""] = mapped_value
-
-        folders = list(map(str, library_folders))
-        path_mapper = PathParentMapper(parent_serialise=serialise_mapping, parent_deserialise=deserialise_mapping)
-
-        model = LocalLibrary(library_folders=library_folders, path_mapper=path_mapper)
-
-        for key in mapped_keys:
-            assert model.path_mapper.parent_serialise[key] in folders
-
-        folder = next((folder for folder in folders if folder in model.path_mapper.parent_deserialise), None)
-        assert folder is not None
-        assert model.path_mapper.parent_deserialise[folder] == mapped_value
-
     def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]):
         names = {pl.name for pl in playlists}
 
