@@ -9,6 +9,7 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
+from mytunes.core.properties.path import PathParentMapper
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.library.musicbee import XMLLibraryParser

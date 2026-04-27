@@ -138,6 +138,10 @@ class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metac
         self.library_folders.clear()
         self.library_folders.update(map(Path, paths))
 
+        # need to revalidate the library folders manually to set the path mapper if needed
+        # noinspection PyCallingNonCallable
+        self._set_library_path_to_mapper()
+
     async def load_library_xml(self) -> dict[str, Any]:
         """Load the MusicBee library XML file from disk."""
         parser = XMLLibraryParser(source=self.xml_library_path, path_keys=self._xml_library_path_keys)

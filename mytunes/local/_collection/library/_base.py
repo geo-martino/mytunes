@@ -75,8 +75,6 @@ class LocalLibrary(
 
     @model_validator(mode="after")
     def _set_library_path_to_mapper(self) -> Self:
-        if isinstance(self.path_mapper, PathModelMapper):  # switch from basic mapper
-            self.path_mapper = PathParentMapper()
         if not isinstance(self.path_mapper, PathParentMapper):
             return self
 
