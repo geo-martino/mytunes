@@ -51,7 +51,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
 
     @model_validator(mode="after")
     def _set_track_total_from_album(self) -> Self:
-        from mytunes.core._collection.album import AlbumCollection
+        from .._collection.album import AlbumCollection
 
         if self.album is None:
             return self
@@ -67,7 +67,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
 
     @model_validator(mode="after")
     def _set_disc_total_from_album(self) -> Self:
-        from mytunes.core._collection.album import AlbumCollection
+        from .._collection.album import AlbumCollection
 
         if self.album is None:
             return self

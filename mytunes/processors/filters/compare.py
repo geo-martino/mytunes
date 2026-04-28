@@ -1,12 +1,11 @@
-from collections.abc import Iterable, Mapping, Collection, Sequence
+from collections.abc import Mapping, Collection, Sequence, MutableMapping
 from contextlib import suppress
 from typing import Self, Any, final, Annotated, Literal
 
+from pydantic import Field, validate_call, ValidationError, model_validator
+
 from mytunes._types import TO_TUPLE
 from mytunes.exception import MyTunesValidationError
-from pydantic import Field, field_validator, field_serializer, validate_call, ValidationError, model_validator
-
-from ..._base.resource import ResourceModel
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters._base import Filter
 
@@ -42,7 +41,9 @@ class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
 
     @model_validator(mode="before")
     @classmethod
-    def _from_comparer[T](cls, data: T | Mapping[str, Any] | Collection[Mapping[str, Any]]) -> T | Mapping[Comparer, Self]:
+    def _from_comparer[T](
+            cls, data: T | MutableMapping[str, Any] | Collection[Mapping[str, Any]]
+    ) -> T | Mapping[Comparer, Self]:
         match data:
             case Mapping() if data:
                 with suppress(ValidationError):
@@ -50,7 +51,6 @@ class ComparerFilter[IT: Any](Filter[Literal["compare", "comparer"], IT]):
             case Collection() if data and all(isinstance(value, Mapping) for value in data):
                 return dict(comparers=[Comparer.model_validate(value) for value in data])
 
-        data[cls.__discriminator_field__] = "compare"
         return data
 
     @model_validator(mode="after")

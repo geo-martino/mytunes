@@ -12,7 +12,7 @@ from yarl import URL
 
 from mytunes._types import StrippedString, TO_SET, HttpURL
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError
-from ..._base import BaseModel, RootModel, make_cls
+from ..._base import RootModel, make_cls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute
 from ...logger import Logger
@@ -138,14 +138,13 @@ class URI(RootModel[str]):
     @classmethod
     def get_adapter_for_source(cls, source: str) -> TypeAdapter[URI]:
         """Generate a type adapter for the registered URI submodels of a given source."""
-        kls = cast('type[BaseModel]', cls)
-        if kls.__final__:
+        if cls.__final__:
             raise MyTunesTypeError(
                 "Cannot get an adapter for a final model, must be called on a base class with registered submodels"
             )
 
         # noinspection PyTypeChecker
-        classes = {klass for klass in kls.registered_submodels if klass._source.casefold() == source.casefold()}
+        classes = {klass for klass in cls.registered_submodels if klass._source.casefold() == source.casefold()}
         if not classes:
             raise MyTunesTypeError(f"No registered {cls.__name__} submodels found for source: {source!r}")
 

@@ -102,7 +102,7 @@ class LocalTrack[FT: FileType](
     def _set_computed_fields(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(data)
 
-        for field_name in cls.model_computed_fields:
+        for field_name in cls.model_computed_fields.keys():
             if field_name not in cls.__tag_attributes__ or not hasattr(getattr(cls, field_name), "fset"):
                 continue
             if (value := cls._get_value_from_data(data, field_name)) is None:

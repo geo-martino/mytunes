@@ -40,6 +40,7 @@ class SpotifyURIBase(URI):
 
     @model_validator(mode="after")  # override to ensure this validation happens after length validation
     def _validate_type(self) -> Self:
+        # noinspection PyCallingNonCallable
         return super()._validate_type()
 
     @classmethod

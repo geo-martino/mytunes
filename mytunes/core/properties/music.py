@@ -64,12 +64,6 @@ class KeySignature(BaseModel):
             key_base = (v + "m" for v in key_base)
         return "/".join(key_base)
 
-    # noinspection PyTypeChecker
-    @key.setter
-    def key(self, value: str) -> None:
-        self.root = value
-        self.mode = value
-
     def __str__(self) -> str:
         return str(self.key)
 

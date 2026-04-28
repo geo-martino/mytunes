@@ -214,7 +214,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
         results.remove(match)
 
         message = f"Match found: {self._get_item_log_name(match)}"
-        if match.has_uri:
+        if isinstance(match, HasURI) and match.has_uri:
             message += f" - {match.uri}"
         self._log_debug(item, message=message)
 

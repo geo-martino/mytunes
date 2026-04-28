@@ -12,6 +12,7 @@ from mytunes.exception import MyTunesValidationError
 from mytunes.processors.filters.composite import IncludeExcludeFilter
 from mytunes.processors.filters.values import NameFilter
 from ..._item.track import Track, HasTracks, HasMutableTracks
+from ...sequence import UniqueSequence
 from ...._base.attribute import AttributeMetaclass
 from ...._base.resource import ResourceModel, ResourceMetaclass
 from ....processors.filters import ComparerFilter, Filter
@@ -35,8 +36,8 @@ class HasTracksAndPlaylists[TT: Track, PT: Playlist](
     )
 
     @property
-    def _items(self) -> list[TT]:
-        return list(self.tracks)
+    def _items(self) -> UniqueSequence[TT]:
+        return self.tracks
 
     def dump(self) -> dict[str, Any]:
         """Generate a dump of this library's state. This can be used for backup or debugging purposes."""

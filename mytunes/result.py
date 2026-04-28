@@ -2,9 +2,9 @@ import re
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
+import tabulate
 from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
-from tabulate import tabulate, SEPARATING_LINE
 from termcolor import colored
 
 from mytunes._types import StrippedString
@@ -162,7 +162,7 @@ class Result(BaseModel):
         # take key when not a Result to allow for separating lines
         rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results]
         col_count = max(map(len, rows)) if rows else 0
-        table = tabulate(
+        table = tabulate.tabulate(
             rows,
             tablefmt=cls._table_format,
             colalign=("left", *["right"] * max(0, col_count - 1)),
@@ -181,7 +181,7 @@ class Result(BaseModel):
         chunks: list[tuple[KT, VT]] = []
         chunk: list[tuple[KT, VT]] = []
         for key, result in results:
-            if key != SEPARATING_LINE:
+            if key != tabulate.SEPARATING_LINE:
                 chunk.append((key, result))
                 continue
 

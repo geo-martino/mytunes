@@ -36,4 +36,4 @@ def _attribute_is_writeable(kls: type[AttributeModel], name: str) -> bool:
 
 
 _WRITEABLE_ATTRIBUTE_FIELD_MAP = get_writeable_tag_attributes_map()
-_WRITEABLE_ATTRIBUTE_FIELD_TYPE = get_writeable_tag_attributes_type()
+type _WRITEABLE_ATTRIBUTE_FIELD_TYPE = get_writeable_tag_attributes_type()

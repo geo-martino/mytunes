@@ -1,5 +1,4 @@
 from collections.abc import MutableMapping, Iterable, Sequence
-from collections.abc import MutableMapping, Iterable, Sequence
 from typing import Any, final, Annotated
 
 import mutagen.flac

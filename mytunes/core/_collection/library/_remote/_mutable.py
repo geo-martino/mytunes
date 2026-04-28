@@ -601,10 +601,10 @@ class RemoteMutableLibrary[
             properties: Mapping[str, Any],
             dry_run: bool = False,
     ) -> SyncRemoteResult | None:
-        api: (
-            HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]] |
+        api: Union[
+            HasPlaylistEndpoints[PlaylistReadWriteEndpoints | HasLibraryEndpoints[PlaylistLibraryEndpoints]],
             HasTrackEndpoints[BatchReadEndpoints]
-        ) = self.api
+        ] = self.api
 
         async with self.concurrency:
             try:

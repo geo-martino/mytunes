@@ -9,7 +9,7 @@ from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, CollectionValue, HasCondition
-from .values._base import from_fixed_value
+from mytunes.processors.tagger.values import from_fixed_value
 from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel

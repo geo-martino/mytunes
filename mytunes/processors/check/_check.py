@@ -45,7 +45,9 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasAsyncOperations, HasPro
         return user.name if user is not None else "the current user"
 
     @abstractmethod
-    async def _check_page[T: HasURI](self, page: CheckerPage[API, T]) -> CheckResult[T] | Sequence[CheckResult[T]] | None:
+    async def _check_page[T: HasURI](
+            self, page: CheckerPage[API, T]
+    ) -> CheckResult[T] | Sequence[CheckResult[T]] | None:
         raise NotImplementedError
 
     @abstractmethod

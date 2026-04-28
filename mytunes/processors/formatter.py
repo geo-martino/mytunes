@@ -1,4 +1,3 @@
-import textwrap
 from collections.abc import Sequence, Iterable, Collection
 from contextlib import suppress
 from typing import Literal, Self, Annotated
@@ -9,17 +8,17 @@ from tabulate import tabulate
 from termcolor import colored
 
 from mytunes._types import TO_LIST
-from mytunes.exception import MyTunesTypeError, MyTunesValidationError
-from .._base import BaseModel
-from .._base.resource import ResourceModel
-from mytunes.core.collection import CollectionModel
 from mytunes.core.album import HasAlbum
 from mytunes.core.artist import HasArtists
+from mytunes.core.collection import CollectionModel
 from mytunes.core.properties.date import HasReleaseDate
 from mytunes.core.properties.length import HasLength
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.order import Position, HasTrackPosition
 from mytunes.core.properties.uri import HasImmutableURI, HasMutableURI
+from mytunes.exception import MyTunesTypeError, MyTunesValidationError
+from .._base import BaseModel
+from .._base.resource import ResourceModel
 from .._utils import truncate_string
 
 FIELDS = Literal[

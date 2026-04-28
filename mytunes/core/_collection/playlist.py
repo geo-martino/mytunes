@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from typing import ClassVar, Annotated, TYPE_CHECKING, Self, overload, Any
 
 from pydantic import Field, validate_call, BeforeValidator, computed_field, PositiveInt, model_validator
@@ -63,7 +63,7 @@ class MutablePlaylist[TT: Track](HasMutableTracks[TT], Playlist[TT]):
         self.images |= other.images
 
 
-type MergePlaylistsType[K, V] = V | Iterable[V] | Mapping[K, V]
+type MergePlaylistsType[V] = V | Iterable[V]
 
 
 def _get_playlists_map_from_merge_input[PT](
@@ -78,6 +78,10 @@ def _get_playlists_map_from_merge_input[PT](
             return playlists.playlists
         case HasPlaylists():
             return MutableUniqueSequence(playlists.playlists)
+        case Playlist():
+            return MutableUniqueSequence([playlists])
+        case Playlist():
+            return MutableUniqueSequence([playlists])
         case _:
             return MutableUniqueSequence(playlists)
 

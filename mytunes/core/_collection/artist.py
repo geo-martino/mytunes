@@ -14,13 +14,14 @@ from .._item.album import HasAlbums, Album, RemoteAlbum
 from .._item.artist import Artist, RemoteArtist
 from .._item.genre import Genre, RemoteGenre
 from .._item.track import Track
+from ..sequence import MutableUniqueSequence
 
 
 class ArtistCollection[AT: Album, GT: Genre](CollectionModel[AT], Artist[GT], HasAlbums[AT]):
     """Represents a collection of artists and their properties."""
 
     @property
-    def _items(self) -> list[AT]:
+    def _items(self) -> MutableUniqueSequence[AT]:
         return self.albums
 
     @property

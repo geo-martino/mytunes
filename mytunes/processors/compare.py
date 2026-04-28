@@ -8,9 +8,8 @@ from contextlib import suppress
 from datetime import datetime
 from functools import cached_property
 from types import NoneType
-from typing import Any, Literal, Self, Annotated, get_type_hints, get_args, get_origin, Union, final, TypeAlias
+from typing import Any, Self, Annotated, get_type_hints, get_args, get_origin, Union, final
 
-from mytunes.core.sequence import UniqueSequence
 from pydantic import Field, TypeAdapter, model_validator, ValidationError
 from pydantic.alias_generators import to_snake
 from pydantic.fields import FieldInfo
@@ -18,17 +17,14 @@ from typing_inspection.introspection import is_union_origin
 from typing_inspection.typing_objects import is_typevar
 
 from mytunes._types import LowerSnakeCase, Number
+from mytunes.core.properties.name import HasName
+from mytunes.core.sequence import UniqueSequence
 from mytunes.exception import MyTunesTypeError
 from mytunes.processors.time import TimeMapper
 from ._base.dynamic import DynamicProcessor, ProcessorAttribute, processormethod
-from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_MAP, _ATTRIBUTE_FIELD_TYPE, \
+from ._types import _ATTRIBUTE_FIELD_MAP, _ATTRIBUTE_FIELD_TYPE, \
     ItemCollection
 from .._base.attribute import AttributeModel
-from mytunes.core.track import Track
-from mytunes.core.properties.audio import HasAudioProperties
-from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
-from mytunes.core.properties.file import IsLocalFile
-from mytunes.core.properties.name import HasName
 
 
 @final

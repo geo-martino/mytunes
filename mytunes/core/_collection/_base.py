@@ -17,7 +17,7 @@ class CollectionModel[IT: ResourceModel](BaseModel):
     """Defines a common base models for attributes made of common collection properties."""
     @property
     @abstractmethod
-    def _items(self) -> Collection:
+    def _items(self) -> Collection[IT]:
         """The items in this collection."""
         raise NotImplementedError
 

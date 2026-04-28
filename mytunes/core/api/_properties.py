@@ -8,10 +8,11 @@ from pydantic import Field, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, core_schema
 
-from mytunes._base import BaseModel
+from ..._base import BaseModel
 
 
 class _GeometricCountTimerType:
+    # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         instance_schema = core_schema.is_instance_schema(GeometricCountTimer)
@@ -50,6 +51,7 @@ type RetryTimerT = Annotated[GeometricCountTimer, _GeometricCountTimerType]
 
 
 class _StepCeilingTimer:
+    # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         instance_schema = core_schema.is_instance_schema(StepCeilingTimer)
@@ -99,6 +101,7 @@ class Timers(BaseModel):
 
 
 class _SQLiteCacheType:
+    # noinspection PyUnusedLocal
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         instance_schema = core_schema.is_instance_schema(SQLiteCache)

@@ -75,7 +75,9 @@ class SpotifyArtistEndpoints(
 
     @validate_call
     async def get_all(
-            self, collection: SpotifyArtistCollection | PageCursor, types: set[OnErrorOmit[_ALBUM_TYPE]] = _ALL_ALBUM_TYPES,
+            self,
+            collection: SpotifyArtistCollection | PageCursor,
+            types: set[OnErrorOmit[_ALBUM_TYPE]] = _ALL_ALBUM_TYPES,
     ) -> list[SpotifyAlbum]:
         match collection:
             case PageCursor() as cursor:

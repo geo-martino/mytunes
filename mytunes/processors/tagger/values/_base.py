@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from collections.abc import Iterable
 from typing import Any, final, Literal, Annotated, Union
 
 from pydantic import Field, AliasChoices
@@ -10,7 +11,7 @@ from ...._types import StrippedString
 
 
 # noinspection PyAbstractClass
-class Value[OT: str, IT: BaseModel, VT: Any](DiscriminatorModel):
+class Value[OT: str, IT: BaseModel | Iterable[BaseModel], VT: Any](DiscriminatorModel):
     operation: Annotated[OT, DiscriminatorAttribute()] = Field(
         description="The name of this operation."
     )

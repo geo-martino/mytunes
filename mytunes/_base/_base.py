@@ -38,11 +38,6 @@ class ModelMetaclass(PydanticModelMetaclass):
 
         return cls
 
-    def __hash__(cls) -> int:
-        hsh = super().__hash__()
-        #print(cls, hsh, cls.__module__)
-        return hsh
-
     def _add_to_registry(cls) -> None:
         # WORKAROUND: hashes for classes are different depending on how they are imported meaning two of the
         #  same class definitions can have different hashes
@@ -225,6 +220,7 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
 class RootModel[T](PydanticRootModel[T], metaclass=ModelMetaclass):
     __required_modules__: dict[str, Any] = {}
+    __final__: bool
 
     model_config = ConfigDict(
         validate_default=True,

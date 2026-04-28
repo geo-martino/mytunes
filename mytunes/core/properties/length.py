@@ -76,6 +76,6 @@ class HasLength(AttributeModel):
         self: CollectionModel | HasLength
         length = sum(float(item.length or 0) for item in self._items)
         if length != self.length and length > 0:
-            self.__dict__["length"] = Length(length)
+            self.__dict__["length"] = Length(root=length)
 
         return self

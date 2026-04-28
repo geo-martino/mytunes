@@ -98,7 +98,7 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
         )
 
     @classmethod
-    def _get_tracks_in_collections(cls, collections: Iterable[HasTracks[Any, T]], others: Iterable[T]) -> tuple[T, ...]:
+    def _get_tracks_in_collections(cls, collections: Iterable[HasTracks[T]], others: Iterable[T]) -> tuple[T, ...]:
         """All unique tracks from all given collections"""
         in_collections: list[T] = []
 

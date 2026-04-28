@@ -58,4 +58,4 @@ _ATTRIBUTE_FIELD_TYPES: frozenset[type[AttributeModel]] = frozenset({
     HasPlayedDate,
 })
 _ATTRIBUTE_FIELD_MAP = get_tag_attributes_map()
-_ATTRIBUTE_FIELD_TYPE = get_tag_attributes_type()
+type _ATTRIBUTE_FIELD_TYPE = get_tag_attributes_type()

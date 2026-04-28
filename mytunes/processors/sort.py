@@ -6,24 +6,19 @@ from collections.abc import Mapping, MutableMapping, Sequence, Iterable, Collect
 from copy import copy
 from datetime import datetime
 from random import random, randrange, shuffle, uniform
-from typing import Any, Literal, Annotated, SupportsFloat, Union
+from typing import Any, Annotated, SupportsFloat
 
 from pydantic import Field, field_validator, field_serializer, model_validator
 
-from mytunes.exception import MyTunesValueError, MyTunesAttributeError
-from ._base import Processor
-from ._types import get_tag_attributes_map, get_tag_attributes_type, _ATTRIBUTE_FIELD_TYPE, ItemCollection
-from .._base.attribute import AttributeModel
-from .._base.enum import IntEnumModel
-from .._base.resource import ResourceModel
 from mytunes.core.artist import HasArtists
-from mytunes.core.track import Track
-from mytunes.core.properties.audio import HasAudioProperties
-from mytunes.core.properties.date import HasAddedDate, HasPlayedDate
-from mytunes.core.properties.file import IsLocalFile
+from mytunes.core.properties.date import HasAddedDate
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.rating import HasRating
-from mytunes.core.sequence import UniqueSequence
+from mytunes.exception import MyTunesValueError, MyTunesAttributeError
+from ._base import Processor
+from ._types import _ATTRIBUTE_FIELD_TYPE, ItemCollection
+from .._base.enum import IntEnumModel
+from .._base.resource import ResourceModel
 
 
 class ShuffleMode(IntEnumModel):
