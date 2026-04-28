@@ -30,6 +30,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     __supported_types__ = (mutagen.mp4.MP4,)
 
     class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.mp4.MP4Cover]):
+        # noinspection SpellCheckingInspection
         alias: ClassVar[str] = "covr"
 
         @classmethod
@@ -74,12 +75,14 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias="©alb"
     )
+    # noinspection SpellCheckingInspection
     genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         validation_alias=AliasChoices("©gen", "gnre", "----:com.apple.iTunes:GENRE"),
         serialization_alias="©gen",
     )
+    # noinspection SpellCheckingInspection
     track: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
@@ -95,6 +98,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
         default=None,
         alias="tmpo"
     )
+    # noinspection SpellCheckingInspection
     key: Annotated[KeySignature | None, TagAttribute()] = Field(
         description="The key of this track.",
         default=None,
@@ -132,6 +136,7 @@ class M4A(LocalTrack[mutagen.mp4.MP4]):
     def album_artist(self, value: LocalArtist) -> None:
         super(type(self), type(self)).album_artist.fset(self, value)
 
+    # noinspection SpellCheckingInspection
     @computed_field(
         description="Whether the album is a compilation album.",
         alias="cpil",

@@ -4,7 +4,7 @@ from typing import ClassVar, TYPE_CHECKING, Annotated, Self
 from pydantic import Field
 
 from mytunes.core.properties.uri import URI, HasImmutableURI
-from .._base import BaseModel, makecls
+from .._base import BaseModel, make_cls
 from .._base.resource import UniqueAttribute
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class RemoteModel(BaseModel):
 
 
 # noinspection PyAbstractClass
-class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=makecls()):
+class RemoteResource[UT: URI](HasImmutableURI[UT], RemoteModel, metaclass=make_cls()):
     # we just need to make this field required
     uri: Annotated[UT, UniqueAttribute()] = Field(
         description="The URI for this resource on the remote service.",

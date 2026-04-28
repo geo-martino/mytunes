@@ -51,7 +51,7 @@ class Position(AttributeModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _from_strin[T](cls, data: T | str) -> T | dict[str, Any]:
+    def _from_string[T](cls, data: T | str) -> T | dict[str, Any]:
         if not isinstance(data, str):
             return data
 

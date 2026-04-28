@@ -15,7 +15,7 @@ from mytunes.core.properties.tag import HasSeparableTags
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
 from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
-from ..._base import makecls
+from ..._base import make_cls
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 from ..._base.resource import ResourceModel
 
@@ -29,7 +29,7 @@ class Album[RT: Artist, GT: Genre](
     HasReleaseDate,
     HasImages,
     ResourceModel,
-    metaclass=makecls()
+    metaclass=make_cls()
 ):
     type: ClassVar[str] = "album"
 
@@ -114,7 +114,7 @@ class HasAlbums[AT: Album](HasSeparableTags):
         return cls._separate_tags(value)
 
 
-class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=makecls()):
+class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=make_cls()):
     @validate_call
     async def reload(self, api: HasAlbumEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.albums.get(self.uri)

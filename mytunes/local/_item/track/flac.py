@@ -28,6 +28,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     __supported_extensions__ = frozenset({"flac"})
     __supported_types__ = (mutagen.flac.FLAC,)
 
+    # noinspection SpellCheckingInspection
     model_config = ConfigDict(
         # catches fields like albumartist etc.
         alias_generator=lambda name: name.lower().replace("_", "")
@@ -69,12 +70,14 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         default_factory=list,
         alias="genre",
     )
+    # noinspection SpellCheckingInspection
     track: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the track in the album that this track is featured on.",
         default=None,
         validation_alias=AliasChoices("tracknumber", "tracktotal"),
         serialization_alias="tracknumber",
     )
+    # noinspection SpellCheckingInspection
     disc: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
@@ -87,6 +90,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         validation_alias=AliasChoices("date", "release date", "year"),
         serialization_alias="date",
     )
+    # noinspection SpellCheckingInspection
     key: Annotated[KeySignature | None, TagAttribute()] = Field(
         description="The key of this track.",
         default=None,

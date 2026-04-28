@@ -22,7 +22,7 @@ from mytunes.core.sequence import UniqueSequence, MutableUniqueSequence
 from mytunes.exception import MyTunesValidationError
 from .._item.track import Track, HasTracks, HasMutableTracks, RemoteTrack
 from .._item.user import RemoteUser
-from ..._base import makecls
+from ..._base import make_cls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel
 from ...processors.filters import Filter
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 class Playlist[TT: Track](
-    CollectionModel[TT], HasTracks[TT], HasName, HasLength, HasImages, ResourceModel, metaclass=makecls()
+    CollectionModel[TT], HasTracks[TT], HasName, HasLength, HasImages, ResourceModel, metaclass=make_cls()
 ):
     """Represents a playlist collection and its properties."""
     type: ClassVar[str] = "playlist"
@@ -143,7 +143,7 @@ class HasMutablePlaylists[PT: MutablePlaylist](HasPlaylists[PT]):
 
 # noinspection PyAbstractClass
 class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
-    Playlist[TT], RemoteCollection[UT, TT, CT], metaclass=makecls()
+    Playlist[TT], RemoteCollection[UT, TT, CT], metaclass=make_cls()
 ):
     owner: Annotated[OT, Attribute()] = Field(
         description="The owner of this playlist.",

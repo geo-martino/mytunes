@@ -23,7 +23,7 @@ from mytunes.local._collection.library._base import LocalLibrary
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local.exception import XMLReaderError, FileDoesNotExistError
 from ..._item.track import LocalTrack
-from ...._base import BaseModel, makecls
+from ...._base import BaseModel, make_cls
 
 try:
     import xmltodict
@@ -40,7 +40,7 @@ except ImportError:
 
 # noinspection PyFinal
 @final
-class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metaclass=makecls()):
+class MusicBee(LocalLibrary, IsReadableFile, IsWriteableFile, IsLocalFile, metaclass=make_cls()):
     """
     Represents a local MusicBee library, providing various methods for manipulating
     tracks and playlists across an entire local library collection.

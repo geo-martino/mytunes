@@ -3,14 +3,14 @@ from pathlib import Path
 from random import randrange, choice
 from typing import ClassVar
 
-from mytunes._base import makecls
+from mytunes._base import make_cls
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection import CollectionModel
 from mytunes.core.properties.name import HasName
 from tests.remote import URI_TYPES
 
 
-class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=makecls()):
+class MockCollection(CollectionModel, ResourceModel, HasName, metaclass=make_cls()):
     type: ClassVar[str] = choice(URI_TYPES)
 
     all_items: list = []

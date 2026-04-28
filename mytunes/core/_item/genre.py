@@ -10,12 +10,12 @@ from mytunes.core.properties.tag import HasSeparableTags
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
 from mytunes.core.sequence import MutableUniqueSequence
-from ..._base import makecls
+from ..._base import make_cls
 from ..._base.attribute import Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute
 
 
-class Genre(HasName, ResourceModel, metaclass=makecls()):
+class Genre(HasName, ResourceModel, metaclass=make_cls()):
     """Represents a genre resource and its properties."""
     type: ClassVar[str] = "genre"
 
@@ -66,7 +66,7 @@ class HasGenres[GT: Genre](HasSeparableTags):
         self.genres = value
 
 
-class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=makecls()):
+class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=make_cls()):
     @validate_call
     async def reload(self, api: HasGenreEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.genres.get(self.uri)

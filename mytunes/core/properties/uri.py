@@ -12,7 +12,7 @@ from yarl import URL
 
 from mytunes._types import StrippedString, TO_SET, HttpURL
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError
-from ..._base import BaseModel, RootModel, makecls
+from ..._base import BaseModel, RootModel, make_cls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute
 from ...logger import Logger
@@ -178,7 +178,7 @@ class URI(RootModel[str]):
 
 
 # noinspection PyAbstractClass
-class HasURI(AttributeModel, ResourceModel, metaclass=makecls()):
+class HasURI(AttributeModel, ResourceModel, metaclass=make_cls()):
     # not sure how to define this in a way that works for both without causing issues with pydantic...
     # this is either a field or property in child classes so have put this for type checking only for now
     if TYPE_CHECKING:

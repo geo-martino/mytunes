@@ -476,7 +476,7 @@ class _SpotifyAudioAnalysisSegment(_SpotifyAudioAnalysisInterval):
     loudness_max_time: Annotated[Length, Attribute()] = Field(
         description=(
             "The segment-relative offset of the segment peak loudness in seconds. Combined with loudness_start and "
-            "loudness_max, these components can be used to desctibe the 'attack' of the segment."
+            "loudness_max, these components can be used to describe the 'attack' of the segment."
         )
     )
     loudness_end: Annotated[Decibels, Attribute()] = Field(
@@ -533,7 +533,7 @@ class SpotifyAudioAnalysis(SpotifyModel):
         ),
     )
     segments: Annotated[list[_SpotifyAudioAnalysisSegment], Attribute()] = Field(
-        description="Each segment contains a roughly conisistent sound throughout its duration."
+        description="Each segment contains a roughly consistent sound throughout its duration."
     )
     tatums: Annotated[list[_SpotifyAudioAnalysisInterval], Attribute()] = Field(
         description=(

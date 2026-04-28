@@ -376,11 +376,11 @@ class InitialCursor(_HasLimitParam):
     This is used in special cases where the type of cursor the API will return is now known in advance.
     For the pagination functions to work, the cursor must return a 'next' cursor to get the next page of items.
     If the user does not know the type of cursor the API will return in advance,
-    they can use this cursor as a placeholder until they get the first page of items and can determine the type of
-    cursor from the response.
+    they can use this cursor as a placeholder until they get the first page of items.
+    The next cursor returned should then enable paginated responses for the remaining items.
 
     Special care must be taken to ensure that the API does not return a cursor of this same type for the next
-    page of items, as this will cause an infinite loop when trying to get the next page of items.
+    page of items. This will cause an infinite loop when trying to get the next page of items.
     """
 
     @classmethod

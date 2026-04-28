@@ -17,7 +17,7 @@ from mytunes.core.properties.rating import HasRating
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
 from mytunes.core.sequence import MutableUniqueSequence, UniqueSequence
-from ..._base import makecls
+from ..._base import make_cls
 from ..._base.attribute import AttributeModel, Attribute, TagAttribute
 from ..._base.resource import ResourceModel
 
@@ -35,7 +35,7 @@ class Track[RT: Artist, AT: Album, GT: Genre](
     HasLength,
     HasKeySignature,
     ResourceModel,
-    metaclass=makecls()
+    metaclass=make_cls()
 ):
     """Represents a track resource and its properties."""
     type: ClassVar[str] = "track"
@@ -137,7 +137,7 @@ class HasMutableTracks[TT: Track](HasTracks[TT]):
 
 
 class RemoteTrack[UT: URI, RT: RemoteArtist, AT: RemoteAlbum, GT: RemoteGenre](
-    Track[RT, AT, GT], RemoteResource[UT], metaclass=makecls()
+    Track[RT, AT, GT], RemoteResource[UT], metaclass=make_cls()
 ):
     @validate_call
     async def reload(self, api: HasTrackEndpoints[ItemReadEndpoints]) -> Self:

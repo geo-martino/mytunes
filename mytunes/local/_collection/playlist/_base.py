@@ -19,7 +19,7 @@ from mytunes.processors.filters.composite import CompositeFilter, CompositeResul
 from mytunes.processors.limit import ItemLimiter
 from mytunes.processors.sort import ItemSorter
 from ..._item.track import LocalTrack, HasLocalTracks
-from ...._base import makecls
+from ...._base import make_cls
 from ...._base.resource import UniqueAttribute
 from ...._types import DEFAULT_IF_NONE
 
@@ -30,7 +30,7 @@ class LocalPlaylistFile[TF: Filter](
     MutablePlaylist[LocalTrack[mutagen.FileType]],
     HasLocalTracks[LocalTrack[mutagen.FileType]],
     HasMutableURI,
-    metaclass=makecls()
+    metaclass=make_cls()
 ):
     _original: MutableUniqueSequence[LocalTrack] = PrivateAttr(default_factory=MutableUniqueSequence)
 

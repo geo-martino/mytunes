@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 
-from mytunes._base import makecls
+from mytunes._base import make_cls
 from mytunes._base.resource import ResourceModel
 from mytunes.core._collection import CollectionModel, RemoteCollection
 from mytunes.core._collection.album import AlbumCollection
@@ -28,7 +28,7 @@ from tests.utils import split_list
 class SearcherTester(metaclass=ABCMeta):
     @pytest.fixture
     def items(self, tracks: list[Track], faker: Faker) -> list[HasMutableURI]:
-        class TrackWithURI(Track, HasMutableURI, metaclass=makecls()):
+        class TrackWithURI(Track, HasMutableURI, metaclass=make_cls()):
             pass
 
         tracks = faker.random_elements(tracks, length=len(tracks) // 2, unique=True)

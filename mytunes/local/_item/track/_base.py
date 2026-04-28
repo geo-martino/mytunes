@@ -38,7 +38,7 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track._types import ItemSequence
 from mytunes.local.exception import FileError
-from ...._base import BaseModel, makecls
+from ...._base import BaseModel, make_cls
 from ...._base.attribute import TagAttribute
 from ...._base.resource import ResourceModel
 
@@ -78,7 +78,7 @@ class LocalTrack[FT: FileType](
     HasAddedDate,
     HasPlayedDate,
     Track[LocalArtist, LocalAlbum, LocalGenre],
-    metaclass=makecls(),
+    metaclass=make_cls(),
 ):
     __supported_types__: ClassVar[Sequence[type[mutagen.FileType]] | None] = None
 

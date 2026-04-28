@@ -67,42 +67,50 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         default_factory=list,
         alias="TPE1",
     )
+    # noinspection SpellCheckingInspection
     album: Annotated[LocalAlbum | None, TagAttribute()] = Field(
         description="The album this track is featured on.",
         default=None,
         alias="TALB",
     )
+    # noinspection SpellCheckingInspection
     genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
         description="The genres associated with this track.",
         default_factory=list,
         alias="TCON",
     )
+    # noinspection SpellCheckingInspection
     track: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
         alias="TRCK",
     )
+    # noinspection SpellCheckingInspection
     disc: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
         alias="TPOS",
     )
+    # noinspection SpellCheckingInspection
     bpm: Annotated[PositiveFloat | None, TagAttribute()] = Field(
         description="The tempo of this track.",
         default=None,
         alias="TBPM",
     )
+    # noinspection SpellCheckingInspection
     key: Annotated[KeySignature | None, TagAttribute()] = Field(
         description="The key of this track.",
         default=None,
         alias="TKEY",
     )
+    # noinspection SpellCheckingInspection
     released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
         description="The date this track was released.",
         default=None,
         validation_alias=AliasChoices("TDAT", "TDOR", "TYER", "TORY", "TDRC"),
         serialization_alias="TDAT",
     )
+    # noinspection SpellCheckingInspection
     rating: Annotated[Rating[NonNegativeFloat] | None, TagAttribute()] = Field(
         description="The rating of this track.",
         default=None,
@@ -137,6 +145,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         value = self._deserialize_text_frame(value)
         super(type(self), type(self)).album_artist.fset(self, value)
 
+    # noinspection SpellCheckingInspection
     @computed_field(
         description="Whether the album is a compilation album.",
         alias="TCMP",
