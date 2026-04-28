@@ -4,6 +4,7 @@ from faker import Faker
 from mytunes.core._collection.library._base import HasTracksAndPlaylists
 from mytunes.core._collection.playlist import Playlist
 from mytunes.core._item.track import Track, RemoteTrack
+from mytunes.processors.filters import NameFilter
 from tests.testers import NoUniqueKeyTester
 
 
@@ -11,6 +12,13 @@ class TestLibrary(NoUniqueKeyTester):
     @pytest.fixture
     def model(self, faker: Faker) -> HasTracksAndPlaylists:
         return HasTracksAndPlaylists()
+
+    def test_convert_playlist_names_to_filter(self, model: HasTracksAndPlaylists, playlists: list[Playlist]):
+        names = {pl.name for pl in playlists}
+
+        model.playlist_filter = names
+        assert isinstance(model.playlist_filter, NameFilter)
+        assert model.playlist_filter.values == names
 
     def test_items_count(self, tracks: list[Track], playlists: list[Playlist]):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)

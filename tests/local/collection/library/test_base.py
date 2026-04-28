@@ -148,13 +148,6 @@ class TestLocalLibrary(NoUniqueKeyTester):
         model = LocalLibrary(library_folders=system_paths)
         assert model.library_folders == set(library_folders)
 
-    def test_convert_playlist_names_to_filter(self, model: LocalLibrary, playlists: list[Playlist]):
-        names = {pl.name for pl in playlists}
-
-        model.playlist_filter = names
-        assert isinstance(model.playlist_filter, NameFilter)
-        assert model.playlist_filter.values == names
-
     def test_gets_all_track_paths(self, model: LocalLibrary, tracks: list[LocalTrack]):
         expected = {track.path for track in tracks}
         assert expected

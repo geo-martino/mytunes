@@ -76,6 +76,14 @@ class NameFilter(_ValueFilter[Literal["name", "names"], str]):
             case _:
                 return item
 
+    @classmethod
+    def from_names[T](cls, data: T | str | Collection[str]) -> T | NameFilter:
+        if isinstance(data, str):
+            data = (data,)
+        if not isinstance(data, Collection) or not all(isinstance(it, str) for it in data):
+            return data
+        return NameFilter(values=data)
+
     @validate_call
     def check[T: str | HasName](self, item: T, reference: T | None = None) -> bool:
         name = self._extract_value_from_model(item)

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Mapping, Collection
 from typing import Any, ClassVar, Self, Annotated, Union
 
-from pydantic import Field, Tag, Discriminator, field_validator
+from pydantic import Field, Tag, Discriminator, field_validator, BeforeValidator
 
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists
@@ -20,6 +20,20 @@ from ....processors.filters import ComparerFilter, Filter
 class HasTracksAndPlaylists[TT: Track, PT: Playlist](
     CollectionModel[TT], HasTracks[TT], HasPlaylists[PT],
 ):
+    playlist_filter: Annotated[
+        Union[
+            NameFilter,
+            IncludeExcludeFilter[PT, NameFilter, NameFilter],
+            ComparerFilter[str],
+        ],
+        Field(discriminator=Filter.__discriminator_field__),
+        BeforeValidator(NameFilter.from_names),
+    ] | None = Field(
+        description="The filter to apply when loading playlists. Filters playlist by name.",
+        default=None,
+        repr=False,
+    )
+
     @property
     def _items(self) -> list[TT]:
         return list(self.tracks)
@@ -64,24 +78,6 @@ class Library[TT: Track, PT: Playlist](
     source: ClassVar[str] = Field(
         description="The name of the source of this library.",
     )
-
-    playlist_filter: Annotated[
-        NameFilter | IncludeExcludeFilter[PT, NameFilter, NameFilter] | ComparerFilter[str],
-        Field(discriminator=Filter.__discriminator_field__),
-    ] | None = Field(
-        description="The filter to apply when loading playlists. Filters playlist by name.",
-        default=None,
-        repr=False,
-    )
-
-    @field_validator("playlist_filter", mode="before", check_fields=True)
-    @classmethod
-    def _filter_from_names[T](cls, data: T | str | Collection[str]) -> T | NameFilter:
-        if isinstance(data, str):
-            data = (data,)
-        if not isinstance(data, Collection) or not all(isinstance(it, str) for it in data):
-            return data
-        return NameFilter(values=data)
 
     @abstractmethod
     async def load(self):
