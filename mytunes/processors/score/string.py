@@ -126,7 +126,7 @@ class NameScorer(StringScoreReducer[Literal["name", "title"], NameCleaner]):
 
 
 @final
-class ArtistScorer(StringScorer[Literal["artist"], ArtistCleaner]):
+class ArtistScorer(StringScorer[Literal["artist", "artists"], ArtistCleaner]):
     """Score items by comparing artists. Score=0 when either value is None."""
     __final__ = True
 

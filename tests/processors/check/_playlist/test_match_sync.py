@@ -110,7 +110,7 @@ class TestSyncMatch(UniqueKeyTester):
         for item in items:
             match = next(it for it in mutable_items if id(item) == id(item))
             if item in expected_updated:
-                assert item.uri == match.uri
+                assert item.uri == match.uri  # FIXME: flakey assertion - unbelievably rare
             else:
                 assert item.uri is None
 
