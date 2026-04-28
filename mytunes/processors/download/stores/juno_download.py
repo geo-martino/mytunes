@@ -11,7 +11,7 @@ from mytunes.processors.download.stores.exception import StoreTypeError
 
 
 @final
-class JunoDownloadStore(AudioStore[Literal["juno"]]):
+class JunoDownloadStore(AudioStore[Literal["juno_download", "juno"]]):
     __final__ = True
 
     _accepted_types: ClassVar[tuple[type[ResourceModel], ...]] = (Track, Album)
