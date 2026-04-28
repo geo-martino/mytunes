@@ -4,7 +4,7 @@ from typing import ClassVar, Self, Any, Literal
 
 from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
-from tabulate import tabulate
+from tabulate import tabulate, SEPARATING_LINE
 from termcolor import colored
 
 from mytunes._types import StrippedString
@@ -157,7 +157,7 @@ class Result(BaseModel):
         if isinstance(results, Mapping):
             results = results.items()
 
-        results = sorted(results, key=lambda x: x[0].casefold())
+        results = cls._sort_results(results)
 
         # take key when not a Result to allow for separating lines
         rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results]
@@ -174,6 +174,25 @@ class Result(BaseModel):
             table = cls._header_formatter.get_value(header) + ":\n" + table
 
         return table
+
+    @staticmethod
+    def _sort_results[KT, VT](results: Sequence[tuple[KT, VT]]) -> list[tuple[KT, VT]]:
+        # sort the results in chunks to account for separating lines
+        chunks: list[tuple[KT, VT]] = []
+        chunk: list[tuple[KT, VT]] = []
+        for key, result in results:
+            if key != SEPARATING_LINE:
+                chunk.append((key, result))
+                continue
+
+            chunk.sort(key=lambda x: x[0].casefold())
+            chunks.extend(chunk)
+            chunks.append((key, result))
+            chunk.clear()
+
+        chunk.sort(key=lambda x: x[0].casefold())
+        chunks.extend(chunk)
+        return chunks
 
     def generate_log(self, key: str | None = None) -> tuple[str, ...]:
         """Generate a log of stats for this result"""

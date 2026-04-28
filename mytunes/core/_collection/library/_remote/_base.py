@@ -174,8 +174,9 @@ class RemoteLibrary[
 
         self._logger.stat(table, new_line_start=True, new_line_end=True)
 
-    def _generate_playlist_results(self) -> tuple[RemotePlaylistsResult[PT], ...]:
-        return RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
+    def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[PT]]:
+        results = RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
+        return {result.name: result for result in results}
 
     ###########################################################################
     ## Load - tracks

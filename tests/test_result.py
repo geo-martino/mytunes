@@ -1,12 +1,17 @@
 import os
+from random import shuffle
 from typing import Annotated
+from unittest.mock import Mock
 
 import pytest
+import tabulate
 from faker import Faker
+from pytest_mock import MockerFixture
 from termcolor import can_colorize, colored
 
 from mytunes.exception import MyTunesTypeError
-from mytunes.result import LogFormatter, LenLogFormatter, Result, CountResult, TotalCountResult, MapLogFormatter
+from mytunes.result import LogFormatter, LenLogFormatter, MapLogFormatter, \
+    Result, NamedResult, CountResult, TotalCountResult
 from tests.testers import BaseModelTester
 
 
@@ -182,11 +187,26 @@ class TestResult(BaseModelTester):
 
     def test_generate_table(self, model: Result, results: list[Result]):
         results = {result.name: result for result in results}
-        table = model.generate_table(results, header="Test Results")
+        table = Result.generate_table(results, header="Test Results")
 
         assert len(table.splitlines()) == len(results) + 1  # adds header row
         # adds key to each row
         assert len(table.splitlines()[1].split(" | ")) == len(next(iter(results.values())).generate_log()) + 1
+
+    def test_sort_results(self, model: Result, results: list[Result], faker: Faker):
+        expected = [
+            *((result.name, result) for result in sorted(results, key=lambda result: result.name)),
+            (tabulate.SEPARATING_LINE, None),
+            *((result.name, result) for result in sorted(results, key=lambda result: result.name)),
+        ]
+
+        results = (
+            *((result.name, result) for result in results),
+            (tabulate.SEPARATING_LINE, None),
+            *((result.name, result) for result in results),
+        )
+
+        assert Result._sort_results(results) == expected
 
 
 class TestCountResult(BaseModelTester):
@@ -275,3 +295,28 @@ class TestTotalCountResult(BaseModelTester):
             expected_total
         )
         assert model.generate_totals_log(results) == expected
+
+
+class TestNamedResult(BaseModelTester):
+    @pytest.fixture
+    def model(self, faker: Faker) -> NamedResult:
+        return NamedResult(name=faker.word())
+
+    @pytest.fixture
+    def results(self, model: NamedResult, faker: Faker) -> list[NamedResult]:
+        return [model.__class__(name=f"test {i}") for i in range(faker.random_int(1, 10))]
+
+    @pytest.fixture
+    def mock_generate_table(self, mocker: MockerFixture) -> Mock:
+        return mocker.spy(Result, "generate_table")
+
+    def test_generate_table_from_sequence(
+            self, model: NamedResult, results: list[NamedResult], mock_generate_table: Mock
+    ):
+        expected = [(result.name, result) for result in results]
+
+        NamedResult.generate_table(results, header=None)
+        mock_generate_table.assert_called_with(results=expected, header=None)
+
+        NamedResult.generate_table(expected, header=None)
+        mock_generate_table.assert_called_with(results=expected, header=None)
