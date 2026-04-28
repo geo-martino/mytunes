@@ -12,7 +12,6 @@ from mytunes.processors.download.stores._base import AudioStore, HasLocale
 from mytunes.processors.download.stores.exception import StoreTypeError
 
 
-
 @final
 class SevenDigitalStore(AudioStore[Literal["7digital"]], HasLocale):
     __final__ = True

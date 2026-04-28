@@ -45,9 +45,9 @@ class StoreManager(Processor, HasLogger, HasProgress):
     @field_validator("stores", mode="before", check_fields=True)
     @classmethod
     def _from_store_names[T](cls, names: T) -> T | list[dict[str, str]]:
-        if not isinstance(names, Collection) or not all(isinstance(name, str) for name in names):
+        if not isinstance(names, Collection):
             return names
-        return [dict(name=name) for name in names]
+        return [dict(name=name) if isinstance(name, str) else name for name in names]
 
     @validate_call
     def open_sites_for_collections(self, collections: Sequence[CollectionModel]) -> None:
