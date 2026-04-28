@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from collections.abc import Mapping, Collection
+from collections.abc import Mapping
 from typing import Any, ClassVar, Self, Annotated, Union
 
-from pydantic import Field, Tag, Discriminator, field_validator, BeforeValidator
+from pydantic import Field, Tag, Discriminator, BeforeValidator
 
 from mytunes.core._collection import CollectionModel
 from mytunes.core._collection.playlist import Playlist, HasPlaylists, HasMutablePlaylists

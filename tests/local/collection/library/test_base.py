@@ -1,7 +1,6 @@
 import os
 from asyncio import Semaphore
 from collections.abc import Generator
-from copy import copy
 from pathlib import Path
 from random import choice, sample
 from unittest import mock
@@ -12,8 +11,6 @@ from faker import Faker
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 
-from mytunes.core._collection.playlist import Playlist
-from mytunes.core.properties.path import PathParentMapper
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.playlist import LocalPlaylist
 from mytunes.local._collection.playlist.result import LoadPlaylistResult

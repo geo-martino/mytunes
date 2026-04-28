@@ -1,18 +1,16 @@
 import itertools
-from collections.abc import Generator, Collection, Sequence, MutableMapping
-from copy import copy
+from collections.abc import Generator, Collection, Sequence
 from pathlib import Path
-from typing import Annotated, ClassVar, final, Any, Self
+from typing import Annotated, ClassVar, final, Any
 
 import tabulate
 from mutagen import MutagenError
-from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, model_validator, \
-    validate_call, OnErrorOmit
+from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, validate_call, OnErrorOmit
 from termcolor import colored
 
 from mytunes._types import DEFAULT_IF_NONE
 from mytunes.core.library import MutableLibrary
-from mytunes.core.properties.path import PathMapper, PathParentMapper, SystemPath, SystemPaths, PathModelMapper
+from mytunes.core.properties.path import PathMapper, SystemPath, SystemPaths, PathModelMapper
 from mytunes.exception import MyTunesError, MyTunesValueError
 from mytunes.local._collection._base import LocalCollection
 from mytunes.local._collection.album import LocalAlbumCollection
