@@ -454,8 +454,12 @@ class LocalTrack[FT: FileType](
     @classmethod
     def _map_uri_field(cls, fields: Collection[str], context: TagContext = None) -> tuple[str, ...]:
         fields = list(fields)
-        if context is not None and context.map_uri_to_field and "uri" in fields:
-            fields.remove("uri")
+        if context is not None and context.map_uri_to_field and ("uri" in fields or "uris" in fields):
+            with suppress(ValueError):
+                fields.remove("uri")
+            with suppress(ValueError):
+                fields.remove("uris")
+
             fields.append(context.map_uri_to_field)
 
         return tuple(fields)
@@ -576,9 +580,11 @@ class LocalTrack[FT: FileType](
             context: TagContext[FT] = None
     ) -> dict[str, Any]:
         include = self._map_uri_field(include, context=context)
+        include = {field.split(".")[0] for field in include}  # can only serialise top-level fields
         include = self._validate_tag_fields(include or self.__tag_fields__)
 
         exclude = self._map_uri_field(exclude, context=context)
+        exclude = {field.split(".")[0] for field in exclude}  # can only serialise top-level fields
         exclude = self._validate_tag_fields(exclude)
 
         return self.model_dump(

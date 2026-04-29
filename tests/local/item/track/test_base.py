@@ -321,6 +321,12 @@ class TestLocalTrack(UniqueKeyTester):
         with pytest.raises(MyTunesValueError):
             model.to_tags(exclude={"name", "does not exist"})
 
+    def test_to_selected_tags_on_top_level_only(self, model: LocalTrack):
+        tags = model.to_tags(include={"name", "album.name", "album_artist.tag", "compilation.yes"}, exclude={"name"})
+        assert "album" in tags
+        assert "album_artist" in tags
+        assert "compilation" in tags
+
     def test_to_selected_uri_tag(self, model: LocalTrack, context: TagContext):
         tags = model.to_tags(include={"uri"}, context=context)
         assert context.map_uri_to_field in tags
