@@ -1,6 +1,6 @@
 import functools
 from abc import abstractmethod
-from collections.abc import Mapping, Callable
+from collections.abc import Mapping, Callable, Awaitable
 from contextlib import suppress
 from typing import Self, Any, Annotated
 
@@ -134,20 +134,15 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
             invalid_return: T,
             *expected: tuple[str | None, type[Endpoints | HasEndpoints], str]
     ) -> Callable:
-        async def invalid_wrapper() -> T:
-            if callable(invalid_return):
-                return invalid_return()
-            return invalid_return
-
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[Any, Awaitable[T]]) -> Callable:
             @functools.wraps(func)
-            def wrapper(self: HasAPI, *args, **kwargs):
+            async def wrapper(self: HasAPI, *args, **kwargs):
                 for key, expected_type, context in expected:
                     endpoints = self._validate_endpoints(key=key, context=context, expected=expected_type, name=kind)
                     if endpoints is None:
-                        return invalid_wrapper()
+                        return invalid_return() if callable(invalid_return) else invalid_return
 
-                return func(self, *args, **kwargs)
+                return await func(self, *args, **kwargs)
 
             return wrapper
         return decorator
