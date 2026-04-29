@@ -1,8 +1,9 @@
 from ._setter import ValueSetter, GroupSetter, SortSetter, IncrementalSetter
-from ._tagger import Tagger
+from ._tagger import Tagger, TaggerResult
 
 __all__ = [
     Tagger.__name__,
+    TaggerResult.__name__,
     ValueSetter.__name__,
     GroupSetter.__name__,
     SortSetter.__name__,
