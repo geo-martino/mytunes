@@ -22,6 +22,7 @@ from mytunes.core._item.artist import RemoteArtist
 from mytunes.core._item.track import RemoteTrack
 from mytunes.core.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
     BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
+from mytunes.core.api._endpoints import ItemsReadEndpoints
 from mytunes.core.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from mytunes.core.properties.image import ImageURL, ImageFile
 from mytunes.core.properties.uri import URI
@@ -558,6 +559,33 @@ class TestItemReadEndpoints(EndpointsTester):
             converter: Callable[[URI], str | URI | URL | RemoteResource],
     ):
         await model.get(converter(uri))
+
+
+class TestItemsReadEndpoints(EndpointsTester):
+    @pytest.fixture
+    def model(self, handler: RequestHandler) -> ItemsReadEndpoints:
+        return ItemsReadEndpoints[SimpleURI, MockRemoteResource](
+            handler=handler,
+        )
+
+    @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
+    async def test_get_many(
+            self,
+            model: ItemsReadEndpoints,
+            uris: list[URI],
+            limit: int,
+            items: list[dict[str, Any]],
+            mock_get_many: Mock,
+            mock_create_model: Mock,
+            converter: Callable[[URI], str | URI | URL | RemoteResource],
+    ):
+        # need to ensure the models get created to enable sorting by ID
+        mock_create_model.side_effect = lambda x, *_, **__: MockRemoteResource.model_validate(x)
+
+        results = await model.get_many(list(map(converter, uris)))
+
+        # guarantees same output order as input order
+        assert [result.uri.id for result in results] == [uri.id for uri in uris]
 
 
 class TestReadCollectionEndpoints(EndpointsTester):

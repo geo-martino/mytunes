@@ -21,6 +21,8 @@ class TestUserEndpoints(EndpointsTester):
             name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type))
 
     async def test_context_sets_user(self, model: UserEndpoints, user: RemoteUser, mock_get: Mock):
+        mock_get.reset_mock(side_effect=True)  # clear side effect function
+
         assert model.user is None
         mock_get.return_value = user
 

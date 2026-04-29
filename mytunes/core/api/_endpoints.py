@@ -20,7 +20,7 @@ from pydantic_core import PydanticUndefined
 from yarl import URL
 
 from mytunes._types import get_generic, get_generics, get_generic_type, get_bases
-from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
+from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence, ApiURLSequence
 from mytunes.core.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from mytunes.core.properties.image import ImageSource, PILImageFileT, ImageURL
 from mytunes.core.properties.logger import HasLogger, HasProgress
@@ -466,8 +466,10 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         """Persist ``responses`` for a given ``url`` to the cache."""
         urls = set()
         for response in responses:
+            print(response, self._url_path, self._id_path)
             url = self._get_value_from_response(response, self._url_path)
-            if url is None:
+            # key = self._get_value_from_response(response, self._id_path)
+            if url is None: #or key is None:
                 continue
 
             url = url.replace(self._get_value_from_response(response, self._id_path), "")
@@ -572,6 +574,37 @@ class ItemReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         """
         response = await self._handler.get(url)
         return type(self).create_model(response, context=self._model_context)
+
+
+class ItemsReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+    @overload
+    async def get_many(self, urls: Sequence[_URL_TYPE[UT, RT]]) -> list[RT]: ...
+
+    @overload
+    async def get_many(self, urls: Sequence[UT]) -> list[RT]: ...
+
+    @ApiURLSchema.validate_call("urls", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
+    async def get_many(self, urls: ApiURLSequence[UT, RT]) -> list[RT]:
+        """
+        Get multiple resources from the API using the given URLs.
+        Calls each URL individually rather than batching requests.
+
+        The URLs must relate to the resource type handled by this API model, and can be one of the following:
+            * URLs (as strings or URL objects) pointing to the resource's API
+            * URIs (as strings or URI objects)
+            * Resource objects with a URI property for the resources
+            * IDs (as strings) for the resources
+
+        :param urls: A list of URLs. See above for accepted formats.
+        """
+        item_type = type(self).item_type_name or "item"
+
+        async def _get_item(url: URL) -> RT:
+            response = await self._handler.get(url)
+            return type(self).create_model(response, context=self._model_context)
+
+        task_id = self._progress.add_task(description=f"Getting {item_type}s", total=len(urls))
+        return await self._run_tasks_async(map(_get_item, urls), task_id=task_id)
 
 
 class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource](Endpoints[UT, RT]):
@@ -718,6 +751,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     async def get_many(self, uris: ApiURISequence[UT, RT], limit: PositiveInt | None = None) -> list[RT]:
         """
         Get multiple resources from the API using the given URIs.
+        Calls sets of URIs in batches rather than individually.
 
         The URIs must relate to the resource type handled by this API model, and can be one of the following:
             * URLs (as strings or URL objects) pointing to the resource's API
@@ -731,7 +765,7 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         item_type = type(self).item_type_name or "item"
 
         if not uris:
-            self._handler.log("SKIP", self._read_url, message=f"No {item_type}s given to add")
+            self._handler.log("SKIP", self._read_url, message=f"No {item_type}s given to get")
             return []
 
         if limit is None:

@@ -136,7 +136,7 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
         return handler(core_schema.url_schema())
 
     @classmethod
-    def validate_call(cls, param_key: str = "url") -> Callable:
+    def validate_call(cls, param_key: str = "url", is_sequence: bool = False) -> Callable:
         """
         Decorator to validate and convert a URL argument for API endpoint methods.
 
@@ -156,6 +156,9 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
                 self = args.pop(0)
                 cls_t = cls._construct_type_from_model_generics(self)
+                if is_sequence:
+                    # noinspection PyTypeHints
+                    cls_t = Sequence[cls_t]
                 adapter = TypeAdapter(cls_t)
 
                 args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
@@ -167,6 +170,7 @@ class ApiURLSchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
 
 
 type ApiURL[UT: URI, MT: HasURI] = Annotated[URL, ApiURLSchema[UT, MT]]
+type ApiURLSequence[UT: URI, MT: HasURI] = Sequence[ApiURL[UT, MT]]
 
 
 class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
@@ -259,7 +263,6 @@ class ApiURISchema[UT: URI, MT: HasURI](_ApiSchemaBase[UT, MT]):
                 adapter = TypeAdapter(cls_t)
 
                 args_prev, value, args_next = cls._pop_value_from_args_or_kwargs(args, kwargs, param_idx - 1, param_key)
-
                 uris = adapter.validate_python(value)
 
                 return func(self, *args_prev, uris, *args_next, **kwargs)
