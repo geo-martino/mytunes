@@ -22,6 +22,7 @@ from ...._item.artist import RemoteArtist
 from ...._item.genre import RemoteGenre
 from ...._item.track import RemoteTrack
 from ...._item.user import RemoteUser
+from ....api._base import validate_api
 from ....api._endpoints import ItemsReadEndpoints
 
 
@@ -48,8 +49,8 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Add library items
     ###########################################################################
-    @HasAPI._validate_api(None, HasTrackEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
-    @HasAPI._validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasTrackEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     async def add_tracks(self, uris: Sequence[OnErrorOmit[URI | HasURI]]) -> None:
         """Add library tracks to the library."""
         api: HasTrackEndpoints[
@@ -58,8 +59,8 @@ class RemoteMutableLibrary[
         items = await self._add_library_items(items=uris, items_type="tracks", api=api.tracks)
         self.tracks.extend(items)
 
-    @HasAPI._validate_api(None, HasArtistEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
-    @HasAPI._validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasArtistEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     async def add_artists(self, uris: Sequence[OnErrorOmit[URI | HasURI]]) -> None:
         """Add library artists to the library."""
         api: HasArtistEndpoints[
@@ -68,8 +69,8 @@ class RemoteMutableLibrary[
         items = await self._add_library_items(items=uris, items_type="artists", api=api.artists)
         self.artists.extend(items)
 
-    @HasAPI._validate_api(None, HasAlbumEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
-    @HasAPI._validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasAlbumEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     async def add_albums(self, uris: Sequence[OnErrorOmit[URI | HasURI]]) -> None:
         """Add library albums to the library."""
         api: HasAlbumEndpoints[
@@ -141,8 +142,8 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Sync library items
     ###########################################################################
-    @HasAPI._validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    @HasAPI._validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     async def sync_tracks(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult | None:
         """
         Synchronise the current library track's with the remote service.
@@ -162,8 +163,8 @@ class RemoteMutableLibrary[
             items=self.tracks, items_type="tracks", kind=kind, api=api.tracks, dry_run=dry_run
         )
 
-    @HasAPI._validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    @HasAPI._validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     async def sync_artists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult | None:
         """
         Synchronise the current library artist's with the remote service.
@@ -183,8 +184,8 @@ class RemoteMutableLibrary[
             items=self.artists, items_type="artists", kind=kind, api=api.artists, dry_run=dry_run
         )
 
-    @HasAPI._validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    @HasAPI._validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     async def sync_albums(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> SyncRemoteResult | None:
         """
         Synchronise the current library album's with the remote service.
@@ -252,7 +253,7 @@ class RemoteMutableLibrary[
     ###########################################################################
     ## Create/Sync Playlists
     ###########################################################################
-    @HasAPI._validate_api(None, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
+    @validate_api(None, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
     async def create_playlist(self, name: str, **kwargs) -> PT | None:
         """Create a new playlist with the given name and return it."""
         api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistLibraryEndpoints]] = self.api
@@ -267,8 +268,8 @@ class RemoteMutableLibrary[
 
         return playlist
 
-    @HasAPI._validate_api(tuple, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
-    @HasAPI._validate_api(tuple, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
+    @validate_api(tuple, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
+    @validate_api(tuple, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
     async def sync_playlists(self, kind: SYNC_TYPE = "new", dry_run: bool = False) -> tuple[SyncRemoteResult, ...]:
         """
         Synchronise the items of playlists in this library with the remote service.
@@ -359,9 +360,9 @@ class RemoteMutableLibrary[
     def _extract_tracks_from_backup(backup: Any) -> tuple[str | URI, ...]:
         return RemoteMutableLibrary._extract_uris_from_backup(backup, "tracks")
 
-    @HasAPI._validate_api(None, HasTrackEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
-    @HasAPI._validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    @HasAPI._validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasTrackEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(None, HasTrackEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     @validate_call
     async def restore_tracks(
             self,
@@ -395,9 +396,9 @@ class RemoteMutableLibrary[
     def _extract_artists_from_backup(backup: Any) -> tuple[str | URI, ...]:
         return RemoteMutableLibrary._extract_uris_from_backup(backup, "artists")
 
-    @HasAPI._validate_api(None, HasArtistEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
-    @HasAPI._validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    @HasAPI._validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasArtistEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(None, HasArtistEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     @validate_call
     async def restore_artists(
             self,
@@ -431,9 +432,9 @@ class RemoteMutableLibrary[
     def _extract_albums_from_backup(backup: Any) -> tuple[str | URI, ...]:
         return RemoteMutableLibrary._extract_uris_from_backup(backup, "albums")
 
-    @HasAPI._validate_api(None, HasAlbumEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
-    @HasAPI._validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    @HasAPI._validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
+    @validate_api(None, HasAlbumEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(None, HasAlbumEndpoints, HasLibraryEndpoints, BatchWriteEndpoints)
     @validate_call
     async def restore_albums(
             self,
@@ -489,9 +490,9 @@ class RemoteMutableLibrary[
         # noinspection PyTypeChecker
         return tuple(map(dict, playlists))
 
-    @HasAPI._validate_api(tuple, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
-    @HasAPI._validate_api(tuple, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
-    @HasAPI._validate_api(tuple, HasTrackEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
+    @validate_api(tuple, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
+    @validate_api(tuple, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
+    @validate_api(tuple, HasTrackEndpoints, ItemsReadEndpoints | BatchReadEndpoints)
     @validate_call
     async def restore_playlists(
             self,

@@ -1,7 +1,7 @@
 import functools
 from abc import abstractmethod
 from collections.abc import Mapping, Callable, Awaitable
-from contextlib import suppress
+from contextlib import suppress, AbstractAsyncContextManager
 from types import UnionType
 from typing import Self, Any, Annotated
 
@@ -18,7 +18,7 @@ from mytunes.core.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel
-from mytunes.exception import APIError
+from mytunes.exception import APIError, APIModelError
 from ._properties import ResponseCacheT, Timers
 from .._context import RemoteModelContext
 from ..._base.attribute import AttributeModel, Attribute
@@ -43,7 +43,7 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel, Timers):
 
 
 # noinspection PyAbstractClass
-class RemoteAPI[AT: RemoteAuthoriser](RemoteModel):
+class RemoteAPI[AT: RemoteAuthoriser](RemoteModel, AbstractAsyncContextManager):
     @classmethod
     def from_credentials(cls, credentials: Mapping[str, Any]) -> Self:
         """Create an authoriser for the API using the configured credentials."""
@@ -116,40 +116,41 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
         return await super().__aexit__(exc_type, exc_val, exc_tb)
 
-    @classmethod
-    def _validate_api[T](
-            cls, invalid_return: T, *endpoints: type[Endpoints | HasEndpoints] | UnionType
-    ) -> Callable[Callable[Any, Awaitable[T]]]:
-        def decorator(func: Callable[Any, Awaitable[T]]) -> Callable[Any, Awaitable[T]]:
-            @functools.wraps(func)
-            async def wrapper(self: HasAPI, *args, **kwargs):
-                api = self.api
-                source = api.source if isinstance(api, RemoteAPI) and isinstance(api.source, str) else "the"
-                log = f"Cannot run {source} operation: {func.__name__!r}"
 
-                types: list[str] = []
-                for endpoint in endpoints:
-                    errors: list[APIError] = []
+def validate_api[T](invalid_return: T, *endpoints: type[Endpoints | HasEndpoints] | UnionType) -> Callable:
+    def decorator(func: Callable[Any, Awaitable[T]]) -> Callable[Any, Awaitable[T]]:
+        @functools.wraps(func)
+        async def wrapper(self, *args, **kwargs):
+            if not isinstance(self, HasAPI):
+                raise APIModelError(f"Cannot validate API, {type(self).__name__!r} does not support API models.")
 
-                    for ep in get_base_types(endpoint):  # try to get the first matching endpoints type
-                        ep: type[Endpoints | HasEndpoints]
-                        try:
-                            api = ep.validate_api(api, *types)
-                            errors.clear()
-                            break
-                        except APIError as exc:
-                            errors.append(exc)
+            api = self.api
+            source = api.source if isinstance(api, RemoteAPI) and isinstance(api.source, str) else "the"
+            log = f"Cannot run {source} operation: {func.__name__!r}"
 
-                    if errors:
-                        self._logger.warning(f"{log}: {" | ".join(map(str, errors))}")
-                        return invalid_return() if callable(invalid_return) else invalid_return
+            types: list[str] = []
+            for endpoint in endpoints:
+                errors: list[APIError] = []
 
-                    if isinstance(endpoint, type) and issubclass(endpoint, HasEndpoints):
-                        types.append(next(iter(endpoint.get_endpoint_names())))
+                for ep in get_base_types(endpoint):  # try to get the first matching endpoints type
+                    ep: type[Endpoints | HasEndpoints]
+                    try:
+                        api = ep.validate_api(api, *types)
+                        errors.clear()
+                        break
+                    except APIError as exc:
+                        errors.append(exc)
 
-                return await func(self, *args, **kwargs)
-            return wrapper
-        return decorator
+                if errors:
+                    self._logger.warning(f"{log}: {" | ".join(map(str, errors))}")
+                    return invalid_return() if callable(invalid_return) else invalid_return
+
+                if isinstance(endpoint, type) and issubclass(endpoint, HasEndpoints):
+                    types.append(next(iter(endpoint.get_endpoint_names())))
+
+            return await func(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 # TODO: drop this on aiorequestful v2

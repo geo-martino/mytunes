@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from mytunes.core._item.user import RemoteUser
 from mytunes.core.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, Endpoints, HasAPI
+from mytunes.core.api._base import validate_api
 from mytunes.core.api.items import HasTrackEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
     PlaylistLibraryEndpoints, PlaylistReadAllEndpoints
@@ -136,8 +137,8 @@ class TestHasAPI(BaseModelTester):
     class MockHasAPI(HasAPI):
         source: ClassVar[str] = "Test"
 
-        @HasAPI._validate_api(False, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
-        @HasAPI._validate_api(False, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
+        @validate_api(False, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
+        @validate_api(False, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
         async def return_bool(self) -> bool:
             return True
 

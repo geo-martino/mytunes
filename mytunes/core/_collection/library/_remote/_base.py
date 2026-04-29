@@ -23,6 +23,7 @@ from ...._item.artist import RemoteArtist, HasArtists
 from ...._item.genre import RemoteGenre, HasGenres
 from ...._item.track import RemoteTrack
 from ...._item.user import RemoteUser
+from ....api._base import validate_api
 from ....._base.attribute import Attribute
 
 
@@ -117,9 +118,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - playlists
     ###########################################################################
-    @HasAPI._validate_api(
-        False, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistReadAllEndpoints,
-    )
+    @validate_api(False, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistReadAllEndpoints)
     async def load_playlists(self) -> bool:
         api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistReadAllEndpoints]] = self.api
 
@@ -134,7 +133,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(False, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
+    @validate_api(False, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
     async def load_playlist_items(self) -> bool:
         """Load all playlist items for all currently loaded playlists."""
         api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
@@ -172,7 +171,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - tracks
     ###########################################################################
-    @HasAPI._validate_api(False, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(False, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
     async def load_tracks(self) -> bool:
         api: HasTrackEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
@@ -197,7 +196,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - artists
     ###########################################################################
-    @HasAPI._validate_api(False, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(False, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
     async def load_library_artists(self) -> bool:
         """Load all artists available for this library. Replaces all currently loaded artists."""
         api: HasArtistEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
@@ -210,7 +209,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(False, HasArtistEndpoints, CollectionReadEndpoints)
+    @validate_api(False, HasArtistEndpoints, CollectionReadEndpoints)
     async def load_library_artist_albums(self) -> bool:
         """Load all artists albums for all currently loaded albums."""
         api: HasArtistEndpoints[CollectionReadEndpoints] = self.api
@@ -249,7 +248,7 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - albums
     ###########################################################################
-    @HasAPI._validate_api(False, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    @validate_api(False, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
     async def load_library_albums(self) -> bool:
         """Load all albums available for this library. Replaces all currently loaded albums."""
         api: HasAlbumEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
@@ -262,7 +261,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(False, HasAlbumEndpoints, CollectionReadEndpoints)
+    @validate_api(False, HasAlbumEndpoints, CollectionReadEndpoints)
     async def load_library_album_tracks(self) -> bool:
         """Load all album tracks for all currently loaded albums."""
         api: HasAlbumEndpoints[CollectionReadEndpoints] = self.api
