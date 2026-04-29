@@ -6,8 +6,8 @@ from pydantic.json_schema import JsonSchemaValue
 from yarl import URL
 
 from mytunes.core.api import HasLibraryEndpoints
-from mytunes.core.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
-    ItemReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
+from mytunes.core.api._endpoints import Endpoints, ItemReadEndpoints, ItemReadAllEndpoints, CollectionWriteEndpoints, \
+    HasEndpoints, CollectionReadEndpoints, \
     BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
 from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
 from mytunes.core.properties.uri import URI

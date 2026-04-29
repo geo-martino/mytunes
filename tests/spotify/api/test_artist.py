@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Any, get_args
+from typing import Any
 from unittest.mock import patch, AsyncMock, Mock
 
 import pytest

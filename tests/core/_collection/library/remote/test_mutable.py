@@ -8,7 +8,6 @@ import pytest
 from aiorequestful.response.exception import ResponseError
 from faker import Faker
 from pytest_mock import MockerFixture
-from yarl import URL
 
 from mytunes import MODULE_ROOT
 from mytunes.core._collection._sync import SYNC_TYPE

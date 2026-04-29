@@ -1,9 +1,9 @@
 import functools
 from abc import abstractmethod
-from collections.abc import Mapping, Callable, Awaitable, Collection, Sequence
+from collections.abc import Mapping, Callable, Awaitable
 from contextlib import suppress
 from types import UnionType
-from typing import Self, Any, Annotated, Union
+from typing import Self, Any, Annotated
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
@@ -13,12 +13,12 @@ from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, Field, ValidationError, ConfigDict
 
-from mytunes._types import get_generic, TO_TUPLE, to_tuple, get_base_types
+from mytunes._types import get_generic, get_base_types
 from mytunes.core.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel
-from mytunes.exception import EndpointsError, MyTunesValidationError, APIError
+from mytunes.exception import APIError
 from ._properties import ResponseCacheT, Timers
 from .._context import RemoteModelContext
 from ..._base.attribute import AttributeModel, Attribute
@@ -141,7 +141,7 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
                             errors.append(exc)
 
                     if errors:
-                        self._logger.print(f"{log}: {" | ".join(map(str, errors))}")
+                        self._logger.warning(f"{log}: {" | ".join(map(str, errors))}")
                         return invalid_return() if callable(invalid_return) else invalid_return
 
                     if isinstance(endpoint, type) and issubclass(endpoint, HasEndpoints):

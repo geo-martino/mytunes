@@ -16,9 +16,7 @@ from aiorequestful.request import RequestHandler
 from pydantic import InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
 from pydantic.alias_generators import to_snake
-from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
-from pydantic.v1.typing import is_union
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
@@ -38,9 +36,8 @@ from ..._base import BaseModel
 from ..._base import ModelMetaclass
 from ..._base.resource import ResourceModel
 
-
 if TYPE_CHECKING:
-    from mytunes.core.api._base import RemoteAPI
+    pass
 
 
 class EndpointsMetaclass(ModelMetaclass):
@@ -227,7 +224,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         return await super().__aexit__(exc_type, exc_val, exc_tb)
 
     @classmethod
-    def validate_api(cls, api: RemoteAPI, *types: str, context: str | None = None) -> Self | None:
+    def validate_api(cls, api: Any, *types: str, context: str | None = None) -> Self | None:
         if not isinstance(api, cls):
             suffix = f" for {"->".join(types)} types" if types else ""
             if not context:
@@ -997,7 +994,7 @@ class HasEndpoints[ET: Endpoints | HasEndpoints](RemoteModel, AbstractAsyncConte
         return tuple(names)
 
     @classmethod
-    def validate_api(cls, api: RemoteAPI, *types: str) -> ET | None:
+    def validate_api(cls, api: Any, *types: str) -> ET | None:
         names = cls.get_endpoint_names()
         if len(names) != 1:
             raise APIError("Cannot validate against multiple endpoints.")
