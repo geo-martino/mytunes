@@ -64,7 +64,9 @@ class Position(AttributeModel):
             return self
 
         if self.number > self.total:
-            raise MyTunesValidationError("Start position cannot be greater than end position.")
+            raise MyTunesValidationError(
+                f"Start position cannot be greater than end position: {self.number} > {self.total}"
+            )
         return self
 
     @property
