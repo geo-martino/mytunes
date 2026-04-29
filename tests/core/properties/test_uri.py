@@ -27,7 +27,7 @@ def uri(faker: Faker) -> SimpleURI:
 
 
 @pytest.fixture
-def uris(models: list[ResourceModel], uri: URI, faker: Faker) -> list[SimpleURI]:
+def uris(models: list[ResourceModel], uri: URI, faker: Faker) -> list[URI]:
     seen = set()
     uris = [uri]
 
@@ -148,23 +148,23 @@ class TestHasImmutableURI(UniqueKeyTester):
 class TestHasMutableURI(UniqueKeyTester):
     @pytest.fixture
     def model(self, uri: URI, uris: list[URI]) -> HasMutableURI:
-        return MockHasMutableURI(source=uri.source, uris=uris)
+        return MockHasMutableURI(source=uri.source, uris=set(uris))
 
     def test_validates_uris_are_from_unique_sources(self, uris: list[URI]):
         uri = choice(uris)
         different_uri = next(u for u in uris if u.source != uri.source)
         new_uri = uri.from_id(different_uri.id, different_uri.type)
 
-        MockHasMutableURI(uris=uris)
+        MockHasMutableURI(uris=set(uris))
         with pytest.raises(ValidationError):
-            MockHasMutableURI(uris=[*uris, new_uri])
+            MockHasMutableURI(uris={*uris, new_uri})
 
     def test_validate_uri_matches_type(self, model: MockHasMutableURI, uri_with_other_type: URI, uris: list[URI]):
         with pytest.raises(ValidationError):
             MockHasMutableURI(uri=uri_with_other_type)
 
         with pytest.raises(ValidationError):
-            MockHasMutableURI(uris=[uri_with_other_type])
+            MockHasMutableURI(uris={uri_with_other_type})
 
     def test_uri_on_init(self, uri: URI):
         model = MockHasMutableURI(uri=uri)
@@ -172,7 +172,7 @@ class TestHasMutableURI(UniqueKeyTester):
         assert model.uri is uri
         assert model.uris == {uri}
 
-        model = MockHasMutableURI(uris=[uri])
+        model = MockHasMutableURI(uris={uri})
         assert model.source == uri.source
         assert model.uri is uri
         assert model.uris == {uri}
@@ -246,13 +246,13 @@ class TestHasMutableURI(UniqueKeyTester):
 
     def test_equality(self, model: HasMutableURI, uris: list[URI]):
         assert model == model
-        assert model == MockHasMutableURI(source=model.source, uris=uris)
+        assert model == MockHasMutableURI(source=model.source, uris=set(uris))
 
         # URIs do not match
         missing_uri = next(uri for uri in uris if uri.source != model.source)
-        assert model != MockHasMutableURI(source=missing_uri.source, uris=uris)
+        assert model != MockHasMutableURI(source=missing_uri.source, uris=set(uris))
 
         # 2nd models doesn't have a URI set due to no URIs matching the given source
         missing_uri = next(uri for uri in uris if uri.source != model.source)
         uris = [uri for uri in uris if uri is not missing_uri]
-        assert model != MockHasMutableURI(source=missing_uri.source, uris=uris)
+        assert model != MockHasMutableURI(source=missing_uri.source, uris=set(uris))

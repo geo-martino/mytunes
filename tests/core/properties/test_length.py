@@ -11,7 +11,7 @@ from tests.testers import BaseModelTester
 class TestLength(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Length:
-        return Length(faker.random_int())
+        return Length(root=faker.random_int())
 
     def test_numeric_representation_conversion(self):
         model = Length.model_validate("12")

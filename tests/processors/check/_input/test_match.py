@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 import pytest
+from faker import Faker
 
 from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.order import Position

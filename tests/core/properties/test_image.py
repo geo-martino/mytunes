@@ -8,6 +8,7 @@ import pytest
 from PIL.ImageFile import ImageFile as PILImageFile
 from aiohttp import ClientSession
 from faker import Faker
+from yarl import URL
 
 from mytunes.core.properties.image import ImageBase, ImageSource, ImageURL, HasImages, ImageFile
 from mytunes.exception import MyTunesValueError
@@ -98,7 +99,7 @@ class TestImageFile(BaseModelTester):
         )
 
         assert model != ImageFile(
-            path=faker.file_path(extension="jpg"),
+            path=Path(faker.file_path(extension="jpg")),
             type=model.type,
             height=faker.random_int(),
             width=faker.random_int()
@@ -126,7 +127,7 @@ class TestImageURL(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> ImageURL:
         return ImageURL(
-            url=faker.url(),
+            url=URL(faker.url()),
             height=faker.random_int(min=600, max=1000),
             width=faker.random_int(min=600, max=1000),
         )
@@ -141,7 +142,7 @@ class TestImageURL(BaseModelTester):
         )
 
         assert model != ImageURL(
-            url=faker.url(),
+            url=URL(faker.url()),
             type=model.type,
             height=faker.random_int(),
             width=faker.random_int()

@@ -92,12 +92,18 @@ class TestPathParentMapper(PathMapperTester):
         return [str(parent.joinpath(faker.file_name(category="audio"))) for parent in parents]
 
     def test_mapping(self, model: PathParentMapper, faker: Faker):
-        linux = Path(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux"))
+        linux = PurePosixPath(
+            faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux")
+        )
 
-        windows = PureWindowsPath(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="windows"))
+        windows = PureWindowsPath(
+            faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="windows")
+        )
         windows = windows.parent.joinpath(linux.name)
 
-        other = Path(faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux"))
+        other = PurePosixPath(
+            faker.file_path(depth=faker.random_int(4, 10), category="audio", file_system_rule="linux")
+        )
         other = other.parent.joinpath(linux.name)
 
         model.parent_serialise = {str(linux.parent): str(windows.parent)}

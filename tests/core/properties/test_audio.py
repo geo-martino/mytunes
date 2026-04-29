@@ -32,7 +32,7 @@ def file(faker: Faker, tmp_path: Path) -> mutagen.FileType:
 class TestDecibels(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> Decibels:
-        return Decibels(faker.random_int(-60000, 0) / 1000)
+        return Decibels(root=faker.random_int(-60000, 0) / 1000)
 
     def test_to_str(self, model: Decibels):
         assert re.match(r"-\d{1,2}\.\d{0,3}", str(model))

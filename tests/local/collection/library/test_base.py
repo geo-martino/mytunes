@@ -135,7 +135,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
             playlist_folder: Path,
             faker: Faker
     ) -> LocalLibrary:
-        return LocalLibrary(library_folders=library_folders, playlist_folder=playlist_folder)
+        return LocalLibrary(library_folders=set(library_folders), playlist_folder=playlist_folder)
 
     def test_get_current_system_library_paths(
             self, library_folders: list[Path], platform: str, system_paths: dict[str, str]

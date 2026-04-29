@@ -16,8 +16,8 @@ class LocalPlaylistTester(UniqueKeyTester, metaclass=ABCMeta):
         """Creates a basic PathParentMapper for the given tracks."""
         parent = "folder/"
         return PathParentMapper(
-            parent_serialise={parent: str(tmp_path)},
-            parent_deserialise={str(tmp_path): parent},
+            serialise={parent: str(tmp_path)},
+            deserialise={str(tmp_path): parent},
         )
 
     @staticmethod

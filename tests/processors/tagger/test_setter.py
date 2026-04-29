@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from unittest.mock import patch
 
 import pytest
@@ -38,8 +39,9 @@ class TestValueSetter(BaseModelTester):
         assert track.track.total == expected
 
 
-class GroupedSetterTester(BaseModelTester):
-    def test_validates_item_in_group(self, model: GroupSetter, tracks: list[Track], faker: Faker):
+class GroupedSetterTester(BaseModelTester, metaclass=ABCMeta):
+    @staticmethod
+    def test_validates_item_in_group(model: GroupSetter, tracks: list[Track], faker: Faker):
         track = faker.random_element(tracks)
         with patch.object(AttributeModel, "__setattr__"):
             model.set(track, tracks)  # should pass

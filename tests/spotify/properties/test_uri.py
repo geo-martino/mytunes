@@ -35,20 +35,20 @@ class TestSpotifyURIBase(SpotifyURITester):
     @pytest.fixture
     def model(self, kind: str, id_value: str) -> SpotifyURIBase:
         uri_value = f"spotify:{kind}:{id_value}"
-        return SpotifyURIBase(uri_value)
+        return SpotifyURIBase(root=uri_value)
 
     def test_validate_uri_length(self, kind: str, id_value: str):
         with pytest.raises(ValidationError, match="No type found"):  # too short
-            SpotifyURIBase("spotify")
+            SpotifyURIBase(root="spotify")
 
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. Expected format"):  # too short
-            SpotifyURIBase(f"spotify:{kind}")
+            SpotifyURIBase(root=f"spotify:{kind}")
 
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. Expected format"):  # too long
-            SpotifyURIBase(f"spotify:{kind}:{id_value}:extra")
+            SpotifyURIBase(root=f"spotify:{kind}:{id_value}:extra")
 
     def test_properties(self, kind: str, id_value: str):
-        uri = SpotifyURIBase(f"spotify:{kind}:{id_value}")
+        uri = SpotifyURIBase(root=f"spotify:{kind}:{id_value}")
         assert uri.source == "spotify"
         assert uri.type == kind
         assert uri.id == id_value
@@ -58,22 +58,22 @@ class TestSpotifyURIBase(SpotifyURITester):
         assert uri.root == f"spotify:{kind}:{id_value}"
 
     def test_api_url(self, kind: str, id_value: str):
-        uri = SpotifyURIBase(f"spotify:{kind}:{id_value}")
+        uri = SpotifyURIBase(root=f"spotify:{kind}:{id_value}")
         assert uri.api_url == URL(f"https://api.spotify.com/v1/{kind}s/{id_value}")
 
     def test_from_api_url(self, kind: str, id_value: str):
         api_url = f"https://api.spotify.com/v1/{kind}s/{id_value}"
-        uri = SpotifyURIBase(api_url)
+        uri = SpotifyURIBase(root=api_url)
         assert uri.type == kind
         assert uri.id == id_value
 
     def test_public_url(self, kind: str, id_value: str):
-        uri = SpotifyURIBase(f"spotify:{kind}:{id_value}")
+        uri = SpotifyURIBase(root=f"spotify:{kind}:{id_value}")
         assert uri.public_url == URL(f"https://open.spotify.com/{kind}/{id_value}")
 
     def test_from_public_url(self, kind: str, id_value: str):
         api_url = f"https://open.spotify.com/{kind}/{id_value}"
-        uri = SpotifyURIBase(api_url)
+        uri = SpotifyURIBase(root=api_url)
         assert uri.type == kind
         assert uri.id == id_value
 
@@ -82,25 +82,25 @@ class TestSpotifyResourceURI(SpotifyURITester):
     @pytest.fixture
     def model(self, kind: str, id_value: str) -> SpotifyResourceURI:
         uri_value = f"spotify:{kind}:{id_value}"
-        return SpotifyResourceURI(uri_value)
+        return SpotifyResourceURI(root=uri_value)
 
     def test_validate_id_length(self, kind: str, faker: Faker):
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. ID must be"):  # too short
-            SpotifyResourceURI(f"spotify:{kind}:{faker.pystr(23, 100)}")
+            SpotifyResourceURI(root=f"spotify:{kind}:{faker.pystr(23, 100)}")
 
         with pytest.raises(ValidationError, match="Invalid Spotify URI format. ID must be"):  # too long
-            SpotifyResourceURI(f"spotify:{kind}:{faker.pystr(1, 21)}")
+            SpotifyResourceURI(root=f"spotify:{kind}:{faker.pystr(1, 21)}")
 
     def test_validate_type_is_not_user(self, id_value: str, faker: Faker):
         with pytest.raises(ValidationError, match="accepted resource type"):
-            SpotifyResourceURI(f"spotify:user:{id_value}")
+            SpotifyResourceURI(root=f"spotify:user:{id_value}")
 
 
 class TestSpotifyUserURI(SpotifyURITester):
     @pytest.fixture
     def model(self, kind: str, id_value: str) -> SpotifyUserURI:
         uri_value = f"spotify:user:{id_value}"
-        return SpotifyUserURI(uri_value)
+        return SpotifyUserURI(root=uri_value)
 
     @pytest.fixture
     def id_value(self, faker: Faker) -> str:
@@ -108,4 +108,4 @@ class TestSpotifyUserURI(SpotifyURITester):
 
     def test_validate_type_is_user(self, id_value: str, kind: str, faker: Faker):
         with pytest.raises(ValidationError, match="accepted resource type"):
-            SpotifyUserURI(f"spotify:{kind}:{id_value}")
+            SpotifyUserURI(root=f"spotify:{kind}:{id_value}")

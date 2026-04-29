@@ -103,7 +103,7 @@ class TestGroupFilter(FilterTester):
         tracks = faker.random_elements(tracks, 15, unique=True)
         for track in tracks:
             track.name = "track name"
-        return tracks
+        return list(tracks)
 
     @pytest.fixture
     def tracks_released_at(self, tracks_name: list[LocalTrack], faker: Faker) -> list[LocalTrack]:
@@ -111,7 +111,7 @@ class TestGroupFilter(FilterTester):
         tracks = faker.random_elements(tracks_name, 9, unique=True)
         for track in tracks:
             track.released_at = SparseDate(year=2025, month=1, day=1)
-        return tracks
+        return list(tracks)
 
     @pytest.fixture
     def tracks_include(self, tracks: list[LocalTrack], tracks_name: list[LocalTrack], faker: Faker) -> list[LocalTrack]:

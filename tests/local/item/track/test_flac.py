@@ -64,7 +64,7 @@ class TestFLACEmbeddedImage(LocalTrackEmbeddedImageTester):
     @pytest.fixture
     def model(self, image_object: PILImageFile, image_type: str, faker: Faker) -> FLAC.EmbeddedImage:
         return FLAC.EmbeddedImage(
-            path=faker.file_path(category="image"),
+            path=Path(faker.file_path(category="image")),
             type=image_type,
             mime=image_object.get_format_mimetype(),
             height=image_object.height,

@@ -1,6 +1,7 @@
 from collections.abc import Callable, Generator
 from copy import deepcopy
 from io import BytesIO
+from pathlib import Path
 from typing import Any, final, ClassVar
 from unittest.mock import patch, Mock, AsyncMock, PropertyMock
 
@@ -512,7 +513,7 @@ class TestEndpoints(EndpointsTester):
             expected_image_mime: str,
             faker: Faker,
     ):
-        image_url = ImageURL(url=faker.url())
+        image_url = ImageURL(url=URL(faker.url()))
 
         with patch.object(ClientSession, "get", side_effect=CallbackResult.from_response(expected_image_data)):
             data, mime = await model._get_image_data(image_url)
@@ -531,7 +532,7 @@ class TestEndpoints(EndpointsTester):
             expected_image_mime: str,
             faker: Faker,
     ):
-        image_url = ImageFile(path=faker.file_path())
+        image_url = ImageFile(path=Path(faker.file_path()))
 
         with patch.object(ImageFile, "load", return_value=image_object, new_callable=AsyncMock) as mock_load:
             data, mime = await model._get_image_data(image_url)
@@ -637,7 +638,7 @@ class TestWriteCollectionEndpoints(EndpointsTester):
 
     @pytest.fixture
     def collection(self, uri: URI, total: int, faker: Faker) -> RemoteCollection:
-        return MockRemoteCollection(uri=uri, cursor=MockUrlCursor(url=faker.url()))
+        return MockRemoteCollection(uri=uri, cursor=MockUrlCursor(url=URL(faker.url())))
 
     @pytest.mark.parametrize("converter", URI_TYPE_CONVERTERS.values(), ids=URI_TYPE_CONVERTERS.keys())
     async def test_add(

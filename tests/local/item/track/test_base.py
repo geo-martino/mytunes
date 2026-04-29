@@ -31,7 +31,7 @@ class TestLocalTrack(UniqueKeyTester):
     @pytest.fixture
     def model(self, tags: dict[str, Any], faker: Faker) -> LocalTrack:
         uri = SimpleURI.create_random(LocalTrack.type)
-        return LocalTrack(**tags, uri=uri, path=faker.file_path())
+        return LocalTrack(**tags, uri=uri, path=Path(faker.file_path()))
 
     @pytest.fixture
     def uri(self, faker: Faker) -> SimpleURI:

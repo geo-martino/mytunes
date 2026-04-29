@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch, AsyncMock, MagicMock
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
+from yarl import URL
 
 from mytunes._base import make_cls
 from mytunes._base.resource import ResourceModel
@@ -381,7 +382,7 @@ class TestCollectionSearcher(SearcherTester):
             MockRemoteCollection(
                 name=faker.name(),
                 uri=SimpleURI.create_random(MockRemoteCollection.type),
-                cursor=MockUrlCursor(url=faker.url()),
+                cursor=MockUrlCursor(url=URL(faker.url())),
             )
             for _ in range(faker.random_int(5, 15))
         ]

@@ -11,11 +11,11 @@ from tests.testers import BaseModelTester
 class TestSparseDate(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> SparseDate:
-        return SparseDate(year=faker.year())
+        return SparseDate(year=int(faker.year()))
 
     def test_validate_month_not_set_when_day_set(self, model: SparseDate, faker: Faker):
         with pytest.raises(ValidationError, match="Cannot set day"):
-            SparseDate(year=faker.year(), day=faker.random_int(min=1, max=28))
+            SparseDate(year=int(faker.year()), day=faker.random_int(min=1, max=28))
 
     def test_from_date(self, model: SparseDate):
         model = model.model_validate("2025-03-01")
@@ -40,7 +40,7 @@ class TestSparseDate(BaseModelTester):
         assert model.day is None
 
     def test_date_property(self, model: SparseDate, faker: Faker):
-        model = SparseDate(year=faker.year())
+        model = SparseDate(year=int(faker.year()))
         assert model.date is None
 
         model = SparseDate(year=model.year, month=faker.random_int(min=1, max=12))

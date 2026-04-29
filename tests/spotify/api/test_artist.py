@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Any
+from typing import Any, get_args
 from unittest.mock import patch, AsyncMock, Mock
 
 import pytest
@@ -9,7 +9,7 @@ from yarl import URL
 
 from mytunes.spotify import API_URL
 # noinspection PyProtectedMember
-from mytunes.spotify._api.artist import SpotifyArtistEndpoints
+from mytunes.spotify._api.artist import SpotifyArtistEndpoints, _ALL_ALBUM_TYPES
 from mytunes.spotify._collection.artist import SpotifyArtistCollection
 from mytunes.spotify._item.album import SpotifyAlbum
 from mytunes.spotify._properties.uri import SpotifyResourceURI
@@ -63,7 +63,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
     ):
         uri = SpotifyResourceURI.from_id(faker.pystr(22, 22), kind="artist")
         cursor = SpotifyInitialCursor(url=uri.api_url, total=faker.random_int(0, 50))
-        types = set(faker.random_elements(("album", "single", "compilation", "appears_on"), unique=True))
+        types = set(faker.random_elements(_ALL_ALBUM_TYPES, unique=True))
 
         results = await model.get_all(cursor, types=types)
         assert all(isinstance(result, SpotifyAlbum) for result in results)

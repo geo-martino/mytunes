@@ -25,7 +25,7 @@ class TestSpotifyUser(UniqueKeyTester, SpotifyModelTester):
     def test_non_spotify_user_uri_not_allowed(self, model: SpotifyUser, faker: Faker):
         additional_fields = model.model_dump(exclude={"uri"})
 
-        uri = SpotifyResourceURI(f"spotify:artist:{faker.pystr(22, 22)}")
+        uri = SpotifyResourceURI(root=f"spotify:artist:{faker.pystr(22, 22)}")
         with pytest.raises(ValidationError):
             SpotifyUser(**additional_fields, uri=uri)
 

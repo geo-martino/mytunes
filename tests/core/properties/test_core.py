@@ -11,7 +11,7 @@ from tests.testers import BaseModelTester
 class TestNumberModel(BaseModelTester):
     @pytest.fixture
     def model(self) -> NumberModel:
-        return NumberModel(123.45)
+        return NumberModel(root=123.45)
 
     def test_to_number(self):
         model = NumberModel.model_validate(123.45)

@@ -2,7 +2,7 @@ import pytest
 from faker import Faker
 
 from mytunes.core._collection.library._base import HasTracksAndPlaylists
-from mytunes.core._collection.playlist import Playlist
+from mytunes.core._collection.playlist import Playlist, RemotePlaylist
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.processors.filters import NameFilter
 from tests.testers import NoUniqueKeyTester
@@ -24,7 +24,7 @@ class TestLibrary(NoUniqueKeyTester):
         library = HasTracksAndPlaylists(tracks=tracks, playlists=playlists)
         assert library.total == len(tracks)
 
-    def test_dump(self, model: HasTracksAndPlaylists, playlists: list[Playlist], tracks: list[RemoteTrack]):
+    def test_dump(self, model: HasTracksAndPlaylists, playlists: list[RemotePlaylist], tracks: list[RemoteTrack]):
         model = model.__class__(playlists=playlists, tracks=tracks)
 
         backup = model.dump()

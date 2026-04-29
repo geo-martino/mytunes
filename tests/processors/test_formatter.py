@@ -13,7 +13,8 @@ from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.properties.length import Length
 from mytunes.core.properties.order import Position
-from mytunes.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter
+from mytunes.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter, \
+    ALIGNMENTS
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 
@@ -28,7 +29,7 @@ class TestModelFormatter(BaseModelTester):
     @pytest.fixture
     def tracks(self, tracks: list[Track], faker: Faker) -> list[Track]:
         for track in tracks:
-            track.__dict__["length"] = Length(faker.random_int(min=1, max=100)) if faker.boolean() else None
+            track.__dict__["length"] = Length(root=faker.random_int(min=1, max=100)) if faker.boolean() else None
         return tracks
 
     def test_applies_width_to_all_fields(self, faker: Faker):
@@ -61,31 +62,30 @@ class TestModelFormatter(BaseModelTester):
 
     def test_applies_alignment_to_all_fields(self, faker: Faker):
         fields = get_args(FIELDS)
-        alignment = faker.random_element(("left", "right", "center", "decimal"))
+        alignment = faker.random_element(get_args(ALIGNMENTS))
         formatter = ModelFormatter(fields=fields, alignments=alignment)
         assert formatter.alignments == [alignment] * len(fields), "Alignment should be applied to all fields"
 
     def test_validate_alignments_match_fields(self, faker: Faker):
         fields = get_args(FIELDS)
-        supported_alignments = ("left", "right", "center", "decimal")
         log = "The number of alignments must match the number of fields"
 
         too_few_alignments = [
-            faker.random_element(supported_alignments)
+            faker.random_element(get_args(ALIGNMENTS))
             for _ in range(len(fields) - faker.random_int(1, len(fields) - 2))
         ]
         with pytest.raises(ValidationError, match=log):
             ModelFormatter(fields=fields, alignments=too_few_alignments)
 
         too_many_alignments = [
-            faker.random_element(supported_alignments)
+            faker.random_element(get_args(ALIGNMENTS))
             for _ in range(len(fields) + faker.random_int(2, len(fields) - 1))
         ]
         with pytest.raises(ValidationError, match=log):
             ModelFormatter(fields=fields, alignments=too_many_alignments)
 
         # this is fine
-        valid_alignments = [faker.random_element(supported_alignments) for _ in range(len(fields))]
+        valid_alignments = [faker.random_element(get_args(ALIGNMENTS)) for _ in range(len(fields))]
         ModelFormatter(fields=fields, alignments=valid_alignments)
 
     @pytest.fixture

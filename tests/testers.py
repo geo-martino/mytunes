@@ -211,7 +211,7 @@ class EndpointsTester(BaseModelTester, metaclass=ABCMeta):
     def mock_get_all_items(self, items: list[dict[str, Any]], faker: Faker) -> Generator[Mock]:
         total = faker.random_int(1, 100)
         cursor = MockIndexCursor(
-            url=faker.url(), offset=total + 1, limit=faker.random_int(0, 20), total=total
+            url=URL(faker.url()), offset=total + 1, limit=faker.random_int(0, 20), total=total
         )
 
         with patch.object(Endpoints, "_get_all_items", return_value=(items, cursor)) as mock_get_all_items:

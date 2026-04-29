@@ -49,7 +49,7 @@ class TestMatcher(BaseModelTester):
         for track in tracks:
             track.artists = sample(artists, k=faker.random_int(1, 3))
             track.album = choice(albums)
-            track.__dict__["length"] = Length(faker.random_int())
+            track.__dict__["length"] = Length(root=faker.random_int())
             track.released_at = faker.date()
 
         return tracks
@@ -68,7 +68,7 @@ class TestMatcher(BaseModelTester):
             collection = AlbumCollection(**album.model_dump(), tracks=sample(tracks, 10))
 
             collection.artists = sample(artists, k=faker.random_int(1, 3))
-            collection.__dict__["length"] = Length(faker.random_int())
+            collection.__dict__["length"] = Length(root=faker.random_int())
             collection.released_at = faker.date()
 
             album_collections.append(collection)

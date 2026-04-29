@@ -1,5 +1,6 @@
 import pytest
 from faker import Faker
+from yarl import URL
 
 from mytunes.core._collection.playlist import RemoteMutablePlaylist, RemotePlaylist, Playlist
 from mytunes.core._item.album import RemoteAlbum, Album
@@ -17,7 +18,7 @@ def playlists(
         RemoteMutablePlaylist(
             **pl.model_dump(exclude={"tracks"}),
             owner=RemoteUser(name=faker.name(), uri=SimpleURI.create_random(RemoteUser.type)),
-            cursor=MockUrlCursor(url=faker.url()),
+            cursor=MockUrlCursor(url=URL(faker.url())),
             tracks=faker.random_elements(tracks),
             uri=SimpleURI.create_random(RemotePlaylist.type))
         for pl in playlists

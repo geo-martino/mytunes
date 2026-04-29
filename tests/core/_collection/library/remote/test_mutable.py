@@ -470,7 +470,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
     @pytest.fixture
     def mock_get_playlist(
             self, model: RemoteMutableLibrary, playlists: list[RemotePlaylist], faker: Faker
-    ) -> Generator[tuple[Mock, list[URL]]]:
+    ) -> Generator[tuple[Mock, list[URI]]]:
         failed: list[URI] = []
         response = namedtuple("ClientResponse", ["status"])
 
@@ -521,7 +521,7 @@ class TestRemoteMutableLibrary(BaseModelTester):
             mock_get_many: Mock,
             mock_sync_items: Mock,
             mock_semaphore: Mock,
-):
+    ):
         result = await model.restore_playlists(playlists_dump, dry_run=False)
 
         assert len(result) == len(playlists)

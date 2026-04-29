@@ -14,6 +14,7 @@ from PIL import Image, ImageFile as PILImageFile
 # noinspection PyProtectedMember
 from aiohttp import ClientSession
 from faker import Faker
+from yarl import URL
 
 from mytunes.core._collection.playlist import Playlist, MutablePlaylist
 from mytunes.core._item.album import Album
@@ -166,7 +167,7 @@ def image_urls(image_types: set[str], faker: Faker) -> Generator[list[ImageURL]]
         url = faker.url()
 
         image_url = ImageURL(
-            url=url,
+            url=URL(url),
             type=choice(list(image_types)),
             mime=img.get_format_mimetype(),
             height=img.height,

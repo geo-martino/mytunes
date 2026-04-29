@@ -32,7 +32,7 @@ class TestPageCursor(BaseModelTester):
 
     @pytest.fixture
     def model(self, faker: Faker) -> PageCursor:
-        return MockPageCursor(url=faker.url())
+        return MockPageCursor(url=URL(faker.url()))
 
     def test_from_url(self, faker: Faker):
         url = faker.url()
@@ -148,7 +148,7 @@ class TestIterablePageCursor(BaseModelTester):
         next=MagicMock(),
     )
     def model(self, faker: Faker) -> IterablePageCursor:
-        return IterablePageCursor(url=faker.url())
+        return IterablePageCursor(url=URL(faker.url()))
 
     @pytest.fixture
     def mock_next(self) -> Generator[Mock]:
@@ -174,7 +174,7 @@ class TestIndexCursor(BaseModelTester):
         limit = faker.random_int(1, offset // 5) if offset / 5 > 1 else 1
         total = offset + limit * 5
 
-        return IndexCursor(url=faker.url(), offset=offset, limit=limit, total=total)
+        return IndexCursor(url=URL(faker.url()), offset=offset, limit=limit, total=total)
 
     def test_set_params_from_url(self, faker: Faker):
         limit = faker.random_int()
@@ -296,7 +296,7 @@ class TestIndexCursor(BaseModelTester):
 class TestKeyCursor(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> KeyCursor:
-        return KeyCursor(url=faker.url(), before=faker.pystr(), after=faker.pystr())
+        return KeyCursor(url=URL(faker.url()), before=faker.pystr(), after=faker.pystr())
 
     def test_previous(self, model: KeyCursor):
         expected_url = model.url.update_query(after=model.before)
@@ -328,7 +328,7 @@ class TestKeyCursor(BaseModelTester):
 class TestUrlCursor(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> UrlCursor:
-        return UrlCursor(url=faker.url(), previous_url=faker.url(), next_url=faker.url())
+        return UrlCursor(url=URL(faker.url()), previous_url=URL(faker.url()), next_url=URL(faker.url()))
 
     def test_previous(self, model: UrlCursor):
 
@@ -357,7 +357,7 @@ class TestUrlCursor(BaseModelTester):
 class TestInitialCursor(BaseModelTester):
     @pytest.fixture
     def model(self, faker: Faker) -> InitialCursor:
-        return InitialCursor(url=faker.url())
+        return InitialCursor(url=URL(faker.url()))
 
     def test_next(self, model: InitialCursor):
         assert model.next is model

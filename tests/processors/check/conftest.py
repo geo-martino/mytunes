@@ -52,7 +52,7 @@ def playlists(playlists: list[Playlist], faker: Faker) -> list[RemoteMutablePlay
         RemoteMutablePlaylist(
             **pl.model_dump(),
             owner=user,
-            cursor=MockUrlCursor(url=faker.url()),
+            cursor=MockUrlCursor(url=URL(faker.url())),
             uri=SimpleURI.create_random(RemotePlaylist.type),
         )
         for pl in playlists
