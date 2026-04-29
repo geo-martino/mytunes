@@ -11,8 +11,8 @@ from .._collection.artist import SpotifyArtistCollection
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._properties.uri import SpotifyResourceURI
-from ...core.api import HasLibraryEndpoints, ItemReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
-    BatchReadEndpoints, CollectionReadEndpoints
+from ...core.api import HasLibraryEndpoints, ItemReadEndpoints, ItemsReadEndpoints, ItemReadAllEndpoints, \
+    CollectionReadEndpoints, BatchWriteEndpoints
 from ...core.api.types import ApiURL, ApiURLSchema
 from ...core.cursors import PageCursor
 
@@ -56,14 +56,10 @@ class SpotifyArtistEndpoints(
     _SpotifyArtistEndpoints,
     HasLibraryEndpoints[_SpotifyArtistLibraryEndpoints],
     ItemReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
-    BatchReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    ItemsReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
     CollectionReadEndpoints[SpotifyResourceURI, SpotifyArtistCollection, SpotifyAlbum],
 ):
     __final__ = True
-
-    _read_url: ClassVar[URL] = API_URL.joinpath("artists")
-    _read_limit: ClassVar[int] = 50
-    _read_path: ClassVar[str] = "artists"
 
     _extend_path: ClassVar[str] = "items"
 

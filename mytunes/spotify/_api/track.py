@@ -8,8 +8,8 @@ from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoint
 from mytunes.spotify._api._types import SpotifyApiURI, SpotifyApiURISequence
 from .._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis
 from .._properties.uri import SpotifyResourceURI
-from ...core.api import HasLibraryEndpoints, ItemReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
-    BatchReadEndpoints
+from ...core.api import HasLibraryEndpoints, ItemReadEndpoints, ItemsReadEndpoints, ItemReadAllEndpoints, \
+    BatchWriteEndpoints
 from ...core.api.types import ApiURISchema
 
 
@@ -34,13 +34,9 @@ class SpotifyTrackEndpoints(
     SpotifyEndpoints[SpotifyResourceURI, SpotifyTrack],
     HasLibraryEndpoints[_SpotifyTrackLibraryEndpoints],
     ItemReadEndpoints[SpotifyResourceURI, SpotifyTrack],
-    BatchReadEndpoints[SpotifyResourceURI, SpotifyTrack],
+    ItemsReadEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
     __final__ = True
-
-    _read_url: ClassVar[URL] = API_URL.joinpath("tracks")
-    _read_limit: ClassVar[int] = 50
-    _read_path: ClassVar[str] = "tracks"
 
     @ApiURISchema.validate_call()  # WORKAROUND: replace with @validate_call when supported
     async def get_audio_features(self, uri: SpotifyApiURI[SpotifyTrack]) -> SpotifyAudioFeatures:
