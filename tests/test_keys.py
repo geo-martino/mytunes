@@ -22,9 +22,6 @@ def test_common_unique_attributes(source: ResourceModel, target: ResourceModel):
     assert source.__unique_attributes__ & target.__unique_attributes__
 
 
-# TODO: this shouldn't pass if the above test fails
-#  passes because not all final classes are registered when test is called
-#  either restructure to fix or import final classes manually
 @pytest.mark.parametrize("model_type", [Track, Playlist])
 def test_registry_has_unique_attributes(model_type: type[ResourceModel]):
     """Needed to ensure comparison across libraries work correctly."""
