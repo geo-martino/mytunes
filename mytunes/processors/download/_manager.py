@@ -148,7 +148,7 @@ class StoreManager(Processor, HasLogger, HasProgress):
         message = (
             f"Opening sites for {len(items)} {types} on {len(self.stores)} stores using fields: {', '.join(fields)}"
         )
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
     def _log_skip(self, message: str) -> None:
         self._logger.extra(colored(message, "yellow"))

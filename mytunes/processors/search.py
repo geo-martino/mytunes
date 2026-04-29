@@ -258,7 +258,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
     def _log_start(self, items: Collection, default_type: str) -> None:
         types = self._logger.format_types_to_string(items) or default_type
         message = f"Searching for matches on {self.source} for {len(items)} {types}"
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
     def _log_skip(self, message: str) -> None:
         self._logger.extra(colored(message, "yellow"))

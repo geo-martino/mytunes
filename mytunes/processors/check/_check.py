@@ -93,7 +93,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasAsyncOperations, HasPro
     def _log_start(self, items: Sequence[ResourceModel]) -> None:
         types = self._logger.format_types_to_string(items)
         message = f"Checking matches for {len(items)} {types}"
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
 
 class ItemChecker[API: RemoteAPI](Checker[API]):
@@ -153,7 +153,7 @@ class ItemChecker[API: RemoteAPI](Checker[API]):
     def _log_start(self, items: Sequence[ResourceModel]) -> None:
         types = self._logger.format_types_to_string(items)
         message = f"Checking matches for {len(items)} {types}"
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
 
 class CollectionChecker[API: RemoteAPI](Checker[API]):
@@ -256,7 +256,7 @@ class CollectionChecker[API: RemoteAPI](Checker[API]):
             f"Checking matches for items for {len(collections)} {types} by creating "
             f"temporary {self.source} playlists for {self.username}"
         )
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
     def _log_page(self, page: PlaylistsPage) -> None:
         message = f"Creating {page.total} {self.source} playlists for {self.username}"
