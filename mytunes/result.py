@@ -166,6 +166,10 @@ class Result(BaseModel):
             rows,
             tablefmt=cls._table_format,
             colalign=("left", *["right"] * max(0, col_count - 1)),
+            # WORKAROUND: needed to avoid parsing coloured number strings as int, which causes tabulate to
+            #  throw ValueError when trying to cast these strings to int as the ANSI codes are still
+            #  present in the string value when casting
+            disable_numparse=True,
         )
         table = re.sub(r"\| +\|", "|", table)
         table = re.sub(r"\| +\|", "|", table)

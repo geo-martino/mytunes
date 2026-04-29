@@ -156,6 +156,10 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             tablefmt=self.table_format,
             missingval=self.missing_value,
             showindex=indices if isinstance(indices, bool) else list(map(str, indices)),
+            # WORKAROUND: needed to avoid parsing coloured number strings as int, which causes tabulate to
+            #  throw ValueError when trying to cast these strings to int as the ANSI codes are still
+            #  present in the string value when casting
+            disable_numparse=True,
         )
 
     def _format_row(self, item: RT) -> tuple:
