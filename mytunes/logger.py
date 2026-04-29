@@ -211,14 +211,14 @@ class Logger(logging.Logger):
         return " ".join(map(str, (part for part in parts if part))).strip()
 
     @classmethod
-    def format_types_to_string(cls, items: Iterable[Any]) -> str:
+    def format_types_to_string(cls, items: Iterable[Any], final_join_word: str = "&") -> str:
         """Format the given ``items`` as a string of types for logging."""
         from ._base.resource import ResourceModel
         types = {f"{it.type.rstrip("s")}s" for it in items if isinstance(it, ResourceModel)}
-        return cls.format_list_to_string(types)
+        return cls.format_list_to_string(types, final_join_word=final_join_word)
 
     @staticmethod
-    def format_list_to_string(values: Iterable[Any]) -> str:
+    def format_list_to_string(values: Iterable[Any], final_join_word: str = "&") -> str:
         """Format the given ``values`` as a list of strings for logging."""
         if isinstance(values, set):
             values = sorted(values)
@@ -226,7 +226,7 @@ class Logger(logging.Logger):
         values = list(map(str, values))
         value_str = ", ".join(values[:-1])
         if value_str:
-            value_str = " & ".join([value_str, values[-1]])
+            value_str = f" {final_join_word} ".join([value_str, values[-1]])
         elif values:
             value_str = values[0]
 
