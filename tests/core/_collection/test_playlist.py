@@ -196,7 +196,7 @@ class TestRemoteMutablePlaylist(RemoteCollectionTester):
                 PlaylistReadWriteEndpoints, "get", return_value=model, new_callable=AsyncMock
             ),
             patch.object(
-                PlaylistReadWriteEndpoints, "get_all", return_value=tracks, new_callable=AsyncMock
+                PlaylistReadWriteEndpoints, "get_all_items", return_value=tracks, new_callable=AsyncMock
             ) as mock_get_all
         ):
             yield mock_get_all

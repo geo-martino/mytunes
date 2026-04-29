@@ -8,7 +8,7 @@ from yarl import URL
 
 from mytunes.core._collection.playlist import RemotePlaylist, Playlist
 from mytunes.core._item.user import RemoteUser
-from mytunes.core.api.playlist import PlaylistBatchReadAllEndpoints, PlaylistLibraryEndpoints, \
+from mytunes.core.api.playlist import PlaylistReadAllEndpoints, PlaylistLibraryEndpoints, \
     PlaylistReadWriteEndpoints
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
@@ -63,7 +63,7 @@ class TestPlaylistReadWriteEndpoints(EndpointsTester):
 
         # we just want to test that duplicates are skipped when adding, so we mock all surrounding logic
         with (
-            patch.object(PlaylistReadWriteEndpoints, "get_all", return_value=collection_items, new_callable=AsyncMock),
+            patch.object(PlaylistReadWriteEndpoints, "get_all_items", return_value=collection_items, new_callable=AsyncMock),
             patch.object(PlaylistReadWriteEndpoints, "add", new_callable=AsyncMock) as mock_add
         ):
             await model.add_and_skip_duplicates(url, uris_duplicated, limit=limit)
@@ -72,18 +72,18 @@ class TestPlaylistReadWriteEndpoints(EndpointsTester):
 
 @pytest.fixture
 def mock_get_all(playlists: list[RemotePlaylist], faker: Faker) -> Generator[Mock]:
-    with patch.object(PlaylistBatchReadAllEndpoints, "get_all", return_value=playlists) as mock_get_all:
+    with patch.object(PlaylistReadAllEndpoints, "get_all", return_value=playlists) as mock_get_all:
         yield mock_get_all
 
 
-class TestPlaylistBatchReadAllEndpoints(EndpointsTester):
+class TestPlaylistItemReadAllEndpoints(EndpointsTester):
     @pytest.fixture
-    def model(self, handler: RequestHandler) -> PlaylistBatchReadAllEndpoints:
-        return PlaylistBatchReadAllEndpoints(handler=handler)
+    def model(self, handler: RequestHandler) -> PlaylistReadAllEndpoints:
+        return PlaylistReadAllEndpoints(handler=handler)
 
     async def test_get_by_user(
             self,
-            model: PlaylistBatchReadAllEndpoints,
+            model: PlaylistReadAllEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -97,7 +97,7 @@ class TestPlaylistBatchReadAllEndpoints(EndpointsTester):
 
     async def test_get_by_name(
             self,
-            model: PlaylistBatchReadAllEndpoints,
+            model: PlaylistReadAllEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker
@@ -107,7 +107,7 @@ class TestPlaylistBatchReadAllEndpoints(EndpointsTester):
 
     async def test_get_by_names(
             self,
-            model: PlaylistBatchReadAllEndpoints,
+            model: PlaylistReadAllEndpoints,
             playlists: list[RemotePlaylist],
             mock_get_all: Mock,
             faker: Faker

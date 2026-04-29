@@ -21,7 +21,7 @@ from mytunes.core._item.album import RemoteAlbum
 from mytunes.core._item.artist import RemoteArtist
 from mytunes.core._item.track import RemoteTrack
 from mytunes.core.api import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
-    BatchReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
+    ItemReadAllEndpoints, CollectionWriteEndpoints, BatchWriteEndpoints, CollectionReadEndpoints
 from mytunes.core.api._endpoints import ItemsReadEndpoints
 from mytunes.core.cursors import PageCursor, IndexCursor, UrlCursor, InitialCursor
 from mytunes.core.properties.image import ImageURL, ImageFile
@@ -588,6 +588,50 @@ class TestItemsReadEndpoints(EndpointsTester):
         assert [result.uri.id for result in results] == [uri.id for uri in uris]
 
 
+class TestItemReadAllEndpoints(EndpointsTester):
+    class MockItemReadAllEndpoints(ItemReadAllEndpoints[SimpleURI, MockRemoteResource]):
+        _read_all_url = URL("https://api.example.com/me")
+        _read_all_path = "items"
+        _read_all_limit = 15
+
+        source = MockRemoteResource.source
+
+    @pytest.fixture
+    def model(self, handler: RequestHandler) -> ItemReadAllEndpoints:
+        return self.MockItemReadAllEndpoints(handler=handler)
+
+    @pytest.fixture
+    def mock_initial_cursor(self, model: ItemReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock]:
+        cursor = MockInitialCursor(url=uri.api_url)
+
+        with patch.object(InitialCursor, "from_url", return_value=cursor) as mock_cursor:
+            yield mock_cursor
+
+    async def test_get_all(
+            self, handler: RequestHandler, mock_get_all_items: Mock, mock_initial_cursor: Mock, faker: Faker
+    ):
+        model = self.MockItemReadAllEndpoints(handler=handler)
+        limit = faker.random_int(1, 100)
+
+        await model.get_all(limit=limit)
+
+        mock_initial_cursor.assert_called_once_with(
+            url=self.MockItemReadAllEndpoints._read_all_url, source=model.source, limit=limit,
+        )
+        mock_get_all_items.assert_called_once_with(
+            mock_initial_cursor.return_value, path=self.MockItemReadAllEndpoints._read_all_path,
+        )
+
+    async def test_get_all_uses_default_limit(self, model: ItemReadAllEndpoints, mock_initial_cursor: Mock):
+        await model.get_all()
+
+        mock_initial_cursor.assert_called_once_with(
+            url=self.MockItemReadAllEndpoints._read_all_url,
+            source=model.source,
+            limit=model._read_all_limit
+        )
+
+
 class TestReadCollectionEndpoints(EndpointsTester):
     class MockReadCollectionEndpoints(CollectionReadEndpoints[SimpleURI, MockRemoteCollection, MockRemoteResource]):
         _extend_path = "items"
@@ -608,19 +652,19 @@ class TestReadCollectionEndpoints(EndpointsTester):
     def collection(self, uri: URI, cursor: PageCursor, total: int, faker: Faker) -> RemoteCollection:
         return MockRemoteCollection(uri=uri, cursor=cursor)
 
-    async def test_get_all_from_cursor(
+    async def test_get_all_items_from_cursor(
             self, model: CollectionReadEndpoints, uri: URI, cursor: PageCursor, mock_get_all_items: Mock, faker: Faker
     ):
         expected_items, _ = mock_get_all_items.return_value
 
-        result = await model.get_all(cursor)
+        result = await model.get_all_items(cursor)
         assert result == expected_items
 
         mock_get_all_items.assert_called_once()
         assert mock_get_all_items.call_args.args[0] == cursor
         assert mock_get_all_items.call_args.kwargs["path"] == model._extend_path
 
-    async def test_get_all_from_collection(
+    async def test_get_all_items_from_collection(
             self,
             model: CollectionReadEndpoints,
             uri: URI,
@@ -642,7 +686,7 @@ class TestReadCollectionEndpoints(EndpointsTester):
         with patch.object(collection.__class__, "_items", return_value=expected_collection, new_callable=PropertyMock):
             assert not collection.has_all_items
 
-            result = await model.get_all(collection)
+            result = await model.get_all_items(collection)
 
             assert result == items
 
@@ -762,50 +806,6 @@ class TestBatchReadEndpoints(EndpointsTester):
 
         url = BatchReadEndpoints._generate_batch_url(url, uris)
         assert url.query["ids"] == ",".join(uris)
-
-
-class TestBatchReadAllEndpoints(EndpointsTester):
-    class MockBatchReadAllEndpoints(BatchReadAllEndpoints[SimpleURI, MockRemoteResource]):
-        _read_all_url = URL("https://api.example.com/me")
-        _read_all_path = "items"
-        _read_all_limit = 15
-
-        source = MockRemoteResource.source
-
-    @pytest.fixture
-    def model(self, handler: RequestHandler) -> BatchReadAllEndpoints:
-        return self.MockBatchReadAllEndpoints(handler=handler)
-
-    @pytest.fixture
-    def mock_initial_cursor(self, model: BatchReadAllEndpoints, uri: URI, faker: faker) -> Generator[Mock]:
-        cursor = MockInitialCursor(url=uri.api_url)
-
-        with patch.object(InitialCursor, "from_url", return_value=cursor) as mock_cursor:
-            yield mock_cursor
-
-    async def test_get_all(
-            self, handler: RequestHandler, mock_get_all_items: Mock, mock_initial_cursor: Mock, faker: Faker
-    ):
-        model = self.MockBatchReadAllEndpoints(handler=handler)
-        limit = faker.random_int(1, 100)
-
-        await model.get_all(limit=limit)
-
-        mock_initial_cursor.assert_called_once_with(
-            url=self.MockBatchReadAllEndpoints._read_all_url, source=model.source, limit=limit,
-        )
-        mock_get_all_items.assert_called_once_with(
-            mock_initial_cursor.return_value, path=self.MockBatchReadAllEndpoints._read_all_path,
-        )
-
-    async def test_get_all_uses_default_limit(self, model: BatchReadAllEndpoints, mock_initial_cursor: Mock):
-        await model.get_all()
-
-        mock_initial_cursor.assert_called_once_with(
-            url=self.MockBatchReadAllEndpoints._read_all_url,
-            source=model.source,
-            limit=model._read_all_limit
-        )
 
 
 class TestBatchWriteEndpoints(EndpointsTester):

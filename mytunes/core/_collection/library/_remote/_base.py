@@ -10,10 +10,10 @@ from mytunes.core._collection.library import Library
 from mytunes.core._collection.library._remote._result import RemoteTracksResult, RemoteArtistsResult, \
     RemoteAlbumsResult, RemotePlaylistsResult
 from mytunes.core._collection.playlist import RemotePlaylist
-from mytunes.core.api import RemoteAPI, HasLibraryEndpoints, BatchReadAllEndpoints, \
+from mytunes.core.api import RemoteAPI, HasLibraryEndpoints, ItemReadAllEndpoints, \
     CollectionReadEndpoints, HasAPI
 from mytunes.core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
-from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistBatchReadAllEndpoints, PlaylistReadWriteEndpoints
+from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadAllEndpoints, PlaylistReadWriteEndpoints
 from mytunes.core.api.user import HasUserEndpoints
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel
@@ -118,14 +118,10 @@ class RemoteLibrary[
     ## Load - playlists
     ###########################################################################
     @HasAPI._validate_api(
-        "playlist",
-        False,
-        (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("playlists.library", PlaylistBatchReadAllEndpoints, "reading data for library {type}s"),
+        False, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistReadAllEndpoints,
     )
     async def load_playlists(self) -> bool:
-        api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistBatchReadAllEndpoints]] = self.api
+        api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistReadAllEndpoints]] = self.api
 
         self._logger.info(f"Loading {self._log_name} playlists", header=2)
 
@@ -138,12 +134,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(
-        "playlist",
-        False,
-        (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("playlists", PlaylistReadWriteEndpoints, "reading data for {type} items"),
-    )
+    @HasAPI._validate_api(False, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
     async def load_playlist_items(self) -> bool:
         """Load all playlist items for all currently loaded playlists."""
         api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
@@ -156,7 +147,7 @@ class RemoteLibrary[
 
         async def _extend_playlist_tracks(pl: PT) -> None:
             async with self.concurrency:
-                items = await api.playlists.get_all(pl)
+                items = await api.playlists.get_all_items(pl)
             # noinspection PyProtectedMember
             pl.tracks._replace(items)
 
@@ -181,15 +172,9 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - tracks
     ###########################################################################
-    @HasAPI._validate_api(
-        "track",
-        False,
-        (None, HasTrackEndpoints, "{type} endpoints"),
-        ("tracks", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("tracks.library", BatchReadAllEndpoints, "reading data for library {type}s"),
-    )
+    @HasAPI._validate_api(False, HasTrackEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
     async def load_tracks(self) -> bool:
-        api: HasTrackEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
+        api: HasTrackEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
         self._logger.info(f"Loading {self._log_name} library tracks", header=2)
 
@@ -212,16 +197,10 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - artists
     ###########################################################################
-    @HasAPI._validate_api(
-        "artist",
-        False,
-        (None, HasArtistEndpoints, "{type} endpoints"),
-        ("artists", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("artists.library", BatchReadAllEndpoints, "reading data for library {type}s"),
-    )
+    @HasAPI._validate_api(False, HasArtistEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
     async def load_library_artists(self) -> bool:
         """Load all artists available for this library. Replaces all currently loaded artists."""
-        api: HasArtistEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
+        api: HasArtistEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
         self._logger.info(f"Loading {self._log_name} library artists", header=2)
 
@@ -231,12 +210,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(
-        "artist",
-        False,
-        (None, HasPlaylistEndpoints, "{type} endpoints"),
-        ("artists", CollectionReadEndpoints, "reading data for library {type}'s albums"),
-    )
+    @HasAPI._validate_api(False, HasArtistEndpoints, CollectionReadEndpoints)
     async def load_library_artist_albums(self) -> bool:
         """Load all artists albums for all currently loaded albums."""
         api: HasArtistEndpoints[CollectionReadEndpoints] = self.api
@@ -249,7 +223,7 @@ class RemoteLibrary[
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
             async with self.concurrency:
-                albums = await api.artists.get_all(artist)
+                albums = await api.artists.get_all_items(artist)
 
             artist.albums.clear()
             artist.albums.extend(albums)
@@ -275,16 +249,10 @@ class RemoteLibrary[
     ###########################################################################
     ## Load - albums
     ###########################################################################
-    @HasAPI._validate_api(
-        "album",
-        False,
-        (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", HasLibraryEndpoints, "library {type}s endpoints"),
-        ("albums.library", BatchReadAllEndpoints, "reading data for library {type}s"),
-    )
+    @HasAPI._validate_api(False, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
     async def load_library_albums(self) -> bool:
         """Load all albums available for this library. Replaces all currently loaded albums."""
-        api: HasAlbumEndpoints[HasLibraryEndpoints[BatchReadAllEndpoints]] = self.api
+        api: HasAlbumEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
         self._logger.info(f"Loading {self._log_name} library albums", header=2)
 
@@ -294,12 +262,7 @@ class RemoteLibrary[
 
         return True
 
-    @HasAPI._validate_api(
-        "album",
-        False,
-        (None, HasAlbumEndpoints, "{type} endpoints"),
-        ("albums", CollectionReadEndpoints, "reading data for library {type}'s tracks"),
-    )
+    @HasAPI._validate_api(False, HasAlbumEndpoints, CollectionReadEndpoints)
     async def load_library_album_tracks(self) -> bool:
         """Load all album tracks for all currently loaded albums."""
         api: HasAlbumEndpoints[CollectionReadEndpoints] = self.api
@@ -312,7 +275,7 @@ class RemoteLibrary[
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
             async with self.concurrency:
-                tracks = await api.albums.get_all(album)
+                tracks = await api.albums.get_all_items(album)
             # noinspection PyProtectedMember
             album.tracks._replace(tracks)
 

@@ -303,7 +303,7 @@ class TestPause:
             return faker.random_elements(tracks)
 
         with patch.object(
-                PlaylistReadWriteEndpoints, "get_all", side_effect=_random_tracks, new_callable=AsyncMock
+                PlaylistReadWriteEndpoints, "get_all_items", side_effect=_random_tracks, new_callable=AsyncMock
         ) as mock_get_all:
             yield mock_get_all
 

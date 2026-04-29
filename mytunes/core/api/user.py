@@ -24,7 +24,7 @@ class UserEndpoints[UT: URI, RT: RemoteUser](Endpoints[UT, RT]):
         return type(self).create_model(response, context=self._model_context)
 
 
-class HasUserEndpoints[ET: UserEndpoints](HasEndpoints):
+class HasUserEndpoints[ET: UserEndpoints](HasEndpoints[ET]):
     users: ET = Field(
         description="Access user endpoints for the API."
     )

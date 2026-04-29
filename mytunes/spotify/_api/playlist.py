@@ -116,10 +116,10 @@ class SpotifyPlaylistEndpoints(
     _create_url: ClassVar[URL] = API_URL.joinpath("me/playlists")
 
     @validate_call
-    async def get_all(self, collection: PageCursor | HasPageCursor | SpotifyPlaylist) -> list[SpotifyPlaylistTrack]:
+    async def get_all_items(self, collection: PageCursor | HasPageCursor | SpotifyPlaylist) -> list[SpotifyPlaylistTrack]:
         try:
 
-            return await super().get_all(collection)
+            return await super().get_all_items(collection)
         except ResponseError as exc:
             # WORKAROUND: Spotify returns 403 for private playlists, even if the user is a collaborator
             #  and has access to the playlist.

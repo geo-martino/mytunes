@@ -28,8 +28,8 @@ from ..._base.resource import ResourceModel
 from ...processors.filters import Filter
 
 if TYPE_CHECKING:
-    from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadEndpoints, \
-        PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
+    from mytunes.core.api import ItemReadEndpoints
+    from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 
 
 class Playlist[TT: Track](
@@ -187,7 +187,7 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
         return self
 
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
-    async def reload(self, api: HasPlaylistEndpoints[PlaylistReadEndpoints]) -> Self:
+    async def reload(self, api: HasPlaylistEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.playlists.get(self.uri)
         self.__dict__.update(model.__dict__)
         return model
@@ -195,7 +195,7 @@ class RemotePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
     # @validate_call  # can't validate as can't import these types at runtime due to cyclical imports
     async def extend(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> None:
         # noinspection PyProtectedMember
-        self.tracks._replace(await api.playlists.get_all(self))
+        self.tracks._replace(await api.playlists.get_all_items(self))
 
 
 class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCursor](
@@ -286,4 +286,4 @@ class RemoteMutablePlaylist[UT: URI, TT: RemoteTrack, OT: RemoteUser, CT: PageCu
 
     async def _get_remote_uris(self, api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints]) -> list[UT]:
         playlist = await api.playlists.get(self.uri.api_url)
-        return [track.uri for track in await api.playlists.get_all(playlist)]
+        return [track.uri for track in await api.playlists.get_all_items(playlist)]

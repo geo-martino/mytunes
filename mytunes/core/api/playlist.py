@@ -7,7 +7,7 @@ from yarl import URL
 
 from mytunes.core.api import HasLibraryEndpoints
 from mytunes.core.api._endpoints import Endpoints, ItemReadEndpoints, BatchReadEndpoints, \
-    BatchReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
+    ItemReadAllEndpoints, CollectionWriteEndpoints, HasEndpoints, CollectionReadEndpoints, \
     BatchWriteEndpoints, _URL_TYPE, _URI_TYPE
 from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence
 from mytunes.core.properties.uri import URI
@@ -20,24 +20,11 @@ class PlaylistEndpoints[UT: URI, RT: RemotePlaylist](Endpoints[UT, RT]):
     pass
 
 
-class PlaylistReadEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
+class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
     PlaylistEndpoints[UT, RT],
     ItemReadEndpoints[UT, RT],
     CollectionReadEndpoints[UT, RT, IT],
-):
-    pass
-
-
-class PlaylistWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
-    PlaylistEndpoints[UT, RT],
     CollectionWriteEndpoints[UT, RT, IT],
-):
-    pass
-
-
-class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
-    PlaylistReadEndpoints[UT, RT, IT],
-    PlaylistWriteEndpoints[UT, RT, IT],
 ):
     @overload
     async def add_and_skip_duplicates(
@@ -56,7 +43,7 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
     ) -> int:
         """Add items to the playlist and avoid adding any duplicates."""
         collection = await self.get(url)
-        items = await self.get_all(collection)
+        items = await self.get_all_items(collection)
 
         uris_unique = []
         uris_current = {item.uri for item in items}
@@ -67,14 +54,8 @@ class PlaylistReadWriteEndpoints[UT: URI, RT: RemotePlaylist, IT: RemoteTrack](
         return await self.add(url, uris_unique, limit=limit)
 
 
-class PlaylistBatchReadEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], BatchReadEndpoints[UT, RT]
-):
-    pass
-
-
-class PlaylistBatchReadAllEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
-    PlaylistEndpoints[UT, RT], BatchReadAllEndpoints[UT, RT]
+class PlaylistReadAllEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
+    PlaylistEndpoints[UT, RT], ItemReadAllEndpoints[UT, RT]
 ):
     @validate_call
     async def get_by_user(self, user: OT, limit: PositiveInt | None = None) -> list[RT]:
@@ -96,16 +77,9 @@ class PlaylistBatchReadAllEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser]
         return [playlists_mapped[name] for name in names if name in playlists_mapped]
 
 
-class PlaylistBatchWriteEndpoints[UT: URI, RT: RemotePlaylist](
-    PlaylistEndpoints[UT, RT], BatchWriteEndpoints[UT, RT]
-):
-    pass
-
-
 # noinspection PyAbstractClass
 class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
-    PlaylistBatchReadAllEndpoints[UT, RT, OT],
-    PlaylistBatchWriteEndpoints[UT, RT],
+    PlaylistReadAllEndpoints[UT, RT, OT], BatchWriteEndpoints[UT, RT],
 ):
     _create_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to create a playlist for the current user.",
@@ -179,7 +153,7 @@ class PlaylistLibraryEndpoints[UT: URI, RT: RemotePlaylist, OT: RemoteUser](
         return playlist
 
 
-class HasPlaylistEndpoints[ET: PlaylistEndpoints | HasLibraryEndpoints](HasEndpoints):
+class HasPlaylistEndpoints[ET: PlaylistEndpoints | HasLibraryEndpoints](HasEndpoints[ET]):
     playlists: ET = Field(
         description="Access playlist endpoints for the API."
     )

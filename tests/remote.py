@@ -17,7 +17,7 @@ from mytunes.core._item.artist import Artist, RemoteArtist
 from mytunes.core._item.genre import Genre
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.core._item.user import RemoteUser, User
-from mytunes.core.api import HasEndpoints, RemoteAuthoriser, BatchReadAllEndpoints, BatchWriteEndpoints, \
+from mytunes.core.api import HasEndpoints, RemoteAuthoriser, ItemReadAllEndpoints, BatchWriteEndpoints, \
     BatchReadEndpoints, HasLibraryEndpoints, RemoteAPI
 from mytunes.core.api.items import HasTrackEndpoints, HasArtistEndpoints, HasAlbumEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, HasPlaylistEndpoints
@@ -203,7 +203,7 @@ class MockSearchEndpoints(
 
 
 class MockLibraryEndpoints[RT: RemoteResource](
-    BatchReadAllEndpoints[SimpleURI, RT],
+    ItemReadAllEndpoints[SimpleURI, RT],
     BatchWriteEndpoints[SimpleURI, RT],
 ):
     pass

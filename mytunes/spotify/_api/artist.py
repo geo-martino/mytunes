@@ -11,7 +11,7 @@ from .._collection.artist import SpotifyArtistCollection
 from .._item.album import SpotifyAlbum
 from .._item.artist import SpotifyArtist
 from .._properties.uri import SpotifyResourceURI
-from ...core.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+from ...core.api import HasLibraryEndpoints, ItemReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
     BatchReadEndpoints, CollectionReadEndpoints
 from ...core.api.types import ApiURL, ApiURLSchema
 from ...core.cursors import PageCursor
@@ -38,7 +38,7 @@ class _SpotifyArtistEndpoints(
 class _SpotifyArtistLibraryEndpoints(
     _SpotifyArtistEndpoints,
     _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
-    BatchReadAllEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
+    ItemReadAllEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
     BatchWriteEndpoints[SpotifyResourceURI, SpotifyArtistCollection],
 ):
     __final__ = True
@@ -74,7 +74,7 @@ class SpotifyArtistEndpoints(
         return type(self).create_model(response, context=self._model_context)
 
     @validate_call
-    async def get_all(
+    async def get_all_items(
             self,
             collection: SpotifyArtistCollection | PageCursor,
             types: set[OnErrorOmit[_ALBUM_TYPE]] = _ALL_ALBUM_TYPES,
@@ -87,4 +87,4 @@ class SpotifyArtistEndpoints(
 
         query = {"include_groups": ",".join(map(str, types))}
         cursor.url = cursor.url.update_query(query)
-        return await super().get_all(cursor)
+        return await super().get_all_items(cursor)

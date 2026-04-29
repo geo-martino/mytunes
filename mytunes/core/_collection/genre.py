@@ -86,4 +86,4 @@ class RemoteGenreCollection[UT: URI, TT: RemoteTrack, CT: PageCursor](
     @validate_call
     async def extend(self, api: HasGenreEndpoints[CollectionReadEndpoints]) -> None:
         # noinspection PyProtectedMember
-        self.tracks._replace(await api.genres.get_all(self))
+        self.tracks._replace(await api.genres.get_all_items(self))

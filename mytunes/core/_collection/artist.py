@@ -91,4 +91,4 @@ class RemoteArtistCollection[UT: URI, AT: RemoteAlbum, GT: RemoteGenre, CT: Page
 
     @validate_call
     async def extend(self, api: HasArtistEndpoints[CollectionReadEndpoints]) -> None:
-        self.albums[:] = await api.artists.get_all(self)
+        self.albums[:] = await api.artists.get_all_items(self)

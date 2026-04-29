@@ -8,7 +8,7 @@ from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoint
 from mytunes.spotify._api._types import SpotifyApiURI, SpotifyApiURISequence
 from .._item.track import SpotifyTrack, SpotifyAudioFeatures, SpotifyAudioAnalysis
 from .._properties.uri import SpotifyResourceURI
-from ...core.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
+from ...core.api import HasLibraryEndpoints, ItemReadAllEndpoints, BatchWriteEndpoints, ItemReadEndpoints, \
     BatchReadEndpoints
 from ...core.api.types import ApiURISchema
 
@@ -16,7 +16,7 @@ from ...core.api.types import ApiURISchema
 @final
 class _SpotifyTrackLibraryEndpoints(
     _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyTrack],
-    BatchReadAllEndpoints[SpotifyResourceURI, SpotifyTrack],
+    ItemReadAllEndpoints[SpotifyResourceURI, SpotifyTrack],
     BatchWriteEndpoints[SpotifyResourceURI, SpotifyTrack],
 ):
     __final__ = True

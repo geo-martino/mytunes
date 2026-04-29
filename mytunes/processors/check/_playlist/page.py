@@ -9,7 +9,7 @@ from termcolor import colored
 
 from mytunes.core.api import RemoteAPI, HasLibraryEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
-    HasPlaylistEndpoints, PlaylistBatchWriteEndpoints
+    HasPlaylistEndpoints, BatchWriteEndpoints
 from mytunes.core.collection import CollectionModel
 from mytunes.core.cursors import InitialCursor
 from mytunes.core.playlist import RemoteMutablePlaylist, RemotePlaylist
@@ -195,7 +195,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
         self._logger.extra(message, header=3)
 
         uris = {pl.uri for pl in playlists}
-        api: PlaylistBatchWriteEndpoints = self.api.playlists.library
+        api: BatchWriteEndpoints = self.api.playlists.library
         await api.remove_many(list(uris))
 
         for uri in uris:
@@ -245,7 +245,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
         """Get the current items in the playlist with the given URI."""
         api: PlaylistReadWriteEndpoints = self.api.playlists
         current_playlist = await api.get(uri.api_url)
-        current_items = await api.get_all(current_playlist)
+        current_items = await api.get_all_items(current_playlist)
         return [item for item in current_items if item.has_uri]
 
     async def refresh_playlist_items(self, uri: URI) -> None:

@@ -88,4 +88,4 @@ class RemoteAlbumCollection[UT: URI, TT: RemoteTrack, RT: RemoteArtist, GT: Remo
     @validate_call
     async def extend(self, api: HasAlbumEndpoints[CollectionReadEndpoints]) -> None:
         # noinspection PyProtectedMember
-        self.tracks._replace(await api.albums.get_all(self))
+        self.tracks._replace(await api.albums.get_all_items(self))

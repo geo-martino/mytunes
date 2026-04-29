@@ -5,7 +5,7 @@ from copy import copy
 from io import BytesIO
 from itertools import batched
 from types import UnionType
-from typing import Any, ClassVar, Self, cast, overload, get_args, get_origin
+from typing import Any, ClassVar, Self, cast, overload, get_args, get_origin, TYPE_CHECKING
 
 from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.auth import Authoriser
@@ -15,11 +15,14 @@ from aiorequestful.cache.session import CachedSession
 from aiorequestful.request import RequestHandler
 from pydantic import InstanceOf, AliasPath, PositiveInt, validate_call, TypeAdapter, \
     PrivateAttr, model_validator, ModelWrapValidatorHandler, AliasChoices
+from pydantic.alias_generators import to_snake
+from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
+from pydantic.v1.typing import is_union
 from pydantic_core import PydanticUndefined
 from yarl import URL
 
-from mytunes._types import get_generic, get_generics, get_generic_type, get_bases
+from mytunes._types import get_generic, get_generics, get_generic_type, get_bases, get_base_types
 from mytunes.core.api.types import ApiURL, ApiURLSchema, ApiURISchema, ApiURISequence, ApiURLSequence
 from mytunes.core.cursors import PageCursor, HasPageCursor, IterablePageCursor, IndexCursor, InitialCursor
 from mytunes.core.properties.image import ImageSource, PILImageFileT, ImageURL
@@ -34,6 +37,10 @@ from .._context import RemoteModelContext
 from ..._base import BaseModel
 from ..._base import ModelMetaclass
 from ..._base.resource import ResourceModel
+
+
+if TYPE_CHECKING:
+    from mytunes.core.api._base import RemoteAPI
 
 
 class EndpointsMetaclass(ModelMetaclass):
@@ -218,6 +225,15 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         if not self._handler.closed:
             await self._handler.__aexit__(exc_type, exc_val, exc_tb)
         return await super().__aexit__(exc_type, exc_val, exc_tb)
+
+    @classmethod
+    def validate_api(cls, api: RemoteAPI, *types: str, context: str | None = None) -> Self | None:
+        if not isinstance(api, cls):
+            suffix = f" for {"->".join(types)} types" if types else ""
+            if not context:
+                context = to_snake(cls.__name__).replace("_", " ").strip()
+            raise MyTunesValidationError(f"API does not support {context}{suffix}.")
+        return api
 
     @staticmethod
     def _batch_values(values: Iterable, limit: int) -> batched:
@@ -466,7 +482,6 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
         """Persist ``responses`` for a given ``url`` to the cache."""
         urls = set()
         for response in responses:
-            print(response, self._url_path, self._id_path)
             url = self._get_value_from_response(response, self._url_path)
             # key = self._get_value_from_response(response, self._id_path)
             if url is None: #or key is None:
@@ -607,13 +622,41 @@ class ItemsReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return await self._run_tasks_async(map(_get_item, urls), task_id=task_id)
 
 
+_INITIAL_CURSOR_ADAPTER = TypeAdapter[InitialCursor](InitialCursor.annotation)
+
+
+class ItemReadAllEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
+    _read_all_url: ClassVar[URL] = PrivateAttr(
+        # description="The API endpoint to get the current user's library items.",
+    )
+    _read_all_limit: ClassVar[PositiveInt] = PrivateAttr(
+        # description="The maximum number of items that can be sent in each request for reading library items.",
+    )
+    _read_all_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
+        # description="The path to the list of library items in the API response. Use '*' for wildcard matching.",
+    )
+
+    @validate_call
+    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]:
+        """Get the current user's library items for this endpoint resource type."""
+        if limit is None:
+            limit = self._read_all_limit
+
+        # we don't know what type of pagination will be used for library items
+        # just get a cursor which returns a url to begin pagination and figure it out later
+        cursor = InitialCursor.from_url(url=self._read_all_url, source=self.source, limit=limit)
+
+        items, *_ = await self._get_all_items(cursor, path=self._read_all_path)
+        return list(items)
+
+
 class CollectionReadEndpoints[UT: URI, RT: RemoteCollection, IT: RemoteResource](Endpoints[UT, RT]):
     _extend_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
         # description="The path to the list of items in the API response. Use '*' for wildcard matching.",
     )
 
     @validate_call
-    async def get_all(self, collection: PageCursor | HasPageCursor | RT) -> list[IT]:
+    async def get_all_items(self, collection: PageCursor | HasPageCursor | RT) -> list[IT]:
         """Get all items in the collection by paginating through its cursor. May also give a cursor directly."""
         match collection:
             case PageCursor():
@@ -803,34 +846,6 @@ class BatchReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return base_url.update_query(ids=",".join(map(str, values)))
 
 
-_INITIAL_CURSOR_ADAPTER = TypeAdapter[InitialCursor](InitialCursor.annotation)
-
-
-class BatchReadAllEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
-    _read_all_url: ClassVar[URL] = PrivateAttr(
-        # description="The API endpoint to get the current user's library items.",
-    )
-    _read_all_limit: ClassVar[PositiveInt] = PrivateAttr(
-        # description="The maximum number of items that can be sent in each request for reading library items.",
-    )
-    _read_all_path: ClassVar[str | AliasPath | AliasChoices] = PrivateAttr(
-        # description="The path to the list of library items in the API response. Use '*' for wildcard matching.",
-    )
-
-    @validate_call
-    async def get_all(self, limit: PositiveInt | None = None) -> list[RT]:
-        """Get the current user's library items for this endpoint resource type."""
-        if limit is None:
-            limit = self._read_all_limit
-
-        # we don't know what type of pagination will be used for library items
-        # just get a cursor which returns a url to begin pagination and figure it out later
-        cursor = InitialCursor.from_url(url=self._read_all_url, source=self.source, limit=limit)
-
-        items, *_ = await self._get_all_items(cursor, path=self._read_all_path)
-        return list(items)
-
-
 class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     _write_url: ClassVar[URL] = PrivateAttr(
         # description="The API endpoint to modify the current user's library items.",
@@ -910,7 +925,7 @@ class BatchWriteEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
         return {"json": {"ids": list(map(str, values))}}
 
 
-class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
+class HasEndpoints[ET: Endpoints | HasEndpoints](RemoteModel, AbstractAsyncContextManager):
     @property
     def _handler(self) -> RequestHandler:
         fields = {
@@ -965,3 +980,31 @@ class HasEndpoints(RemoteModel, AbstractAsyncContextManager):
         for endpoints in self._nested_endpoints:
             await endpoints.__aexit__(exc_type, exc_val, exc_tb)
         return await super().__aexit__(exc_type, exc_val, exc_tb)
+
+    @classmethod
+    def get_endpoint_names(cls) -> tuple[str, ...]:
+        def _get_bases(annotation: Any) -> tuple[type, ...]:
+            return tuple(
+                b for t in get_base_types(annotation, resolve_generics=True)
+                for b in get_base_types(t)
+            )
+
+        names = []
+        for name, field in cls.model_fields.items():
+            if any(issubclass(base, Endpoints) for base in _get_bases(field.annotation)):
+                names.append(name)
+
+        return tuple(names)
+
+    @classmethod
+    def validate_api(cls, api: RemoteAPI, *types: str) -> ET | None:
+        names = cls.get_endpoint_names()
+        if len(names) != 1:
+            raise MyTunesValidationError("Cannot validate against multiple endpoints.")
+
+        name = names[0]
+        if not isinstance(api, cls):
+            suffix = f" for {"->".join(types)} types" if types else ""
+            raise MyTunesValidationError(f"API does not support {name!r} endpoints{suffix}.")
+
+        return getattr(api, name)

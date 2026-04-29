@@ -70,4 +70,4 @@ class SpotifyArtistCollection[AT: SpotifyAlbum](
         self._clear()
 
         for album_type in types:
-            self.albums += await api.artists.get_all(cursor, types={album_type})
+            self.albums += await api.artists.get_all_items(cursor, types={album_type})

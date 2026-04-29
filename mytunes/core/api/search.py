@@ -111,7 +111,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
         return self.cleaner.clean(item.name) if self.cleaner is not None else item.name
 
 
-class HasSearchEndpoints[ET: SearchEndpoints | HasLibraryEndpoints](HasEndpoints):
+class HasSearchEndpoints[ET: SearchEndpoints | HasLibraryEndpoints](HasEndpoints[ET]):
     search: ET = Field(
         description="Access search endpoints for the API."
     )

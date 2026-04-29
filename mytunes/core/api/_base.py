@@ -1,8 +1,9 @@
 import functools
 from abc import abstractmethod
-from collections.abc import Mapping, Callable, Awaitable
+from collections.abc import Mapping, Callable, Awaitable, Collection, Sequence
 from contextlib import suppress
-from typing import Self, Any, Annotated
+from types import UnionType
+from typing import Self, Any, Annotated, Union
 
 from aiorequestful.auth import Authoriser
 from aiorequestful.cache.backend import ResponseCache
@@ -12,12 +13,12 @@ from aiorequestful.request import RequestHandler
 from aiorequestful.response.payload import JSONPayloadHandler
 from pydantic import model_validator, Field, ValidationError, ConfigDict
 
-from mytunes._types import get_generic
+from mytunes._types import get_generic, TO_TUPLE, to_tuple, get_base_types
 from mytunes.core.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel
-from mytunes.exception import EndpointsError
+from mytunes.exception import EndpointsError, MyTunesValidationError
 from ._properties import ResponseCacheT, Timers
 from .._context import RemoteModelContext
 from ..._base.attribute import AttributeModel, Attribute
@@ -42,7 +43,7 @@ class RemoteAuthoriser[AT: Authoriser](RemoteModel, Timers):
 
 
 # noinspection PyAbstractClass
-class RemoteAPI[AT: RemoteAuthoriser](HasEndpoints):
+class RemoteAPI[AT: RemoteAuthoriser](RemoteModel):
     @classmethod
     def from_credentials(cls, credentials: Mapping[str, Any]) -> Self:
         """Create an authoriser for the API using the configured credentials."""
@@ -115,49 +116,40 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
         await self.api.__aexit__(exc_type, exc_val, exc_tb)
         return await super().__aexit__(exc_type, exc_val, exc_tb)
 
-    @staticmethod
-    def _get_endpoints(api: Endpoints | HasEndpoints, key: str | None) -> Endpoints | HasEndpoints:
-        if not key:
-            return api
-
-        for key in key.split("."):
-            if not hasattr(api, key):
-                raise EndpointsError(f"API does not have attribute '{key}'.")
-            api = getattr(api, key)
-
-        return api
-
     @classmethod
     def _validate_api[T](
-            cls,
-            kind: str,
-            invalid_return: T,
-            *expected: tuple[str | None, type[Endpoints | HasEndpoints], str]
-    ) -> Callable:
-        def decorator(func: Callable[Any, Awaitable[T]]) -> Callable:
+            cls, invalid_return: T, *endpoints: type[Endpoints | HasEndpoints] | UnionType
+    ) -> Callable[Callable[Any, Awaitable[T]]]:
+        def decorator(func: Callable[Any, Awaitable[T]]) -> Callable[Any, Awaitable[T]]:
             @functools.wraps(func)
             async def wrapper(self: HasAPI, *args, **kwargs):
-                for key, expected_type, context in expected:
-                    endpoints = self._validate_endpoints(key=key, context=context, expected=expected_type, name=kind)
-                    if endpoints is None:
+                api = self.api
+                source = api.source if isinstance(api, RemoteAPI) and isinstance(api.source, str) else "the"
+                log = f"Cannot run {source} operation: {func.__name__!r}"
+
+                types: list[str] = []
+                for endpoint in endpoints:
+                    errors: list[MyTunesValidationError] = []
+
+                    for ep in get_base_types(endpoint):  # try to get the first matching endpoints type
+                        ep: type[Endpoints | HasEndpoints]
+                        try:
+                            api = ep.validate_api(api, *types)
+                            errors.clear()
+                            break
+                        except MyTunesValidationError as exc:
+                            errors.append(exc)
+
+                    if errors:
+                        self._logger.print(f"{log}: {" | ".join(map(str, errors))}")
                         return invalid_return() if callable(invalid_return) else invalid_return
 
-                return await func(self, *args, **kwargs)
+                    if isinstance(endpoint, type) and issubclass(endpoint, HasEndpoints):
+                        types.append(next(iter(endpoint.get_endpoint_names())))
 
+                return await func(self, *args, **kwargs)
             return wrapper
         return decorator
-
-    def _validate_endpoints[T](self, key: str | None, expected: type[T], context: str, name: str = "") -> T | None:
-        api = self._get_endpoints(self.api, key)
-        if isinstance(api, expected):
-            return api
-
-        source = self.api.source if isinstance(api, RemoteAPI) else "the"
-        context = context.format(type=name)
-        message = f"Cannot run {source} operation for {name or key}. API does not support {context}."
-        self._logger.warning(message)
-
-        return None
 
 
 # TODO: drop this on aiorequestful v2

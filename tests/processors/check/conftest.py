@@ -10,8 +10,8 @@ from mytunes.core._collection.playlist import RemotePlaylist, Playlist, RemoteMu
 from mytunes.core._item.genre import Genre
 from mytunes.core._item.track import Track, RemoteTrack
 from mytunes.core._item.user import RemoteUser
-from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints, \
-    PlaylistBatchWriteEndpoints
+from mytunes.core.api import BatchWriteEndpoints
+from mytunes.core.api.playlist import PlaylistReadWriteEndpoints, PlaylistLibraryEndpoints
 from mytunes.core.cursors import InitialCursor
 from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import HasImmutableURI, HasMutableURI, HasURI
@@ -140,13 +140,13 @@ def mock_create_playlist(playlists: list[RemoteMutablePlaylist]) -> Generator[Mo
 
 @pytest.fixture(autouse=True)
 def mock_add_playlists() -> Generator[Mock]:
-    with patch.object(PlaylistBatchWriteEndpoints, "add_many", new_callable=AsyncMock) as mock_add:
+    with patch.object(BatchWriteEndpoints, "add_many", new_callable=AsyncMock) as mock_add:
         yield mock_add
 
 
 @pytest.fixture(autouse=True)
 def mock_remove_playlists() -> Generator[Mock]:
-    with patch.object(PlaylistBatchWriteEndpoints, "remove_many", new_callable=AsyncMock) as mock_remove:
+    with patch.object(BatchWriteEndpoints, "remove_many", new_callable=AsyncMock) as mock_remove:
         yield mock_remove
 
 
@@ -165,7 +165,7 @@ def mock_sync_playlist() -> Generator[Mock]:
 @pytest.fixture(autouse=True)
 def mock_get_playlist_items(available_items: list[HasURI], faker: Faker) -> Generator[Mock]:
     with patch.object(
-            PlaylistReadWriteEndpoints, "get_all", return_value=available_items, new_callable=AsyncMock
+            PlaylistReadWriteEndpoints, "get_all_items", return_value=available_items, new_callable=AsyncMock
     ) as mock_get_all:
         yield mock_get_all
 

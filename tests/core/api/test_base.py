@@ -12,7 +12,7 @@ from mytunes.core._item.user import RemoteUser
 from mytunes.core.api import RemoteAPI, RemoteAuthoriser, HasLibraryEndpoints, Endpoints, HasAPI
 from mytunes.core.api.items import HasTrackEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistReadWriteEndpoints, \
-    PlaylistLibraryEndpoints, PlaylistBatchReadAllEndpoints
+    PlaylistLibraryEndpoints, PlaylistReadAllEndpoints
 from mytunes.core.api.user import UserEndpoints
 from tests.remote import SimpleURI, MockRemoteAuthoriser, MockItemEndpoints, MockRemoteAPI
 from tests.testers import BaseModelTester
@@ -136,14 +136,8 @@ class TestHasAPI(BaseModelTester):
     class MockHasAPI(HasAPI):
         source: ClassVar[str] = "Test"
 
-        @HasAPI._validate_api(
-            "playlist",
-            False,
-            (None, HasPlaylistEndpoints, "{type} endpoints"),
-            ("playlists", PlaylistReadWriteEndpoints, "writing data for {type}s"),
-            ("playlists", HasLibraryEndpoints, "library {type}s endpoints"),
-            ("playlists.library", PlaylistLibraryEndpoints, "writing data for library {type}s"),
-        )
+        @HasAPI._validate_api(False, HasPlaylistEndpoints, PlaylistReadWriteEndpoints)
+        @HasAPI._validate_api(False, HasPlaylistEndpoints, HasLibraryEndpoints, PlaylistLibraryEndpoints)
         async def return_bool(self) -> bool:
             return True
 
@@ -169,7 +163,7 @@ class TestHasAPI(BaseModelTester):
         assert await model.return_bool() is False
 
     async def test_validate_api_fails_on_no_write_library_playlist_endpoints(self, handler: RequestHandler):
-        class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasLibraryEndpoints[PlaylistBatchReadAllEndpoints]):
+        class MockPlaylistEndpoints(PlaylistReadWriteEndpoints, HasLibraryEndpoints[PlaylistReadAllEndpoints]):
             pass
 
         class MockAPI(RemoteAPI[MockRemoteAuthoriser], HasPlaylistEndpoints[MockPlaylistEndpoints]):

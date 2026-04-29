@@ -4,14 +4,14 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 from aiorequestful.auth import Authoriser
 
-from mytunes.core.api import BatchReadAllEndpoints, RemoteAPI
+from mytunes.core.api import ItemReadAllEndpoints, RemoteAPI
 from mytunes.core.api.user import UserEndpoints
 from tests.remote import MockRemoteAPI
 
 
 @pytest.fixture
 def mock_get_all() -> Generator[Mock]:
-    with patch.object(BatchReadAllEndpoints, "get_all") as mock_get_all:
+    with patch.object(ItemReadAllEndpoints, "get_all") as mock_get_all:
         yield mock_get_all
 
 

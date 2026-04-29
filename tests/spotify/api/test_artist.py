@@ -65,7 +65,7 @@ class TestSpotifyArtistEndpoints(BaseModelTester):
         cursor = SpotifyInitialCursor(url=uri.api_url, total=faker.random_int(0, 50))
         types = set(faker.random_elements(_ALL_ALBUM_TYPES, unique=True))
 
-        results = await model.get_all(cursor, types=types)
+        results = await model.get_all_items(cursor, types=types)
         assert all(isinstance(result, SpotifyAlbum) for result in results)
 
         url = URL(mock_get_all.call_args.args[0])

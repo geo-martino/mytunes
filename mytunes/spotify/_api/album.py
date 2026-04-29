@@ -8,14 +8,14 @@ from mytunes.spotify._api._base import SpotifyEndpoints, _SpotifyLibraryEndpoint
 from .._collection.album import SpotifyAlbumCollection
 from .._item.track import SpotifyTrack
 from .._properties.uri import SpotifyResourceURI
-from ...core.api import HasLibraryEndpoints, BatchReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
+from ...core.api import HasLibraryEndpoints, ItemReadAllEndpoints, BatchWriteEndpoints, BatchReadEndpoints, \
     ItemReadEndpoints, CollectionReadEndpoints
 
 
 @final
 class _SpotifyAlbumLibraryEndpoints(
     _SpotifyLibraryEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
-    BatchReadAllEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
+    ItemReadAllEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
     BatchWriteEndpoints[SpotifyResourceURI, SpotifyAlbumCollection],
 ):
     __final__ = True
