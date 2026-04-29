@@ -4,6 +4,7 @@ from typing import Any, final, Literal
 
 from pydantic import Field, model_validator
 
+from mytunes._types import Number
 from ._base import Value
 from ..._types import _ATTRIBUTE_FIELD_TYPE
 from ...._base.attribute import AttributeModel
@@ -48,3 +49,23 @@ class MaxValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["max"], IT, 
     def get(self, items: Iterable[IT]) -> VT | None:
         values = self._get_values(items)
         return max(values) if values else None
+
+
+@final
+class SumValue[IT: AttributeModel, VT: Number](CollectionValue[Literal["sum"], IT, VT]):
+    __final__ = True
+
+    def get(self, items: Iterable[IT]) -> VT | None:
+        values = self._get_values(items)
+        return sum(values) if values else None
+
+
+
+@final
+class CountValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["count"], IT, VT]):
+    __final__ = True
+
+    field: Literal[None] = Field(default=None)
+
+    def get(self, items: Iterable[IT]) -> VT | None:
+        return len(list(items))
