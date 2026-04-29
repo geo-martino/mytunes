@@ -66,7 +66,7 @@ class RemoteLibrary[
         return f"{self.user.name}'s {source}"
 
     async def load(self):
-        self._logger.info(f"Loading {self._log_name} library", header=1)
+        self._logger.info(f"Loading {self._log_name} library", header=1, new_line_start=True)
 
         with self._progress:
             await self.load_playlists()
@@ -122,7 +122,7 @@ class RemoteLibrary[
     async def load_playlists(self) -> bool:
         api: HasPlaylistEndpoints[HasLibraryEndpoints[PlaylistReadAllEndpoints]] = self.api
 
-        self._logger.info(f"Loading {self._log_name} playlists", header=2)
+        self._logger.info(f"Loading {self._log_name} playlists", header=2, new_line_start=True)
 
         playlists = await api.playlists.library.get_all()
         if self.playlist_filter is not None:
@@ -142,7 +142,8 @@ class RemoteLibrary[
         if not playlists:
             return False
 
-        self._logger.info(f"Loading tracks for {len(playlists)} playlists in {self._log_name} library", header=2)
+        message = f"Loading tracks for {len(playlists)} playlists in {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         async def _extend_playlist_tracks(pl: PT) -> None:
             async with self.concurrency:
@@ -175,7 +176,7 @@ class RemoteLibrary[
     async def load_tracks(self) -> bool:
         api: HasTrackEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
-        self._logger.info(f"Loading {self._log_name} library tracks", header=2)
+        self._logger.info(f"Loading {self._log_name} library tracks", header=2, new_line_start=True)
 
         tracks = await api.tracks.library.get_all()
         # noinspection PyProtectedMember
@@ -201,7 +202,7 @@ class RemoteLibrary[
         """Load all artists available for this library. Replaces all currently loaded artists."""
         api: HasArtistEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
-        self._logger.info(f"Loading {self._log_name} library artists", header=2)
+        self._logger.info(f"Loading {self._log_name} library artists", header=2, new_line_start=True)
 
         artists = await api.artists.library.get_all()
         self.artists.clear()
@@ -218,7 +219,8 @@ class RemoteLibrary[
         if not artists:
             return False
 
-        self._logger.info(f"Loading albums for {len(artists)} library artists in {self._log_name} library", header=2)
+        message = f"Loading albums for {len(artists)} library artists in {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         async def _extend_artist_albums(artist: RemoteArtistCollection) -> None:
             async with self.concurrency:
@@ -253,7 +255,7 @@ class RemoteLibrary[
         """Load all albums available for this library. Replaces all currently loaded albums."""
         api: HasAlbumEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
 
-        self._logger.info(f"Loading {self._log_name} library albums", header=2)
+        self._logger.info(f"Loading {self._log_name} library albums", header=2, new_line_start=True)
 
         albums = await api.albums.library.get_all()
         self.albums.clear()
@@ -270,7 +272,8 @@ class RemoteLibrary[
         if not albums:
             return True
 
-        self._logger.info(f"Loading tracks for {len(albums)} library albums in {self._log_name} library", header=2)
+        message = f"Loading tracks for {len(albums)} library albums in {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
             async with self.concurrency:

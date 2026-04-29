@@ -98,7 +98,7 @@ class RemoteMutableLibrary[
                     raise MyTunesTypeError(f"Unrecognised URI type: {type(item).__name__!r}")
 
         message = f"Adding {len(items)} {items_type} to {self._log_name} library"
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
         count = await api.library.add_many(items)
         return await api.get_many(items) if count > 0 else []
@@ -120,7 +120,7 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: Map of item type to the sync result.
         """
-        self._logger.info(f"Synchronising {self._log_name} library", header=1)
+        self._logger.info(f"Synchronising {self._log_name} library", header=1, new_line_start=True)
 
         results: list[SyncRemoteResult | None] = []
         with self._progress:
@@ -216,7 +216,7 @@ class RemoteMutableLibrary[
         """Run a sync of the given type by calling the given add and remove functions with the appropriate items."""
         message_context = get_sync_message(kind, item_type=items_type, from_type="from the library")
         message = f"Synchronising {len(items)} {items_type} on {self._log_name} library: {message_context}"
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
         items = self._filter_items(items, items_type=items_type)
         initial = [item.uri for item in items if item.uri]
@@ -262,7 +262,9 @@ class RemoteMutableLibrary[
             self._logger.warning(f"Playlist with name {name!r} already exists in {self._log_name} library.")
             return playlist
 
-        self._logger.info(f"Creating playlist {name!r} on {self._log_name} library", header=2)
+        message = f"Creating playlist {name!r} on {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
+
         playlist = await api.playlists.library.create(name=name, **kwargs)
         self.playlists.append(playlist)
 
@@ -293,7 +295,7 @@ class RemoteMutableLibrary[
 
         message_context = get_sync_message(kind, item_type="items", from_type=f"from each {self.source} playlist")
         message = f"Synchronising {len(playlists)} playlists on {self._log_name} library: {message_context}"
-        self._logger.info(message, header=1)
+        self._logger.info(message, header=1, new_line_start=True)
 
         async def _sync_playlist[T: RemoteMutablePlaylist](pl: T) -> SyncRemoteResult:
             async with self.concurrency:
@@ -324,7 +326,7 @@ class RemoteMutableLibrary[
         :return: The results of the restore as a mapping of item type to either a sync result
             or a mapping of playlist name to a sync result.
         """
-        self._logger.info(f"Restoring {self._log_name} library", header=1)
+        self._logger.info(f"Restoring {self._log_name} library", header=1, new_line_start=True)
 
         results: list[SyncRemoteResult | None] = []
         with self._progress:
@@ -387,7 +389,8 @@ class RemoteMutableLibrary[
             ItemsReadEndpoints | BatchReadEndpoints | HasLibraryEndpoints[ItemReadAllEndpoints | BatchWriteEndpoints]
         ] = self.api
 
-        self._logger.info(f"Restoring {len(uris)} library tracks on {self._log_name} library", header=2)
+        message = f"Restoring {len(uris)} library tracks on {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         self.tracks[:] = await api.tracks.get_many(uris)
         return await self.sync_tracks(kind="refresh", dry_run=dry_run)
@@ -423,7 +426,8 @@ class RemoteMutableLibrary[
             ItemsReadEndpoints | BatchReadEndpoints | HasLibraryEndpoints[ItemReadAllEndpoints | BatchWriteEndpoints]
         ] = self.api
 
-        self._logger.info(f"Restoring {len(uris)} library artists on {self._log_name} library", header=2)
+        message = f"Restoring {len(uris)} library artists on {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         self.artists[:] = await api.artists.get_many(uris)
         return await self.sync_artists(kind="refresh", dry_run=dry_run)
@@ -459,7 +463,8 @@ class RemoteMutableLibrary[
             ItemsReadEndpoints | BatchReadEndpoints | HasLibraryEndpoints[ItemReadAllEndpoints | BatchWriteEndpoints]
         ] = self.api
 
-        self._logger.info(f"Restoring {len(uris)} library albums on {self._log_name} library", header=2)
+        message = f"Restoring {len(uris)} library albums on {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         self.albums[:] = await api.albums.get_many(uris)
         return await self.sync_albums(kind="refresh", dry_run=dry_run)
@@ -512,7 +517,8 @@ class RemoteMutableLibrary[
         :param dry_run: Run function, but do not modify the remote service at all.
         :return: The count of library tracks on the remote service after the sync.
         """
-        self._logger.info(f"Restoring {len(playlists)} playlists on {self._log_name} library", header=2)
+        message = f"Restoring {len(playlists)} playlists on {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
 
         async def _restore_playlist(dump: RemotePlaylistDump) -> SyncRemoteResult | None:
             dump = dict(dump)
