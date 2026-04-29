@@ -18,7 +18,7 @@ from mytunes.core.api._endpoints import HasEndpoints, Endpoints, _map_handler
 from mytunes.core.properties.logger import HasLogger
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteModel
-from mytunes.exception import EndpointsError, MyTunesValidationError
+from mytunes.exception import EndpointsError, MyTunesValidationError, APIError
 from ._properties import ResponseCacheT, Timers
 from .._context import RemoteModelContext
 from ..._base.attribute import AttributeModel, Attribute
@@ -129,7 +129,7 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
 
                 types: list[str] = []
                 for endpoint in endpoints:
-                    errors: list[MyTunesValidationError] = []
+                    errors: list[APIError] = []
 
                     for ep in get_base_types(endpoint):  # try to get the first matching endpoints type
                         ep: type[Endpoints | HasEndpoints]
@@ -137,7 +137,7 @@ class HasAPI[API: RemoteAPI](AttributeModel, HasLogger):
                             api = ep.validate_api(api, *types)
                             errors.clear()
                             break
-                        except MyTunesValidationError as exc:
+                        except APIError as exc:
                             errors.append(exc)
 
                     if errors:

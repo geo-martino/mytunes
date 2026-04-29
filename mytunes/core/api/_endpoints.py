@@ -30,7 +30,7 @@ from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.core.properties.uri import URI, HasURI
 from mytunes.core.remote import RemoteModel, RemoteResource
 from mytunes.exception import MyTunesTypeError, MyTunesValidationError, ModelError, RequestError, APIModelError, \
-    CursorResponseError
+    CursorResponseError, APIError
 from mytunes.logger import Logger
 from .._collection import RemoteCollection
 from .._context import RemoteModelContext
@@ -232,7 +232,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
             suffix = f" for {"->".join(types)} types" if types else ""
             if not context:
                 context = to_snake(cls.__name__).replace("_", " ").strip()
-            raise MyTunesValidationError(f"API does not support {context}{suffix}.")
+            raise APIError(f"API does not support {context}{suffix}.")
         return api
 
     @staticmethod
@@ -1000,11 +1000,11 @@ class HasEndpoints[ET: Endpoints | HasEndpoints](RemoteModel, AbstractAsyncConte
     def validate_api(cls, api: RemoteAPI, *types: str) -> ET | None:
         names = cls.get_endpoint_names()
         if len(names) != 1:
-            raise MyTunesValidationError("Cannot validate against multiple endpoints.")
+            raise APIError("Cannot validate against multiple endpoints.")
 
         name = names[0]
         if not isinstance(api, cls):
             suffix = f" for {"->".join(types)} types" if types else ""
-            raise MyTunesValidationError(f"API does not support {name!r} endpoints{suffix}.")
+            raise APIError(f"API does not support {name!r} endpoints{suffix}.")
 
         return getattr(api, name)
