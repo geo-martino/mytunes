@@ -132,16 +132,15 @@ def validate_api[T](invalid_return: T, *endpoints: type[Endpoints | HasEndpoints
             for endpoint in endpoints:
                 errors: list[APIError] = []
 
-                for ep in get_base_types(endpoint):  # try to get the first matching endpoints type
+                # try to get the first matching endpoints type
+                for ep in get_base_types(endpoint):
                     ep: type[Endpoints | HasEndpoints]
                     try:
                         api = ep.validate_api(api, *types)
-                        errors.clear()
                         break
                     except APIError as exc:
                         errors.append(exc)
-
-                if errors:
+                else:
                     self._logger.warning(f"{log}: {" | ".join(map(str, errors))}")
                     return invalid_return() if callable(invalid_return) else invalid_return
 
