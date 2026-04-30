@@ -225,7 +225,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
             self._assign_uri_from_match(item, match)
 
     def _assign_uri_from_match(self, item: HasMutableURI, match: HasURI) -> None:
-        if not isinstance(item, HasMutableURI) or not isinstance(match, HasURI) or not match.has_uri:
+        if not isinstance(item, HasMutableURI) or not isinstance(match, HasURI) or match.has_uri is False:
             return
 
         if item.uri != match.uri:
@@ -238,6 +238,9 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
     def _should_skip(self, item: Any) -> bool:
         if self.skip_if_has_uri and isinstance(item, HasURI) and item.has_uri:
             self._log_debug(item, message=f"Skipping: already has a URI")
+            return True
+        elif isinstance(item, HasURI) and item.has_uri is False:
+            self._log_debug(item, message=f"Skipping: item does not exist on {self.source}")
             return True
         return False
 
@@ -289,7 +292,7 @@ class ItemSearcher[API: _ApiT](Searcher[API]):
         """Search for matches for the given item and return the matching result if found"""
         if self._should_skip(item):
             self._log_skip(f"Cannot process {self._get_item_log_name(item)}")
-            return
+            return None
 
         self._log_start([item], default_type="item")
         return await self._query_and_match(item)
@@ -338,7 +341,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
         """Search for matches for the given collection and return the results."""
         if self._should_skip(collection):
             self._log_skip(f"Cannot process {self._get_item_log_name(collection)}")
-            return
+            return None
 
         self._log_start([collection], default_type="collection")
         return await self._search_collection(collection)
@@ -354,7 +357,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
 
         collections, _ = self._split_items(collections)
         if not collections:
-            self._log_skip(f"Cannot process of the given collections")
+            self._log_skip(f"Cannot process any of the given collections")
             return tuple()
 
         self._log_start(collections, default_type="collections")
@@ -443,7 +446,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
     ## Utilities
     ###########################################################################
     def _should_search_on_items_only(self, item: CollectionModel) -> bool:
-        message = "Searching as items only"
+        message = "Searching for collection items"
         if self.items_only_on_collections:
             reason = "set to search for collections as items only"
             self._log_debug(item, message=f"{message}: {reason}")
