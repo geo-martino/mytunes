@@ -1,4 +1,4 @@
-from collections.abc import Sequence, Iterable
+from collections.abc import Sequence, Iterable, MutableSequence
 from functools import partial
 from typing import Union, Annotated
 
@@ -10,7 +10,7 @@ from mytunes.processors.filters import Filter
 from mytunes.result import ItemResult, MapLogFormatter
 from ._setter import Setter
 from ..._base.attribute import AttributeModel
-from ..._types import TO_TUPLE
+from ..._types import TO_TUPLE, TO_LIST
 from ...logger import Logger
 
 
@@ -45,22 +45,30 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         """Apply setters to the item from the collection."""
         items = list(self.filter_items(items))
 
+        task_id = self._progress.add_task(description="Applying tags to items", total=len(items) * len(self.setters))
+        results: list[TaggerResult[IT]] = []
+
         for setter in self.setters:
             setter.set_context(items)
 
-        task_id = self._progress.add_task(description="Applying tags to items", total=len(items))
-        tasks = (partial(self.set_tags_to_item, item) for item in items)
-        results = tuple(self._run_tasks(tasks, task_id=task_id))
+            for item in items:
+                is_set = setter.set(item)
 
-        for setter in self.setters:
+                if is_set:
+                    result = next((result for result in results if result.item is item), None)
+                    if result is None:
+                        result = TaggerResult(item=item)
+                        results.append(result)
+
+                    result.__dict__["tags"] = tuple(list(result.tags) + [setter.field])
+
+                self._progress.advance(task_id)
+
             setter.clear_context()
 
-        return results
+        self._progress.remove_task(task_id)
 
-    @validate_call
-    def filter_items(self, items: Iterable[OnErrorOmit[IT]]) -> Iterable[IT]:
-        """Apply the item filter to the items provided (if applicable)."""
-        return filter(self.filter.check, items) if self.filter else items
+        return tuple(results)
 
     @validate_call
     def set_tags_to_item(self, item: IT, collection: Sequence[OnErrorOmit[IT]] = None) -> TaggerResult[IT]:
@@ -78,6 +86,11 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
                 setter.clear_context()
 
         return TaggerResult(item=item, tags=tags)
+
+    @validate_call
+    def filter_items(self, items: Iterable[OnErrorOmit[IT]]) -> Iterable[IT]:
+        """Apply the item filter to the items provided (if applicable)."""
+        return filter(self.filter.check, items) if self.filter else items
 
     @validate_call
     def log_results(self, results: Sequence[OnErrorOmit[TaggerResult]]) -> None:
