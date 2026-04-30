@@ -53,8 +53,9 @@ class _FieldValue[OT: str, IT: AttributeModel, VT: Any](
     @validate_call
     def get(self, item: IT) -> VT | None:
         """Get the tag value from the given item if it meets the condition (if applicable)."""
-        value = self._get(item)
-        return value if self._check(value) else None
+        if not self._check(item):
+            return None
+        return self._get(item)
 
     def _get(self, item: IT) -> Any:
         return getattr(item, self.field)
@@ -86,12 +87,15 @@ class PositionValue[IT: AttributeModel](_FieldValue[Literal["position"], IT, Pos
 
     @validate_call
     def get(self, item: IT) -> Position | None:
+        if not self._check(item):
+            return None
+
         value: Position = copy(self._get(item))
         if value is None:
             return value
 
         value.zero_fill = self.leading_zeros
-        return value if self._check(value) else None
+        return value
 
 
 @final
@@ -106,13 +110,16 @@ class PathValue[IT: IsLocalFile](_FieldValue[Literal["path"], IT, Path]):
 
     @validate_call
     def get(self, item: IT) -> Path | None:
+        if not self._check(item):
+            return None
+
         value: Path = copy(self._get(item))
         if value is None:
             return value
 
         if self.parent is not None:
             value = value.parts[-self.parent - 1]
-        return value if self._check(value) else None
+        return value
 
 
 type FieldValueT = _FieldValue.annotation
