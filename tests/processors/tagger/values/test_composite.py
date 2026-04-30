@@ -4,6 +4,7 @@ from faker import Faker
 from mytunes.core._item.track import Track
 from mytunes.core.properties.order import Position
 from mytunes.exception import MyTunesValueError
+from mytunes.processors.filters import ValueFilter
 from mytunes.processors.tagger.values import FixedValue
 from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue
 from mytunes.processors.tagger.values._fields import FieldValue, PathValue
@@ -28,6 +29,15 @@ class TestJoinValue(BaseModelTester):
         model = JoinValue(fields=["name", "key"], fail_on_missing=True)
         with pytest.raises(MyTunesValueError):
             model.get(track)
+
+    def test_applies_filter(self, track: Track, faker: Faker):
+        track.artist = faker.name()
+        condition = ValueFilter(values={track.name})
+        assert not condition.check(track.artist)
+
+        model = JoinValue(fields=["name", "key"], condition=condition)
+        assert model.get(track) is None
+
 
 
 class TestTemplateValue(BaseModelTester):
@@ -67,3 +77,11 @@ class TestTemplateValue(BaseModelTester):
         model = TemplateValue(template="{name} - {key}", fail_on_missing=True)
         with pytest.raises(MyTunesValueError):
             model.get(track)
+
+    def test_applies_filter(self, track: Track, faker: Faker):
+        track.artist = faker.name()
+        condition = ValueFilter(values={track.name})
+        assert not condition.check(track.artist)
+
+        model = TemplateValue(template="{name} - {key}", condition=condition)
+        assert model.get(track) is None

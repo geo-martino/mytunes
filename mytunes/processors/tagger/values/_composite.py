@@ -9,12 +9,12 @@ from mytunes._types import StrippedString
 from mytunes.exception import MyTunesValueError, MyTunesValidationError
 from mytunes.processors._types import _ATTRIBUTE_FIELD_MAP
 from mytunes.processors.tagger.values._fields import FieldValue, from_field_names, FieldValueT
-from ._base import Value, FixedValue
+from ._base import Value, FixedValue, HasCondition
 from ...._base.attribute import AttributeModel
 
 
 # noinspection PyAbstractClass
-class CompositeValue[OT: str, IT: AttributeModel](Value[OT, IT, str]):
+class CompositeValue[OT: str, IT: AttributeModel](Value[OT, IT, str], HasCondition[str]):
     fail_on_missing: bool = Field(
         description="Whether or not to fail on missing tag values or replace missing values with an empty string.",
         default=False,
@@ -49,7 +49,10 @@ class JoinValue[IT: AttributeModel](CompositeValue[Literal["join"], IT]):
     )
 
     @validate_call
-    def get(self, item: IT) -> str:
+    def get(self, item: IT) -> str | None:
+        if not self._check(item):
+            return None
+
         field_values = {field.field: field.get(item) for field in self.fields}
         self._handler_invalid_fields(field_values)
 
@@ -107,8 +110,11 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
         return self
 
     @validate_call
-    def get(self, item: IT) -> str:
+    def get(self, item: IT) -> str | None:
         """Format the template from the fields of the given item."""
+        if not self._check(item):
+            return None
+
         field_values: dict[str, Any] = {field.field: field.get(item) for field in self.fields}
         self._handler_invalid_fields(field_values)
 

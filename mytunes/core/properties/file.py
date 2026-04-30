@@ -161,6 +161,7 @@ class IsLocalFile(IsFile, metaclass=LocalFileMetaclass):
         if value == self.filename:
             return
 
+        #
         path = self.path.with_stem(value)
         self.path = self.path.rename(path) if self.path.exists() else path
 
