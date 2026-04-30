@@ -21,9 +21,10 @@ from mytunes.result import Result
 from ...._item.album import RemoteAlbum, HasAlbums
 from ...._item.artist import RemoteArtist, HasArtists
 from ...._item.genre import RemoteGenre, HasGenres
-from ...._item.track import RemoteTrack
+from ...._item.track import RemoteTrack, Track
 from ...._item.user import RemoteUser
 from ....api._base import validate_api
+from ....sequence import UniqueSequence
 from ....._base.attribute import Attribute
 
 
@@ -93,13 +94,13 @@ class RemoteLibrary[
     def dump(self) -> RemoteLibraryDump[UT]:
         names_seen = set()
         playlists: list[RemotePlaylistDump[UT]] = []
-        for pl in self.playlists.unique:
+        for pl in self.playlists:
             if pl.name in names_seen:
                 continue
 
             pl_dump = RemotePlaylistDump[UT](
                 **pl.model_dump(exclude={"tracks"}),
-                items=[str(track.uri) for track in pl.tracks.unique]
+                items=[str(track.uri) for track in pl.tracks]
             )
             playlists.append(pl_dump)
 
@@ -114,6 +115,11 @@ class RemoteLibrary[
     @staticmethod
     def _should_extend(item: Any) -> bool:
         return isinstance(item, RemoteCollection) and not item.has_all_items
+
+    def get_all_tracks(self) -> UniqueSequence[TT]:
+        """Get all unique tracks currently loaded for this library across all track sources."""
+        result = self._generate_track_results()
+        return UniqueSequence(*result.in_library, *result.in_playlists, *result.in_albums)
 
     ###########################################################################
     ## Load - playlists
@@ -138,7 +144,7 @@ class RemoteLibrary[
         """Load all playlist items for all currently loaded playlists."""
         api: HasPlaylistEndpoints[PlaylistReadWriteEndpoints] = self.api
 
-        playlists = list(filter(self._should_extend, self.playlists.unique))
+        playlists = list(filter(self._should_extend, self.playlists))
         if not playlists:
             return False
 
@@ -166,7 +172,7 @@ class RemoteLibrary[
         self._logger.stat(table, new_line_start=True)
 
     def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[PT]]:
-        results = RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
+        results = RemotePlaylistsResult.from_playlists(playlists=self.playlists)
         return {result.name: result for result in results}
 
     ###########################################################################
@@ -192,7 +198,59 @@ class RemoteLibrary[
         self._logger.stat(table, new_line_start=True)
 
     def _generate_track_results(self) -> RemoteTracksResult[TT]:
-        return RemoteTracksResult.from_library(self.tracks, self.playlists.unique, self.albums)
+        return RemoteTracksResult.from_library(self.tracks, self.playlists, self.albums)
+
+    ###########################################################################
+    ## Load - albums
+    ###########################################################################
+    @validate_api(False, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
+    async def load_library_albums(self) -> bool:
+        """Load all albums available for this library. Replaces all currently loaded albums."""
+        api: HasAlbumEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
+
+        self._logger.info(f"Loading {self._log_name} library albums", header=2, new_line_start=True)
+
+        albums = await api.albums.library.get_all()
+        self.albums.clear()
+        self.albums.extend(albums)
+
+        return True
+
+    @validate_api(False, HasAlbumEndpoints, CollectionReadEndpoints)
+    async def load_library_album_tracks(self) -> bool:
+        """Load all album tracks for all currently loaded albums."""
+        api: HasAlbumEndpoints[CollectionReadEndpoints] = self.api
+
+        albums = list(filter(self._should_extend, self.albums))
+        if not albums:
+            return True
+
+        message = f"Loading tracks for {len(albums)} library albums in {self._log_name} library"
+        self._logger.info(message, header=2, new_line_start=True)
+
+        async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
+            async with self.concurrency:
+                tracks = await api.albums.get_all_items(album)
+            # noinspection PyProtectedMember
+            album.tracks._replace(tracks)
+
+        task_id = self._progress.add_task(
+            description=f"Loading {self.source} album tracks", total=len(albums),
+        )
+        await self._run_tasks_async(map(_extend_album_tracks, albums), task_id=task_id)
+
+        return True
+
+    def log_albums(self) -> None:
+        """Log stats on currently loaded albums."""
+        result = self._generate_album_results()
+        key = f"{self._log_name.upper()} ALBUMS"
+        table = result.generate_table(results={key: result})
+
+        self._logger.stat(table, new_line_start=True)
+
+    def _generate_album_results(self) -> RemoteAlbumsResult[AT]:
+        return RemoteAlbumsResult(albums=self.albums)
 
     ###########################################################################
     ## Load - artists
@@ -246,55 +304,3 @@ class RemoteLibrary[
 
     def _generate_artist_results(self) -> RemoteArtistsResult[RT]:
         return RemoteArtistsResult(artists=self.artists)
-
-    ###########################################################################
-    ## Load - albums
-    ###########################################################################
-    @validate_api(False, HasAlbumEndpoints, HasLibraryEndpoints, ItemReadAllEndpoints)
-    async def load_library_albums(self) -> bool:
-        """Load all albums available for this library. Replaces all currently loaded albums."""
-        api: HasAlbumEndpoints[HasLibraryEndpoints[ItemReadAllEndpoints]] = self.api
-
-        self._logger.info(f"Loading {self._log_name} library albums", header=2, new_line_start=True)
-
-        albums = await api.albums.library.get_all()
-        self.albums.clear()
-        self.albums.extend(albums)
-
-        return True
-
-    @validate_api(False, HasAlbumEndpoints, CollectionReadEndpoints)
-    async def load_library_album_tracks(self) -> bool:
-        """Load all album tracks for all currently loaded albums."""
-        api: HasAlbumEndpoints[CollectionReadEndpoints] = self.api
-
-        albums = list(filter(self._should_extend, self.albums))
-        if not albums:
-            return True
-
-        message = f"Loading tracks for {len(albums)} library albums in {self._log_name} library"
-        self._logger.info(message, header=2, new_line_start=True)
-
-        async def _extend_album_tracks(album: RemoteAlbumCollection) -> None:
-            async with self.concurrency:
-                tracks = await api.albums.get_all_items(album)
-            # noinspection PyProtectedMember
-            album.tracks._replace(tracks)
-
-        task_id = self._progress.add_task(
-            description=f"Loading {self.source} album tracks", total=len(albums),
-        )
-        await self._run_tasks_async(map(_extend_album_tracks, albums), task_id=task_id)
-
-        return True
-
-    def log_albums(self) -> None:
-        """Log stats on currently loaded albums."""
-        result = self._generate_album_results()
-        key = f"{self._log_name.upper()} ALBUMS"
-        table = result.generate_table(results={key: result})
-
-        self._logger.stat(table, new_line_start=True)
-
-    def _generate_album_results(self) -> RemoteAlbumsResult[AT]:
-        return RemoteAlbumsResult(albums=self.albums)

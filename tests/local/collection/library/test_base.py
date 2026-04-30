@@ -182,7 +182,7 @@ class TestLocalLibrary(NoUniqueKeyTester):
         assert mock_load.call_count == len(paths)
         mock_load.assert_has_calls([mock.call(path) for path in paths], any_order=True)
 
-        assert sorted(model.playlists.unique, key=lambda pl: pl.name) == sorted(playlists, key=lambda pl: pl.name)
+        assert sorted(model.playlists, key=lambda pl: pl.name) == sorted(playlists, key=lambda pl: pl.name)
 
     async def test_load(
             self,

@@ -40,19 +40,19 @@ class TestRemoteLibrary(BaseModelTester):
         mock_get_all.return_value = playlists
         assert await model.load_playlists()
 
-        self.assert_items_loaded(list(model.playlists.unique), mock_get_all)
+        self.assert_items_loaded(model.playlists, mock_get_all)
 
     async def test_load_library_tracks(self, model: RemoteLibrary, tracks: list[Track], mock_get_all: Mock):
         mock_get_all.return_value = tracks
         assert await model.load_tracks()
         self.assert_items_loaded(model.tracks, mock_get_all)
 
-    async def test_load_library_artists(self, model: RemoteLibrary, artists: list[Artist], mock_get_all: Mock):
-        mock_get_all.return_value = artists
-        assert await model.load_library_artists()
-        self.assert_items_loaded(model.artists, mock_get_all)
-
     async def test_load_library_albums(self, model: RemoteLibrary, albums: list[Album], mock_get_all: Mock):
         mock_get_all.return_value = albums
         assert await model.load_library_albums()
         self.assert_items_loaded(model.albums, mock_get_all)
+
+    async def test_load_library_artists(self, model: RemoteLibrary, artists: list[Artist], mock_get_all: Mock):
+        mock_get_all.return_value = artists
+        assert await model.load_library_artists()
+        self.assert_items_loaded(model.artists, mock_get_all)

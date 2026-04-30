@@ -5,7 +5,7 @@ from pydantic import Field, computed_field
 
 from mytunes._types import TO_TUPLE
 from mytunes.core._collection.album import AlbumCollection, RemoteAlbumCollection
-from mytunes.core._collection.artist import RemoteArtistCollection
+from mytunes.core._collection.artist import RemoteArtistCollection, ArtistCollection
 from mytunes.core._collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
 from mytunes.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter, NamedResult
 from ...._item.album import RemoteAlbum
@@ -88,7 +88,7 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
             cls,
             tracks: Iterable[T],
             playlists: Iterable[Playlist[T]],
-            albums: Iterable[AlbumCollection[T, Any, Any]]
+            albums: Iterable[AlbumCollection[T, Any, Any]],
     ) -> Self:
         """Create a result from the given library items."""
         return cls(
@@ -103,6 +103,9 @@ class RemoteTracksResult[T: RemoteTrack](TotalCountResult):
         in_collections: list[T] = []
 
         for coll in collections:
+            if not isinstance(coll, HasTracks):
+                continue
+
             for track in coll.tracks:
                 if track not in in_collections and track not in others:
                     in_collections.append(track)

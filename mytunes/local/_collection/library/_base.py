@@ -302,7 +302,7 @@ class LocalLibrary(
         source = self.tracks_context.remote_source
         return {
             playlist.name: LibraryURIsResult.from_tracks(playlist.tracks, source=source)
-            for playlist in self.playlists.unique
+            for playlist in self.playlists
         }
 
     async def save_playlists(self, dry_run: bool = False) -> tuple[SavePlaylistResult, ...]:
@@ -320,7 +320,7 @@ class LocalLibrary(
         self._logger.info(f"Saving {total} playlists in {self.source} {self.type}", header=2)
 
         task_id = self._progress.add_task(description=f"Updating {self.source} playlists", total=total)
-        results = await self._run_tasks_async(map(_save_playlist, self.playlists.unique), task_id=task_id)
+        results = await self._run_tasks_async(map(_save_playlist, self.playlists), task_id=task_id)
         return tuple(results)
 
     @validate_call

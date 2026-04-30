@@ -226,7 +226,7 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
     def _limit_tracks(self, tracks: Sequence[LocalTrack], ignore: Collection[Path]) -> LimitResult:
         if self.limiter is not None and tracks is not None and self.limiter_deduplication:
-            tracks = list(MutableUniqueSequence(tracks).unique)
+            tracks = list(MutableUniqueSequence(tracks))
         return super()._limit_tracks(tracks=tracks, ignore=ignore)
 
     async def save(self, dry_run: bool = False) -> SyncXAutoPFResult:

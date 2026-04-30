@@ -97,21 +97,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
         await model.add_tracks(uris)
         assert model.tracks == tracks
 
-    async def test_add_artists(
-            self,
-            model: RemoteMutableLibrary,
-            artists: list[RemoteArtist],
-            mock_add_many: Mock,
-            mock_get_many: Mock,
-    ):
-        mock_get_many.return_value = artists
-
-        model.tracks.clear()
-        uris = [artist.uri for artist in artists]
-
-        await model.add_artists(uris)
-        assert model.artists == artists
-
     async def test_add_albums(
             self,
             model: RemoteMutableLibrary,
@@ -126,6 +111,21 @@ class TestRemoteMutableLibrary(BaseModelTester):
 
         await model.add_albums(uris)
         assert model.albums == albums
+
+    async def test_add_artists(
+            self,
+            model: RemoteMutableLibrary,
+            artists: list[RemoteArtist],
+            mock_add_many: Mock,
+            mock_get_many: Mock,
+    ):
+        mock_get_many.return_value = artists
+
+        model.tracks.clear()
+        uris = [artist.uri for artist in artists]
+
+        await model.add_artists(uris)
+        assert model.artists == artists
 
     ###########################################################################
     ## Sync library items
@@ -230,15 +230,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             kind=kind, items_type="tracks", items=model.tracks, api=model.api.tracks, dry_run=dry_run
         )
 
-    async def test_sync_artists(self, model: RemoteMutableLibrary, mock_sync_library_items: Mock, faker: Faker):
-        kind = faker.random_element(get_args(SYNC_TYPE))
-        dry_run = faker.boolean()
-
-        await model.sync_artists(kind=kind, dry_run=dry_run)
-        mock_sync_library_items.assert_called_once_with(
-            kind=kind, items_type="artists", items=model.artists, api=model.api.artists, dry_run=dry_run
-        )
-
     async def test_sync_albums(self, model: RemoteMutableLibrary, mock_sync_library_items: Mock, faker: Faker):
         kind = faker.random_element(get_args(SYNC_TYPE))
         dry_run = faker.boolean()
@@ -246,6 +237,15 @@ class TestRemoteMutableLibrary(BaseModelTester):
         await model.sync_albums(kind=kind, dry_run=dry_run)
         mock_sync_library_items.assert_called_once_with(
             kind=kind, items_type="albums", items=model.albums, api=model.api.albums, dry_run=dry_run
+        )
+
+    async def test_sync_artists(self, model: RemoteMutableLibrary, mock_sync_library_items: Mock, faker: Faker):
+        kind = faker.random_element(get_args(SYNC_TYPE))
+        dry_run = faker.boolean()
+
+        await model.sync_artists(kind=kind, dry_run=dry_run)
+        mock_sync_library_items.assert_called_once_with(
+            kind=kind, items_type="artists", items=model.artists, api=model.api.artists, dry_run=dry_run
         )
 
     ###########################################################################
@@ -383,33 +383,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             kind="refresh", items_type="tracks", items=tracks, api=model.api.tracks, dry_run=dry_run
         )
 
-    async def test_restore_artists(
-            self,
-            model: RemoteMutableLibrary,
-            artists: list[Artist],
-            mock_get_many: Mock,
-            mock_sync_library_items: Mock,
-            faker: Faker,
-    ):
-        dry_run = faker.boolean()
-
-        uris = tuple(
-            SimpleURI.create_random(RemoteArtist.type)
-            for _ in range(faker.random_int(1, 10))
-        )
-
-        mock_get_many.return_value = artists
-
-        assert model.artists != artists
-
-        await model.restore_artists(uris, dry_run=dry_run)
-        assert model.artists == artists
-
-        mock_get_many.assert_called_once_with(uris)
-        mock_sync_library_items.assert_called_once_with(
-            kind="refresh", items_type="artists", items=artists, api=model.api.artists, dry_run=dry_run
-        )
-
     async def test_restore_albums(
             self,
             model: RemoteMutableLibrary,
@@ -435,6 +408,33 @@ class TestRemoteMutableLibrary(BaseModelTester):
         mock_get_many.assert_called_once_with(uris)
         mock_sync_library_items.assert_called_once_with(
             kind="refresh", items_type="albums", items=albums, api=model.api.albums,  dry_run=dry_run
+        )
+
+    async def test_restore_artists(
+            self,
+            model: RemoteMutableLibrary,
+            artists: list[Artist],
+            mock_get_many: Mock,
+            mock_sync_library_items: Mock,
+            faker: Faker,
+    ):
+        dry_run = faker.boolean()
+
+        uris = tuple(
+            SimpleURI.create_random(RemoteArtist.type)
+            for _ in range(faker.random_int(1, 10))
+        )
+
+        mock_get_many.return_value = artists
+
+        assert model.artists != artists
+
+        await model.restore_artists(uris, dry_run=dry_run)
+        assert model.artists == artists
+
+        mock_get_many.assert_called_once_with(uris)
+        mock_sync_library_items.assert_called_once_with(
+            kind="refresh", items_type="artists", items=artists, api=model.api.artists, dry_run=dry_run
         )
 
     ###########################################################################
