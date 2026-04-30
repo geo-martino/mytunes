@@ -51,13 +51,13 @@ class _FieldValue[OT: str, IT: AttributeModel, VT: Any](
         return dict(field=data)
 
     @validate_call
-    def get(self, item: IT) -> VT | None:
+    def get(self, item: IT) -> str | VT | None:
         """Get the tag value from the given item if it meets the condition (if applicable)."""
         if not self._check(item):
             return None
         return self._get(item)
 
-    def _get(self, item: IT) -> Any:
+    def _get(self, item: IT) -> VT | None:
         return getattr(item, self.field)
 
 
@@ -80,22 +80,39 @@ class PositionValue[IT: AttributeModel](_FieldValue[Literal["position"], IT, Pos
     """Gets a position tag according to some rules."""
     __final__ = True
 
-    leading_zeros: bool | NonNegativeInt = Field(
-        description="Whether leading zeros should be included in the tag value.",
+    number: bool = Field(
+        description="Whether to include the number of the position.",
         default=True,
+    )
+    total: bool = Field(
+        description="Whether to include the total of the position.",
+        default=True,
+    )
+    zero_fill: bool | NonNegativeInt | None = Field(
+        description="Whether leading zeros should be included in the value.",
+        default=None,
     )
 
     @validate_call
-    def get(self, item: IT) -> Position | None:
+    def get(self, item: IT) -> str | None:
         if not self._check(item):
             return None
 
-        value: Position = copy(self._get(item))
+        value = copy(self._get(item))
         if value is None:
-            return value
+            return None
 
-        value.zero_fill = self.leading_zeros
-        return value
+        if self.zero_fill is not None:
+            value.zero_fill = self.zero_fill
+
+        if self.number and self.total:
+            pass
+        elif self.number:  # accounts for zero-fill
+            value = str(value).split(value.sep)[0]
+        elif self.total:  # accounts for zero-fill
+            value = str(value).split(value.sep)[1]
+
+        return str(value)
 
 
 @final
@@ -109,17 +126,17 @@ class PathValue[IT: IsLocalFile](_FieldValue[Literal["path"], IT, Path]):
     )
 
     @validate_call
-    def get(self, item: IT) -> Path | None:
+    def get(self, item: IT) -> str | None:
         if not self._check(item):
             return None
 
         value: Path = copy(self._get(item))
         if value is None:
-            return value
+            return None
 
         if self.parent is not None:
             value = value.parts[-self.parent - 1]
-        return value
+        return str(value)
 
 
 type FieldValueT = _FieldValue.annotation

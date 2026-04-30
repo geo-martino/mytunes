@@ -240,7 +240,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     @classmethod
     def _deserialize_text_frames[T](cls, value: T | Iterable[mutagen.id3.TextFrame]) -> T | list[str]:
         if value is None:
-            return value
+            return None
         if not isinstance(value, ItemSequence):
             value = [value]
 

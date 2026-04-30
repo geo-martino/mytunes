@@ -46,19 +46,36 @@ class TestPositionValue(ValueTester):
 
     @pytest.fixture
     def position(self, faker: Faker) -> Position:
-        return Position(number=faker.random_int(1, 20), total=faker.random_int(100, 500))
+        return Position(
+            number=faker.random_int(1, 20), total=faker.random_int(100, 500), zero_fill=True
+        )
 
     def test_get_value(self, track: Track, position: Position):
         track.track = position
         model = PositionValue(field="track")
-        assert model.get(track) == position
+        assert model.get(track) == str(position)
 
-    def test_get_value_with_zero_fill(self, track: Track, position: Position, faker: Faker):
-        leading_zeros = faker.random_element((faker.boolean(), faker.random_int(0, 100)))
+    def test_get_value_number(self, track: Track, position: Position, faker: Faker):
         track.disc = position
+        track.disc.zero_fill = True
 
-        model = PositionValue(field="disc", leading_zeros=leading_zeros)
-        assert model.get(track).zero_fill == leading_zeros
+        model = PositionValue(field="disc", number=True, total=False)
+        assert model.get(track) == str(position.number).zfill(len(str(position.total)))
+
+    def test_get_value_total(self, track: Track, position: Position, faker: Faker):
+        track.disc = position
+        track.disc.zero_fill = True
+
+        model = PositionValue(field="disc", number=False, total=True)
+        assert model.get(track) == str(position.total)
+
+    def test_get_value_sets_zero_fill(self, track: Track, position: Position, faker: Faker):
+        track.disc = position
+        zero_fill = faker.random_element((faker.boolean(), faker.random_int(0, 100)))
+        expected = str(position.model_copy(update={"zero_fill": zero_fill}))
+
+        model = PositionValue(field="disc", zero_fill=zero_fill)
+        assert model.get(track) == expected
 
     def test_get_missing_value(self, track: Track):
         assert track.disc is None
@@ -87,7 +104,7 @@ class TestPathValue(ValueTester):
 
     def test_get_value(self, file: IsLocalFile, path: Path):
         model = PathValue(field="path")
-        assert model.get(file) == path
+        assert model.get(file) == str(path)
 
     def test_get_value_with_parent(self, file: IsLocalFile, path: Path):
         file.path = Path("./path/to/a/file.txt")

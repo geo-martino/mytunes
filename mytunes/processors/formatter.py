@@ -121,22 +121,24 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
     def _expand_single_item_to_all_fields(self, name: str) -> None:
         value = getattr(self, name)
         if value is None:
-            return
+            return None
         if len(value) != 1 or len(self.fields) == 1:
-            return
+            return None
 
         self.__dict__[name] = list(value) * len(self.fields)
 
     def _validate_lengths_match_fields(self, name: str) -> None:
         value = getattr(self, name)
         if value is None:
-            return
+            return None
 
         if len(value) != len(self.fields):
             raise MyTunesValidationError(
                 f"The number of {name} must match the number of fields: "
                 f"{len(value)} {name} != {len(self.fields)} fields"
             )
+
+        return None
 
     def format(self, item: RT | Iterable[RT], indices: bool | Sequence = False) -> str:
         """Format the given item."""
