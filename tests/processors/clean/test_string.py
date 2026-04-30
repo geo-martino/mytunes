@@ -35,10 +35,7 @@ class TestStringCleaner(StringCleanerTester):
         _get_item_value=MagicMock(),
     )
     def model(self) -> StringCleaner:
-        return StringCleaner(
-            drop_brackets=False,
-            drop_non_alphanumeric=False,
-        )
+        return StringCleaner()
 
     def test_clean_returns_on_missing_value(self, model: StringCleaner):
         assert model.clean(None) == ""
@@ -72,10 +69,7 @@ class TestStringCleaner(StringCleanerTester):
 class TestNameCleaner(StringCleanerTester):
     @pytest.fixture
     def model(self) -> NameCleaner:
-        return NameCleaner(
-            drop_brackets=False,
-            drop_non_alphanumeric=False,
-        )
+        return NameCleaner()
 
     def test_get_item_value(self, model: NameCleaner):
         item = HasName(name="Test Name")
@@ -87,10 +81,7 @@ class TestNameCleaner(StringCleanerTester):
 class TestArtistCleaner(StringCleanerTester):
     @pytest.fixture
     def model(self) -> ArtistCleaner:
-        return ArtistCleaner(
-            drop_brackets=False,
-            drop_non_alphanumeric=False,
-        )
+        return ArtistCleaner()
 
     def test_clean(self, model: ArtistCleaner):
         artist_names = ["Artist One", "Artist Two", "Artist Three"]
@@ -114,10 +105,7 @@ class TestArtistCleaner(StringCleanerTester):
 class TestAlbumCleaner(StringCleanerTester):
     @pytest.fixture
     def model(self) -> AlbumCleaner:
-        return AlbumCleaner(
-            drop_brackets=False,
-            drop_non_alphanumeric=False,
-        )
+        return AlbumCleaner()
 
     def test_get_item_value(self, model: NameCleaner):
         item = HasAlbum()

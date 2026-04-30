@@ -23,11 +23,11 @@ class StringCleaner[IT: AttributeModel](TagCleaner[IT, str]):
     )
     drop_brackets: bool = Field(
         description="Whether to remove any text contained in brackets or parentheses.",
-        default=True,
+        default=False,
     )
     drop_non_alphanumeric: bool = Field(
         description="Whether to remove any non-alphanumeric characters.",
-        default=True,
+        default=False,
     )
     drop_phrases: set[str] = Field(
         description=(
