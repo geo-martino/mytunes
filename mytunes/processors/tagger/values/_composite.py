@@ -25,7 +25,7 @@ class CompositeValue[OT: str, IT: AttributeModel](Value[OT, IT, str], HasConditi
         """Get the combined value from the given item's tags."""
         raise NotImplementedError
 
-    def _handler_invalid_fields(self, field_values: dict[str, Any]) -> None:
+    def _handle_invalid_fields(self, field_values: dict[str, Any]) -> None:
         if not self.fail_on_missing:
             field_values |= {field: value if value is not None else "" for field, value in field_values.items()}
             return
@@ -54,9 +54,9 @@ class JoinValue[IT: AttributeModel](CompositeValue[Literal["join"], IT]):
             return None
 
         field_values = {field.field: field.get(item) for field in self.fields}
-        self._handler_invalid_fields(field_values)
+        self._handle_invalid_fields(field_values)
 
-        return self.separator.join(field_values.values())
+        return self.separator.join(map(str, field_values.values()))
 
 
 @final
@@ -116,7 +116,7 @@ class TemplateValue[IT: AttributeModel](CompositeValue[Literal["template"], IT])
             return None
 
         field_values: dict[str, Any] = {field.field: field.get(item) for field in self.fields}
-        self._handler_invalid_fields(field_values)
+        self._handle_invalid_fields(field_values)
 
         # needed as format_map doesn't recognise keys with dots in them
         field_values = {field.replace(".", "_"): value for field, value in field_values.items()}
