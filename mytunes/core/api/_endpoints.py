@@ -1,4 +1,5 @@
 import itertools
+from asyncio import Semaphore
 from collections.abc import Iterable, Sequence, Mapping, Iterator, Collection
 from contextlib import suppress, AbstractAsyncContextManager
 from copy import copy
@@ -590,13 +591,13 @@ class ItemReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
 
 class ItemsReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
     @overload
-    async def get_many(self, urls: Sequence[_URL_TYPE[UT, RT]]) -> list[RT]: ...
+    async def get_many(self, urls: Sequence[_URL_TYPE[UT, RT]], limit: PositiveInt | Semaphore = 100) -> list[RT]: ...
 
     @overload
-    async def get_many(self, urls: Sequence[UT]) -> list[RT]: ...
+    async def get_many(self, urls: Sequence[UT], limit: PositiveInt | Semaphore = 100) -> list[RT]: ...
 
     @ApiURLSchema.validate_call("urls", is_sequence=True)  # WORKAROUND: replace with @validate_call when supported
-    async def get_many(self, urls: ApiURLSequence[UT, RT]) -> list[RT]:
+    async def get_many(self, urls: ApiURLSequence[UT, RT], limit: PositiveInt | Semaphore = 100) -> list[RT]:
         """
         Get multiple resources from the API using the given URLs.
         Calls each URL individually rather than batching requests.
@@ -608,11 +609,16 @@ class ItemsReadEndpoints[UT: URI, RT: RemoteResource](Endpoints[UT, RT]):
             * IDs (as strings) for the resources
 
         :param urls: A list of URLs. See above for accepted formats.
+        :param limit: The maximum number of parallel requests.
         """
-        item_type = type(self).item_type_name or "item"
+        item_type = type(self).type_name or "item"
+
+        if not isinstance(limit, Semaphore):
+            limit = Semaphore(limit)
 
         async def _get_item(url: URL) -> RT:
-            response = await self._handler.get(url)
+            async with limit:
+                response = await self._handler.get(url)
             return type(self).create_model(response, context=self._model_context)
 
         task_id = self._progress.add_task(description=f"Getting {item_type}s", total=len(urls))
