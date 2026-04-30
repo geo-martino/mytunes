@@ -4,12 +4,11 @@ from faker import Faker
 from mytunes.core._item.track import Track
 from mytunes.core.properties.order import Position
 from mytunes.exception import MyTunesValueError
-from mytunes.processors.filters import ValueFilter, ComparerFilter
+from mytunes.processors.filters import ComparerFilter
 from mytunes.processors.tagger.values import FixedValue
 from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue
 from mytunes.processors.tagger.values._fields import FieldValue, PathValue
 from processors.tagger.values.testers import ValueTester
-from tests.testers import BaseModelTester
 
 
 class TestJoinValue(ValueTester):

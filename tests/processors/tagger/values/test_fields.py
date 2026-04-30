@@ -6,12 +6,9 @@ from faker import Faker
 from mytunes.core._item.track import Track
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.order import Position
-from mytunes.processors.compare import Comparer
 from mytunes.processors.filters import ComparerFilter
-from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.tagger.values._fields import FieldValue, PositionValue, PathValue
 from processors.tagger.values.testers import ValueTester
-from tests.testers import BaseModelTester
 
 
 class TestFieldValue(ValueTester):

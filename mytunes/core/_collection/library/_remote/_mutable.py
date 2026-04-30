@@ -10,7 +10,7 @@ from mytunes.core._collection._sync import SYNC_TYPE, get_sync_message, get_sync
 from mytunes.core._collection.library import MutableLibrary
 from mytunes.core._collection.library._remote._base import RemoteLibrary, RemoteLibraryDump, RemotePlaylistDump
 from mytunes.core._collection.playlist import RemoteMutablePlaylist, RemotePlaylist
-from mytunes.core.api import RemoteAPI, HasAPI, HasLibraryEndpoints, ItemReadAllEndpoints, \
+from mytunes.core.api import RemoteAPI, HasLibraryEndpoints, ItemReadAllEndpoints, \
     BatchReadEndpoints, BatchWriteEndpoints
 from mytunes.core.api.items import HasAlbumEndpoints, HasArtistEndpoints, HasTrackEndpoints
 from mytunes.core.api.playlist import HasPlaylistEndpoints, PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints

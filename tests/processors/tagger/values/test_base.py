@@ -2,11 +2,9 @@ import pytest
 from faker import Faker
 
 from mytunes.core._item.track import Track
-from mytunes.processors.compare import Comparer
-from mytunes.processors.filters import ValueFilter, ComparerFilter
+from mytunes.processors.filters import ComparerFilter
 from mytunes.processors.tagger.values import FixedValue
 from processors.tagger.values.testers import ValueTester
-from tests.testers import BaseModelTester
 
 
 class TestFixedValue(ValueTester):

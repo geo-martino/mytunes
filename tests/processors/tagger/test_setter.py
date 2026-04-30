@@ -1,16 +1,14 @@
 from abc import ABCMeta
-from unittest.mock import patch
 
 import pytest
 from faker import Faker
 
-from mytunes._base.attribute import AttributeModel
 from mytunes.core._item.track import Track
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger import MaxValue
 from mytunes.processors.tagger._setter import ValueSetter, GroupSetter, SortSetter, IncrementalSetter, _GroupSetter
-from mytunes.processors.tagger.values import FixedValue, MinValue
+from mytunes.processors.tagger.values import FixedValue
 from tests.testers import BaseModelTester
 
 

@@ -1,10 +1,10 @@
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, final, Literal, Annotated, Union
+from typing import Any, final, Literal, Annotated
 
 from pydantic import Field, AliasChoices
 
-from mytunes.processors.filters import Filter, ComparerFilter
+from mytunes.processors.filters import ComparerFilter
 from ...._base import BaseModel
 from ...._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 from ...._types import StrippedString

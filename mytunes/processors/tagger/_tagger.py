@@ -1,6 +1,5 @@
-from collections.abc import Sequence, Iterable, MutableSequence
-from functools import partial
-from typing import Union, Annotated
+from collections.abc import Sequence, Iterable, Mapping
+from typing import Union, Annotated, Any
 
 from pydantic import AliasChoices, Field, OnErrorOmit, validate_call
 
@@ -10,23 +9,21 @@ from mytunes.processors.filters import Filter
 from mytunes.result import ItemResult, MapLogFormatter
 from ._setter import Setter
 from ..._base.attribute import AttributeModel
-from ..._types import TO_TUPLE, TO_LIST
 from ...logger import Logger
 
 
 class TaggerResult[IT: AttributeModel](ItemResult[IT]):
     tags: Annotated[
-        Sequence[str],
-        TO_TUPLE,
+        Mapping[str, Any],
         MapLogFormatter(
-            value=lambda values: Logger.format_list_to_string(values),
+            value=lambda values: Logger.format_list_to_string(values.keys()),
             colour="blue",
             colour_attributes=["bold"],
             include_name_in_log=False,
         ),
     ] = Field(
         description="The tags that were modified on the item.",
-        default_factory=tuple
+        default_factory=dict
     )
 
 
@@ -53,16 +50,17 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
 
             for item in items:
                 is_set = setter.set(item)
-
-                if is_set:
-                    result = next((result for result in results if result.item is item), None)
-                    if result is None:
-                        result = TaggerResult(item=item)
-                        results.append(result)
-
-                    result.__dict__["tags"] = tuple(list(result.tags) + [setter.field])
-
                 self._progress.advance(task_id)
+
+                if not is_set:
+                    continue
+
+                result = next((result for result in results if result.item is item), None)
+                if result is None:
+                    result = TaggerResult(item=item)
+                    results.append(result)
+
+                result.__dict__["tags"] = dict(result.tags) | {setter.field: getattr(item, setter.field)}
 
             setter.clear_context()
 

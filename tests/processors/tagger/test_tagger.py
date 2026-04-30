@@ -25,4 +25,4 @@ class TestTagger(BaseModelTester):
 
         assert all(track.name == value for track in tracks)
         assert len(results) == len(tracks)
-        assert all(result.tags == ("name",) for result in results)
+        assert all(result.tags == {"name": value} for result in results)

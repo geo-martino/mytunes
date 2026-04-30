@@ -6,10 +6,10 @@ import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer, NonNegativeFloat, computed_field, NonNegativeInt
+    field_validator, field_serializer, computed_field, NonNegativeInt
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
-from mytunes._types import StrippedString, DEFAULT_IF_NONE, Number, TO_INT
+from mytunes._types import StrippedString, DEFAULT_IF_NONE, TO_INT
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.image import ImageURL, ImageFile
 from mytunes.core.properties.music import KeySignature
