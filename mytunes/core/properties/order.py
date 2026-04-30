@@ -56,7 +56,18 @@ class Position(AttributeModel):
             return data
 
         numbers = iter(data.split(cls.sep))
-        return dict(number=next(numbers), total=next(numbers, None))
+        number = next(numbers)
+        total = next(numbers, None)
+
+        zero_fill = False
+        if not total and number.startswith("0"):
+            zero_fill = len(str(number))
+        elif total and total.startswith("0"):
+            zero_fill = len(str(total))
+        elif total:
+            zero_fill = len(number) == len(total)
+
+        return dict(number=number, total=total, zero_fill=zero_fill)
 
     @model_validator(mode="after")
     def _validate_position_is_less_than_total(self) -> Self:
