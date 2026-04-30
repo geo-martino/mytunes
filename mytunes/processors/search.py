@@ -123,8 +123,8 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
         default=None,
     )
 
-    skip_if_has_uri: bool = Field(
-        description="Skip searching for matches if the item already has a URI assigned.",
+    skip_if_matched: bool = Field(
+        description="Skip searching for matches if the item does not need matching.",
         default=True,
     )
     assign_uri: bool = Field(
@@ -236,7 +236,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
     ## Utilities
     ###########################################################################
     def _should_skip(self, item: Any) -> bool:
-        if self.skip_if_has_uri and isinstance(item, HasURI) and item.has_uri:
+        if self.skip_if_matched and isinstance(item, HasURI) and item.has_uri:
             self._log_debug(item, message=f"Skipping: already has a URI")
             return True
         elif isinstance(item, HasURI) and item.has_uri is False:
@@ -309,27 +309,31 @@ class ItemSearcher[API: _ApiT](Searcher[API]):
 
 
 class CollectionSearcher[API: _ApiT](Searcher[API]):
-    items_only_on_collections: bool = Field(
+    skip_if_matched_items: bool = Field(
+        description="Skip searching for matches if none of the items need matching.",
+        default=True,
+    )
+
+    items_only: bool = Field(
         description=(
-            "Whether to always search for collections by searching for the items individually instead of the "
+            "Whether to always search for the items individually instead of the collection as a whole. "
+            "When False, items will be matched to the items in the matched collection. "
+            "This overrides all other settings related to searching for items if set to True."
+        ),
+        default=False,
+    )
+    items_only_on_compilations: bool = Field(
+        description=(
+            "Whether to always only search for the individual items compilation collections instead of the "
             "collection as a whole. "
-            "In case of the latter, items will be matched to the items in the matched collection. "
-            "This overrides all other settings related to searching for collections if set to True."
+            "When False, items will be matched to the tracks in the matched album."
         ),
         default=False,
     )
-    compilation_albums_as_tracks_only: bool = Field(
+    match_all_items: bool = Field(
         description=(
-            "Whether to always search for compilation albums by searching for the individual tracks instead of the "
-            "album as a whole. "
-            "In case of the latter, tracks will be matched to the tracks in the matched album."
-        ),
-        default=False,
-    )
-    keep_matching_collection_items: bool = Field(
-        description=(
-            "If matching a collection and there are still unmatched items, searching for matches "
-            "for the outstanding items individually. "
+            "If there are still unmatched items after matching the items to the collection, search for matches "
+            "for the unmatched items individually. "
             "This only applies if the collection has been searched for as a whole with items matched "
             "to that result first."
         ),
@@ -385,7 +389,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
 
         items, skipped = self._split_items(collection.items)
         result = self._match_items(items, list(match.items), skipped=skipped, name=name)
-        if self.keep_matching_collection_items and result.unmatched:
+        if self.match_all_items and result.unmatched:
             result = await self._search_from_result(result)
 
         return result
@@ -445,15 +449,25 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
     ###########################################################################
     ## Utilities
     ###########################################################################
+    def _should_skip(self, item: Any) -> bool:
+        if super()._should_skip(item):
+            return True
+        if self.skip_if_matched_items and isinstance(item, CollectionModel) and not any(
+            isinstance(it, HasURI) and it.has_uri is None for it in item.items
+        ):
+            self._log_debug(item, message=f"Skipping: no items with missing URIs")
+            return True
+        return False
+
     def _should_search_on_items_only(self, item: CollectionModel) -> bool:
         message = "Searching for collection items"
-        if self.items_only_on_collections:
+        if self.items_only:
             reason = "set to search for collections as items only"
             self._log_debug(item, message=f"{message}: {reason}")
             return True
 
         match item:
-            case AlbumCollection() as coll if self.compilation_albums_as_tracks_only and coll.compilation:
+            case AlbumCollection() as coll if self.items_only_on_compilations and coll.compilation:
                 reason = "is compilation album + set to search for compilation albums as tracks only"
                 self._log_debug(item, message=f"{message}: {reason}")
                 return True

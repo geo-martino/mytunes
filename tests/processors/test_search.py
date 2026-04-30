@@ -17,6 +17,7 @@ from mytunes.core.api import RemoteAPI
 from mytunes.core.api.search import SearchEndpoints
 from mytunes.core.properties.uri import HasMutableURI
 from mytunes.core.remote import RemoteResource
+from mytunes.local._item import LocalTrack
 from mytunes.processors.match import Matcher
 from mytunes.processors.score.string import NameScorer
 from mytunes.processors.search import Searcher, SearchResult, ItemSearcher, CollectionSearcher
@@ -142,19 +143,19 @@ class TestSearcher(SearcherTester, BaseModelTester):
             for _ in range(faker.random_int(5, 15))
         ]
 
-    def test_skip_if_has_uri(self, model: Searcher, item: HasMutableURI, match: RemoteResource):
+    def test_skip_if_matched(self, model: Searcher, item: HasMutableURI, match: RemoteResource):
         assert match.uri is not None
 
-        model.skip_if_has_uri = False
+        model.skip_if_matched = False
         assert not model._should_skip(item)
         assert not model._should_skip(match)
 
-        model.skip_if_has_uri = True
+        model.skip_if_matched = True
         assert not model._should_skip(item)
         assert model._should_skip(match)
 
     async def test_query(self, model: Searcher, item: HasMutableURI, mock_query_item: Mock):
-        model.skip_if_has_uri = False
+        model.skip_if_matched = False
         assert await model._query(item) == mock_query_item.return_value
 
     async def test_query_returns_no_results(
@@ -361,9 +362,9 @@ class TestCollectionSearcher(SearcherTester):
         return faker.random_element(collections)
 
     @pytest.fixture
-    def collections(self, tracks: list[Track], faker: Faker) -> list[CollectionModel]:
+    def collections(self, local_tracks: list[LocalTrack], faker: Faker) -> list[CollectionModel]:
         return [
-            MockCollection(name=faker.sentence().rstrip("."), all_items=faker.random_elements(tracks))
+            MockCollection(name=faker.sentence().rstrip("."), all_items=faker.random_elements(local_tracks))
             for _ in range(faker.random_int(5, 10))
         ]
 
@@ -386,6 +387,20 @@ class TestCollectionSearcher(SearcherTester):
             )
             for _ in range(faker.random_int(5, 15))
         ]
+
+    def test_skip_if_matched_items(
+            self, model: CollectionSearcher, collection: CollectionModel
+    ):
+        for item in collection.items:
+            item.uri = SimpleURI.create_random(item.type)
+
+        assert all(item.has_uri for item in collection.items)
+
+        model.skip_if_matched_items = False
+        assert not model._should_skip(collection)
+
+        model.skip_if_matched_items = True
+        assert model._should_skip(collection)
 
     async def test_search_from_result(
             self,
@@ -465,7 +480,7 @@ class TestCollectionSearcher(SearcherTester):
         assert model._should_search_on_items_only(CollectionModel())  # not a resource model
 
         # always returns True now
-        model.items_only_on_collections = True
+        model.items_only = True
         assert model._should_search_on_items_only(collection)
 
     @patch.multiple(
@@ -478,7 +493,7 @@ class TestCollectionSearcher(SearcherTester):
         for track in tracks:
             track.album = album
 
-        model.compilation_albums_as_tracks_only = False
+        model.items_only_on_compilations = False
 
         collection = AlbumCollection(**album.model_dump(), tracks=tracks)
         assert not model._should_search_on_items_only(collection)
@@ -486,7 +501,7 @@ class TestCollectionSearcher(SearcherTester):
         collection.compilation = True
         assert not model._should_search_on_items_only(collection)
 
-        model.compilation_albums_as_tracks_only = True
+        model.items_only_on_compilations = True
         assert model._should_search_on_items_only(collection)
 
     @pytest.fixture(autouse=True)
@@ -628,7 +643,7 @@ class TestCollectionSearcher(SearcherTester):
         mock_match.return_value = match
 
         mock_match_items.return_value = SearchResult(name=collection.name, unmatched=tracks)
-        model.keep_matching_collection_items = True
+        model.match_all_items = True
 
         await model.search(collection)
 
