@@ -11,7 +11,7 @@ from ...._base.attribute import AttributeModel
 
 
 # noinspection PyAbstractClass
-class CollectionValue[OT: str, IT: AttributeModel, VT: Any](Value[OT, Iterable[IT], VT]):
+class AggregateValue[OT: str, IT: AttributeModel, VT: Any](Value[OT, Iterable[IT], VT]):
     field: _ATTRIBUTE_FIELD_TYPE = Field(
         description="The field from which to get a tag value from.",
     )
@@ -34,7 +34,7 @@ class CollectionValue[OT: str, IT: AttributeModel, VT: Any](Value[OT, Iterable[I
 
 
 @final
-class MinValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["min"], IT, VT]):
+class MinValue[IT: AttributeModel, VT: Any](AggregateValue[Literal["min"], IT, VT]):
     __final__ = True
 
     def get(self, items: Iterable[IT]) -> VT | None:
@@ -43,7 +43,7 @@ class MinValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["min"], IT, 
 
 
 @final
-class MaxValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["max"], IT, VT]):
+class MaxValue[IT: AttributeModel, VT: Any](AggregateValue[Literal["max"], IT, VT]):
     __final__ = True
 
     def get(self, items: Iterable[IT]) -> VT | None:
@@ -52,7 +52,7 @@ class MaxValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["max"], IT, 
 
 
 @final
-class SumValue[IT: AttributeModel, VT: Number](CollectionValue[Literal["sum"], IT, VT]):
+class SumValue[IT: AttributeModel, VT: Number](AggregateValue[Literal["sum"], IT, VT]):
     __final__ = True
 
     def get(self, items: Iterable[IT]) -> VT | None:
@@ -62,7 +62,7 @@ class SumValue[IT: AttributeModel, VT: Number](CollectionValue[Literal["sum"], I
 
 
 @final
-class CountValue[IT: AttributeModel, VT: Any](CollectionValue[Literal["count"], IT, VT]):
+class CountValue[IT: AttributeModel, VT: Any](AggregateValue[Literal["count"], IT, VT]):
     __final__ = True
 
     field: Literal[None] = Field(default=None)

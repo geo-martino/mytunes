@@ -45,9 +45,15 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         """Apply setters to the item from the collection."""
         items = list(self.filter_items(items))
 
+        for setter in self.setters:
+            setter.set_context(items)
+
         task_id = self._progress.add_task(description="Applying tags to items", total=len(items))
-        tasks = (partial(self.set_tags_to_item, item=item, collection=items) for item in items)
+        tasks = (partial(self.set_tags_to_item, item) for item in items)
         results = tuple(self._run_tasks(tasks, task_id=task_id))
+
+        for setter in self.setters:
+            setter.clear_context()
 
         return results
 
@@ -57,13 +63,19 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
         return filter(self.filter.check, items) if self.filter else items
 
     @validate_call
-    def set_tags_to_item(self, item: IT, collection: Sequence[OnErrorOmit[IT]]) -> TaggerResult[IT]:
+    def set_tags_to_item(self, item: IT, collection: Sequence[OnErrorOmit[IT]] = None) -> TaggerResult[IT]:
         """Apply setters to the item from the collection."""
         tags = []
         for setter in self.setters:
-            is_set = setter.set(item, collection)
+            if collection is not None:
+                setter.set_context(collection)
+
+            is_set = setter.set(item)
             if is_set:
                 tags.append(setter.field)
+
+            if collection is not None:
+                setter.clear_context()
 
         return TaggerResult(item=item, tags=tags)
 

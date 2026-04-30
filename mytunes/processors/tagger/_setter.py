@@ -1,14 +1,16 @@
 from abc import abstractmethod
-from collections.abc import Sequence, Collection, Iterable
-from typing import Any, Union, final, Annotated, Literal
+from collections import defaultdict
+from collections.abc import Sequence, Collection, Iterable, Iterator, MutableSequence, Hashable, Mapping
+from contextlib import AbstractContextManager
+from typing import Any, Union, final, Annotated, Literal, Self
 
-from pydantic import Field, PositiveInt, BeforeValidator
+from pydantic import Field, PositiveInt, BeforeValidator, PrivateAttr, field_validator, model_validator
 from typing_inspection.typing_objects import is_typevar
 
 from mytunes.exception import MyTunesValueError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
-from mytunes.processors.tagger.values import Value, CollectionValue, HasCondition
+from mytunes.processors.tagger.values import Value, AggregateValue, HasCondition
 from mytunes.processors.tagger.values import from_fixed_value
 from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel
@@ -51,18 +53,38 @@ class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass
         description="The value getter for the tag value to set.",
     )
 
+    _items: Collection[IT] = PrivateAttr(
+        # description="The items in the collection used in various ways by value getters/setters."
+        default_factory=tuple,
+    )
+
+    def get(self, item: IT) -> VT:
+        """Get the value for the given item."""
+        return self.value.get(self._items) if isinstance(self.value, AggregateValue) else self.value.get(item)
+
     @abstractmethod
-    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
+    def set(self, item: IT) -> bool:
         """Sets the configured tag to the item. Returns True if the tag was set."""
         raise NotImplementedError
+
+    def set_context(self, items: Iterable[IT] = ()) -> None:
+        """
+        Set the collection of items which contain all items to be set.
+        Used by various setters to assign tags based on collection values.
+        """
+        self._items = tuple(items)
+
+    def clear_context(self) -> None:
+        """Clear the collection of items."""
+        self._items = tuple()
 
 
 @final
 class ValueSetter[IT: AttributeModel, VT: Any](Setter[Literal["value"], IT, VT]):
     __final__ = True
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
-        value = self.value.get(other) if isinstance(self.value, CollectionValue) else self.value.get(item)
+    def set(self, item: IT) -> bool:
+        value = self.get(item)
 
         if value is None:
             return False
@@ -74,7 +96,7 @@ class ValueSetter[IT: AttributeModel, VT: Any](Setter[Literal["value"], IT, VT])
 
 
 class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
-    value: CollectionValue.annotation = Field(
+    value: AggregateValue.annotation = Field(
         description="The value getter for the tag value to set.",
     )
     group_by: Annotated[Sequence[_ATTRIBUTE_FIELD_TYPE], TO_TUPLE] = Field(
@@ -82,12 +104,32 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
         default_factory=tuple,
     )
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
-        self._validate_item_in_group(item, other)
+    _groups: Mapping[tuple[Hashable | None, ...], tuple[IT, ...]] = PrivateAttr(
+        # description="The groups of items set in the context."
+        default_factory=dict,
+    )
 
-        group = self._group_items(item, other)
+    @model_validator(mode="after")
+    def _set_groups(self) -> Self:
+        self.set_context(self._items)
+        return self
 
-        value = self.value.get(group)
+    def get(self, item: IT) -> VT:
+        group = self._get_group(item)
+        return self.value.get(group)
+
+    def _get_group(self, item: IT) -> tuple[VT, ...]:
+        values = tuple(getattr(item, field, None) for field in self.group_by)
+
+        group = self._groups.get(tuple(values))
+        if group is None:
+            raise MyTunesValueError("Given item must be present in the currently set items.")
+
+        return group
+
+    def set(self, item: IT) -> bool:
+        value = self.get(item)
+
         if value is None:
             return False
         if getattr(item, self.field) == value:
@@ -96,18 +138,19 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
         setattr(item, self.field, value)
         return True
 
-    @staticmethod
-    def _validate_item_in_group(item: IT, other: Collection[IT] = ()) -> None:
-        if item not in other:
-            raise MyTunesValueError("Given item must be present in the group.")
+    def set_context(self, items: Iterable[IT] = ()) -> None:
+        super().set_context(items)
 
-    def _group_items(self, item: IT, other: Collection[IT]) -> Iterable[IT]:
-        if not self.group_by:
-            return other
+        group_values: dict[tuple[Hashable | None, ...], list[IT]] = defaultdict(list)
+        for item in items:
+            values = [getattr(item, field, None) for field in self.group_by]
+            group_values[tuple(values)].append(item)
 
-        def _is_in_group(it: IT) -> bool:
-            return all(getattr(it, field, None) == getattr(item, field, None) for field in self.group_by)
-        return filter(_is_in_group, other)
+        self._groups = {k: tuple(v) for k, v in group_values.items()}
+
+    def clear_context(self) -> None:
+        super().clear_context()
+        self._groups = {}
 
 
 @final
@@ -121,20 +164,10 @@ class _SortSetter[OT: str, IT: AttributeModel, VT: Any](_GroupSetter[OT, IT, VT]
         default_factory=tuple,
     )
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
-        self._validate_item_in_group(item, other)
-
-        group = list(self._group_items(item, other))
+    def _get_group(self, item: IT) -> tuple[VT, ...]:
+        group = list(super()._get_group(item))
         self.sort_by.sort(group)
-
-        value = self.value.get(group)
-        if value is None:
-            return False
-        if getattr(item, self.field) == value:
-            return False
-
-        setattr(item, self.field, value)
-        return True
+        return tuple(group)
 
 
 @final
@@ -146,8 +179,8 @@ class SortSetter[IT: AttributeModel, VT: Any](_SortSetter[Literal["sort"], IT, V
 class IncrementalSetter[IT: AttributeModel](_SortSetter[Literal["incremental"], IT, int], HasCondition[int]):
     __final__ = True
 
-    # make optional
-    value: Union[CollectionValue.annotation, None] = Field(
+    # now optional
+    value: Union[AggregateValue.annotation, None] = Field(
         description="The value getter for the tag value to set.",
         default=None,
     )
@@ -160,20 +193,12 @@ class IncrementalSetter[IT: AttributeModel](_SortSetter[Literal["incremental"], 
         default=1,
     )
 
-    def set(self, item: IT, other: Collection[IT] = ()) -> bool:
-        self._validate_item_in_group(item, other)
-
-        group = list(self._group_items(item, other))
-        self.sort_by.sort(group)
+    def get(self, item: IT) -> int | None:
+        group = self._get_group(item)
 
         if self.value is not None:
             value = self.value.get(group)
             if value is None or not self._check(value):
-                return False
+                return None
 
-        value = self.start + (group.index(item) * self.increment)
-        if getattr(item, self.field) == value:
-            return False
-
-        setattr(item, self.field, value)
-        return True
+        return self.start + (group.index(item) * self.increment)
