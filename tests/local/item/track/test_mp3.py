@@ -165,6 +165,20 @@ class TestMP3(LocalTrackTester):
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
 
+    def test_serialize_rating_frame(self, model: MP3, faker: Faker):
+        value = faker.random_int(0, 100)
+        info = Namespace(field_name="rating", by_alias=True, context=None, mode="python")
+
+        # play count is also set as part of the rating in MP3 tags
+        play_count = faker.random_int(0, 1000)
+        model.play_count = play_count if faker.boolean() else None
+
+        # noinspection PyTypeChecker
+        result = model._serialize_rating_frame(value, handler=lambda x: x, info=info)
+        assert isinstance(result, mutagen.id3.POPM)
+        assert result.rating == value
+        assert result.count == (play_count if model.play_count else 0)
+
     def test_from_tags(
             self, model: MP3, uri: URI, image_bytes: list[bytes], pictures: dict[str, mutagen.id3.APIC], faker: Faker
     ):
@@ -179,6 +193,7 @@ class TestMP3(LocalTrackTester):
             "TPOS": mutagen.id3.TPOS(text="1/2"),
             "TBPM": mutagen.id3.TBPM(text="124.931"),
             "TKEY": mutagen.id3.TKEY(text="B"),
+            "POPM": mutagen.id3.POPM(rating=55),
             "TCMP": mutagen.id3.TCMP(text="1"),
             choice(("TDRC", "TDAT", "TDOR", "TYER", "TORY")): mutagen.id3.TDRC(text="2023-04-14"),
             choice(("COMM", "COMMENT")) + ":ID3V1 COMMENT:eng": mutagen.id3.COMM(text=faker.sentence()),
@@ -203,6 +218,7 @@ class TestMP3(LocalTrackTester):
         assert model.disc.total == 2
         assert model.bpm == 124.931
         assert model.key.key == "B"
+        assert model.rating == 55
         assert model.released_at == date(2023, 4, 14)
         assert model.compilation is True
         assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
@@ -222,6 +238,8 @@ class TestMP3(LocalTrackTester):
         model.disc = (1, 2)
         model.bpm = 124.931
         model.key = "B"
+        model.rating = 55
+        model.play_count = 200
         model.released_at = "2023-04-14"
         model.compilation = True
         model.comments = [faker.sentence()]
@@ -238,6 +256,7 @@ class TestMP3(LocalTrackTester):
             "TPOS": mutagen.id3.TPOS(text="1/2"),
             "TBPM": mutagen.id3.TBPM(text="124.931"),
             "TKEY": mutagen.id3.TKEY(text="B"),
+            "POPM": mutagen.id3.POPM(rating=55, count=200),
             "TDAT": mutagen.id3.TDAT(text="2023-04-14"),
             "TCMP": mutagen.id3.TCMP(text="1"),
             "COMM:1:eng": mutagen.id3.COMM(text=model.comments[0], lang="eng"),

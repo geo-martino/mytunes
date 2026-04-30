@@ -6,10 +6,10 @@ import mutagen.id3
 import mutagen.mp3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, InstanceOf, model_validator, model_serializer, \
-    field_validator, field_serializer, NonNegativeFloat, computed_field
+    field_validator, field_serializer, NonNegativeFloat, computed_field, NonNegativeInt
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, FieldSerializationInfo, SerializationInfo
 
-from mytunes._types import StrippedString, DEFAULT_IF_NONE
+from mytunes._types import StrippedString, DEFAULT_IF_NONE, Number, TO_INT
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.image import ImageURL, ImageFile
 from mytunes.core.properties.music import KeySignature
@@ -111,7 +111,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         serialization_alias="TDAT",
     )
     # noinspection SpellCheckingInspection
-    rating: Annotated[Rating[NonNegativeFloat] | None, TagAttribute()] = Field(
+    rating: Annotated[Rating[NonNegativeInt] | None, TO_INT, TagAttribute()] = Field(
         description="The rating of this track.",
         default=None,
         alias="POPM",
@@ -315,6 +315,18 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
             values.extend(frame_cls(text=str(uri), desc=f"{uri.source.casefold()}URI", lang="eng") for uri in self.uris)
 
         return values
+
+    @field_serializer("rating", mode="wrap", when_used="unless-none")
+    def _serialize_rating_frame[T](
+            self,
+            value: T | Rating,
+            handler: SerializerFunctionWrapHandler,
+            info: FieldSerializationInfo,
+    ) -> T | InstanceOf[mutagen.id3.POPM]:
+        if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
+            return handler(value)
+
+        return mutagen.id3.POPM(rating=int(value), count=self.play_count or 0)
 
     @staticmethod
     def _clear_tag(file: mutagen.mp3.MP3, tag_id: str) -> set[str]:

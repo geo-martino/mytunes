@@ -42,11 +42,25 @@ type ListWithValues[T] = Annotated[list[T], MinLen(1)]
 ###########################################################################
 ## Validators
 ###########################################################################
+def to_int(value: Any) -> int | None:
+    """Converts a value to a set."""
+    match value:
+        case None:
+            return None
+        case int():
+            return value
+        case float():
+            return int(value)
+
+
+TO_INT = BeforeValidator(to_int)
+
+
 def to_set(value: Any) -> set[Any] | None:
     """Converts a value to a set."""
     match value:
         case None:
-            return
+            return None
         case str() | BaseModel():
             return {value}
         case Iterable():
@@ -62,7 +76,7 @@ def to_tuple(value: Any) -> tuple[Any] | None:
     """Converts a value to a tuple."""
     match value:
         case None:
-            return
+            return None
         case str() | Mapping() | BaseModel():
             return (value,)
         case Iterable():
@@ -78,7 +92,7 @@ def to_list(value: Any) -> list[Any] | None:
     """Converts a value to a list."""
     match value:
         case None:
-            return
+            return None
         case str() | Mapping() | BaseModel():
             return [value]
         case Iterable():
