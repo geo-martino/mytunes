@@ -64,10 +64,7 @@ class TestItemChecker(CheckerTester):
             mock_pause: Mock,
             mock_input_match: Mock,
     ):
-        mock_pause.return_value = False
-
         result = await model.check(tracks)
-
         assert isinstance(result, CheckResult)
 
         mock_check_page.assert_called_once()
@@ -75,7 +72,7 @@ class TestItemChecker(CheckerTester):
         mock_match_page.assert_called_once()
         mock_input_match.assert_called_once()
 
-    async def test_check_runs_all_skip_match(
+    async def test_check_skips_match(
             self,
             model: ItemChecker,
             tracks: list[RemoteTrack],
@@ -84,10 +81,30 @@ class TestItemChecker(CheckerTester):
             mock_pause: Mock,
             mock_input_match: Mock,
     ):
-        mock_pause.return_value = True
-        result = await model.check(tracks)
+        mock_pause.side_effect = SkipPage
 
+        result = await model.check(tracks)
         assert isinstance(result, CheckResult)
+
+        mock_check_page.assert_called_once()
+        mock_pause.assert_called_once()
+        mock_match_page.assert_not_called()
+        mock_input_match.assert_not_called()
+
+    async def test_check_quits_match(
+            self,
+            model: ItemChecker,
+            tracks: list[RemoteTrack],
+            mock_check_page: Mock,
+            mock_match_page: Mock,
+            mock_pause: Mock,
+            mock_input_match: Mock,
+            faker: Faker,
+    ):
+        mock_pause.side_effect = QuitImmediately
+
+        result = await model.check(tracks)
+        assert result is None
 
         mock_check_page.assert_called_once()
         mock_pause.assert_called_once()
@@ -107,37 +124,6 @@ class TestItemChecker(CheckerTester):
 
         mock_check_page.assert_not_called()
         mock_match_page.assert_not_called()
-
-    async def test_check_skips_match(
-            self,
-            model: ItemChecker,
-            tracks: list[RemoteTrack],
-            mock_input_match: Mock,
-            faker: Faker,
-    ):
-        with patch.object(InputPage, "pause", side_effect=SkipPage):
-            await model.check(tracks)
-
-        mock_input_match.assert_not_called()
-
-    async def test_check_quits_match(
-            self,
-            model: ItemChecker,
-            tracks: list[RemoteTrack],
-            mock_check_page: Mock,
-            mock_match_page: Mock,
-            mock_pause: Mock,
-            mock_input_match: Mock,
-            faker: Faker,
-    ):
-        mock_pause.side_effect = QuitImmediately
-
-        await model.check(tracks)
-
-        mock_check_page.assert_called_once()
-        mock_pause.assert_called_once()
-        mock_match_page.assert_not_called()
-        mock_input_match.assert_not_called()
 
 
 class TestCollectionChecker(CheckerTester):

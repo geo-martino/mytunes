@@ -43,28 +43,18 @@ class InputPage[API: RemoteAPI, CT: HasURI](CheckerPage[_ApiT, CT]):
     @property
     def _options(self) -> dict[str, str]:
         return {
-            "y/yes": "Accept all the current matches and proceed to the next set of items (if applicable)",
-            "n/no": "Reject all the current matches and proceed to manually match each item",
-            "s/set": "Proceed to manually match each item with no current match",
+            "<Return/Enter>": "Proceed to manually match each item without a current match",
+            "s": "Accept all the current matches",
             "q": "Quit check",
         }
 
-    async def pause(self) -> bool | None:
+    async def pause(self) -> None:
         """Pause the check process and prompt the user on how to proceed."""
         super().pause()
 
         while option := self._get_user_input():
             match option.casefold():
-                case "y" | "yes":
-                    return True
-
-                case "n" | "no":
-                    return False
-
-                case "s" | "set":
-                    return None
-
                 case _:
                     self._log_unrecognised_input(option)
 
-        return False
+        return None

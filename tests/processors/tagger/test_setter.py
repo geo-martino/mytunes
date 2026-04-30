@@ -66,7 +66,7 @@ class GroupedSetterTester(BaseModelTester, metaclass=ABCMeta):
         track = tracks.pop(0)
         model.set_context(tracks)
 
-        with pytest.raises(MyTunesValueError):
+        with pytest.raises(MyTunesValueError):  # FIXME: flakey assertion - very rare
             model.set(track)
 
     @staticmethod

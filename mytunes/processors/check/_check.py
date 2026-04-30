@@ -2,7 +2,6 @@ import functools
 import itertools
 from abc import abstractmethod
 from collections.abc import Sequence, Callable, Collection
-from copy import copy
 from typing import Any
 
 from pydantic import Field, PositiveInt, OnErrorOmit, validate_call
@@ -131,6 +130,7 @@ class ItemChecker[API: RemoteAPI](Checker[API]):
                 result = await self._check_page(page)
         except SkipPage:
             self._logger.error("User triggered skip page with skip command")
+            result = CheckResult(name=page.name, unchanged=page.items)
         except QuitImmediately:
             self._logger.error("User triggered exit with quit command")
 
@@ -138,22 +138,12 @@ class ItemChecker[API: RemoteAPI](Checker[API]):
 
     async def _check_page[T: HasURI](self, page: InputPage[API, T]) -> CheckResult[T] | None:
         with self._pause_progress():
-            all_valid = await page.pause()
-
-        if all_valid:
-            return CheckResult(name=page.name, unchanged=page.items)
-        elif all_valid is False:
-            return await self._match_page(page)
-        return await self._match_page_for_missing_items(page)
+            await page.pause()
+        return await self._match_page(page)
 
     async def _match_page[T: HasURI](self, page: InputPage[API, T], **__) -> CheckResult[T]:
         matchers = [SimpleInputMatch(page=page)]
         return await self._match_items(matchers, items=page.items)
-
-    async def _match_page_for_missing_items[T: HasURI](self, page: InputPage[API, T], **__) -> CheckResult[T]:
-        matchers = [SimpleInputMatch(page=page)]
-        items = SimpleInputMatch.get_missing_items(page.items)
-        return await self._match_items(matchers, items=items)
 
     ###########################################################################
     ## Logging
