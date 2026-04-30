@@ -116,11 +116,6 @@ class RemoteLibrary[
     def _should_extend(item: Any) -> bool:
         return isinstance(item, RemoteCollection) and not item.has_all_items
 
-    def get_all_tracks(self) -> UniqueSequence[TT]:
-        """Get all unique tracks currently loaded for this library across all track sources."""
-        result = self._generate_track_results()
-        return UniqueSequence(*result.in_library, *result.in_playlists, *result.in_albums)
-
     ###########################################################################
     ## Load - playlists
     ###########################################################################
