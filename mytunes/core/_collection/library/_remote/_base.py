@@ -88,7 +88,7 @@ class RemoteLibrary[
         results["SAVED ALBUMS"] = self._generate_album_results()
         table = Result.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table, new_line_start=True)
 
     def dump(self) -> RemoteLibraryDump[UT]:
         names_seen = set()
@@ -163,7 +163,7 @@ class RemoteLibrary[
         header = f"{self._log_name.upper()} PLAYLISTS"
         table = RemotePlaylistsResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table, new_line_start=True)
 
     def _generate_playlist_results(self) -> dict[str, RemotePlaylistsResult[PT]]:
         results = RemotePlaylistsResult.from_playlists(playlists=self.playlists.unique)
@@ -189,7 +189,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} TRACKS"
         table = result.generate_table(results={key: result})
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table, new_line_start=True)
 
     def _generate_track_results(self) -> RemoteTracksResult[TT]:
         return RemoteTracksResult.from_library(self.tracks, self.playlists.unique, self.albums)
@@ -242,7 +242,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} ARTISTS"
         table = result.generate_table(results={key: result})
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table, new_line_start=True)
 
     def _generate_artist_results(self) -> RemoteArtistsResult[RT]:
         return RemoteArtistsResult(artists=self.artists)
@@ -294,7 +294,7 @@ class RemoteLibrary[
         key = f"{self._log_name.upper()} ALBUMS"
         table = result.generate_table(results={key: result})
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table, new_line_start=True)
 
     def _generate_album_results(self) -> RemoteAlbumsResult[AT]:
         return RemoteAlbumsResult(albums=self.albums)

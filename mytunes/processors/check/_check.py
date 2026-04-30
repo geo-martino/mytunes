@@ -88,7 +88,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasAsyncOperations, HasPro
         header = f"{self.source.upper()} CHECK RESULTS"
         table = CheckResult.generate_table(results=results, header=header)
 
-        self._logger.report(table, new_line_start=True, new_line_end=True)
+        self._logger.report(table, new_line_start=True)
 
     def _log_start(self, items: Sequence[ResourceModel]) -> None:
         types = self._logger.format_types_to_string(items)

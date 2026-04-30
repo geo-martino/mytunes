@@ -329,7 +329,7 @@ class LocalLibrary(
         header = f"{self.source.upper()} PLAYLISTS SAVED"
         table = SavePlaylistResult.generate_table(results=results, header=header)
 
-        self._logger.stat(table, new_line_start=True, new_line_end=True)
+        self._logger.stat(table, new_line_start=True)
 
     ###########################################################################
     ## Collections

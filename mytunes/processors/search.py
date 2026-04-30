@@ -253,7 +253,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
         header = f"{self.source.upper()} SEARCH RESULTS"
         table = SearchResult.generate_table(results=results, header=header)
 
-        self._logger.report(table, new_line_start=True, new_line_end=True)
+        self._logger.report(table, new_line_start=True)
 
     def _log_start(self, items: Collection, default_type: str) -> None:
         types = self._logger.format_types_to_string(items) or default_type
