@@ -6,12 +6,15 @@ from faker import Faker
 from mytunes.core._item.track import Track
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.order import Position
+from mytunes.processors.compare import Comparer
+from mytunes.processors.filters import ComparerFilter
 from mytunes.processors.filters.values import ValueFilter
 from mytunes.processors.tagger.values._fields import FieldValue, PositionValue, PathValue
+from processors.tagger.values.testers import ValueTester
 from tests.testers import BaseModelTester
 
 
-class TestFieldValue(BaseModelTester):
+class TestFieldValue(ValueTester):
     @pytest.fixture
     def model(self) -> FieldValue:
         return FieldValue(field="name")
@@ -32,16 +35,14 @@ class TestFieldValue(BaseModelTester):
         model = FieldValue(field="key")
         assert model.get(track) is None
 
-    def test_applies_filter(self, track: Track, faker: Faker):
-        track.artist = faker.name()
-        condition = ValueFilter(values={track.name})
-        assert not condition.check(track.artist)
+    def test_applies_filter(self, track: Track, condition: ComparerFilter):
+        assert not condition.check(track)
 
         model = FieldValue(field="artist", condition=condition)
         assert model.get(track) is None
 
 
-class TestPositionValue(BaseModelTester):
+class TestPositionValue(ValueTester):
     @pytest.fixture
     def model(self) -> PositionValue:
         return PositionValue(field="track")
@@ -67,16 +68,14 @@ class TestPositionValue(BaseModelTester):
         model = PositionValue(field="disc")
         assert model.get(track) is None
 
-    def test_applies_filter(self, track: Track, position: Position):
-        track.disc = position
-        condition = ValueFilter(values={track.track})
-        assert not condition.check(track.disc)
+    def test_applies_filter(self, track: Track, position: Position, condition: ComparerFilter):
+        assert not condition.check(track)
 
         model = PositionValue(field="disc", condition=condition)
         assert model.get(track) is None
 
 
-class TestPathValue(BaseModelTester):
+class TestPathValue(ValueTester):
     @pytest.fixture
     def model(self) -> PathValue:
         return PathValue(field="path")
@@ -102,10 +101,9 @@ class TestPathValue(BaseModelTester):
         model = PathValue(field="path", parent=3)
         assert model.get(file) == "path"
 
-    def test_applies_filter(self, file: IsLocalFile, path: Path, faker: Faker):
-        file.path = path
-        condition = ValueFilter(values={faker.word()})
-        assert not condition.check(file.path)
+    def test_applies_filter(self, file: IsLocalFile, path: Path, condition: ComparerFilter):
+        condition.comparers[0].field = "filename"
+        assert not condition.check(file)
 
         model = PathValue(field="path", condition=condition)
         assert model.get(file) is None

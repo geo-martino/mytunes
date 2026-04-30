@@ -4,7 +4,7 @@ from typing import Any, final, Literal, Annotated, Union
 
 from pydantic import Field, AliasChoices
 
-from mytunes.processors.filters import Filter
+from mytunes.processors.filters import Filter, ComparerFilter
 from ...._base import BaseModel
 from ...._base.discriminator import DiscriminatorModel, DiscriminatorAttribute
 from ...._types import StrippedString
@@ -23,8 +23,8 @@ class Value[OT: str, IT: BaseModel | Iterable[BaseModel], VT: Any](Discriminator
 
 
 class HasCondition[VT: Any](BaseModel):
-    condition: Union[Filter.annotation, None] = Field(
-        description="The condition that the tag value should meet in order to be returned.",
+    condition: ComparerFilter | None = Field(
+        description="The condition that the item should meet for its value to be returned.",
         default=None,
         validation_alias=AliasChoices("condition", "when", "if")
     )

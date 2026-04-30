@@ -4,14 +4,15 @@ from faker import Faker
 from mytunes.core._item.track import Track
 from mytunes.core.properties.order import Position
 from mytunes.exception import MyTunesValueError
-from mytunes.processors.filters import ValueFilter
+from mytunes.processors.filters import ValueFilter, ComparerFilter
 from mytunes.processors.tagger.values import FixedValue
 from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue
 from mytunes.processors.tagger.values._fields import FieldValue, PathValue
+from processors.tagger.values.testers import ValueTester
 from tests.testers import BaseModelTester
 
 
-class TestJoinValue(BaseModelTester):
+class TestJoinValue(ValueTester):
     @pytest.fixture
     def model(self) -> JoinValue:
         return JoinValue(fields=["name", "artist"])
@@ -30,17 +31,15 @@ class TestJoinValue(BaseModelTester):
         with pytest.raises(MyTunesValueError):
             model.get(track)
 
-    def test_applies_filter(self, track: Track, faker: Faker):
-        track.artist = faker.name()
-        condition = ValueFilter(values={track.name})
-        assert not condition.check(track.artist)
+    def test_applies_filter(self, track: Track, condition: ComparerFilter):
+        assert not condition.check(track)
 
         model = JoinValue(fields=["name", "key"], condition=condition)
         assert model.get(track) is None
 
 
 
-class TestTemplateValue(BaseModelTester):
+class TestTemplateValue(ValueTester):
     @pytest.fixture
     def model(self) -> TemplateValue:
         return TemplateValue(template="{name} - {artist}")
@@ -78,10 +77,8 @@ class TestTemplateValue(BaseModelTester):
         with pytest.raises(MyTunesValueError):
             model.get(track)
 
-    def test_applies_filter(self, track: Track, faker: Faker):
-        track.artist = faker.name()
-        condition = ValueFilter(values={track.name})
-        assert not condition.check(track.artist)
+    def test_applies_filter(self, track: Track, condition: ComparerFilter):
+        assert not condition.check(track)
 
         model = TemplateValue(template="{name} - {key}", condition=condition)
         assert model.get(track) is None

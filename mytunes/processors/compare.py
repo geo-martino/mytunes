@@ -223,6 +223,8 @@ class Comparer(DynamicProcessor):
     def _get_value_from_item(self, item: Any) -> Any:
         if self.field and isinstance(item, AttributeModel):
             value = getattr(item, self.field.lower())
+        elif self.field and hasattr(item, self.field.lower()):
+            value = getattr(item, self.field.lower())
         else:
             value = item
 
