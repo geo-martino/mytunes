@@ -26,11 +26,11 @@ class TestLocalPlaylist(UniqueKeyTester):
         pl = LocalPlaylistFile(path=path)
         assert pl.name == path.stem
 
-    def test_merge(self, model: LocalPlaylistFile):
+    def test_merge(self, model: LocalPlaylistFile, faker: Faker):
         other = model.model_copy()
-        other.matcher = ValueFilter()
-        other.limiter = ItemLimiter()
-        other.sorter = ItemSorter()
+        other.matcher = ValueFilter() if faker.boolean() else None
+        other.limiter = ItemLimiter() if faker.boolean() else None
+        other.sorter = ItemSorter() if faker.boolean() else None
 
         model.merge(other)
 

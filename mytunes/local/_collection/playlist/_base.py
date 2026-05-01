@@ -116,10 +116,10 @@ class LocalPlaylistFile[TF: Filter](
         super().merge(other, reference)
 
         if isinstance(other, type(self)):
-            self.matcher = other.matcher.model_copy(deep=True)
-            self.limiter = other.limiter.model_copy(deep=True)
+            self.matcher = other.matcher.model_copy(deep=True) if other.matcher is not None else None
+            self.limiter = other.limiter.model_copy(deep=True) if other.limiter is not None else None
 
-        if isinstance(other, LocalPlaylistFile):
+        if isinstance(other, LocalPlaylistFile) and other.sorter is not None:
             self.sorter = other.sorter.model_copy(deep=True)
 
 
