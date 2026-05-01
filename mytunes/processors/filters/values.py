@@ -82,6 +82,8 @@ class NameFilter(_ValueFilter[Literal["name", "names"], str]):
             data = (data,)
         if not isinstance(data, Collection) or not all(isinstance(it, str) for it in data):
             return data
+        if isinstance(data, Mapping):
+            return data
         return NameFilter(values=data)
 
     @validate_call
