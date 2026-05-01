@@ -321,10 +321,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
             self._logger.print_line()
             return
 
-        playlist = playlist.model_copy(deep=True)
-        playlist.tracks.replace(items)
-
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
-        table = self.playlist_formatter.format(playlist, indices=True) or missing_message
+        table = self.playlist_formatter.format(items, indices=True) or missing_message
         self._logger.print(header + ":\n" + table)
         self._logger.print_line()

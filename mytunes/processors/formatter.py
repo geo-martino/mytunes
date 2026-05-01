@@ -240,13 +240,17 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
 
 class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
-    def format(self, collection: CT, indices: bool | Sequence = False) -> str:
-        if not isinstance(collection, CollectionModel) or not collection.total:
-            return super().format(collection, indices=indices)
+    def format(self, collection: CT | Sequence, indices: bool | Sequence = False) -> str:
+        items = []
+        match collection:
+            case CollectionModel() if collection.total:
+                items.extend(collection.items)
+            case Sequence() if all(isinstance(it, ResourceModel) for it in collection):
+                items.extend(collection)
+            case _:
+                return super().format(collection, indices=indices)
 
-        items = list(collection.items)
         indices = self._get_indices_from_positions(items) if indices is True else False
-
         return super().format(items, indices=indices)
 
     @staticmethod

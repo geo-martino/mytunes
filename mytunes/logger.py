@@ -233,11 +233,11 @@ class Logger(logging.Logger):
         return value_str
 
     def __copy__(self):
-        """Do not copy logger"""
+        """Do not copy"""
         return self
 
     def __deepcopy__(self, _: dict = None):
-        """Do not copy logger"""
+        """Do not copy"""
         return self
 
 

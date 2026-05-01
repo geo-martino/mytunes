@@ -1,3 +1,4 @@
+from copy import copy, deepcopy
 from random import choice
 from typing import final, Annotated
 
@@ -7,22 +8,33 @@ from mytunes.processors._base.dynamic import DynamicProcessor, processormethod, 
 from tests.testers import BaseModelTester
 
 
-def test_dynamic_processor_method_decorator():
+def test_processormethod_decorator_simple():
     @processormethod
-    def test_1():
+    def test():
         return 1
 
-    assert isinstance(test_1, processormethod)
-    assert not test_1.alternative_names
-    assert test_1() == 1
+    assert isinstance(test, processormethod)
+    assert not test.alternative_names
+    assert test() == 1
 
+
+def test_processormethod_decorator_with_alternative_names():
     @processormethod("alt_1", "alt_2")
-    def test_2():
+    def test():
         return 2
 
-    assert isinstance(test_2, processormethod)
-    assert test_2.alternative_names == ("alt_1", "alt_2")
-    assert test_2() == 2
+    assert isinstance(test, processormethod)
+    assert test.alternative_names == ("alt_1", "alt_2")
+    assert test() == 2
+
+
+def test_processormethod_decorator_no_copy():
+    @processormethod
+    def test():
+        return 3
+
+    assert copy(test) is test
+    assert deepcopy(test) is test
 
 
 @final

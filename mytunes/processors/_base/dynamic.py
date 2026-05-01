@@ -39,6 +39,14 @@ class processormethod:
     def __call__(self, *args, **kwargs) -> Any:
         return self.func(self.instance_, *args, **kwargs) if self.instance_ else self.func(*args, **kwargs)
 
+    def __copy__(self):
+        """Do not copy"""
+        return self
+
+    def __deepcopy__(self, _: dict = None):
+        """Do not copy"""
+        return self
+
 
 @dataclass(config=ConfigDict(frozen=True))
 class ProcessorAttribute(Attribute):
