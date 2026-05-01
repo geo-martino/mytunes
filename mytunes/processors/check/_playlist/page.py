@@ -322,6 +322,6 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
             return
 
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
-        table = self.playlist_formatter.format(items, indices=True) or missing_message
+        table = self.playlist_formatter.format(items, indices=range(1, len(items))) or missing_message
         self._logger.print(header + ":\n" + table)
         self._logger.print_line()
