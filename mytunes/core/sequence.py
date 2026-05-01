@@ -131,10 +131,18 @@ class UniqueSequence[IT: ResourceModel](Sequence[IT]):
         items._extend(other)
         return items
 
+
     @property
     def unique(self) -> Iterator[IT]:
         """The unique items in this sequence"""
         yield from self._items_mapped.unique
+
+    def refresh(self) -> None:
+        """
+        Refresh the uniqueness of items in this sequence.
+        Useful when the unique keys of items have changed since being added.
+        """
+        self._items_mapped.refresh()
 
     def get(self, key: IT | Any, default: IT | None = None) -> IT | None:
         """Get an item by its key, returning `default` if not found."""

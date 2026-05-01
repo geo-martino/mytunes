@@ -119,6 +119,14 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
         """The number of unique items in this sequence"""
         return len(list(self.unique))
 
+    # TODO: test me
+    def refresh(self) -> None:
+        """
+        Refresh the uniqueness of items in this mapping.
+        Useful when the unique keys of items have changed since being added.
+        """
+        self._update(self.unique)
+
     def copy(self) -> Self:
         """Return a shallow copy of this mapping"""
         return type(self)(self._items.copy())
