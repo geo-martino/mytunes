@@ -10,7 +10,7 @@ from typing import final, Any, Annotated
 
 from pydantic import Field, ValidationError, BeforeValidator
 
-from mytunes._types import TO_SET
+from mytunes._types import TO_SET, DEFAULT_IF_NONE
 from mytunes.core.properties.file import IsLocalFile
 from mytunes.exception import MyTunesError
 from ..._base import BaseModel
@@ -93,12 +93,18 @@ class PathParentMapper(PathMapper):
     """
     __final__ = True
 
-    parent_serialise: Mapping[ParentPathAnnotated, ParentPathAnnotated] = Field(
+    parent_serialise: Annotated[
+        Mapping[ParentPathAnnotated, ParentPathAnnotated],
+        DEFAULT_IF_NONE,
+    ] = Field(
         description="A map of ``{<parent to be replaced>: <its replacement>}`` to be applied during serialization.",
         default_factory=dict,
         alias="serialise",
     )
-    parent_deserialise: Mapping[ParentPathAnnotated, ParentPathAnnotated] = Field(
+    parent_deserialise: Annotated[
+        Mapping[ParentPathAnnotated, ParentPathAnnotated],
+        DEFAULT_IF_NONE,
+    ] = Field(
         description="A map of ``{<parent to be replaced>: <its replacement>}`` to be applied during deserialization.",
         default_factory=dict,
         alias="deserialise",
