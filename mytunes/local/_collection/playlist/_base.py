@@ -22,6 +22,8 @@ from ..._item.track import LocalTrack, HasLocalTracks
 from ...._base import make_cls
 from ...._base.resource import UniqueAttribute
 from ...._types import DEFAULT_IF_NONE
+from ....core._collection.playlist import Playlist
+from ....core._item.track import HasTracks
 
 
 class LocalPlaylistFile[TF: Filter](
@@ -109,6 +111,16 @@ class LocalPlaylistFile[TF: Filter](
         self.sorter.sort(tracks)
 
         return SortResult(sorted=tuple(tracks))
+
+    def merge(self, other: HasTracks[LocalTrack] | Playlist, reference: HasTracks[LocalTrack] | None = None) -> None:
+        super().merge(other, reference)
+
+        if isinstance(other, type(self)):
+            self.matcher = other.matcher.model_copy(deep=True)
+            self.limiter = other.limiter.model_copy(deep=True)
+
+        if isinstance(other, LocalPlaylistFile):
+            self.sorter = other.sorter.model_copy(deep=True)
 
 
 # noinspection PyAbstractClass

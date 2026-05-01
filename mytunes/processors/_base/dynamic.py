@@ -41,11 +41,11 @@ class processormethod:
 
     def __copy__(self):
         """Do not copy"""
-        return self
+        return self  # causes 'invalid partial state' errors when attempting to copy
 
     def __deepcopy__(self, _: dict = None):
         """Do not copy"""
-        return self
+        return self  # causes 'invalid partial state' errors when attempting to copy
 
 
 @dataclass(config=ConfigDict(frozen=True))

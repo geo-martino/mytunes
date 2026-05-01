@@ -4,10 +4,14 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
+from mytunes._base import BaseModel
 from mytunes.core.properties.path import PathParentMapper
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee
 from mytunes.local._collection.playlist import LocalPlaylistFile
+from mytunes.processors.filters import ValueFilter
+from mytunes.processors.limit import ItemLimiter
+from mytunes.processors.sort import ItemSorter
 from tests.testers import UniqueKeyTester
 
 
@@ -21,6 +25,18 @@ class TestLocalPlaylist(UniqueKeyTester):
         path = Path(faker.file_path(absolute=False, extension="m3u"))
         pl = LocalPlaylistFile(path=path)
         assert pl.name == path.stem
+
+    def test_merge(self, model: LocalPlaylistFile):
+        other = model.model_copy()
+        other.matcher = ValueFilter()
+        other.limiter = ItemLimiter()
+        other.sorter = ItemSorter()
+
+        model.merge(other)
+
+        assert model.matcher == other.matcher
+        assert model.limiter == other.limiter
+        assert model.sorter == other.sorter
 
 
 @pytest.fixture(scope="module")
