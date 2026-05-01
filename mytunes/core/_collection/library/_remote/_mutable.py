@@ -295,11 +295,8 @@ class RemoteMutableLibrary[
 
         async def _sync_playlist[T: RemoteMutablePlaylist](pl: T) -> SyncRemoteResult:
             async with self.concurrency:
-                remote: T = await api.playlists.library.get_or_create(pl.name)
-                remote.tracks.replace(pl.tracks)
-
-                properties = await remote.sync_properties(api, dry_run=dry_run)
-                result = await remote.sync_items(api, kind=kind, sync_filter=self.sync_filter, dry_run=dry_run)
+                properties = await pl.sync_properties(api, dry_run=dry_run)
+                result = await pl.sync_items(api, kind=kind, sync_filter=self.sync_filter, dry_run=dry_run)
 
                 return result.model_copy(update=dict(properties=properties))
 

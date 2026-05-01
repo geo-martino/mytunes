@@ -150,7 +150,6 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             case _:
                 raise MyTunesTypeError("Item must be a ResourceModel or a sequence of ResourceModels.")
 
-        print(len(rows), list(indices))
         return tabulate(
             rows,
             headers=self.fields if self.header else (),

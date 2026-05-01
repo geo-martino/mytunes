@@ -311,7 +311,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
             self,
             model: RemoteMutableLibrary,
             playlists: list[RemoteMutablePlaylist],
-            mock_get_or_create_playlist: Mock,
             mock_sync_properties: Mock,
             mock_sync_items: Mock,
             mock_semaphore: Mock,
@@ -322,7 +321,6 @@ class TestRemoteMutableLibrary(BaseModelTester):
         results = await model.sync_playlists()
         assert len(results) == len(playlists)
 
-        assert mock_get_or_create_playlist.call_count == len(playlists)
         assert mock_sync_properties.call_count == len(playlists)
         assert mock_sync_items.call_count == len(playlists)
         assert mock_semaphore.call_count == len(playlists)

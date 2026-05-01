@@ -113,6 +113,7 @@ class HasProgress(AbstractContextManager, AbstractAsyncContextManager):
 
         if remove and task_id in self._progress.task_ids:
             self._progress.remove_task(task_id)
+
         return result
 
     async def _wrap_task_async[T](self, task: Awaitable[T], task_id: TaskID | None = None) -> T:
