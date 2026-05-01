@@ -150,6 +150,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             case _:
                 raise MyTunesTypeError("Item must be a ResourceModel or a sequence of ResourceModels.")
 
+        print(len(rows), list(indices))
         return tabulate(
             rows,
             headers=self.fields if self.header else (),
@@ -250,7 +251,8 @@ class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
             case _:
                 return super().format(collection, indices=indices)
 
-        indices = self._get_indices_from_positions(items) if indices is True else False
+        if indices is True:
+            indices = self._get_indices_from_positions(items)
         return super().format(items, indices=indices)
 
     @staticmethod

@@ -312,8 +312,10 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
     async def _print_playlist_items(self, playlist: RemoteMutablePlaylist) -> None:
         missing_message = colored("No items available", "red", attrs=["bold"])
 
+        items = list(playlist.items)
+
         header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
-        table = self.playlist_formatter.format(playlist, indices=True) or missing_message
+        table = self.playlist_formatter.format(items, indices=range(1, len(items) + 1)) or missing_message
         self._logger.print(header + ":\n" + table)
 
         items = await self.get_current_playlist_items(playlist.uri)
@@ -322,6 +324,6 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
             return
 
         header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
-        table = self.playlist_formatter.format(items, indices=range(1, len(items))) or missing_message
+        table = self.playlist_formatter.format(items, indices=range(1, len(items) + 1)) or missing_message
         self._logger.print(header + ":\n" + table)
         self._logger.print_line()

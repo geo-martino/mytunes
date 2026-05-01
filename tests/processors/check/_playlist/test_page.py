@@ -320,7 +320,9 @@ class TestPause:
         mock_get_playlist_items.return_value = playlist.tracks
 
         await model._print_playlist_items(playlist)
-        mock_format.assert_called_once_with(model.playlist_formatter, playlist, indices=True)
+        mock_format.assert_called_once_with(
+            model.playlist_formatter, list(playlist.items), indices=range(1, len(playlist.tracks) + 1)
+        )
 
     async def test_print_playlist_items_with_changes(
             self,
