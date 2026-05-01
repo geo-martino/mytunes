@@ -56,7 +56,7 @@ class MutablePlaylist[TT: Track](HasMutableTracks[TT], Playlist[TT]):
         See :py:meth:`.MutableUniqueSequence.merge` for more information.
         """
         self.tracks.merge(other.tracks, reference=reference.tracks if reference else None)
-        if not isinstance(other, Playlist):
+        if not isinstance(other, type(self)):
             return
 
         self.description = other.description
