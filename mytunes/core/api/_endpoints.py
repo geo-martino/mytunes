@@ -52,9 +52,6 @@ class EndpointsMetaclass(ModelMetaclass):
 
     def item_type_name(cls) -> str | None:
         """The name for the type of items in the collection resource handled by this Endpoint type if applicable."""
-        if not issubclass(cls, (CollectionReadEndpoints, CollectionWriteEndpoints)):
-            return None
-
         kls = cast('type[Endpoints]', cls)
         with suppress(MyTunesTypeError):
             kls = get_generic(kls, expected=RemoteResource, not_expected=RemoteCollection, base=Endpoints)
@@ -254,7 +251,7 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
             return (), cursor
 
         collection_type = type(self).type_name
-        item_type = type(self).item_type_name
+        item_type = type(self).item_type_name or "item"
         amount = cursor.total or "all"
 
         if item_type and item_type != collection_type:
