@@ -4,7 +4,7 @@ from collections.abc import Sequence, Iterable, Collection, Mapping
 from typing import ClassVar, Literal, Union, Annotated, final
 
 from mytunes.core.sequence import UniqueSequence
-from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter
+from pydantic import Field, field_validator, validate_call, StringConstraints, TypeAdapter, BeforeValidator
 from yarl import URL
 
 from mytunes._types import StrippedString, HttpURL
@@ -40,7 +40,7 @@ class AudioStore[T: str](DiscriminatorModel):
         description="Additional string to add to the end of search query in the URL.",
         default=None,
     )
-    additional_params: Mapping[str, str] = Field(
+    additional_params: Mapping[str, Annotated[str, BeforeValidator(str)]] = Field(
         description=(
             "Additional query parameters to add to the URL. "
             "WARNING: Will override any params generated from the item."

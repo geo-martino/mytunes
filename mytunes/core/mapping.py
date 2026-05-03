@@ -119,7 +119,6 @@ class UniqueMapping[TK, TV: ResourceModel](Mapping[TK | TV, TV]):
         """The number of unique items in this sequence"""
         return len(list(self.unique))
 
-    # TODO: test me
     def refresh(self) -> None:
         """
         Refresh the uniqueness of items in this mapping.
