@@ -58,7 +58,7 @@ class _PlaylistMatch[IT: HasMutableURI](BaseMatch[_ApiT, IT], HasImmutableURI):
 
 
 class SyncMatch[IT: HasMutableURI](_PlaylistMatch[IT]):
-    _method: ClassVar[str] = "PLAYLIST_SYNC"
+    _method: ClassVar[str] = "PL_SYNC"
 
     async def match(self, items: Sequence[IT]) -> CheckResult[IT]:
         """Match the given that have missing URIs with items in the current playlist."""
@@ -100,14 +100,14 @@ class SyncMatch[IT: HasMutableURI](_PlaylistMatch[IT]):
     def _compare_items[RT: HasURI](
             self, items: Sequence[IT], others: Sequence[RT]
     ) -> tuple[list[RT], list[IT], list[IT], list[IT], list[IT]]:
-        valid_items = self.get_valid_items(items)
-        items_unique = UniqueSequence(valid_items)
+        initial = self.get_valid_items(items)
+        initial_unique = UniqueSequence(initial)
         others_unique = UniqueSequence(others)
 
-        added = list(others_unique.difference(items_unique))
-        removed = list(items_unique.difference(others_unique))
-        removed += self._compare_duplicate_items(valid_items, others, removed)
-        unchanged = list(items_unique.intersection(others_unique))
+        added = list(others_unique.difference(initial_unique))
+        removed = list(initial_unique.difference(others_unique))
+        removed += self._compare_duplicate_items(initial, others, removed)
+        unchanged = list(initial_unique.intersection(others_unique))
         unavailable = self.get_unavailable_items(items)
         missing = self.get_missing_items(items)
 
@@ -115,7 +115,7 @@ class SyncMatch[IT: HasMutableURI](_PlaylistMatch[IT]):
             initial_message = "items that were in the playlist before starting"
             self._log_debug(initial_message, count=initial)
 
-        self._log_debug("items at start", count=len(items))
+        self._log_debug("items at start", count=len(initial))
         self._log_debug("items that are confirmed as unavailable", count=len(unavailable))
         self._log_debug("items added", count=len(added))
         self._log_debug("items removed", count=len(removed))
@@ -172,7 +172,7 @@ class SyncMatch[IT: HasMutableURI](_PlaylistMatch[IT]):
 
 
 class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT]):
-    _method: ClassVar[str] = "PLAYLIST_INPUT"
+    _method: ClassVar[str] = "PL_INPUT"
 
     item_formatter: ModelFormatter = Field(
         description="The formatter to use for formatting info about the item to print.",

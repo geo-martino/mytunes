@@ -23,7 +23,7 @@ class Processor(BaseModel):
             messages = (messages,)
 
         title = cls._get_item_log_value(item)
-        header = f"{pad[0] * 3} {method.upper():<7}: {title}"
+        header = f"{pad[0] * 3} {method.upper():<8}: {title}"
         return "|" + " | ".join([header] + list(map(str, messages)))
 
     @staticmethod
