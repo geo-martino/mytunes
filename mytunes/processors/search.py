@@ -428,20 +428,29 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
         if not isinstance(collection, RemoteCollection):
             try:
                 collection = await collection.reload(self.api)
-            except AttributeError:
-                message = "Cannot reload collection: valid endpoints not configured for this resource type"
+            except AttributeError as exc:
+                message = (
+                    "Cannot reload collection: valid endpoints not configured for this resource type: "
+                    f"{type(collection).__name__} - {str(exc)}"
+                )
                 self._log_debug(collection, message=message)
                 return collection
 
             if isinstance(collection, RemoteResource) and not isinstance(collection, RemoteCollection):
-                message = "API did not return a collection when trying to extend items in collection"
+                message = (
+                    "API did not return a collection when trying to extend items in collection: "
+                    f"{type(collection).__name__}"
+                )
                 self._log_debug(collection, message=message)
                 return collection
 
         try:
             await collection.extend(self.api)
-        except AttributeError:
-            message = "Cannot extend items in collection: valid endpoints not configured for this resource type"
+        except AttributeError as exc:
+            message = (
+                "Cannot extend items in collection: valid endpoints not configured for this resource type"
+                f"{type(collection).__name__} - {str(exc)}"
+            )
             self._log_debug(collection, message=message)
 
         return collection
