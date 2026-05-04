@@ -606,7 +606,14 @@ class TestLocalTrack(UniqueKeyTester):
             track.uri = SimpleURI.create_random(LocalTrack.type)
         return tracks
 
-    def test_restore_tracks_on_field(self, restore_tracks: list[LocalTrack], faker: Faker):
+    @pytest.fixture
+    def mock_save_tracks(self) -> Generator[Mock]:
+        with patch.object(HasLocalTracks, "save_tracks") as mock_save:
+            yield mock_save
+
+    async def test_restore_tracks_on_field(
+            self, restore_tracks: list[LocalTrack], mock_save_tracks: Mock, faker: Faker
+    ):
         new_title = "brand new title"
         new_artist = "brand new artist"
 
@@ -615,13 +622,17 @@ class TestLocalTrack(UniqueKeyTester):
             track["name"] = new_title
 
         model = HasLocalTracks(tracks=restore_tracks)
-        model.restore_tracks(backup)
+        await model.restore_tracks(backup)
 
         for track in model.tracks:
             assert track.name == new_title
             assert track.artist != new_artist
 
-    def test_restore_tracks_on_fields(self, restore_tracks: list[LocalTrack], faker: Faker):
+        mock_save_tracks.assert_called_once()
+
+    async def test_restore_tracks_on_fields(
+            self, restore_tracks: list[LocalTrack], mock_save_tracks: Mock, faker: Faker
+    ):
         new_title = "brand new title"
         new_artist = "brand new artist"
 
@@ -631,8 +642,10 @@ class TestLocalTrack(UniqueKeyTester):
             track["artists"] = [new_artist]
 
         model = HasLocalTracks(tracks=restore_tracks)
-        model.restore_tracks({Path(track["path"]): track for track in backup})
+        await model.restore_tracks({Path(track["path"]): track for track in backup})
 
         for track in model.tracks:
             assert track.name == "brand new title"
             assert track.artist == new_artist
+
+        mock_save_tracks.assert_called_once()

@@ -765,14 +765,16 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
         return list(map(adapter.validate_python, tracks))
 
     @validate_call
-    def restore_tracks(
+    async def restore_tracks(
             self,
             others: Annotated[Sequence[LocalTrack], BeforeValidator(_extract_tracks_from_backup)],
             include: set[str] | Sequence[str] = (),
             exclude: set[str] | Sequence[str] = (),
+            dry_run: bool = False,
     ) -> dict[Path, dict[str, Any]]:
         """
-        Restore track tags from a backup to loaded track objects. This does not save the updated tags.
+        Restore track tags from a backup to loaded track objects.
+        This will save the tags to file.
 
         Backup may be in the form of either:
             * An iterable of dictionaries where dictionary is ``{<Dump of track data>}``
@@ -783,6 +785,8 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
         :param others: Backup data. See description for accepted formats.
         :param include: The fields to include in the merge. If empty, all fields will be included.
         :param exclude: The fields to exclude from the merge. Ignored if empty.
+        :param dry_run: Run function, but do not modify the file on the disk.
         :return: A map of the track path to the fields that were updated on that track.
         """
-        return self.merge_tracks(others=others, include=include, exclude=exclude, replace=True)
+        self.merge_tracks(others=others, include=include, exclude=exclude, replace=True)
+        return await self.save_tracks(include=include, exclude=exclude, replace=True, dry_run=dry_run)
