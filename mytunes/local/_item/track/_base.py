@@ -701,10 +701,11 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
         self._logger.print_line(DEBUG)
 
         for path, tags in results.items():
+            tags = self._logger.format_list_to_string(tags)
             if tags and dry_run:
-                self._logger.debug(f"Would have updated {path.name} with tags: {', '.join(tags)}")
+                self._logger.debug(f"Would have updated {path.name} with tags: {tags}")
             elif tags:
-                self._logger.debug(f"Updated {path.name} with tags: {', '.join(tags)}")
+                self._logger.debug(f"Updated {path.name} with tags: {tags}")
             else:
                 self._logger.debug(f"No tags updated for {path.name}")
 
