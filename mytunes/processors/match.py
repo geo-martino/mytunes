@@ -141,7 +141,7 @@ class Matcher(Processor, HasLogger):
 
         # apply required scorers first to allow for early stopping if they fail
         for scorer in filter(lambda x: x.required_score > 0, scorers):
-            score = scorer.score(item, other)
+            score = scorer.score(item, other) if scorer.can_score(other) else 0
             if score < scorer.required_score:
                 message = ["SCORER FAILED".ljust(25), f"{scorer.type}={score:.2f} < {scorer.required_score:.2f}"]
                 log = self._format_item_message(method="SKIP", item=item, messages=message, pad="<")

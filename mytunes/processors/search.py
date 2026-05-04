@@ -383,7 +383,8 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
         collection: ResourceModel | CollectionModel  # type checked in the above condition
 
         match = await self._query_and_match(collection)
-        match = await self._extend_collection_items(match)
+        if match is not None:
+            match = await self._extend_collection_items(match)
         if match is None or not isinstance(match, CollectionModel):
             return await self._search_items(collection.items, name=name)
 
