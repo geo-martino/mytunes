@@ -14,6 +14,7 @@ from pydantic import AliasPath, TypeAdapter, AliasChoices
 from pytest_mock import MockerFixture
 from yarl import URL
 
+from mytunes.annotation import RemoteGenre
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import RemotePlaylist
 from mytunes.core._context import RemoteModelContext
@@ -53,6 +54,8 @@ class TestEndpointsMetaclass:
     @final
     class MockRemoteAlbum(RemoteAlbum, MockRemoteResource):
         __final__ = True
+
+        total: int = 10
 
     def test_get_type_name_simple(self):
         class MockTrackEndpoints(Endpoints[SimpleURI, RemoteTrack]):
@@ -169,11 +172,7 @@ class TestEndpointsMetaclass:
             mock_validate_python: Mock,
             faker: Faker,
     ):
-        types = [
-            RemoteTrack,
-            RemoteAlbum,
-            RemoteArtist,
-        ]
+        types = [RemoteTrack, RemoteArtist]
         expected_type = faker.random_element(types)
 
         uri = SimpleURI.create_random(expected_type.type)

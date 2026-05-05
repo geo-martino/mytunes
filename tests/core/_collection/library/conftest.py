@@ -1,3 +1,5 @@
+from unittest.mock import patch, PropertyMock
+
 import pytest
 from faker import Faker
 from yarl import URL
@@ -46,6 +48,11 @@ def artists(artists: list[Artist], faker: Faker) -> list[RemoteArtist]:
 
 
 @pytest.fixture
+@patch.multiple(
+    RemoteAlbum,
+    __abstractmethods__=set(),
+    total=PropertyMock(return_value=10),
+)
 def albums(albums: list[Album], faker: Faker) -> list[RemoteAlbum]:
     return [
         RemoteAlbum(

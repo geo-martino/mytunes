@@ -79,7 +79,7 @@ class Matcher(Processor, HasLogger):
             self._logger.debug(log)
             return None
 
-        self._log_scorers(scorers, item=item, others=others)
+        self._log_scorers(scorers, item=item, others=others, pad=">")
 
         other = None
         for other in others:
@@ -100,21 +100,21 @@ class Matcher(Processor, HasLogger):
             self._logger.debug(log)
 
         messages = [self._get_item_log_value(best_match or other), f"SCORE={best_score:.2f}"]
-        if best_score <= self.min_score:
+        if best_score < self.min_score:
             method = "FAILED"
-            messages.append(f"< MIN SCORE ({self.min_score:.2f})")
+            messages.append(f"<  MIN SCORE ({self.min_score:.2f})")
         elif best_score >= self.max_score:
             method = "MATCHED"
-            messages.append(f"> MAX SCORE ({self.max_score:.2f})")
+            messages.append(f">= MAX SCORE ({self.max_score:.2f})")
         else:
             method = "MATCHED"
-            messages.append("= BEST SCORE")
+            messages.append("== BEST SCORE")
 
         log = self._format_item_message(method=method, item=item, messages=messages, pad="<")
         self._logger.debug(log)
         return best_match  # will be None if no match above min_score was found
 
-    def _log_scorers(self, scorers: list[Scorer], item: Any, others: Collection) -> None:
+    def _log_scorers(self, scorers: list[Scorer], item: Any, others: Collection, pad: str = " ") -> None:
         """Log the scorers being used for a given item and other item."""
         required = [scorer for scorer in scorers if scorer.required_score > 0]
         optional = [scorer for scorer in scorers if scorer.required_score == 0]
@@ -125,7 +125,7 @@ class Matcher(Processor, HasLogger):
             f"OPTIONAL: {", ".join(scorer.type for scorer in optional)}"
             if optional else "No optional scorers",
         ]
-        log = self._format_item_message(method="START", item=item, messages=messages, pad=">")
+        log = self._format_item_message(method="START", item=item, messages=messages, pad=pad)
 
         self._logger.debug(log)
 
@@ -168,7 +168,7 @@ class Matcher(Processor, HasLogger):
 
         for item in items:
             scorers = self.get_scorers_for_item(item)
-            self._log_scorers(scorers, item=item, others=others)
+            self._log_scorers(scorers, item=item, others=others, pad="-")
 
             score = 0
 

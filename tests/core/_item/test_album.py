@@ -1,3 +1,5 @@
+from unittest.mock import patch, PropertyMock
+
 import pytest
 from faker import Faker
 
@@ -60,6 +62,11 @@ class TestHasAlbums(NoUniqueKeyTester):
 
 class TestRemoteAlbum(UniqueKeyTester):
     @pytest.fixture
+    @patch.multiple(
+        RemoteAlbum,
+        __abstractmethods__=set(),
+        total=PropertyMock(return_value=10),
+    )
     def model(self, faker: Faker) -> RemoteAlbum:
         uri = SimpleURI.create_random(RemoteAlbum.type)
         return RemoteAlbum(name=faker.word(), uri=uri)

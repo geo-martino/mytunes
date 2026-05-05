@@ -15,6 +15,7 @@ class TestSpotifyAlbum(SpotifyResourceTester):
             uri=generator.generate_uri("album"),
             released_at=SparseDate.model_validate(faker.date()),
             compilation=faker.boolean(),
+            total=faker.random_int(),
         )
 
     def test_response(self, generator: SpotifyPayloadGenerator):
@@ -32,3 +33,4 @@ class TestSpotifyAlbum(SpotifyResourceTester):
         self.assert_expected_rating(model, payload)
 
         assert model.compilation is (payload["album_type"] == "compilation")
+        assert model.total == payload["total_tracks"]

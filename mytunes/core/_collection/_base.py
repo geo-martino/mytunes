@@ -2,10 +2,12 @@ from abc import abstractmethod
 from collections.abc import Collection, Iterator
 from typing import TYPE_CHECKING
 
+from pydantic import computed_field
+
 from mytunes.core.cursors import PageCursor, HasPageCursor, InitialCursor
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
-from ..._base import BaseModel
+from mytunes.core.properties.length import HasTotal
 from ..._base.resource import ResourceModel
 
 if TYPE_CHECKING:
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 
 
 # noinspection PyAbstractClass
-class CollectionModel[IT: ResourceModel](BaseModel):
+class CollectionModel[IT: ResourceModel](HasTotal):
     """Defines a common base models for attributes made of common collection properties."""
     @property
     @abstractmethod

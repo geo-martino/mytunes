@@ -2,7 +2,7 @@ import inspect
 from typing import Any, cast, get_origin, Union, Self
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
-    ConfigDict, AliasChoices, AliasPath
+    ConfigDict, AliasChoices, AliasPath, model_validator, ModelWrapValidatorHandler
 # noinspection PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from pydantic.fields import FieldInfo
@@ -153,6 +153,22 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
         if inspect.isabstract(cls):  # force abstract classes to throw validation error for pydantic validation
             raise MyTunesValidationError(f"{cls.__name__} cannot be instantiated directly, must be subclassed.")
         return super().__new__(cls)
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _set_computed_fields(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        model: Self = handler(data)
+
+        for field_name in cls.model_computed_fields.keys():
+            if getattr(getattr(cls, field_name), "fset", None) is None:
+                continue
+            if (value := cls._get_value_from_data(data, field_name)) is None:
+                continue
+            if value == getattr(model, field_name):
+                continue
+            setattr(model, field_name, value)
+
+        return model
 
     @classmethod
     def _validate_required_modules_installed(cls) -> None:

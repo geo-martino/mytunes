@@ -97,22 +97,6 @@ class LocalTrack[FT: FileType](
     def _uri_adapter(self) -> TypeAdapter[URI]:
         return TypeAdapter(URI.annotation)
 
-    @model_validator(mode="wrap")
-    @classmethod
-    def _set_computed_fields(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
-        model: Self = handler(data)
-
-        for field_name in cls.model_computed_fields.keys():
-            if field_name not in cls.__tag_attributes__ or not hasattr(getattr(cls, field_name), "fset"):
-                continue
-            if (value := cls._get_value_from_data(data, field_name)) is None:
-                continue
-            if value == getattr(model, field_name):
-                continue
-            setattr(model, field_name, value)
-
-        return model
-
     # noinspection PyAbstractClass
     class EmbeddedImage[TT](FileEmbeddedImage):
         alias: ClassVar[str | AliasChoices] = "images"
@@ -594,7 +578,6 @@ class LocalTrack[FT: FileType](
             by_alias=True,
             exclude_none=True,
             exclude_defaults=True,
-            exclude_unset=True,
         )
 
     def merge(
@@ -770,6 +753,7 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
             others: Annotated[Sequence[LocalTrack], BeforeValidator(_extract_tracks_from_backup)],
             include: set[str] | Sequence[str] = (),
             exclude: set[str] | Sequence[str] = (),
+            context: TagContext | None = None,
             dry_run: bool = False,
     ) -> dict[Path, dict[str, Any]]:
         """
@@ -785,8 +769,11 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
         :param others: Backup data. See description for accepted formats.
         :param include: The fields to include in the merge. If empty, all fields will be included.
         :param exclude: The fields to exclude from the merge. Ignored if empty.
+        :param context: The context to use when writing the tags.
         :param dry_run: Run function, but do not modify the file on the disk.
         :return: A map of the track path to the fields that were updated on that track.
         """
         self.merge_tracks(others=others, include=include, exclude=exclude, replace=True)
-        return await self.save_tracks(include=include, exclude=exclude, replace=True, dry_run=dry_run)
+        return await self.save_tracks(
+            include=include, exclude=exclude, context=context, replace=True, dry_run=dry_run
+        )

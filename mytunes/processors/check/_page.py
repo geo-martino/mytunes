@@ -10,10 +10,11 @@ from mytunes.core.user import RemoteUser
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors import PageProcessor
 from ..._base.resource import ResourceModel
+from mytunes.core.properties.length import HasTotal
 
 
 # noinspection PyAbstractClass
-class CheckerPage[API: RemoteAPI, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOperations):
+class CheckerPage[API: RemoteAPI, CT: HasURI](PageProcessor, HasAPI[API], HasAsyncOperations, HasTotal):
     items: Sequence[ResourceModel] = Field(
         description="The items to be checked on this page."
     )

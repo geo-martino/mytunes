@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import re
+from abc import abstractmethod
 from datetime import timedelta
 from functools import reduce, total_ordering
 from operator import mul
-from typing import Annotated, Self
+from typing import Annotated, Self, TYPE_CHECKING
 
-from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator
+from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator, PositiveInt
 
 from mytunes._types import Number
 from mytunes.core.properties._base import NumberModel
@@ -79,3 +80,12 @@ class HasLength(AttributeModel):
             self.__dict__["length"] = Length(root=length)
 
         return self
+
+
+# noinspection PyAbstractClass
+class HasTotal(AttributeModel):
+    @property
+    @abstractmethod
+    def total(self) -> Annotated[PositiveInt, Attribute()]:
+        """The total number of items in this resource."""
+        raise NotImplementedError

@@ -186,7 +186,7 @@ class HasURI(AttributeModel, ResourceModel, metaclass=make_cls()):
     def __new__(cls, *args, **kwargs):
         # check for presence of uri field or property in child class
         fields = cls.model_fields.keys() | cls.model_computed_fields.keys()
-        fields |= {name for name, method in cls.__dict__.items() if isinstance(method, property)}
+        fields |= {name for name in dir(cls) if isinstance(getattr(cls, name), property)}
         if "uri" not in fields:
             raise MyTunesValidationError(f"{cls.__name__} must have a 'uri' field or property to be instantiated")
 

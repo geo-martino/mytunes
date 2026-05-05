@@ -5,9 +5,8 @@ from pydantic import Field, NonNegativeInt, validate_call
 
 from mytunes._types import Number
 from mytunes.core.album import HasAlbum
-from mytunes.core.collection import CollectionModel
 from mytunes.core.properties.date import HasReleaseDate, SparseDate
-from mytunes.core.properties.length import HasLength, Length
+from mytunes.core.properties.length import HasLength, Length, HasTotal
 from mytunes.processors.clean._base import TagCleaner
 from ..._base.attribute import AttributeModel
 
@@ -103,19 +102,19 @@ class ReleaseYearCleaner(NumericCleaner[HasAlbum | HasReleaseDate]):
         return year
 
 
-class TotalItemsCleaner(NumericCleaner[CollectionModel]):
+class TotalItemsCleaner(NumericCleaner[HasTotal]):
     @classmethod
     def can_clean(cls, item: Any, skip_on_exact_type: bool = False) -> bool:
         match item:
-            case CollectionModel():
+            case HasTotal():
                 return super().can_clean(item.total)
             case _:
                 return super().can_clean(item)
 
     @classmethod
-    def _get_item_value(cls, item: CollectionModel | Collection | None) -> int:
+    def _get_item_value(cls, item: HasTotal | Collection | None) -> int:
         match item:
-            case CollectionModel():
+            case HasTotal():
                 total = item.total
             case Collection() as items if not isinstance(items, str):
                 total = len(items)

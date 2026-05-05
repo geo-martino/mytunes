@@ -204,7 +204,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
 
     def _pop_match_from_results[T: ResourceModel](self, item: T, results: MutableSequence[T]) -> T | None:
         if not results:
-            return
+            return None
 
         match = self.matcher.match(item, results) if self.matcher is not None else results[0]
         if match is None:

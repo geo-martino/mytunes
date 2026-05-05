@@ -1,6 +1,6 @@
 from typing import final, Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, PositiveInt, InstanceOf, SkipValidation, computed_field, PrivateAttr
 
 from mytunes.core.album import RemoteAlbum
 from mytunes.core.properties.date import SparseDate
@@ -21,6 +21,9 @@ class SpotifyAlbum(
     RemoteAlbum[SpotifyResourceURI, SpotifyArtist, SpotifyGenre],
 ):
     __final__ = True
+    __total: PositiveInt = PrivateAttr(
+        default=0,
+    )
 
     released_at: Annotated[SparseDate, Attribute()] = Field(
         description="The date this album was released.",
@@ -30,6 +33,17 @@ class SpotifyAlbum(
         description="Is this a compilation album",
         validation_alias="album_type",
     )
+
+    @computed_field(
+        alias="total_tracks",
+    )
+    @property
+    def total(self) -> Annotated[PositiveInt, Attribute()]:
+        return self.__total
+
+    @total.setter
+    def total(self, total: PositiveInt):
+        self.__total = total
 
     @field_validator("compilation", mode="before")
     @classmethod

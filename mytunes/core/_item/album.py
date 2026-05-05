@@ -8,7 +8,7 @@ from mytunes.core.api import ItemReadEndpoints
 from mytunes.core.api.items import HasAlbumEndpoints
 from mytunes.core.properties.date import HasReleaseDate
 from mytunes.core.properties.image import HasImages
-from mytunes.core.properties.length import HasLength
+from mytunes.core.properties.length import HasLength, HasTotal
 from mytunes.core.properties.name import HasName
 from mytunes.core.properties.rating import HasRating
 from mytunes.core.properties.tag import HasSeparableTags
@@ -114,7 +114,7 @@ class HasAlbums[AT: Album](HasSeparableTags):
         return cls._separate_tags(value)
 
 
-class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](Album[RT, GT], RemoteResource[UT], metaclass=make_cls()):
+class RemoteAlbum[UT: URI, RT: RemoteArtist, GT: RemoteGenre](HasTotal, Album[RT, GT], RemoteResource[UT], metaclass=make_cls()):
     @validate_call
     async def reload(self, api: HasAlbumEndpoints[ItemReadEndpoints]) -> Self:
         model = await api.albums.get(self.uri)
