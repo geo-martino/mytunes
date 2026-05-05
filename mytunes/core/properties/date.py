@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from contextlib import suppress
 from datetime import date, datetime
 from functools import total_ordering
@@ -53,8 +54,13 @@ class SparseDate(AttributeModel):
         if not isinstance(data, str):
             return data
 
-        value = iter(data.split("-"))
-        return dict(year=next(value, None), month=next(value, None), day=next(value, None))
+        match data:
+            case _ if re.match(r"^\d{4}-\d{2}-\d{2}$", data):
+                values = iter(data.split("-"))
+            case _:
+                values = data.split()
+
+        return dict(year=next(values, None), month=next(values, None), day=next(values, None))
 
     @model_validator(mode="after")
     def _validate_month_not_set_when_day_set(self) -> Self:
