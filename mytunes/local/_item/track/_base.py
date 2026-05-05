@@ -368,9 +368,15 @@ class LocalTrack[FT: FileType](
                 uri = self._uri_adapter.validate_python(value)
                 uris.append(uri)
 
+        # these need to be run manually as they won't be invoked in the assignment later
+        self._validate_uris_from_unique_sources(uris)
+        self._validate_uris_match_type(uris)
+
         if values != self.uris:
             self.__dict__["uris"] = set(uris)
         return self
+
+
 
     def _extend_with_uris(self, values: MutableSequence[Any], info: FieldSerializationInfo) -> None:
         context = info.context
