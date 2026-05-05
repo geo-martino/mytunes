@@ -61,3 +61,7 @@ class SpotifyAlbumCollection[RT: SpotifyArtist](
             track.disc.number for track in self.tracks
             if track.disc is not None and track.disc.number is not None
         )
+
+    @property
+    def total(self) -> PositiveInt | None:
+        return super(RemoteAlbumCollection, self).total  # use the remote collection total instead
