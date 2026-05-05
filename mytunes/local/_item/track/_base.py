@@ -359,7 +359,7 @@ class LocalTrack[FT: FileType](
         if context.remote_source and context.remote_source.casefold() != (self.source or "").casefold():
             self.source = context.remote_source
 
-        if not (values := getattr(self, context.map_uri_to_field, [])):
+        if not (values := getattr(self, context.map_uri_to_field, []) + list(self.uris)):
             return self
 
         uris = []
@@ -372,8 +372,8 @@ class LocalTrack[FT: FileType](
         self._validate_uris_from_unique_sources(uris)
         self._validate_uris_match_type(uris)
 
-        if values != self.uris:
-            self.__dict__["uris"] = set(uris)
+        if (uris := set(uris)) != self.uris:
+            self.__dict__["uris"] = uris
         return self
 
 
