@@ -93,10 +93,6 @@ class LocalTrack[FT: FileType](
         default=None,
     )
 
-    @cached_property
-    def _uri_adapter(self) -> TypeAdapter[URI]:
-        return TypeAdapter(URI.annotation)
-
     # noinspection PyAbstractClass
     class EmbeddedImage[TT](FileEmbeddedImage):
         alias: ClassVar[str | AliasChoices] = "images"
@@ -181,6 +177,10 @@ class LocalTrack[FT: FileType](
             """Builds the image tag object for serialization."""
             raise NotImplementedError
 
+    @cached_property
+    def _uri_adapter(self) -> TypeAdapter[URI]:
+        return TypeAdapter(URI.annotation)
+
     @Track.album_artist.setter
     def album_artist(self, value: Any) -> None:
         value = to_list(value)
@@ -191,6 +191,20 @@ class LocalTrack[FT: FileType](
     def compilation(self, value: Any) -> None:
         value = self._extract_first_value_from_single_sequence(value)
         super(Track, type(self)).compilation.fset(self, value)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _name_from_filename[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
+        if not isinstance(data, MutableMapping):
+            return data
+        if cls._get_value_from_data(data, "name") is not None:
+            return data
+
+        if (path := cls._get_value_from_data(data, "path")) is None:
+            return data
+
+        data["name"] = Path(path).stem
+        return data
 
     ###########################################################################
     ## Utility Methods
