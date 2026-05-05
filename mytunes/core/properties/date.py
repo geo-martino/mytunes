@@ -56,10 +56,11 @@ class SparseDate(AttributeModel):
 
         match data:
             case _ if re.match(r"^\d{4}-\d{2}-\d{2}$", data):
-                values = iter(data.split("-"))
+                values = data.split("-")
             case _:
                 values = data.split()
 
+        values = iter(values)
         return dict(year=next(values, None), month=next(values, None), day=next(values, None))
 
     @model_validator(mode="after")
