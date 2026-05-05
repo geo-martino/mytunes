@@ -55,7 +55,7 @@ class SparseDate(AttributeModel):
             return data
 
         match data:
-            case _ if re.match(r"^\d{4}-\d{2}-\d{2}$", data):
+            case _ if re.match(r"^\d{4}(-\d{1,2}){0,2}$", data):
                 values = data.split("-")
             case _:
                 values = data.split()

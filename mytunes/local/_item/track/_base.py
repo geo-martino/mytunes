@@ -192,20 +192,6 @@ class LocalTrack[FT: FileType](
         value = self._extract_first_value_from_single_sequence(value)
         super(Track, type(self)).compilation.fset(self, value)
 
-    @model_validator(mode="before")
-    @classmethod
-    def _name_from_filename[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
-        if not isinstance(data, MutableMapping):
-            return data
-        if cls._get_value_from_data(data, "name") is not None:
-            return data
-
-        if (path := cls._get_value_from_data(data, "path")) is None:
-            return data
-
-        data["name"] = Path(path).stem
-        return data
-
     ###########################################################################
     ## Utility Methods
     ###########################################################################
