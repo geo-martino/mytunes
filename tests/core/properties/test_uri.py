@@ -7,8 +7,8 @@ from pydantic import ValidationError
 
 from mytunes._base.resource import ResourceModel
 from mytunes.core._context import RemoteModelContext
-from mytunes.core.properties.uri import URI, HasMutableURI, HasImmutableURI
-from mytunes.exception import MyTunesTypeError
+from mytunes.core.properties.uri import URI, HasMutableURI, HasImmutableURI, UniqueURIs
+from mytunes.exception import MyTunesTypeError, MyTunesValueError, MyTunesKeyError, MyTunesValidationError
 from tests.remote import SimpleURI, URI_TYPES
 from tests.testers import BaseModelTester, UniqueKeyTester
 
@@ -44,6 +44,11 @@ def uris(models: list[ResourceModel], uri: URI, faker: Faker) -> list[URI]:
         seen.add(source)
 
     return uris
+
+
+@pytest.fixture
+def uri_with_duplicate_source(uri: SimpleURI, faker: Faker) -> URI:
+    return type(uri).create_random(uri.type)
 
 
 @pytest.fixture
@@ -100,7 +105,6 @@ class TestURI(BaseModelTester):
         assert not model.exists
 
     def test_equality(self, model: SimpleURI, uri_with_other_type: URI):
-
         assert model == model
         assert model == str(model)
         assert model == model.model_validate(str(model))
@@ -116,6 +120,90 @@ class TestURI(BaseModelTester):
 
         assert model == model.api_url
         assert model != model.model_validate(str(uri_with_other_type)).api_url
+
+
+class TestUniqueURIs:
+    @pytest.fixture
+    def model(self, uris: list[URI]) -> UniqueURIs:
+        return UniqueURIs(uris)
+
+    def test_container_methods(self, model: UniqueURIs, uris: list[URI]):
+        assert all(uri in model for uri in uris)
+
+    def test_collection_methods(self, model: UniqueURIs, uris: list[URI]):
+        assert len(model) == len(uris)
+        assert sorted(model) == sorted(uris)
+        assert sorted(iter(model)) == sorted(uris)
+
+    def test_equality(self, model: UniqueURIs, uris: list[URI]):
+        assert model == set(uris)
+
+    def test_init_fails_on_multiple_types(self, uris: list[URI], uri_with_other_type: URI):
+        with pytest.raises(MyTunesValidationError):
+            UniqueURIs(uris + [uri_with_other_type])
+
+    def test_init_fails_on_duplicate_sources(self, uris: list[SimpleURI], uri_with_duplicate_source: URI):
+        with pytest.raises(MyTunesValidationError):
+            UniqueURIs(uris + [uri_with_duplicate_source])
+
+    def test_add_new_source(self, uris: list[URI]):
+        uri = uris.pop()
+        model = UniqueURIs(uris)
+
+        assert uri not in model
+        model.add(uri)
+        assert uri in model
+
+    def test_add_existing_source_fails(self, model: UniqueURIs, uri_with_duplicate_source: URI):
+        assert uri_with_duplicate_source not in model
+        with pytest.raises(MyTunesKeyError):
+            model.add(uri_with_duplicate_source)
+
+    def test_add_different_type_fails(self, model: UniqueURIs, uri_with_other_type: URI):
+        assert uri_with_other_type not in model
+        with pytest.raises(MyTunesTypeError):
+            model.add(uri_with_other_type)
+
+    def test_replace_new_source(self, uris: list[SimpleURI], faker: Faker):
+        uri = uris.pop()
+        model = UniqueURIs(uris)
+
+        assert uri not in model
+        model.replace(uri)
+        assert uri in model
+
+    def test_replace_existing_source(self, model: UniqueURIs, uri_with_duplicate_source: URI):
+        assert uri_with_duplicate_source not in model
+        model.replace(uri_with_duplicate_source)
+        assert uri_with_duplicate_source in model
+
+    def test_replace_different_type_fails(self, model: UniqueURIs, uri_with_other_type: URI):
+        assert uri_with_other_type not in model
+        with pytest.raises(MyTunesTypeError):
+            model.replace(uri_with_other_type)
+
+    def test_discard(self, model: UniqueURIs, uris: list[URI], faker: Faker):
+        uri = faker.random_element(uris)
+        assert uri in model
+
+        model.discard(uri)
+        assert uri not in model
+
+        model.discard(uri)
+        assert uri not in model
+
+    def test_get(self, model: UniqueURIs, uris: list[URI], faker: Faker):
+        uri = faker.random_element(uris)
+        assert uri in model
+
+        assert model.get(uri.source) is uri
+
+    def test_drop(self, model: UniqueURIs, uris: list[URI], faker: Faker):
+        uri = faker.random_element(uris)
+        assert uri in model
+
+        model.drop(uri.source)
+        assert uri not in model
 
 
 class TestHasImmutableURI(UniqueKeyTester):

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Collection
+from collections import Counter
+from collections.abc import Collection, MutableSet, Iterable
 from copy import copy
 from functools import total_ordering, cached_property
-from typing import ClassVar, Self, Annotated, TYPE_CHECKING, Union
+from typing import ClassVar, Self, Annotated, TYPE_CHECKING, Union, Any
 
-from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict
-from pydantic_core.core_schema import ValidationInfo
+from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict, \
+    validate_call, GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pydantic_core.core_schema import ValidationInfo, CoreSchema
 from yarl import URL
 
-from mytunes._types import StrippedString, TO_SET, HttpURL
-from mytunes.exception import MyTunesTypeError, MyTunesValidationError
+from mytunes._types import StrippedString, TO_SET, HttpURL, to_set
+from mytunes.exception import MyTunesTypeError, MyTunesValidationError, MyTunesValueError, MyTunesKeyError
 from ..._base import RootModel, make_cls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute
@@ -176,6 +179,102 @@ class URI(RootModel[str]):
         return str(self) < str(other)
 
 
+class UniqueURIs(MutableSet[URI]):
+    """Set of URIs with unique sources. All URIs in this set must be of the same type."""
+    # noinspection PyUnusedLocal
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        values_schema = handler.generate_schema(URI)
+
+        python_schema = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                values_schema,
+                core_schema.set_schema(values_schema),
+                core_schema.tuple_variable_schema(values_schema),
+                core_schema.list_schema(values_schema),
+            ],
+        )
+
+        # noinspection PyProtectedMember
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.set_schema(values_schema),
+            python_schema=core_schema.no_info_plain_validator_function(cls, json_schema_input_schema=python_schema),
+        )
+
+    def __init__(self, uris: URI | Iterable[URI] = ()) -> None:
+        uris = to_set(uris)
+
+        types = {uri.type for uri in uris}
+        if len(types) > 1:
+            raise MyTunesValidationError(f"URIs must all be of the same type: {Logger.format_list_to_string(types)}")
+
+        sources = Counter(uri.source for uri in uris)
+        duplicate_sources = {source for source, count in sources.items() if count > 1}
+        if duplicate_sources:
+            raise MyTunesValidationError(
+                f"URIs with duplicate sources are not allowed: {Logger.format_list_to_string(duplicate_sources)}"
+            )
+
+        self.__uris = uris
+
+    @property
+    def sources(self) -> set[str]:
+        return {uri.source for uri in self}
+
+    @property
+    def type(self) -> str | None:
+        return next(iter(self)).type if len(self) > 0 else None
+
+    def __contains__(self, x: URI):
+        return x in self.__uris
+
+    def __len__(self):
+        return len(self.__uris)
+
+    def __iter__(self):
+        return iter(self.__uris)
+
+    @validate_call
+    def add(self, value: URI) -> None:
+        if self.type is not None and value.type != self.type:
+            raise MyTunesTypeError(f"URI type {value.type!r} does not match expected type: {self.type!r}")
+
+        current = self.get(value.source)
+        if current is not None:
+            raise MyTunesKeyError(f"URI from {value.source!r} already exists in the set")
+
+        self.__uris.add(value)
+
+    @validate_call
+    def replace(self, value: URI) -> None:
+        """
+        Add the given URI to the set, replacing any existing URI from the same source.
+        If no existing URI with a matching source exists, the URI will be just simply be added to the set.
+        """
+        current = self.get(value.source)
+        if current is not None:
+            self.__uris.remove(current)
+
+        self.add(value)
+
+    @validate_call
+    def discard(self, value: URI):
+        self.__uris.discard(value)
+
+    @validate_call
+    def get(self, source: str) -> URI | None:
+        """Get the URI with the specified source."""
+        return next((uri for uri in self if uri.source.casefold() == source.casefold()), None)
+
+    @validate_call
+    def drop(self, source: str) -> None:
+        """Drop the URI with the specified source."""
+        current = self.get(source)
+        if current is not None:
+            self.__uris.remove(current)
+
+
 # noinspection PyAbstractClass
 class HasURI(AttributeModel, ResourceModel, metaclass=make_cls()):
     # not sure how to define this in a way that works for both without causing issues with pydantic...
@@ -246,7 +345,7 @@ class HasMutableURI(HasURI):
         ),
         default=None,
     )
-    uris: Annotated[set[URI], TO_SET] = Field(
+    uris: UniqueURIs = Field(
         description="A set of URIs that represent this resource.",
         default_factory=set,
         validation_alias="uri",
@@ -263,32 +362,15 @@ class HasMutableURI(HasURI):
 
     @model_validator(mode="after")
     def _set_source_from_uri(self) -> Self:
-        if self.source is None and len(set(source := uri.source for uri in self.uris)) == 1:
-            self.__dict__["source"] = source
+        if self.source is None and len(self.uris.sources) == 1:
+            self.__dict__["source"] = next(iter(self.uris.sources))
         return self
 
     @field_validator("uris", mode="after", check_fields=True)
-    @staticmethod
-    def _validate_uris_from_unique_sources[T: Collection](uris: T) -> T:
-        sources: set[str] = set()
-        duplicates: set[str] = set()
-
-        for uri in uris:
-            source = uri.source.casefold()
-            if source in sources:
-                duplicates.add(source)
-            sources.add(source)
-
-        if duplicates:
-            raise MyTunesValidationError(f"Duplicate URIs found from sources: {', '.join(duplicates)}")
-        return uris
-
-    @field_validator("uris", mode="after", check_fields=True)
     @classmethod
-    def _validate_uris_match_type[T: Collection](cls, uris: T) -> T:
-        for uri in uris:
-            if not uri.type == cls.type:
-                raise MyTunesValidationError(f"URI type {uri.type!r} does not match expected type {cls.type!r}")
+    def _validate_uris_match_type(cls, uris: UniqueURIs) -> UniqueURIs:
+        if uris.type is not None and uris.type != cls.type:
+            raise MyTunesValidationError(f"URI type {uris.type!r} does not match expected type {cls.type!r}")
         return uris
 
     @computed_field(
@@ -297,8 +379,10 @@ class HasMutableURI(HasURI):
     @property
     def uri(self) -> Annotated[URI | None, UniqueAttribute()]:
         if self.source is None:
-            return
-        return next((uri for uri in self.uris if uri.source.casefold() == self.source.casefold() and uri.exists), None)
+            return None
+
+        uri = self.uris.get(self.source)
+        return uri if uri is not None and uri.exists else None
 
     @uri.setter
     def uri(self, value: URI | None):
@@ -315,14 +399,10 @@ class HasMutableURI(HasURI):
         if value.type != self.type:
             raise MyTunesTypeError(f"Cannot set URI of type {value.type!r} for type {self.type!r}")
 
+        self.uris.replace(value)
         if self.source is None:
             self.source = value.source
 
-        for existing in copy(self.uris):
-            if existing.source.casefold() == value.source.casefold():
-                self.uris.remove(existing)
-
-        self.uris.add(value)
         if hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 
@@ -331,11 +411,9 @@ class HasMutableURI(HasURI):
         if self.has_uri is None:
             return
 
-        uri = self.uri
-        if uri is None:
-            uri = next(uri for uri in self.uris if uri.source.casefold() == self.source.casefold())
-
+        uri = self.uris.get(self.source)
         self.uris.remove(uri)
+
         if hasattr(self, "unique_keys"):
             del self.unique_keys  # clear the cached property
 
@@ -343,4 +421,6 @@ class HasMutableURI(HasURI):
     def has_uri(self) -> bool | None:
         if self.source is None:
             return None
-        return next((uri.exists for uri in self.uris if uri.source.casefold() == self.source.casefold()), None)
+
+        uri = self.uris.get(self.source)
+        return uri.exists if uri is not None else None

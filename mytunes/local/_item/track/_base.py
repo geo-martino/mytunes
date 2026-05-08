@@ -368,12 +368,14 @@ class LocalTrack[FT: FileType](
                 uri = self._uri_adapter.validate_python(value)
                 uris.append(uri)
 
-        # these need to be run manually as they won't be invoked in the assignment later
-        self._validate_uris_from_unique_sources(uris)
-        self._validate_uris_match_type(uris)
-
         if (uris := set(uris)) != self.uris:
-            self.__dict__["uris"] = uris
+            for uri in uris:
+                self.uris.replace(uri)
+
+        # these need to be run manually as they won't be invoked in the previous operations
+        self._validate_uris_match_type(self.uris)
+        self._set_source_from_uri()
+
         return self
 
 
