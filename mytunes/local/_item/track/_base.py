@@ -558,12 +558,10 @@ class LocalTrack[FT: FileType](
     def _drop_matching_tags(file: FT, tags: Mapping[str, Any]) -> dict[str, Any]:
         clean: dict[str, Any] = {}
         for key, value in tags.items():
-            if key not in file:
-                clean[key] = value
-
-            existing = file.tags.get(key)
-            if value == existing:
-                continue
+            if key in file and value == file.tags.get(key):
+                continue  # matching tag
+            if isinstance(value, Collection) and not value:
+                continue  # don't add empty collections when tag not present
 
             clean[key] = value
 
@@ -670,6 +668,7 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
                 file = await track.load_file(track.path)
                 tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
                 if tags:
+                    print(tags)
                     await track.save(dry_run=dry_run, file=file)
 
             return track.path, tags

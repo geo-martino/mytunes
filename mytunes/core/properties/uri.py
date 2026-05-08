@@ -393,9 +393,14 @@ class HasMutableURI(HasURI):
     @uri.setter
     def uri(self, value: URI | None):
         if value is None:
-            if self.uri is None:
-                return
-            value = self.uri.from_id(None, self.type)  # mark unavailable
+            if self.source is None:
+                return None
+
+            from .._context import RemoteModelContext  # avoid circular import
+            context = RemoteModelContext(type=self.type)
+
+            # mark unavailable
+            value = URI.get_adapter_for_source(self.source).validate_python(None, context=context)
 
         if not isinstance(value, URI):
             raise MyTunesTypeError("URI must be a URI instance")
