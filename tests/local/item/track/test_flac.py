@@ -328,3 +328,12 @@ class TestFLAC(LocalTrackTester):
         assert {k: v for k, v in result.items() if k != "images"} == expected
         result_image_types = {pic.type for k, v in result.items() if k == "images" for pic in v}
         assert result_image_types == {pic.type for pic in pictures.values()}
+
+    def test_to_tags_assigns_unique_uris_only(self, model: FLAC, uri: URI, faker: Faker):
+        model.comments = [faker.sentence(), str(uri)]
+        model.uri = uri
+
+        context = TagContext(map_uri_to_field="comments")
+        result = model.to_tags(context=context)
+
+        assert result["comment"] == model.comments

@@ -49,9 +49,12 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
 
     @validate_call
     async def query(
-            self, query: str, types: set[str], limit: PositiveInt | None = None, **kwargs
+            self, query: str | None, types: set[str], limit: PositiveInt | None = None, **kwargs
     ) -> dict[str, list[RT]]:
         """Query for items of the given types that match the given query parameters."""
+        if not query:
+            return {}
+
         if limit is None:
             limit = self._query_limit
 
@@ -100,7 +103,7 @@ class SearchEndpoints[UT: URI, RT: RemoteResource, QT: ResourceModel](Endpoints[
     async def query_item(self, item: QT, **kwargs) -> list[RT]:
         """Query for items that match the given item."""
         kwargs = self._format_query_from_item(item, **kwargs)
-        return next(iter((await self.query(**kwargs)).values()))
+        return next(iter((await self.query(**kwargs)).values()), [])
 
     @abstractmethod
     def _format_query_from_item(self, item: QT, **kwargs) -> dict[str, Any]:

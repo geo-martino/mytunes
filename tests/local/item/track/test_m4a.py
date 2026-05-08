@@ -231,3 +231,12 @@ class TestM4A(LocalTrackTester):
 
         assert {k: v for k, v in result.items() if k != "covr"} == expected
         assert sum(len(v) for k, v in result.items() if k.startswith("covr")) == len(pictures)
+
+    def test_to_tags_assigns_unique_uris_only(self, model: M4A, uri: URI, faker: Faker):
+        model.comments = [faker.sentence(), str(uri)]
+        model.uri = uri
+
+        context = TagContext(map_uri_to_field="comments")
+        result = model.to_tags(context=context)
+
+        assert result["©cmt"] == model.comments

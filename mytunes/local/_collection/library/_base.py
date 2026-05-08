@@ -9,6 +9,7 @@ from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, validat
 from termcolor import colored
 
 from mytunes._types import DEFAULT_IF_NONE
+from mytunes.core._item.album import Album
 from mytunes.core.library import MutableLibrary
 from mytunes.core.properties.path import PathMapper, SystemPath, SystemPaths, PathModelMapper
 from mytunes.exception import MyTunesError, MyTunesValueError
@@ -22,6 +23,7 @@ from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADA
 from mytunes.local._collection.playlist.result import LoadPlaylistResult, SavePlaylistResult
 from mytunes.logger import STAT
 from mytunes.processors.sort import ItemSorter
+from ..._item import LocalAlbum, LocalArtist, LocalGenre
 from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
 
 
@@ -374,13 +376,10 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.album.name if track.album else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="album")
         for name, group in grouped.items():
-            if name is None:
-                continue
-
             album = next(
                 track.album for track in group
                 if track.album and track.album.name.casefold() == name.casefold()
-            )
+            ) if name is not None else LocalAlbum(name=None)
 
             group = sorted(group, key=lambda track: track.track or 0)
             yield LocalAlbumCollection(**album.model_dump(), tracks=group)
@@ -396,13 +395,10 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.artists[0].name if track.artists else "")
         grouped = ItemSorter.group_by_field(items=tracks, field="artists")
         for name, group in grouped.items():
-            if name is None:
-                continue
-
             artist = next(
                 artist for track in group for artist in track.artists
                 if artist.name.casefold() == name.casefold()
-            )
+            ) if name is not None else LocalArtist(name=None)
 
             albums = sorted(cls.generate_albums(group), key=lambda alb: alb.name)
             for album in albums:
@@ -422,13 +418,10 @@ class LocalLibrary(
         tracks = sorted(tracks, key=lambda track: track.genre)
         grouped = ItemSorter.group_by_field(items=tracks, field="genres")
         for name, group in grouped.items():
-            if name is None:
-                continue
-
             genre = next(
                 genre for track in group for genre in track.genres
                 if genre.name.casefold() == name.casefold()
-            )
+            ) if name is not None else LocalGenre(name=None)
 
             group = sorted(group, key=lambda track: track.track or 0)
             yield LocalGenreCollection(**genre.model_dump(), tracks=group)

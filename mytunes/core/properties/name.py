@@ -9,7 +9,7 @@ from ..._base.attribute import AttributeModel, Attribute
 
 
 class HasName(AttributeModel):
-    name: Annotated[StrippedString, Attribute()] = Field(
+    name: Annotated[StrippedString | None, Attribute()] = Field(
         description="The name of this resource."
     )
 

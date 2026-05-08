@@ -194,7 +194,7 @@ class Result(BaseModel):
             chunks.append((key, result))
             chunk.clear()
 
-        chunk.sort(key=lambda x: x[0].casefold())
+        chunk.sort(key=lambda x: x[0].casefold() if x[0] is not None else "")
         chunks.extend(chunk)
         return chunks
 
@@ -317,7 +317,7 @@ class TotalCountResult(CountResult):
 
 
 class NamedResult(Result):
-    name: str = Field(
+    name: str | None = Field(
         description="The name of the collection"
     )
 

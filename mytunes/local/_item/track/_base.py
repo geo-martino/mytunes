@@ -83,7 +83,7 @@ class LocalTrack[FT: FileType](
     __supported_types__: ClassVar[Sequence[type[mutagen.FileType]] | None] = None
 
     # override to apply file tag metadata and alias
-    name: Annotated[StrippedString, TagAttribute()] = Field(
+    name: Annotated[StrippedString | None, TagAttribute()] = Field(
         description="The name of this track.",
         alias="title",
     )
@@ -378,12 +378,17 @@ class LocalTrack[FT: FileType](
 
         return self
 
-
-
     def _extend_with_uris(self, values: MutableSequence[Any], info: FieldSerializationInfo) -> None:
         context = info.context
-        if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
-            values.extend(self.uris)
+        if not self.uris or not isinstance(context, TagContext) or context.map_uri_to_field != info.field_name:
+            return
+
+        # clean up duplicate URI values if present
+        for uri in self.uris:
+            if uri in values:
+                values.remove(uri)
+
+        values.extend(uri for uri in self.uris if uri not in values)
 
     @field_validator("images", mode="before")
     @classmethod
@@ -538,9 +543,12 @@ class LocalTrack[FT: FileType](
         :return: The tags that were updated on the file.
         """
         tags = self.to_tags(include=include, exclude=exclude, context=context)
+        print(tags)
         tags = self._drop_matching_tags(file, tags)
+        print(tags)
         if not replace:
             tags = self._drop_existing_tags(file, tags)
+        print(tags)
 
         if tags:
             file.update(tags)

@@ -277,3 +277,12 @@ class TestWMA(LocalTrackTester):
         assert result_image_types == {
             WMA.EmbeddedImage.get_id3_type_from_tag(pic) for pic in pictures.values()
         }
+
+    def test_to_tags_assigns_unique_uris_only(self, model: WMA, uri: URI, faker: Faker):
+        model.comments = [faker.sentence(), str(uri)]
+        model.uri = uri
+
+        context = TagContext(map_uri_to_field="comments")
+        result = model.to_tags(context=context)
+
+        assert result["WM/Comments"] == list(map(ASFUnicodeAttribute, model.comments))

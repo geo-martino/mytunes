@@ -269,3 +269,13 @@ class TestMP3(LocalTrackTester):
 
         assert {k: v for k, v in result.items() if not k.startswith("APIC")} == expected
         assert {k for k, v in result.items() if k.startswith("APIC")} == {f"APIC:{kind}" for kind in pictures}
+
+    def test_to_tags_assigns_unique_uris_only(self, model: MP3, uri: URI, faker: Faker):
+        model.comments = [faker.sentence(), str(uri)]
+        model.uri = uri
+
+        context = TagContext(map_uri_to_field="comments")
+        result = model.to_tags(context=context)
+
+        assert result["COMM:1:eng"] == mutagen.id3.COMM(text=model.comments[0], lang="eng")
+        assert result[f"COMM:{uri.source}URI:eng"] == mutagen.id3.COMM(text=str(uri), lang="eng", desc=f"{uri.source}URI")
