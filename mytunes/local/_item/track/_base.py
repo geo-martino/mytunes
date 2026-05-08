@@ -376,6 +376,9 @@ class LocalTrack[FT: FileType](
         self._validate_uris_match_type(self.uris)
         self._set_source_from_uri()
 
+        # remove uris from original tag value
+        self.__dict__[context.map_uri_to_field] = type(values)(v for v in values if v not in uris)
+
         return self
 
     def _extend_with_uris(self, values: MutableSequence[Any], info: FieldSerializationInfo) -> None:

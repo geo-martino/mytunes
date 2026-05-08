@@ -7,6 +7,7 @@ from PIL import Image, ImageFile as PILImageFile
 from aiorequestful.request import RequestHandler
 from faker import Faker
 
+from mytunes import PROGRAM_NAME
 from mytunes.exception import RequestError
 # noinspection PyProtectedMember
 from mytunes.spotify._api.playlist import _SpotifyPlaylistLibraryEndpoints
@@ -29,11 +30,16 @@ class TestSpotifyPlaylistLibraryEndpoints(EndpointsTester):
         description = faker.sentence()
         public = faker.boolean()
         collaborative = faker.boolean() if not public else False
+        default_name = f"{PROGRAM_NAME} Playlist"
 
         assert await model._format_playlist_body(name=name) == {"name": name}
-        assert await model._format_playlist_body(description=description) == {"description": description}
+        assert await model._format_playlist_body(description=description) == {
+            "name": default_name,
+            "description": description
+        }
 
         assert await model._format_playlist_body(collaborative=collaborative, public=public) == {
+            "name": default_name,
             "collaborative": collaborative,
             "public": public,
         }

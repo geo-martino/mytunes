@@ -244,6 +244,7 @@ class TestFLAC(LocalTrackTester):
             faker: Faker,
     ):
         sep = choice(FLAC._tag_sep)
+        comments = faker.words()
         tags = {
             "title": ["Sleepwalk My Life Away"],
             "artist": ["Metallica"],
@@ -256,7 +257,7 @@ class TestFLAC(LocalTrackTester):
             "bpm": ["124.931"],
             "key": ["B"],
             choice(("date", "year")): ["2023-04-14"],
-            choice(("comment", "description")): [str(uri)],
+            choice(("comment", "description")): [str(uri), *comments],
             "compilation": ["1"],
             "images": list(pictures.values()),
         }
@@ -281,7 +282,7 @@ class TestFLAC(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.compilation is True
-        assert model.comments == [str(uri)]
+        assert model.comments == comments
         assert model.images == expected_images
 
         assert model.source == uri.source

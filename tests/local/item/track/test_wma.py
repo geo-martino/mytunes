@@ -178,6 +178,7 @@ class TestWMA(LocalTrackTester):
             faker: Faker,
     ):
         sep = choice(WMA._tag_sep)
+        comments = faker.words()
         tags = {
             "Title": [ASFUnicodeAttribute("Sleepwalk My Life Away")],
             "Author": [ASFUnicodeAttribute("Metallica")],
@@ -193,7 +194,9 @@ class TestWMA(LocalTrackTester):
             "WM/BeatsPerMinute": [ASFUnicodeAttribute("124.931")],
             "WM/InitialKey": [ASFUnicodeAttribute("B")],
             choice(("WM/Year", "WM/OriginalReleaseYear")): [ASFUnicodeAttribute("2023-04-14")],
-            choice(("Description", "WM/Comments")): [ASFUnicodeAttribute(str(uri))],
+            choice(("Description", "WM/Comments")): [
+                ASFUnicodeAttribute(str(uri)), *map(ASFUnicodeAttribute, comments)
+            ],
             "WM/Picture": list(pictures.values()),
             "COMPILATION": [ASFUnicodeAttribute("1")],
         }
@@ -218,7 +221,7 @@ class TestWMA(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.compilation is True
-        assert model.comments == [str(uri)]
+        assert model.comments == comments
         assert model.images == expected_images
 
         assert model.source == uri.source

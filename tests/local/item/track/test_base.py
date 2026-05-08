@@ -228,7 +228,7 @@ class TestLocalTrack(UniqueKeyTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.compilation is True
-        assert model.comments == tags["comments"]
+        assert model.comments == [value for value in tags["comments"] if value != uri]
 
         assert model.source == uri.source
         assert model.uris == {uri}

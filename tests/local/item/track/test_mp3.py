@@ -221,7 +221,9 @@ class TestMP3(LocalTrackTester):
         assert model.rating == 55
         assert model.released_at == date(2023, 4, 14)
         assert model.compilation is True
-        assert sorted(model.comments) == sorted(str(val) for key, val in tags.items() if key.startswith("COMM"))
+        assert sorted(model.comments) == sorted(
+            str(val) for key, val in tags.items() if key.startswith("COMM") and "URI" not in key
+        )
         assert model.images == expected_images
 
         assert model.source == uri.source

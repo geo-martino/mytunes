@@ -146,6 +146,7 @@ class TestM4A(LocalTrackTester):
             faker: Faker,
     ):
         sep = choice(M4A._tag_sep)
+        comments = faker.words()
         tags = {
             "©nam": ["Sleepwalk My Life Away"],
             "©ART": ["Metallica"],
@@ -161,7 +162,7 @@ class TestM4A(LocalTrackTester):
             "tmpo": [124],
             "----:com.apple.iTunes:INITIALKEY": [MP4FreeForm(b"B")],
             "©day": ["2023-04-14"],
-            "©cmt": [str(uri)],
+            "©cmt": [str(uri), *comments],
             "covr": list(map(MP4Cover, image_bytes)),
             "cpil": True,
         }
@@ -186,7 +187,7 @@ class TestM4A(LocalTrackTester):
         assert model.key.key == "B"
         assert model.released_at == date(2023, 4, 14)
         assert model.compilation is True
-        assert model.comments == [str(uri)]
+        assert model.comments == comments
         assert model.images == expected_images
 
         assert model.source == uri.source
