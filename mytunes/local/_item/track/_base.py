@@ -368,9 +368,9 @@ class LocalTrack[FT: FileType](
                 uri = self._uri_adapter.validate_python(value)
                 uris.append(uri)
 
-        if (uris := set(uris)) != self.uris:
-            for uri in uris:
-                self.uris.replace(uri)
+        # drop duplicates + prioritise first URI from each source
+        for uri in reversed(uris):
+            self.uris.replace(uri)
 
         # these need to be run manually as they won't be invoked in the previous operations
         self._validate_uris_match_type(self.uris)

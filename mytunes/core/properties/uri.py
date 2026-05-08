@@ -216,7 +216,7 @@ class UniqueURIs(MutableSet[URI]):
                 f"URIs with duplicate sources are not allowed: {Logger.format_list_to_string(duplicate_sources)}"
             )
 
-        self.__uris = uris
+        self._uris = uris
 
     @property
     def sources(self) -> set[str]:
@@ -226,14 +226,20 @@ class UniqueURIs(MutableSet[URI]):
     def type(self) -> str | None:
         return next(iter(self)).type if len(self) > 0 else None
 
+    def __str__(self):
+        return str(self._uris)
+
+    def __repr__(self):
+        return repr(self._uris)
+
     def __contains__(self, x: URI):
-        return x in self.__uris
+        return x in self._uris
 
     def __len__(self):
-        return len(self.__uris)
+        return len(self._uris)
 
     def __iter__(self):
-        return iter(self.__uris)
+        return iter(self._uris)
 
     @validate_call
     def add(self, value: URI) -> None:
@@ -244,7 +250,7 @@ class UniqueURIs(MutableSet[URI]):
         if current is not None:
             raise MyTunesKeyError(f"URI from {value.source!r} already exists in the set")
 
-        self.__uris.add(value)
+        self._uris.add(value)
 
     @validate_call
     def replace(self, value: URI) -> None:
@@ -254,13 +260,13 @@ class UniqueURIs(MutableSet[URI]):
         """
         current = self.get(value.source)
         if current is not None:
-            self.__uris.remove(current)
+            self._uris.remove(current)
 
         self.add(value)
 
     @validate_call
     def discard(self, value: URI):
-        self.__uris.discard(value)
+        self._uris.discard(value)
 
     @validate_call
     def get(self, source: str) -> URI | None:
@@ -272,7 +278,7 @@ class UniqueURIs(MutableSet[URI]):
         """Drop the URI with the specified source."""
         current = self.get(source)
         if current is not None:
-            self.__uris.remove(current)
+            self._uris.remove(current)
 
 
 # noinspection PyAbstractClass
