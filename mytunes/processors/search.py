@@ -389,7 +389,9 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
             return await self._search_items(collection.items, name=name)
 
         items, skipped = self._split_items(collection.items)
-        result = self._match_items(items, list(match.items), skipped=skipped, name=name)
+        # skip any matched items in this collection
+        matches = [it for it in match.items if it not in skipped]
+        result = self._match_items(items, matches, skipped=skipped, name=name)
         if self.match_all_items and result.unmatched:
             result = await self._search_from_result(result)
 
