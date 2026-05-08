@@ -17,6 +17,7 @@ from mytunes.spotify.user import SpotifyUser
 from .._collection.playlist import SpotifyPlaylist, SpotifyMutablePlaylist
 from .._item.track import SpotifyTrack, SpotifyPlaylistTrack
 from .._properties.uri import SpotifyResourceURI
+from ... import PROGRAM_NAME
 from ...core.api import HasLibraryEndpoints
 from ...core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints
 from ...core.api.types import ApiURISchema, ApiURLSchema
@@ -81,14 +82,13 @@ class _SpotifyPlaylistLibraryEndpoints(
     @classmethod
     @validate_call
     async def _format_playlist_body(
-            cls, name: str = None, public: bool = None, collaborative: bool = None, description: str = None
+            cls, name: str | None = None, public: bool = None, collaborative: bool = None, description: str = None
     ) -> JsonSchemaValue:
         if public and collaborative:
             raise RequestError("A playlist cannot be both public and collaborative.")
 
-        body: JsonSchemaValue = {}
-        if name is not None:
-            body["name"] = name
+        body: JsonSchemaValue = {"name": name or f"{PROGRAM_NAME} Playlist"}
+
         if public is not None:
             body["public"] = public
         if collaborative is not None:

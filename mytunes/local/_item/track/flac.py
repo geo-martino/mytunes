@@ -179,7 +179,6 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
             return handler(value)
 
         # noinspection PyTypeChecker
-        print(value, info)
         values = self._serialize_names(value, handler=handler, info=None)
         self._extend_with_uris(values, info=info)
         return list(map(str, values))

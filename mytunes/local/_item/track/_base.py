@@ -543,12 +543,9 @@ class LocalTrack[FT: FileType](
         :return: The tags that were updated on the file.
         """
         tags = self.to_tags(include=include, exclude=exclude, context=context)
-        print(tags)
         tags = self._drop_matching_tags(file, tags)
-        print(tags)
         if not replace:
             tags = self._drop_existing_tags(file, tags)
-        print(tags)
 
         if tags:
             file.update(tags)
