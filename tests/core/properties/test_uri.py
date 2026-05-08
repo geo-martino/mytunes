@@ -205,9 +205,6 @@ class TestUniqueURIs:
         model.drop(uri.source)
         assert uri not in model
 
-    def test_print(self, model: UniqueURIs):
-        print(repr(model))
-
 
 class TestHasImmutableURI(UniqueKeyTester):
 

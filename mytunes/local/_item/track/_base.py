@@ -668,7 +668,6 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
                 file = await track.load_file(track.path)
                 tags = track.update(file, include=include, exclude=exclude, context=context, replace=replace)
                 if tags:
-                    print(tags)
                     await track.save(dry_run=dry_run, file=file)
 
             return track.path, tags
