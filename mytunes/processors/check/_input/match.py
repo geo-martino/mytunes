@@ -72,7 +72,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
                     self._drop_uri(item)
                     return option
 
-                case value if (log := self._set_uri(item, value=value)) is None:
+                case _ if (log := self._set_uri(item, value=option)) is None:
                     break
 
                 case _:

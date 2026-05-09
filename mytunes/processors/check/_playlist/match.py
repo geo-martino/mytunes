@@ -246,7 +246,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
                     if self._match_item_with_playlist(item, others=others):
                         return option
 
-                case value if (log := self._set_uri(item, value=value)) is None:
+                case _ if (log := self._set_uri(item, value=option)) is None:
                     break
 
                 case _:
