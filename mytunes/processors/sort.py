@@ -119,16 +119,17 @@ class ItemSorter(Processor):
             return
 
         sort_key = cls._get_sort_key_by_type(items, field=field, ignore_words=ignore_words)
-        items[:] = sorted(items, key=sort_key, reverse=reverse)
+        if sort_key is not None:
+            items[:] = sorted(items, key=sort_key, reverse=reverse)
 
     @classmethod
     def _get_sort_key_by_type(
             cls, items: Collection[ResourceModel], field: _ATTRIBUTE_FIELD_TYPE, ignore_words: Iterable[str]
     ) -> Any:
-        try:  # attempt to find an example value to determine the value type for this sort
-            value = next(iter(val for item in items if (val := getattr(item, field)) is not None))
-        except StopIteration:  # if no example value found, all values are None and so no sort can happen safely. Skip
-            raise MyTunesValueError(f"No value set for {field} in {items}")
+        # attempt to find an example value to determine the value type for this sort
+        value = next((val for item in items if (val := getattr(item, field)) is not None), None)
+        if value is None:
+            return None
 
         match value:  # get sort key based on value type
             case str() | HasName():  # key gets name and strips ignore words from string

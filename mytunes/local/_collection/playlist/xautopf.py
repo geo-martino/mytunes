@@ -187,6 +187,9 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
 
     @staticmethod
     def _get_reference_for_last_played_track(tracks: MutableSequence[LocalTrack]) -> LocalTrack | None:
+        if not tracks:
+            return None
+
         with suppress(MyTunesValueError):
             ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
             return tracks[0]
