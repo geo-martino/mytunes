@@ -8,7 +8,8 @@ from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Annotated, TYPE_CHECKING, Union, Any
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict, \
-    validate_call, GetCoreSchemaHandler
+    validate_call, GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
 from pydantic_core.core_schema import ValidationInfo, CoreSchema
 from yarl import URL
@@ -198,8 +199,9 @@ class UniqueURIs(MutableSet[URI]):
 
         # noinspection PyProtectedMember
         return core_schema.json_or_python_schema(
-            json_schema=core_schema.set_schema(values_schema),
+            json_schema=core_schema.list_schema(core_schema.list_schema(core_schema.str_schema())),
             python_schema=core_schema.no_info_plain_validator_function(cls, json_schema_input_schema=python_schema),
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda x: list(x), when_used="json"),
         )
 
     def __init__(self, uris: URI | Iterable[URI] = ()) -> None:
