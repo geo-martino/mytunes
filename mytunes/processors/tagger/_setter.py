@@ -6,7 +6,7 @@ from typing import Any, Union, final, Annotated, Literal, Self
 from pydantic import Field, PositiveInt, BeforeValidator, PrivateAttr, model_validator
 from typing_inspection.typing_objects import is_typevar
 
-from mytunes.exception import MyTunesValueError
+from mytunes.exception import MyTunesValueError, MyTunesAttributeError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, AggregateValue, HasCondition
@@ -66,6 +66,17 @@ class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass
         """Sets the configured tag to the item. Returns True if the tag was set."""
         raise NotImplementedError
 
+    @classmethod
+    def _set_attribute(cls, item: IT, field: str, value: Any):
+        try:
+            setattr(item, field, value)
+        except MyTunesAttributeError:
+            # handle cases where model can be set by a single value e.g. HasName
+            parent_field = ".".join(field.split(".")[:-1])
+            if parent_field == field:
+                raise
+            cls._set_attribute(item, field, value)
+
     def set_context(self, items: Iterable[IT] = ()) -> None:
         """
         Set the collection of items which contain all items to be set.
@@ -90,7 +101,7 @@ class ValueSetter[IT: AttributeModel, VT: Any](Setter[Literal["value"], IT, VT])
         if getattr(item, self.field) == value:
             return False
 
-        setattr(item, self.field, value)
+        self._set_attribute(item, self.field, value)
         return True
 
 
@@ -134,7 +145,7 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
         if getattr(item, self.field) == value:
             return False
 
-        setattr(item, self.field, value)
+        self._set_attribute(item, self.field, value)
         return True
 
     def set_context(self, items: Iterable[IT] = ()) -> None:
