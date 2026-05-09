@@ -97,7 +97,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
         self._log_debug(f"Getting user input for {len(missing)} items")
         self._print_help_text(header=self._get_header(len(missing)))
 
-        initial = [it.model_copy() for it in missing]
+        initial = [it.model_copy(deep=True) for it in missing]
         formatter = self._configure_formatter_for_items(missing)
         option = None
 
