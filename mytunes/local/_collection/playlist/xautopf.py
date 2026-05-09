@@ -190,9 +190,8 @@ class XAutoPF(LocalPlaylist[AutoMatcher]):
         if not tracks:
             return None
 
-        with suppress(MyTunesValueError):
-            ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
-            return tracks[0]
+        ItemSorter.sort_by_field(tracks, field="last_played_at", reverse=True)
+        return tracks[0]
 
     async def load(self, tracks: Collection[LocalTrack] = ()) -> LoadPlaylistResult:
         """
