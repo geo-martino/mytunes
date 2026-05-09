@@ -228,7 +228,7 @@ class Comparer(DynamicProcessor):
         else:
             value = item
 
-        if isinstance(value, HasName):
+        if isinstance(value, HasName) and value.name:
             value = value.name
 
         return value

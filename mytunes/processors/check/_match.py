@@ -110,7 +110,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
     @classmethod
     def _configure_formatter_for_items(cls, items: Iterable) -> LogFormatter:
         width = min(
-            max(len(item.name) if isinstance(item, HasName) else 0 for item in items),
+            max(len(item.name) if isinstance(item, HasName) and item.name else 0 for item in items),
             cls.input_formatter.max_width or sys.maxsize,
         )
         kwargs = vars(cls.input_formatter)

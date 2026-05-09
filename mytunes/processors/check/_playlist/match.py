@@ -209,7 +209,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
     async def _match_item_with_input(
             self, item: IT, others: Sequence[IT], option: str | None, formatter: LogFormatter
     ) -> str | None:
-        name = item.name if isinstance(item, HasName) else str(id(item))
+        name = item.name if isinstance(item, HasName) and item.name else str(id(item))
         input_requested = option is None
 
         while option or (option := self._get_user_input(name, formatter=formatter)):

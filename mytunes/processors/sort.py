@@ -134,7 +134,7 @@ class ItemSorter(Processor):
             case str() | HasName():  # key gets name and strips ignore words from string
                 def _sort_key(item: ResourceModel) -> tuple[bool, str]:
                     if (val := getattr(item, field)) is not None and isinstance(val, HasName):
-                        val = val.name
+                        val = val.name or ""
 
                     special_start = cls._special_start(val)
                     val = cls._strip_words(val, words=ignore_words).casefold()
@@ -202,7 +202,7 @@ class ItemSorter(Processor):
             match val:
                 case str() | HasName():
                     if isinstance(val, HasName):
-                        val = val.name
+                        val = val.name or ""
                     if ignore_words:
                         val = cls._strip_words(val, words=ignore_words, strip_special_chars=False)
                     val = val.casefold()

@@ -687,7 +687,7 @@ class HasLocalTracks[TT: LocalTrack](HasMutableTracks[TT], HasLogger, HasProgres
             case ResourceModel() as resource if isinstance(resource.type, str):
                 message += f" in {resource.type}"
 
-        if isinstance(self, HasName):
+        if isinstance(self, HasName) and self.name:
             message += f": {self.name!r}"
 
         self._logger.info(message, header=2)

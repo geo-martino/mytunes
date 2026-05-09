@@ -144,7 +144,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
     async def _setup_playlist(self, collection: CollectionModel) -> RemoteMutablePlaylist | None:
         api: PlaylistReadWriteEndpoints = self.api.playlists
         api_library: PlaylistLibraryEndpoints = self.api.playlists.library
-        name = collection.name if isinstance(collection, HasName) else str(id(collection))
+        name = collection.name if isinstance(collection, HasName) and collection.name else str(id(collection))
 
         async with self.concurrency:
             props = self.additional_properties

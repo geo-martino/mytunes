@@ -81,7 +81,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
             option = None
 
     def _log_match(self, item: IT, formatter: LogFormatter) -> str:
-        name = item.name if isinstance(item, HasName) else str(id(item))
+        name = item.name if isinstance(item, HasName) and item.name else str(id(item))
         sep = colored(" | ", "white", attrs=["bold"])
 
         if item.has_uri and isinstance(uri := item.uri, URI):

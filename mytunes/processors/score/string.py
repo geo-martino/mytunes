@@ -91,7 +91,7 @@ class KaraokeScorer(StringScorer[Literal["karaoke"], NameCleaner]):
 
     def score[T: HasName](self, item: T, other: T | None = None) -> Number:
         scores = [
-            self._calculate_score(item, item) if isinstance(item, HasName) else False,
+            self._calculate_score(item, item.name) if isinstance(item, HasName) else False,
             self._calculate_score(item, item.artist) if isinstance(item, HasArtists) else False,
             self._calculate_score(item, item.album) if isinstance(item, HasAlbum) else False,
         ]

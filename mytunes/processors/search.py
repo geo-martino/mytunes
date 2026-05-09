@@ -376,7 +376,7 @@ class CollectionSearcher[API: _ApiT](Searcher[API]):
     async def _search_collection[T: ResourceModel](
             self, collection: CollectionModel[T]
     ) -> SearchResult[T, Any]:
-        name = collection.name if isinstance(collection, HasName) else str(id(collection))
+        name = collection.name if isinstance(collection, HasName) and collection.name else str(id(collection))
 
         if self._should_search_on_items_only(collection):
             return await self._search_items(collection.items, name=name)
