@@ -75,7 +75,7 @@ class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass
             parent_field = ".".join(field.split(".")[:-1])
             if parent_field == field:
                 raise
-            cls._set_attribute(item, field, value)
+            cls._set_attribute(item, parent_field, value)
 
     def set_context(self, items: Iterable[IT] = ()) -> None:
         """
