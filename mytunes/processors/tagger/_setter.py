@@ -9,9 +9,8 @@ from typing_inspection.typing_objects import is_typevar
 from mytunes.exception import MyTunesValueError, MyTunesAttributeError
 from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
-from mytunes.processors.tagger.values import Value, AggregateValue, HasCondition
+from mytunes.processors.tagger.values import Value, AggregateValue, HasCondition, FixedValue
 from mytunes.processors.tagger.values import from_fixed_value
-from . import FixedValue
 from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel
