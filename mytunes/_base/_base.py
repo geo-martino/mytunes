@@ -1,4 +1,5 @@
 import inspect
+from collections.abc import Mapping
 from typing import Any, cast, get_origin, Union, Self
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
@@ -158,6 +159,8 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
     @classmethod
     def _set_computed_fields(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
         model: Self = handler(data)
+        if not isinstance(data, dict):
+            return model
 
         for field_name in cls.model_computed_fields.keys():
             if getattr(getattr(cls, field_name), "fset", None) is None:

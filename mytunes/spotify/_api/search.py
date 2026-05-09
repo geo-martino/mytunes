@@ -60,8 +60,7 @@ class SpotifySearchEndpoints(
             case Album() as album if album.artists:
                 query = f"album:{self._get_name(album)} artist:{self._get_name(album.artists[0])}"
             case Album() as album:
-                query = f"album:{self._get_name(album)} artist:Beck"
-                # query = self._get_name(album)
+                query = self._get_name(album)
             case Artist() as artist:
                 query = self._get_name(artist)
             case Playlist() as playlist:
