@@ -134,10 +134,12 @@ class ItemSorter(Processor):
             case str() | HasName():  # key gets name and strips ignore words from string
                 def _sort_key(item: ResourceModel) -> tuple[bool, str]:
                     if (val := getattr(item, field)) is not None and isinstance(val, HasName):
-                        val = val.name or ""
+                        val = val.name
+                    if not val:
+                        return False, ""
 
                     special_start = cls._special_start(val)
-                    val = cls._strip_words(val, words=ignore_words).casefold()
+                    val = cls._strip_words(val, words=ignore_words)
 
                     return not special_start, val.casefold()
             case datetime():  # key converts datetime to floats
