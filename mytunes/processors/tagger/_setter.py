@@ -11,6 +11,7 @@ from mytunes.processors.sort import ItemSorter
 from mytunes.processors.tagger._types import _WRITEABLE_ATTRIBUTE_FIELD_TYPE, get_writeable_tag_attributes_type
 from mytunes.processors.tagger.values import Value, AggregateValue, HasCondition
 from mytunes.processors.tagger.values import from_fixed_value
+from . import FixedValue
 from .._types import _ATTRIBUTE_FIELD_TYPE
 from ..._base import BaseModel
 from ..._base.attribute import AttributeModel
@@ -38,7 +39,6 @@ class SetterMetaclass(DiscriminatorMetaclass):
         return get_writeable_tag_attributes_type(generic)
 
 
-# noinspection PyAbstractClass
 class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass=SetterMetaclass):
     """Sets tags on items according to some rules."""
     operation: Annotated[OT, DiscriminatorAttribute()] = Field(
@@ -61,10 +61,18 @@ class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass
         """Get the value for the given item."""
         return self.value.get(self._items) if isinstance(self.value, AggregateValue) else self.value.get(item)
 
-    @abstractmethod
     def set(self, item: IT) -> bool:
         """Sets the configured tag to the item. Returns True if the tag was set."""
-        raise NotImplementedError
+        value = self.get(item)
+
+        # skip if not forcing value to be none with fixed value
+        if value is None and not isinstance(self.value, FixedValue):
+            return False
+        if getattr(item, self.field) == value:
+            return False
+
+        self._set_attribute(item, self.field, value)
+        return True
 
     @classmethod
     def _set_attribute(cls, item: IT, field: str, value: Any):
@@ -92,17 +100,6 @@ class Setter[OT: str, IT: AttributeModel, VT: Any](DiscriminatorModel, metaclass
 @final
 class ValueSetter[IT: AttributeModel, VT: Any](Setter[Literal["value"], IT, VT]):
     __final__ = True
-
-    def set(self, item: IT) -> bool:
-        value = self.get(item)
-
-        if value is None:
-            return False
-        if getattr(item, self.field) == value:
-            return False
-
-        self._set_attribute(item, self.field, value)
-        return True
 
 
 class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
@@ -136,17 +133,6 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
             raise MyTunesValueError("Given item must be present in the currently set items.")
 
         return group
-
-    def set(self, item: IT) -> bool:
-        value = self.get(item)
-
-        if value is None:
-            return False
-        if getattr(item, self.field) == value:
-            return False
-
-        self._set_attribute(item, self.field, value)
-        return True
 
     def set_context(self, items: Iterable[IT] = ()) -> None:
         super().set_context(items)
