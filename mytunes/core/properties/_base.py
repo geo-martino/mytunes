@@ -13,6 +13,9 @@ from ..._base import RootModel
 class NumberModel[T: Number](RootModel[T]):
     model_config = ConfigDict(frozen=True)
 
+    def __str__(self):
+        return str(self.root)
+
     def __int__(self):
         return int(self.root)
 
