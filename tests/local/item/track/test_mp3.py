@@ -114,7 +114,7 @@ class TestMP3(LocalTrackTester):
         assert MP3._deserialize_text_frame(data) == expected
 
     def test_deserialize_rating_frame(self, faker: Faker):
-        rating = mutagen.id3.POPM(email=faker.email(), rating=str(faker.random_int(1, 5)), count=1)
+        rating = mutagen.id3.POPM(email=faker.email(), rating=faker.random_int(1, 5), count=1)
         assert MP3._deserialize_rating_frame(rating) == rating.rating
 
     def test_serialize_text_frame_from_string(self, model: MP3, faker: Faker):

@@ -163,7 +163,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         return data
 
     @field_serializer(
-        "key", "bpm", "released_at",
+        "key", "bpm", "rating", "released_at",
         mode="wrap", when_used="unless-none",
     )
     def _serialize_string(self, value: Any, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> str:
