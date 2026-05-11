@@ -2,12 +2,10 @@ from abc import abstractmethod
 from collections.abc import Collection, Iterator
 from typing import TYPE_CHECKING
 
-from pydantic import computed_field
-
 from mytunes.core.cursors import PageCursor, HasPageCursor, InitialCursor
+from mytunes.core.properties.length import HasTotal
 from mytunes.core.properties.uri import URI
 from mytunes.core.remote import RemoteResource
-from mytunes.core.properties.length import HasTotal
 from ..._base.resource import ResourceModel
 
 if TYPE_CHECKING:

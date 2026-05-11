@@ -5,12 +5,12 @@ from pydantic import Field, field_validator
 from mytunes.core.api import RemoteAPI, HasAPI, Endpoints
 from mytunes.core.api.user import HasUserEndpoints
 from mytunes.core.properties.asynch import HasAsyncOperations
+from mytunes.core.properties.length import HasTotal
 from mytunes.core.properties.uri import HasURI
 from mytunes.core.user import RemoteUser
 from mytunes.exception import MyTunesValidationError
 from mytunes.processors import PageProcessor
 from ..._base.resource import ResourceModel
-from mytunes.core.properties.length import HasTotal
 
 
 # noinspection PyAbstractClass

@@ -2,20 +2,18 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections import Counter
-from collections.abc import Collection, MutableSet, Iterable
-from copy import copy
+from collections.abc import MutableSet, Iterable
 from functools import total_ordering, cached_property
 from typing import ClassVar, Self, Annotated, TYPE_CHECKING, Union, Any
 
 from pydantic import PrivateAttr, computed_field, model_validator, field_validator, Field, TypeAdapter, ConfigDict, \
-    validate_call, GetCoreSchemaHandler, GetJsonSchemaHandler
-from pydantic.json_schema import JsonSchemaValue
+    validate_call, GetCoreSchemaHandler
 from pydantic_core import core_schema
 from pydantic_core.core_schema import ValidationInfo, CoreSchema
 from yarl import URL
 
-from mytunes._types import StrippedString, TO_SET, HttpURL, to_set
-from mytunes.exception import MyTunesTypeError, MyTunesValidationError, MyTunesValueError, MyTunesKeyError
+from mytunes._types import StrippedString, HttpURL, to_set
+from mytunes.exception import MyTunesTypeError, MyTunesValidationError, MyTunesKeyError
 from ..._base import RootModel, make_cls
 from ..._base.attribute import AttributeModel, Attribute
 from ..._base.resource import ResourceModel, UniqueAttribute

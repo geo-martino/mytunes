@@ -5,7 +5,7 @@ import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    NonNegativeFloat, ConfigDict, field_validator
+    NonNegativeFloat, ConfigDict
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from mytunes._types import get_base_types, DEFAULT_IF_NONE
@@ -123,7 +123,9 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
 
     @model_validator(mode="before")
     @classmethod
-    def _merge_position_values[T](cls, data: T | MutableMapping[str, Any]) -> T | MutableMapping[str, Any]:
+    def _merge_position_values[T](
+            cls, data: T | mutagen.flac.FLAC | MutableMapping[str, Any]
+    ) -> T | MutableMapping[str, Any]:
         if not isinstance(data, MutableMapping):
             return data
 

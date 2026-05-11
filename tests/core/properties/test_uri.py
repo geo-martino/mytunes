@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from mytunes._base.resource import ResourceModel
 from mytunes.core._context import RemoteModelContext
 from mytunes.core.properties.uri import URI, HasMutableURI, HasImmutableURI, UniqueURIs
-from mytunes.exception import MyTunesTypeError, MyTunesValueError, MyTunesKeyError, MyTunesValidationError
+from mytunes.exception import MyTunesTypeError, MyTunesKeyError, MyTunesValidationError
 from tests.remote import SimpleURI, URI_TYPES
 from tests.testers import BaseModelTester, UniqueKeyTester
 

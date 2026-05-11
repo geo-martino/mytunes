@@ -5,7 +5,7 @@ from abc import abstractmethod
 from datetime import timedelta
 from functools import reduce, total_ordering
 from operator import mul
-from typing import Annotated, Self, TYPE_CHECKING
+from typing import Annotated, Self
 
 from pydantic import NonNegativeInt, NonNegativeFloat, field_validator, Field, model_validator, PositiveInt
 

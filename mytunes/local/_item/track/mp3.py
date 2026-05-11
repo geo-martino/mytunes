@@ -167,8 +167,6 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     @model_validator(mode="before")
     @classmethod
     def _merge_suffixed_tags[T](cls, data: T | mutagen.mp3.MP3 | MutableMapping[str, Any]) -> T | dict[str, Any]:
-        # WORKAROUND: seems this validator gets called before _from_mutagen, manually get tags here
-        data = cls._extract_tags_from_mutagen(data) if isinstance(data, mutagen.mp3.MP3) else data
         if not isinstance(data, MutableMapping):
             return data
 

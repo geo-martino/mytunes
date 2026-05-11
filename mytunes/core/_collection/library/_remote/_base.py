@@ -21,10 +21,9 @@ from mytunes.result import Result
 from ...._item.album import RemoteAlbum, HasAlbums
 from ...._item.artist import RemoteArtist, HasArtists
 from ...._item.genre import RemoteGenre, HasGenres
-from ...._item.track import RemoteTrack, Track
+from ...._item.track import RemoteTrack
 from ...._item.user import RemoteUser
 from ....api._base import validate_api
-from ....sequence import UniqueSequence
 from ....._base.attribute import Attribute
 
 

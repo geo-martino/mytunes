@@ -1,5 +1,4 @@
 import inspect
-from collections.abc import Mapping
 from typing import Any, cast, get_origin, Union, Self
 
 from pydantic import BaseModel as PydanticBaseModel, RootModel as PydanticRootModel, \
@@ -210,7 +209,7 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
         if field is None:
             field = cls.model_computed_fields.get(field_name)
         if field is None:
-            return
+            return None
 
         if field.alias is not None and field.alias in data:
             return data[field.alias]
@@ -235,6 +234,7 @@ class BaseModel(PydanticBaseModel, metaclass=ModelMetaclass):
 
         if isinstance(field, FieldInfo) and not field.is_required():
             return field.get_default(call_default_factory=True, validated_data=data)
+        return None
 
 
 class RootModel[T](PydanticRootModel[T], metaclass=ModelMetaclass):

@@ -9,7 +9,6 @@ from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, validat
 from termcolor import colored
 
 from mytunes._types import DEFAULT_IF_NONE
-from mytunes.core._item.album import Album
 from mytunes.core.library import MutableLibrary
 from mytunes.core.properties.path import PathMapper, SystemPath, SystemPaths, PathModelMapper
 from mytunes.exception import MyTunesError, MyTunesValueError

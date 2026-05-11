@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 from faker import Faker
 
-from mytunes._base import BaseModel
 from mytunes.core.properties.path import PathParentMapper
 from mytunes.local._collection.library import LocalLibrary
 from mytunes.local._collection.library.musicbee import MusicBee

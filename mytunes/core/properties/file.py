@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Annotated, Self, Union, cast
 
 import mutagen
-from pydantic import Field, model_validator, Tag, Discriminator
+from pydantic import Field, model_validator, Tag, Discriminator, ModelWrapValidatorHandler
 
 from mytunes.exception import MyTunesTypeError
 from ..._base import BaseModel
@@ -115,12 +115,16 @@ class IsLocalFile(IsFile, metaclass=LocalFileMetaclass):
             return data
         return dict(path=Path(data))
 
-    @model_validator(mode="before")
+    # Needs to be a wrap validator to ensure it gets executed before all other validators
+    @model_validator(mode="wrap")
     @classmethod
-    def _from_mutagen[T](cls, data: T | mutagen.FileType) -> T | dict[str, Any]:
+    def _from_mutagen[T](
+            cls, data: T | mutagen.FileType, handler: ModelWrapValidatorHandler[Self]
+    ) -> T | dict[str, Any]:
         if not isinstance(data, mutagen.FileType):
-            return data
-        return cls._extract_tags_from_mutagen(data)
+            return handler(data)
+        data = cls._extract_tags_from_mutagen(data)
+        return handler(data)
 
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.FileType) -> dict[str, Any]:

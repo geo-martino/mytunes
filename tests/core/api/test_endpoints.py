@@ -14,7 +14,6 @@ from pydantic import AliasPath, TypeAdapter, AliasChoices
 from pytest_mock import MockerFixture
 from yarl import URL
 
-from mytunes.annotation import RemoteGenre
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.playlist import RemotePlaylist
 from mytunes.core._context import RemoteModelContext

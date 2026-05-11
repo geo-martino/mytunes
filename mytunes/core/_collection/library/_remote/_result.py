@@ -5,7 +5,7 @@ from pydantic import Field, computed_field
 
 from mytunes._types import TO_TUPLE
 from mytunes.core._collection.album import AlbumCollection, RemoteAlbumCollection
-from mytunes.core._collection.artist import RemoteArtistCollection, ArtistCollection
+from mytunes.core._collection.artist import RemoteArtistCollection
 from mytunes.core._collection.playlist import Playlist, RemotePlaylist, RemoteMutablePlaylist
 from mytunes.result import CountResult, TotalCountResult, LenLogFormatter, MapLogFormatter, LogFormatter, NamedResult
 from ...._item.album import RemoteAlbum
