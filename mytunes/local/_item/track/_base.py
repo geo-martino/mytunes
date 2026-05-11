@@ -297,6 +297,13 @@ class LocalTrack[FT: FileType](
             return value
         return list(itertools.chain.from_iterable(map(cls._separate_tags, value)))
 
+    @field_validator("artists", "genres", "comments", mode="before", check_fields=True)
+    @classmethod
+    def _drop_empty_values[T: Sequence[str]](cls, value: T) -> T | list[str]:
+        if not isinstance(value, ItemSequence) or not all(isinstance(v, str) for v in value):
+            return value
+        return list(filter(lambda x: len(x) > 0, value))
+
     def _join_split_tags(self, value: Iterable[Any]) -> str:
         # noinspection PyTypeChecker
         values = (self._serialize_name(val, lambda x: x, None) for val in value)

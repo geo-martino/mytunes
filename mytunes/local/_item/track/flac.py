@@ -5,7 +5,7 @@ import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    NonNegativeFloat, ConfigDict
+    NonNegativeFloat, ConfigDict, field_validator
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from mytunes._types import get_base_types, DEFAULT_IF_NONE
