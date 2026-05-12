@@ -8,13 +8,14 @@ import sys
 from collections.abc import Iterable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Annotated
+from typing import Any, Annotated, Optional, Union
 
 from pydantic import Field, validate_call
-from rich.console import Console
+from rich.console import Console as RichConsole, JustifyMethod, OverflowMethod
 from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 from rich.prompt import Prompt
+from rich.style import Style
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
@@ -33,6 +34,18 @@ logging.STAT = STAT
 
 # WORKAROUND: Needed to ensure ANSI codes log as expected by default
 RichHandler.HIGHLIGHTER_CLASS = NullHighlighter
+
+
+class Console(RichConsole):
+    # override print default to ensure ANSI coloured message print with full width
+    def print(
+        self,
+        *objects: Any,
+        overflow: Optional[OverflowMethod] = "ignore",
+        crop: bool = False,
+        **kwargs
+    ) -> None:
+        super().print(*objects, overflow=overflow, crop=crop, **kwargs)
 
 
 class Logger(logging.Logger):
@@ -159,9 +172,7 @@ class Logger(logging.Logger):
         """
         message = self.generate_message(sep.join(values), header=header)
         if not values or not self._will_log_to_stdout(logging.DEBUG):
-            self.console.print(
-                message, sep=sep, new_line_start=not self.compact, overflow="ignore", crop=False, **kwargs
-            )
+            self.console.print(message, sep=sep, new_line_start=not self.compact, **kwargs)
         elif message:
             self.debug(message)
 
