@@ -92,9 +92,11 @@ class HasAlbum[AT: Album](AttributeModel):
         return self.album.compilation if self.album is not None else None
 
     @compilation.setter
-    def compilation(self, value: bool | None) -> None:
+    def compilation(self, value: str | bool | None) -> None:
         if self.album is None:
             return
+        if isinstance(value, str) and value.isdigit():
+            value = int(value)  # int("0") -> bool(0) -> False instead of bool("0") -> True
         self.album.compilation = value
 
 

@@ -197,10 +197,10 @@ class LocalTrack[FT: FileType](
     ###########################################################################
     @classmethod
     @validate_call
-    async def from_path(cls, path: str | Path) -> Self:
+    async def from_path(cls, path: str | Path, context: TagContext = TagContext()) -> Self:
         file = await cls.load_file(path)
         # some subclasses need to access the file obj on construction so just pass the file obj
-        return cls.model_validate(file)
+        return cls.model_validate(file, context=context)
 
     @classmethod
     @validate_call
@@ -487,9 +487,9 @@ class LocalTrack[FT: FileType](
             file = await self.load_file(self.path)
         return file
 
-    async def load(self, file: FT = None) -> FT:
+    async def load(self, file: FT = None, context: TagContext = TagContext()) -> FT:
         file = await self._check_and_load_file(file=file)
-        model = self.model_validate(file)
+        model = self.model_validate(file, context=context)
         self.__dict__ = model.__dict__
         return file
 
