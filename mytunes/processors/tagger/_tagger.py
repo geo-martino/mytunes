@@ -52,13 +52,13 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
                 is_set = setter.set(item)
                 self._progress.advance(task_id)
 
-                if not is_set:
-                    continue
-
                 result = next((result for result in results if result.item is item), None)
                 if result is None:
                     result = TaggerResult(item=item)
                     results.append(result)
+
+                if not is_set:
+                    continue
 
                 result.__dict__["tags"] = dict(result.tags) | {setter.field: getattr(item, setter.field)}
 
