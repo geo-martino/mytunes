@@ -108,7 +108,7 @@ class HasProgress(AbstractContextManager, AbstractAsyncContextManager):
         """
         async with asyncio.TaskGroup() as tg:
             tasks = [tg.create_task(self._wrap_task_async(task, task_id=task_id)) for task in tasks]
-            result = await asyncio.gather(*tasks)
+            result = await asyncio.gather(*tasks, return_exceptions=True)
             result = list(filter(lambda x: x is not None, result))
 
         if remove and task_id in self._progress.task_ids:
