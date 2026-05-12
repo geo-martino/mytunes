@@ -144,7 +144,7 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
         data = super()._extract_tags_from_mutagen(file)
-        data |= dict(images=file.pictures, track=file.tags, disc=file.tags)
+        data |= dict(images=file.pictures, track=dict(file), disc=dict(file))
         data.pop("source", None)  # clashes with HasMutableURI field
         return data
 

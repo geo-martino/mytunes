@@ -210,7 +210,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.asf.ASF) -> dict[str, Any]:
         data = super()._extract_tags_from_mutagen(file)
-        data |= dict(track=file.tags)
+        data |= dict(track=dict(file))
         return data
 
     @field_validator(

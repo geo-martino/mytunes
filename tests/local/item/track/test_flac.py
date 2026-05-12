@@ -109,8 +109,8 @@ class TestFLAC(LocalTrackTester):
             audio=file,
             length=file.info.length,
             images=file.pictures,
-            track=file.tags,
-            disc=file.tags,
+            track=dict(file),
+            disc=dict(file),
         )
 
     def test_format_to_tags(self, model: FLAC, uri: URI, faker: Faker):
