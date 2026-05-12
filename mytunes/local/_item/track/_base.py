@@ -85,19 +85,20 @@ class _SeparatedPosition(Position):
         return data
 
     @field_validator("number", "total", mode="before", check_fields=True)
+    @classmethod
+    def _split_string[T](cls, value: T | str, info: FieldValidationInfo) -> T | dict[str, Any]:
+        if not isinstance(value, str) or cls.sep not in value:
+            return value
+        # noinspection PyCallingNonCallable
+        return cls._from_string(value)[info.field_name]
+
+    @field_validator("number", "total", mode="before", check_fields=True)
     @staticmethod
     def _extract_first_value_from_sequence[T](value: Sequence[T]) -> T:
         if isinstance(value, ItemSequence) and len(value) == 1:
             value = value[0]
         return value
 
-    @field_validator("number", "total", mode="before")
-    @classmethod
-    def _split_string[T](cls, value: T | str, info: FieldValidationInfo) -> T | dict[str, Any]:
-        if not isinstance(value, str):
-            return value
-        # noinspection PyCallingNonCallable
-        return cls._from_string(value)[info.field_name]
 
 # noinspection PyAbstractClass
 class LocalTrack[FT: FileType](
