@@ -17,7 +17,8 @@ from pydantic import field_validator, model_validator, validate_call, AliasChoic
     field_serializer, BeforeValidator, TypeAdapter, ValidationError
 # noinspection PyProtectedMember
 from pydantic.fields import Field, FieldInfo, ComputedFieldInfo
-from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler
+from pydantic_core.core_schema import FieldSerializationInfo, ValidationInfo, SerializerFunctionWrapHandler, \
+    FieldValidationInfo
 
 from mytunes._types import StrippedString, to_list
 from mytunes.core.library import Library
@@ -76,6 +77,13 @@ class _SeparatedPosition(Position):
 
     We will need validate the original set of file tags to extract the number and total as expected.
     """
+    @model_validator(mode="before")
+    @classmethod
+    def _from_position[T](cls, data: T | Position) -> T | dict[str, Any]:
+        if type(data) is Position:  # allow assigning values from parent class
+            data = data.model_dump()
+        return data
+
     @field_validator("number", "total", mode="before", check_fields=True)
     @staticmethod
     def _extract_first_value_from_sequence[T](value: Sequence[T]) -> T:
@@ -83,12 +91,13 @@ class _SeparatedPosition(Position):
             value = value[0]
         return value
 
-    @model_validator(mode="before")
+    @field_validator("number", "total", mode="before")
     @classmethod
-    def _from_position[T](cls, data: T | Position) -> T | dict[str, Any]:
-        if type(data) is Position:  # allow assigning values from parent class
-            data = data.model_dump()
-        return data
+    def _split_string[T](cls, value: T | str, info: FieldValidationInfo) -> T | dict[str, Any]:
+        if not isinstance(value, str):
+            return value
+        # noinspection PyCallingNonCallable
+        return cls._from_string(value)[info.field_name]
 
 # noinspection PyAbstractClass
 class LocalTrack[FT: FileType](
