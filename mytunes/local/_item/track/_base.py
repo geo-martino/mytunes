@@ -70,6 +70,26 @@ class LocalAudioFile(IsReadableFile, IsWriteableFile, IsLocalFile, HasAudioPrope
         return data
 
 
+class _SeparatedPosition(Position):
+    """
+    Model for position tags which may be separated across multiple tags.
+
+    We will need validate the original set of file tags to extract the number and total as expected.
+    """
+    @field_validator("number", "total", mode="before", check_fields=True)
+    @staticmethod
+    def _extract_first_value_from_sequence[T](value: Sequence[T]) -> T:
+        if isinstance(value, ItemSequence) and len(value) == 1:
+            value = value[0]
+        return value
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_position[T](cls, data: T | Position) -> T | dict[str, Any]:
+        if type(data) is Position:  # allow assigning values from parent class
+            data = data.model_dump()
+        return data
+
 # noinspection PyAbstractClass
 class LocalTrack[FT: FileType](
     LocalModel,
@@ -337,13 +357,12 @@ class LocalTrack[FT: FileType](
         return values
 
     @staticmethod
-    def _serialize_position_tags(value: Position, field: FieldInfo) -> str | dict[str, str]:
-        if not isinstance(field.validation_alias, AliasChoices):
+    def _serialize_position_tags(value: Position, info: FieldSerializationInfo) -> str | dict[str, str]:
+        if type(value) is Position:  # only apply custom serialisation to subclasses
             return str(value)
 
-        aliases = [al for al in field.validation_alias.choices if isinstance(al, str)]
-        data = dict(zip(aliases, (value.number, value.total)))
-        return {k: str(v).zfill(value.zero_fill) for k, v in data.items() if v is not None}
+        dump = value.model_dump(include={"number", "total"}, mode=info.mode, by_alias=info.by_alias)
+        return {k: str(v).zfill(value.zero_fill) for k, v in dump.items() if v is not None}
 
     @staticmethod
     def _flatten_dump(data: MutableMapping[str, Any]) -> None:

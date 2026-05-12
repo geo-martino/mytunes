@@ -18,7 +18,7 @@ from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import URI
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import TagContext
-from mytunes.local._item.track.wma import WMA
+from mytunes.local._item.track.wma import WMA, WMATrackPosition
 from tests.local.item.track.testers import LocalTrackEmbeddedImageTester, LocalTrackTester
 from tests.testers import assert_validator_skips
 
@@ -128,18 +128,18 @@ class TestWMA(LocalTrackTester):
     def test_serialize_position_tags(self, model: WMA):
         info = Namespace(field_name="track", by_alias=True, context=None, mode="python")
 
-        position = Position(number=1, total=2, zero_fill=3)
-        expected = {"WM/TrackNumber": "001", "TotalTracks": "002"}
+        position = WMATrackPosition(number=1, total=2, zero_fill=3)
+        expected = {"WM/TrackNumber": "001", "WM/TrackTotal": "002"}
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
-        position = Position(number=1, zero_fill=2)
+        position = WMATrackPosition(number=1, zero_fill=2)
         expected = {"WM/TrackNumber": "01"}
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
-        position = Position(total=3, zero_fill=2)
-        expected = {"TotalTracks": "03"}
+        position = WMATrackPosition(total=3, zero_fill=2)
+        expected = {"WM/TrackTotal": "03"}
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
@@ -189,7 +189,9 @@ class TestWMA(LocalTrackTester):
                 ASFUnicodeAttribute("Metal" + sep + "Rock"),
                 ASFUnicodeAttribute("Thrash Metal")
             ],
-            choice(("WM/TrackNumber", "TotalTracks")): [ASFUnicodeAttribute("04")],
+            "track": {
+                choice(("WM/TrackNumber", "WM/Track")): [ASFUnicodeAttribute("04")],
+            },
             "WM/PartOfSet": [ASFUnicodeAttribute("1/2")],
             "WM/BeatsPerMinute": [ASFUnicodeAttribute("124.931")],
             "WM/InitialKey": [ASFUnicodeAttribute("B")],

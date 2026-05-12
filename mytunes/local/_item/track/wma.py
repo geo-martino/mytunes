@@ -6,7 +6,7 @@ import mutagen.asf
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, PositiveFloat, field_validator, field_serializer, model_serializer, \
-    InstanceOf, computed_field
+    InstanceOf, computed_field, PositiveInt
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from mytunes._types import StrippedString, DEFAULT_IF_NONE
@@ -20,8 +20,35 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from mytunes.local._item.track._types import ItemSequence
+from ._base import _SeparatedPosition
 from ...._base.attribute import TagAttribute
 from ....core.sequence import MutableUniqueSequence
+
+
+class WMATrackPosition(_SeparatedPosition):
+    number: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The track index position on the album.",
+        default=None,
+        validation_alias=AliasChoices("WM/TrackNumber", "WM/Track"),
+        serialization_alias="WM/TrackNumber",
+    )
+    total: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The total number of tracks on the album.",
+        default=None,
+        validation_alias=AliasChoices("WM/TrackTotal", "TotalTracks"),
+        serialization_alias="WM/TrackTotal",
+    )
+
+    @field_validator("number", "total", mode="before", check_fields=True)
+    @classmethod
+    def _deserialize_unicode_attribute[T](cls, value: T) -> T | str:
+        # parent class validators always execute after child class validators
+        # need to manually call required upstream parent validators here
+        value = cls._extract_first_value_from_sequence(value)
+        if not isinstance(value, mutagen.asf.ASFUnicodeAttribute):
+            return value
+
+        return value.value
 
 
 @final
@@ -113,10 +140,9 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         default_factory=list,
         alias="WM/Genre"
     )
-    track: Annotated[Position | None, TagAttribute()] = Field(
+    track: Annotated[WMATrackPosition | None, TagAttribute()] = Field(
         description="The position of the track on the album that this track is featured on.",
         default=None,
-        validation_alias=AliasChoices("WM/TrackNumber", "TotalTracks"),
     )
     disc: Annotated[Position | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
@@ -181,8 +207,14 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         value = self._deserialize_unicode_attribute(value)
         super(type(self), type(self)).compilation.fset(self, value)
 
+    @classmethod
+    def _extract_tags_from_mutagen(cls, file: mutagen.asf.ASF) -> dict[str, Any]:
+        data = super()._extract_tags_from_mutagen(file)
+        data |= dict(track=file.tags)
+        return data
+
     @field_validator(
-        "name", "album", "track", "disc", "bpm", "key", "released_at", "uri",
+        "name", "album", "disc", "bpm", "key", "released_at", "uri",
         mode="before"
     )
     @classmethod
@@ -266,8 +298,7 @@ class WMA(LocalTrack[mutagen.asf.ASF]):
         if not info.by_alias or not isinstance(value, Position):
             return handler(value)
 
-        field = type(self).model_fields[info.field_name]
-        tags = super()._serialize_position_tags(value, field=field)
+        tags = super()._serialize_position_tags(value, info=info)
         if not isinstance(tags, Mapping):
             return tags
 

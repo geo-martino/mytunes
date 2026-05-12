@@ -18,7 +18,7 @@ from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import URI
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import TagContext
-from mytunes.local._item.track.flac import FLAC
+from mytunes.local._item.track.flac import FLAC, FLACDiscPosition
 from tests.local.item.track.testers import LocalTrackTester, LocalTrackEmbeddedImageTester
 
 
@@ -104,56 +104,14 @@ class TestFLAC(LocalTrackTester):
         assert file.pictures
 
         result = FLAC._extract_tags_from_mutagen(file)
-        assert result == tags | dict(path=file.filename, audio=file, length=file.info.length, images=file.pictures)
-
-    # noinspection PyCallingNonCallable
-    def test_merge_position_values_skips(self):
-        tags = {
-            "title": ["Sleepwalk My Life Away"],
-            "artist": ["Metallica"],
-            "album": ["72 Seasons"],
-            "albumartist": ["Metallica"],
-        }
-        result = FLAC._merge_position_values(tags)
-
-        assert "track" not in result
-        assert "disc" not in result
-
-    # noinspection PyCallingNonCallable
-    def test_merge_position_values(self):
-        tags = {
-            "title": ["Sleepwalk My Life Away"],
-            "artist": ["Metallica"],
-            "album": ["72 Seasons"],
-            "albumartist": ["Metallica"],
-            "track": 3,
-            "tracknumber": 5,
-            "tracktotal": 10,
-            "discnumber": 2,
-            "disctotal": 5,
-        }
-        result = FLAC._merge_position_values(tags)
-
-        assert result["track"] == ("3", "10")
-        assert result["disc"] == ("2", "5")
-
-    # noinspection PyCallingNonCallable
-    def test_merge_position_values_splits_appropriately(self):
-        tags = {
-            "title": ["Sleepwalk My Life Away"],
-            "artist": ["Metallica"],
-            "album": ["72 Seasons"],
-            "albumartist": ["Metallica"],
-            "track": ["3/5"],
-            "tracktotal": ["10/20"],
-            "discnumber": 2,
-            "disctotal": ["5/15"],
-            "path": "/music/Metallica/72 Seasons/04 Sleepwalk My Life Away.flac",
-        }
-        result = FLAC._merge_position_values(tags)
-
-        assert result["track"] == ("3", "20")
-        assert result["disc"] == ("2", "15")
+        assert result == tags | dict(
+            path=file.filename,
+            audio=file,
+            length=file.info.length,
+            images=file.pictures,
+            track=file.tags,
+            disc=file.tags,
+        )
 
     def test_format_to_tags(self, model: FLAC, uri: URI, faker: Faker):
         tags = {
@@ -163,7 +121,7 @@ class TestFLAC(LocalTrackTester):
                 "tracknumber": "04",
                 "tracktotal": "08",
             },
-            "discnumber": {
+            "disc": {
                 "discnumber": "1",
                 "disctotal": "2",
             },
@@ -220,17 +178,17 @@ class TestFLAC(LocalTrackTester):
     def test_serialize_position_tags(self, model: FLAC):
         info = Namespace(field_name="disc", by_alias=True, context=None, mode="python")
 
-        position = Position(number=1, total=2, zero_fill=3)
+        position = FLACDiscPosition(number=1, total=2, zero_fill=3)
         expected = {"discnumber": "001", "disctotal": "002"}
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
-        position = Position(number=1, zero_fill=2)
+        position = FLACDiscPosition(number=1, zero_fill=2)
         expected = {"discnumber": "01"}
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
 
-        position = Position(total=3, zero_fill=2)
+        position = FLACDiscPosition(total=3, zero_fill=2)
         expected = {"disctotal": "03"}
         # noinspection PyTypeChecker
         assert model._serialize_position_tags(position, handler=lambda x: x, info=info) == expected
@@ -251,9 +209,13 @@ class TestFLAC(LocalTrackTester):
             "album": ["72 Seasons"],
             "albumartist": ["Metallica and friends"],
             "genre": ["Hard Rock", "Metal" + sep + "Rock", "Thrash Metal"],
-            choice(("tracknumber", "tracktotal")): ["04"],
-            "discnumber": ["1"],
-            "disctotal": ["2"],
+            "track": {
+                choice(("tracknumber", "track")): ["04"],
+            },
+            "disc": {
+                "discnumber": ["1"],
+                "disctotal": ["2"],
+            },
             "bpm": ["124.931"],
             "key": ["B"],
             choice(("date", "year")): ["2023-04-14"],

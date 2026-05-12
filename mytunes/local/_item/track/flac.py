@@ -1,11 +1,12 @@
 from collections.abc import MutableMapping, Iterable, Sequence
+from copy import copy
 from typing import Any, final, Annotated
 
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
 from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    NonNegativeFloat, ConfigDict
+    NonNegativeFloat, ConfigDict, PositiveInt, field_validator
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
 from mytunes._types import get_base_types, DEFAULT_IF_NONE
@@ -17,8 +18,40 @@ from mytunes.core.properties.rating import Rating
 from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
+from ._base import _SeparatedPosition
+from ._types import ItemSequence
 from ...._base.attribute import TagAttribute
 from ....core.sequence import MutableUniqueSequence
+
+
+class FLACTrackPosition(_SeparatedPosition):
+    number: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The track index position on the album.",
+        default=None,
+        validation_alias=AliasChoices("tracknumber", "track"),
+        serialization_alias="tracknumber",
+    )
+    total: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The total number of tracks on the album.",
+        default=None,
+        validation_alias=AliasChoices("tracktotal", "totaltracks"),
+        serialization_alias="tracktotal",
+    )
+
+
+class FLACDiscPosition(_SeparatedPosition):
+    number: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The disc index position on the album.",
+        default=None,
+        validation_alias=AliasChoices("discnumber", "disc"),
+        serialization_alias="discnumber",
+    )
+    total: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The total number of discs on the album.",
+        default=None,
+        validation_alias=AliasChoices("disctotal", "totaldiscs"),
+        serialization_alias="disctotal",
+    )
 
 
 @final
@@ -69,19 +102,13 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
         default_factory=list,
         alias="genre",
     )
-    # noinspection SpellCheckingInspection
-    track: Annotated[Position | None, TagAttribute()] = Field(
+    track: Annotated[FLACTrackPosition | None, TagAttribute()] = Field(
         description="The position of the track in the album that this track is featured on.",
         default=None,
-        validation_alias=AliasChoices("tracknumber", "tracktotal"),
-        serialization_alias="tracknumber",
     )
-    # noinspection SpellCheckingInspection
-    disc: Annotated[Position | None, TagAttribute()] = Field(
+    disc: Annotated[FLACDiscPosition | None, TagAttribute()] = Field(
         description="The position of the disc in the album that this track is featured on.",
         default=None,
-        validation_alias=AliasChoices("discnumber", "disctotal"),
-        serialization_alias="discnumber",
     )
     released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
         description="The date this track was released.",
@@ -117,41 +144,8 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     @classmethod
     def _extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
         data = super()._extract_tags_from_mutagen(file)
-        data |= dict(images=file.pictures)
+        data |= dict(images=file.pictures, track=file.tags, disc=file.tags)
         data.pop("source", None)  # clashes with HasMutableURI field
-        return data
-
-    @model_validator(mode="before")
-    @classmethod
-    def _merge_position_values[T](
-            cls, data: T | mutagen.flac.FLAC | MutableMapping[str, Any]
-    ) -> T | MutableMapping[str, Any]:
-        if not isinstance(data, MutableMapping):
-            return data
-
-        for name, field in cls.model_fields.items():
-            if not isinstance(field.validation_alias, AliasChoices) or isinstance(data.get(name, None), Position):
-                continue
-            if Position not in get_base_types(field.annotation):
-                continue
-
-            aliases = (al for al in field.validation_alias.choices if isinstance(al, str))
-            values = []
-            if cls.model_config.get("validate_by_name") and data.get(name, None) is not None:
-                value = data.pop(name)
-                values.extend(value) if isinstance(value, Sequence) else values.append(value)
-                # assume first alias choice is an alias for the position number
-                # look for total number from 2nd alias choice onward
-                next(aliases)
-
-            values += filter(None, (data.pop(alias, None) for alias in aliases))
-            values[:] = list(map(cls._extract_first_value_from_sequence, values))
-            if len(values) > 1:
-                # if multiple values with divider, assume first is position, second is total
-                values[:] = [str(v).split("/")[min(len(str(v).split("/")) - 1, i)] for i, v in enumerate(values)]
-            if values:
-                data[name] = tuple(values)
-
         return data
 
     @model_serializer(mode="wrap")
@@ -199,5 +193,4 @@ class FLAC(LocalTrack[mutagen.flac.FLAC]):
     ) -> str | dict[str, str] | None:
         if not info.by_alias or not isinstance(value, Position):
             return handler(value)
-        field = type(self).model_fields[info.field_name]
-        return super()._serialize_position_tags(value, field=field)
+        return super()._serialize_position_tags(value, info=info)
