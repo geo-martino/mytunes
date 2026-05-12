@@ -8,14 +8,14 @@ import sys
 from collections.abc import Iterable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Annotated, Optional, Union
+from typing import Any, Annotated
 
 from pydantic import Field, validate_call
-from rich.console import Console as RichConsole, JustifyMethod, OverflowMethod
+from rich.console import Console
 from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 from rich.prompt import Prompt
-from rich.style import Style
+from rich.text import Text
 from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
@@ -34,18 +34,6 @@ logging.STAT = STAT
 
 # WORKAROUND: Needed to ensure ANSI codes log as expected by default
 RichHandler.HIGHLIGHTER_CLASS = NullHighlighter
-
-
-class Console(RichConsole):
-    # override print default to ensure ANSI coloured message print with full width
-    def print(
-        self,
-        *objects: Any,
-        overflow: Optional[OverflowMethod] = "ignore",
-        crop: bool = False,
-        **kwargs
-    ) -> None:
-        super().print(*objects, overflow=overflow, crop=crop, **kwargs)
 
 
 class Logger(logging.Logger):
@@ -200,7 +188,7 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> str:
+    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> Text:
         match header:
             case None:
                 header = ""
@@ -221,7 +209,7 @@ class Logger(logging.Logger):
             hidden = colored(hidden, "dark_grey", attrs=["dark"])
 
         parts = [header, message, hidden]
-        return " ".join(map(str, (part for part in parts if part))).strip()
+        return Text.from_ansi(" ".join(map(str, (part for part in parts if part))).strip())
 
     @classmethod
     def format_types_to_string(cls, items: Iterable[Any], final_join_word: str = "&") -> str:
