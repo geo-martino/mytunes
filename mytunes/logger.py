@@ -159,7 +159,9 @@ class Logger(logging.Logger):
         """
         message = self.generate_message(sep.join(values), header=header)
         if not values or not self._will_log_to_stdout(logging.DEBUG):
-            self.console.print(message, sep=sep, new_line_start=not self.compact, **kwargs)
+            self.console.print(
+                message, sep=sep, new_line_start=not self.compact, overflow="ignore", crop=False, **kwargs
+            )
         elif message:
             self.debug(message)
 
