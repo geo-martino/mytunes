@@ -12,7 +12,6 @@ from typing import Any, Annotated
 
 from pydantic import Field, validate_call
 from rich.console import Console
-from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 from rich.prompt import Prompt
 from rich.text import Text
@@ -31,9 +30,6 @@ STAT = logging.INFO - 5
 logging.addLevelName(STAT, "STAT")
 logging.STAT = STAT
 
-# WORKAROUND: Needed to ensure ANSI codes log as expected by default
-RichHandler.HIGHLIGHTER_CLASS = NullHighlighter
-
 
 class Logger(logging.Logger):
     """The logger for all logging operations."""
@@ -41,7 +37,7 @@ class Logger(logging.Logger):
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
 
-    console: Console = Console(highlight=False, highlighter=NullHighlighter())
+    console: Console = Console()
 
     @property
     def stdout_handlers(self) -> list[logging.Handler]:
