@@ -14,7 +14,6 @@ from faker import Faker
 
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.music import KeySignature
-from mytunes.core.properties.order import Position
 from mytunes.core.properties.uri import URI
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import TagContext

@@ -5,7 +5,6 @@ from contextlib import suppress
 from typing import Any, ClassVar
 
 from pydantic import Field, InstanceOf, OnErrorOmit, validate_call, ValidationError
-from termcolor import colored
 
 from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.logger import HasLogger
@@ -149,8 +148,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
 
     def _get_header(self, count: int) -> str:
         message = self._header.format(count=count)
-        name = colored(self.name, "blue", attrs=["bold"])
-        return f"{name}: {message}"
+        return f"[bold blue]{self.name}[\]: {message}"
 
     def _set_uri(self, item: IT, value: str | None) -> str | set[str] | None:
         try:

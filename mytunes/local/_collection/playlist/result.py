@@ -11,7 +11,7 @@ class LimitResult(CountResult):
     limited: Annotated[
         tuple[LocalTrack, ...],
         LogPosition(position=20),
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LenLogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The items after applying limiting.",
         default_factory=tuple,
@@ -19,7 +19,7 @@ class LimitResult(CountResult):
     limit_ignored: Annotated[
         tuple[LocalTrack, ...],
         LogPosition(position=21),
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LenLogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The items that were ignored while applying limiting.",
         default_factory=tuple,
@@ -30,7 +30,7 @@ class SortResult(CountResult):
     sorted: Annotated[
         tuple[LocalTrack, ...],
         LogPosition(position=30),
-        LenLogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LenLogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The items after applying sorting.",
         default_factory=tuple,
@@ -42,10 +42,10 @@ class LoadPlaylistResult(NamedResult, GroupResult[LocalTrack], LimitResult):
         tuple[LocalTrack, ...],
         LogPosition(position=50),
         LenLogFormatter(
-            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold red", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The final list of tracks after all operations.",

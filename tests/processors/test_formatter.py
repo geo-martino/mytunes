@@ -13,8 +13,7 @@ from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.properties.length import Length
 from mytunes.core.properties.order import Position
-from mytunes.processors.formatter import ModelFormatter, FIELDS, COLOURS, COLOUR_ATTRIBUTES, CollectionFormatter, \
-    ALIGNMENTS
+from mytunes.processors.formatter import ModelFormatter, CollectionFormatter, FIELDS, ALIGNMENTS
 from tests.processors.utils import MockCollection
 from tests.testers import BaseModelTester
 
@@ -191,23 +190,20 @@ class TestModelFormatter(BaseModelTester):
             mock_tabulate: Mock,
             faker: Faker,
     ):
+        styles = ["red", "green", "blue"]
         model = model.model_copy(update=dict(
-            colours=[faker.random_element(get_args(COLOURS)) for _ in model.fields],
-            colour_attributes=[faker.random_element(get_args(COLOUR_ATTRIBUTES)) for _ in model.fields]
+            styles=[faker.random_element(styles) for _ in model.fields],
         ))
 
-        def _to_str(v, *_, **__) -> str:
-            return str(v)
+        model.format(tracks)
 
-        with patch(f"{MODULE_ROOT}.processors.formatter.colored", side_effect=_to_str) as mock_colored:
-            model.format(tracks)
+        rows = mock_tabulate.call_args.args[0]
+        for row in rows:
+            for value, style in zip(row, model.styles):
+                if value is None or value == "":
+                    continue
+                assert value.startswith(f"[{style}]") and value.endswith(f"[\]")
 
-            rows = mock_tabulate.call_args.args[0]
-            for row in rows:
-                for value, colour, attributes in zip(row, model.colours, model.colour_attributes):
-                    if value is None or value == "":
-                        continue
-                    mock_colored.assert_any_call(value, color=colour, attrs=attributes)
 
     def test_full_format(
             self, model: ModelFormatter, tracks: list[Track], faker: Faker,

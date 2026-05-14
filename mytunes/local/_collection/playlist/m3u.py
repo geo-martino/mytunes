@@ -19,17 +19,17 @@ class SyncM3UResult(SavePlaylistResult):
     """Stores the results of a sync with a local M3U playlist"""
     start: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The total number of tracks in the playlist before the sync."
     )
     added: Annotated[
         NonNegativeInt,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The number of tracks added to the playlist."
@@ -37,10 +37,10 @@ class SyncM3UResult(SavePlaylistResult):
     removed: Annotated[
         NonNegativeInt,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold red", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The number of tracks removed from the playlist."
@@ -48,10 +48,10 @@ class SyncM3UResult(SavePlaylistResult):
     unchanged: Annotated[
         NonNegativeInt,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold yellow", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The number of tracks that were in the playlist both before and after the sync."
@@ -59,15 +59,15 @@ class SyncM3UResult(SavePlaylistResult):
     difference: Annotated[
         int,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0),
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0),
         LogFormatter(
-            width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x != 0),
+            width=6, alignment="right", style="bold magenta", condition=lambda x: x != 0),
     ] = Field(
         description="The difference between the total number tracks from before and after the sync."
     )
     final: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The total number of tracks in the playlist after the sync."
     )

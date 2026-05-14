@@ -6,7 +6,6 @@ from collections.abc import Iterable, Collection, Sequence
 
 from pydantic import Field, validate_call, PositiveInt, \
     conlist, AliasChoices, field_validator
-from termcolor import colored
 from yarl import URL
 
 from mytunes._types import StrippedString
@@ -151,4 +150,4 @@ class StoreManager(Processor, HasLogger, HasProgress):
         self._logger.info(message, header=1, new_line_start=True)
 
     def _log_skip(self, message: str) -> None:
-        self._logger.extra(colored(message, "yellow"))
+        self._logger.extra(f"[yellow]{message}[\]")

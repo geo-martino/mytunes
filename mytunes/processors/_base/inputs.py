@@ -6,7 +6,6 @@ from typing import ClassVar
 from pydantic import Field
 from rich.progress import TaskID
 from tabulate import tabulate
-from termcolor import colored
 
 from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.core.properties.order import Position
@@ -22,7 +21,7 @@ class InputProcessor(Processor, HasLogger):
     Contains methods for getting user input and printing formatted options text to the terminal.
     """
     input_formatter: ClassVar[LogFormatter] = LogFormatter(
-        colour="yellow", colour_attributes=["bold"]
+        style="bold yellow"
     )
 
     def _get_user_input(
@@ -32,7 +31,7 @@ class InputProcessor(Processor, HasLogger):
         if formatter is None:
             formatter = self.input_formatter
 
-        log = f"{formatter.get_value(text)} {colored("|", "white", attrs=["bold"])}"
+        log = f"{formatter.get_value(text)} [bold white]|[\]"
         return self._logger.input(log, choices=choices)
 
 
@@ -64,10 +63,8 @@ class OptionsProcessor(InputProcessor):
             if key is None:  # Used only for printing additional text after options
                 continue
 
-            row = (
-                colored(key, "blue", attrs=["bold"]) + ":",
-                colored("\n".join(textwrap.wrap(description, width - max_key_width)), "white"),
-            )
+            desc = "\n".join(textwrap.wrap(description, width - max_key_width))
+            row = f"[bold blue]{key}[\]:[white]{desc}[\]"
             rows.append(row)
 
         if header is True and self._header:
@@ -76,7 +73,7 @@ class OptionsProcessor(InputProcessor):
             header = ""
 
         header = f"{header}\n\n" if header else ""
-        sub_header = colored("Enter one of the following", "cyan") + ":\n"
+        sub_header = "[cyan]Enter one of the following[\]:\n"
         log = header + sub_header + tabulate(
             rows,
             tablefmt="plain",
@@ -124,7 +121,7 @@ class OptionsProcessor(InputProcessor):
 
         for val in value:
             message = f"Unrecognised input: {val!r}. Enter {help_key!r} for valid options."
-            self._logger.warning(colored(message, "red"))
+            self._logger.warning(f"[red]{message}[\]")
 
 
 class PageProcessor(OptionsProcessor, HasProgress):

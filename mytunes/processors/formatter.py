@@ -5,9 +5,8 @@ from typing import Literal, Self, Annotated
 from pydantic import Field, model_validator, PositiveInt, validate_call, \
     ValidationError, ConfigDict
 from tabulate import tabulate
-from termcolor import colored
 
-from mytunes._types import TO_LIST
+from mytunes._types import TO_LIST, StrippedString
 from mytunes.core.album import HasAlbum
 from mytunes.core.artist import HasArtists
 from mytunes.core.collection import CollectionModel
@@ -25,14 +24,6 @@ FIELDS = Literal[
     "Name", "Album", "Artist", "Released At", "Length", "URI", "Public URL"
 ]
 ALIGNMENTS = Literal["left", "right", "center", "decimal"]
-COLOURS = Literal[
-    "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
-    "light_grey", "dark_grey", "light_red", "light_green", "light_yellow", "light_blue",
-    "light_magenta", "light_cyan"
-]
-COLOUR_ATTRIBUTES = Literal[
-    "bold", "dark", "italic", "underline", "blink", "reverse", "concealed", "strike"
-]
 
 
 class ModelFormatter[RT: ResourceModel](BaseModel):
@@ -58,19 +49,11 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         default=None,
         min_length=1,
     )
-    colours: Annotated[
-        Sequence[COLOURS | tuple[int, int, int] | None],
+    styles: Annotated[
+        Sequence[StrippedString | None],
         TO_LIST
     ] | None = Field(
-        description="The colours to assign to each column. Must be the same length as `fields`.",
-        default=None,
-        min_length=1,
-    )
-    colour_attributes: Annotated[
-        Sequence[Annotated[Sequence[COLOUR_ATTRIBUTES], TO_LIST] | None],
-        TO_LIST
-    ] | None = Field(
-        description="The colour attributes to assign to each column. Must be the same length as `fields`.",
+        description="The styles to assign to each column. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
@@ -107,15 +90,9 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _validate_colours(self) -> Self:
-        self._expand_single_item_to_all_fields("colours")
-        self._validate_lengths_match_fields("colours")
-        return self
-
-    @model_validator(mode="after")
-    def _validate_colour_attributes(self) -> Self:
-        self._expand_single_item_to_all_fields("colour_attributes")
-        self._validate_lengths_match_fields("colour_attributes")
+    def _validate_styles(self) -> Self:
+        self._expand_single_item_to_all_fields("styles")
+        self._validate_lengths_match_fields("styles")
         return self
 
     def _expand_single_item_to_all_fields(self, name: str) -> None:
@@ -194,14 +171,11 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         return value
 
     def _colour_value_if_needed[T](self, value: T, position: int) -> T | str:
-        if value is None or (self.colours is None and self.colour_attributes is None):
+        if value is None or self.styles is None:
             return value
 
-        colour = self.colours[position] if self.colours else None
-        attributes = self.colour_attributes[position] if self.colour_attributes else None
-
-        value = colored(str(value), color=colour, attrs=attributes)
-        return value
+        style = self.styles[position]
+        return f"[{style}]{value}[\]" if style else value
 
     @staticmethod
     @validate_call

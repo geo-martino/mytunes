@@ -1,4 +1,3 @@
-import os
 from typing import Annotated
 from unittest.mock import Mock
 
@@ -6,7 +5,6 @@ import pytest
 import tabulate
 from faker import Faker
 from pytest_mock import MockerFixture
-from termcolor import can_colorize, colored
 
 from mytunes.exception import MyTunesTypeError
 from mytunes.result import LogFormatter, LenLogFormatter, MapLogFormatter, \
@@ -47,22 +45,18 @@ class TestLogFormatter:
         assert result == value
 
     def test_colour(self, faker: Faker):
-        os.environ["FORCE_COLOR"] = "1"
-        can_colorize.cache_clear()
         value = faker.sentence()
 
         colour = faker.random_element(["red", "green", "blue"])
-        result = LogFormatter(colour=colour).get_value(value)
+        result = LogFormatter(style=colour).get_value(value)
         assert result != value
-        assert result.startswith("\033[") and result.endswith("\033[0m")
+        assert result.startswith(f"[{colour}]") and result.endswith("[\]")
 
-        result = LogFormatter(colour_attributes=["bold"]).get_value(value)
+        result = LogFormatter(style="bold").get_value(value)
         assert result != value
-        assert result.startswith("\033[") and result.endswith("\033[0m")
+        assert result.startswith(f"[bold]") and result.endswith("[\]")
 
     def test_colour_skips(self, faker: Faker):
-        os.environ["FORCE_COLOR"] = "1"
-        can_colorize.cache_clear()
         value = faker.sentence()
 
         formatter = LogFormatter(max_width=faker.random_int(len(value) + 5))
@@ -73,8 +67,7 @@ class TestLogFormatter:
     def test_full(self, faker: Faker):
         value = faker.sentence(faker.random_int(10, 50))
         formatter = LogFormatter(
-            colour="red",
-            colour_attributes=["bold"],
+            style="bold red",
             max_width=faker.random_int(3, len(value) - 5),
             width=faker.random_int(len(value) + 5),
             alignment="right",
@@ -84,8 +77,7 @@ class TestLogFormatter:
 
     def test_full_skips_on_not_pretty(self, faker: Faker):
         formatter = LogFormatter(
-            colour="red",
-            colour_attributes=["bold"],
+            style="bold red",
             max_width=faker.random_int(3),
             width=faker.random_int(),
             alignment="right",
@@ -115,9 +107,9 @@ class TestLenLogFormatter:
 class TestMapLogFormatter:
     def test_get_value_uses_mapped_value(self, faker: Faker):
         formatter = MapLogFormatter(
-            colour="red", colour_attributes=["bold"], condition=lambda x: x > 5, value="VALUE"
+            style="bold red", condition=lambda x: x > 5, value="VALUE"
         )
-        assert formatter.get_value(10) == colored("VALUE", color="red", attrs=["bold"])
+        assert formatter.get_value(10) == f"[bold red]VALUE[\]"
         assert formatter.get_value(5) is None
 
 
@@ -134,7 +126,7 @@ class TestResult(BaseModelTester):
     @pytest.fixture
     def amount_formatter(self) -> LogFormatter:
         return LogFormatter(
-            colour="red", colour_attributes=["bold"], max_width=10, width=15, alignment="left"
+            style="bold red", max_width=10, width=15, alignment="left"
         )
 
     @pytest.fixture
@@ -221,7 +213,7 @@ class TestCountResult(BaseModelTester):
     @pytest.fixture
     def formatter(self) -> LenLogFormatter:
         return LenLogFormatter(
-            colour="red", colour_attributes=["bold"], max_width=10, width=15, alignment="left"
+            style="bold red", max_width=10, width=15, alignment="left"
         )
 
     @pytest.fixture
@@ -254,7 +246,7 @@ class TestTotalCountResult(BaseModelTester):
     @pytest.fixture
     def formatter(self) -> LenLogFormatter:
         return LenLogFormatter(
-            colour="red", colour_attributes=["bold"], max_width=10, width=15, alignment="left"
+            style="bold red", max_width=10, width=15, alignment="left"
         )
 
     @pytest.fixture

@@ -1,15 +1,14 @@
-from collections.abc import MutableMapping, Iterable, Sequence
-from copy import copy
+from collections.abc import MutableMapping, Iterable
 from typing import Any, final, Annotated
 
 import mutagen.flac
 import mutagen.id3
 from PIL import Image, ImageFile as PILImageFile
-from pydantic import Field, AliasChoices, model_validator, field_serializer, model_serializer, \
-    NonNegativeFloat, ConfigDict, PositiveInt, field_validator
+from pydantic import Field, AliasChoices, field_serializer, model_serializer, \
+    NonNegativeFloat, ConfigDict, PositiveInt
 from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
 
-from mytunes._types import get_base_types, DEFAULT_IF_NONE
+from mytunes._types import DEFAULT_IF_NONE
 from mytunes.core.properties.date import SparseDate
 from mytunes.core.properties.image import ImageFile, ImageURL
 from mytunes.core.properties.music import KeySignature
@@ -19,7 +18,6 @@ from mytunes.local._item.artist import LocalArtist
 from mytunes.local._item.genre import LocalGenre
 from mytunes.local._item.track import LocalTrack
 from ._base import _SeparatedPosition
-from ._types import ItemSequence
 from ...._base.attribute import TagAttribute
 from ....core.sequence import MutableUniqueSequence
 

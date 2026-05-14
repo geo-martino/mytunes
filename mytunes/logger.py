@@ -16,7 +16,6 @@ from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
 from rich.prompt import Prompt
 from rich.text import Text
-from termcolor import colored
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
 
@@ -202,11 +201,11 @@ class Logger(logging.Logger):
                 header = " ·"
 
         if header:
-            header = colored(header, "magenta", attrs=["bold"])
-            message = colored(message, "white", attrs=["bold"])
+            header = f"[bold magenta]{header}[\]"
+            message = f"[bold white]{message}[\]"
 
         if hidden:
-            hidden = colored(hidden, "dark_grey", attrs=["dark"])
+            hidden = f"[grey74]{hidden}[\]"
 
         parts = [header, message, hidden]
         return Text.from_ansi(" ".join(map(str, (part for part in parts if part))).strip())

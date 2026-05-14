@@ -32,7 +32,6 @@ dependencies = [
     "python-dateutil~=2.9.0",
     "Pillow~=12.1.1",
     "tabulate[widechars]~=0.10.0",
-    "termcolor~=3.3.0",
 ]
 
 [project.optional-dependencies]

@@ -50,74 +50,74 @@ class SyncXAutoPFResult(SavePlaylistResult):
 
     start: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The total number of tracks in the playlist before the sync."
     )
     start_included: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold green"),
     ] = Field(
         description="The number of tracks that matched the include settings before the sync."
     )
     start_excluded: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold red"),
     ] = Field(
         description="The number of tracks that matched the exclude settings before the sync."
     )
     start_compared: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold yellow"),
     ] = Field(
         description="The number of tracks that matched the comparer settings before the sync."
     )
     start_limit: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold magenta"),
     ] = Field(
         description="The limit count before the sync. 0 if no limiter was present."
     )
     start_sort: Annotated[
         bool,
-        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold magenta"),
     ] = Field(
         description="Was a sorter present on the playlist before the sync."
     )
 
     final: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The total number of tracks in the playlist after the sync."
     )
     final_included: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="green", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold green"),
     ] = Field(
         description="The number of tracks that matched the include settings after the sync."
     )
     final_excluded: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="red", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold red"),
     ] = Field(
         description="The number of tracks that matched the exclude settings after the sync."
     )
     final_compared: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="yellow", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold yellow"),
     ] = Field(
         description="The number of tracks that matched the comparer settings after the sync."
     )
     final_limit: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold magenta"),
     ] = Field(
         description="The limit count after the sync. 0 if no limiter was present."
     )
     final_sort: Annotated[
         bool,
-        LogFormatter(width=6, alignment="right", colour="magenta", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold magenta"),
     ] = Field(
         description="Was a sorter present on the playlist after the sync."
     )

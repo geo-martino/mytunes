@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 from pydantic import Field, OnErrorOmit
-from termcolor import colored
 
 from mytunes.core.api import RemoteAPI
 from mytunes.core.properties.uri import HasURI
@@ -23,7 +22,7 @@ class InputPage[API: RemoteAPI, CT: HasURI](CheckerPage[_ApiT, CT]):
         description="The formatter to use for formatting info about the item to print.",
         default=ModelFormatter(
             fields=("Name", "URI", "Public URL"),
-            colours=("white", "green", "blue"),
+            styles=("white", "green", "blue"),
             header=False,
         )
     )
@@ -34,11 +33,10 @@ class InputPage[API: RemoteAPI, CT: HasURI](CheckerPage[_ApiT, CT]):
     @property
     def _header(self) -> str:
         types = self._logger.format_types_to_string(self.items)
-        header = f"These are the matches that exist for all given {types}:"
-        header = colored(header, "blue", attrs=["bold"])
+        header = f"These are the matches that exist for all given {types}"
         table = self.item_formatter.format(self.items)
 
-        return f"{header}\n\n{table}"
+        return f"[bold blue]{header}[\]:\n\n{table}"
 
     @property
     def _options(self) -> dict[str, str]:

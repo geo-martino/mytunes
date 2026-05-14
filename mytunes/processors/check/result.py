@@ -15,10 +15,10 @@ class CheckResult[T: HasURI](NamedResult):
         Sequence[T],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that had their matches changed during the check.",
@@ -28,10 +28,10 @@ class CheckResult[T: HasURI](NamedResult):
         Sequence[T],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that didn't have their matches changed during the check.",
@@ -41,10 +41,10 @@ class CheckResult[T: HasURI](NamedResult):
         Sequence[T],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold yellow", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that were marked as unavailable during the check.",
@@ -54,10 +54,10 @@ class CheckResult[T: HasURI](NamedResult):
         Sequence[T],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that were skipped during the check.",

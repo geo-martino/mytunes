@@ -2,7 +2,6 @@ from collections.abc import Sequence, MutableSequence, Collection, Iterable
 from typing import Self, Any, Annotated
 
 from pydantic import Field, validate_call, model_validator, field_validator, OnErrorOmit
-from termcolor import colored
 
 from mytunes._types import TO_TUPLE
 from mytunes.processors.match import Matcher
@@ -40,10 +39,10 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
         Sequence[IT],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description=(
@@ -56,10 +55,10 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
         Sequence[IT],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold red", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items for which matches were not found from the search.",
@@ -69,10 +68,10 @@ class SearchResult[IT: Any, MT: Any](NamedResult, TotalCountResult):
         Sequence[IT],
         TO_TUPLE,
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items which were skipped during the search.",
@@ -264,7 +263,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
         self._logger.info(message, header=1, new_line_start=True)
 
     def _log_skip(self, message: str) -> None:
-        self._logger.extra(colored(message, "yellow"))
+        self._logger.extra(f"[yellow]{message}[\]")
 
     def _log_debug(self, item: Any, message: str) -> None:
         name = self._get_item_log_name(item)

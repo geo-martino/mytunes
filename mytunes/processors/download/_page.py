@@ -4,7 +4,6 @@ from functools import partial
 from webbrowser import open as webopen
 
 from pydantic import Field
-from termcolor import colored
 from yarl import URL
 
 from mytunes._types import HttpURL
@@ -62,11 +61,11 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
     def _header(self) -> str:
         header = f"Opened {sum(len(urls) for urls in self.urls)} sites for {len(self.items)} {self.types}. "
         header += f"You may now search for and download the {self.types}."
-        return colored(header, "blue", attrs=["bold"])
+        return f"[bold blue]{header}[\]"
 
     @property
     def _options(self) -> dict[str | None, str]:
-        fields = colored(self._logger.format_list_to_string(sorted(self.fields)), "dark_grey", attrs=["dark"])
+        fields = self._logger.format_list_to_string(sorted(self.fields))
         return {
             "<Return/Enter>": "Once you are finished with this batch, continue on to the next batch",
             "r": f"Re-open all sites for the current batch of {self.types}",
@@ -74,7 +73,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
                 f"Re-open all sites for the current batch of {self.types} using the input list of fields, "
                 "each separated by a space e.g. title artist album",
             "q": f"Skip opening sites for any remaining {self.types} and quit",
-            None: colored("\nValid fields: ", "white") + fields
+            None: f"[white]\nValid fields: [grey74]{fields}[\]"
         }
 
     def pause(self, print_help: bool = True) -> tuple[str, ...] | None:

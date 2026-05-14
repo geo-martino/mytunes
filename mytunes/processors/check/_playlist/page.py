@@ -5,7 +5,6 @@ from typing import Self, Any, ClassVar
 
 from aiorequestful.exception import HTTPError
 from pydantic import Field, field_validator, PrivateAttr, PositiveFloat
-from termcolor import colored
 
 from mytunes.core.api import RemoteAPI, HasLibraryEndpoints
 from mytunes.core.api.playlist import PlaylistLibraryEndpoints, PlaylistReadWriteEndpoints, \
@@ -72,7 +71,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
         description="The formatter to use for formatting info about the playlists during the check.",
         default=CollectionFormatter(
             fields=("Name", "URI", "Public URL"),
-            colours=("white", "red", "yellow"),
+            styles=("white", "red", "yellow"),
             header=False,
         )
     )
@@ -265,7 +264,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
         source = f"{self.username}'s {self.source} library" if self.username is not None else self.source
         header = f"{len(self._playlists)} temporary playlists created on {source}. "
         header += f"You may now check the items in each playlist on {self.source}."
-        return colored(header, "blue", attrs=["bold"])
+        return f"[bold blue]{header}[\]"
 
     @property
     def _options(self) -> dict[str, str]:
@@ -298,7 +297,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
                     self._log_unrecognised_input(option)
 
     def _print_playlist_links(self):
-        header = colored("Created playlists", "blue", attrs=["bold"])
+        header = f"[bold blue]Created playlists[\]"
         rows = (f"{playlist.name} - {playlist.uri.public_url}" for playlist in self._playlists.values())
         rows = map(str, (self._logger.generate_message(row, header=3) for row in sorted(rows)))
         self._logger.print(header + ":\n" + "\n".join(rows))
@@ -310,11 +309,11 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
                 return playlist
 
     async def _print_playlist_items(self, playlist: RemoteMutablePlaylist) -> None:
-        missing_message = colored("No items available", "red", attrs=["bold"])
+        missing_message = f"[bold red]No items available[\]"
 
         items = list(playlist.items)
 
-        header = colored(f"{playlist.name.upper()} - ORIGINAL", "yellow", attrs=["bold"])
+        header = f"[bold yellow]{playlist.name.upper()} - ORIGINAL[\]"
         table = self.playlist_formatter.format(items, indices=range(1, len(items) + 1)) or missing_message
         self._logger.print(header + ":\n" + table)
 
@@ -323,7 +322,7 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
             self._logger.print_line()
             return
 
-        header = colored(f"{playlist.name.upper()} - CURRENT", "green", attrs=["bold"])
+        header = f"[bold green]{playlist.name.upper()} - CURRENT[\]"
         table = self.playlist_formatter.format(items, indices=range(1, len(items) + 1)) or missing_message
         self._logger.print(header + ":\n" + table)
         self._logger.print_line()

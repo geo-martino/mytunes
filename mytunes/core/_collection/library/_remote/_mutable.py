@@ -3,7 +3,6 @@ from typing import Any, Literal, Annotated, Union
 
 from aiorequestful.response.exception import ResponseError
 from pydantic import Field, validate_call, BeforeValidator, OnErrorOmit
-from termcolor import colored
 
 from mytunes.core._collection import SyncRemoteResult
 from mytunes.core._collection._sync import SYNC_TYPE, get_sync_message, get_sync_items
@@ -245,7 +244,7 @@ class RemoteMutableLibrary[
         filtered_items = self.sync_filter.apply(items)
         difference = len(filtered_items) - initial_count
         if difference:
-            message = colored(f"Filtered out {difference} {items_type}.", "dark_grey", attrs=["dark"])
+            message = f"[grey74]Filtered out {difference} {items_type}[\]"
             self._logger.info(message, header=3)
 
         return items

@@ -5,7 +5,6 @@ from typing import ClassVar, Self, Any, Literal
 import tabulate
 from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
-from termcolor import colored
 
 from mytunes._types import StrippedString
 from mytunes._utils import truncate_string
@@ -44,13 +43,9 @@ class LogFormatter[T](Attribute):
         ge=3,
     )
 
-    colour: StrippedString | None = Field(
-        description="The colour to apply to the field's value in logs.",
+    style: StrippedString | None = Field(
+        description="The style to apply to the field's value in logs.",
         default=None,
-    )
-    colour_attributes: Sequence[StrippedString] = Field(
-        description="The colour attributes to apply to the field's value in logs.",
-        default_factory=tuple,
     )
     condition: Callable[[T], bool] = Field(
         description="Only log this field when this condition is True.",
@@ -72,7 +67,7 @@ class LogFormatter[T](Attribute):
             return value
 
         value = self._align_value(value)
-        return colored(value, color=self.colour, attrs=self.colour_attributes)
+        return f"[{self.style}]{value}[\]" if self.style else value
 
     def _align_value(self, value: str) -> str:
         """Align the given log value according to the alignment and width."""
@@ -126,7 +121,7 @@ class MapLogFormatter[T](LogFormatter[T]):
             return value
 
         value = self._align_value(value)
-        return colored(value, color=self.colour, attrs=self.colour_attributes)
+        return f"[{self.style}]{value}[\]" if self.style else value
 
 
 class Result(BaseModel):
@@ -135,16 +130,14 @@ class Result(BaseModel):
 
     _table_format: ClassVar[str] = "orgtbl"
     _header_formatter: ClassVar[LogFormatter] = LogFormatter(
-        colour="cyan",
-        colour_attributes=["bold"],
+        style="bold cyan",
     )
     _key_formatter: ClassVar[LogFormatter] = LogFormatter(
         max_width=40,
-        colour="white",
-        colour_attributes=["bold"],
+        style="bold white",
     )
     _name_formatter: ClassVar[LogFormatter] = LogFormatter(
-        colour="white",
+        style="white",
     )
 
     @classmethod
@@ -242,8 +235,7 @@ class CountResult(Result):
     """Same as Result but only with numeric fields which can be summed in a totals row."""
     _total_key_formatter: ClassVar[LogFormatter] = LogFormatter(
         max_width=40,
-        colour="white",
-        colour_attributes=["bold"],
+        style="bold white",
     )
 
     @classmethod
@@ -275,8 +267,7 @@ class TotalCountResult(CountResult):
     _total_value_formatter: ClassVar[LogFormatter] = LogFormatter(
         width=6,
         alignment="right",
-        colour="magenta",
-        colour_attributes=["bold"],
+        style="bold magenta",
     )
 
     def generate_log(self, key: str | None = None) -> tuple[str, ...]:

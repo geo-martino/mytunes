@@ -5,7 +5,6 @@ from typing import ClassVar
 
 from pydantic import Field
 from pydantic import InstanceOf
-from termcolor import colored
 
 from mytunes import PROGRAM_NAME
 from mytunes.core.properties.name import HasName
@@ -178,7 +177,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
         description="The formatter to use for formatting info about the item to print.",
         default=ModelFormatter(
             fields=("Name", "Artist", "Album", "Length", "Released At"),
-            colours=("white", "blue", "blue", "red", "yellow"),
+            styles=("white", "blue", "blue", "red", "yellow"),
             header=True,
         )
     )
@@ -203,7 +202,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
             ),
             "s": "Skip checking process for all current playlists",
             "q": "Skip checking process for all current playlists and quit check.  No results will be returned.",
-            None: colored("OR enter a custom URI/URL/ID for this item", "white")
+            None: "[white]OR enter a custom URI/URL/ID for this item[\]"
         }
 
     async def _match_item_with_input(
@@ -266,5 +265,5 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
             return True
 
         message = f"No match found for this item in the playlist: {self.name!r}"
-        self._logger.warning(colored(message, "red"))
+        self._logger.warning(f"[red]{message}[\]")
         return False

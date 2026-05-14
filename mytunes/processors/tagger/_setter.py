@@ -126,7 +126,7 @@ class _GroupSetter[OT: str, IT: AttributeModel, VT: Any](Setter[OT, IT, VT]):
     def _get_group(self, item: IT) -> tuple[VT, ...]:
         values = tuple(getattr(item, field, None) for field in self.group_by)
 
-        group = self._groups.get(tuple(values))
+        group = self._groups.get(values)
         if group is None:
             raise MyTunesValueError("Given item must be present in the currently set items.")
 

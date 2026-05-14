@@ -6,7 +6,6 @@ from typing import Annotated, ClassVar, final, Any
 import tabulate
 from mutagen import MutagenError
 from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, validate_call, OnErrorOmit
-from termcolor import colored
 
 from mytunes._types import DEFAULT_IF_NONE
 from mytunes.core.library import MutableLibrary
@@ -98,8 +97,8 @@ class LocalLibrary(
         if len(self.errors) == 0:
             return
 
-        header = colored(message, "white") + ":"
-        errors = list(map(lambda err: colored(err, "red"), sorted(set(self.errors))))
+        header = f"[white]{message}[\]:"
+        errors = list(map(lambda err: f"[red]{err}[\]", sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
         self._logger.warning(log, new_line_start=True)

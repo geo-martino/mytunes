@@ -22,10 +22,10 @@ class CompositeResult[IT: Any](CountResult):
         list[IT],
         LogPosition(position=10),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ]:
         """Combine the individual results to one combined list"""
@@ -83,10 +83,10 @@ class IncludeExcludeResult[IT: Any](CompositeResult[IT]):
         TO_TUPLE,
         LogPosition(position=1),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that matched include settings.",
@@ -97,10 +97,10 @@ class IncludeExcludeResult[IT: Any](CompositeResult[IT]):
         TO_TUPLE,
         LogPosition(position=2),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold red", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that matched exclude settings.",
@@ -160,10 +160,10 @@ class GroupResult[IT: Any](IncludeExcludeResult[IT]):
         TO_TUPLE,
         LogPosition(position=5),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold yellow", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that matched comparer settings",
@@ -174,10 +174,10 @@ class GroupResult[IT: Any](IncludeExcludeResult[IT]):
         TO_TUPLE,
         LogPosition(position=6),
         LenLogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LenLogFormatter(
-            width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold magenta", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The items that matched on 'group by' settings",

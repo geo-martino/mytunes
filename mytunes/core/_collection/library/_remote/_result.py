@@ -14,10 +14,10 @@ from ...._item.track import RemoteTrack, HasTracks
 
 _log_formatters = [
     LenLogFormatter(
-        width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x == 0
+        width=6, alignment="right", style="bold yellow", condition=lambda x: x == 0
     ),
     LenLogFormatter(
-        width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+        width=6, alignment="right", style="bold green", condition=lambda x: x > 0
     ),
 ]
 
@@ -25,7 +25,7 @@ _log_formatters = [
 class RemotePlaylistsResult[T: RemoteTrack](NamedResult, CountResult):
     owner: Annotated[
         str,
-        LogFormatter(colour="magenta", max_width=20, include_name_in_log=False)
+        LogFormatter(style="magenta", max_width=20, include_name_in_log=False)
     ] = Field(
         description="The owner of the playlist."
     )
@@ -33,15 +33,13 @@ class RemotePlaylistsResult[T: RemoteTrack](NamedResult, CountResult):
         bool,
         MapLogFormatter(
             value="WRITEABLE",
-            colour="green",
-            colour_attributes=["bold"],
+            style="bold green",
             condition=lambda x: x,
             include_name_in_log=False,
         ),
         MapLogFormatter(
             value="READ ONLY",
-            colour="blue",
-            colour_attributes=["bold"],
+            style="bold blue",
             condition=lambda x: not x,
             include_name_in_log=False,
         ),

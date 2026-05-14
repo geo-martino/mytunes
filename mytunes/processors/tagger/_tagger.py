@@ -17,8 +17,7 @@ class TaggerResult[IT: AttributeModel](ItemResult[IT]):
         Mapping[str, Any],
         MapLogFormatter(
             value=lambda values: Logger.format_list_to_string(values.keys()),
-            colour="blue",
-            colour_attributes=["bold"],
+            style="bold blue",
             include_name_in_log=False,
         ),
     ] = Field(

@@ -13,17 +13,17 @@ class SyncRemoteResult(NamedResult, CountResult):
     """Stores the results of a sync with a remote service."""
     start: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The total number of items in the resource before the sync."
     )
     added: Annotated[
         NonNegativeInt,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="green", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold green", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The number of items added to the resource."
@@ -31,10 +31,10 @@ class SyncRemoteResult(NamedResult, CountResult):
     removed: Annotated[
         NonNegativeInt,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="red", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold red", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The number of items removed from the resource."
@@ -42,10 +42,10 @@ class SyncRemoteResult(NamedResult, CountResult):
     unchanged: Annotated[
         NonNegativeInt,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="yellow", colour_attributes=["bold"], condition=lambda x: x > 0
+            width=6, alignment="right", style="bold yellow", condition=lambda x: x > 0
         ),
     ] = Field(
         description="The number of items that were in the remote resource both before and after the sync."
@@ -53,17 +53,17 @@ class SyncRemoteResult(NamedResult, CountResult):
     difference: Annotated[
         int,
         LogFormatter(
-            width=6, alignment="right", colour="blue", colour_attributes=["bold"], condition=lambda x: x == 0
+            width=6, alignment="right", style="bold blue", condition=lambda x: x == 0
         ),
         LogFormatter(
-            width=6, alignment="right", colour="magenta", colour_attributes=["bold"], condition=lambda x: x != 0
+            width=6, alignment="right", style="bold magenta", condition=lambda x: x != 0
         ),
     ] = Field(
         description="The difference between the total number items from before and after the sync."
     )
     final: Annotated[
         NonNegativeInt,
-        LogFormatter(width=6, alignment="right", colour="blue", colour_attributes=["bold"]),
+        LogFormatter(width=6, alignment="right", style="bold blue"),
     ] = Field(
         description="The total number of items in the resource after the sync."
     )
@@ -71,7 +71,7 @@ class SyncRemoteResult(NamedResult, CountResult):
         JsonSchemaValue,
         MapLogFormatter(
             value=lambda x: Logger.format_list_to_string(x.keys()),
-            colour="blue",
+            style="blue",
             condition=lambda x: len(x) > 0,
             include_name_in_log=False
         ),
