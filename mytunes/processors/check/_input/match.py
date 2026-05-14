@@ -44,7 +44,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
             "n": f"Leave item with no URI. ({PROGRAM_NAME} will still attempt to find this item at the next run)",
             "s": "Skip checking process for all current items",
             "q": "Skip checking process for all current items and quit check. No results will be returned.",
-            None: "[white]OR enter a custom URI/URL/ID for this item[\\]"
+            None: "[white]OR enter a custom URI/URL/ID for this item[/]"
         }
 
     async def _match_item_with_input(
@@ -81,14 +81,14 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT]):
 
     def _log_match(self, item: IT, formatter: LogFormatter) -> str:
         name = item.name if isinstance(item, HasName) and item.name else str(id(item))
-        sep = f" [bold white]|[\\] "
+        sep = f" [bold white]|[/] "
 
         if item.has_uri and isinstance(uri := item.uri, URI):
-            url = f"[blue]{uri.public_url}[\\]"
-            uri = f"[green]{uri}[\\]"
+            url = f"[blue]{uri.public_url}[/]"
+            uri = f"[green]{uri}[/]"
             log_parts = [uri, url]
         else:
-            log_parts = ["[red]NO MATCH[\\]"]
+            log_parts = ["[red]NO MATCH[/]"]
 
         self._logger.print(sep.join((formatter.get_value(name), *log_parts)))
 

@@ -67,7 +67,7 @@ class LogFormatter[T](Attribute):
             return value
 
         value = self._align_value(value)
-        return f"[{self.style}]{value}[\\]" if self.style else value
+        return f"[{self.style}]{value}[/]" if self.style else value
 
     def _align_value(self, value: str) -> str:
         """Align the given log value according to the alignment and width."""
@@ -121,7 +121,7 @@ class MapLogFormatter[T](LogFormatter[T]):
             return value
 
         value = self._align_value(value)
-        return f"[{self.style}]{value}[\\]" if self.style else value
+        return f"[{self.style}]{value}[/]" if self.style else value
 
 
 class Result(BaseModel):

@@ -97,8 +97,8 @@ class LocalLibrary(
         if len(self.errors) == 0:
             return
 
-        header = f"[white]{message}[\\]:"
-        errors = list(map(lambda err: f"[red]{err}[\\]", sorted(set(self.errors))))
+        header = f"[white]{message}[/]:"
+        errors = list(map(lambda err: f"[red]{err}[/]", sorted(set(self.errors))))
 
         log = "\n\t- ".join([header] + errors)
         self._logger.warning(log, new_line_start=True)

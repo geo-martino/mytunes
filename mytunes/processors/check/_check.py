@@ -106,7 +106,7 @@ class ItemChecker[API: RemoteAPI](Checker[API]):
             items = [item for item in items if isinstance(item, HasURI)]
 
             if len(items) == 0:
-                self._logger.extra("[yellow]No valid items to check.[\\]")
+                self._logger.extra("[yellow]No valid items to check.[/]")
                 return _invalid_response()
 
             return func(self, items, *args, **kwargs)
@@ -179,7 +179,7 @@ class CollectionChecker[API: RemoteAPI](Checker[API]):
             ]
 
             if len(collections) == 0:
-                self._logger.extra("[yellow]No valid collections or items to check.[\\]")
+                self._logger.extra("[yellow]No valid collections or items to check.[/]")
                 return _invalid_response()
 
             return func(self, collections, *args, **kwargs)

@@ -201,11 +201,11 @@ class Logger(logging.Logger):
                 header = " ·"
 
         if header:
-            header = f"[bold magenta]{header}[\\]"
-            message = f"[bold white]{message}[\\]"
+            header = f"[bold magenta]{header}[/]"
+            message = f"[bold white]{message}[/]"
 
         if hidden:
-            hidden = f"[grey74]{hidden}[\\]"
+            hidden = f"[grey74]{hidden}[/]"
 
         parts = [header, message, hidden]
         return Text.from_ansi(" ".join(map(str, (part for part in parts if part))).strip())

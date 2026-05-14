@@ -202,7 +202,7 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
             ),
             "s": "Skip checking process for all current playlists",
             "q": "Skip checking process for all current playlists and quit check.  No results will be returned.",
-            None: "[white]OR enter a custom URI/URL/ID for this item[\\]"
+            None: "[white]OR enter a custom URI/URL/ID for this item[/]"
         }
 
     async def _match_item_with_input(
@@ -265,5 +265,5 @@ class InputMatch[IT: HasMutableURI](BaseInputMatch[_ApiT, IT], _PlaylistMatch[IT
             return True
 
         message = f"No match found for this item in the playlist: {self.name!r}"
-        self._logger.warning(f"[red]{message}[\\]")
+        self._logger.warning(f"[red]{message}[/]")
         return False

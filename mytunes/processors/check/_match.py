@@ -148,7 +148,7 @@ class BaseInputMatch[API: RemoteAPI, IT: HasMutableURI](BaseMatch[API, IT], Opti
 
     def _get_header(self, count: int) -> str:
         message = self._header.format(count=count)
-        return f"[bold blue]{self.name}[\\]: {message}"
+        return f"[bold blue]{self.name}[/]: {message}"
 
     def _set_uri(self, item: IT, value: str | None) -> str | set[str] | None:
         try:

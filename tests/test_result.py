@@ -50,11 +50,11 @@ class TestLogFormatter:
         colour = faker.random_element(["red", "green", "blue"])
         result = LogFormatter(style=colour).get_value(value)
         assert result != value
-        assert result.startswith(f"[{colour}]") and result.endswith("[\\]")
+        assert result.startswith(f"[{colour}]") and result.endswith("[/]")
 
         result = LogFormatter(style="bold").get_value(value)
         assert result != value
-        assert result.startswith(f"[bold]") and result.endswith("[\\]")
+        assert result.startswith(f"[bold]") and result.endswith("[/]")
 
     def test_colour_skips(self, faker: Faker):
         value = faker.sentence()
@@ -109,7 +109,7 @@ class TestMapLogFormatter:
         formatter = MapLogFormatter(
             style="bold red", condition=lambda x: x > 5, value="VALUE"
         )
-        assert formatter.get_value(10) == f"[bold red]VALUE[\\]"
+        assert formatter.get_value(10) == f"[bold red]VALUE[/]"
         assert formatter.get_value(5) is None
 
 

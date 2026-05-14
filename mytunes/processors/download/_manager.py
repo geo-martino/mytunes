@@ -150,4 +150,4 @@ class StoreManager(Processor, HasLogger, HasProgress):
         self._logger.info(message, header=1, new_line_start=True)
 
     def _log_skip(self, message: str) -> None:
-        self._logger.extra(f"[yellow]{message}[\\]")
+        self._logger.extra(f"[yellow]{message}[/]")
