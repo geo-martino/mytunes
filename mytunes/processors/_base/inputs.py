@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from typing import ClassVar
 
 from pydantic import Field
+from rich import get_console
 from rich.progress import TaskID
 from tabulate import tabulate
 
@@ -54,7 +55,7 @@ class OptionsProcessor(InputProcessor):
         """Format help text with a given mapping of options. Add an option header to include before options."""
         options = self._options | OptionsProcessor._options.fget(self)
 
-        width = self._logger.console.width
+        width = get_console().width
         # +2 for ':' and space between cols in tabulate
         max_key_width = max(len(key) for key in options if key) + 2
 

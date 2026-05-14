@@ -29,7 +29,6 @@ class HasProgress(AbstractContextManager, AbstractAsyncContextManager):
         TimeElapsedColumn(),
         "/",
         TimeRemainingColumn(compact=True),
-        console=Logger.console,
     )
 
     def __enter__(self) -> Self:

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Annotated
 
 from pydantic import Field, validate_call
-from rich.console import Console
+from rich import get_console
 from rich.logging import RichHandler
 from rich.prompt import Prompt
 from rich.text import Text
@@ -36,8 +36,6 @@ class Logger(logging.Logger):
 
     #: When true, never print a new line in the console when :py:meth:`print()` is called
     compact: bool = False
-
-    console: Console = Console()
 
     @property
     def stdout_handlers(self) -> list[logging.Handler]:
@@ -155,7 +153,7 @@ class Logger(logging.Logger):
         """
         message = self.generate_message(sep.join(values), header=header)
         if not values or not self._will_log_to_stdout(logging.DEBUG):
-            self.console.print(message, sep=sep, new_line_start=not self.compact, **kwargs)
+            get_console().print(message, sep=sep, new_line_start=not self.compact, **kwargs)
         elif message:
             self.debug(message)
 
@@ -165,7 +163,7 @@ class Logger(logging.Logger):
             return
 
         if self._will_log_to_stdout(level):
-            self.console.print()
+            get_console().print()
 
     def input(self, text: str | None = None, choices: list[str] | None = None) -> str:
         """Print dialogue with optional text and get the user's input."""
