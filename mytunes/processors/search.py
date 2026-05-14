@@ -263,7 +263,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
         self._logger.info(message, header=1, new_line_start=True)
 
     def _log_skip(self, message: str) -> None:
-        self._logger.extra(f"[yellow]{message}[\]")
+        self._logger.extra(f"[yellow]{message}[\\]")
 
     def _log_debug(self, item: Any, message: str) -> None:
         name = self._get_item_log_name(item)

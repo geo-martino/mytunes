@@ -36,7 +36,7 @@ class InputPage[API: RemoteAPI, CT: HasURI](CheckerPage[_ApiT, CT]):
         header = f"These are the matches that exist for all given {types}"
         table = self.item_formatter.format(self.items)
 
-        return f"[bold blue]{header}[\]:\n\n{table}"
+        return f"[bold blue]{header}[\\]:\n\n{table}"
 
     @property
     def _options(self) -> dict[str, str]:

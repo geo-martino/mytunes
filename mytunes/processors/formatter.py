@@ -175,7 +175,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             return value
 
         style = self.styles[position]
-        return f"[{style}]{value}[\]" if style else value
+        return f"[{style}]{value}[\\]" if style else value
 
     @staticmethod
     @validate_call

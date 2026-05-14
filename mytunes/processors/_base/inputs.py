@@ -31,7 +31,7 @@ class InputProcessor(Processor, HasLogger):
         if formatter is None:
             formatter = self.input_formatter
 
-        log = f"{formatter.get_value(text)} [bold white]|[\]"
+        log = f"{formatter.get_value(text)} [bold white]|[\\]"
         return self._logger.input(log, choices=choices)
 
 
@@ -64,7 +64,7 @@ class OptionsProcessor(InputProcessor):
                 continue
 
             desc = "\n".join(textwrap.wrap(description, width - max_key_width))
-            row = f"[bold blue]{key}[\]:[white]{desc}[\]"
+            row = f"[bold blue]{key}[\\]:[white]{desc}[\\]"
             rows.append(row)
 
         if header is True and self._header:
@@ -73,7 +73,7 @@ class OptionsProcessor(InputProcessor):
             header = ""
 
         header = f"{header}\n\n" if header else ""
-        sub_header = "[cyan]Enter one of the following[\]:\n"
+        sub_header = "[cyan]Enter one of the following[\\]:\n"
         log = header + sub_header + tabulate(
             rows,
             tablefmt="plain",
@@ -121,7 +121,7 @@ class OptionsProcessor(InputProcessor):
 
         for val in value:
             message = f"Unrecognised input: {val!r}. Enter {help_key!r} for valid options."
-            self._logger.warning(f"[red]{message}[\]")
+            self._logger.warning(f"[red]{message}[\\]")
 
 
 class PageProcessor(OptionsProcessor, HasProgress):

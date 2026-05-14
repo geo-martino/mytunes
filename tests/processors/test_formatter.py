@@ -202,7 +202,7 @@ class TestModelFormatter(BaseModelTester):
             for value, style in zip(row, model.styles):
                 if value is None or value == "":
                     continue
-                assert value.startswith(f"[{style}]") and value.endswith(f"[\]")
+                assert value.startswith(f"[{style}]") and value.endswith(f"[\\]")
 
 
     def test_full_format(

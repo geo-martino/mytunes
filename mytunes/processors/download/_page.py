@@ -61,7 +61,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
     def _header(self) -> str:
         header = f"Opened {sum(len(urls) for urls in self.urls)} sites for {len(self.items)} {self.types}. "
         header += f"You may now search for and download the {self.types}."
-        return f"[bold blue]{header}[\]"
+        return f"[bold blue]{header}[\\]"
 
     @property
     def _options(self) -> dict[str | None, str]:
@@ -73,7 +73,7 @@ class StorePausePage[IT: AttributeModel](PageProcessor):
                 f"Re-open all sites for the current batch of {self.types} using the input list of fields, "
                 "each separated by a space e.g. title artist album",
             "q": f"Skip opening sites for any remaining {self.types} and quit",
-            None: f"[white]\nValid fields: [grey74]{fields}[\]"
+            None: f"[white]\nValid fields: [grey74]{fields}[\\]"
         }
 
     def pause(self, print_help: bool = True) -> tuple[str, ...] | None:
