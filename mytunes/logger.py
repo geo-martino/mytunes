@@ -103,7 +103,7 @@ class Logger(logging.Logger):
         if not self.compact and new_line_start:
             self.print_line(level)
 
-        msg = self.generate_message(msg, header, hidden)
+        msg = self.generate_message(msg, header=header, hidden=hidden)
         super()._log(level, msg, args, **kwargs)
 
         if not self.compact and new_line_end:
