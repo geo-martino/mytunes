@@ -65,12 +65,12 @@ class OptionsProcessor(InputProcessor):
         if header is True and self._header:
             header = self._header
         if isinstance(header, str):
-            self._logger.print(f"{header}\n\n")
+            self._logger.print(f"{header}\n")
 
-        self._logger.print("[cyan]Enter one of the following[/]:\n")
+        self._logger.print("[cyan]Enter one of the following[/]:")
         self._logger.print(table)
         if additional_text := options.get(None):
-            self._logger.print(f"\n{additional_text}")
+            self._logger.print(additional_text)
 
         self._logger.print_line()
 
