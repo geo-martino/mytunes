@@ -1,12 +1,13 @@
 import random
 from collections.abc import Generator
-from typing import get_args
+from typing import get_args, Any
 from unittest.mock import patch, Mock
 
 import pytest
 from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
+from rich.table import Table, Column
 
 from mytunes import MODULE_ROOT
 from mytunes.core._item.artist import Artist
@@ -88,11 +89,6 @@ class TestModelFormatter(BaseModelTester):
         ModelFormatter(fields=fields, alignments=valid_alignments)
 
     @pytest.fixture
-    def mock_tabulate(self) -> Generator[Mock]:
-        with patch(f"{MODULE_ROOT}.processors.formatter.tabulate") as mock_tabulate:
-            yield mock_tabulate
-
-    @pytest.fixture
     def values(self, model: ModelFormatter, tracks: list[Track]) -> list[tuple[str, ...]]:
         def _get_value(track: Track, field: str):
             value = getattr(track, field.lower().replace(" ", "_"), None)
@@ -100,128 +96,51 @@ class TestModelFormatter(BaseModelTester):
 
         return [tuple(_get_value(track, field) for field in model.fields) for track in tracks]
 
-    def test_extract_values(
-            self,
-            model: ModelFormatter,
-            tracks: list[Track],
-            values: list[tuple[str, ...]],
-            mock_tabulate: Mock,
-            faker: Faker,
-    ):
-        model.format(tracks)
-        mock_tabulate.assert_called_once()
+    @staticmethod
+    def assert_table_values(table: Table, values: list[tuple]) -> None:
+        assert len(table.rows) == len(values)
 
-        rows = mock_tabulate.call_args.args[0]
-        assert rows == values
+        expected_columns = list(map(list, zip(*values)))
+        assert len(table.columns) == len(expected_columns)
 
-    def test_uses_default_kwargs(
-            self,
-            model: ModelFormatter,
-            tracks: list[Track],
-            mock_tabulate: Mock,
-            faker: Faker,
-    ):
-        model = model.model_copy(update=dict(
-            header=True,
-            alignments=[faker.random_element(("left", "right", "center", "decimal")) for _ in model.fields],
-            widths=[faker.random_int() for _ in model.fields],
-            missing_value=faker.word(),
-        ))
+        for actual, expected in zip(table.columns, expected_columns, strict=True):
+            assert list(actual.cells) == expected
 
-        model.format(tracks, indices=False)
-        mock_tabulate.assert_called_once()
+    def test_values(self, model: ModelFormatter, tracks: list[Track], values: list[tuple], faker: Faker):
+        table = model.format(tracks)
+        self.assert_table_values(table, values)
 
-        kwargs = mock_tabulate.call_args.kwargs
-        assert kwargs["headers"] == model.fields
-        assert kwargs["colalign"] == model.alignments
-        assert kwargs["maxcolwidths"] == model.widths
-        assert kwargs["missingval"] == model.missing_value
-        assert kwargs["showindex"] is False
-
-    def test_adds_index(
-            self,
-            model: ModelFormatter,
-            tracks: list[Track],
-            values: list[tuple[str, ...]],
-            mock_tabulate: Mock,
-            faker: Faker,
-    ):
+    def test_adds_index(self, model: ModelFormatter, tracks: list[Track], values: list[tuple], faker: Faker):
         indices = list(range(1, len(tracks) + 1))
-        if faker.boolean():
+        if faker.boolean():  # accepts position values too
             indices = list(map(Position.model_validate, indices))
 
-        model.format(tracks, indices=indices)
-        mock_tabulate.assert_called_once()
+        values = [(str(i), *row) for i, row in zip(indices, values)]
 
-        kwargs = mock_tabulate.call_args.kwargs
-        assert kwargs["showindex"] == list(map(str, indices))
+        table = model.format(tracks, indices=indices)
+        self.assert_table_values(table, values)
 
-    def test_truncates_values(
-            self,
-            model: ModelFormatter,
-            tracks: list[Track],
-            values: list[tuple[str, ...]],
-            mock_tabulate: Mock,
-            faker: Faker,
-    ):
-        model = model.model_copy(update=dict(
-            widths=[5] * len(model.fields),
-            truncate=[True] * len(model.fields)
-        ))
-        assert any(len(str(val)) > model.widths[0] for row in values for val in row)  # will truncate some values
+    def test_column_properties(self, model: ModelFormatter, tracks: list[Track], values: list[tuple], faker: Faker):
+        model = ModelFormatter(
+            fields=model.fields,
+            widths=[faker.random_int(min=1, max=100) for _ in range(len(model.fields))],
+            alignments=[faker.random_element(get_args(ALIGNMENTS)) for _ in range(len(model.fields))],
+            styles=[faker.random_element(("red", "green", "blue", None)) for _ in range(len(model.fields))],
+            truncate=[faker.null_boolean() for _ in range(len(model.fields))],
+        )
 
-        model.format(tracks)
-        mock_tabulate.assert_called_once()
+        table = model.format(tracks)
 
-        rows = mock_tabulate.call_args.args[0]
-        assert rows != values
-
-        for row, row_original in zip(rows, values):
-            for value, original, width in zip(row, row_original, model.widths):
-                assert len(str(value)) <= width, "Value should be truncated to the specified width"
-                if len(str(original)) > width:
-                    assert str(value).endswith("."), "Truncated value should end with placeholder"
-
-    def test_colours_values(
-            self,
-            model: ModelFormatter,
-            tracks: list[Track],
-            values: list[tuple[str, ...]],
-            mock_tabulate: Mock,
-            faker: Faker,
-    ):
-        styles = ["red", "green", "blue"]
-        model = model.model_copy(update=dict(
-            styles=[faker.random_element(styles) for _ in model.fields],
-        ))
-
-        model.format(tracks)
-
-        rows = mock_tabulate.call_args.args[0]
-        for row in rows:
-            for value, style in zip(row, model.styles):
-                if value is None or value == "":
-                    continue
-                assert value.startswith(f"[{style}]") and value.endswith(f"[/]")
-
-
-    def test_full_format(
-            self, model: ModelFormatter, tracks: list[Track], faker: Faker,
-    ):
-        model = model.model_copy(update=dict(
-            header=True,
-            alignments=[faker.random_element(("left", "right", "center", "decimal")) for _ in model.fields],
-            widths=[faker.random_int() for _ in model.fields],
-            missing_value=faker.word(),
-        ))
-
-        indices = list(range(1, len(tracks) + 1))
-        if faker.boolean():
-            indices = [Position(number=i, total=len(tracks), zero_fill=True) for i in indices]
-
-        result = model.format(tracks, indices=indices)
-        assert isinstance(result, str)
-        assert len(result.splitlines()) > len(tracks)  # should have header row
+        for actual, name, alignment, width, style, truncate in zip(
+            table.columns, model.fields, model.alignments, model.widths, model.styles, model.truncate, strict=True
+        ):
+            actual: Column
+            assert actual.header == name
+            assert actual.justify == alignment
+            assert actual.width == width
+            assert actual.style == (style if style else "")
+            assert actual.no_wrap == truncate
+            assert actual.overflow == "ellipsis" if truncate else "fold"
 
 
 class TestCollectionFormatter(BaseModelTester):

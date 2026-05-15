@@ -2,7 +2,6 @@ from typing import Annotated
 from unittest.mock import Mock
 
 import pytest
-import tabulate
 from faker import Faker
 from pytest_mock import MockerFixture
 
@@ -177,23 +176,26 @@ class TestResult(BaseModelTester):
         assert result.generate_log("Test Result") == expected
 
     def test_generate_table(self, model: Result, results: list[Result]):
+        title = "Test Results"
         results = {result.name: result for result in results}
-        table = Result.generate_table(results, header="Test Results")
+        table = Result.generate_table(results, title=title)
 
-        assert len(table.splitlines()) == len(results) + 1  # adds header row
+        assert table.title == title
+
+        assert len(table.rows) == len(results)
         # adds key to each row
-        assert len(table.splitlines()[1].split(" | ")) == len(next(iter(results.values())).generate_log()) + 1
+        assert len(table.columns) == len(next(iter(results.values())).generate_log()) + 1
 
     def test_sort_results(self, model: Result, results: list[Result], faker: Faker):
         expected = [
             *((result.name, result) for result in sorted(results, key=lambda result: result.name)),
-            (tabulate.SEPARATING_LINE, None),
+            (None, None),  # section end
             *((result.name, result) for result in sorted(results, key=lambda result: result.name)),
         ]
 
         results = (
             *((result.name, result) for result in results),
-            (tabulate.SEPARATING_LINE, None),
+            (None, None),  # section end
             *((result.name, result) for result in results),
         )
 
@@ -306,8 +308,8 @@ class TestNamedResult(BaseModelTester):
     ):
         expected = [(result.name, result) for result in results]
 
-        NamedResult.generate_table(results, header=None)
-        mock_generate_table.assert_called_with(results=expected, header=None)
+        NamedResult.generate_table(results, title=None)
+        mock_generate_table.assert_called_with(results=expected, title=None)
 
-        NamedResult.generate_table(expected, header=None)
-        mock_generate_table.assert_called_with(results=expected, header=None)
+        NamedResult.generate_table(expected, title=None)
+        mock_generate_table.assert_called_with(results=expected, title=None)

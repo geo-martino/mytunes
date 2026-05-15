@@ -313,9 +313,9 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
 
         items = list(playlist.items)
 
-        header = f"[bold yellow]{playlist.name.upper()} - ORIGINAL[/]"
+        header = f"[bold yellow]{playlist.name.upper()} - ORIGINAL[/]:"
         table = self.playlist_formatter.format(items, indices=range(1, len(items) + 1)) or missing_message
-        self._logger.print(header + ":\n" + table)
+        self._logger.print(header, table)
 
         items = await self.get_current_playlist_items(playlist.uri)
         if items == list(playlist.items):
@@ -324,5 +324,5 @@ class PlaylistsPage[API: _ApiT, CT: HasURI](CheckerPage[API, CT]):
 
         header = f"[bold green]{playlist.name.upper()} - CURRENT[/]"
         table = self.playlist_formatter.format(items, indices=range(1, len(items) + 1)) or missing_message
-        self._logger.print(header + ":\n" + table)
+        self._logger.print(header, table)
         self._logger.print_line()

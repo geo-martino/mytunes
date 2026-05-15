@@ -3,7 +3,6 @@ from collections.abc import Generator, Collection, Sequence
 from pathlib import Path
 from typing import Annotated, ClassVar, final, Any
 
-import tabulate
 from mutagen import MutagenError
 from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, validate_call, OnErrorOmit
 
@@ -86,10 +85,10 @@ class LocalLibrary(
 
     def _log_library_uris(self):
         header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
-        results: dict[str, LibraryURIsResult | None] = self._generate_playlist_uris_results()
-        results[tabulate.SEPARATING_LINE] = None
+        results: dict[str | None, LibraryURIsResult | None] = self._generate_playlist_uris_results()
+        results[None] = None  # add section separator
         results["TRACKS"] = self._generate_track_uris_results()
-        table = LibraryURIsResult.generate_table(results=results, header=header)
+        table = LibraryURIsResult.generate_table(results=results, title=header)
 
         self._logger.stat(table)
 
@@ -287,14 +286,14 @@ class LocalLibrary(
 
     def _log_playlist_load(self, results: Sequence[LoadPlaylistResult]) -> None:
         header = f"{self.source.upper()} PLAYLISTS LOADED"
-        table = LoadPlaylistResult.generate_table(results=results, header=header)
+        table = LoadPlaylistResult.generate_table(results=results, title=header)
 
         self._logger.stat(table)
 
     def _log_playlist_uris(self) -> None:
         results = self._generate_playlist_uris_results()
         header = f"{self.source.upper()} PLAYLIST URIS"
-        table = LibraryURIsResult.generate_table(results=results, header=header)
+        table = LibraryURIsResult.generate_table(results=results, title=header)
 
         self._logger.stat(table)
 
@@ -327,7 +326,7 @@ class LocalLibrary(
     def log_save_playlists_results(self, results: Sequence[OnErrorOmit[SavePlaylistResult]]) -> None:
         """Log the given results of saving playlists."""
         header = f"{self.source.upper()} PLAYLISTS SAVED"
-        table = SavePlaylistResult.generate_table(results=results, header=header)
+        table = SavePlaylistResult.generate_table(results=results, title=header)
 
         self._logger.stat(table, new_line_start=True)
 

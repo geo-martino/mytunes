@@ -1,12 +1,10 @@
-import textwrap
 from abc import abstractmethod
 from collections.abc import Iterable
 from typing import ClassVar
 
 from pydantic import Field
-from rich import get_console
 from rich.progress import TaskID
-from tabulate import tabulate
+from rich.table import Table
 
 from mytunes.core.properties.logger import HasLogger, HasProgress
 from mytunes.core.properties.order import Position
@@ -55,35 +53,25 @@ class OptionsProcessor(InputProcessor):
         """Format help text with a given mapping of options. Add an option header to include before options."""
         options = self._options | OptionsProcessor._options.fget(self)
 
-        width = get_console().width
-        # +2 for ':' and space between cols in tabulate
-        max_key_width = max(len(key) for key in options if key) + 2
+        table = Table.grid()
+        table.add_column("key", justify="left", style="bold blue", no_wrap=True)
+        table.add_column("desc", justify="left", style="white")
 
-        rows = []
         for key, description in options.items():
             if key is None:  # Used only for printing additional text after options
                 continue
-
-            desc = "\n".join(textwrap.wrap(description, width - max_key_width))
-            row = f"[bold blue]{key}[/]:[white]{desc}[/]"
-            rows.append(row)
+            table.add_row(key + ": ", description)
 
         if header is True and self._header:
             header = self._header
-        elif not isinstance(header, str):
-            header = ""
+        if isinstance(header, str):
+            self._logger.print(f"{header}\n\n")
 
-        header = f"{header}\n\n" if header else ""
-        sub_header = "[cyan]Enter one of the following[/]:\n"
-        log = header + sub_header + tabulate(
-            rows,
-            tablefmt="plain",
-            colalign=("left", "left"),
-        )
+        self._logger.print("[cyan]Enter one of the following[/]:\n")
+        self._logger.print(table)
         if additional_text := options.get(None):
-            log += f"\n{additional_text}"
+            self._logger.print(f"\n{additional_text}")
 
-        self._logger.print(log)
         self._logger.print_line()
 
     def _get_user_input(

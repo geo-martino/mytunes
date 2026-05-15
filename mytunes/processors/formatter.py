@@ -2,9 +2,9 @@ from collections.abc import Sequence, Iterable, Collection
 from contextlib import suppress
 from typing import Literal, Self, Annotated
 
-from pydantic import Field, model_validator, PositiveInt, validate_call, \
-    ValidationError, ConfigDict
-from tabulate import tabulate
+from pydantic import Field, model_validator, PositiveInt, validate_call, ValidationError, ConfigDict, InstanceOf
+from rich import box
+from rich.table import Table
 
 from mytunes._types import TO_LIST, StrippedString
 from mytunes.core.album import HasAlbum
@@ -23,7 +23,7 @@ from .._utils import truncate_string
 FIELDS = Literal[
     "Name", "Album", "Artist", "Released At", "Length", "URI", "Public URL"
 ]
-ALIGNMENTS = Literal["left", "right", "center", "decimal"]
+ALIGNMENTS = Literal["default", "left", "center", "right", "full"]
 
 
 class ModelFormatter[RT: ResourceModel](BaseModel):
@@ -34,7 +34,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         description="The fields of the model to include in the formatted output.",
         min_length=1,
     )
-    alignments: Annotated[Sequence[ALIGNMENTS], TO_LIST] | None = Field(
+    alignments: Annotated[Sequence[ALIGNMENTS | None], TO_LIST] | None = Field(
         description="The alignments of the fields in the formatted output. Must be the same length as `fields`.",
         default=None,
         min_length=1,
@@ -44,27 +44,24 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
         default=None,
         min_length=1,
     )
-    truncate: Annotated[Sequence[bool], TO_LIST] | None = Field(
+    truncate: Annotated[Sequence[bool | None], TO_LIST] | None = Field(
         description="Whether to truncate the fields in the formatted output. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
-    styles: Annotated[
-        Sequence[StrippedString | None],
-        TO_LIST
-    ] | None = Field(
+    styles: Annotated[Sequence[StrippedString | None], TO_LIST] | None = Field(
         description="The styles to assign to each column. Must be the same length as `fields`.",
         default=None,
         min_length=1,
     )
-    missing_value: str = Field(
+    missing_value: str | None = Field(
         description="The value to use in the output when a field is missing.",
         default="",
     )
 
-    table_format: str = Field(
+    table_format: InstanceOf[box.Box] = Field(
         description="The format to use for the table.",
-        default="orgtbl",
+        default=box.ASCII,
     )
     header: bool = Field(
         description="Whether to include the header in the output.",
@@ -73,36 +70,37 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
     @model_validator(mode="after")
     def _validate_widths(self) -> Self:
-        self._expand_single_item_to_all_fields("widths")
+        self._expand_for_all_fields("widths")
         self._validate_lengths_match_fields("widths")
         return self
 
     @model_validator(mode="after")
     def _validate_alignments(self) -> Self:
-        self._expand_single_item_to_all_fields("alignments")
+        self._expand_for_all_fields("alignments")
         self._validate_lengths_match_fields("alignments")
         return self
 
     @model_validator(mode="after")
     def _validate_truncate(self) -> Self:
-        self._expand_single_item_to_all_fields("truncate")
+        self._expand_for_all_fields("truncate")
         self._validate_lengths_match_fields("truncate")
         return self
 
     @model_validator(mode="after")
     def _validate_styles(self) -> Self:
-        self._expand_single_item_to_all_fields("styles")
+        self._expand_for_all_fields("styles")
         self._validate_lengths_match_fields("styles")
         return self
 
-    def _expand_single_item_to_all_fields(self, name: str) -> None:
+    def _expand_for_all_fields(self, name: str) -> None:
         value = getattr(self, name)
         if value is None:
-            return None
+            value = [None]
         if len(value) != 1 or len(self.fields) == 1:
             return None
 
         self.__dict__[name] = list(value) * len(self.fields)
+        return None
 
     def _validate_lengths_match_fields(self, name: str) -> None:
         value = getattr(self, name)
@@ -117,7 +115,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
         return None
 
-    def format(self, item: RT | Iterable[RT], indices: bool | Sequence = False) -> str:
+    def format(self, item: RT | Iterable[RT], indices: bool | Sequence = False) -> Table:
         """Format the given item."""
         match item:
             case ResourceModel():
@@ -127,19 +125,29 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             case _:
                 raise MyTunesTypeError("Item must be a ResourceModel or a sequence of ResourceModels.")
 
-        return tabulate(
-            rows,
-            headers=self.fields if self.header else (),
-            colalign=self.alignments,
-            maxcolwidths=self.widths,
-            tablefmt=self.table_format,
-            missingval=self.missing_value,
-            showindex=indices if isinstance(indices, bool) else list(map(str, indices)),
-            # WORKAROUND: needed to avoid parsing coloured number strings as int, which causes tabulate to
-            #  throw ValueError when trying to cast these strings to int as the ANSI codes are still
-            #  present in the string value when casting
-            disable_numparse=True,
-        )
+        table = Table(show_header=self.header, box=self.table_format)
+        if indices:
+            table.add_column(no_wrap=True)
+        columns = zip(self.fields, self.alignments, self.widths, self.styles, self.truncate, strict=True)
+        for name, alignment, width, style, truncate in columns:
+            table.add_column(
+                name,
+                justify=alignment if alignment else "default",
+                width=width,
+                style=style,
+                no_wrap=truncate,
+                overflow="ellipsis" if truncate else "fold",
+            )
+
+        if indices is True:
+            rows = ((i, *row) for i, row in enumerate(rows, 1))
+        elif isinstance(indices, Sequence):
+            rows = ((str(i), *row) for i, row in zip(indices, rows))
+
+        for row in rows:
+            table.add_row(*row)
+
+        return table
 
     def _format_row(self, item: RT) -> tuple:
         row = []
@@ -150,32 +158,9 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
             with suppress(ValidationError):  # just use the default missing value if the getter fails
                 value = getter(item)
 
-            value = self._truncate_value_if_needed(value, position)
-            value = self._colour_value_if_needed(value, position)
-            if value is None:
-                value = self.missing_value if self.missing_value else ""
-
-            row.append(value)
+            row.append(value if value is not None else self.missing_value)
 
         return tuple(row)
-
-    def _truncate_value_if_needed[T](self, value: T, position: int) -> T | str:
-        if self.widths is None or self.truncate is None:
-            return value
-
-        width = self.widths[position]
-        should_truncate = self.truncate[position]
-
-        if width is not None and should_truncate:
-            value = truncate_string(str(value), width)
-        return value
-
-    def _colour_value_if_needed[T](self, value: T, position: int) -> T | str:
-        if value is None or self.styles is None:
-            return value
-
-        style = self.styles[position]
-        return f"[{style}]{value}[/]" if style else value
 
     @staticmethod
     @validate_call
@@ -214,7 +199,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
 
 
 class CollectionFormatter[CT: CollectionModel](ModelFormatter[CT]):
-    def format(self, collection: CT | Sequence, indices: bool | Sequence = False) -> str:
+    def format(self, collection: CT | Sequence, indices: bool | Sequence = False) -> Table:
         items = []
         match collection:
             case CollectionModel() if collection.total:

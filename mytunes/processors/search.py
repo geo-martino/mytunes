@@ -253,7 +253,7 @@ class Searcher[API: _ApiT](Processor, HasAPI[API], HasAsyncOperations, HasProgre
             results = [results]
 
         header = f"{self.source.upper()} SEARCH RESULTS"
-        table = SearchResult.generate_table(results=results, header=header)
+        table = SearchResult.generate_table(results=results, title=header)
 
         self._logger.report(table, new_line_start=True)
 

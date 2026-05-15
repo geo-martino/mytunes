@@ -85,7 +85,7 @@ class Checker[API: RemoteAPI](Processor, HasAPI[API], HasAsyncOperations, HasPro
             results = [results]
 
         header = f"{self.source.upper()} CHECK RESULTS"
-        table = CheckResult.generate_table(results=results, header=header)
+        table = CheckResult.generate_table(results=results, title=header)
 
         self._logger.report(table, new_line_start=True)
 

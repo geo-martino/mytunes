@@ -134,7 +134,7 @@ class RemoteMutableLibrary[
     def log_sync_results(self, results: Sequence[SyncRemoteResult]) -> None:
         """Log stats from the given sync playlist results"""
         header = f"{self._log_name.upper()} SYNC RESULTS"
-        table = SyncRemoteResult.generate_table(results=results, header=header)
+        table = SyncRemoteResult.generate_table(results=results, title=header)
 
         self._logger.stat(table, new_line_start=True)
 

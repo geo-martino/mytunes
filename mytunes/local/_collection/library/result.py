@@ -10,8 +10,6 @@ from ..._item.track import LocalTrack
 
 class LibraryURIsResult[T: LocalTrack](TotalCountResult):
     """Stores the results of the URIs on loaded tracks in a local library."""
-    _key_formatter = TotalCountResult._header_formatter
-
     source: str | None = Field(
         description="The remote library source these URIs are associated with.",
     )

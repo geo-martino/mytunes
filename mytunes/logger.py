@@ -14,7 +14,6 @@ from pydantic import Field, validate_call
 from rich import get_console
 from rich.logging import RichHandler
 from rich.prompt import Prompt
-from rich.text import Text
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
 
@@ -145,17 +144,19 @@ class Logger(logging.Logger):
         if self.isEnabledFor(logging.CRITICAL):
             self._log(logging.CRITICAL, *args, **kwargs)
 
-    def print(self, *values, sep=' ', header: int | None = None, **kwargs) -> None:
+    def print(self, *values, sep=" ", header: int | None = None, **kwargs) -> None:
         """
         Wrapper for print. Logs the given ``values`` to the INFO setting.
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
         This ensures the user sees the ``values`` always.
         """
-        message = self.generate_message(sep.join(values), header=header)
+        if all(isinstance(value, str) for value in values):
+            values = (self.generate_message(sep.join(values), header=header),)
+
         if not values or not self._will_log_to_stdout(logging.DEBUG):
-            get_console().print(message, sep=sep, new_line_start=not self.compact, **kwargs)
-        elif message:
-            self.debug(message)
+            get_console().print(*values, sep=sep, new_line_start=not self.compact, **kwargs)
+        elif values:
+            self.debug(*values)
 
     def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
@@ -181,7 +182,7 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> Text:
+    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> str:
         match header:
             case None:
                 header = ""
@@ -202,7 +203,7 @@ class Logger(logging.Logger):
             hidden = f"[grey74]{hidden}[/]"
 
         parts = [header, message, hidden]
-        return Text.from_ansi(" ".join(map(str, (part for part in parts if part))).strip())
+        return " ".join(map(str, (part for part in parts if part))).strip()
 
     @classmethod
     def format_types_to_string(cls, items: Iterable[Any], final_join_word: str = "&") -> str:

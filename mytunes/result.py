@@ -1,10 +1,10 @@
-import re
 from collections.abc import Iterable, Mapping, Collection, Callable, Sequence
 from typing import ClassVar, Self, Any, Literal
 
-import tabulate
 from pydantic import ConfigDict, Field, PositiveInt
 from pydantic.dataclasses import dataclass
+from rich import box
+from rich.table import Table
 
 from mytunes._types import StrippedString
 from mytunes._utils import truncate_string
@@ -128,10 +128,9 @@ class Result(BaseModel):
     """Stores the results of an operation"""
     model_config = ConfigDict(frozen=True)
 
-    _table_format: ClassVar[str] = "orgtbl"
-    _header_formatter: ClassVar[LogFormatter] = LogFormatter(
-        style="bold cyan",
-    )
+    _table_format: ClassVar[box.Box] = box.MINIMAL
+    _title_style: ClassVar[str] = "bold cyan"
+
     _key_formatter: ClassVar[LogFormatter] = LogFormatter(
         max_width=40,
         style="bold white",
@@ -144,31 +143,27 @@ class Result(BaseModel):
     def generate_table(
             cls,
             results: Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
-            header: str = None
-    ) -> str:
+            title: str = None
+    ) -> Table:
         """Generate a formatted table of stats for multiple results"""
         if isinstance(results, Mapping):
             results = results.items()
 
+        table = Table(title=title, box=cls._table_format, title_style=cls._title_style)
+
         results = cls._sort_results(results)
+        rows = [result.generate_log(key) if isinstance(result, Result) else None for key, result in results]
+        cols_count = max(map(len, filter(None, rows))) if rows else 0
 
-        # take key when not a Result to allow for separating lines
-        rows = [result.generate_log(key) if isinstance(result, Result) else key for key, result in results]
-        col_count = max(map(len, rows)) if rows else 0
-        table = tabulate.tabulate(
-            rows,
-            tablefmt=cls._table_format,
-            colalign=("left", *["right"] * max(0, col_count - 1)),
-            # WORKAROUND: needed to avoid parsing coloured number strings as int, which causes tabulate to
-            #  throw ValueError when trying to cast these strings to int as the ANSI codes are still
-            #  present in the string value when casting
-            disable_numparse=True,
-        )
-        table = re.sub(r"\| +\|", "|", table)
-        table = re.sub(r"\| +\|", "|", table)
+        table.add_column(justify="left")  # key col
+        for i in range(cols_count - 1):
+            table.add_column(justify="right")  # value col
 
-        if header:
-            table = cls._header_formatter.get_value(header) + ":\n" + table
+        for row in rows:
+            if row:
+                table.add_row(*row)
+            elif row is None and len(table.rows) > 0:  # indicates that previous row was the end of a section
+                table.rows[-1].end_section = True
 
         return table
 
@@ -178,7 +173,7 @@ class Result(BaseModel):
         chunks: list[tuple[KT, VT]] = []
         chunk: list[tuple[KT, VT]] = []
         for key, result in results:
-            if key != tabulate.SEPARATING_LINE:
+            if key is not None:
                 chunk.append((key, result))
                 continue
 
@@ -316,10 +311,10 @@ class NamedResult(Result):
     def generate_table(
             cls,
             results: Sequence[Self] | Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
-            header: str = None
-    ) -> str:
+            title: str = None
+    ) -> Table:
         if isinstance(results, Mapping):
-            return super().generate_table(results=results, header=header)
+            return super().generate_table(results=results, title=title)
 
         results_mapped: list[tuple[str, cls]] = []
         for result in results:
@@ -329,7 +324,7 @@ class NamedResult(Result):
 
             results_mapped.append((result.name, result))
 
-        return super().generate_table(results=results_mapped, header=header)
+        return super().generate_table(results=results_mapped, title=title)
 
 
 class ItemResult[IT](Result):
@@ -341,10 +336,10 @@ class ItemResult[IT](Result):
     def generate_table(
             cls,
             results: Sequence[Self] | Sequence[tuple[str | None, Self | None]] | Mapping[str | None, Self | None],
-            header: str = None
-    ) -> str:
+            title: str = None
+    ) -> Table:
         if isinstance(results, Mapping):
-            return super().generate_table(results=results, header=header)
+            return super().generate_table(results=results, title=title)
 
         results_mapped: list[tuple[str, cls]] = []
         for result in results:
@@ -362,4 +357,4 @@ class ItemResult[IT](Result):
 
             results_mapped.append((key, result))
 
-        return super().generate_table(results=results_mapped, header=header)
+        return super().generate_table(results=results_mapped, title=title)

@@ -1,8 +1,6 @@
 from collections.abc import Sequence
 from typing import Annotated, Any, TypedDict
 
-import tabulate
-
 from mytunes.core._collection import RemoteCollection
 from mytunes.core._collection.album import RemoteAlbumCollection
 from mytunes.core._collection.artist import RemoteArtistCollection
@@ -81,12 +79,12 @@ class RemoteLibrary[
             await self.load_library_artist_albums()
 
         header = f"{self._log_name.upper()} LIBRARY"
-        results: dict[str, Result | None] = self._generate_playlist_results()
-        results[tabulate.SEPARATING_LINE] = None
+        results: dict[str | None, Result | None] = self._generate_playlist_results()
+        results[None] = None
         results["SAVED TRACKS"] = self._generate_track_results()
         results["SAVED ARTISTS"] = self._generate_artist_results()
         results["SAVED ALBUMS"] = self._generate_album_results()
-        table = Result.generate_table(results=results, header=header)
+        table = Result.generate_table(results=results, title=header)
 
         self._logger.stat(table, new_line_start=True)
 
@@ -161,7 +159,7 @@ class RemoteLibrary[
     def log_playlists(self) -> None:
         results = self._generate_playlist_results()
         header = f"{self._log_name.upper()} PLAYLISTS"
-        table = RemotePlaylistsResult.generate_table(results=results, header=header)
+        table = RemotePlaylistsResult.generate_table(results=results, title=header)
 
         self._logger.stat(table, new_line_start=True)
 

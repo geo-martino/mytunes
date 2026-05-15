@@ -93,6 +93,6 @@ class Tagger[IT: AttributeModel](Processor, HasLogger, HasProgress):
     def log_results(self, results: Sequence[OnErrorOmit[TaggerResult]]) -> None:
         """Log the given tagger results"""
         header = "TAGGER RESULTS"
-        table = TaggerResult.generate_table(results=results, header=header)
+        table = TaggerResult.generate_table(results=results, title=header)
 
         self._logger.report(table, new_line_start=True)
