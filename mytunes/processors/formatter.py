@@ -62,6 +62,7 @@ class ModelFormatter[RT: ResourceModel](BaseModel):
     table_format: InstanceOf[box.Box] = Field(
         description="The format to use for the table.",
         default=box.ASCII,
+        exclude=True,
     )
     header: bool = Field(
         description="Whether to include the header in the output.",
