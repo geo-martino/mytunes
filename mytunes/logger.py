@@ -151,7 +151,7 @@ class Logger(logging.Logger):
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
         This ensures the user sees the ``values`` always.
         """
-        message = self.generate_message(values, header=header, sep=sep)
+        message = self.generate_message(*values, header=header, sep=sep)
 
         if not values or not self._will_log_to_stdout(logging.DEBUG):
             get_console().print(message, sep=sep, new_line_start=not self.compact, **kwargs)
