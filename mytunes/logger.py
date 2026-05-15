@@ -14,6 +14,7 @@ from pydantic import Field, validate_call
 from rich import get_console
 from rich.logging import RichHandler
 from rich.prompt import Prompt
+from rich.table import Table
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
 
@@ -144,19 +145,18 @@ class Logger(logging.Logger):
         if self.isEnabledFor(logging.CRITICAL):
             self._log(logging.CRITICAL, *args, **kwargs)
 
-    def print(self, *values, sep=" ", header: int | None = None, **kwargs) -> None:
+    def print(self, *values, sep: str = " ", header: int | None = None, **kwargs) -> None:
         """
         Wrapper for print. Logs the given ``values`` to the INFO setting.
         If there are no stdout handlers with severity <= INFO, also print this to the terminal.
         This ensures the user sees the ``values`` always.
         """
-        if all(isinstance(value, str) for value in values):
-            values = (self.generate_message(sep.join(values), header=header),)
+        message = self.generate_message(values, header=header, sep=sep)
 
         if not values or not self._will_log_to_stdout(logging.DEBUG):
-            get_console().print(*values, sep=sep, new_line_start=not self.compact, **kwargs)
+            get_console().print(message, sep=sep, new_line_start=not self.compact, **kwargs)
         elif values:
-            self.debug(*values)
+            self.debug(message)
 
     def print_line(self, level: int = logging.CRITICAL + 1) -> None:
         """Print a new line only when DEBUG < ``logger level`` <= ``level`` for all console handlers"""
@@ -182,7 +182,9 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(message: object, header: HeaderType | None = None, hidden: str | None = None) -> str:
+    def generate_message(
+            *message: object, header: HeaderType | None = None, hidden: str | None = None, sep: str = " "
+    ) -> str:
         match header:
             case None:
                 header = ""
@@ -197,13 +199,14 @@ class Logger(logging.Logger):
 
         if header:
             header = f"[bold magenta]{header}[/]"
-            message = f"[bold white]{message}[/]"
+            message = (f"[bold white]{m}[/]" for m in message)
 
         if hidden:
             hidden = f"[grey74]{hidden}[/]"
 
-        parts = [header, message, hidden]
-        return " ".join(map(str, (part for part in parts if part))).strip()
+        parts = [header, *message, hidden]
+        parts = list(filter(None, parts))
+        return sep.join(map(str, parts)).strip() if len(parts) > 1 else next(iter(parts), "")
 
     @classmethod
     def format_types_to_string(cls, items: Iterable[Any], final_join_word: str = "&") -> str:

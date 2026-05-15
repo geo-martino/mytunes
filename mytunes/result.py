@@ -149,7 +149,13 @@ class Result(BaseModel):
         if isinstance(results, Mapping):
             results = results.items()
 
-        table = Table(title=title, box=cls._table_format, title_style=cls._title_style)
+        table = Table(
+            title=title,
+            title_style=cls._title_style,
+            box=cls._table_format,
+            show_header=False,
+            show_edge=False,
+        )
 
         results = cls._sort_results(results)
         rows = [result.generate_log(key) if isinstance(result, Result) else None for key, result in results]
