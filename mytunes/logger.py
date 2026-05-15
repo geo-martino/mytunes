@@ -182,12 +182,10 @@ class Logger(logging.Logger):
 
     @staticmethod
     @validate_call
-    def generate_message(
-            *message: object, header: HeaderType | None = None, hidden: str | None = None, sep: str = " "
-    ) -> str:
+    def generate_message[T](
+            *values: T, header: HeaderType | None = None, hidden: str | None = None, sep: str = " "
+    ) -> str | T:
         match header:
-            case None:
-                header = ""
             case 1:
                 header = "->"
             case 2:
@@ -199,12 +197,12 @@ class Logger(logging.Logger):
 
         if header:
             header = f"[bold magenta]{header}[/]"
-            message = (f"[bold white]{m}[/]" for m in message)
+            values = (f"[bold white]{val}[/]" for val in values)
 
         if hidden:
             hidden = f"[grey74]{hidden}[/]"
 
-        parts = [header, *message, hidden]
+        parts = [header, *values, hidden]
         parts = list(filter(None, parts))
         return sep.join(map(str, parts)).strip() if len(parts) > 1 else next(iter(parts), "")
 
