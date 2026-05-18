@@ -66,7 +66,7 @@ class _SpotifyPlaylistLibraryEndpoints(
             self._handler.log("SKIP", url, message="No playlist data given to modify")
 
         if kwargs:
-            await super().modify(**kwargs)
+            await super().modify(url, **kwargs)
         if image is not None:
             await self._modify_image(url, image=image)
 
