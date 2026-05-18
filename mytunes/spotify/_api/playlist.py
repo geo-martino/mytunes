@@ -76,6 +76,7 @@ class _SpotifyPlaylistLibraryEndpoints(
         data, mime = await self._get_image_data(image)
         if len(data) > 256:
             self._logger.warning(f"Cannot modify image, image too large: {len(data)} > 256 bytes | {url}")
+            return
 
         if not url.path.endswith("/images"):
             url = url.joinpath("images")
