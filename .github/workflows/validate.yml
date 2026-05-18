@@ -5,7 +5,7 @@ on:
     branches: [ master ]
     paths:
       - pyproject.toml
-      - musify/**
+      - ../../mytunes/**
       - tests/**
 
   workflow_dispatch:

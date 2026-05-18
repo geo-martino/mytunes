@@ -6,15 +6,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for using Musify and for finding the time to help make using it a better experience for everyone!
+        Thank you for using MyTunes and for finding the time to help make using it a better experience for everyone!
 
         Note, you do not need to create an issue if you already have a fix for an issue.
 
-        You can open a [pull request](https://github.com/geo-martino/musify/pulls) immediately instead.
+        You can open a [pull request](https://github.com/geo-martino/mytunes/pulls) immediately instead.
   - type: input
     attributes:
-      label: Musify version
-      description: What Musify version are you using?.
+      label: MyTunes version
+      description: What MyTunes version are you using?.
     validations:
       required: true
   - type: textarea
