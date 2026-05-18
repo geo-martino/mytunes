@@ -621,7 +621,7 @@ class LocalTrack[FT: FileType](
         exclude = {field.split(".")[0] for field in exclude}  # can only serialise top-level fields
         exclude = self._validate_tag_fields(exclude)
 
-        return self.model_dump(
+        tags = self.model_dump(
             include=set(include),
             exclude=set(exclude),
             context=context,
@@ -629,6 +629,7 @@ class LocalTrack[FT: FileType](
             exclude_none=True,
             exclude_defaults=True,
         )
+        return {k: v for k, v in tags.items() if v is not None}
 
     def merge(
             self,

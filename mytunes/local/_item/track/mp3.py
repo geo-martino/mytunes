@@ -1,4 +1,4 @@
-from collections.abc import MutableSequence, MutableMapping, Iterable, Collection
+from collections.abc import MutableSequence, MutableMapping, Iterable
 from copy import copy
 from typing import Any, ClassVar, final, Annotated
 
@@ -271,16 +271,17 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return self._serialize_text_frame(value, handler=handler, info=info)
 
     @field_serializer("artists", "genres", mode="wrap", when_used="unless-none")
-    def _serialize_names[T: Collection[str | HasName]](
+    def _serialize_names[T: Iterable[str | HasName]](
         self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
     ) -> T | list[str] | InstanceOf[mutagen.id3.TextFrame] | None:
         if info.mode == "json":
             return super()._serialize_names(value, handler=handler, info=info)
+        value = list(value)
         if len(value) == 0:
-            return None  # don't serialise empty values
+            return []  # don't serialise empty values
 
-        # noinspection PyArgumentList
-        return self._serialize_text_frame(value, handler=handler, info=info)
+        tag_value = self._join_split_tags(value)
+        return self._serialize_text_frame(tag_value, handler=handler, info=info)
 
     @field_serializer(
         "name", "track", "disc", "bpm", "key", "released_at",
@@ -288,15 +289,14 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     )
     def _serialize_text_frame[T](
             self, value: T | str | HasName, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> T | InstanceOf[mutagen.id3.TextFrame]:
+    ) -> T | InstanceOf[mutagen.id3.TextFrame] | None:
         if not info.by_alias or info.mode == "json":  # not serializing to tag IDs
             return handler(value)
-        if not isinstance(value, ItemSequence):
-            value = [value]
 
         frame_cls = self._get_frame_class(info)
-        tag_value = self._join_split_tags(value)
-        return frame_cls(text=tag_value)
+        # noinspection PyTypeChecker
+        tag_value = super()._serialize_name(value, lambda x: x, None)
+        return frame_cls(text=str(tag_value)) if tag_value is not None else None  # don't serialise invalid values
 
     @field_serializer("comments", mode="wrap", when_used="unless-none")
     def _serialize_text_frames(
@@ -315,7 +315,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
             values.extend(frame_cls(text=str(uri), desc=f"{uri.source.casefold()}URI", lang="eng") for uri in self.uris)
 
-        return values if len(values) > 0 else None  # don't serialise empty values
+        return values if len(values) > 0 else []  # don't serialise empty values
 
     @field_serializer("rating", mode="wrap", when_used="unless-none")
     def _serialize_rating_frame[T](

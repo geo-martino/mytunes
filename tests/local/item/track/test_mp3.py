@@ -117,7 +117,7 @@ class TestMP3(LocalTrackTester):
         rating = mutagen.id3.POPM(email=faker.email(), rating=faker.random_int(1, 5), count=1)
         assert MP3._deserialize_rating_frame(rating) == rating.rating
 
-    def test_serialize_text_frame_from_string(self, model: MP3, faker: Faker):
+    def test_serialize_text_frame(self, model: MP3, faker: Faker):
         value = faker.sentence()
         info = Namespace(field_name="name", by_alias=True, context=None, mode="python")
 
@@ -125,25 +125,6 @@ class TestMP3(LocalTrackTester):
         result = model._serialize_text_frame(value, handler=lambda x: x, info=info)
         assert isinstance(result, mutagen.id3.TIT2)
         assert str(result) == value
-
-    def test_serialize_text_frame_from_strings(self, model: MP3, faker: Faker):
-        value = faker.words()
-        expected = model._join_tags(value)
-        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
-
-        # noinspection PyTypeChecker
-        result = model._serialize_text_frame(value, handler=lambda x: x, info=info)
-        assert isinstance(result, mutagen.id3.COMM)
-        assert str(result) == expected
-
-    def test_serialize_text_frame_from_names(self, model: MP3, artists: list[LocalArtist]):
-        expected = model._join_tags(artist.name for artist in artists)
-        info = Namespace(field_name="artists", by_alias=True, context=None, mode="python")
-
-        # noinspection PyTypeChecker
-        result = model._serialize_text_frame(artists, handler=lambda x: x, info=info)
-        assert isinstance(result, mutagen.id3.TPE1)
-        assert str(result) == expected
 
     def test_serialize_text_frames(self, model: MP3, faker: Faker):
         expected = [faker.sentence() for _ in range(faker.random_int(3, 6))]
@@ -164,6 +145,25 @@ class TestMP3(LocalTrackTester):
         result = model._serialize_text_frames(value, handler=lambda x: x, info=info)
         assert all(isinstance(r, mutagen.id3.COMM) for r in result)
         assert list(map(str, result)) == expected
+
+    def test_serialize_names_from_strings(self, model: MP3, faker: Faker):
+        value = faker.words()
+        expected = model._join_tags(value)
+        info = Namespace(field_name="comments", by_alias=True, context=None, mode="python")
+
+        # noinspection PyTypeChecker
+        result = model._serialize_names(value, handler=lambda x: x, info=info)
+        assert isinstance(result, mutagen.id3.COMM)
+        assert str(result) == expected
+
+    def test_serialize_names_from_names(self, model: MP3, artists: list[LocalArtist]):
+        expected = model._join_tags(artist.name for artist in artists)
+        info = Namespace(field_name="artists", by_alias=True, context=None, mode="python")
+
+        # noinspection PyTypeChecker
+        result = model._serialize_names(artists, handler=lambda x: x, info=info)
+        assert isinstance(result, mutagen.id3.TPE1)
+        assert str(result) == expected
 
     def test_serialize_rating_frame(self, model: MP3, faker: Faker):
         value = faker.random_int(0, 100)
