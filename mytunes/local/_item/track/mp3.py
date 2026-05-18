@@ -1,4 +1,4 @@
-from collections.abc import MutableSequence, MutableMapping, Iterable
+from collections.abc import MutableSequence, MutableMapping, Iterable, Collection
 from copy import copy
 from typing import Any, ClassVar, final, Annotated
 
@@ -271,12 +271,14 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         return self._serialize_text_frame(value, handler=handler, info=info)
 
     @field_serializer("artists", "genres", mode="wrap", when_used="unless-none")
-    def _serialize_names[T: Iterable[str | HasName]](
+    def _serialize_names[T: Collection[str | HasName]](
         self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> T | list[str] | InstanceOf[mutagen.id3.TextFrame]:
+    ) -> T | list[str] | InstanceOf[mutagen.id3.TextFrame] | None:
         if info.mode == "json":
             return super()._serialize_names(value, handler=handler, info=info)
-        print(1, info.field_name, value)
+        if len(value) == 0:
+            return None  # don't serialise empty values
+
         # noinspection PyArgumentList
         return self._serialize_text_frame(value, handler=handler, info=info)
 
@@ -291,11 +293,9 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
             return handler(value)
         if not isinstance(value, ItemSequence):
             value = [value]
-        print(2, info.field_name, value)
 
         frame_cls = self._get_frame_class(info)
         tag_value = self._join_split_tags(value)
-        print(3, info.field_name, tag_value)
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="wrap", when_used="unless-none")
@@ -315,7 +315,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
         if self.uris and isinstance(context, TagContext) and context.map_uri_to_field == info.field_name:
             values.extend(frame_cls(text=str(uri), desc=f"{uri.source.casefold()}URI", lang="eng") for uri in self.uris)
 
-        return values
+        return values if len(values) > 0 else None  # don't serialise empty values
 
     @field_serializer("rating", mode="wrap", when_used="unless-none")
     def _serialize_rating_frame[T](

@@ -14,7 +14,6 @@ from pydantic import Field, validate_call
 from rich import get_console
 from rich.logging import RichHandler
 from rich.prompt import Prompt
-from rich.table import Table
 
 type HeaderType = Annotated[int, Field(ge=1, le=4)]
 

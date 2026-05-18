@@ -1,7 +1,6 @@
 import random
-from collections.abc import Generator
-from typing import get_args, Any
-from unittest.mock import patch, Mock
+from typing import get_args
+from unittest.mock import Mock
 
 import pytest
 from faker import Faker
@@ -9,7 +8,6 @@ from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from rich.table import Table, Column
 
-from mytunes import MODULE_ROOT
 from mytunes.core._item.artist import Artist
 from mytunes.core._item.track import Track
 from mytunes.core.properties.length import Length
