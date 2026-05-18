@@ -8,7 +8,7 @@ SPHINXOPTS    ?= -D release=${VERSION}
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = docs
 BUILDDIR      = docs/_build
-PROJECTNAME   = musify
+PROJECTNAME   = mytunes
 LINKCHECKDIR  = docs/_linkcheck
 
 # Put it first so that "make" without argument is like "make help".

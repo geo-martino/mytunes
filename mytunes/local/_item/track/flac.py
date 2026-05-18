@@ -1,0 +1,194 @@
+from collections.abc import MutableMapping, Iterable
+from typing import Any, final, Annotated
+
+import mutagen.flac
+import mutagen.id3
+from PIL import Image, ImageFile as PILImageFile
+from pydantic import Field, AliasChoices, field_serializer, model_serializer, \
+    NonNegativeFloat, ConfigDict, PositiveInt
+from pydantic_core.core_schema import SerializerFunctionWrapHandler, SerializationInfo, FieldSerializationInfo
+
+from mytunes._types import DEFAULT_IF_NONE
+from mytunes.core.properties.date import SparseDate
+from mytunes.core.properties.image import ImageFile, ImageURL
+from mytunes.core.properties.music import KeySignature
+from mytunes.core.properties.order import Position
+from mytunes.core.properties.rating import Rating
+from mytunes.local._item.artist import LocalArtist
+from mytunes.local._item.genre import LocalGenre
+from mytunes.local._item.track import LocalTrack
+from ._base import _SeparatedPosition
+from ...._base.attribute import TagAttribute
+from ....core.sequence import MutableUniqueSequence
+
+
+class FLACTrackPosition(_SeparatedPosition):
+    number: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The track index position on the album.",
+        default=None,
+        validation_alias=AliasChoices("tracknumber", "track"),
+        serialization_alias="tracknumber",
+    )
+    total: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The total number of tracks on the album.",
+        default=None,
+        validation_alias=AliasChoices("tracktotal", "totaltracks"),
+        serialization_alias="tracktotal",
+    )
+
+
+class FLACDiscPosition(_SeparatedPosition):
+    number: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The disc index position on the album.",
+        default=None,
+        validation_alias=AliasChoices("discnumber", "disc"),
+        serialization_alias="discnumber",
+    )
+    total: Annotated[PositiveInt | None, TagAttribute()] = Field(
+        description="The total number of discs on the album.",
+        default=None,
+        validation_alias=AliasChoices("disctotal", "totaldiscs"),
+        serialization_alias="disctotal",
+    )
+
+
+@final
+class FLAC(LocalTrack[mutagen.flac.FLAC]):
+    __final__ = True
+    __supported_extensions__ = frozenset({"flac"})
+    __supported_types__ = (mutagen.flac.FLAC,)
+
+    # noinspection SpellCheckingInspection
+    model_config = ConfigDict(
+        # catches fields like albumartist etc.
+        alias_generator=lambda name: name.lower().replace("_", "")
+    )
+
+    class EmbeddedImage(LocalTrack.EmbeddedImage[mutagen.flac.Picture]):
+        @classmethod
+        def _get_bytes(cls, value: Any) -> Any:
+            return value.data if isinstance(value, mutagen.flac.Picture) else value
+
+        @classmethod
+        def get_id3_type_from_tag(cls, value: mutagen.flac.Picture) -> str | None:
+            return cls._get_type_from_number(value.type) if isinstance(value, mutagen.flac.Picture) else None
+
+        async def _get_tag_value(self, file: mutagen.flac.FLAC = None) -> mutagen.flac.Picture | None:
+            file = await self._get_file(file)
+            return next((pic for pic in file.pictures if pic.type == self.id3_type), None)
+
+        def build(self, image: bytes | PILImageFile.ImageFile | None) -> mutagen.flac.Picture | None:
+            if image is None:
+                return
+
+            image, data = self._get_image_data(image)
+
+            picture = mutagen.flac.Picture()
+            picture.type = self.id3_type
+            picture.mime = Image.MIME[image.format]
+            picture.data = data
+
+            return picture
+
+    artists: Annotated[MutableUniqueSequence[LocalArtist], TagAttribute(), TagAttribute("artist")] = Field(
+        description="The artists featured on this track.",
+        default_factory=list,
+        alias="artist",
+    )
+    genres: Annotated[MutableUniqueSequence[LocalGenre], TagAttribute(), TagAttribute("genre")] = Field(
+        description="The genres associated with this track.",
+        default_factory=list,
+        alias="genre",
+    )
+    track: Annotated[FLACTrackPosition | None, TagAttribute()] = Field(
+        description="The position of the track in the album that this track is featured on.",
+        default=None,
+    )
+    disc: Annotated[FLACDiscPosition | None, TagAttribute()] = Field(
+        description="The position of the disc in the album that this track is featured on.",
+        default=None,
+    )
+    released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
+        description="The date this track was released.",
+        default=None,
+        validation_alias=AliasChoices("date", "release date", "year"),
+        serialization_alias="date",
+    )
+    # noinspection SpellCheckingInspection
+    key: Annotated[KeySignature | None, TagAttribute()] = Field(
+        description="The key of this track.",
+        default=None,
+        alias="initialkey",
+    )
+    rating: Annotated[Rating[NonNegativeFloat] | None, TagAttribute()] = Field(
+        description="The rating of this track.",
+        default=None,
+    )
+    comments: Annotated[list[str], TagAttribute()] = Field(
+        description="Freeform comments that are associated with this track.",
+        default_factory=list,
+        validation_alias=AliasChoices("comment", "description"),
+        alias="comment",
+    )
+    images: Annotated[
+        MutableMapping[str, ImageFile | ImageURL | EmbeddedImage],
+        TagAttribute(),
+        DEFAULT_IF_NONE,
+    ] = Field(
+        description="Images associated with this track.",
+        default_factory=dict,
+    )
+
+    @classmethod
+    def _extract_tags_from_mutagen(cls, file: mutagen.flac.FLAC) -> dict[str, Any]:
+        data = super()._extract_tags_from_mutagen(file)
+        data |= dict(images=file.pictures, track=dict(file), disc=dict(file))
+        data.pop("source", None)  # clashes with HasMutableURI field
+        return data
+
+    @model_serializer(mode="wrap")
+    def _format_to_tags(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if not info.by_alias:  # not serializing to tag IDs
+            return data
+
+        self._flatten_dump(data)
+        self._convert_values_to_list(data)
+        return data
+
+    @field_serializer(
+        "key", "bpm", "rating", "released_at",
+        mode="wrap", when_used="unless-none",
+    )
+    def _serialize_string(self, value: Any, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> str:
+        if not info.by_alias or info.mode == "json":
+            return handler(value)
+        return str(value)
+
+    @field_serializer("genres", "comments", mode="wrap", when_used="unless-none")
+    def _serialize_strings(
+            self, value: Iterable[str], handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> list:
+        if not info.by_alias and info.mode != "json":  # not serializing to tag IDs
+            return handler(value)
+
+        # noinspection PyTypeChecker
+        values = self._serialize_names(value, handler=handler, info=None)
+        self._extend_with_uris(values, info=info)
+        return list(map(str, values))
+
+    @field_serializer("compilation", mode="wrap", when_used="unless-none")
+    def _serialize_bool[T: str | bool](
+            self, value: T, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> T:
+        if not info.by_alias and info.mode != "json":
+            return handler(value)
+        return str(int(value))
+
+    @field_serializer("track", "disc", mode="wrap", when_used="unless-none")
+    def _serialize_position_tags(
+            self, value: Position, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> str | dict[str, str] | None:
+        if not info.by_alias or not isinstance(value, Position):
+            return handler(value)
+        return super()._serialize_position_tags(value, info=info)

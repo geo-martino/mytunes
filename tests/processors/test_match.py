@@ -1,231 +1,215 @@
+from collections.abc import Collection
+from copy import copy
+from random import sample, choice
+from unittest.mock import patch
+
 import pytest
+from faker import Faker
+from pytest_mock import MockerFixture
 
-from musify.field import TagFields as Tag
-from musify.libraries.local.track import LocalTrack
-from musify.processors.match import ItemMatcher, CleanTagConfig
-from tests.libraries.local.track.utils import random_track
-from tests.testers import PrettyPrinterTester
+from mytunes.core._collection.album import AlbumCollection
+from mytunes.core._item.album import HasAlbums, Album
+from mytunes.core._item.artist import HasArtists, Artist
+from mytunes.core._item.track import Track
+from mytunes.core.properties.date import HasReleaseDate
+from mytunes.core.properties.length import HasLength, Length
+from mytunes.core.properties.name import HasName
+from mytunes.processors.match import Matcher
+from mytunes.processors.score import Scorer
+from mytunes.processors.score.numeric import NumericScorer, LengthScorer, ReleaseYearScorer, TotalItemsScorer
+from mytunes.processors.score.string import StringScorer, NameScorer, ArtistScorer, AlbumScorer
+from tests.testers import BaseModelTester
 
 
-class TestItemMatcher(PrettyPrinterTester):
+class TestMatcher(BaseModelTester):
+    @pytest.fixture
+    def model(self, scorers: list[Scorer]) -> Matcher:
+        return Matcher(scorers=scorers)
 
     @pytest.fixture
-    def obj(self, matcher: ItemMatcher) -> ItemMatcher:
-        return matcher
-
-    @pytest.fixture(scope="class")
-    def matcher(self) -> ItemMatcher:
-        """Return an :py:class:`ItemMatcher` object with expected config for subsequent tests."""
-        ItemMatcher.karaoke_tags = {"karaoke", "backing", "instrumental"}
-        ItemMatcher.year_range = 10
-
-        ItemMatcher.clean_tags_remove_all = {"the", "a", "&", "and"}
-        ItemMatcher.clean_tags_split_all = set()
-        ItemMatcher.clean_tags_config = (
-            CleanTagConfig(tag=Tag.TITLE, remove={"part"}, split={"featuring", "feat.", "ft.", "/"}),
-            CleanTagConfig(tag=Tag.ARTIST, split={"featuring", "feat.", "ft.", "vs"}),
-            CleanTagConfig(tag=Tag.ALBUM, remove={"ep"}, preprocess=lambda x: x.split("-")[0])
-        )
-
-        ItemMatcher.reduce_name_score_on = {"live", "demo", "acoustic"}
-        ItemMatcher.reduce_name_score_factor = 0.5
-
-        return ItemMatcher()
+    def scorers(self) -> list[Scorer]:
+        """Fixture for providing a list of scorers to test the Matcher model with."""
+        return [
+            NameScorer(),
+            ArtistScorer(scale_on_many_artists=False),
+            AlbumScorer(),
+            # KaraokeScorer(),  # complicates tests if added
+            LengthScorer(),
+            ReleaseYearScorer(),
+            TotalItemsScorer(),
+        ]
 
     @pytest.fixture
-    def track1(self) -> LocalTrack:
-        """Generate a random :py:class:`LocalTrack` for matching"""
-        return random_track()
+    def tracks(
+            self, tracks: list[Track], artists: list[Artist], albums: list[Album], faker: Faker
+    ) -> list[Track]:
+        """Fixture which returns a list of unique tracks"""
+        tracks = tracks[:10]
+
+        for track in tracks:
+            track.artists = sample(artists, k=faker.random_int(1, 3))
+            track.album = choice(albums)
+            track.__dict__["length"] = Length(root=faker.random_int())
+            track.released_at = faker.date()
+
+        return tracks
 
     @pytest.fixture
-    def track2(self) -> LocalTrack:
-        """Generate a random :py:class:`LocalTrack` for matching"""
-        return random_track()
+    def track(self, tracks: list[Track], faker: Faker) -> Track:
+        return faker.random_element(tracks)
 
-    def test_clean_tags(self, matcher: ItemMatcher, track1: LocalTrack):
-        # noinspection SpellCheckingInspection
-        track1.uri = "spotify:track:ASDFGHJKLQWERTYUIOPZX"
+    @pytest.fixture
+    def albums(
+            self, tracks: list[Track], artists: list[Artist], albums: list[Album], faker: Faker
+    ) -> list[AlbumCollection]:
+        """Fixture which returns a list of unique albums with tracks"""
+        album_collections = []
+        for album in albums:
+            collection = AlbumCollection(**album.model_dump(), tracks=sample(tracks, 10))
 
-        track1.title = "A Song Part 2"
-        track1.artist = "Artist 1 & Artist two Feat. Artist 3"
-        track1.album = "The Best EP - the new one"
+            collection.artists = sample(artists, k=faker.random_int(1, 3))
+            collection.__dict__["length"] = Length(root=faker.random_int())
+            collection.released_at = faker.date()
 
-        matcher.clean_tags(track1)
-        assert track1.clean_tags[Tag.TITLE] == "song 2"
-        assert track1.clean_tags[Tag.ARTIST] == "artist 1 artist two"
-        assert track1.clean_tags[Tag.ALBUM] == "best"
+            album_collections.append(collection)
 
-    def test_match_not_karaoke(self, matcher: ItemMatcher, track1: LocalTrack):
-        track1.title = "title"
-        track1.artist = "artist"
-        track1.album = "album"
+        return album_collections
 
-        assert matcher.match_not_karaoke(track1, track1) == 1
+    @pytest.fixture
+    def album(self, albums: list[Album], faker: Faker) -> Album:
+        return faker.random_element(albums)
 
-        track1.title = "title backing"
-        assert matcher.match_not_karaoke(track1, track1) == 0
+    @staticmethod
+    def get_expected_scorers_from_classes(model: Matcher, classes: Collection[type[Scorer]]) -> list[Scorer]:
+        return [scorer for scorer in model.scorers if scorer.__class__ in classes]
 
-        track1.title = "title"
-        track1.album = "album instrumental"
-        assert matcher.match_not_karaoke(track1, track1) == 0
+    def test_get_scorers_for_item_strings(self, model: Matcher):
+        assert all(isinstance(scorer, StringScorer) for scorer in model.get_scorers_for_item("string"))
 
-    def test_match_name(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        # no names in at least one item always returns 0
-        track1.clean_tags[Tag.NAME] = None
-        track2.clean_tags[Tag.NAME] = None
-        assert matcher.match_name(track1, track2) == 0
+        name = HasName(name="Test Name")
+        assert all(isinstance(scorer, NameScorer) for scorer in model.get_scorers_for_item(name))
 
-        # 1/1 word match
-        track1.title = "title"
-        track1.clean_tags[Tag.NAME] = track1.title
-        track2.title = "other title"
-        track2.clean_tags[Tag.NAME] = track2.title
-        assert matcher.match_name(track1, track2) == 1
+        artist = HasArtists(artist="Test Artist")
+        assert all(isinstance(scorer, ArtistScorer) for scorer in model.get_scorers_for_item(artist))
 
-        # 0/4 words match
-        track1.title = "title of a track"
-        track1.clean_tags[Tag.NAME] = track1.title
-        track2.title = "song"
-        track2.clean_tags[Tag.NAME] = track2.title
-        assert matcher.match_name(track1, track2) == 0
+        album = HasAlbums(album="Test Album")
+        assert all(isinstance(scorer, AlbumScorer) for scorer in model.get_scorers_for_item(album))
 
-        # 2/3 words match
-        track1.title = "a longer title"
-        track1.clean_tags[Tag.NAME] = track1.title
-        track2.title = "this is a different title"
-        track2.clean_tags[Tag.NAME] = track2.title
-        assert round(matcher.match_name(track1, track2), 2) == 0.67
+    def test_get_scorers_for_item_numeric(self, model: Matcher):
+        assert all(isinstance(scorer, NumericScorer) for scorer in model.get_scorers_for_item(123))
+        assert all(isinstance(scorer, NumericScorer) for scorer in model.get_scorers_for_item(123.45))
 
-    def test_match_artist(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        sep = track1.tag_sep
+        assert all(isinstance(scorer, LengthScorer) for scorer in model.get_scorers_for_item(HasLength()))
+        assert all(isinstance(scorer, ReleaseYearScorer) for scorer in model.get_scorers_for_item(HasReleaseDate()))
 
-        # no artists in at least one item always returns 0
-        track1.clean_tags[Tag.ARTIST] = "artist"
-        track2.clean_tags[Tag.ARTIST] = None
-        assert matcher.match_artist(track1, track2) == 0
+    def test_get_scorers_for_track(self, model: Matcher, track: Track):
+        track.released_at = None
 
-        # 1/4 words match
-        track1.clean_tags[Tag.ARTIST] = f"band{sep}a singer{sep}artist"
-        track2.clean_tags[Tag.ARTIST] = f"artist{sep}nope{sep}other"
-        assert matcher.match_artist(track1, track2) == 0.25
+        expected_classes = (NameScorer, ArtistScorer, AlbumScorer, LengthScorer)
+        expected = self.get_expected_scorers_from_classes(model, expected_classes)
 
-        # 2/4 words match, but now weighted
-        # match 'artist' = 0.25 + match 'singer' = 0.125
-        track1.clean_tags[Tag.ARTIST] = f"band{sep}a singer{sep}artist"
-        track2.clean_tags[Tag.ARTIST] = f"artist{sep}singer{sep}other"
-        assert matcher.match_artist(track1, track2) == 0.375
+        assert model.get_scorers_for_item(track) == expected
 
-    def test_match_album(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        # no albums in at least one item always returns 0
-        track1.clean_tags[Tag.ALBUM] = None
-        track2.clean_tags[Tag.ALBUM] = "album"
-        assert matcher.match_album(track1, track2) == 0
+    def test_get_scorers_for_artist(self, model: Matcher, artist: Artist):
+        assert any(isinstance(scorer, NameScorer) for scorer in model.scorers)
+        assert any(isinstance(scorer, ArtistScorer) for scorer in model.scorers)
 
-        # 1/2 words match
-        track1.clean_tags[Tag.ALBUM] = "album name"
-        track2.clean_tags[Tag.ALBUM] = "name"
-        assert matcher.match_album(track1, track2) == 0.5
+        # both name and artist scorers present, should only select name scorer
+        expected_classes = (NameScorer,)
+        expected = self.get_expected_scorers_from_classes(model, expected_classes)
 
-        # 3/3 words match
-        track1.clean_tags[Tag.ALBUM] = "brand new album"
-        track2.clean_tags[Tag.ALBUM] = "this is a brand new really cool album"
-        assert matcher.match_album(track1, track2) == 1
+        assert model.get_scorers_for_item(artist) == expected
 
-    def test_match_length(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        # no lengths for at least one item always returns 0
-        track1.clean_tags[Tag.LENGTH] = 110.20
-        track2.clean_tags[Tag.LENGTH] = None
-        assert matcher.match_length(track1, track2) == 0
+    def test_get_scorers_for_album(self, model: Matcher, album: Album):
+        album.__dict__["length"] = None  # override re-validating from items
 
-        track1.clean_tags[Tag.LENGTH] = 100
-        track2.clean_tags[Tag.LENGTH] = 90
-        assert matcher.match_length(track1, track2) == 0.9
+        assert any(isinstance(scorer, NameScorer) for scorer in model.scorers)
+        assert any(isinstance(scorer, AlbumScorer) for scorer in model.scorers)
 
-    def test_match_year(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        # no year for at least one item always returns 0
-        track1.clean_tags[Tag.YEAR] = 2023
-        track2.clean_tags[Tag.YEAR] = None
-        assert matcher.match_year(track1, track2) == 0
+        # both name and album scorers present, should only select name scorer
+        expected_classes = (NameScorer, ArtistScorer, ReleaseYearScorer, TotalItemsScorer)
+        expected = self.get_expected_scorers_from_classes(model, expected_classes)
 
-        track1.clean_tags[Tag.YEAR] = 2020
-        track2.clean_tags[Tag.YEAR] = 2015
-        assert matcher.match_year(track1, track2) == 0.5
+        assert model.get_scorers_for_item(album) == expected
 
-        track1.clean_tags[Tag.YEAR] = 2020
-        track2.clean_tags[Tag.YEAR] = 2010
-        assert matcher.match_year(track1, track2) == 0
+    def test_match(self, model: Matcher, tracks: list[Track]):
+        track = tracks.pop()
+        assert model.match(track, [track] + tracks) is track
 
-        track1.clean_tags[Tag.YEAR] = 2020
-        track2.clean_tags[Tag.YEAR] = 2005
-        assert matcher.match_year(track1, track2) == 0
+        model.min_score = 1  # perfect match needed
+        assert model.match(track, tracks) is None
 
-    @pytest.mark.slow
-    def test_match_all(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        sep = track1.tag_sep
+    def test_match_breaks_early(self, model: Matcher, tracks: list[Track]):
+        # first track is a perfect match (score == 1), should break early and not check the rest
+        track = tracks.pop()
 
-        track1.title = "a longer title"
-        track2.title = "this is a different title"
-        track1.artist = f"band{sep}a singer{sep}artist"
-        track2.artist = "nope"
-        track1.album = "album"
-        track2.album = "name"
-        track1._reader.file.info.length = 100
-        track2._reader.file.info.length = 10
-        track1.year = 2020
-        track2.year = 2010
+        with patch.object(Matcher, "score", return_value=1) as mock_score:
+            model.match(track, [track] + tracks)
+            mock_score.assert_called_once()
 
-        # track2 score is below min_score
-        assert matcher.match(track1, [track2], min_score=0.2, max_score=0.8) is None
-        assert matcher(track1, [track2], min_score=0.2, max_score=0.8) is None
+    def test_score(self, model: Matcher, tracks: list[Track]):
+        track = tracks[0]
+        assert model.score(track, track) == 1
 
-        # track3 score is above min_score
-        track3 = random_track()
-        track3.title = "this is a different title"
-        track3.artist = f"artist{sep}nope{sep}other"
-        track3.year = 2015
-        assert matcher.match(track1, [track2, track3], min_score=0.2, max_score=0.8) == track3
-        assert matcher(track1, [track3, track2], min_score=0.2, max_score=0.8) == track3
+    def test_score_always_between_0_and_1(
+            self, model: Matcher, tracks: list[Track], albums: list[AlbumCollection], faker: Faker
+    ):
+        for scorer in model.scorers:  # ensure individual scores are inflated
+            scorer.weight = faker.random_int()
 
-        # track4 score is above max_score causing an early stop
-        track4 = random_track()
-        track4.title = "a longer title"
-        track4.artist = f"band{sep}a singer{sep}artist"
-        track4.album = "album"
-        track4._reader.file.info.length = 100
-        track4.year = 2015
-        assert matcher.match(track1, [track4, track2, track3], min_score=0.2, max_score=0.8) == track4
-        assert matcher(track1, [track2, track4, track3], min_score=0.2, max_score=0.8) == track4
+        for other in tracks:
+            assert 0 <= model.score(tracks[0], other) <= 1
 
-    def test_allows_karaoke(self, matcher: ItemMatcher, track1: LocalTrack, track2: LocalTrack):
-        sep = track1.tag_sep
-        track3 = random_track()
+        for other in albums:
+            assert 0 <= model.score(albums[0], other) <= 1
 
-        track1.title = "a longer title"
-        track2.title = "this is track2 title"
-        track3.title = "this is track3 title"
+    def test_score_respects_required_scorer(self, model: Matcher, tracks: list[Track]):
+        track = tracks[0]
+        other = copy(track)
+        other.name = "complete-and-utter-nonsense"
 
-        track1.artist = f"band{sep}a singer{sep}artist"
-        track2.artist = "nope"
-        track3.artist = f"artist{sep}nope{sep}other"
+        scorers = model.get_scorers_for_item(track)
+        assert all(not scorer.required_score for scorer in scorers if isinstance(scorer, NameScorer))
+        assert model.score(track, other, scorers=scorers) == 0.8  # name doesn't match but still returns score
 
-        track1.album = "album"
-        track2.album = "name"
-        track3.album = "valid album"
+        # name doesn't pass required_score threshold, so returns 0
+        scorers.append(NameScorer(required_score=0.5))
+        assert model.score(track, other, scorers=scorers) == 0
 
-        track1._reader.file.info.length = 100
-        track2._reader.file.info.length = 10
-        track3._reader.file.info.length = 100
+    def test_score_items_if_configured(self, model: Matcher, albums: list[AlbumCollection], mocker: MockerFixture):
+        album_1 = albums.pop()
+        album_2 = albums.pop()
 
-        track1.year = 2020
-        track2.year = 2010
-        track3.year = 2020
+        mock_score_items = mocker.spy(model, "_score_items")
 
-        # track3 score is above min_score
-        assert matcher.match(track1, [track2, track3], min_score=0.5, max_score=1) == track3
+        model.score_items_in_collections = False
+        model.score(album_1, album_2)
+        mock_score_items.assert_not_called()
 
-        # ...but is now karaoke
-        track3.album = "karaoke"
-        assert matcher.match(track1, [track2, track3], min_score=0.5, max_score=1) is None
+        model.score_items_in_collections = True
+        model.score(album_1, album_2)
+        mock_score_items.assert_called_once_with(album_1.tracks, album_2.tracks)
 
-        # ...and now karaoke is allowed
-        assert matcher(track1, [track2, track3], min_score=0.5, max_score=1, allow_karaoke=True) == track3
+    def test_score_items(self, model: Matcher, tracks: list[Track]):
+        assert model._score_items(tracks, tracks) == [1.0] * len(tracks)
+
+        length = len(tracks) // 2
+        result = model._score_items(tracks[:length], tracks[length:])
+        assert len(result) == length
+        assert result != [1.0] * length
+
+    def test_score_items_breaks_early(self, model: Matcher, tracks: list[Track]):
+        # breaks early every time, only checks the first track
+        with patch.object(Matcher, 'score', return_value=1) as mock_score:
+            model._score_items(tracks, tracks)
+            assert mock_score.call_count == len(tracks)
+
+        # never breaks early, checks every track against every other track
+        length = len(tracks) // 2
+        with patch.object(Matcher, 'score', return_value=0) as mock_score:
+            model._score_items(tracks[:length], tracks[length:])
+            assert mock_score.call_count == length ** 2
+
+    def test_match_skips(self, model: Matcher, tracks: list[Track]):
+        model.scorers = [scorer for scorer in model.scorers if not isinstance(scorer, NameScorer)]
+        assert model.match(HasName(name="test"), tracks) is None

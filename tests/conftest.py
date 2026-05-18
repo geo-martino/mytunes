@@ -1,73 +1,185 @@
-import asyncio
-import copy
-import logging.config
-import shutil
-import types
 from collections import defaultdict
+from collections.abc import Generator
+from contextlib import suppress
+from copy import copy
+from io import BytesIO
 from pathlib import Path
+from random import choice, sample
+from types import MethodType
+from unittest.mock import patch
 
+import mutagen.id3
 import pytest
-import yaml
-from _pytest.fixtures import SubRequest
+from PIL import Image, ImageFile as PILImageFile
 # noinspection PyProtectedMember
-from _pytest.logging import LogCaptureHandler, _remove_ansi_escape_sequences
-from aiorequestful.types import UnitCollection
+from aiohttp import ClientSession
+from faker import Faker
+from yarl import URL
 
-from musify import MODULE_ROOT
-from musify.libraries.remote.core.types import RemoteObjectType
-from musify.libraries.remote.spotify.api import SpotifyAPI
-from musify.libraries.remote.spotify.wrangle import SpotifyDataWrangler
-from musify.logger import MusifyLogger
-from musify.utils import to_collection
-from tests.libraries.remote.core.utils import ALL_ITEM_TYPES
-from tests.libraries.remote.spotify.api.mock import SpotifyMock
-from tests.utils import idfn, path_resources
+from mytunes.core._collection.playlist import Playlist, MutablePlaylist
+from mytunes.core._item.album import Album
+from mytunes.core._item.artist import Artist
+from mytunes.core._item.genre import Genre
+from mytunes.core._item.track import Track
+from mytunes.core.properties.image import ImageURL, ImageFile
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+def faker() -> Faker:
+    """Sets up and yields a basic Faker object for fake data"""
+    return Faker()
 
 
-# noinspection PyUnusedLocal
-@pytest.hookimpl
-def pytest_configure(config: pytest.Config):
-    """Loads logging config"""
-    config_file = path_resources.joinpath("test_logging").with_suffix(".yml")
-    if not config_file.is_file():
-        return
-
-    with open(config_file, "r", encoding="utf-8") as file:
-        log_config = yaml.full_load(file)
-
-    log_config.pop("compact", False)
-    MusifyLogger.disable_bars = True
-    MusifyLogger.compact = True
-
-    for formatter in log_config["formatters"].values():  # ensure ANSI colour codes in format are recognised
-        formatter["format"] = formatter["format"].replace(r"\33", "\33")
-
-    log_config["loggers"][MODULE_ROOT] = log_config["loggers"]["test"]
-    logging.config.dictConfig(log_config)
+@pytest.fixture
+def track(faker: Faker) -> Track:
+    return Track(name=faker.sentence(nb_words=faker.random_int(1, 5)))
 
 
-def pytest_collection_modifyitems(items: list[pytest.Function]):
-    """Modifies test items in-place, ordering them based on assigned marks."""
-    marker_name_order = []  # currently not implemented
+@pytest.fixture
+def tracks(faker: Faker) -> list[Track]:
+    return [
+        Track(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(15, 30))
+    ]
 
-    def _get_item_order_index(item: pytest.Function) -> int:
-        try:
-            name = next(marker.name for marker in item.own_markers if marker.name.casefold() in marker_name_order)
-            return marker_name_order.index(name.casefold())
-        except (StopIteration, ValueError):
-            return len(marker_name_order)
 
-    items.sort(key=_get_item_order_index)
+@pytest.fixture
+def artist(faker: Faker) -> Artist:
+    return Artist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+
+
+@pytest.fixture
+def artists(faker: Faker) -> list[Artist]:
+    return [
+        Artist(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(5, 10))
+    ]
+
+
+@pytest.fixture
+def album(faker: Faker) -> Album:
+    return Album(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+
+
+@pytest.fixture
+def albums(faker: Faker) -> list[Album]:
+    return [
+        Album(name=faker.sentence(nb_words=faker.random_int(1, 5)))
+        for _ in range(faker.random_int(5, 10))
+    ]
+
+
+@pytest.fixture
+def genre(faker: Faker) -> Genre:
+    return Genre(name=faker.word())
+
+
+@pytest.fixture
+def genres(faker: Faker) -> list[Genre]:
+    names = [faker.word() for _ in range(faker.random_int(5, 10))]
+    return [Genre(name=name) for name in names]
+
+
+@pytest.fixture
+def playlist(faker: Faker) -> Playlist:
+    return MutablePlaylist(name=faker.sentence().rstrip("."))
+
+
+@pytest.fixture
+def playlists(faker: Faker) -> list[Playlist]:
+    return [MutablePlaylist(name=faker.sentence().rstrip(".")) for _ in range(faker.random_int(10, 30))]
+
+
+@pytest.fixture
+def image_bytes(faker: Faker) -> list[bytes]:
+    return [
+        faker.image(
+            size=(faker.random_int(100, 300), faker.random_int(100, 300)),
+            image_format=choice(["jpeg", "png"])
+        )
+        for _ in range(faker.random_int(3, 5))
+    ]
+
+
+@pytest.fixture
+def image_object(faker: Faker) -> PILImageFile.ImageFile:
+    image_bytes = faker.image(
+        size=(faker.random_int(100, 300), faker.random_int(100, 300)),
+        image_format=choice(["jpeg", "png"])
+    )
+    return Image.open(BytesIO(image_bytes))
+
+
+@pytest.fixture
+def image_objects(image_bytes: list[bytes]) -> list[PILImageFile.ImageFile]:
+    return list(map(Image.open, map(BytesIO, image_bytes)))
+
+
+@pytest.fixture
+def image_type(image_types: set[str]) -> str:
+    return choice(list(image_types))
+
+
+@pytest.fixture
+def image_types(image_bytes: list[bytes]) -> set[str]:
+    """Fixture to provide a valid image type."""
+    types = {
+        name for name, enum in vars(mutagen.id3.PictureType).items()
+        if isinstance(enum, mutagen.id3.PictureType)
+    }
+    return set(sample(list(types), len(image_bytes)))
+
+
+@pytest.fixture
+def image_files(image_types: set[str], faker: Faker, tmp_path: Path) -> list[Path]:
+    """Fixture to provide a list of image files."""
+    image_files = []
+
+    for _ in range(faker.random_int(3, 5)):
+        size = (faker.random_int(100, 300), faker.random_int(100, 300))
+        image_bytes = faker.image(size=size, image_format=choice(["jpeg", "png"]))
+
+        path = tmp_path.joinpath(faker.file_name(category="image"))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(image_bytes)
+        img = Image.open(BytesIO(image_bytes))
+
+        image_file = ImageFile(
+            path=path,
+            type=choice(list(image_types)),
+            mime=img.get_format_mimetype(),
+            height=img.height,
+            width=img.width
+        )
+        image_files.append(image_file)
+
+    return image_files
+
+
+@pytest.fixture
+def image_urls(image_types: set[str], faker: Faker) -> Generator[list[ImageURL]]:
+    image_urls: list[ImageURL] = []
+
+    for _ in range(faker.random_int(3, 5)):
+        size = (faker.random_int(100, 300), faker.random_int(100, 300))
+        image_bytes = faker.image(size=size, image_format=choice(["jpeg", "png"]))
+        img = Image.open(BytesIO(image_bytes))
+        url = faker.url()
+
+        image_url = ImageURL(
+            url=URL(url),
+            type=choice(list(image_types)),
+            mime=img.get_format_mimetype(),
+            height=img.height,
+            width=img.width
+        )
+        image_urls.append(image_url)
+
+    with (
+            patch.object(ClientSession, "get"),
+            patch.object(ClientSession, "close"),
+    ):
+        yield image_urls
 
 
 # This is a fork of the pytest-lazy-fixture package
@@ -76,7 +188,7 @@ def pytest_collection_modifyitems(items: list[pytest.Function]):
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_setup(item):
     if hasattr(item, "_request"):
-        item._request._fillfixtures = types.MethodType(
+        item._request._fillfixtures = MethodType(
             fillfixtures(item._request._fillfixtures), item._request
         )
 
@@ -150,17 +262,15 @@ def normalize_metafunc_calls(metafunc, used_keys=None):
 
 # noinspection PyProtectedMember
 def copy_metafunc(metafunc):
-    copied = copy.copy(metafunc)
-    copied.fixturenames = copy.copy(metafunc.fixturenames)
+    copied = copy(metafunc)
+    copied.fixturenames = copy(metafunc.fixturenames)
     copied._calls = []
 
-    try:
-        copied._ids = copy.copy(metafunc._ids)
-    except AttributeError:
-        # pytest>=5.3.0
-        pass
+    with suppress(AttributeError):
+        # pytest<5.3.0
+        copied._ids = copy(metafunc._ids)
 
-    copied._arg2fixturedefs = copy.copy(metafunc._arg2fixturedefs)
+    copied._arg2fixturedefs = copy(metafunc._arg2fixturedefs)
     return copied
 
 
@@ -269,132 +379,7 @@ class LazyFixture(object):
         self.name = name
 
     def __repr__(self):
-        return '<{} "{}">'.format(self.__class__.__name__, self.name)
+        return '<{} "{}">'.format(type(self).__name__, self.name)
 
     def __eq__(self, other):
         return self.name == other.name
-
-
-class LogCapturer(LogCaptureHandler):
-    """
-    Fixture to capture logs regardless of the Propagate flag. See
-    https://github.com/pytest-dev/pytest/issues/3697 for details.
-    """
-
-    @property
-    def text(self) -> str:
-        return _remove_ansi_escape_sequences(self.stream.getvalue())
-
-    @property
-    def messages(self) -> list[str]:
-        return [_remove_ansi_escape_sequences(record.getMessage()) for record in self.records]
-
-    def __init__(self):
-        super().__init__()
-        self._level: int = logging.INFO
-        self._loggers: list[logging.Logger] = []
-
-        self._original_levels: dict[logging.Logger, int] = {}
-        self._raw_messages: list[str] = []
-
-    def set_level(self, level: int) -> None:
-        """Set the level at which to capture logs"""
-        self._level = level
-
-    def add_logger(self, logger: logging.Logger) -> None:
-        """Set the logger on which to capture logs"""
-        self._loggers.append(logger)
-
-    def emit(self, record: logging.LogRecord) -> None:
-        if hasattr(record, "message"):
-            self._raw_messages.append(record.message)
-        super().emit(record)
-
-    def __call__(self, level: int | None = None, loggers: UnitCollection[logging.Logger] | None = None):
-        if level is not None:
-            self._level = level
-        if loggers is not None:
-            self._loggers = to_collection(loggers, list)
-        return self
-
-    def __enter__(self):
-        self.clear()
-
-        for logger in self._loggers:
-            self._original_levels[logger] = logger.level
-            logger.setLevel(self._level)
-            logger.addHandler(self)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._level = logging.INFO
-        self._loggers = []
-
-        for logger, level in self._original_levels.items():
-            logger.setLevel(level)
-            logger.removeHandler(self)
-
-
-@pytest.fixture
-def log_capturer() -> LogCapturer:
-    return LogCapturer()
-
-
-@pytest.fixture
-def path(request: pytest.FixtureRequest | SubRequest, tmp_path: Path) -> Path:
-    """
-    Copy the path of the source file to the test cache for this test and return the cache path.
-    Deletes the test folder when test is done.
-    """
-    if hasattr(request, "param"):
-        src_path = request.param
-    else:  # assume path is given at the top-level fixture, get param from this request
-        # noinspection PyProtectedMember
-        src_path = request._pyfuncitem.callspec.params[request._parent_request.fixturename]
-
-    src_path = Path(src_path)
-    trg_path = tmp_path.joinpath(src_path.name)
-
-    trg_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src_path, trg_path)
-
-    yield trg_path
-
-    shutil.rmtree(trg_path.parent)
-
-
-@pytest.fixture(scope="session", params=ALL_ITEM_TYPES, ids=idfn)
-def object_type(request) -> RemoteObjectType:
-    """Yields the valid :py:class:`RemoteObjectTypes` to use throughout tests in this suite as a pytest.fixture."""
-    return request.param
-
-
-@pytest.fixture(scope="session")
-def spotify_wrangler():
-    """Yields a :py:class:`SpotifyDataWrangler` for testing Spotify data wrangling"""
-    return SpotifyDataWrangler()
-
-
-@pytest.fixture(scope="session")
-def spotify_mock() -> SpotifyMock:
-    """Yield an authorised and configured :py:class:`SpotifyMock` object"""
-    with SpotifyMock() as m:
-        yield m
-
-
-@pytest.fixture(scope="session")
-async def spotify_api(spotify_mock: SpotifyMock) -> SpotifyAPI:
-    """Yield an authorised :py:class:`SpotifyAPI` object"""
-    token = {"access_token": "fake access token", "token_type": "Bearer", "scope": "test-read"}
-    # disable any token tests by setting tester as appropriate
-    api = SpotifyAPI()
-    api.handler.authoriser.response.replace(token)
-    api.handler.authoriser.tester.response_test = None
-    api.handler.authoriser.tester.max_expiry = 0
-
-    # force no backoff/wait settings
-    api.handler.wait_timer = None
-    api.handler.retry_timer = None
-
-    async with api as a:
-        spotify_mock.reset()
-        yield a

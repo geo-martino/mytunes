@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=docs
 set BUILDDIR=docs/_build
-set PROJECTNAME=musify
+set PROJECTNAME=mytunes
 
 %SPHINXBUILD% >NUL 2>NUL
 if errorlevel 9009 (

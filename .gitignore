@@ -140,7 +140,7 @@ _logs/
 
 # Sphinx/other documentation
 docs/_build/
-docs/reference/musify.rst
+docs/reference/mytunes.rst
 .grip/
 
 # Jekyll
@@ -150,5 +150,7 @@ _site
 .jekyll-metadata
 vendor
 
-test.py
-./test*.py
+/test.py
+/test_*.py
+/utils.py
+/utils_*.py

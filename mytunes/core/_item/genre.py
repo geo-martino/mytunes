@@ -1,0 +1,74 @@
+from typing import ClassVar, Annotated, Self
+
+from pydantic import Field, field_validator, validate_call
+
+from mytunes._types import StrippedString
+from mytunes.core.api import ItemReadEndpoints
+from mytunes.core.api.items import HasGenreEndpoints
+from mytunes.core.properties.name import HasName
+from mytunes.core.properties.tag import HasSeparableTags
+from mytunes.core.properties.uri import URI
+from mytunes.core.remote import RemoteResource
+from mytunes.core.sequence import MutableUniqueSequence
+from ..._base import make_cls
+from ..._base.attribute import Attribute
+from ..._base.resource import ResourceModel, UniqueAttribute
+
+
+class Genre(HasName, ResourceModel, metaclass=make_cls()):
+    """Represents a genre resource and its properties."""
+    type: ClassVar[str] = "genre"
+
+    name: Annotated[StrippedString, UniqueAttribute()] = Field(
+        description="The name of this genre.",
+        alias="genre",
+        frozen=True,
+    )
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+
+class HasGenres[GT: Genre](HasSeparableTags):
+    genres: Annotated[MutableUniqueSequence[GT], Attribute()] = Field(
+        description="The genres associated with this resource.",
+        default_factory=MutableUniqueSequence[GT],
+        validation_alias="genre",
+    )
+
+    @field_validator("genres", mode="before", check_fields=True)
+    @classmethod
+    def _from_string[T: str](cls, value: T) -> T | list[str]:
+        if not isinstance(value, str):
+            return value
+        return cls._separate_tags(value)
+
+    @field_validator("genres", mode="before", check_fields=True)
+    @classmethod
+    def _from_model[T: Genre](cls, value: T) -> T | list[T]:
+        if not isinstance(value, Genre):
+            return value
+        return [value]
+
+    @property
+    def genre(self) -> Annotated[str | None, Attribute()]:
+        """A string representation of all genres associated with this resource"""
+        return self._join_tags(genre.name for genre in self.genres)
+
+    @genre.setter
+    def genre(self, value: str | list[str]) -> None:
+        if not value:
+            self.genres = []
+            return
+
+        if isinstance(value, str):
+            value = self._separate_tags(value)
+        self.genres = value
+
+
+class RemoteGenre[UT: URI](RemoteResource[UT], Genre, metaclass=make_cls()):
+    @validate_call
+    async def reload(self, api: HasGenreEndpoints[ItemReadEndpoints]) -> Self:
+        model = await api.genres.get(self.uri)
+        self.__dict__.update(model.__dict__)
+        return model

@@ -1,0 +1,129 @@
+from typing import Self, Any, final, ClassVar
+
+from pydantic import field_validator, model_validator
+from yarl import URL
+
+from mytunes.core.album import Album
+from mytunes.core.artist import Artist
+from mytunes.core.playlist import Playlist
+from mytunes.core.properties.uri import URI
+from mytunes.core.track import Track
+from mytunes.core.user import User
+from mytunes.exception import MyTunesValidationError
+from mytunes.spotify._url import API_URL, PUBLIC_URL, SOURCE_NAME
+
+
+class SpotifyURIBase(URI):
+    _source: ClassVar[str] = SOURCE_NAME
+
+    @property
+    def _parts(self) -> tuple[str, str, str]:
+        return self.root.split(":")
+
+    @property
+    def source(self) -> str:
+        return self._parts[0]
+
+    @property
+    def type(self) -> str:
+        return self._parts[1]
+
+    @property
+    def id(self) -> str:
+        return self._parts[2]
+
+    @model_validator(mode="after")
+    def _validate_uri_length(self) -> Self:
+        if len(self._parts) != 3:
+            raise MyTunesValidationError("Invalid Spotify URI format. Expected format: spotify:{type}:{id}")
+        return self
+
+    @model_validator(mode="after")  # override to ensure this validation happens after length validation
+    def _validate_type(self) -> Self:
+        # noinspection PyCallingNonCallable
+        return super()._validate_type()
+
+    @classmethod
+    def from_id(cls, value: Any, kind: str) -> Self:
+        uri = ":".join((cls._source.casefold(), kind, str(value)))
+        return cls(uri)
+
+    @property
+    def api_url(self) -> URL:
+        path = "/".join((self.type + "s", self.id))
+        return API_URL.joinpath(path)
+
+    @classmethod
+    def from_api_url[T](cls, value: T) -> T | str:
+        if not isinstance(value, str | URL):
+            return value
+
+        if isinstance(value, str):
+            if not value.startswith(str(API_URL)):
+                return value
+            value = URL(value)
+
+        if value.host != API_URL.host:
+            return value
+
+        path_parts = value.path.strip("/").split("/")
+        if len(path_parts) < 3:
+            return value
+
+        version, kind, id_value, *_ = path_parts
+        return ":".join((cls._source.casefold(), kind.rstrip("s"), str(id_value)))
+
+    @property
+    def public_url(self) -> URL:
+        path = "/" + "/".join((self.type, self.id))
+        return URL.build(scheme=API_URL.scheme, host="open.spotify.com", path=path)
+
+    @classmethod
+    def from_public_url[T](cls, value: T) -> T | str:
+        if not isinstance(value, str | URL):
+            return value
+
+        if isinstance(value, str):
+            if not value.startswith(str(PUBLIC_URL)):
+                return value
+            value = URL(value)
+
+        if value.host != PUBLIC_URL.host:
+            return value
+
+        path_parts = value.path.strip("/").split("/")
+        if len(path_parts) < 2:
+            return value
+
+        kind, id_value, *_ = path_parts
+        return ":".join((cls._source.casefold(), kind, str(id_value)))
+
+
+@final
+class SpotifyResourceURI(SpotifyURIBase):
+    __final__ = True
+
+    @property
+    def _valid_types(self) -> set[str]:
+        return {Track.type, Album.type, Artist.type, Playlist.type}
+
+    @field_validator("root", mode="after")
+    @classmethod
+    def _validate_id_length(cls, uri: str) -> str:
+        id_value = uri.split(":")[-1]
+        if len(id_value) != 22 and id_value != cls._unavailable_id:
+            raise MyTunesValidationError("Invalid Spotify URI format. ID must be exactly 22 characters long.")
+        return uri
+
+
+@final
+class SpotifyUserURI(SpotifyURIBase):
+    __final__ = True
+
+    @property
+    def _valid_types(self) -> set[str]:
+        return {User.type}
+
+    @classmethod
+    def from_id(cls, value: Any, kind: str = "user") -> Self:
+        return super().from_id(value, kind)

@@ -1,17 +1,17 @@
-# Musify
+# MyTunes
 
-[![PyPI Version](https://img.shields.io/pypi/v/musify?logo=pypi&label=Latest%20Version)](https://pypi.org/project/musify)
-[![Python Version](https://img.shields.io/pypi/pyversions/musify.svg?logo=python&label=Supported%20Python%20Versions)](https://pypi.org/project/musify/)
-[![Documentation](https://img.shields.io/badge/Documentation-red.svg)](https://geo-martino.github.io/musify/)
+[![PyPI Version](https://img.shields.io/pypi/v/mytunes?logo=pypi&label=Latest%20Version)](https://pypi.org/project/mytunes)
+[![Python Version](https://img.shields.io/pypi/pyversions/mytunes.svg?logo=python&label=Supported%20Python%20Versions)](https://pypi.org/project/mytunes/)
+[![Documentation](https://img.shields.io/badge/Documentation-red.svg)](https://geo-martino.github.io/mytunes/)
 </br>
-[![PyPI Downloads](https://img.shields.io/pypi/dm/musify?label=Downloads)](https://pypi.org/project/musify/)
-[![Code Size](https://img.shields.io/github/languages/code-size/geo-martino/musify?label=Code%20Size)](https://github.com/geo-martino/musify)
-[![Contributors](https://img.shields.io/github/contributors/geo-martino/musify?logo=github&label=Contributors)](https://github.com/geo-martino/musify/graphs/contributors)
-[![License](https://img.shields.io/github/license/geo-martino/musify?label=License)](https://github.com/geo-martino/musify/blob/master/LICENSE)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/mytunes?label=Downloads)](https://pypi.org/project/mytunes/)
+[![Code Size](https://img.shields.io/github/languages/code-size/geo-martino/mytunes?label=Code%20Size)](https://github.com/geo-martino/mytunes)
+[![Contributors](https://img.shields.io/github/contributors/geo-martino/mytunes?logo=github&label=Contributors)](https://github.com/geo-martino/mytunes/graphs/contributors)
+[![License](https://img.shields.io/github/license/geo-martino/mytunes?label=License)](https://github.com/geo-martino/mytunes/blob/master/LICENSE)
 </br>
-[![GitHub - Validate](https://github.com/geo-martino/musify/actions/workflows/validate.yml/badge.svg?branch=master)](https://github.com/geo-martino/musify/actions/workflows/validate.yml)
-[![GitHub - Deployment](https://github.com/geo-martino/musify/actions/workflows/deploy.yml/badge.svg?event=release)](https://github.com/geo-martino/musify/actions/workflows/deploy.yml)
-[![GitHub - Documentation](https://github.com/geo-martino/musify/actions/workflows/docs_publish.yml/badge.svg)](https://github.com/geo-martino/musify/actions/workflows/docs_publish.yml)
+[![GitHub - Validate](https://github.com/geo-martino/mytunes/actions/workflows/validate.yml/badge.svg?branch=master)](https://github.com/geo-martino/mytunes/actions/workflows/validate.yml)
+[![GitHub - Deployment](https://github.com/geo-martino/mytunes/actions/workflows/deploy.yml/badge.svg?event=release)](https://github.com/geo-martino/mytunes/actions/workflows/deploy.yml)
+[![GitHub - Documentation](https://github.com/geo-martino/mytunes/actions/workflows/docs_publish.yml/badge.svg)](https://github.com/geo-martino/mytunes/actions/workflows/docs_publish.yml)
 
 ### A Swiss Army knife for music library management
 Supporting local and music streaming service (remote) libraries.
@@ -36,27 +36,27 @@ Supporting local and music streaming service (remote) libraries.
 
 > [!NOTE]  
 > This readme provides a brief overview of the program. 
-> [Read the docs](https://geo-martino.github.io/musify/) for full reference documentation.
+> [Read the docs](https://geo-martino.github.io/mytunes/) for full reference documentation.
 
 
 ## Installation
 Install through pip using one of the following commands:
 
 ```bash
-pip install musify
+pip install mytunes
 ```
 ```bash
-python -m pip install musify
+python -m pip install mytunes
 ```
 
 There are optional dependencies that you may install for optional functionality. 
-For the current list of optional dependency groups, [read the docs](https://geo-martino.github.io/musify/howto/install.html)
+For the current list of optional dependency groups, [read the docs](https://geo-martino.github.io/mytunes/howto/install.html)
 
 
 ## Quick Guides
 
-These quick guides will help you get set up and going with Musify in just a few minutes.
-For more detailed guides, check out the [documentation](https://geo-martino.github.io/musify/).
+These quick guides will help you get set up and going with MyTunes in just a few minutes.
+For more detailed guides, check out the [documentation](https://geo-martino.github.io/mytunes/).
 
 > [!TIP]
 > Set up logging to ensure you can see all info reported by the later operations.
@@ -64,7 +64,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
 > ```python
 > import logging
 > import sys
-> from musify.logger import STAT
+> from mytunes.logger import STAT
 > 
 > logging.basicConfig(format="%(message)s", level=STAT, stream=sys.stdout)
 > ```
@@ -86,7 +86,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
    > The scopes listed in this example will allow access to read your library data and write to your playlists.
    > See Spotify Web API documentation for more information about [scopes](https://developer.spotify.com/documentation/web-api/concepts/scopes)
    ```python
-    from musify.libraries.remote.spotify.api import SpotifyAPI
+    from mytunes.libraries.remote.spotify.api import SpotifyAPI
    
     spotify_api = SpotifyAPI(
         client_id="<YOUR CLIENT ID>",
@@ -106,7 +106,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
    ```
 4. Define helper functions for loading your `SpotifyLibrary` data:
    ```python
-    from musify.libraries.remote.spotify.library import SpotifyLibrary
+    from mytunes.libraries.remote.spotify.library import SpotifyLibrary
 
 
     async def load_library(library: SpotifyLibrary) -> None:
@@ -151,7 +151,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
    ```
 5. Define helper functions for loading some Spotify objects using any of the supported identifiers:
    ```python
-    from musify.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist, SpotifyArtist
+    from mytunes.libraries.remote.spotify.object import SpotifyTrack, SpotifyAlbum, SpotifyPlaylist, SpotifyArtist
 
 
     async def load_playlist(api: SpotifyAPI) -> SpotifyPlaylist:
@@ -248,7 +248,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
 
    #### Generic local library
    ```python
-   from musify.libraries.local.library import LocalLibrary
+   from mytunes.libraries.local.library import LocalLibrary
    
    library = LocalLibrary(
        library_folders=["<PATH TO YOUR LIBRARY FOLDER>", ...],
@@ -258,9 +258,9 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
    
    #### MusicBee
    > You will need to install the `musicbee` optional dependency to work with MusicBee objects.
-   > [Read the docs](https://geo-martino.github.io/musify/howto.install.html) for more info.
+   > [Read the docs](https://geo-martino.github.io/mytunes/howto.install.html) for more info.
    ```python
-   from musify.libraries.local.library import MusicBee
+   from mytunes.libraries.local.library import MusicBee
    
    library = MusicBee(musicbee_folder="<PATH TO YOUR MUSICBEE FOLDER>")
    ```
@@ -335,7 +335,7 @@ For more detailed guides, check out the [documentation](https://geo-martino.gith
 
 6. Save the tags to the file:
    ```python
-   from musify.libraries.local.track.field import LocalTrackField
+   from mytunes.libraries.local.track.field import LocalTrackField
    
    # you don't have to save all the tags you just modified
    # select which you wish to save first like so
@@ -409,7 +409,7 @@ on the work of their craft. One can dream.
 ## Release History
 
 For change and release history, 
-check out the [documentation](https://geo-martino.github.io/musify/info/release-history.html).
+check out the [documentation](https://geo-martino.github.io/mytunes/info/release-history.html).
 
 
 ## Contributing and Reporting Issues
@@ -417,8 +417,8 @@ check out the [documentation](https://geo-martino.github.io/musify/info/release-
 If you have any suggestions, wish to contribute, or have any issues to report, please do let me know 
 via the issues tab or make a new pull request with your new feature for review. 
 
-For more info on how to contribute to Musify, 
-check out the [documentation](https://geo-martino.github.io/musify/info/contributing.html).
+For more info on how to contribute to MyTunes, 
+check out the [documentation](https://geo-martino.github.io/mytunes/info/contributing.html).
 
 
 ## Author notes
@@ -431,4 +431,4 @@ this project to be one that aims to break down the barriers between listening ex
 The ultimate aim being to make managing a local library as easy as any of the major music streaming services, 
 allowing users the same conveniences while compensating artists fairly for their work.
 
-I hope you enjoy using Musify!
+I hope you enjoy using MyTunes!

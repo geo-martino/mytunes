@@ -1,0 +1,424 @@
+import itertools
+from collections.abc import Generator, Collection, Sequence
+from pathlib import Path
+from typing import Annotated, ClassVar, final, Any
+
+from mutagen import MutagenError
+from pydantic import Field, DirectoryPath, PrivateAttr, BeforeValidator, validate_call, OnErrorOmit
+
+from mytunes._types import DEFAULT_IF_NONE
+from mytunes.core.library import MutableLibrary
+from mytunes.core.properties.path import PathMapper, SystemPath, SystemPaths, PathModelMapper
+from mytunes.exception import MyTunesError, MyTunesValueError
+from mytunes.local._collection._base import LocalCollection
+from mytunes.local._collection.album import LocalAlbumCollection
+from mytunes.local._collection.artist import LocalArtistCollection
+from mytunes.local._collection.folder import Folder
+from mytunes.local._collection.genre import LocalGenreCollection
+from mytunes.local._collection.library.result import LibraryURIsResult
+from mytunes.local._collection.playlist import LocalPlaylist, LOCAL_PLAYLIST_ADAPTER
+from mytunes.local._collection.playlist.result import LoadPlaylistResult, SavePlaylistResult
+from mytunes.logger import STAT
+from mytunes.processors.sort import ItemSorter
+from ..._item import LocalAlbum, LocalArtist, LocalGenre
+from ..._item.track import LocalTrack, HasLocalTracks, TagContext, LOCAL_TRACK_ADAPTER
+
+
+@final
+class LocalLibrary(
+    HasLocalTracks[LocalTrack],
+    MutableLibrary[LocalTrack, LocalPlaylist],
+    LocalCollection[LocalTrack],
+):
+    """
+    Represents a local library, providing various methods for manipulating
+    tracks and playlists across an entire local library collection.
+    """
+    __final__ = True
+
+    _ignore_folders: ClassVar[frozenset[str]] = frozenset({"$RECYCLE.BIN"})
+    source: ClassVar[str] = "Local"
+
+    library_folders: Annotated[
+        set[DirectoryPath], BeforeValidator(SystemPaths.get_current_system_paths)
+    ] = Field(
+        description="Set of folders to scan for music files.",
+        default_factory=set,
+    )
+    playlist_folder: Annotated[
+         Path, BeforeValidator(SystemPath.get_current_system_path)
+    ] | None = Field(
+        description="Path to the folder containing the playlist. This may absolute or relative to the library folders.",
+        default=None,
+    )
+    path_mapper: Annotated[PathMapper.annotation, DEFAULT_IF_NONE] = Field(
+        description="Mapper to use when mapping paths stored in the playlist files.",
+        default_factory=PathModelMapper,
+    )
+    tracks_context: TagContext = Field(
+        description="Settings to apply when loading tracks in this library.",
+        default_factory=TagContext,
+        validation_alias="tracks_load_context",
+    )
+
+    _errors: list[str] = PrivateAttr(
+        default_factory=list
+    )
+
+    @property
+    def errors(self) -> list[str]:
+        """List of errors encountered while loading the library."""
+        return self._errors
+
+    async def load(self) -> None:
+        self._logger.info(f"Loading tracks and playlists in {self.source} library", header=1, new_line_start=True)
+
+        with self._progress:
+            await self.load_tracks()
+            playlist_results = await self.load_playlists()
+
+        self._logger.print_line(STAT)
+        self._log_playlist_load(playlist_results)
+        self._logger.print_line(STAT)
+        self._log_library_uris()
+        self._logger.print_line(STAT)
+
+    def _log_library_uris(self):
+        header = f"{self.source.upper()} TRACK AND PLAYLIST URIS"
+        results: dict[str | None, LibraryURIsResult | None] = self._generate_playlist_uris_results()
+        results[None] = None  # add section separator
+        results["TRACKS"] = self._generate_track_uris_results()
+        table = LibraryURIsResult.generate_table(results=results, title=header)
+
+        self._logger.stat(table)
+
+    def _log_errors(self, message: str = "Could not load") -> None:
+        if len(self.errors) == 0:
+            return
+
+        header = f"[white]{message}[/]:"
+        errors = list(map(lambda err: f"[red]{err}[/]", sorted(set(self.errors))))
+
+        log = "\n\t- ".join([header] + errors)
+        self._logger.warning(log, new_line_start=True)
+        self.errors.clear()
+
+    ###########################################################################
+    ## Tracks
+    ###########################################################################
+    async def load_track(self, path: str | Path) -> LocalTrack | None:
+        """
+        Loads the track at the given ``path``.
+
+        Handles exceptions by logging paths which produce errors to internal list of ``errors``.
+        """
+        try:
+            async with self.concurrency:
+                self._logger.debug(f"Loading track: {path}")
+                file = await LocalTrack.load_file(path)
+
+            return LOCAL_TRACK_ADAPTER.validate_python(file, context=self.tracks_context)
+
+        except (MyTunesError, MutagenError, ValueError, OSError) as ex:
+            self._logger.debug(f"Load error for track: {path} - {ex}")
+            self.errors.append(path)
+
+    async def load_tracks(self) -> int:
+        if not (paths := set(self._track_paths)):
+            return 0
+
+        self._logger.info(f"Loading {len(paths)} tracks in {self.source} library", header=2)
+
+        task_id = self._progress.add_task(
+            description=f"Loading {self.source} tracks", total=len(paths)
+        )
+        tracks = await self._run_tasks_async(map(self.load_track, paths), task_id=task_id)
+        self.tracks.replace(tracks)
+
+        self._log_errors("Could not load the following tracks")
+        return len(self.tracks)
+
+    @property
+    def _track_paths(self) -> Generator[Path]:
+        if not self.library_folders:
+            return
+
+        extensions: set[str] = LocalTrack.supported_extensions
+
+        folders = self.library_folders
+        folder_message = "folder" if len(folders) == 1 else "folders"
+        message = f"Scanning {len(folders)} {self.source} library {folder_message} for tracks with extensions:"
+        extensions_log = self._logger.format_list_to_string(extensions)
+        self._logger.info(message, header=2, hidden=extensions_log, new_line_start=True)
+
+        for folder in folders:
+            for path in folder.rglob(f"[!.]*"):
+                if path.suffix.lstrip(".").casefold() not in extensions:
+                    continue
+                if any(part in path.parts for part in self._ignore_folders):
+                    continue
+
+                yield path
+
+    def log_tracks(self) -> None:
+        self._logger.print_line(STAT)
+        self._log_track_uris()
+        self._logger.print_line(STAT)
+
+    def _log_track_uris(self) -> None:
+        result = self._generate_track_uris_results()
+        key = f"{self.source.upper()} TRACK URIS"
+        table = result.generate_table(results={key: result})
+
+        self._logger.stat(table)
+
+    def _generate_track_uris_results(self) -> LibraryURIsResult[LocalTrack]:
+        source = self.tracks_context.remote_source
+        return LibraryURIsResult.from_tracks(self.tracks, source=source)
+
+    @validate_call
+    async def save_tracks(
+            self,
+            include: set[str] | Sequence[str] = (),
+            exclude: set[str] | Sequence[str] = (),
+            context: TagContext | None = None,
+            replace: bool = False,
+            dry_run: bool = False
+    ) -> dict[Path, dict[str, Any]]:
+        if context is None:
+            context = self.tracks_context
+        return await super().save_tracks(include, exclude, context, replace, dry_run)
+
+    ###########################################################################
+    ## Playlists
+    ###########################################################################
+    async def load_playlist(self, path: str | Path) -> tuple[LocalPlaylist, LoadPlaylistResult] | None:
+        """
+        Loads the playlist at the given ``path`` and assigns optional arguments using this library's attributes.
+
+        Handles exceptions by logging paths which produce errors to internal list of ``errors``.
+        """
+        try:
+            async with self.concurrency:
+                self._logger.debug(f"Loading playlist: {path}")
+
+                playlist = LOCAL_PLAYLIST_ADAPTER.validate_python(path)
+                playlist.path_mapper = self.path_mapper
+
+                result = await playlist.load(self.tracks)
+                return playlist, result
+
+        except (MyTunesError, ValueError, FileNotFoundError) as ex:
+            self._logger.debug(f"Load error for playlist: {path} - {ex}")
+            self.errors.append(path)
+
+    async def load_playlists(self) -> tuple[LoadPlaylistResult, ...]:
+        if not (paths := set(self._playlist_paths)):
+            return tuple()
+
+        self._logger.info(f"Loading {len(paths)} playlists in {self.source} library", header=2)
+
+        task_id = self._progress.add_task(
+            description=f"Loading {self.source} playlists", total=len(paths)
+        )
+        task = self._run_tasks_async(map(self.load_playlist, paths), task_id=task_id)
+
+        playlists: list[LocalPlaylist] = []
+        results: list[LoadPlaylistResult] = []
+        for playlist, result in await task:
+            playlists.append(playlist)
+            results.append(result)
+
+        playlists = sorted(playlists, key=lambda x: x.name.casefold())
+        results = sorted(results, key=lambda x: x.name.casefold())
+        self.playlists.replace(playlists)
+
+        self._log_errors("Could not load the following playlists")
+        return tuple(results)
+
+    @property
+    def _playlist_paths(self) -> Generator[Path]:
+        if self.playlist_folder is None:
+            return
+
+        if self.playlist_folder.is_absolute():
+            folders = {self.playlist_folder}
+        else:
+            folders = {
+                library_folder.joinpath(self.playlist_folder)
+                for library_folder in self.library_folders
+            }
+            folders = {folder for folder in folders if folder.is_dir()}
+
+        extensions: set[str] = LocalPlaylist.supported_extensions
+
+        folder_message = "folder" if len(folders) == 1 else "folders"
+        message = f"Scanning {len(folders)} {self.source} library {folder_message} for playlists with extensions:"
+        extensions_log = self._logger.format_list_to_string(extensions)
+        self._logger.info(message, header=2, hidden=extensions_log, new_line_start=True)
+
+        total = 0
+        filtered = 0
+        for folder in folders:
+            for path in folder.rglob(f"[!.]*"):
+                if path.suffix.lstrip(".").casefold() not in extensions:
+                    continue
+                if any(part in path.parts for part in self._ignore_folders):
+                    continue
+                if self.playlist_filter and not self.playlist_filter.check(path.stem):
+                    filtered += 1
+                    continue
+
+                total += 1
+                yield path
+
+        self._logger.debug(f"Filtered out {filtered} playlists from {total} {self.source} available playlists")
+
+    @validate_call
+    def log_playlists(self, results: Sequence[OnErrorOmit[LoadPlaylistResult]] = None) -> None:
+        self._logger.print_line(STAT)
+        if results:
+            self._log_playlist_load(results)
+            self._logger.print_line(STAT)
+
+        self._log_playlist_uris()
+        self._logger.print_line(STAT)
+
+    def _log_playlist_load(self, results: Sequence[LoadPlaylistResult]) -> None:
+        header = f"{self.source.upper()} PLAYLISTS LOADED"
+        table = LoadPlaylistResult.generate_table(results=results, title=header)
+
+        self._logger.stat(table)
+
+    def _log_playlist_uris(self) -> None:
+        results = self._generate_playlist_uris_results()
+        header = f"{self.source.upper()} PLAYLIST URIS"
+        table = LibraryURIsResult.generate_table(results=results, title=header)
+
+        self._logger.stat(table)
+
+    def _generate_playlist_uris_results(self) -> dict[str, LibraryURIsResult[LocalTrack]]:
+        source = self.tracks_context.remote_source
+        return {
+            playlist.name: LibraryURIsResult.from_tracks(playlist.tracks, source=source)
+            for playlist in self.playlists
+        }
+
+    async def save_playlists(self, dry_run: bool = False) -> tuple[SavePlaylistResult, ...]:
+        """
+        Save associated tracks and settings (if applicable) for all playlists in this library.
+
+        :param dry_run: Run function, but do not modify the file on the disk.
+        :return: A map of the playlist name to the results of its sync as a :py:class:`Result` object.
+        """
+        async def _save_playlist(pl: LocalPlaylist) -> SavePlaylistResult:
+            async with self.concurrency:
+                return await pl.save(dry_run=dry_run)
+
+        total = len(self.playlists)
+        self._logger.info(f"Saving {total} playlists in {self.source} {self.type}", header=2)
+
+        task_id = self._progress.add_task(description=f"Updating {self.source} playlists", total=total)
+        results = await self._run_tasks_async(map(_save_playlist, self.playlists), task_id=task_id)
+        return tuple(results)
+
+    @validate_call
+    def log_save_playlists_results(self, results: Sequence[OnErrorOmit[SavePlaylistResult]]) -> None:
+        """Log the given results of saving playlists."""
+        header = f"{self.source.upper()} PLAYLISTS SAVED"
+        table = SavePlaylistResult.generate_table(results=results, title=header)
+
+        self._logger.stat(table, new_line_start=True)
+
+    ###########################################################################
+    ## Collections
+    ###########################################################################
+    @property
+    def folders(self) -> Generator[Folder]:
+        """
+        Dynamically generate a set of folder collections from the tracks in this library.
+        Folder collections are generated relevant to the library folder it is found in.
+        """
+        return self.generate_folders(self.tracks)
+
+    def generate_folders(self, tracks: Collection[LocalTrack]) -> Generator[Folder]:
+        """
+        Dynamically generate a set of folder collections from the given tracks.
+        Folder collections are generated relevant to the library folder it is found in.
+        """
+        def get_relative_path(track: LocalTrack) -> Path:
+            """Return path of a track relative to the library folders of this library"""
+            for folder in self.library_folders:
+                if track.path.is_relative_to(folder):
+                    return track.path.relative_to(folder).parent
+
+            raise MyTunesValueError(f"Track path is not relative to any library folders: {track.path}")
+
+        groups = itertools.groupby(sorted(tracks, key=get_relative_path), get_relative_path)
+        for path, group in groups:
+            if not path.name:
+                continue
+
+            group = sorted(group, key=lambda track: track.filename)
+            yield Folder(name=path.name, tracks=group)
+
+    @property
+    def albums(self) -> Generator[LocalAlbumCollection]:
+        """Dynamically generate a set of album collections from the tracks in this library"""
+        return self.generate_albums(self.tracks)
+
+    @classmethod
+    def generate_albums(cls, tracks: Collection[LocalTrack]) -> Generator[LocalAlbumCollection]:
+        """Dynamically generate a set of album collections from the given tracks"""
+        tracks = sorted(tracks, key=lambda track: track.album.name if track.album else "")
+        grouped = ItemSorter.group_by_field(items=tracks, field="album")
+        for name, group in grouped.items():
+            album = next(
+                track.album for track in group
+                if track.album and track.album.name.casefold() == name.casefold()
+            ) if name is not None else LocalAlbum(name=None)
+
+            group = sorted(group, key=lambda track: track.track or 0)
+            yield LocalAlbumCollection(**album.model_dump(), tracks=group)
+
+    @property
+    def artists(self) -> Generator[LocalArtistCollection]:
+        """Dynamically generate a set of artist collections from the tracks in this library"""
+        return self.generate_artists(self.tracks)
+
+    @classmethod
+    def generate_artists(cls, tracks: Collection[LocalTrack]) -> Generator[LocalArtistCollection]:
+        """Dynamically generate a set of artist collections from the given tracks"""
+        tracks = sorted(tracks, key=lambda track: track.artists[0].name if track.artists else "")
+        grouped = ItemSorter.group_by_field(items=tracks, field="artists")
+        for name, group in grouped.items():
+            artist = next(
+                artist for track in group for artist in track.artists
+                if artist.name.casefold() == name.casefold()
+            ) if name is not None else LocalArtist(name=None)
+
+            albums = sorted(cls.generate_albums(group), key=lambda alb: alb.name)
+            for album in albums:
+                if not any(artist.name == art.name for art in album.artists):
+                    album.artists.append(artist)
+
+            yield LocalArtistCollection(**artist.model_dump(), albums=albums)
+
+    @property
+    def genres(self) -> Generator[LocalGenreCollection]:
+        """Dynamically generate a set of genre collections from the tracks in this library"""
+        return self.generate_genres(self.tracks)
+
+    @classmethod
+    def generate_genres(cls, tracks: Collection[LocalTrack]) -> Generator[LocalGenreCollection]:
+        """Dynamically generate a set of genre collections from the given tracks."""
+        tracks = sorted(tracks, key=lambda track: track.genre)
+        grouped = ItemSorter.group_by_field(items=tracks, field="genres")
+        for name, group in grouped.items():
+            genre = next(
+                genre for track in group for genre in track.genres
+                if genre.name.casefold() == name.casefold()
+            ) if name is not None else LocalGenre(name=None)
+
+            group = sorted(group, key=lambda track: track.track or 0)
+            yield LocalGenreCollection(**genre.model_dump(), tracks=group)

@@ -1,0 +1,71 @@
+from abc import abstractmethod
+from collections.abc import Iterable
+from typing import Any, final, Literal
+
+from pydantic import Field, model_validator
+
+from mytunes._types import Number
+from ._base import Value
+from ..._types import _ATTRIBUTE_FIELD_TYPE
+from ...._base.attribute import AttributeModel
+
+
+# noinspection PyAbstractClass
+class AggregateValue[OT: str, IT: AttributeModel, VT: Any](Value[OT, Iterable[IT], VT]):
+    field: _ATTRIBUTE_FIELD_TYPE = Field(
+        description="The field from which to get a tag value from.",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _from_field[T](cls, data: T | str) -> T | dict[str, Any]:
+        if not isinstance(data, str):
+            return data
+        return dict(field=data)
+
+    @abstractmethod
+    def get(self, items: Iterable[IT]) -> VT:
+        """Get the value from a collection of items."""
+        raise NotImplementedError
+
+    def _get_values(self, items: Iterable[IT]) -> list[VT]:
+        values = (getattr(item, self.field) for item in items)
+        return list(filter(None, values))
+
+
+@final
+class MinValue[IT: AttributeModel, VT: Any](AggregateValue[Literal["min"], IT, VT]):
+    __final__ = True
+
+    def get(self, items: Iterable[IT]) -> VT | None:
+        values = self._get_values(items)
+        return min(values) if values else None
+
+
+@final
+class MaxValue[IT: AttributeModel, VT: Any](AggregateValue[Literal["max"], IT, VT]):
+    __final__ = True
+
+    def get(self, items: Iterable[IT]) -> VT | None:
+        values = self._get_values(items)
+        return max(values) if values else None
+
+
+@final
+class SumValue[IT: AttributeModel, VT: Number](AggregateValue[Literal["sum"], IT, VT]):
+    __final__ = True
+
+    def get(self, items: Iterable[IT]) -> VT | None:
+        values = self._get_values(items)
+        return sum(values) if values else None
+
+
+
+@final
+class CountValue[IT: AttributeModel, VT: Any](AggregateValue[Literal["count"], IT, VT]):
+    __final__ = True
+
+    field: Literal[None] = Field(default=None)
+
+    def get(self, items: Iterable[IT]) -> VT | None:
+        return len(list(items))
