@@ -558,13 +558,13 @@ class Endpoints[UT: URI, RT: RemoteResource](RemoteModel, HasLogger, HasProgress
                 img = await img.load(self._handler.session)
             case ImageSource() as img:
                 img = await img.load()
-            case PILImageFile.ImageFile() as img:
+            case PILImageFile.Image.Image() as img:
                 img = img
             case bytes() as value:
                 data = value
                 img = Image.open(BytesIO(data))
             case _:
-                raise RequestError("Unknown image format.")
+                raise RequestError(f"Unknown image format: {type(image).__name__!r}")
 
         mime = Image.MIME[img.format]
         if data is None:

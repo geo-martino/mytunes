@@ -1,3 +1,4 @@
+import base64
 from collections.abc import Generator
 from io import BytesIO
 from unittest.mock import Mock, patch
@@ -74,10 +75,29 @@ class TestSpotifyPlaylistLibraryEndpoints(EndpointsTester):
         expected_mime = Image.MIME[image_object.format]
 
         data = BytesIO()
-        image_object.save(data, format=image_object.format)
-        expected_data = data.getvalue()
+        img = image_object.resize(size=(100, 100))
+        img.format = image_object.format
+        img.save(data, format=img.format)
+        expected_data = base64.b64encode(data.getvalue()).decode("ascii")
 
-        await model.modify(str(uri.api_url), image=image_object)
+        await model.modify(str(uri.api_url), image=img)
         mock_put.assert_called_once_with(
             expected_url, data=expected_data, headers={"Content-Type": expected_mime}
         )
+
+    async def test_modify_image_too_large(
+            self,
+            model: _SpotifyPlaylistLibraryEndpoints,
+            uri: SpotifyResourceURI,
+            image_object: PILImageFile.ImageFile,
+            mock_put: Mock,
+            faker: Faker,
+    ):
+        data = BytesIO()
+        img = image_object.resize(size=(image_object.width * 100, image_object.height * 100))
+        img.format = image_object.format
+        img.save(data, format=img.format)
+        assert len(data.getvalue()) > 256 * 10e3
+
+        await model.modify(str(uri.api_url), image=img)
+        mock_put.assert_not_called()
