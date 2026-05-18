@@ -6,7 +6,7 @@ from faker import Faker
 from mytunes.core.track import Track
 from mytunes.processors.compare import Comparer
 from mytunes.processors.filters import ComparerFilter
-from testers import BaseModelTester
+from tests.testers import BaseModelTester
 
 
 class ValueTester(BaseModelTester, metaclass=ABCMeta):

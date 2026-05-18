@@ -12,14 +12,19 @@
         </value>
       </option>
     </inspection_tool>
+    <inspection_tool class="PyInconsistentReturnsInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PyMissingOrEmptyDocstringInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="PyMissingTypeHintsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="ignoredErrors">
         <list>
           <option value="E266" />
+          <option value="E721" />
         </list>
       </option>
+    </inspection_tool>
+    <inspection_tool class="PyProtectedMemberInspection" enabled="true" level="WEAK WARNING" enabled_by_default="false">
+      <scope name="src" level="WEAK WARNING" enabled="true" />
     </inspection_tool>
     <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="ignoredNames">
@@ -32,7 +37,7 @@
     <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredIdentifiers">
         <list>
-          <option value="logging.Logger.stat" />
+          <option value="mutagen.id3._frames.APIC.*" />
         </list>
       </option>
     </inspection_tool>

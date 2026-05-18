@@ -8,7 +8,7 @@ from mytunes.core.properties.file import IsLocalFile
 from mytunes.core.properties.order import Position
 from mytunes.processors.filters import ComparerFilter
 from mytunes.processors.tagger.values._fields import FieldValue, PositionValue, PathValue
-from processors.tagger.values.testers import ValueTester
+from tests.processors.tagger.values.testers import ValueTester
 
 
 class TestFieldValue(ValueTester):

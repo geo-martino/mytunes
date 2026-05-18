@@ -8,7 +8,7 @@ from mytunes.processors.filters import ComparerFilter
 from mytunes.processors.tagger.values import FixedValue
 from mytunes.processors.tagger.values._composite import TemplateValue, JoinValue
 from mytunes.processors.tagger.values._fields import FieldValue, PathValue
-from processors.tagger.values.testers import ValueTester
+from tests.processors.tagger.values.testers import ValueTester
 
 
 class TestJoinValue(ValueTester):

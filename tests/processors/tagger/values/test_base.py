@@ -4,7 +4,7 @@ from faker import Faker
 from mytunes.core._item.track import Track
 from mytunes.processors.filters import ComparerFilter
 from mytunes.processors.tagger.values import FixedValue
-from processors.tagger.values.testers import ValueTester
+from tests.processors.tagger.values.testers import ValueTester
 
 
 class TestFixedValue(ValueTester):
