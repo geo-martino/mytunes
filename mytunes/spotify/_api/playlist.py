@@ -1,3 +1,4 @@
+import base64
 from collections.abc import Iterable
 from typing import ClassVar, final
 
@@ -81,7 +82,8 @@ class _SpotifyPlaylistLibraryEndpoints(
         if not url.path.endswith("/images"):
             url = url.joinpath("images")
 
-        await self._handler.put(url, data=data, headers={"Content-Type": mime})
+        encoded_data = base64.b64encode(data).decode('ascii')
+        await self._handler.put(url, data=encoded_data, headers={"Content-Type": mime})
 
     @classmethod
     @validate_call
