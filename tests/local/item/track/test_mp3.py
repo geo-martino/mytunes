@@ -259,7 +259,7 @@ class TestMP3(LocalTrackTester):
             "TBPM": mutagen.id3.TBPM(text="124.931"),
             "TKEY": mutagen.id3.TKEY(text="B"),
             "POPM": mutagen.id3.POPM(rating=55, count=200),
-            "TDAT": mutagen.id3.TDAT(text="2023-04-14"),
+            "TDRC": mutagen.id3.TDRC(text="2023-04-14"),
             "TCMP": mutagen.id3.TCMP(text="1"),
             "COMM:1:eng": mutagen.id3.COMM(text=model.comments[0], lang="eng"),
             f"COMM:{uri.source}URI:eng": mutagen.id3.COMM(text=str(uri), lang="eng", desc=f"{uri.source}URI"),

@@ -107,8 +107,8 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     released_at: Annotated[SparseDate | None, TagAttribute()] = Field(
         description="The date this track was released.",
         default=None,
-        validation_alias=AliasChoices("TDAT", "TDOR", "TYER", "TORY", "TDRC"),
-        serialization_alias="TDAT",
+        validation_alias=AliasChoices("TDRC", "TDAT", "TDOR", "TYER", "TORY"),
+        serialization_alias="TDRC",
     )
     # noinspection SpellCheckingInspection
     rating: Annotated[Rating[NonNegativeInt] | None, TO_INT, TagAttribute()] = Field(
