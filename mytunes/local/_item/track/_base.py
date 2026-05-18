@@ -459,11 +459,11 @@ class LocalTrack[FT: FileType](
 
     @field_serializer("images", mode="plain", when_used="unless-none")
     def _serialize_images[T](self, images: dict[str, Any], info: FieldSerializationInfo) -> list | T:
-        if not info.by_alias or not self.images:  # if not serializing to tag IDs, return the images models
+        if not info.by_alias:  # if not serializing to tag IDs, return the images models
             return images
 
         context = info.context
-        if not isinstance(context, TagContext) or not context.loaded_images:
+        if not isinstance(context, TagContext) or not context.loaded_images or not self.images:
             return []
         if missing_images := set(context.loaded_images) - set(self.images or ()):
             # noinspection PyUnboundLocalVariable
