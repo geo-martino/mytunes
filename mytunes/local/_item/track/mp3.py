@@ -276,6 +276,7 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
     ) -> T | list[str] | InstanceOf[mutagen.id3.TextFrame]:
         if info.mode == "json":
             return super()._serialize_names(value, handler=handler, info=info)
+        print(1, info.field_name, value)
         # noinspection PyArgumentList
         return self._serialize_text_frame(value, handler=handler, info=info)
 
@@ -290,9 +291,11 @@ class MP3(LocalTrack[mutagen.mp3.MP3]):
             return handler(value)
         if not isinstance(value, ItemSequence):
             value = [value]
+        print(2, info.field_name, value)
 
         frame_cls = self._get_frame_class(info)
         tag_value = self._join_split_tags(value)
+        print(3, info.field_name, tag_value)
         return frame_cls(text=tag_value)
 
     @field_serializer("comments", mode="wrap", when_used="unless-none")
