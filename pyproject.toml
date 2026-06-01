@@ -4,9 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 dynamic = ["version"]
-name = "musify"
+name = "mytunes"
 authors = [
-  { name="George Martin Marino", email="gm.engineer+musify@pm.me" },
+  { name="George Martin Marino", email="gm.engineer+mytunes@pm.me" },
 ]
 description = "A Swiss Army knife for programmatic music library management"
 readme = "README.md"
@@ -33,7 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 # optional functionality
 all = [
-    "musify[bars,musicbee,sqlite]",
+    "mytunes[bars,musicbee,sqlite]",
 ]
 bars = [
     "tqdm~=4.67.1",
@@ -53,7 +53,7 @@ build = [
     "versioningit~=3.1.2",
 ]
 test = [
-    "musify[all]",
+    "mytunes[all]",
     "pytest~=8.3.5",
     "pytest-asyncio~=0.26.0",
     "pytest-xdist~=3.6.1",
@@ -63,7 +63,7 @@ test = [
     "pycountry~=24.6.1",
 ]
 docs = [
-    "musify[build]",
+    "mytunes[build]",
     "sphinx~=8.2.3",
     "sphinx-rtd-theme~=3.0.2",
     "graphviz~=0.20.3",
@@ -74,7 +74,7 @@ docs = [
     "sphinx-new-tab-link~=0.8.0",
 ]
 dev = [
-    "musify[test,docs]",
+    "mytunes[test,docs]",
     "flake8",
     "grip",
     "jupyterlab",
@@ -82,11 +82,11 @@ dev = [
 ]
 
 [project.urls]
-"Documentation" = "https://geo-martino.github.io/musify/"
-"Release Notes" = "https://geo-martino.github.io/musify/info/release-history.html"
-"Contribute" = "https://geo-martino.github.io/musify/info/contributing.html"
-"Source code" = "https://github.com/geo-martino/musify"
-Issues = "https://github.com/geo-martino/musify/issues"
+"Documentation" = "https://geo-martino.github.io/mytunes/"
+"Release Notes" = "https://geo-martino.github.io/mytunes/info/release-history.html"
+"Contribute" = "https://geo-martino.github.io/mytunes/info/contributing.html"
+"Source code" = "https://github.com/geo-martino/mytunes"
+Issues = "https://github.com/geo-martino/mytunes/issues"
 
 [tool.hatch.version]
 source = "versioningit"
