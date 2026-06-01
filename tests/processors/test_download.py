@@ -98,7 +98,6 @@ class TestItemDownloadHelper(PrettyPrinterTester):
     ):
         def log_urls(url) -> None:
             """Log the opened URLs"""
-            nonlocal urls
             urls.append(url)
 
         urls = []
@@ -127,7 +126,6 @@ class TestItemDownloadHelper(PrettyPrinterTester):
     ):
         def log_urls(url) -> None:
             """Log the opened URLs"""
-            nonlocal urls
             urls.append(url)
 
         urls = []
