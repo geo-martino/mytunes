@@ -44,6 +44,7 @@ musicbee = [
 ]
 sqlite = [
     "aiorequestful[sqlite]~=1.0.20",
+    "aiosqlite~=0.21.0",  # WORKAROUND: pinned to support Connection.is_alive  # TODO: drop me on aiorequestful v2
 ]
 
 # dev dependencies
